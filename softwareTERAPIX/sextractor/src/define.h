@@ -9,7 +9,7 @@
 *
 *	Contents:	global definitions.
 *
-*	Last modify:	23/09/2005
+*	Last modify:	29/11/2005
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -34,6 +34,7 @@
 /*--------------------------- Internal constants ----------------------------*/
 
 #define	BIG			1e+30		/* a huge number */
+#define	LESSBIG			1e+25		/* a somewhat smaller number */
 #define	DATA_BUFSIZE		262144		/* data buffer size */
 #define	MARGIN_SCALE		2.0		/* Margin / object height */ 
 #define	MAXCHAR			512		/* max. number of characters */

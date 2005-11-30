@@ -10,7 +10,7 @@
 *	Contents:	functions for extraction of connected pixels from
 *			a bitmap.
 *
-*	Last modify:	11/08/98
+*	Last modify:	29/11/2005
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -44,7 +44,7 @@ void		lutzalloc(int, int),
 		lutzfree(void),
 		lutzsort(infostruct *, objliststruct *),
 		sortit(picstruct *, picstruct *, picstruct *, picstruct *,
-			infostruct *, objliststruct *),
+			infostruct *, objliststruct *, PIXTYPE *, PIXTYPE *),
 		update(infostruct *, infostruct *, pliststruct *);
 
 int		lutz(objliststruct *, int, objstruct *, objliststruct *); 

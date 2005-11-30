@@ -9,7 +9,7 @@
 *
 *	Contents:	functions dealing with the handling of pixel lists.
 *
-*	Last modify:	27/11/2003
+*	Last modify:	29/11/2005
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -137,7 +137,7 @@ INPUT	-.
 OUTPUT  -.
 NOTES   The preparation of components relies on the preferences.
 AUTHOR  E. Bertin (IAP, Leiden observatory & ESO)
-VERSION 29/04/98
+VERSION 29/11/2005
  ***/
 void	init_plist(void)
 
@@ -183,6 +183,15 @@ void	init_plist(void)
     }
   else
     plistexist_flag = 0;
+
+  if (FLAG(obj.wflag))
+    {
+    plistexist_wflag = 1;
+    plistoff_wflag = plistsize;
+    plistsize += sizeof(FLAGTYPE);
+    }
+  else
+    plistexist_wflag = 0;
 
   if (prefs.weight_flag)
     {

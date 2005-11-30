@@ -9,7 +9,7 @@
 *
 *	Contents:	parameter list for catalog data.
 *
-*	Last modify:	25/08/2005
+*	Last modify:	29/11/2005
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -461,6 +461,8 @@ keystruct	objkey[] = {
 
   {"FLAGS", "Extraction flags",
 	&outobj.flag, H_INT, T_SHORT, "%3d", ""},
+  {"FLAGS_WEIGHT", "Weighted extraction flags",
+	&outobj.wflag, H_INT, T_SHORT, "%1d", ""},
   {"FLAGS_WIN", "Flags for WINdowed parameters",
 	&outobj2.win_flag, H_INT, T_SHORT, "%3d", ""},
   {"IMAFLAGS_ISO", "FLAG-image flags OR'ed over the iso. profile",

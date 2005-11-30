@@ -9,7 +9,7 @@
 *
 *	Contents:	global type definitions.
 *
-*	Last modify:	25/08/2005
+*	Last modify:	29/11/2005
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -30,6 +30,11 @@
 #define		OBJ_ISO_PB	0x0020
 #define		OBJ_DOVERFLOW	0x0040
 #define		OBJ_OVERFLOW	0x0080
+
+/*----------------------------- weight flags --------------------------------*/
+
+#define		OBJ_WEIGHTZERO	0x0001
+#define		OBJ_DWEIGHTZERO 0x0002
 
 /*---------------------------- preanalyse flags -----------------------------*/
 
@@ -92,6 +97,7 @@ typedef struct
   int		*submap;			/* Pixel-index sub-map */
   int		subx,suby, subw,subh;		/* sub-image pos. and size */
   short		flag;				/* extraction flags */
+  BYTE		wflag;				/* weighted extraction flags */
   FLAGTYPE	imaflag[MAXFLAG];		/* flags from FLAG-images */
   BYTE		singuflag;			/* flags for singularities */
   int		imanflag[MAXFLAG];     		/* number of MOST flags */
