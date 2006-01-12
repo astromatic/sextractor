@@ -9,7 +9,7 @@
 *
 *	Contents:	global type definitions.
 *
-*	Last modify:	29/11/2005
+*	Last modify:	12/01/2006
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -399,6 +399,7 @@ typedef struct
 /*----- Misc. strings defining the extraction */
   char		prefs_name[MAXCHAR];			/* Prefs filename*/
   char		image_name[MAXCHAR];			/* image filename*/
+  char		psf_name[MAXCHAR];			/* PSF filename*/
   char		nnw_name[MAXCHAR];			/* NNW name */
   char		filter_name[MAXCHAR];			/* Filter name */
   char		soft_name[MAXCHAR];			/* Sextractor version*/

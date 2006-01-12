@@ -9,7 +9,7 @@
 *
 *	Contents:	global definitions.
 *
-*	Last modify:	29/11/2005
+*	Last modify:	12/01/2006
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -17,7 +17,7 @@
 /* Check if we are using a configure script here */
 #ifndef HAVE_CONFIG_H
 #define		VERSION		"2.x"
-#define		DATE		"2002-12-13"
+#define		DATE		"2006-01-12"
 #endif
 
 /*------------------------ what, who, when and where ------------------------*/
@@ -47,7 +47,7 @@
 #define	MAXPICSIZE		1048576		/* max. image size */
 #define	NISO			8		/* number of isophotes */
 #define	OUTPUT			stderr		/* where all msgs are sent */
-#define PSF_NPSFMAX		11		/* Max number of fitted PSFs */
+#define PSF_NPSFMAX		9		/* Max number of fitted PSFs */
 
 #ifndef PI
 #define	PI			3.1415926535898	/* never met before? */

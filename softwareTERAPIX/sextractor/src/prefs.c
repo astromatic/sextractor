@@ -9,7 +9,7 @@
 *
 *	Contents:	Functions to handle the configuration file.
 *
-*	Last modify:	18/07/2005
+*	Last modify:	12/01/2006
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -487,8 +487,11 @@ void	useprefs()
 		" are not in equal number");
 
 /*---------------------------- PSF-fitting ---------------------------------*/
-  if (FLAG(obj2.flux_psf))
+  if (FLAG(obj2.flux_psf) )
+    {
     prefs.psf_flag = 1;
+    prefs.dpsf_flag = (prefs.npsf_name>1);	/*?*/
+    }
   if (prefs.check_flag)
     for (i=0; i<prefs.ncheck_type; i++)
       if (prefs.check_type[i] == CHECK_SUBPSFPROTOS

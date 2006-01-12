@@ -9,7 +9,7 @@
 *
 *	Contents:	main program.
 *
-*	Last modify:	26/11/2003
+*	Last modify:	12/01/2006
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -63,7 +63,9 @@ void	makeit()
   if (prefs.psf_flag)
     {
     NFPRINTF(OUTPUT, "Reading PSF information");
-    thepsf = psf_load(prefs.psf_name); 
+    thepsf = psf_load(prefs.psf_name[0]); 
+    if (prefs.dpsf_flag)
+      ppsf = psf_load(prefs.psf_name[1]);
  /*-- Need to check things up because of PSF context parameters */
     updateparamflags();
     useprefs();
@@ -299,6 +301,11 @@ void	makeit()
       {
       psf_readcontext(thepsf, field);
       psf_init(thepsf);
+      if (prefs.dpsf_flag)
+        {
+        psf_readcontext(thepsf, dfield);
+        psf_init(thepsf); /*?*/
+        }
       }
 
 /*-- Copy field structures to static ones (for catalog info) */
@@ -387,7 +394,10 @@ void	makeit()
     endgrowth();
 
   if (prefs.psf_flag)
-    psf_end(thepsf);
+    psf_end(thepsf,thepsfit); /*?*/
+
+  if (prefs.dpsf_flag)
+    psf_end(ppsf,ppsfit);
 
   if (FLAG(obj2.sprob))
     neurclose();

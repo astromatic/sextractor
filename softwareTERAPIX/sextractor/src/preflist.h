@@ -9,7 +9,7 @@
 *
 *	Contents:	Keywords for the configuration file.
 *
-*	Last modify:	19/10/2005
+*	Last modify:	12/01/2006
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -107,7 +107,8 @@ pkeystruct key[] =
   {"PHOT_PETROPARAMS", P_FLOATLIST, prefs.petroparam, 0,0, 0.0,10.0,
    {""}, 2,2, &prefs.npetroparam},
   {"PIXEL_SCALE", P_FLOAT, &prefs.pixel_scale, 0,0, 0.0, 1e+10},
-  {"PSF_NAME", P_STRING, prefs.psf_name},
+  {"PSF_NAME", P_STRINGLIST, prefs.psf_name, 0,0, 0.0,0.0,
+   {""}, 1, 2, &prefs.npsf_name},	/*?*/
   {"PSF_NMAX", P_INT, &prefs.psf_npsfmax, 1, PSF_NPSFMAX},
   {"PSFDISPLAY_TYPE", P_KEY, &prefs.psfdisplay_type, 0,0, 0.0,0.0,
    {"SPLIT","VECTOR",""}},
@@ -257,7 +258,7 @@ char *default_prefs[] =
 "*INTERP_TYPE      ALL",
 "*MAMA_CORFLEX     3.3e-5",
 "*PSF_NAME         default.psf",
-"*PSF_NMAX         11",
+"*PSF_NMAX         9",
 "*PSFDISPLAY_TYPE  SPLIT",
 "*SOM_NAME         default.som",
 ""

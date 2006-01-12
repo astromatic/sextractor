@@ -9,7 +9,7 @@
 *
 *	Contents:	analyse(), endobject()...: measurements on detections.
 *
-*	Last modify:	27/09/2005
+*	Last modify:	12/01/2006
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -601,7 +601,10 @@ void	endobject(picstruct *field, picstruct *dfield, picstruct *wfield,
     nsub = 1;
     if (prefs.psf_flag)
       {
-      psf_fit(thepsf, field, wfield, obj);
+      if (prefs.dpsf_flag)
+        double_psf_fit(ppsf, field, wfield, obj, thepsf, dfield, dwfield);
+      else
+        psf_fit(thepsf, field, wfield, obj);
       obj2->npsf = thepsfit->npsf;
       if (prefs.psfdisplay_type == PSFDISPLAY_SPLIT)
         {
@@ -618,6 +621,11 @@ void	endobject(picstruct *field, picstruct *dfield, picstruct *wfield,
             obj2->y_psf[j] = thepsfit->y[j];
           if (FLAG(obj2.flux_psf) && j<prefs.psf_fluxsize)
             obj2->flux_psf[j] = thepsfit->flux[j];
+          if (FLAG(obj2.magerr_psf) && j<prefs.psf_magerrsize)
+            obj2->magerr_psf[j] = obj2->fluxerr_psf[j]>0.0?
+		1.086*obj2->fluxerr_psf[j]/thepsfit->flux[j] : 99.0;
+          if (FLAG(obj2.fluxerr_psf) && j<prefs.psf_fluxerrsize)
+            obj2->fluxerr_psf[j] = obj2->fluxerr_psf[j];     
           if (FLAG(obj2.mag_psf) && j<prefs.psf_magsize)
             obj2->mag_psf[j] = thepsfit->flux[j]>0.0?
 		prefs.mag_zeropoint -2.5*log10(thepsfit->flux[j]) : 99.0;
@@ -643,10 +651,16 @@ void	endobject(picstruct *field, picstruct *dfield, picstruct *wfield,
         if (FLAG(obj2.y_psf))
           obj2->y_psf[0] = thepsfit->y[j];
         if (FLAG(obj2.flux_psf))
-          obj2->flux_psf[0] = thepsfit->flux[j];
+          obj2->flux_psf[0] = thepsfit->flux[j]>0.0? thepsfit->flux[j]:0.0; /*?*/
         if (FLAG(obj2.mag_psf))
           obj2->mag_psf[0] = thepsfit->flux[j]>0.0?
 		prefs.mag_zeropoint -2.5*log10(thepsfit->flux[j]) : 99.0;
+        if (FLAG(obj2.magerr_psf))
+          obj2->magerr_psf[0]=
+		(thepsfit->flux[j]>0.0 && obj2->fluxerr_psf[j]>0.0) ? /*?*/
+			1.086*obj2->fluxerr_psf[j]/thepsfit->flux[j] : 99.0;
+        if (FLAG(obj2.fluxerr_psf))
+          obj2->fluxerr_psf[0]= obj2->fluxerr_psf[j];
         if (j)
           obj->number = ++thecat.ntotal;
         }

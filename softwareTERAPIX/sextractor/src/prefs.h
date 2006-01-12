@@ -9,7 +9,7 @@
 *
 *	Contents:	Keywords for the configuration file.
 *
-*	Last modify:	18/07/2005
+*	Last modify:	12/01/2006
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -170,7 +170,9 @@ typedef struct
   int		nflux_frac;       			/* number of elem. */
 /*----- PSF-fitting */
   int		psf_flag;				/* PSF-fit needed */
-  char		psf_name[MAXCHAR];			/* PSF filename */
+  int		dpsf_flag;				/* dual image PSF-fit */
+  char		*(psf_name[2]);				/* PSF filename */
+  int		npsf_name;				/* nb of params */
   int		psf_npsfmax;				/* Max # of PSFs */
   enum	{PSFDISPLAY_SPLIT, PSFDISPLAY_VECTOR}
 		psfdisplay_type;			/* PSF display type */

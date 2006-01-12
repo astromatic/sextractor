@@ -5,11 +5,12 @@
 *
 *	Part of:	SExtractor
 *
-*	Author:		E.BERTIN (IAP)
+*	Authors:	E.BERTIN (IAP)
+*			P.DELORME (LAOG)
 *
 *	Contents:	Include file for psffit.c.
 *
-*	Last modify:	11/11/99
+*	Last modify:	12/01/2006
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -20,7 +21,8 @@
 #define	PSF_MINSHIFT	1e-3	/* Min shift from previous guess (pixels)*/
 #define PSF_NITER	20	/* Maximum number of iterations in fit */
 #define PSF_NA		3	/* Number of fitted parameters per component */
-#define PSF_NTOT	(PSF_NA*PSF_NPSFMAX) /* Number of fitted parameters */
+#define PSF_NTOT	(PSF_NA*PSF_NPSFMAX)	/* Number of fitted parameters*/
+#define PSF_DOUBLETOT   ((PSF_NA+1)*PSF_NPSFMAX)/* Nb of fitted parameters */
 #define	PC_NITER	1	/* Maximum number of iterations in PC fit */
 
 /* NOTES:
@@ -87,17 +89,30 @@ typedef struct
   }	psfitstruct;
 
 /*----------------------------- Global variables ----------------------------*/
-psfstruct	*thepsf;
-psfitstruct	*thepsfit;
+psfstruct	*psf,*ppsf,*thepsf;
+psfitstruct	*thepsfit,*ppsfit,*psfit;
 PIXTYPE		*checkmask;
 
 /*-------------------------------- functions --------------------------------*/
-extern void	psf_build(psfstruct *psf),
-		psf_end(psfstruct *psf),
+extern void	compute_pos(int *pnpsf,int *pconvflag,int *pnpsfflag,
+			double radmin2, double radmax2,double r2, double *sol,
+			double *flux , double *deltax,double *deltay,
+			double *pdx,double *pdy),
+		compute_pos_phot(int *pnpsf,double *sol,double *flux),
+		compute_poserr(int j,double *var,double *sol,obj2struct *obj2,
+			double *x2, double *y2,double *xy),
+		psf_build(psfstruct *psf),
+		psf_end(psfstruct *psf, psfitstruct *psfit),
 		psf_init(psfstruct *psf),
 		svdfit(double *a, double *b, int m, int n, double *sol,
 			double *vmat, double *wmat),
 		svdvar(double *vmat, double *wmat, int n, double *covmat);
+
+extern double	*compute_gradient (double *weight,int width, int height,
+			double *masks, double *maskx, double *masky,
+			double *mat),
+		*compute_gradient_phot(double *weight,int width, int height,
+			double *masks, double *pm);
 
 extern psfstruct	*psf_load(char *filename);
 
@@ -105,6 +120,9 @@ extern void	pc_end(pcstruct *pc),
 		pc_fit(psfstruct *psf, double *data, double *weight,
 		int width, int height, int ix, int iy, double dx, double dy,
 		int npc, float backrms),
+		double_psf_fit(psfstruct *psf, picstruct *field,
+			picstruct *wfield, objstruct *obj,
+			psfstruct *dpsf, picstruct *dfield, picstruct *dwfield),
 		psf_fit(psfstruct *psf, picstruct *field, picstruct *wfield,
 		objstruct *obj),
 		psf_readcontext(psfstruct *psf, picstruct *field);

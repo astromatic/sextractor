@@ -5,11 +5,12 @@
 *
 *	Part of:	SExtractor
 *
-*	Author:		E.BERTIN (IAP)
+*	Authors:	E.BERTIN (IAP)
+*			P.DELORME (LAOG)
 *
 *	Contents:	Fit the PSF to a detection.
 *
-*	Last modify:	15/12/2004
+*	Last modify:	12/01/2006
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -49,6 +50,10 @@ void	psf_init(psfstruct *psf)
   QMALLOC(thepsfit->x, float, prefs.psf_npsfmax);
   QMALLOC(thepsfit->y, float, prefs.psf_npsfmax);
   QMALLOC(thepsfit->flux, float, prefs.psf_npsfmax);
+  QMALLOC(ppsfit, psfitstruct, 1); /*?*/
+  QMALLOC(ppsfit->x, float, prefs.psf_npsfmax);
+  QMALLOC(ppsfit->y, float, prefs.psf_npsfmax);
+  QMALLOC(ppsfit->flux, float, prefs.psf_npsfmax);
 
   return;
   }  
@@ -58,7 +63,7 @@ void	psf_init(psfstruct *psf)
 /*
 Free memory occupied by the PSF-fitting stuff.
 */
-void	psf_end(psfstruct *psf)
+void	psf_end(psfstruct *psf, psfitstruct *psfit)
   {
    int	d, ndim;
 
@@ -79,10 +84,10 @@ void	psf_end(psfstruct *psf)
   free(psf->masksize);
   free(psf);
 
-  free(thepsfit->x);
-  free(thepsfit->y);
-  free(thepsfit->flux);
-  free(thepsfit);
+  free(psfit->x);
+  free(psfit->y);
+  free(psfit->flux);
+  free(psfit);
 
   return;
   }
@@ -297,35 +302,36 @@ void	psf_readcontext(psfstruct *psf, picstruct *field)
 
 
 /******************************** psf_fit ***********************************/
+/*                   standart PSF fit for one component                     */
+/****************************************************************************/
+
 void	psf_fit(psfstruct *psf, picstruct *field, picstruct *wfield,
 		objstruct *obj)
-  {
-   checkstruct		*check;
-   static double	/* x2[PSF_NPSFMAX],y2[PSF_NPSFMAX],xy[PSF_NPSFMAX],
-			sum[PSF_NPSFMAX], */ deltax[PSF_NPSFMAX],
+{
+  checkstruct		*check;
+  static obj2struct     *obj2 = &outobj2;
+  static double		x2[PSF_NPSFMAX],y2[PSF_NPSFMAX],xy[PSF_NPSFMAX],
+			deltax[PSF_NPSFMAX],
 			deltay[PSF_NPSFMAX],flux[PSF_NPSFMAX],
 			deltaxb[PSF_NPSFMAX],deltayb[PSF_NPSFMAX],
 			fluxb[PSF_NPSFMAX],
-			sol[PSF_NTOT], /*covmat[PSF_NTOT*PSF_NTOT], */
+			sol[PSF_NTOT], covmat[PSF_NTOT*PSF_NTOT], 
 			vmat[PSF_NTOT*PSF_NTOT], wmat[PSF_NTOT];
-   double		**psfmasks, **psfmaskx,**psfmasky,
+  double		**psfmasks, **psfmaskx,**psfmasky,
 			*data, *data2, *data3, *weight, *mat, *checkdata,
-			*d, *m, *w, *ps, /* *dps,*pps, */ *px, *py,
-			dx,dy, /* x1,y1, mx,my,mflux, */
-			pix,pix2, wthresh,val, /* dflux, */
-			backnoise2, gain, radmin2,radmax2,satlevel,
-			/* chi2, mr, */
+			*d, *m, *w,  *ps, *var,
+			dx,dy,
+			pix,pix2, wthresh,val,
+			backnoise2, gain, radmin2,radmax2,satlevel,chi2,
 			r2, valmax, psf_fwhm;
-   float		*dh, *wh,
-			pixstep;
-   PIXTYPE		*datah, *weighth, *cpix;
-   int			i,j,k,p, npsf,npsfmax, npix, nppix, ix,iy,niter,
-			width, height, pwidth,pheight, /* hw,hh, */
-			x,y, /* yb, */
+  float			*dh, *wh, pixstep,fluxerr;
+  PIXTYPE		*datah, *weighth, *cpix;
+  int			i,j,p, npsf,npsfmax, npix, nppix, ix,iy,niter,
+			width, height, pwidth,pheight, x,y,
 			xmax,ymax, wbad, gainflag, convflag, npsfflag,
-			ival;
-
-  checkdata = NULL;			/* To avoid gcc -Wall warnings */
+			ival,kill;
+  
+  checkdata = NULL;                    /* To avoid gcc -Wall warnings */
   dx = dy = 0.0;
   niter = 0;
   npsfmax = prefs.psf_npsfmax;
@@ -337,17 +343,18 @@ void	psf_fit(psfstruct *psf, picstruct *field, picstruct *wfield,
   gainflag = prefs.weightgain_flag;
   psf_fwhm = psf->fwhm*psf->pixstep;
 
-/* Initialize outputs */
+ 
+  /* Initialize outputs */
   thepsfit->niter = 0;
   thepsfit->npsf = 0;
-  for (j=0; j<npsfmax; j++)
+  for (j=0; j<npsfmax; j++) 
     {
-    thepsfit->x[j] = 999999.0;
-    thepsfit->y[j] = 999999.0;
-    thepsfit->flux[j] = 0.0;
+      thepsfit->x[j] = obj2->posx;
+      thepsfit->y[j] = obj2->posy;
+      thepsfit->flux[j] = 0.0;
     }
 
-/* Scale data area with object "size" */
+  /* Scale data area with object "size" */
   ix = (obj->xmax+obj->xmin+1)/2;
   iy = (obj->ymax+obj->ymin+1)/2;
   width = obj->xmax-obj->xmin+1+psf_fwhm;
@@ -359,13 +366,19 @@ void	psf_fit(psfstruct *psf, picstruct *field, picstruct *wfield,
   npix = width*height;
   radmin2 = PSF_MINSHIFT*PSF_MINSHIFT;
   radmax2 = npix/2.0;
+  fluxerr = 0.0;
 
-/* Scale total area with PSF FWHM */
+  /* Scale total area with PSF FWHM */
   pwidth = (int)(psf->masksize[0]*psf->pixstep)+width;;
   pheight = (int)(psf->masksize[1]*psf->pixstep)+height;
   nppix = pwidth*pheight;
 
-/* Allocate working space */
+  /* Allocate working space */
+   if (prefs.psf_flag==1)
+      if (prefs.dpsf_flag!=1)
+        if(!FLAG(obj2.fluxerr_psf))
+            QMALLOC(obj2->fluxerr_psf, float, prefs.psf_npsfmax);  
+
   QMALLOC(weighth, PIXTYPE, npix);
   QMALLOC(weight, double, npix);
   QMALLOC(datah, PIXTYPE, npix);
@@ -374,11 +387,11 @@ void	psf_fit(psfstruct *psf, picstruct *field, picstruct *wfield,
   QMALLOC(data3, double, npix);
   QMALLOC(mat, double, npix*PSF_NTOT);
   if (prefs.check[CHECK_SUBPSFPROTOS] || prefs.check[CHECK_PSFPROTOS]
-	|| prefs.check[CHECK_SUBPCPROTOS] || prefs.check[CHECK_PCPROTOS]
-	|| prefs.check[CHECK_PCOPROTOS])
+      || prefs.check[CHECK_SUBPCPROTOS] || prefs.check[CHECK_PCPROTOS]
+      || prefs.check[CHECK_PCOPROTOS])
     {
-    QMALLOC(checkdata, double, nppix);
-    QMALLOC(checkmask, PIXTYPE, nppix);
+      QMALLOC(checkdata, double, nppix);
+      QMALLOC(checkmask, PIXTYPE, nppix);
     }
 
   QMALLOC(psfmasks, double *, npsfmax);
@@ -386,30 +399,30 @@ void	psf_fit(psfstruct *psf, picstruct *field, picstruct *wfield,
   QMALLOC(psfmasky, double *, npsfmax);
   for (i=0; i<npsfmax; i++)
     {
-    QMALLOC(psfmasks[i], double, npix);
-    QMALLOC(psfmaskx[i], double, npix);
-    QMALLOC(psfmasky[i], double, npix);
+      QMALLOC(psfmasks[i], double, npix);
+      QMALLOC(psfmaskx[i], double, npix);
+      QMALLOC(psfmasky[i], double, npix);
     }
 
   copyimage(field, datah, width, height, ix, iy);
 
-/* Compute weights */
+  /* Compute weights */
   wbad = 0;
   if (wfield)
     {
-    copyimage(wfield, weighth, width, height, ix, iy);
-    for (wh=weighth, w=weight, dh=datah,p=npix; p--;)
-      if ((pix=*(wh++)) < wthresh && pix>0
-		&& (pix2=*(dh++))>-BIG
-		&& pix2<satlevel)
-        *(w++) = 1/sqrt(pix+(pix2>0.0?
-		(gainflag? pix2*pix/backnoise2:pix2)/gain
-		:0.0));
-      else
-        {
-        *(w++) = 0.0;
-        wbad++;
-        }
+      copyimage(wfield, weighth, width, height, ix, iy);
+      for (wh=weighth, w=weight, dh=datah,p=npix; p--;)
+        if ((pix=*(wh++)) < wthresh && pix>0
+            && (pix2=*(dh++))>-BIG
+            && pix2<satlevel)
+          *(w++) = 1/sqrt(pix+(pix2>0.0?
+                               (gainflag? pix2*pix/backnoise2:pix2)/gain
+                               :0.0));
+        else
+          {
+            *(w++) = 0.0;
+            wbad++;
+          }
     }
   else
     for (w=weight, dh=datah, p=npix; p--;)
@@ -417,336 +430,272 @@ void	psf_fit(psfstruct *psf, picstruct *field, picstruct *wfield,
         *(w++) = 1.0/sqrt(backnoise2+(pix>0.0?pix/gain:0.0));
       else
         {
-        *(w++) = 0.0;
-        wbad++;
+          *(w++) = 0.0;
+          wbad++;
         }
 
-/* Special action if most of the weights are zero!! */
+  /* Special action if most of the weights are zero!! */
   if (wbad>=npix-3)
     return;
 
-/* Weight the data */
+  /* Weight the data */
   dh = datah;
-  val = obj->dbkg;	/* Take into account a local background change */
+  val = obj->dbkg;      /* Take into account a local background change */
   d = data;
   w = weight;
   for (p=npix; p--;)
     *(d++) = (*(dh++)-val)**(w++);
 
-/* Get the local PSF */
+  /* Get the local PSF */
   psf_build(psf);
 
   npsfflag = 1;
   r2 = psf_fwhm*psf_fwhm/2.0;
   fluxb[0] = deltaxb[0] = deltayb[0] = 0.0;
+
   for (npsf=1; npsf<=npsfmax && npsfflag; npsf++)
     {
+      kill=0;
 /*-- First compute an optimum initial guess for the positions of components */
-    if (npsf>1)
-      {
+      if (npsf>1)
+        {
 /*---- Subtract previously fitted components */
-      d = data2;
-      dh = datah;
-      for (p=npix; p--;)
-        *(d++) = (double)*(dh++);
-      for (j=0; j<npsf-1; j++)
-        {
-        d = data2;
-        ps = psfmasks[j];
-        for (p=npix; p--;)
-          *(d++) -= flux[j]**(ps++);
-        }
-      convolve_image(field, data2, data3, width,height);
+          d = data2;
+          dh = datah;
+          for (p=npix; p--;)
+            *(d++) = (double)*(dh++);
+          for (j=0; j<npsf-1; j++)
+            {
+              d = data2;
+              ps = psfmasks[j];
+              for (p=npix; p--;)
+                *(d++) -= flux[j]**(ps++);
+            }
+          convolve_image(field, data2, data3, width,height);
 /*---- Ignore regions too close to stellar cores */
-      for (j=0; j<npsf-1; j++)
-        {
-        d = data3;
-        dy = -((double)(height/2)+deltay[j]);
-        for (y=height; y--; dy += 1.0)
-          {
-          dx = -((double)(width/2)+deltax[j]);
-          for (x=width; x--; dx+= 1.0, d++)
-            if (dx*dx+dy*dy<r2)
-              *d = -BIG;
-          }
-	}
+          for (j=0; j<npsf-1; j++)
+            {
+              d = data3;
+              dy = -((double)(height/2)+deltay[j]);
+              for (y=height; y--; dy += 1.0)
+                {
+                  dx = -((double)(width/2)+deltax[j]);
+                  for (x=width; x--; dx+= 1.0, d++)
+                    if (dx*dx+dy*dy<r2)
+                      *d = -BIG;
+                }
+            }
 /*---- Now find the brightest pixel (poor man's guess, to be refined later) */
-      d = data3;
-      valmax = -BIG;
-      xmax = width/2;
-      ymax = height/2;
-      for (y=0; y<height; y++)
-        for (x=0; x<width; x++)
-          {
-          if ((val = *(d++))>valmax)
-            {
-            valmax = val;
-            xmax = x;
-            ymax = y;
-            }
-          }
-      deltax[npsf-1] = (double)(xmax - width/2);
-      deltay[npsf-1] = (double)(ymax - height/2);
-      }
-    else
-      {
+          d = data3;
+          valmax = -BIG;
+          xmax = width/2;
+          ymax = height/2;
+          for (y=0; y<height; y++)
+            for (x=0; x<width; x++)
+              {
+                if ((val = *(d++))>valmax)
+                  {
+                    valmax = val;
+                    xmax = x;
+                    ymax = y;
+                  }
+              }
+          deltax[npsf-1] = (double)(xmax - width/2);
+          deltay[npsf-1] = (double)(ymax - height/2);
+        }
+      else
+        {
 /*---- Only one component to fit: simply use the barycenter as a guess */
-      deltax[npsf-1] = obj->mx - ix;
-      deltay[npsf-1] = obj->my - iy;
-      }
-    niter = 0;
-    convflag = 1;
-    for (i=0; i<PSF_NITER && convflag; i++)
-      {
-      convflag = 0;
-      niter++;
-      m = mat;
-      for (j=0; j<npsf; j++)
-        {
-/*------ Resample the PSFs here for the 1st iteration */
-        vignet_resample(psf->maskloc, psf->masksize[0], psf->masksize[1],
-			psfmasks[j], width, height,
-			-deltax[j]*pixstep, -deltay[j]*pixstep,
-			pixstep);
-/*------ 0th order (weighted) */
-        ps = psfmasks[j];
-        w = weight;
-        for (y=0; y<height; y++)
-          for (x=0; x<width; x++, ps++, w++)
-            *(m++) = y?(y>=(height-1)?0:(x?(x>=(width-1)?0:*ps**w):0)):0;
-/*------ 1st order (weighted) moment in x */
-        ps = psfmasks[j];
-        px = psfmaskx[j];
-        w = weight;
-        for (y=0; y<height; y++)
-          for (x=0; x<width; x++, ps++, w++)
-            *(m++) = ((*px++) = (x?(x>=(width-1)?0:*(ps+1)-*(ps-1)):0))**w/2;
-/*------ 1st order (weighted) moment in y */
-        ps = psfmasks[j];
-        py = psfmasky[j];
-        w = weight;
-        for (y=0; y<height; y++)
-          for (x=0; x<width; x++, ps++, w++)
-            *(m++) = (*(py++)=(y?(y>=(height-1)?0:*(ps+width)-*(ps-width)):0))
-		**w/2;
+          deltax[npsf-1] = obj->mx - ix;
+          deltay[npsf-1] = obj->my - iy;
         }
 
-      svdfit(mat, data, npix, npsf*PSF_NA, sol, vmat, wmat);
-
-      for (j=0; j<npsf; j++)
+      niter = 0;
+      convflag = 1;
+      for (i=0; i<PSF_NITER && convflag; i++)
         {
-        flux[j] = sol[j*PSF_NA];
-/*------ Update the PSF shifts */
-        if (fabs(flux[j])>0.0)
-          {
-          dx = -sol[j*PSF_NA+1]/((npsf>1?2:1)*flux[j]);
-          dy = -sol[j*PSF_NA+2]/((npsf>1?2:1)*flux[j]);
-          }
-
-        deltax[j] += dx;
-        deltay[j] += dy;
-/*------ Continue until all PSFs have come to a complete stop */
-        if ((dx*dx+dy*dy) > radmin2)
-          convflag = 1;
-
-/*------ Exit if too much decentering or negative flux */
-        for (k=j+1; k<npsf; k++)
-          {
-          dx = deltax[j]-deltax[k];
-          dy = deltay[j]-deltay[k];
-          if (dx*dx+dy*dy<r2/4.0)
+          convflag = 0,niter++,m=mat;
+          for (j=0; j<npsf; j++)
             {
-            flux[j] = -BIG;
-            break;
-
+/*------ Resample the PSFs here for the 1st iteration */
+              vignet_resample(psf->maskloc, psf->masksize[0], psf->masksize[1],
+                              psfmasks[j], width, height,
+                              -deltax[j]*pixstep, -deltay[j]*pixstep,
+                              pixstep);       
+              m=compute_gradient(weight,width,height,
+                                 psfmasks[j],psfmaskx[j],psfmasky[j],m);
             }
-          }
-        if (flux[j]<0.0
-		|| (deltax[j]*deltax[j] + deltay[j]*deltay[j]) > radmax2)
-          {
-          npsfflag = 0;
-          convflag = 0;
-          npsf--;
-          break;
-          }
+          
+          
+          svdfit(mat, data, npix, npsf*PSF_NA, sol, vmat, wmat);
+          
+          compute_pos( &npsf, &convflag, &npsfflag,radmin2,radmax2,
+                       r2, sol,flux, deltax, deltay,&dx,&dy);
         }
-      }
-    if (npsfflag)
-      {
-/*--- If we reach this point we know the data are worth backuping */
       for (j=0; j<npsf; j++)
         {
-        deltaxb[j] = deltax[j];
-        deltayb[j] = deltay[j];
-        fluxb[j] = flux[j];
+/*-- Compute variances and covariances */
+          svdvar(vmat, wmat, npsf*PSF_NA, covmat);
+          var = covmat;
+/*---- First, the error on the flux estimate */      
+          fluxerr = sqrt(*var)>0.0?  sqrt(*var):999999.0;
+          //if (flux[j]<12*fluxerr && j>0)
+          //  npsfmax--,flux[j]=0;
+          if (flux[j]<12*fluxerr && j>0)
+                 {
+                   flux[j]=0,kill++,npsfmax--;
+                   //if(j==npsfmax-1)
+                   //  kill++;             
+                 } 
         }
-      }
+      if (npsfflag)
+        {
+/*--- If we reach this point we know the data are worth backuping */
+          for (j=0; j<npsf; j++)
+            {
+              deltaxb[j] = deltax[j];
+              deltayb[j] = deltay[j];
+              fluxb[j] = flux[j];
+              obj2->fluxerr_psf[j]=fluxerr;
+            }
+        }
     }
+  npsf=npsf-1-kill;
 
-  npsf--;
 /* Now keep only fitted stars that fall within the current detection area */
   i = 0;
   for (j=0; j<npsf; j++)
-    {
-    x = (int)(deltaxb[j]+0.4999)+width/2;
-    y = (int)(deltayb[j]+0.4999)+height/2;
-    if (x<0 || x>=width || y<0 || y>=height)
-      continue;
-    if (weight[y*width+x] < 1/BIG)
-      continue;
-    deltax[i] = deltaxb[j];
-    deltay[i] = deltayb[j];
-    flux[i++] = fluxb[j];
-    }
-  npsf = i;
+    {      
+      x = (int)(deltaxb[j]+0.4999)+width/2;
+      y = (int)(deltayb[j]+0.4999)+height/2;
+      if (x<0 || x>=width || y<0 || y>=height)
+        continue;
+      if (weight[y*width+x] < 1/BIG)
+        continue;
+      if (10*fluxb[j]<fluxb[0] )
+        continue;
+      if (fluxb[j]<=0 )
+        continue; 
 
-/* Compute chi2 if asked to */
-/*
-  if (FLAG(obj2.chi2_psf))
-    {
-    chi2 = 0.0;
-    val = obj2->flux_psf;
-    for (d=data,w=weight,p=0; p<npix; p++)
-      {
-      pix = *(d++);
-      val = *(w++);
-      for (j=0; j<npsf; j++)
-        pix -=  psfmasks[j][p]*flux[j];
-      chi2 += pix*pix;
-      obj2->chi2_psf = chi2/(npix - 3*npsf);
-      }
-    }
-*/
-/* Error estimates on parameters */
-/*
-  if (FLAG(obj2.fluxerr_psf))
-    {
-     double	*var, vara,varb,covab;
-
--- Compute variances and covariances if asked to 
-    svdvar(vmat, wmat, npsf*PSF_NA, covmat);
-    var = covmat;
-    for (j=0; j<npsf; j++)
-      {
----- First, the error on the flux estimate 
-      obj2->fluxerr_psf = sqrt(*var);
       if (FLAG(obj2.poserrmx2_psf))
         {
------- Variances and covariance along x and y 
-        vara = *(var += PSF_NA+1);
-        covab = *(++var);
-        varb = *(var += PSF_NA);
-        var += PSF_NA+1;
-        obj2->poserrmx2_psf = (vara*x2[j]*x2[j]+varb*xy[j]*xy[j]
-				+2*covab*x2[j]*xy[j])/(sol[0]*sol[0]);
-        obj2->poserrmy2_psf = (varb*y2[j]*y2[j]+vara*xy[j]*xy[j]
-				+2*covab*y2[j]*xy[j])/(sol[0]*sol[0]);
-        obj2->poserrmxy_psf = (vara*x2[j]*xy[j]+varb*y2[j]*xy[j]
-				+covab*(x2[j]*y2[j]+xy[j]*xy[j]))
-				/(sol[0]*sol[0]);
-
------- If requested, translate variances to major and minor error axes... 
-        if (FLAG(obj2.poserra_psf))
-          {
-           double	pmx2,pmy2,temp,theta;
-
-          if (fabs(temp=obj2->poserrmx2_psf-obj2->poserrmy2_psf) > 0.0)
-            theta = atan2(2.0 * obj2->poserrmxy_psf,temp) / 2.0;
-          else
-            theta = PI/4.0;
-
-          temp = sqrt(0.25*temp*temp+obj2->poserrmxy_psf*obj2->poserrmxy_psf);
-          pmy2 = pmx2 = 0.5*(obj2->poserrmx2_psf+obj2->poserrmy2_psf);
-          pmx2+=temp;
-          pmy2-=temp;
-
-          obj2->poserra_psf = (float)sqrt(pmx2);
-          obj2->poserrb_psf = (float)sqrt(pmy2);
-          obj2->poserrtheta_psf = theta*180.0/PI;
-          }
-
------- ...Or ellipse parameters 
-        if (FLAG(obj2.poserr_cxx))
-          {
-           double	xm2,ym2, xym, temp;
-
-          xm2 = obj2->poserrmx2_psf;
-          ym2 = obj2->poserrmy2_psf;
-          xym = obj2->poserrmxy_psf;
-          obj2->poserrcxx_psf = (float)(ym2/(temp=xm2*ym2-xym*xym));
-          obj2->poserrcyy_psf = (float)(xm2/temp);
-          obj2->poserrcxy_psf = (float)(-2*xym/temp);
-          }
+          compute_poserr(j,var,sol,obj2,x2,y2,xy);
         }
       else
-        var += 3*PSF_NA+3;
-      }
+        var += 3*PSF_NA+3;  
+      
+      deltax[i] = deltaxb[j];
+      deltay[i] = deltayb[j];
+      flux[i++] = fluxb[j];
     }
-*/
-/* CHECK images */
+  
+  npsf = i;
+
+  /* Compute chi2 if asked to 
+  if (FLAG(obj2.chi2_psf))
+    {
+      for (j=0; j<npsf; j++)
+        {
+          chi2 = 0.0;
+          for (d=data,w=weight,p=0; p<npix; w++,p++)
+            {
+              pix = *(d++);
+              pix -=  psfmasks[j][p]*flux[j]**w;
+              chi2 += pix*pix;
+              if (chi2>1E29) chi2=1E28;
+            }
+          obj2->chi2_psf = obj->sigbkg>0.?
+            chi2/((npix - 3*npsf)*obj->sigbkg*obj->sigbkg):999999;
+
+        }
+      
+    }*/
+ /* Compute relative chi2 if asked to */
+    if (FLAG(obj2.chi2_psf))
+    {
+      for (j=0; j<npsf; j++)
+        {
+          chi2 = 0.0;
+          for (d=data,w=weight,p=0; p<npix; w++,p++)
+            {
+              pix = *(d++)/flux[j];
+              pix -=  psfmasks[j][p]**w;
+              chi2 += pix*pix;
+              if (chi2>1E29) chi2=1E28;
+            }
+          obj2->chi2_psf = flux[j]>0?
+		chi2/((npix - 3*npsf)*obj->sigbkg*obj->sigbkg):999999;
+
+        }
+      
+    }
+  /* CHECK images */
   if (prefs.check[CHECK_SUBPSFPROTOS] || prefs.check[CHECK_PSFPROTOS])
     for (j=0; j<npsf; j++)
       {
-      vignet_resample(psf->maskloc, psf->masksize[0], psf->masksize[1],
-		checkdata, pwidth, pheight,
-		-deltax[j]*pixstep, -deltay[j]*pixstep, pixstep);
-      cpix = checkmask;
-      d = checkdata;
-      for (p=nppix; p--;)
-        *(cpix++) = (PIXTYPE)*(d++);
-      if ((check = prefs.check[CHECK_SUBPSFPROTOS]))
-        addcheck(check, checkmask, pwidth,pheight, ix,iy,-flux[j]);
-      if ((check = prefs.check[CHECK_PSFPROTOS]))
-        addcheck(check, checkmask, pwidth,pheight, ix,iy,flux[j]);
+        vignet_resample(psf->maskloc, psf->masksize[0], psf->masksize[1],
+                        checkdata, pwidth, pheight,
+                        -deltax[j]*pixstep, -deltay[j]*pixstep, pixstep);
+        cpix = checkmask;
+        d = checkdata;
+        for (p=nppix; p--;)
+          *(cpix++) = (PIXTYPE)*(d++);
+        if ((check = prefs.check[CHECK_SUBPSFPROTOS]))
+          addcheck(check, checkmask, pwidth,pheight, ix,iy,-flux[j]);
+        if ((check = prefs.check[CHECK_PSFPROTOS]))
+          addcheck(check, checkmask, pwidth,pheight, ix,iy,flux[j]);
       }
 
   thepsfit->niter = niter;
   thepsfit->npsf = npsf;
   for (j=0; j<npsf; j++)
     {
-    thepsfit->x[j] = ix+deltax[j]+1.0;
-    thepsfit->y[j] = iy+deltay[j]+1.0;
-    thepsfit->flux[j] = flux[j];
+      thepsfit->x[j] = ix+deltax[j]+1.0;
+      thepsfit->y[j] = iy+deltay[j]+1.0;
+      thepsfit->flux[j] = flux[j];
     }
 
-/* Now the morphology stuff */
+
+
+
+  /* Now the morphology stuff */
   if (prefs.pc_flag)
     {
-    width = pwidth-1;
-    height = pheight-1;
-    npix = width*height;
-    copyimage(field, datah, width, height, ix, iy);
+      width = pwidth-1;
+      height = pheight-1;
+      npix = width*height;
+      copyimage(field, datah, width, height, ix, iy);
 
-/*-- Re-compute weights */
-    if (wfield)
-      {
-      copyimage(wfield, weighth, width, height, ix, iy);
-      for (wh=weighth ,w=weight, p=npix; p--;)
-        *(w++) = (pix=*(wh++))<wthresh? sqrt(pix): 0.0;
-      }
-    else
-      for (w=weight, dh=datah, p=npix; p--;)
-        *(w++) = ((pix = *(dh++))>-BIG && pix<satlevel)?
-		1.0/sqrt(backnoise2+(pix>0.0?pix/gain:0.0))
-		:0.0;
+      /*-- Re-compute weights */
+      if (wfield)
+        {
+          copyimage(wfield, weighth, width, height, ix, iy);
+          for (wh=weighth ,w=weight, p=npix; p--;)
+            *(w++) = (pix=*(wh++))<wthresh? sqrt(pix): 0.0;
+        }
+      else
+        for (w=weight, dh=datah, p=npix; p--;)
+          *(w++) = ((pix = *(dh++))>-BIG && pix<satlevel)?
+            1.0/sqrt(backnoise2+(pix>0.0?pix/gain:0.0))
+            :0.0;
 
-/*-- Weight the data */
-    dh = datah;
-    d = data;
-    w = weight;
-    for (p=npix; p--;)
-      *(d++) = *(dh++)*(*(w++));
+      /*-- Weight the data */
+      dh = datah;
+      d = data;
+      w = weight;
+      for (p=npix; p--;)
+        *(d++) = *(dh++)*(*(w++));
 
-    pc_fit(psf, data, weight, width, height, ix,iy, dx,dy, npix,
-	field->backsig);
-
+      pc_fit(psf, data, weight, width, height, ix,iy, dx,dy, npix,
+             field->backsig);
     }
-
-  for (i=0; i<npsfmax; i++)
+  
+  
+  for (i=0; i<prefs.psf_npsfmax; i++)
     {
-    QFREE(psfmasks[i]);
-    QFREE(psfmaskx[i]);
-    QFREE(psfmasky[i]);
+      QFREE(psfmasks[i]);
+      QFREE(psfmaskx[i]);
+      QFREE(psfmasky[i]);
     }
 
   QFREE(psfmasks);
@@ -759,19 +708,307 @@ void	psf_fit(psfstruct *psf, picstruct *field, picstruct *wfield,
   QFREE(weighth);
   QFREE(weight);
   QFREE(data);
-  QFREE(mat);	
+  QFREE(mat);
 
   if (prefs.check[CHECK_SUBPSFPROTOS] || prefs.check[CHECK_PSFPROTOS]
-	|| prefs.check[CHECK_SUBPCPROTOS] || prefs.check[CHECK_PCPROTOS]
-	|| prefs.check[CHECK_PCOPROTOS])
+      || prefs.check[CHECK_SUBPCPROTOS] || prefs.check[CHECK_PCPROTOS]
+      || prefs.check[CHECK_PCOPROTOS])
     {
-    QFREE(checkdata);
-    QFREE(checkmask);
+      QFREE(checkdata);
+      QFREE(checkmask);
     }
 
   return;
-  }
+}
 
+
+/******************************** double_psf_fit *******************************
+****/
+/* double fit to make the psf detection on one image and the photometry on anoth
+er */
+/*******************************************************************************
+****/
+
+void    double_psf_fit(psfstruct *ppsf, picstruct *pfield, picstruct *pwfield,
+                       objstruct *obj, psfstruct *psf, picstruct *field, 
+                       picstruct *wfield)
+{
+  static double      /* sum[PSF_NPSFMAX]*/ pdeltax[PSF_NPSFMAX],
+    pdeltay[PSF_NPSFMAX],psol[PSF_NPSFMAX], pcovmat[PSF_NPSFMAX*PSF_NPSFMAX], 
+    pvmat[PSF_NPSFMAX*PSF_NPSFMAX], pwmat[PSF_NPSFMAX],pflux[PSF_NPSFMAX];
+
+  double                    **ppsfmasks, **ppsfmaskx,**ppsfmasky,
+    *pmat, *checkdata,
+    *pdata, *pdata2, *pdata3,
+     *pm,*pd, *pw,  *pps,*pweight,/* *pps,  *px, *py,*/
+    dx,dy,pdx,pdy, /* x1,y1, mx,my,mflux, */
+    val, ppix,ppix2, /* dflux, */
+    gain, radmin2,radmax2,satlevel
+    ,chi2,pwthresh,pbacknoise2, /* mr, */
+    r2, psf_fwhm,ppsf_fwhm ;
+  float         *pdh, *pwh, pixstep,ppixstep;
+  PIXTYPE       *pdatah, *pweighth;
+  int                   i,j,k,p, npsf, npix,ix,iy,
+    width, height, /* hw,hh, */
+    x,y, /* yb, */
+    wbad, gainflag,
+    ival,npsfmax;
+  double *pvar;
+  
+    static obj2struct   *obj2 = &outobj2;
+  checkdata = NULL;                     /* To avoid gcc -Wall warnings */
+  pdx = pdy =dx = dy = 0.0;
+  ppixstep = 1.0/ppsf->pixstep;
+  pixstep = 1.0/psf->pixstep;
+  gain = prefs.gain;
+  npsfmax=prefs.psf_npsfmax;
+  pbacknoise2 = pfield->backsig*pfield->backsig;
+  satlevel = prefs.satur_level - obj->bkg;
+  gainflag = prefs.weightgain_flag;
+  psf_fwhm = psf->fwhm*psf->pixstep;
+  ppsf_fwhm = ppsf->fwhm*ppsf->pixstep;
+  pwthresh = pwfield?pwfield->weight_thresh:BIG;
+
+  /* Initialize outputs */
+  ppsfit->niter = 0;
+  ppsfit->npsf = 0;
+  if(!FLAG(obj2.fluxerr_psf))
+    QMALLOC(obj2->fluxerr_psf, float, npsfmax);
+  for (j=0; j<npsfmax; j++) 
+    {
+      ppsfit->x[j] = 999999.0;
+      ppsfit->y[j] = 999999.0;
+      ppsfit->flux[j] = 0.0;
+      obj2->fluxerr_psf[j] = 0.0;
+      pdeltax[j]= pdeltay[j]=psol[j]=  pwmat[j]=pflux[j]=0.0;
+   
+    }
+
+  ix = (obj->xmax+obj->xmin+1)/2;
+  iy = (obj->ymax+obj->ymin+1)/2;
+  width = obj->xmax-obj->xmin+1+psf_fwhm;
+  if (width < (ival=(int)(psf_fwhm*2)))
+    width = ival;
+  height = obj->ymax-obj->ymin+1+psf_fwhm;
+  if (height < (ival=(int)(psf_fwhm*2)))
+    height = ival;
+  npix = width*height;
+  radmin2 = PSF_MINSHIFT*PSF_MINSHIFT;
+  radmax2 = npix/2.0;
+  psf_fit(psf,field, wfield,obj);
+  npsf=thepsfit->npsf;
+  
+  QMALLOC(ppsfmasks,double *,npsfmax);
+  QMALLOC(ppsfmaskx,double *,npsfmax);
+  QMALLOC(ppsfmasky,double *,npsfmax);
+
+  for (i=0; i<npsfmax; i++)
+    {
+      QMALLOC(ppsfmasks[i],double,npix);
+      QMALLOC(ppsfmaskx[i],double,npix);
+      QMALLOC(ppsfmasky[i],double,npix);
+    }
+
+  QMALLOC(pweighth, PIXTYPE, npix);
+  QMALLOC(pweight, double, npix);
+  QMALLOC(pdatah, PIXTYPE, npix);
+  QMALLOC(pdata, double, npix);
+  QMALLOC(pdata2, double, npix);
+  QMALLOC(pdata3, double, npix);
+  QMALLOC(pmat, double, npix*npsfmax);
+  
+   for (j=0; j<npsf; j++)
+    {
+      pdeltax[j] =thepsfit->x[j]-ix-1 ;
+      pdeltay[j] =thepsfit->y[j]-iy-1 ;
+      ppsfit->flux[j] = 0;
+    }
+
+/*-------------------  Now the photometry fit ---------------------*/
+  copyimage(pfield, pdatah, width, height, ix, iy);
+   /* Compute photometry weights */
+  wbad = 0;
+  if (pwfield)
+    {
+       copyimage(pwfield, pweighth, width, height, ix, iy);
+      for (pwh=pweighth, pw=pweight, pdh=pdatah,p=npix; p--;)
+        {
+        if ((ppix=*(pwh++)) < pwthresh && ppix>0
+            && (ppix2=*(pdh++))>-BIG  && ppix2<satlevel)
+          {
+            *(pw++) = 1/sqrt(ppix+(ppix2>0.0?
+			(gainflag? ppix2*ppix/pbacknoise2:ppix2)/gain : 0.0));
+          }
+      else
+          {
+            *(pw++) = 0.0;          
+            wbad++;
+          }
+        }
+    }
+  else
+    for (pw=pweight, pdh=pdatah, p=npix; p--;)
+      if ((ppix=*(pdh++))>-BIG && ppix<satlevel)
+          {
+            *(pw++) = 1.0/sqrt(pbacknoise2+(ppix>0.0?ppix/gain:0.0));
+          }
+      else
+        {
+          *(pw++) = 0.0;
+          wbad++;
+        }
+  /* Special action if most of the weights are zero!! */
+  if (wbad>=npix-3)
+    return;
+
+  /* Weight the data */
+  pdh = pdatah;
+  pd = pdata;
+  pw = pweight;
+  val = obj->dbkg;
+  for (p=npix; p--;)
+    *(pd++) = (*(pdh++)-val)**(pw++);
+
+ 
+  /* Get the photmetry PSF */
+   psf_build(ppsf);
+  for (j=1; j<=npsf; j++)
+    {
+      if (j>1)
+        {
+          /*---- Subtract //previously fitted components in photometry image */
+          pd = pdata2;
+          pdh = pdatah;
+          for (p=npix; p--;)
+            *(pd++) = (double)*(pdh++);
+          for (k=0; k<j-1; k++)
+            {
+              pd = pdata2;
+              pps = ppsfmasks[k];
+              for (p=npix; p--;)
+                *(pd++) -= pflux[k]**(pps++);
+            }
+          convolve_image(pfield, pdata2, pdata3, width,height);
+         /*---- Ignore regions too close to stellar cores */
+          for (k=0; k<j-1; k++)
+            {
+              pd = pdata3;
+              dy = -((double)(height/2)+pdeltay[k]);
+              for (y=height; y--; dy += 1.0)
+                {
+                  dx = -((double)(width/2)+pdeltax[k]);
+                  for (x=width; x--; dx+= 1.0, pd++)
+                    if (dx*dx+dy*dy<r2) /*?*/
+                      *pd = -BIG;
+                }
+            } 
+        }
+   
+      pm=pmat;
+      for (k=0; k<j; k++)
+            {
+              /*------ Resample the PSFs here for the 1st iteration */
+              vignet_resample(ppsf->maskloc,
+			ppsf->masksize[0], ppsf->masksize[1],
+			ppsfmasks[k], width, height,
+			-pdeltax[k]*ppixstep, -pdeltay[k]*ppixstep,
+			ppixstep);              
+              pm=compute_gradient_phot(pweight,width,height, ppsfmasks[k],pm);
+            }
+      
+      svdfit(pmat, pdata, npix, j, psol, pvmat, pwmat);  
+      compute_pos_phot( &j, psol,pflux);
+   
+  for (k=0; k<j; k++)
+        {
+          svdvar(pvmat, pwmat, j, pcovmat);
+          pvar = pcovmat;
+          obj2->fluxerr_psf[k]= sqrt(*pvar)>0.0 && sqrt(*pvar)<99? 
+            sqrt(*pvar):99;
+        }
+    }
+  /* Compute chi2 if asked to 
+  if (FLAG(obj2.chi2_psf))
+    {
+      for (j=0; j<npsf; j++)
+        {
+          chi2 = 0.0;
+          for (pd=pdata,pw=pweight,p=0; p<npix; pw++,p++)
+            {
+              ppix = *(pd++);
+              ppix -=  ppsfmasks[j][p]*pflux[j]**pw;
+              chi2 += ppix*ppix;
+              if (chi2>1E29) chi2=1E28;
+            }
+          obj2->chi2_psf = obj->sigbkg>0.?
+            chi2/((npix - 3*npsf)*obj->sigbkg*obj->sigbkg):999999;
+
+        }
+      
+    }
+ */
+ /* Compute relative error if asked to */
+  if (FLAG(obj2.chi2_psf))
+  {
+      for (j=0; j<npsf; j++)
+        {
+          chi2 = 0.0;
+          for (pd=pdata,pw=pweight,p=0; p<npix; pw++,p++)
+            {
+              ppix = *(pd++)/pflux[j];
+              ppix -=  ppsfmasks[j][p]**pw;
+              chi2 += ppix*ppix;
+              if (chi2>1E29) chi2=1E28;
+            }
+          obj2->chi2_psf = pflux[j]>0?
+		chi2/((npix - 3*npsf)*obj->sigbkg*obj->sigbkg):999999;
+
+        }
+      
+    }
+  ppsfit->niter = thepsfit->niter;
+  ppsfit->npsf = npsf;
+
+  for (j=0; j<npsf; j++)
+    {
+      thepsfit->x[j] = ix+pdeltax[j]+1.0;
+      thepsfit->y[j] = iy+pdeltay[j]+1.0;
+      thepsfit->flux[j] = pflux[j];
+      ppsfit->x[j] = ix+pdeltax[j]+1.0;
+      ppsfit->y[j] = iy+pdeltay[j]+1.0;
+      ppsfit->flux[j] = pflux[j];
+    }
+    
+  
+  for (i=0; i<npsfmax; i++)
+    {
+      QFREE(ppsfmasks[i]);
+      QFREE(ppsfmaskx[i]);
+      QFREE(ppsfmasky[i]);
+    }
+
+  
+  QFREE(ppsfmasks);
+  QFREE(ppsfmaskx);
+  QFREE(ppsfmasky);
+  QFREE(pdatah);
+  QFREE(pdata);
+  QFREE(pdata2);
+  QFREE(pdata3);
+  QFREE(pweighth);
+  QFREE(pweight);
+  QFREE(pdata);
+  QFREE(pmat);
+   
+  if (prefs.check[CHECK_SUBPSFPROTOS] || prefs.check[CHECK_PSFPROTOS]
+      || prefs.check[CHECK_SUBPCPROTOS] || prefs.check[CHECK_PCPROTOS]
+      || prefs.check[CHECK_PCOPROTOS])
+    {
+      QFREE(checkdata);
+      QFREE(checkmask);
+    }
+  return;
+}
 
 /******************************* psf_build **********************************/
 /*
@@ -812,6 +1049,191 @@ void	psf_build(psfstruct *psf)
 
   return;
   }
+
+
+/*****************************compute_gradient*********************************/
+
+double *compute_gradient(double *weight,int width, int height,
+                         double *masks,double *maskx,double *masky
+                        ,double *m)
+{
+  int x,y;
+  double *w,*ps,*px,*py;
+    
+  /*------ copy of the (weighted) PSF, with outer ring set to zero */
+      ps = masks;
+      w = weight;
+      for (y=0; y<height; y++)
+        for (x=0; x<width; x++, ps++, w++)
+          *(m++) = y?(y>=(height-1)?0:(x?(x>=(width-1)?0:*ps**w):0)):0;
+      /*------ (weighted) PSF gradient in x (kernel for first moment in x) */
+      ps = masks;
+      px = maskx;
+      w = weight;
+      for (y=0; y<height; y++)
+        for (x=0; x<width; x++, ps++, w++)
+          *(m++) = ((*px++) = (x?(x>=(width-1)?0:*(ps+1)-*(ps-1)):0))**w/2;
+      /*------ (weighted) PSF gradient in y (kernel for first moment in y) */
+      ps = masks; 
+      py = masky;
+      w = weight;
+      for (y=0; y<height; y++)
+        for (x=0; x<width; x++, ps++, w++)
+          *(m++) = (*(py++)=(y?(y>=(height-1)?0:*(ps+width)-*(ps-width)):0))
+            **w/2;
+  return m;
+}
+
+/*****************************compute_gradient_phot*****************************
+****/
+
+double *compute_gradient_phot(double *pweight,int width, int height,
+                         double *pmasks,double *pm)
+
+{
+  int x,y;
+  double *pw,*pps;
+    
+  /*------ copy of the (weighted) PSF, with outer ring set to zero */
+      pps = pmasks;
+      pw = pweight;
+      for (y=0; y<height; y++)
+        for (x=0; x<width; x++, pps++, pw++)
+          *(pm++) = y?(y>=(height-1)?0:(x?(x>=(width-1)?0:*pps**pw):0)):0;
+
+  return pm;
+}
+
+/**************************compute_pos********************************/
+
+void compute_pos(int *pnpsf,int *pconvflag,int *pnpsfflag,double radmin2,
+                         double radmax2,double r2,double *sol,double *flux 
+                        ,double *deltax,double *deltay,double *pdx,double *pdy)
+{
+  int j,k,convflag,npsfflag,npsf; 
+  double dx,dy;
+
+  dx=*pdx;
+  dy=*pdy;
+  convflag=*pconvflag;
+  npsfflag=*pnpsfflag;
+  npsf=*pnpsf;
+  for (j=0; j<npsf; j++)
+    {
+      flux[j] = sol[j*PSF_NA];
+      /*------ Update the PSF shifts */
+      if (fabs(flux[j])>0.0)
+        {
+          dx = -sol[j*PSF_NA+1]/((npsf>1?2:1)*flux[j]);
+          dy = -sol[j*PSF_NA+2]/((npsf>1?2:1)*flux[j]);
+        }
+      
+      deltax[j] += dx;
+      deltay[j] += dy;
+      /*------ Continue until all PSFs have come to a complete stop */
+      if ((dx*dx+dy*dy) > radmin2)
+        convflag = 1;
+    }
+  for (j=0; j<npsf; j++)
+    {
+      /*------ Exit if too much decentering or negative flux */
+      for (k=j+1; k<npsf; k++)
+        {
+          dx = deltax[j]-deltax[k];
+          dy = deltay[j]-deltay[k];
+          if (dx*dx+dy*dy<r2/4.0)
+            {
+              flux[j] = -BIG;
+              break;
+            }
+        }
+      if (flux[j]<0.0
+          || (deltax[j]*deltax[j] + deltay[j]*deltay[j]) > radmax2)
+        {
+          npsfflag = 0;
+          convflag = 0;
+          npsf--;
+          break;
+        }
+    }
+  *pdx=dx;
+  *pdy=dy;
+  *pconvflag=convflag;
+  *pnpsfflag= npsfflag;
+  *pnpsf=npsf;
+  return;
+}
+
+/**************************compute_pos_phot********************************/
+
+void compute_pos_phot(int *pnpsf,double *sol,double *flux)
+{
+  int j,npsf;   
+  npsf=*pnpsf;
+  for (j=0; j<npsf; j++)
+    {
+      flux[j] = sol[j];     
+    }
+  *pnpsf=npsf;
+  return;
+}
+
+
+/************************************compute_poserr*****************************
+*********/
+
+void compute_poserr( int j,double *var,double *sol,obj2struct *obj2,double *x2,
+                    double *y2,double *xy)
+{
+  double vara,covab,varb;
+
+  /*------ Variances and covariance along x and y */
+  vara = *(var += PSF_NA+1);
+  covab = *(++var);
+  varb = *(var += PSF_NA);
+  var += PSF_NA+1;
+  obj2->poserrmx2_psf = (vara*x2[j]*x2[j]+varb*xy[j]*xy[j]
+                         +2*covab*x2[j]*xy[j])/(sol[0]*sol[0]);
+  obj2->poserrmy2_psf = (varb*y2[j]*y2[j]+vara*xy[j]*xy[j]
+                         +2*covab*y2[j]*xy[j])/(sol[0]*sol[0]);
+  obj2->poserrmxy_psf = (vara*x2[j]*xy[j]+varb*y2[j]*xy[j]
+                         +covab*(x2[j]*y2[j]+xy[j]*xy[j]))
+    /(sol[0]*sol[0]);
+  
+  /*------ If requested, translate variances to major and minor error axes... */
+  if (FLAG(obj2.poserra_psf))
+    {
+      double    pmx2,pmy2,temp,theta;
+      
+      if (fabs(temp=obj2->poserrmx2_psf-obj2->poserrmy2_psf) > 0.0)
+        theta = atan2(2.0 * obj2->poserrmxy_psf,temp) / 2.0;
+      else
+        theta = PI/4.0;
+      
+      temp = sqrt(0.25*temp*temp+obj2->poserrmxy_psf*obj2->poserrmxy_psf);
+      pmy2 = pmx2 = 0.5*(obj2->poserrmx2_psf+obj2->poserrmy2_psf);
+      pmx2+=temp;
+      pmy2-=temp;
+      
+      obj2->poserra_psf = (float)sqrt(pmx2);
+      obj2->poserrb_psf = (float)sqrt(pmy2);
+      obj2->poserrtheta_psf = theta*180.0/PI;
+    }
+  
+  /*------ ...Or ellipse parameters */
+  if (FLAG(obj2.poserr_cxx))
+    {
+      double    xm2,ym2, xym, temp;
+      
+      xm2 = obj2->poserrmx2_psf;
+      ym2 = obj2->poserrmy2_psf;
+      xym = obj2->poserrmxy_psf;
+      obj2->poserrcxx_psf = (float)(ym2/(temp=xm2*ym2-xym*xym));
+      obj2->poserrcyy_psf = (float)(xm2/temp);
+      obj2->poserrcxy_psf = (float)(-2*xym/temp);
+    }
+  return;
+}
 
 
 /******************************** svdfit ************************************/
