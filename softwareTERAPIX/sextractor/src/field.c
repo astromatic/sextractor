@@ -9,7 +9,7 @@
 *
 *	Contents:	Handling of field structures.
 *
-*	Last modify:	26/11/2003
+*	Last modify:	29/06/2006
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -45,7 +45,7 @@ picstruct	*newfield(char *filename, int flags, int nok)
    catstruct	*cat;
    tabstruct	*tab;
    OFF_T	mefpos = 0;		/* To avoid gcc -Wall warnings */
-   int		nok2, ntab;
+   int		nok2, ntab, margin;
 
 /* Move to nok'th valid FITS image extension */
   if (!(cat = read_cat(filename)))
@@ -129,13 +129,17 @@ picstruct	*newfield(char *filename, int flags, int nok)
       field->back_type = BACK_ABSOLUTE;
     }
 
-/* Compute the image buffer size */
-/* Basically, only one margin line is sufficient... */
-  field->stripmargin = 1;
-/* ...but : */
-  field->stripheight = prefs.mem_bufsize;
+/* Add a comfortable margin for local background estimates */
+  margin = (prefs.pback_type == LOCAL)? prefs.pback_size + prefs.mem_bufsize/4
+					: 0;
+
+  field->stripheight = prefs.mem_bufsize + margin;
   if (field->stripheight>field->height)
     field->stripheight = field->height;
+/* Compute the image buffer size */
+/* Basically, only one margin line is sufficient... */
+  field->stripmargin = 1 + margin;
+/* ...but : */
   if (prefs.filter_flag)
     {
 /*-- If filtering is on, one should consider the height of the conv. mask */

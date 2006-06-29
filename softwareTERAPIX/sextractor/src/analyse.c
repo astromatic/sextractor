@@ -38,6 +38,7 @@
 #include	"photom.h"
 #include	"psf.h"
 #include	"retina.h"
+#include	"som.h"
 #include	"winpos.h"
 
 static obj2struct	*obj2 = &outobj2;
@@ -540,7 +541,6 @@ void	endobject(picstruct *field, picstruct *dfield, picstruct *wfield,
 
     if (FLAG(obj2.sprob))
       {
-       int	j;
        double	fac2, input[10], output, fwhm;
 
       fwhm = prefs.seeing_fwhm;
@@ -585,6 +585,29 @@ void	endobject(picstruct *field, picstruct *dfield, picstruct *wfield,
             *pix = newsnumber;
       }
     obj->number = newnumber;
+
+/*-- SOM fitting */
+    if (prefs.somfit_flag)
+      {
+       float    *input;
+
+      input = thesom->input;
+      copyimage(field,input,thesom->inputsize[0],thesom->inputsize[1],ix,iy);
+
+      if (thesom->nextrainput)
+        {
+        input += thesom->ninput-thesom->nextrainput;
+        *(input) = (obj->mx+1)/field->width;
+        *(input+1) = (obj->my+1)/field->height;
+        }
+
+      som_phot(thesom, obj->bkg, field->backsig,
+        (float)prefs.gain, obj->mx-ix, obj->my-iy,
+        FLAG(obj2.vector_somfit)?outobj2.vector_somfit:NULL, -1.0);
+      obj2->stderr_somfit = thesom->stderror;
+      obj2->flux_somfit = thesom->amp;
+      outobj2.fluxerr_somfit = thesom->sigamp;
+      }
 
     if (FLAG(obj2.vignet))
       copyimage(field,outobj2.vignet,prefs.vignetsize[0],prefs.vignetsize[1],

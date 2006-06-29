@@ -84,7 +84,6 @@ void	som_phot(somstruct *som, float back, float backnoise, float gain,
 
 /* Gradient search */
   som_conjgrad(som, 1e-6);
-
 /* Now perform the true photometry */
   som->stderror = (float)sqrt(som_err(som, 0.0, SOM_PHOTOM));
 
@@ -148,7 +147,6 @@ int	som_mkweight(somstruct *som, float back, float backnoise, float gain)
   wstiff = 1/(som->xy_stiff*som->xy_stiff);
   for (i=som->nextrainput; i--;)
     *(wt++) = wstiff;
-
   return ngood;
   }
 
@@ -251,7 +249,10 @@ float	som_err(somstruct *som, float dist, int flags)
 
 /*-- First, the error from the image-fitting */
     som->amp = b = sxy/sxx;
+    err = nima*(b*b*sxx + syy - 2.0*b*sxy)/s;
+/*
     err = (syy - b*sxy)/(nima-1);
+*/
     som->sigamp = sqrt(err*s/(s*sxx-sx*sx));
 
 /*-- Second, the error of non-pixel parameters */
