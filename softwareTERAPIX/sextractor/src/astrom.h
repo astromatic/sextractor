@@ -9,7 +9,7 @@
 *
 *	Contents:	Astrometrical stuff.
 *
-*	Last modify:	15/07/2005
+*	Last modify:	02/07/2006
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -21,21 +21,23 @@
 #define		MJD2000	51544.50000	/* Modified Julian date for J2000.0 */
 #define		MJD1950	33281.92346	/* Modified Julian date for B1950.0 */
 #define		JU2TROP	1.0000214	/* 1 Julian century in tropical units*/
+#define		NAXIS	3		/* Max number of FITS axes */
 
 /*------------------------------- structures --------------------------------*/
 
 typedef struct structastrom
   {
   int		naxis;			/* Number of image axes */
-  char		ctype[2][9];		/* FITS CTYPE strings */
-  char		cunit[2][32];		/* FITS CUNIT strings */
-  double	crval[2];		/* FITS CRVAL parameters */
-  double	cdelt[2];		/* FITS CDELT parameters */
-  double	crpix[2];		/* FITS CRPIX parameters */
-  double	projp[200];		/* FITS PROJP parameters */
+
+  char		ctype[NAXIS][9];	/* FITS CTYPE strings */
+  char		cunit[NAXIS][32];	/* FITS CUNIT strings */
+  double	crval[NAXIS];		/* FITS CRVAL parameters */
+  double	cdelt[NAXIS];		/* FITS CDELT parameters */
+  double	crpix[NAXIS];		/* FITS CRPIX parameters */
+  double	projp[100*NAXIS];	/* FITS PROJP parameters */
   double	longpole,latpole;	/* FITS LONGPOLE and LATPOLE */
-  double	pc[4];			/* FITS PC matrix */
-  double	linmat[4];		/* Local linear mapping matrix */
+  double	pc[NAXIS*NAXIS];	/* FITS PC matrix */
+  double	linmat[NAXIS*NAXIS];	/* Local linear mapping matrix */
   double	lindet;			/* Determinant of the local matrix */
   double	pixscale;		/* (Local) pixel scale */
   double	ap2000,dp2000;		/* J2000 coordinates of pole */
@@ -44,10 +46,14 @@ typedef struct structastrom
   enum {RDSYS_FK5, RDSYS_FK4, RDSYS_FK4_NO_E, RDSYS_GAPPT}
 		radecsys;		/* FITS RADECSYS reference frame */
   int		wcs_flag;		/* WCSLIB: can it be used? */
+  int		lat,lng;		/* longitude and latitude axes # */
+  double	r0;			/* projection "radius" */
   struct wcsprm	*wcs;			/* WCSLIB's wcsprm structure */
   struct linprm	*lin;			/* WCSLIB's linprm structure */
   struct celprm	*cel;			/* WCSLIB's celprm structure */
   struct prjprm *prj;			/* WCSLIB's prjprm structure */
+  struct tnxaxis *tnx_latcor;		/* IRAF's TNX latitude corrections */
+  struct tnxaxis *tnx_lngcor;		/* IRAF's TNX longitude corrections */
   }	astromstruct;
 
 /*------------------------------- functions ---------------------------------*/

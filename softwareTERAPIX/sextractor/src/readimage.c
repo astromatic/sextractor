@@ -9,7 +9,7 @@
 *
 *	Contents:	functions for input of image data.
 *
-*	Last modify:	27/11/2003
+*	Last modify:	02/07/2006
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -34,6 +34,7 @@
 #include	"back.h"
 #include	"astrom.h"
 #include	"weight.h"
+#include        "wcs/tnx.h"
 
 /******************************* loadstrip ***********************************/
 /*
@@ -543,7 +544,9 @@ extract some data from the FITS-file header
 void	readimagehead(picstruct *field)
   {
    int		j,l, n;
-   char		*buf, st[80], str[80], *point;
+   char		wstr1[TNX_MAXCHARS], wstr2[TNX_MAXCHARS],
+		st[80], str[80],
+		*buf, *point;
 
 /* Open the file */
   if (!(field->file = fopen(field->filename, "rb")))
@@ -737,14 +740,63 @@ void	readimagehead(picstruct *field)
         }
 
 /*---- Projection parameters */
-      as->longpole = FITSTOF("LONGPOLE", 999.0);
-      as->latpole = FITSTOF("LATPOLE ", 999.0);
-      if (fitsnfind(buf, "PROJP1  ", n))
-        for (l=0; l<10; l++)
+      if (!strcmp(as->wcs->pcode, "TNX"))
+        {
+/*---- IRAF's TNX projection: decode these #$!?@#!! WAT parameters */
+        if (fitsfind(buf, "WAT?????") != RETURN_ERROR)
           {
-          sprintf(str, "PROJP%-3d", l);
-          as->projp[l] = FITSTOF(str, 0.0);
+/*--------  First we need to concatenate strings */
+          pstr = wstr1;
+          sprintf(str, "WAT1_001");
+          for (j=2; fitsread(buf,str,pstr,H_STRINGS,T_STRING)==RETURN_OK; j++)
+            {
+            sprintf(str, "WAT1_%03d", j);
+            pstr += strlen(pstr);
+            }
+          pstr = wstr2;
+          sprintf(str, "WAT2_001");
+          for (j=2; fitsread(buf,str,pstr,H_STRINGS,T_STRING)==RETURN_OK; j++)
+            {
+            sprintf(str, "WAT2_%03d", j);
+            pstr += strlen(pstr);
+            }
+/*-------- LONGPOLE defaulted to 180 deg if not found */
+          if ((pstr = strstr(wstr1, "longpole"))
+		|| (pstr = strstr(wstr2, "longpole")))
+            pstr = strpbrk(pstr, "1234567890-+.");
+          as->longpole = pstr? atof(pstr) : 999.0;
+          as->latpole = 999.0;
+/*-------- RO defaulted to 180/PI if not found */
+          if ((pstr = strstr(wstr1, "ro"))
+		|| (pstr = strstr(wstr2, "ro")))
+            pstr = strpbrk(pstr, "1234567890-+.");
+          as->r0 = pstr? atof(pstr) : 0.0;
+/*-------- Read the remaining TNX parameters */
+          if ((pstr = strstr(wstr1, "lngcor"))
+		|| (pstr = strstr(wstr2, "lngcor")))
+            as->tnx_lngcor = read_tnxaxis(pstr);
+          if (!as->tnx_lngcor)
+            error(EXIT_FAILURE, "*Error*: incorrect TNX parameters in ",
+		field->filename);
+          if ((pstr = strstr(wstr1, "latcor"))
+		|| (pstr = strstr(wstr2, "latcor")))
+            as->tnx_latcor = read_tnxaxis(pstr);
+          if (!as->tnx_latcor)
+            error(EXIT_FAILURE, "*Error*: incorrect TNX parameters in ",
+		field->filename);
           }
+        }
+      else
+        {
+        as->longpole = FITSTOF("LONGPOLE", 999.0);
+        as->latpole = FITSTOF("LATPOLE ", 999.0);
+        if (fitsnfind(buf, "PROJP1  ", n))
+          for (l=0; l<10; l++)
+            {
+            sprintf(str, "PROJP%-3d", l);
+            as->projp[l] = FITSTOF(str, 0.0);
+            }
+        }
       }
     else
       {

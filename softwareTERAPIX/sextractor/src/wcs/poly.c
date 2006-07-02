@@ -9,7 +9,7 @@
 *
 *	Contents:	Polynomial fitting
 *
-*	Last modify:	21/09/2004
+*	Last modify:	08/03/2005
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -237,13 +237,13 @@ NOTES   If different from NULL, extbasis can be provided to store the
         precomputed basis functions stored in extbasis are used (which saves
         CPU). If w is NULL, all points are given identical weight.
 AUTHOR  E. Bertin (IAP, Leiden observatory & ESO)
-VERSION 07/04/2000
+VERSION 08/03/2005
  ***/
 void	poly_fit(polystruct *poly, double *x, double *y, double *w, int ndata,
 		double *extbasis)
   {
    void	qerror(char *msg1, char *msg2);
-   double	offset[POLY_MAXDIM],
+   double	/*offset[POLY_MAXDIM],*/x2[POLY_MAXDIM],
 		*alpha,*alphat, *beta,*betat, *basis,*basis1,*basis2, *coeff,
 		*extbasist,*xt,
 		val,wval,yval;
@@ -261,7 +261,8 @@ void	poly_fit(polystruct *poly, double *x, double *y, double *w, int ndata,
   QCALLOC(alpha, double, matsize);
   QCALLOC(beta, double, ncoeff);
 
-/* Subtract an average offset to maintain precision */
+/* Subtract an average offset to maintain precision (droped for now ) */
+/*
   if (x)
     {
     for (d=0; d<ndim; d++)
@@ -272,20 +273,18 @@ void	poly_fit(polystruct *poly, double *x, double *y, double *w, int ndata,
         offset[d] += *(xt++);
     for (d=0; d<ndim; d++)
       offset[d] /= (double)ndata;    
-    xt = x;
-    for (n=ndata; n--;)
-      for (d=0; d<ndim; d++)
-        *(xt++) -= offset[d];
     }
- 
+*/ 
 /* Build the covariance matrix */
+  xt = x;
   for (n=ndata; n--;)
     {
     if (x)
       {
 /*---- If x!=NULL, compute the basis functions */
-      poly_func(poly, x);
-      x+=ndim;
+      for (d=0; d<ndim; d++)
+        x2[d] = *(xt++)/* - offset[d]*/;     
+      poly_func(poly, x2);
 /*---- If, in addition, extbasis is provided, then fill it */
       if (extbasis)
         for (basis1=basis,j=ncoeff; j--;)
@@ -320,9 +319,9 @@ void	poly_fit(polystruct *poly, double *x, double *y, double *w, int ndata,
   coeff = poly->coeff;
   for (j=ncoeff; j--;)
     *(coeff++) = *(betat++);
-
+/*
   poly_addcste(poly, offset);
-
+*/
   free(beta);
 
   return;
@@ -336,7 +335,8 @@ PURPOSE Modify matrix coefficients to mimick the effect of adding a cst to
 INPUT   Pointer to the polynomial structure,
         Pointer to the vector of cst.
 OUTPUT  -.
-NOTES   Requires quadruple-precision.
+NOTES   Requires quadruple-precision. **For the time beeing, this function
+	returns completely wrong results!!**
 AUTHOR  E. Bertin (IAP)
 VERSION 03/03/2004
  ***/

@@ -9,7 +9,7 @@
 *
 *	Contents:	Astrometrical computations.
 *
-*	Last modify:	19/10/2005
+*	Last modify:	02/07/2006
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -27,6 +27,7 @@
 #include	"globals.h"
 #include	"prefs.h"
 #include	"astrom.h"
+#include	"wcs/tnx.h"
 
 static obj2struct	*obj2 = &outobj2;
 
@@ -39,9 +40,11 @@ void	initastrom(picstruct *field)
   {
    astromstruct	*as;
    double	*lm;
-   int		l;
+   int		l,n, lng,lat, naxis;
 
   as = field->astrom;
+
+  naxis = as->naxis;
 
 /* Test if the WCS is in use */
   if (as->wcs_flag)
@@ -50,30 +53,56 @@ void	initastrom(picstruct *field)
     QCALLOC(as->lin, struct linprm, 1);
     QMALLOC(as->cel, struct celprm, 1);
     QMALLOC(as->prj, struct prjprm, 1);
-    QMALLOC(as->lin->cdelt, double, 2);
-    QMALLOC(as->lin->crpix, double, 2);
-    QMALLOC(as->lin->pc, double, 4);
+    QMALLOC(as->lin->cdelt, double, naxis);
+    QMALLOC(as->lin->crpix, double, naxis);
+    QMALLOC(as->lin->pc, double, naxis*naxis);
+/* Set WCS flags to 0: structures will be reinitialized by the WCS library */
     as->wcs->flag = as->lin->flag = as->cel->flag = as->prj->flag = 0;
     as->lin->naxis = as->naxis;
 
+/* wcsprm structure */
+    lng = as->lng = as->wcs->lng;
+    lat = as->lat = as->wcs->lat;
+
 /*-- linprm structure */
-    for (l=0; l<2; l++)
+    for (l=0; l<naxis; l++)
       {
       as->lin->crpix[l] = as->crpix[l];
       as->lin->cdelt[l] = as->cdelt[l];
       as->cel->ref[l] = as->crval[l];
       }
-    for (l=0; l<4; l++)
+    for (l=0; l<naxis*naxis; l++)
       as->lin->pc[l] = as->pc[l];
 
 /*-- celprm structure */
+    if (lng>=0)
+      {
+      as->cel->ref[0] = as->crval[lng];
+      as->cel->ref[1] = as->crval[lat];
+      }
+    else
+      {
+      as->cel->ref[0] = as->crval[0];
+      as->cel->ref[1] = as->crval[1];
+      }
     as->cel->ref[2] = as->longpole;
     as->cel->ref[3] = as->latpole;
 
-/*-- prjprm structure */
-    as->prj->r0 = 0.0;
-    for (l=0; l<200; l++)
-      as->prj->p[l] = as->projp[l];
+/* prjprm structure */
+    as->prj->r0 = as->r0;
+    as->prj->tnx_lngcor = as->tnx_lngcor;
+    as->prj->tnx_latcor = as->tnx_latcor;
+    if (lng>=0)
+      {
+      n = 0;
+      for (l=100; l--;)
+        {
+        as->prj->p[l] = as->projp[l+lng*100];
+        as->prj->p[l+100] = as->projp[l+lat*100];
+        if (!n && (as->prj->p[l] || as->prj->p[l+100]))
+          n = l+1;
+        }
+    }
 
 /*-- Compute an "average linear matrix" (at field center) */
     compute_wcs(field, (field->width+1)/2.0, (field->height+1)/2.0);
@@ -101,8 +130,9 @@ void	initastrom(picstruct *field)
     {
 /*-- Simplify the original FITS PC matrix */
     lm = as->linmat;
-    for (l=0; l<4; l++)
-      lm[l] = as->pc[l]*as->cdelt[l%2];
+    for (l=0; l<naxis*naxis; l++)
+      lm[l] = as->pc[l]*as->cdelt[l%naxis];
+/*-- Check valid only in 2D */
     if ((as->lindet = lm[0]*lm[3] - lm[1]*lm[2]) == 0.0)
       warning ("Null determinant in the global distortion matrix:\n",
 	"         Some WORLD-parameters will be incorrect");
@@ -281,58 +311,69 @@ double	*compute_wcs(picstruct *field, double mx, double my)
 
   {
    astromstruct	*as;
-   static double	pixpos[2], wcspos[2],wcspos0[2], imgcrd[2], phi,theta;
+   static double	pixpos[NAXIS], wcspos[NAXIS],wcspos0[2], imgcrd[NAXIS],
+			phi,theta;
    double	*lm, al,da,de,cde;
-   int		rcode;
+   int		rcode, lng,lat, naxis;
 
   as = field->astrom;
   lm = as->linmat;
 
-  pixpos[0] = mx;
-  pixpos[1] = my;
+  naxis = as->naxis;
+  lng = as->lng;
+  lat = as->lat;
+  if (lng == lat)
+    {
+    lng = 0;
+    lat = 1;
+    }
 
-  if ((rcode=wcsrev((const char(*)[9])as->ctype, as->wcs, pixpos, as->lin,
-	imgcrd, as->prj, &phi, &theta, as->crval, as->cel, wcspos0)))
-    error(EXIT_FAILURE, "*Error* in WCSlib: ", (char *)wcsrev_errmsg[rcode]);
+  pixpos[lng] = mx;
+  pixpos[lat] = my;
 
-/* Compute the local distortion matrix */
-  al = wcspos0[0];
-  de = wcspos0[1];
-
-/* Get world coordinates for vector 1,0 */
-  pixpos[0] = mx + 1;
-  pixpos[1] = my;
   if ((rcode=wcsrev((const char(*)[9])as->ctype, as->wcs, pixpos, as->lin,
 	imgcrd, as->prj, &phi, &theta, as->crval, as->cel, wcspos)))
     error(EXIT_FAILURE, "*Error* in WCSlib: ", (char *)wcsrev_errmsg[rcode]);
 
-  da = wcspos[0]-al;
+/* Compute the local distortion matrix */
+  al = wcspos0[lng<lat?0:1] = wcspos[lng];
+  de = wcspos0[lng<lat?1:0] = wcspos[lat];
+
+/* Get world coordinates for vector 1,0 */
+  pixpos[lng] = mx + 1.0;
+  pixpos[lat] = my;
+  if ((rcode=wcsrev((const char(*)[9])as->ctype, as->wcs, pixpos, as->lin,
+	imgcrd, as->prj, &phi, &theta, as->crval, as->cel, wcspos)))
+    error(EXIT_FAILURE, "*Error* in WCSlib: ", (char *)wcsrev_errmsg[rcode]);
+
+  da = wcspos[lng]-al;
   if (da>180.0)
     da -= 360.0;
   else if (da<-180.0)
     da += 360.0;
 
-  lm[0] = da*(cde=cos(de*DEG));
-  lm[1] = wcspos[1] - de;
+  lm[lng] = da*(cde=cos(de*DEG));
+  lm[lat] = wcspos[lat] - de;
 
 /* Get world coordinates for vector 0,1 */
 /* Second one */
-  pixpos[0] = mx;
-  pixpos[1] = my + 1;
+  pixpos[lng] = mx;
+  pixpos[lat] = my + 1.0;
   if ((rcode=wcsrev((const char(*)[9])as->ctype, as->wcs, pixpos, as->lin,
 	imgcrd, as->prj, &phi, &theta, as->crval, as->cel, wcspos)))
     error(EXIT_FAILURE, "*Error* in WCSlib: ", (char *)wcsrev_errmsg[rcode]);
 
-  da = wcspos[0]-al;
+  da = wcspos[lng]-al;
   if (da>180.0)
     da -= 360.0;
   else if (da<-180.0)
     da += 360.0;
 
   lm[2] = da*cde;
-  lm[3] = wcspos[1] - de;
+  lm[3] = wcspos[lat] - de;
 
-  as->lindet = lm[0]*lm[3] - lm[1]*lm[2];
+  as->lindet = lm[lng+lng*naxis]*lm[lat+lat*naxis]
+	- lm[lng+lat*naxis]*lm[lat+lng*naxis];
   if (as->lindet == 0.0)
     warning ("Null determinant in the local distortion matrix:\n",
 	"         Some WORLD-parameters will be incorrect");
@@ -352,19 +393,33 @@ void	astrom_shapeparam(picstruct *field, objstruct *obj)
   {
    astromstruct	*as;
    double	*lm,
-		dx2,dy2,dxy, xm2,ym2,xym, temp,pm2;
+		dx2,dy2,dxy, xm2,ym2,xym, temp,pm2, lm0,lm1,lm2,lm3;
+   int		lng,lat, naxis;
 
   as = field->astrom;
   lm = as->linmat;
+
+  naxis = as->naxis;
+  lng = as->lng;
+  lat = as->lat;
+  if (lng == lat)
+    {
+    lng = 0;
+    lat = 1;
+    }
+  lm0 = lm[lng+naxis*lng];
+  lm1 = lm[lat+naxis*lng];
+  lm2 = lm[lng+naxis*lat];
+  lm3 = lm[lat+naxis*lat];
+
 
 /* All WORLD params based on 2nd order moments have to pass through here */
   dx2 = obj->mx2;
   dy2 = obj->my2;
   dxy = obj->mxy;
-  obj2->mx2w = xm2 = lm[0]*lm[0]*dx2 + lm[1]*lm[1]*dy2 + lm[0]*lm[1]*dxy;
-  obj2->my2w = ym2 = lm[2]*lm[2]*dx2 + lm[3]*lm[3]*dy2 + lm[2]*lm[3]*dxy;
-  obj2->mxyw = xym = lm[0]*lm[2]*dx2 + lm[1]*lm[3]*dy2
-			+ (lm[0]*lm[3]+lm[1]*lm[2])*dxy;
+  obj2->mx2w = xm2 = lm0*lm0*dx2 + lm1*lm1*dy2 + lm0*lm1*dxy;
+  obj2->my2w = ym2 = lm2*lm2*dx2 + lm3*lm3*dy2 + lm2*lm3*dxy;
+  obj2->mxyw = xym = lm0*lm2*dx2 + lm1*lm3*dy2 + (lm0*lm3+lm1*lm2)*dxy;
   temp=xm2-ym2;
   if (FLAG(obj2.thetaw))
     {
@@ -435,19 +490,32 @@ void	astrom_winshapeparam(picstruct *field, objstruct *obj)
   {
    astromstruct	*as;
    double	*lm,
-		dx2,dy2,dxy, xm2,ym2,xym, temp,pm2;
+		dx2,dy2,dxy, xm2,ym2,xym, temp,pm2, lm0,lm1,lm2,lm3;
+   int		lng,lat, naxis;
 
   as = field->astrom;
   lm = as->linmat;
+
+  naxis = as->naxis;
+  lng = as->lng;
+  lat = as->lat;
+  if (lng == lat)
+    {
+    lng = 0;
+    lat = 1;
+    }
+  lm0 = lm[lng+naxis*lng];
+  lm1 = lm[lat+naxis*lng];
+  lm2 = lm[lng+naxis*lat];
+  lm3 = lm[lat+naxis*lat];
 
 /* All WORLD params based on 2nd order moments have to pass through here */
   dx2 = obj2->win_mx2;
   dy2 = obj2->win_my2;
   dxy = obj2->win_mxy;
-  obj2->win_mx2w = xm2 = lm[0]*lm[0]*dx2 + lm[1]*lm[1]*dy2 + lm[0]*lm[1]*dxy;
-  obj2->win_my2w = ym2 = lm[2]*lm[2]*dx2 + lm[3]*lm[3]*dy2 + lm[2]*lm[3]*dxy;
-  obj2->win_mxyw = xym = lm[0]*lm[2]*dx2 + lm[1]*lm[3]*dy2
-			+ (lm[0]*lm[3]+lm[1]*lm[2])*dxy;
+  obj2->win_mx2w = xm2 = lm0*lm0*dx2 + lm1*lm1*dy2 + lm0*lm1*dxy;
+  obj2->win_my2w = ym2 = lm2*lm2*dx2 + lm3*lm3*dy2 + lm2*lm3*dxy;
+  obj2->win_mxyw = xym = lm0*lm2*dx2 + lm1*lm3*dy2 + (lm0*lm3+lm1*lm2)*dxy;
   temp=xm2-ym2;
   if (FLAG(obj2.win_thetaw))
     {
@@ -519,19 +587,32 @@ void	astrom_errparam(picstruct *field, objstruct *obj)
   {
    astromstruct	*as;
    double	*lm,
-		dx2,dy2,dxy, xm2,ym2,xym, temp,pm2;
+		dx2,dy2,dxy, xm2,ym2,xym, temp,pm2, lm0,lm1,lm2,lm3;
+   int		lng,lat, naxis;
 
   as = field->astrom;
   lm = as->linmat;
+
+  naxis = as->naxis;
+  lng = as->lng;
+  lat = as->lat;
+  if (lng == lat)
+    {
+    lng = 0;
+    lat = 1;
+    }
+  lm0 = lm[lng+naxis*lng];
+  lm1 = lm[lat+naxis*lng];
+  lm2 = lm[lng+naxis*lat];
+  lm3 = lm[lat+naxis*lat];
 
 /* All WORLD params based on 2nd order moments have to pass through here */
   dx2 = obj->poserr_mx2;
   dy2 = obj->poserr_my2;
   dxy = obj->poserr_mxy;
-  obj2->poserr_mx2w = xm2 = lm[0]*lm[0]*dx2+lm[1]*lm[1]*dy2+lm[0]*lm[1]*dxy;
-  obj2->poserr_my2w = ym2 = lm[2]*lm[2]*dx2+lm[3]*lm[3]*dy2+lm[2]*lm[3]*dxy;
-  obj2->poserr_mxyw = xym = lm[0]*lm[2]*dx2+lm[1]*lm[3]*dy2
-				+ (lm[0]*lm[3]+lm[1]*lm[2])*dxy;
+  obj2->poserr_mx2w = xm2 = lm0*lm0*dx2 + lm1*lm1*dy2 + lm0*lm1*dxy;
+  obj2->poserr_my2w = ym2 = lm2*lm2*dx2 + lm3*lm3*dy2 + lm2*lm3*dxy;
+  obj2->poserr_mxyw = xym = lm0*lm2*dx2 + lm1*lm3*dy2 + (lm0*lm3+lm1*lm2)*dxy;
   temp=xm2-ym2;
   if (FLAG(obj2.poserr_thetaw))
     {
@@ -602,19 +683,32 @@ void	astrom_winerrparam(picstruct *field, objstruct *obj)
   {
    astromstruct	*as;
    double	*lm,
-		dx2,dy2,dxy, xm2,ym2,xym, temp,pm2;
+		dx2,dy2,dxy, xm2,ym2,xym, temp,pm2, lm0,lm1,lm2,lm3;
+   int		lng,lat, naxis;
 
   as = field->astrom;
   lm = as->linmat;
+
+  naxis = as->naxis;
+  lng = as->lng;
+  lat = as->lat;
+  if (lng == lat)
+    {
+    lng = 0;
+    lat = 1;
+    }
+  lm0 = lm[lng+naxis*lng];
+  lm1 = lm[lat+naxis*lng];
+  lm2 = lm[lng+naxis*lat];
+  lm3 = lm[lat+naxis*lat];
 
 /* All WORLD params based on 2nd order moments have to pass through here */
   dx2 = obj2->winposerr_mx2;
   dy2 = obj2->winposerr_my2;
   dxy = obj2->winposerr_mxy;
-  obj2->winposerr_mx2w = xm2 = lm[0]*lm[0]*dx2+lm[1]*lm[1]*dy2+lm[0]*lm[1]*dxy;
-  obj2->winposerr_my2w = ym2 = lm[2]*lm[2]*dx2+lm[3]*lm[3]*dy2+lm[2]*lm[3]*dxy;
-  obj2->winposerr_mxyw = xym = lm[0]*lm[2]*dx2+lm[1]*lm[3]*dy2
-				+ (lm[0]*lm[3]+lm[1]*lm[2])*dxy;
+  obj2->winposerr_mx2w = xm2 = lm0*lm0*dx2 + lm1*lm1*dy2 + lm0*lm1*dxy;
+  obj2->winposerr_my2w = ym2 = lm2*lm2*dx2 + lm3*lm3*dy2 + lm2*lm3*dxy;
+  obj2->winposerr_mxyw = xym = lm0*lm2*dx2 + lm1*lm3*dy2 + (lm0*lm3+lm1*lm2)*dxy;
   temp=xm2-ym2;
   if (FLAG(obj2.winposerr_thetaw))
     {
@@ -685,21 +779,25 @@ void	copyastrom(picstruct *infield, picstruct *outfield)
 
   {
    astromstruct	*inas, *outas;
+   int		naxis;
 
   if (infield->astrom)
     {
     QMEMCPY(infield->astrom, outfield->astrom, astromstruct, 1);
     inas = infield->astrom;
     outas = outfield->astrom;
+    naxis = inas->naxis;
     if (inas->wcs_flag)
       {
       QMEMCPY(inas->wcs, outas->wcs, struct wcsprm, 1);
       QMEMCPY(inas->lin, outas->lin, struct linprm, 1);
       QMEMCPY(inas->cel, outas->cel, struct celprm, 1);
       QMEMCPY(inas->prj, outas->prj, struct prjprm, 1);
-      QMEMCPY(inas->lin->cdelt, outas->lin->cdelt, double, 2);
-      QMEMCPY(inas->lin->crpix, outas->lin->crpix, double, 2);
-      QMEMCPY(inas->lin->pc, outas->lin->pc, double, 4);
+      QMEMCPY(inas->lin->cdelt, outas->lin->cdelt, double, naxis);
+      QMEMCPY(inas->lin->crpix, outas->lin->crpix, double, naxis);
+      QMEMCPY(inas->lin->pc, outas->lin->pc, double, naxis*naxis);
+      outas->tnx_lngcor = copy_tnxaxis(inas->tnx_lngcor);
+      outas->tnx_latcor = copy_tnxaxis(inas->tnx_latcor);
       }
     }
 
@@ -726,6 +824,8 @@ void	endastrom(picstruct *field)
     free(as->lin);
     free(as->cel);
     free(as->prj);
+    free_tnxaxis(as->tnx_lngcor);
+    free_tnxaxis(as->tnx_latcor);
     }
 
   free(as);
