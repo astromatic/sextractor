@@ -9,7 +9,7 @@
 *
 *	Contents:	main program.
 *
-*	Last modify:	12/01/2006
+*	Last modify:	03/07/2006
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -38,6 +38,7 @@
 #include	"psf.h"
 #include	"som.h"
 #include	"weight.h"
+#include	"xml.h"
 
 /******************************** makeit *************************************/
 /*
@@ -51,7 +52,26 @@ void	makeit()
    catstruct		*imacat;
    tabstruct		*imatab;
    static time_t        thetime1, thetime2;
+   time_t		thetimet, thetimet2;
+   struct tm		*tm;
    int			i, nok, ntab, next;
+
+/* Processing start date and time */
+  thetimet = time(NULL);
+  tm = localtime(&thetimet);
+  sprintf(prefs.sdate_start,"%04d-%02d-%02d",
+        tm->tm_year+1900, tm->tm_mon+1, tm->tm_mday);
+  sprintf(prefs.stime_start,"%02d:%02d:%02d",
+        tm->tm_hour, tm->tm_min, tm->tm_sec);
+
+  NFPRINTF(OUTPUT, "");
+  QPRINTF(OUTPUT, "----- %s %s started on %s at %s with %d thread%s\n\n",
+		BANNER,
+		MYVERSION,
+		prefs.sdate_start,
+		prefs.stime_start,
+		prefs.nthreads,
+		prefs.nthreads>1? "s":"");
 
 /* Initialize globals variables */
   initglob();
@@ -142,6 +162,9 @@ void	makeit()
   NFPRINTF(OUTPUT, "Initializing catalog");
   initcat();
 
+/* Initialize XML data */
+  if (prefs.xml_flag)
+    init_xml(next);
 
 /* Go through all images */
   nok = -1;
@@ -349,6 +372,11 @@ void	makeit()
 
     reendcat();
 
+/* Update XML data */
+  if (prefs.xml_flag)
+    update_xml();
+
+
 /*-- Close ASSOC routines */
     end_assoc(field);
 
@@ -401,6 +429,19 @@ void	makeit()
 
   if (FLAG(obj2.sprob))
     neurclose();
+
+/* Processing end date and time */
+  thetimet2 = time(NULL);
+  tm = localtime(&thetimet2);
+  sprintf(prefs.sdate_end,"%04d-%02d-%02d",
+	tm->tm_year+1900, tm->tm_mon+1, tm->tm_mday);
+  sprintf(prefs.stime_end,"%02d:%02d:%02d",
+	tm->tm_hour, tm->tm_min, tm->tm_sec);
+  prefs.time_diff = difftime(thetimet2, thetimet);
+
+/* Write XML */
+  if (prefs.xml_flag)
+    write_xml();
 
   return;
   }

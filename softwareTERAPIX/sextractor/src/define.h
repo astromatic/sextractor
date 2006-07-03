@@ -9,7 +9,7 @@
 *
 *	Contents:	global definitions.
 *
-*	Last modify:	12/01/2006
+*	Last modify:	03/07/2006
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -18,6 +18,7 @@
 #ifndef HAVE_CONFIG_H
 #define		VERSION		"2.x"
 #define		DATE		"2006-01-12"
+#define		THREADS_NMAX	16		/* max. number of threads */
 #endif
 
 /*------------------------ what, who, when and where ------------------------*/
@@ -46,7 +47,7 @@
 #define	MAXNASSOC		32		/* max. number of assoc. */
 #define	MAXPICSIZE		1048576		/* max. image size */
 #define	NISO			8		/* number of isophotes */
-#define	OUTPUT			stderr		/* where all msgs are sent */
+#define	OUTPUT			stdout		/* where all msgs are sent */
 #define PSF_NPSFMAX		9		/* Max number of fitted PSFs */
 
 #ifndef PI

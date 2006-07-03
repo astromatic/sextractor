@@ -116,6 +116,14 @@ typedef struct
 /*----- miscellaneous */
   int		pipe_flag;				/* allow piping ? */
   enum	{QUIET, NORM, WARN, FULL}      	verbose_type;	/* display type */
+  int		xml_flag;				/* Write XML file? */
+  char		xml_name[MAXCHAR];			/* XML file name */
+  char		xsl_name[MAXCHAR];			/* XSL file name (or URL) */
+  char		sdate_start[12];			/* SCAMP start date */
+  char		stime_start[12];			/* SCAMP start time */
+  char		sdate_end[12];				/* SCAMP end date */
+  char		stime_end[12];				/* SCAMP end time */
+  int		time_diff;				/* Execution time */
 /*----- CHECK-images */
   int		check_flag;				/* CHECK-image flag */
   checkenum    	check_type[MAXCHECK];		       	/* check-image types */
@@ -191,6 +199,8 @@ typedef struct
   double	mama_corflex;
   int		fitsunsigned_flag;			/* Force unsign FITS */
   int		next;			     /* Number of extensions in file */
+/* Multithreading */
+  int		nthreads;			/* Number of active threads */
   }	prefstruct;
 
   prefstruct		prefs;

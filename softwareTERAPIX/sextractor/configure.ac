@@ -134,11 +134,15 @@ AC_FUNC_MMAP
 AC_TYPE_SIGNAL
 AC_FUNC_STAT
 AC_FUNC_STRFTIME
-AC_CHECK_FUNCS([atexit memcpy memmove memset mkdir munmap strstr])
+AC_CHECK_FUNCS([atexit getenv memcpy memmove memset mkdir munmap strstr])
 
 # Check support for large files
 AC_SYS_LARGEFILE
 AC_FUNC_FSEEKO
+
+########################### No multithreading yet! ###########################
+#AC_DEFINE(USE_THREADS, 1, [Triggers multhreading])
+AC_DEFINE_UNQUOTED(THREADS_NMAX, 1,[Maximum number of POSIX threads])
 
 # Special options for the Insure++ debugger
 if test $use_insure = "yes" -a $CC = "insure"; then

@@ -57,7 +57,8 @@ am_sex_OBJECTS = analyse.$(OBJEXT) assoc.$(OBJEXT) astrom.$(OBJEXT) \
 	misc.$(OBJEXT) neurro.$(OBJEXT) pc.$(OBJEXT) photom.$(OBJEXT) \
 	plist.$(OBJEXT) poly.$(OBJEXT) prefs.$(OBJEXT) psf.$(OBJEXT) \
 	readimage.$(OBJEXT) refine.$(OBJEXT) retina.$(OBJEXT) \
-	scan.$(OBJEXT) som.$(OBJEXT) weight.$(OBJEXT) winpos.$(OBJEXT)
+	scan.$(OBJEXT) som.$(OBJEXT) weight.$(OBJEXT) winpos.$(OBJEXT) \
+	xml.$(OBJEXT)
 sex_OBJECTS = $(am_sex_OBJECTS)
 sex_DEPENDENCIES = $(top_builddir)/src/fits/libfits.a \
 	$(top_builddir)/src/wcs/libwcs_c.a
@@ -158,7 +159,7 @@ sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 
 # Program Makefile for SEx
-# Copyright (C) 2004 Emmanuel Bertin.
+# Copyright (C) 2004-2006 Emmanuel Bertin.
 SUBDIRS = fits wcs
 sex_SOURCES = analyse.c assoc.c astrom.c back.c bpro.c catout.c \
 			  check.c clean.c extract.c field.c filter.c \
@@ -166,12 +167,13 @@ sex_SOURCES = analyse.c assoc.c astrom.c back.c bpro.c catout.c \
 			  main.c makeit.c manobjlist.c misc.c neurro.c pc.c \
 			  photom.c plist.c poly.c prefs.c psf.c readimage.c \
 			  refine.c retina.c scan.c som.c weight.c winpos.c \
+			  xml.c \
 			  assoc.h astrom.h back.h bpro.h check.h clean.h \
 			  define.h extract.h field.h filter.h flag.h \
 			  globals.h growth.h image.h interpolate.h key.h \
 			  neurro.h param.h photom.h plist.h poly.h prefs.h \
 			  preflist.h psf.h retina.h sexhead1.h sexhead.h \
-			  sexheadsc.h som.h types.h weight.h winpos.h
+			  sexheadsc.h som.h types.h weight.h winpos.h xml.h
 
 sex_LDADD = $(top_builddir)/src/fits/libfits.a $(top_builddir)/src/wcs/libwcs_c.a
 DATE = `date +"%Y-%m-%d"`
@@ -275,6 +277,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/som.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/weight.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/winpos.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xml.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	if $(COMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \

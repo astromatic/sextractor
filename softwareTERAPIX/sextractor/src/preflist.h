@@ -9,13 +9,23 @@
 *
 *	Contents:	Keywords for the configuration file.
 *
-*	Last modify:	12/01/2006
+*	Last modify:	03/07/2006
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
 
 
 #include "key.h"
+
+#ifndef _XML_H_
+#include "xml.h"
+#endif
+
+#ifdef  USE_THREADS
+#define THREADS_PREFMAX THREADS_NMAX
+#else
+#define THREADS_PREFMAX 65535
+#endif
 
 /*-------------------------------- initialization ---------------------------*/
 int	idummy;
@@ -95,6 +105,7 @@ pkeystruct key[] =
   {"MEMORY_BUFSIZE", P_INT, &prefs.mem_bufsize, 8, 65534},
   {"MEMORY_OBJSTACK", P_INT, &prefs.clean_stacksize, 16,65536},
   {"MEMORY_PIXSTACK", P_INT, &prefs.mem_pixstack, 1000, 10000000},
+  {"NTHREADS", P_INT, &prefs.nthreads, 0, THREADS_PREFMAX},
   {"PARAMETERS_NAME", P_STRING, prefs.param_name},
   {"PHOT_APERTURES", P_FLOATLIST, prefs.apert, 0,0, 0.0,2*MAXPICSIZE,
    {""}, 1, MAXNAPER, &prefs.naper},
@@ -129,6 +140,9 @@ pkeystruct key[] =
   {"WEIGHT_TYPE", P_KEYLIST, prefs.weight_type, 0,0, 0.0,0.0,
    {"NONE","BACKGROUND", "MAP_RMS", "MAP_VAR","MAP_WEIGHT", ""},
    0, MAXIMAGE, &prefs.nweight_type},
+  {"WRITE_XML", P_BOOL, &prefs.xml_flag},
+  {"XML_NAME", P_STRING, prefs.xml_name},
+  {"XSL_URL", P_STRING, prefs.xsl_name},
   {""}
  };
 
@@ -240,27 +254,37 @@ char *default_prefs[] =
 "*ASSOC_DATA       2,3,4          # columns of the data to replicate (0=all)",
 "*ASSOC_PARAMS     2,3,4          # columns of xpos,ypos[,mag]",
 "*ASSOC_RADIUS     2.0            # cross-matching radius (pixels)",
-"*ASSOC_TYPE       MAG_SUM        # ASSOCiation method: \"FIRST\", \"NEAREST\",",
-"*                                # \"MEAN\", \"MAG_MEAN\", \"SUM\", \"MAG_SUM\",",
-"*                                #\"MIN\" or \"MAX\"",
-"*ASSOCSELEC_TYPE  MATCHED        # ASSOC selection type: \"ALL\", \"MATCHED\"",
-"*                                # or \"-MATCHED\"",
+"*ASSOC_TYPE       MAG_SUM        # ASSOCiation method: FIRST, NEAREST, MEAN,",
+"*                                # MAG_MEAN, SUM, MAG_SUM, MIN or MAX",
+"*ASSOCSELEC_TYPE  MATCHED        # ASSOC selection type: ALL, MATCHED or -MATCHED",
 "*",
 "#----------------------------- Miscellaneous ---------------------------------",
 " ",
-"VERBOSE_TYPE     NORMAL         # can be \"QUIET\", \"NORMAL\" or \"FULL\"",
+"VERBOSE_TYPE     NORMAL         # can be QUIET, NORMAL or FULL",
+"WRITE_XML        N              # Write XML file (Y/N)?",
+"XML_NAME         sex.xml        # Filename for XML output",
+"*XSL_URL          " XSL_URL,
+"*                                # Filename for XSL style-sheet",
+#ifdef USE_THREADS
+"*NTHREADS         0              # Number of simultaneous threads for",
+"*                                # the SMP version of " BANNER,
+"*                                # 0 = automatic",
+#else
+"*NTHREADS         1              # 1 single thread",
+#endif
 "*",
-"*#----------------------------------- Other -----------------------------------",
+"*FITS_UNSIGNED    N              # Treat FITS integer values as unsigned (Y/N)?",
+"*INTERP_MAXXLAG   16             # Max. lag along X for 0-weight interpolation",
+"*INTERP_MAXYLAG   16             # Max. lag along Y for 0-weight interpolation",
+"*INTERP_TYPE      ALL            # Interpolation type: NONE, VAR_ONLY or ALL",
 "*",
-"*FITS_UNSIGNED    N",
-"*INTERP_MAXXLAG   16",
-"*INTERP_MAXYLAG   16",
-"*INTERP_TYPE      ALL",
-"*MAMA_CORFLEX     3.3e-5",
-"*PSF_NAME         default.psf",
-"*PSF_NMAX         9",
-"*PSFDISPLAY_TYPE  SPLIT",
-"*SOM_NAME         default.som",
+"*#--------------------------- Experimental Stuff -----------------------------",
+"*",
+"*MAMA_CORFLEX     3.3e-5         # MAMA correction factor",
+"*PSF_NAME         default.psf    # File containing the PSF model",
+"*PSF_NMAX         9              # Max.number of PSFs fitted simultaneously",
+"*PSFDISPLAY_TYPE  SPLIT          # Catalog type for PSF-fitting: SPLIT or VECTOR",
+"*SOM_NAME         default.som    # File containing Self-Organizing Map weights",
 ""
  };
 

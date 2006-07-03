@@ -1,5 +1,5 @@
 # Program Makefile for SEx
-# Copyright (C) 2004 Emmanuel Bertin.
+# Copyright (C) 2004-2006 Emmanuel Bertin.
 SUBDIRS			= fits wcs
 bin_PROGRAMS		= sex
 sex_SOURCES		= analyse.c assoc.c astrom.c back.c bpro.c catout.c \
@@ -8,11 +8,12 @@ sex_SOURCES		= analyse.c assoc.c astrom.c back.c bpro.c catout.c \
 			  main.c makeit.c manobjlist.c misc.c neurro.c pc.c \
 			  photom.c plist.c poly.c prefs.c psf.c readimage.c \
 			  refine.c retina.c scan.c som.c weight.c winpos.c \
+			  xml.c \
 			  assoc.h astrom.h back.h bpro.h check.h clean.h \
 			  define.h extract.h field.h filter.h flag.h \
 			  globals.h growth.h image.h interpolate.h key.h \
 			  neurro.h param.h photom.h plist.h poly.h prefs.h \
 			  preflist.h psf.h retina.h sexhead1.h sexhead.h \
-			  sexheadsc.h som.h types.h weight.h winpos.h
+			  sexheadsc.h som.h types.h weight.h winpos.h xml.h
 sex_LDADD		= $(top_builddir)/src/fits/libfits.a $(top_builddir)/src/wcs/libwcs_c.a
 DATE=`date +"%Y-%m-%d"`
