@@ -28,9 +28,9 @@
 #endif
 
 /*-------------------------------- initialization ---------------------------*/
-int	idummy;
+ int	idummy;
 
-pkeystruct key[] =
+ pkeystruct key[] =
  {
   {"ANALYSIS_THRESH", P_FLOATLIST, prefs.thresh, 0,0, -BIG, BIG,
     {""}, 1, 2, &prefs.nthresh},

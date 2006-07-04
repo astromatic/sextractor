@@ -123,7 +123,7 @@ typedef struct
   char		stime_start[12];			/* SCAMP start time */
   char		sdate_end[12];				/* SCAMP end date */
   char		stime_end[12];				/* SCAMP end time */
-  int		time_diff;				/* Execution time */
+  double	time_diff;				/* Execution time */
 /*----- CHECK-images */
   int		check_flag;				/* CHECK-image flag */
   checkenum    	check_type[MAXCHECK];		       	/* check-image types */

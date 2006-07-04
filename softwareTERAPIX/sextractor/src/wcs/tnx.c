@@ -52,7 +52,7 @@ tnxaxisstruct	*read_tnxaxis(char *tnxstr)
     {
     if (!(tnxaxis=malloc(sizeof(tnxaxisstruct))))
       return NULL;
-    tnxaxis->type = (int)(atof(strtok(pstr, " "))+0.5);
+    tnxaxis->type = (int)(atof(strtok_r(pstr, " ", &ptr))+0.5);
     tnxaxis->xorder = (pstr=strtok_r(NULL, " ", &ptr))?
 			(int)(atof(pstr)+0.5) : 0;
     tnxaxis->yorder = (pstr=strtok_r(NULL, " ", &ptr))?
@@ -90,7 +90,7 @@ tnxaxisstruct	*read_tnxaxis(char *tnxstr)
 /*-- Now read the mapping coefficients */
     if (!(tnxaxis->coeff=malloc(tnxaxis->ncoeff*sizeof(double))))
       return NULL;
-    for (i=0; i<tnxaxis->ncoeff && (pstr=strtok(NULL, " ")); i++)
+    for (i=0; i<tnxaxis->ncoeff && (pstr=strtok_r(NULL, " ", &ptr)); i++)
       tnxaxis->coeff[i] = atof(pstr);
     if (i!=tnxaxis->ncoeff)
       return NULL;

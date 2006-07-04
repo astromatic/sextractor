@@ -9,7 +9,7 @@
 *
 *	Contents:	main program.
 *
-*	Last modify:	03/07/2006
+*	Last modify:	04/07/2006
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -374,7 +374,8 @@ void	makeit()
 
 /* Update XML data */
   if (prefs.xml_flag)
-    update_xml();
+    update_xml(&thecat, dfield? dfield:field, field,
+	dwfield? dwfield:wfield, wfield);
 
 
 /*-- Close ASSOC routines */

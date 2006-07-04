@@ -9,7 +9,7 @@
 *
 *	Contents:	Command-line parsing.
 *
-*	Last modify:	03/07/2006
+*	Last modify:	04/07/2006
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -119,7 +119,7 @@ int	main(int argc, char *argv[])
   makeit();
 
   NFPRINTF(OUTPUT, "");
-  NPRINTF(OUTPUT, "> All done (in %d s)\n", prefs.time_diff);
+  NPRINTF(OUTPUT, "> All done (in %.0f s)\n", prefs.time_diff);
 
   return EXIT_SUCCESS;
   }
