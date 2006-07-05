@@ -10,7 +10,7 @@
 *	Contents:       Handle TNX astrometric format (from IRAF).
 *
 *
-*	Last modify:	29/12/2004
+*	Last modify:	04/07/2006
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -37,7 +37,7 @@ INPUT	String containing the TNX info.
 OUTPUT	TNXAXIS structure if OK, or NULL in case of error.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	29/12/2004
+VERSION	04/07/2006
  ***/
 
 tnxaxisstruct	*read_tnxaxis(char *tnxstr)

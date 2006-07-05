@@ -150,64 +150,166 @@ int	write_xml(void)
   fprintf(file, " <user type=\"char\">%s</user>\n", psuser);
   fprintf(file, " <host type=\"char\">%s</host>\n", pshost);
   fprintf(file, " <path type=\"char\">%s</path>\n", pspath);
-  fprintf(file, " <catalog_name type=\"char\">%s</catalog_name>\n",
+  fprintf(file, " <CONFIG>\n");
+  fprintf(file, "  <catalog_name type=\"char\">%s</catalog_name>\n",
     	prefs.cat_name);
-  fprintf(file, " <catalog_type type=\"char\">%s</catalog_type>\n",
+  fprintf(file, "  <catalog_type type=\"char\">%s</catalog_type>\n",
     	key[findkeys("CATALOG_TYPE",keylist,
 			FIND_STRICT)].keylist[prefs.cat_type]);
-  fprintf(file, " <parameters_name type=\"char\">%s</parameters_name>\n",
+  fprintf(file, "  <parameters_name type=\"char\">%s</parameters_name>\n",
     	prefs.param_name);
-  fprintf(file, " <detect_type type=\"char\">%s</detect_type>\n",
+  fprintf(file, "  <detect_type type=\"char\">%s</detect_type>\n",
     key[findkeys("DETECT_TYPE",keylist,
 			FIND_STRICT)].keylist[prefs.detect_type]);
-  fprintf(file, " <detect_minarea type=\"int\">%d</detect_minarea>\n",
+  fprintf(file, "  <detect_minarea type=\"int\">%d</detect_minarea>\n",
 	prefs.ext_minarea);
-  fprintf(file, " <deblend_nthresh type=\"int\">%d</deblend_nthresh>\n",
+  fprintf(file, "  <deblend_nthresh type=\"int\">%d</deblend_nthresh>\n",
 	prefs.deblend_nthresh);
-  fprintf(file, " <deblend_mincont type=\"float\">%g</deblend_mincont>\n",
+  fprintf(file, "  <deblend_mincont type=\"float\">%g</deblend_mincont>\n",
 	prefs.deblend_mincont);
-  fprintf(file, " <filter_flag type=\"bool\">%c</filter_flag>\n",
+  fprintf(file, "  <filter_flag type=\"bool\">%c</filter_flag>\n",
     	prefs.filter_flag? 'T':'F');
-  fprintf(file, " <filter_name type=\"char\">%s</filter_name>\n",
+  fprintf(file, "  <filter_name type=\"char\">%s</filter_name>\n",
     	prefs.filter_name);
-  fprintf(file, " <clean_flag type=\"bool\">%c</clean_flag>\n",
+  fprintf(file, "  <clean_flag type=\"bool\">%c</clean_flag>\n",
     	prefs.clean_flag? 'T':'F');
-  fprintf(file, " <clean_param type=\"float\">%g</clean_param>\n",
+  fprintf(file, "  <clean_param type=\"float\">%g</clean_param>\n",
 	prefs.clean_param);
-  fprintf(file, " <mask_type type=\"char\">%s</mask_type>\n",
+  fprintf(file, "  <mask_type type=\"char\">%s</mask_type>\n",
 	key[findkeys("MASK_TYPE",keylist,
 			FIND_STRICT)].keylist[prefs.mask_type]);
-  fprintf(file, " <weight_gain type=\"bool\">%c</weight_gain>\n",
+  fprintf(file, "  <weight_gain type=\"bool\">%c</weight_gain>\n",
     	prefs.weightgain_flag? 'T':'F');
-  fprintf(file, " <nextens type=\"int\">%d</nextens>\n", nxmlmax);
-  fprintf(file, " <DETECTION_IMAGE>\n");
-  fprintf(file, "  <image_name type=\"char\">%s</image_name>\n",
+  for (n=0; n<prefs.naper; n++)
+    fprintf(file, "  <phot_apertures%d type=\"float\">%g</phot_apertures%d>\n",
+	n+1, prefs.apert[n], n+1);
+  for (n=0; n<prefs.nautoparam; n++)
+    fprintf(file, "  <phot_autoparams%d type=\"float\">%g</phot_autoparams%d>\n",
+	n+1, prefs.autoparam[n], n+1);
+  for (n=0; n<prefs.npetroparam; n++)
+    fprintf(file, "  <phot_petroparams%d type=\"float\">%g</phot_petroparams%d>\n",
+	n+1, prefs.petroparam[n], n+1);
+  for (n=0; n<prefs.nautoaper; n++)
+    fprintf(file, "  <phot_autoapers%d type=\"float\">%g</phot_autoapers%d>\n",
+	n+1, prefs.autoaper[n], n+1);
+  for (n=0; n<prefs.nflux_frac; n++)
+    fprintf(file, "  <phot_fluxfrac%d type=\"float\">%g</phot_fluxfrac%d>\n",
+	n+1, prefs.flux_frac[n], n+1);
+  fprintf(file, "  <satur_level type=\"float\">%g</satur_level>\n",
+	prefs.satur_level);
+  fprintf(file, "  <mag_zeropoint type=\"float\">%g</mag_zeropoint>\n",
+	prefs.mag_zeropoint);
+  fprintf(file, "  <mag_gamma type=\"float\">%g</mag_gamma>\n",
+	prefs.mag_gamma);
+  fprintf(file, "  <gain type=\"float\">%g</gain>\n",
+	prefs.gain);
+  fprintf(file, "  <pixel_scale type=\"float\">%g</pixel_scale>\n",
+	prefs.pixel_scale);
+  fprintf(file, "  <seeing_fwhm type=\"float\">%g</seeing_fwhm>\n",
+	prefs.seeing_fwhm);
+  fprintf(file, "  <starnnw_name type=\"char\">%s</starnnw_name>\n",
+    	prefs.nnw_name);
+  for (n=0; n<prefs.nbacksize; n++)
+    fprintf(file, "  <back_size%d type=\"int\">%d</back_size%d>\n",
+	n+1, prefs.backsize[n], n+1);
+  for (n=0; n<prefs.nbackfsize; n++)
+    fprintf(file, "  <back_filtersize%d type=\"int\">%d</back_filtersize%d>\n",
+	n+1, prefs.backfsize[n], n+1);
+  fprintf(file, "  <backphoto_type type=\"char\">%s</backphoto_type>\n",
+    key[findkeys("BACKPHOTO_TYPE",keylist,
+			FIND_STRICT)].keylist[prefs.pback_type]);
+  fprintf(file, "  <backphoto_thick type=\"int\">%d</backphoto_thick>\n",
+	prefs.pback_size);
+  fprintf(file, "  <back_filtthresh type=\"float\">%g</back_filtthresh>\n",
+	prefs.backfthresh);
+  fprintf(file, "  <memory_objstack type=\"int\">%d</memory_objstack>\n",
+	prefs.clean_stacksize);
+  fprintf(file, "  <memory_pixstack type=\"int\">%d</memory_pixstack>\n",
+	prefs.mem_pixstack);
+  fprintf(file, "  <memory_bufsize type=\"int\">%d</memory_bufsize>\n",
+	prefs.mem_bufsize);
+  fprintf(file, "  <assoc_name type=\"char\">%s</assoc_name>\n",
+    	prefs.assoc_name);
+  for (n=0; n<prefs.nassoc_data; n++)
+    fprintf(file, "  <assoc_data%d type=\"int\">%d</assoc_data%d>\n",
+	n+1, prefs.assoc_data[n], n+1);
+  for (n=0; n<prefs.nassoc_param; n++)
+    fprintf(file, "  <assoc_params%d type=\"int\">%d</assoc_params%d>\n",
+	n+1, prefs.assoc_param[n], n+1);
+  fprintf(file, "  <assoc_radius type=\"float\">%g</assoc_radius>\n",
+	prefs.assoc_radius);
+  fprintf(file, "  <assoc_type type=\"char\">%s</assoc_type>\n",
+    key[findkeys("ASSOC_TYPE",keylist,
+			FIND_STRICT)].keylist[prefs.assoc_type]);
+  fprintf(file, "  <assocselec_type type=\"char\">%s</assocselec_type>\n",
+    key[findkeys("ASSOCSELEC_TYPE",keylist,
+			FIND_STRICT)].keylist[prefs.assocselec_type]);
+  fprintf(file, "  <fits_unsigned type=\"bool\">%c</fits_unsigned>\n",
+    	prefs.fitsunsigned_flag? 'T':'F');
+  fprintf(file, "  <DETECTION_IMAGE>\n");
+  fprintf(file, "   <image_name type=\"char\">%s</image_name>\n",
     	prefs.image_name[0]);
-  fprintf(file, "  <thresh_type type=\"char\">%s</thresh_type>\n",
+  fprintf(file, "   <thresh_type type=\"char\">%s</thresh_type>\n",
 	key[findkeys("THRESH_TYPE",keylist,
 			FIND_STRICT)].keylist[prefs.thresh_type[0]]);
-  fprintf(file, "  <weight_type type=\"char\">%s</weight_type>\n",
+  fprintf(file, "   <weight_type type=\"char\">%s</weight_type>\n",
 	key[findkeys("WEIGHT_TYPE",keylist,
 			FIND_STRICT)].keylist[prefs.weight_type[0]]);
-  fprintf(file, "  <weight_image type=\"char\">%s</weight_image>\n",
+  fprintf(file, "   <weight_image type=\"char\">%s</weight_image>\n",
     	prefs.wimage_name[0]);
-  fprintf(file, "  <weight_thresh type=\"float\">%g</weight_thresh>\n",
+  fprintf(file, "   <weight_thresh type=\"float\">%g</weight_thresh>\n",
 	prefs.weight_thresh[0]);
-  fprintf(file, " </DETECTION_IMAGE>\n");
-  fprintf(file, " <MEASUREMENT_IMAGE>\n");
-  fprintf(file, "  <image_name type=\"char\">%s</image_name>\n",
+  fprintf(file, "   <back_type type=\"char\">%s</back_type>\n",
+	key[findkeys("BACK_TYPE",keylist,
+			FIND_STRICT)].keylist[prefs.back_type[0]]);
+  fprintf(file, "   <back_value type=\"float\">%g</back_value>\n",
+	prefs.back_val[0]);
+  fprintf(file, "   <interp_maxxlag>%d</interp_maxxlag>\n",
+	prefs.interp_xtimeout[0]);
+  fprintf(file, "   <interp_maxylag>%d</interp_maxylag>\n",
+	prefs.interp_ytimeout[0]);
+  fprintf(file, "   <interp_type type=\"char\">%s</interp_type>\n",
+    key[findkeys("INTERP_TYPE",keylist,
+			FIND_STRICT)].keylist[prefs.interp_type[0]]);
+  fprintf(file, "  </DETECTION_IMAGE>\n");
+  fprintf(file, "  <MEASUREMENT_IMAGE>\n");
+  fprintf(file, "   <image_name type=\"char\">%s</image_name>\n",
     	prefs.image_name[1]? prefs.image_name[1] : prefs.image_name[0]);
-  fprintf(file, "  <thresh_type type=\"char\">%s</thresh_type>\n",
+  fprintf(file, "   <thresh_type type=\"char\">%s</thresh_type>\n",
 	key[findkeys("THRESH_TYPE",keylist,
 			FIND_STRICT)].keylist[prefs.thresh_type[1]]);
-  fprintf(file, "  <weight_type type=\"char\">%s</weight_type>\n",
+  fprintf(file, "   <weight_type type=\"char\">%s</weight_type>\n",
 	key[findkeys("WEIGHT_TYPE",keylist,
 			FIND_STRICT)].keylist[prefs.weight_type[1]]);
-  fprintf(file, "  <weight_image type=\"char\">%s</weight_image>\n",
+  fprintf(file, "   <weight_image type=\"char\">%s</weight_image>\n",
     	prefs.wimage_name[1]? prefs.wimage_name[1] : prefs.wimage_name[0]);
-  fprintf(file, "  <weight_thresh type=\"float\">%g</weight_thresh>\n",
+  fprintf(file, "   <weight_thresh type=\"float\">%g</weight_thresh>\n",
 	prefs.weight_thresh[1]);
-  fprintf(file, " </MEASUREMENT_IMAGE>\n");
+  fprintf(file, "   <back_type type=\"char\">%s</back_type>\n",
+	key[findkeys("BACK_TYPE",keylist,
+			FIND_STRICT)].keylist[prefs.back_type[1]]);
+  fprintf(file, "   <back_value type=\"float\">%g</back_value>\n",
+	prefs.back_val[1]);
+  fprintf(file, "   <interp_maxxlag>%d</interp_maxxlag>\n",
+	prefs.interp_xtimeout[1]);
+  fprintf(file, "   <interp_maxylag>%d</interp_maxylag>\n",
+	prefs.interp_ytimeout[1]);
+  fprintf(file, "   <interp_type type=\"char\">%s</interp_type>\n",
+    key[findkeys("INTERP_TYPE",keylist,
+			FIND_STRICT)].keylist[prefs.interp_type[1]]);
+  fprintf(file, "  </MEASUREMENT_IMAGE>\n");
+  for (n=0; n<prefs.nimaflag; n++)
+    {
+    fprintf(file, " <FLAG_IMAGE>\n");
+    fprintf(file, "  <image_name type=\"char\">%s</image_name>\n",
+    	prefs.fimage_name[n]);
+    fprintf(file, "  <flag_type type=\"char\">%s</flag_type>\n",
+	key[findkeys("FLAG_TYPE",keylist,
+			FIND_STRICT)].keylist[prefs.flag_type[n]]);
+    fprintf(file, " </FLAG_IMAGE>\n");
+    }
+  fprintf(file, " </CONFIG>\n");
+  fprintf(file, " <nextens type=\"int\">%d</nextens>\n", nxmlmax);
   for (n=0; n<nxmlmax; n++)
     {
     fprintf(file, " <EXT_PROPS>\n");
