@@ -9,7 +9,7 @@
 *
 *	Contents:	low-level functions for writing LDAC FITS catalogs.
 *
-*	Last modify:	16/12/2004
+*	Last modify:	07/07/2006
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -385,7 +385,7 @@ INPUT	Output stream
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP & Leiden observatory)
-VERSION	13/06/97
+VERSION	07/07/2006
  ***/
 void	print_obj(FILE *stream, tabstruct *tab)
 
@@ -442,7 +442,7 @@ void	print_obj(FILE *stream, tabstruct *tab)
           break;
         default:
           error(EXIT_FAILURE, "*FATAL ERROR*: Unknown FITS type in ",
-		"show_keys()");
+		"print_obj()");
         }
     if (k)
       putc(' ', stream);
@@ -453,3 +453,83 @@ void	print_obj(FILE *stream, tabstruct *tab)
   return;
   }
 
+
+/****** voprint_obj ***********************************************************
+PROTO	void voprint_obj(FILE *stream, tabstruct *tab)
+PURPOSE	Print one individual source to the output stream in VOTable format
+INPUT	Output stream
+	Table structure.
+OUTPUT	-.
+NOTES	-.
+AUTHOR	G. TISSIER (IAP)
+VERSION	04/09/2004
+ ***/
+void	voprint_obj(FILE *stream, tabstruct *tab)
+
+  {
+   keystruct	*key;
+   char		*ptr;
+   int		i,k, esize;
+
+  if (!(key = tab->key))
+    error(EXIT_FAILURE, "*Error*: no key to print in table ", tab->extname);
+
+  fprintf(stream, "      <TR>");
+
+  for (k=tab->nkey; k--; key = key->nextkey)
+    {
+    fprintf(stream, "<TD>");
+
+    esize = t_size[key->ttype];
+    ptr = key->ptr;
+    for (i = key->nbytes/esize; i--; ptr += esize)
+      switch(key->ttype)
+        {
+        case T_SHORT:
+          fprintf(stream, *key->printf?key->printf:"%d", *(short *)ptr);
+          if (i)
+            putc(' ', stream);
+          break;
+        case T_LONG:
+          fprintf(stream, *key->printf?key->printf:"%d", *(int *)ptr);
+          if (i)
+            putc(' ', stream);
+          break;
+        case T_FLOAT:
+          fprintf(stream, *key->printf?key->printf:"%g", *(float *)ptr);
+          if (i)
+            putc(' ', stream);
+          break;
+        case T_DOUBLE:
+          fprintf(stream, *key->printf?key->printf:"%f", *(double *)ptr);
+          if (i)
+            putc(' ', stream);
+          break;
+        case T_BYTE:
+          if (key->htype==H_BOOL)
+            {
+            if (*ptr)
+              fprintf(stream, "T");
+            else
+              fprintf(stream, "F");
+            }
+          else
+            fprintf(stream, key->printf?key->printf:"%d", (int)*ptr);
+          if (i)
+            putc(' ', stream);
+          break;
+        case T_STRING:
+          fprintf(stream, "%c", (int)*ptr);
+          break;
+        default:
+          error(EXIT_FAILURE, "*FATAL ERROR*: Unknown FITS type in ",
+		"voprint_obj()");
+        }
+
+    fprintf(stream, "</TD>");
+    }
+
+  fprintf(stream, "</TR>\n");
+
+  return;
+  }

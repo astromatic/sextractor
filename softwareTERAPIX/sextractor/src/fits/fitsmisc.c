@@ -9,7 +9,7 @@
 *
 *	Contents:	miscellaneous functions.
 *
-*	Last modify:	14/05/2003
+*	Last modify:	07/07/2006
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -30,6 +30,8 @@
 #include	"fitscat_defs.h"
 #include	"fitscat.h"
 
+void	(*errorfunc)(char *msg1, char *msg2) = NULL;
+
 /********************************* error ************************************/
 /*
 I hope it will never be used!
@@ -41,7 +43,22 @@ void	error(int num, char *msg1, char *msg2)
 #endif
 
   fprintf(stderr, "\n> %s%s\n\n",msg1,msg2);
+  if (num && errorfunc)
+    errorfunc(msg1, msg2);
   exit(num);
+  }
+
+
+/**************************** error_installfunc *****************************/
+/*
+I hope it will never be used!
+*/
+void	error_installfunc(void (*func)(char *msg1, char *msg2))
+  {
+  if (func)
+    errorfunc = func;
+
+  return;
   }
 
 
@@ -51,7 +68,7 @@ Print a warning message on screen.
 */
 void    warning(char *msg1, char *msg2)
   {
-  fprintf(OUTPUT, "\n> WARNING: %s%s\n\n",msg1,msg2);
+  fprintf(stderr, "\n> WARNING: %s%s\n\n",msg1,msg2);
   return;
   }
 

@@ -9,7 +9,7 @@
 *
 *	Contents:	Keywords for the configuration file.
 *
-*	Last modify:	12/01/2006
+*	Last modify:	06/07/2006
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -72,7 +72,7 @@ typedef struct
   int		dweight_flag;				/* detection weight? */
   int		weightgain_flag;			/* weight gain? */
 /*----- photometry */
-  enum	{CAT_NONE, ASCII, ASCII_HEAD, ASCII_SKYCAT,
+  enum	{CAT_NONE, ASCII, ASCII_HEAD, ASCII_SKYCAT, ASCII_VO,
 	FITS_LDAC, FITS_TPX, FITS_10}
 		cat_type;				/* type of catalog */
   enum	{PNONE, FIXED, AUTO}		apert_type;	/* type of aperture */

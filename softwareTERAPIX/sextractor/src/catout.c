@@ -9,7 +9,7 @@
 *
 *	Contents:	functions for output of catalog data.
 *
-*	Last modify:	19/10/2005
+*	Last modify:	07/07/2006
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -335,13 +335,14 @@ Initialize the catalog header
 void	initcat(void)
   {
    keystruct	*key;
-   int		i, n;
+   char		datatype[40], arraysize[40], str[40];
+   int		d, i, n;
 
   if (prefs.cat_type == CAT_NONE)
     return;
 
-  if (prefs.cat_type == ASCII_HEAD || prefs.cat_type == ASCII
-      || prefs.cat_type == ASCII_SKYCAT)
+  if (prefs.cat_type == ASCII_HEAD || prefs.cat_type == ASCII ||
+	prefs.cat_type == ASCII_SKYCAT || prefs.cat_type == ASCII_VO)
     {
     if (prefs.pipe_flag)
       ascfile = stdout;
@@ -375,6 +376,65 @@ void	initcat(void)
         strcpy(key->printf, gstr);
         }
       fprintf(ascfile, "\n------------------\n");
+      }
+    else if (prefs.cat_type == ASCII_VO && (key = objtab->key)) 
+      {
+      fprintf(ascfile, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+      fprintf(ascfile, "<VOTABLE "
+	"xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" "
+	"xsi:noNamespaceSchemaLocation="
+	"\"xmlns=http://www.ivoa.net/xml/VOTable/v1.1\">\n");
+        fprintf(ascfile, "<DESCRIPTION>\n");
+        fprintf(ascfile, "  SExtractor catalog\n");
+        fprintf(ascfile, "</DESCRIPTION>\n");
+        fprintf(ascfile, "<!-- VOTable description at "
+		"http://vizier.u-strasbg.fr/doc/VOTable/ -->\n");
+        fprintf(ascfile,
+		"<RESOURCE ID=\"AVOCat\" name=\"%s\">\n", prefs.image_name[0]);
+        fprintf(ascfile,
+		"  <DESCRIPTION>Catalog of image extracted sources"
+		"</DESCRIPTION>\n");
+        fprintf(ascfile, "  <TABLE ID=\"Source_List\" name=\"%s\">\n",
+		prefs.image_name[0]);
+        fprintf(ascfile,
+		"    <DESCRIPTION>Image detected sources</DESCRIPTION>\n");
+        fprintf(ascfile, "    <!-- RowName:  Each parameter of SExtractor "
+		"parameter file (default is default.param) -->\n");
+        fprintf(ascfile,
+	"    <!-- Now comes the definition of each field -->\n");
+        for (i=0; i++<objtab->nkey; key=key->nextkey)
+          {
+/*--------- indicate datatype, arraysize, width and precision attributes */
+/*-------- Handle multidimensional arrays */
+           arraysize[0] = '\0';
+          if (key->naxis>1)
+            {
+            for (d=0; d<key->naxis; d++)
+              {
+              sprintf(str, "%s%d", d?"x":" arraysize=\"", key->naxisn[d]);
+              strcat(arraysize, str);
+              }
+            strcat(arraysize, "\"");
+            }
+          switch(key->ttype)
+            {
+            case T_BYTE:	strcpy(datatype, "unsignedByte"); break;
+            case T_SHORT:	strcpy(datatype, "short"); break;
+            case T_LONG:	strcpy(datatype, "int"); break;
+            case T_FLOAT:	strcpy(datatype, "float"); break;
+            case T_DOUBLE:	strcpy(datatype, "double"); break;
+            default:
+              error (EXIT_FAILURE, "*Internal Error*: Unknown datatype in ",
+		"initcat()");
+            }
+          fprintf(ascfile, "    <FIELD name=\"%s\" ucd=\"%s\" "
+		"datatype=\"%s\" unit=\"%s\" %s>\n",
+		key->name, key->voucd, datatype,key->vounit, arraysize);
+          fprintf(ascfile, "      <DESCRIPTION>%s</DESCRIPTION>\n",
+		key->comment);
+          fprintf(ascfile, "    </FIELD>\n");
+          }
+        fprintf(ascfile, "    <DATA><TABLEDATA>\n");
       }
     }
   else
@@ -421,8 +481,8 @@ void	reinitcat(picstruct *field)
   if (prefs.cat_type == CAT_NONE)
     return;
 
-  if (prefs.cat_type != ASCII_HEAD && prefs.cat_type != ASCII
-      && prefs.cat_type != ASCII_SKYCAT)
+  if (prefs.cat_type != ASCII_HEAD && prefs.cat_type != ASCII &&
+	prefs.cat_type != ASCII_SKYCAT && prefs.cat_type != ASCII_VO)
     {
     update_tab(objtab);
     switch(prefs.cat_type)
@@ -526,6 +586,9 @@ void	writecat(int n, objliststruct *objlist)
     case ASCII_SKYCAT:
       print_obj(ascfile, objtab);
       break;
+    case ASCII_VO:
+      voprint_obj(ascfile, objtab);
+      break;
 
     case CAT_NONE:
       break;
@@ -556,9 +619,19 @@ void	endcat()
       break;
 
     case ASCII_SKYCAT:
+      fprintf(ascfile, skycattail);
       if (!prefs.pipe_flag)
         fclose(ascfile);
-      fprintf(ascfile, skycattail);
+      break;
+
+    case ASCII_VO:
+      fprintf(ascfile, "    </TABLEDATA></DATA>\n");
+      fprintf(ascfile, "  </TABLE>\n");
+      fprintf(ascfile, "</RESOURCE>\n");
+      fprintf(ascfile, "</VOTABLE>\n");
+
+      if (!prefs.pipe_flag)
+        fclose(ascfile);
       break;
 
     case FITS_LDAC:
@@ -604,6 +677,7 @@ void	reendcat()
     case ASCII:
     case ASCII_HEAD:
     case ASCII_SKYCAT:
+    case ASCII_VO:
       break;
 
     case FITS_LDAC:

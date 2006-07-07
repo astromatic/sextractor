@@ -9,7 +9,7 @@
 *
 *	Contents:	Astrometrical computations.
 *
-*	Last modify:	02/07/2006
+*	Last modify:	07/07/2006
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -131,7 +131,7 @@ void	initastrom(picstruct *field)
 /*-- Simplify the original FITS PC matrix */
     lm = as->linmat;
     for (l=0; l<naxis*naxis; l++)
-      lm[l] = as->pc[l]*as->cdelt[l%naxis];
+      lm[l] = as->pc[l]*as->cdelt[l/naxis];
 /*-- Check valid only in 2D */
     if ((as->lindet = lm[0]*lm[3] - lm[1]*lm[2]) == 0.0)
       warning ("Null determinant in the global distortion matrix:\n",

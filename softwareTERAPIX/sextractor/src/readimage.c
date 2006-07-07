@@ -9,7 +9,7 @@
 *
 *	Contents:	functions for input of image data.
 *
-*	Last modify:	02/07/2006
+*	Last modify:	07/07/2006
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -628,12 +628,11 @@ void	readimagehead(picstruct *field)
     if (fitsnfind(buf, "CD1_1", n))
       {
 /*---- If CD keywords exist, use them for the linear mapping terms... */
-
       for (l=0; l<naxis; l++)
         for (j=0; j<naxis; j++)
           {
           sprintf(str, "CD%d_%d", l+1, j+1);
-          as->pc[l*naxis+j] = FITSTOF(str, l==j?1.0:0.0)/as->cdelt[j];
+          as->pc[l*naxis+j] = FITSTOF(str, l==j?1.0:0.0)/as->cdelt[l];
           }
       }
     else if (fitsnfind(buf, "PC001001", n))

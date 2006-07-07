@@ -9,7 +9,7 @@
 *
 *	Contents:	XML logging.
 *
-*	Last modify:	04/07/2006
+*	Last modify:	06/07/2006
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -34,7 +34,7 @@
 
 extern pkeystruct	key[];	
 extern char		keylist[][32];
-xmlstruct		*xmlstack;
+xmlstruct		*xmlstack = NULL;
 int			nxml, nxmlmax;
 
 /****** init_xml ************************************************************
@@ -100,26 +100,19 @@ int	update_xml(sexcatstruct *sexcat, picstruct *dfield, picstruct *field,
   }
 
 /****** write_xml ************************************************************
-PROTO	int	write_xml(void);
+PROTO	int	write_xml(void)
 PURPOSE	Save meta-data to XML files
-INPUT	Pointer to the array of fields,
-	number of fields,
-	pointer to the array of field groups,
-	number of field groups,
+INPUT	-.
 OUTPUT	RETURN_OK if everything went fine, RETURN_ERROR otherwise.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	04/07/2006
+VERSION	06/07/2006
  ***/
 int	write_xml(void)
   {
    FILE			*file;
-   time_t		thetime;
    char			*pspath,*psuser, *pshost;
    int			n;
-
-/* Processing date and time */
-  thetime = time(NULL);
 
 /* Username */
   psuser = pspath = pshost = NULL;
@@ -150,6 +143,14 @@ int	write_xml(void)
   fprintf(file, " <user type=\"char\">%s</user>\n", psuser);
   fprintf(file, " <host type=\"char\">%s</host>\n", pshost);
   fprintf(file, " <path type=\"char\">%s</path>\n", pspath);
+  fprintf(file, " <DETECTION_IMAGE>\n");
+  fprintf(file, "  <image_name type=\"char\">%s</image_name>\n",
+    	prefs.image_name[0]);
+  fprintf(file, " </DETECTION_IMAGE>\n");
+  fprintf(file, " <MEASUREMENT_IMAGE>\n");
+  fprintf(file, "  <image_name type=\"char\">%s</image_name>\n",
+    	prefs.image_name[1]? prefs.image_name[1] : prefs.image_name[0]);
+  fprintf(file, " </MEASUREMENT_IMAGE>\n");
   fprintf(file, " <CONFIG>\n");
   fprintf(file, "  <catalog_name type=\"char\">%s</catalog_name>\n",
     	prefs.cat_name);
@@ -222,6 +223,15 @@ int	write_xml(void)
 	prefs.pback_size);
   fprintf(file, "  <back_filtthresh type=\"float\">%g</back_filtthresh>\n",
 	prefs.backfthresh);
+  for (n=0; n<prefs.ncheck_type; n++)
+    {
+    fprintf(file, "  <checkimage_type%d type=\"char\">%s</checkimage_type%d>\n",
+	n+1, key[findkeys("CHECKIMAGE_TYPE",keylist,
+			FIND_STRICT)].keylist[prefs.check_type[n]], n+1);
+    if (prefs.check_type[n] != CHECK_NONE)
+      fprintf(file, " <checkimage_name%d type=\"char\">%s</checkimage_name%d>\n",
+    	n+1, prefs.check_name[n], n+1);
+    }
   fprintf(file, "  <memory_objstack type=\"int\">%d</memory_objstack>\n",
 	prefs.clean_stacksize);
   fprintf(file, "  <memory_pixstack type=\"int\">%d</memory_pixstack>\n",
@@ -244,18 +254,30 @@ int	write_xml(void)
   fprintf(file, "  <assocselec_type type=\"char\">%s</assocselec_type>\n",
     key[findkeys("ASSOCSELEC_TYPE",keylist,
 			FIND_STRICT)].keylist[prefs.assocselec_type]);
+  fprintf(file, "  <verbose_type type=\"char\">%s</verbose_type>\n",
+    key[findkeys("VERBOSE_TYPE",keylist,
+			FIND_STRICT)].keylist[prefs.verbose_type]);
   fprintf(file, "  <fits_unsigned type=\"bool\">%c</fits_unsigned>\n",
     	prefs.fitsunsigned_flag? 'T':'F');
+  fprintf(file, "  <psf_name type=\"char\">%s</psf_name>\n",
+    	prefs.psf_name[0]);
+  fprintf(file, "  <psf_nmax type=\"int\">%d</psf_nmax>\n",
+	prefs.psf_npsfmax);
+  fprintf(file, "  <psfdisplay_type type=\"char\">%s</psfdisplay_type>\n",
+    key[findkeys("PSFDISPLAY_TYPE",keylist,
+			FIND_STRICT)].keylist[prefs.psfdisplay_type]);
+  fprintf(file, "  <som_name type=\"char\">%s</som_name>\n",
+    	prefs.som_name);
   fprintf(file, "  <DETECTION_IMAGE>\n");
-  fprintf(file, "   <image_name type=\"char\">%s</image_name>\n",
-    	prefs.image_name[0]);
   fprintf(file, "   <thresh_type type=\"char\">%s</thresh_type>\n",
 	key[findkeys("THRESH_TYPE",keylist,
 			FIND_STRICT)].keylist[prefs.thresh_type[0]]);
   fprintf(file, "   <weight_type type=\"char\">%s</weight_type>\n",
 	key[findkeys("WEIGHT_TYPE",keylist,
 			FIND_STRICT)].keylist[prefs.weight_type[0]]);
-  fprintf(file, "   <weight_image type=\"char\">%s</weight_image>\n",
+  if (prefs.weight_type[0] != WEIGHT_NONE
+	&& prefs.weight_type[0] != WEIGHT_FROMBACK)
+    fprintf(file, "   <weight_image type=\"char\">%s</weight_image>\n",
     	prefs.wimage_name[0]);
   fprintf(file, "   <weight_thresh type=\"float\">%g</weight_thresh>\n",
 	prefs.weight_thresh[0]);
@@ -273,16 +295,16 @@ int	write_xml(void)
 			FIND_STRICT)].keylist[prefs.interp_type[0]]);
   fprintf(file, "  </DETECTION_IMAGE>\n");
   fprintf(file, "  <MEASUREMENT_IMAGE>\n");
-  fprintf(file, "   <image_name type=\"char\">%s</image_name>\n",
-    	prefs.image_name[1]? prefs.image_name[1] : prefs.image_name[0]);
   fprintf(file, "   <thresh_type type=\"char\">%s</thresh_type>\n",
 	key[findkeys("THRESH_TYPE",keylist,
 			FIND_STRICT)].keylist[prefs.thresh_type[1]]);
   fprintf(file, "   <weight_type type=\"char\">%s</weight_type>\n",
 	key[findkeys("WEIGHT_TYPE",keylist,
 			FIND_STRICT)].keylist[prefs.weight_type[1]]);
-  fprintf(file, "   <weight_image type=\"char\">%s</weight_image>\n",
-    	prefs.wimage_name[1]? prefs.wimage_name[1] : prefs.wimage_name[0]);
+  if (prefs.weight_type[1] != WEIGHT_NONE
+	&& prefs.weight_type[1] != WEIGHT_FROMBACK)
+    fprintf(file, "   <weight_image type=\"char\">%s</weight_image>\n",
+    	prefs.wimage_name[1]);
   fprintf(file, "   <weight_thresh type=\"float\">%g</weight_thresh>\n",
 	prefs.weight_thresh[1]);
   fprintf(file, "   <back_type type=\"char\">%s</back_type>\n",
@@ -363,4 +385,75 @@ int	write_xml(void)
   return RETURN_OK;
   }
 
+
+/****** write_xmlerror ********************************************************
+PROTO	int	write_xmlerror(char *msg1, char *msg2)
+PURPOSE	Save meta-data to a simplified XML file in case of a catched error
+INPUT	a character string,
+	another character string
+OUTPUT	RETURN_OK if everything went fine, RETURN_ERROR otherwise.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	07/07/2006
+ ***/
+void	write_xmlerror(char *msg1, char *msg2)
+  {
+   FILE			*file;
+   time_t		thetime;
+   struct tm		*tm;
+   char			*pspath,*psuser, *pshost;
+
+  if (!prefs.xml_flag)
+    return;
+/* Processing date and time */
+  thetime = time(NULL);
+  tm = localtime(&thetime);
+  sprintf(prefs.sdate_end,"%04d-%02d-%02d",
+        tm->tm_year+1900, tm->tm_mon+1, tm->tm_mday);
+  sprintf(prefs.stime_end,"%02d:%02d:%02d",
+        tm->tm_hour, tm->tm_min, tm->tm_sec);
+
+/* Username */
+  psuser = pspath = pshost = NULL;
+#ifdef HAVE_GETENV
+  if (!(psuser=getenv("USERNAME")))	/* Cygwin,... */
+    psuser = getenv("LOGNAME");		/* Linux,... */
+  pspath = getenv("PWD");
+  pshost = getenv("HOSTNAME");
+#endif
+
+  if ((file = fopen(prefs.xml_name, "wb")) == NULL)
+    return;
+  fprintf(file, "<?xml version=\"1.0\"?>\n");
+  fprintf(file, "<?xml-stylesheet type=\"text/xsl\" href=\"%s\"?>\n",
+	prefs.xsl_name);
+/*
+  fprintf(file, "<!DOCTYPE INFO SYSTEM \"instfile.dtd\">\n");
+*/
+  fprintf(file, "<SOURCE_EXTRACTION>\n");
+  fprintf(file, " <software type=\"char\">%s</software>\n", BANNER);
+  fprintf(file, " <version type=\"char\">%s</version>\n", MYVERSION);
+  fprintf(file, " <date type=\"char\">%s</date>\n", prefs.sdate_end);
+  fprintf(file, " <time type=\"char\">%s</time>\n", prefs.stime_end);
+  fprintf(file, " <nthreads type=\"int\">%d</nthreads>\n",
+    	prefs.nthreads);
+  fprintf(file, " <user type=\"char\">%s</user>\n", psuser);
+  fprintf(file, " <host type=\"char\">%s</host>\n", pshost);
+  fprintf(file, " <path type=\"char\">%s</path>\n", pspath);
+  fprintf(file, " <DETECTION_IMAGE>\n");
+  fprintf(file, "  <image_name type=\"char\">%s</image_name>\n",
+    	prefs.image_name[0]);
+  fprintf(file, " </DETECTION_IMAGE>\n");
+  fprintf(file, " <MEASUREMENT_IMAGE>\n");
+  fprintf(file, "  <image_name type=\"char\">%s</image_name>\n",
+    	prefs.image_name[1]? prefs.image_name[1] : prefs.image_name[0]);
+  fprintf(file, " </MEASUREMENT_IMAGE>\n");
+  fprintf(file, " <ERROR_MSG type=\"char\">%s%s</ERROR_MSG>\n", msg1,msg2);
+  fprintf(file, "</SOURCE_EXTRACTION>\n");
+  fclose(file);
+
+  free(xmlstack);
+
+  return;
+  }
 

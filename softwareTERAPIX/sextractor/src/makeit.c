@@ -40,6 +40,7 @@
 #include	"weight.h"
 #include	"xml.h"
 
+
 /******************************** makeit *************************************/
 /*
 Manage the whole stuff.
@@ -55,6 +56,9 @@ void	makeit()
    time_t		thetimet, thetimet2;
    struct tm		*tm;
    int			i, nok, ntab, next;
+
+/* Install error logging */
+  error_installfunc(write_xmlerror);
 
 /* Processing start date and time */
   thetimet = time(NULL);
