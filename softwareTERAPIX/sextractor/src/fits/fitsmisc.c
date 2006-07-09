@@ -9,7 +9,7 @@
 *
 *	Contents:	miscellaneous functions.
 *
-*	Last modify:	07/07/2006
+*	Last modify:	09/07/2006
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -22,6 +22,7 @@
 #include	<stdio.h>
 #include	<stdlib.h>
 #include	<string.h>
+#include	<time.h>
 
 #ifdef HAVE_MPI
 #include	<mpi.h>
@@ -30,7 +31,9 @@
 #include	"fitscat_defs.h"
 #include	"fitscat.h"
 
-void	(*errorfunc)(char *msg1, char *msg2) = NULL;
+static void	(*errorfunc)(char *msg1, char *msg2) = NULL;
+static char	warning_historystr[WARNING_NMAX][192]={""};
+static int	nwarning = 0, nwarning_history = 0;
 
 /********************************* error ************************************/
 /*
@@ -68,8 +71,34 @@ Print a warning message on screen.
 */
 void    warning(char *msg1, char *msg2)
   {
+   time_t	warntime;
+   struct tm	*tm;
+
+  warntime = time(NULL);
+  tm = localtime(&warntime);
+ 
   fprintf(stderr, "\n> WARNING: %s%s\n\n",msg1,msg2);
+  sprintf(warning_historystr[(nwarning++)%WARNING_NMAX],
+	"%04d-%02d-%02d %02d:%02d:%02d : %.80s%.80s",
+	tm->tm_year+1900, tm->tm_mon+1, tm->tm_mday,
+	tm->tm_hour, tm->tm_min, tm->tm_sec,
+	msg1, msg2);
+
+
   return;
+  }
+
+
+/****************************** warning_history ******************************/
+/*
+Return warning.
+*/
+char    *warning_history(void)
+  {
+  if (nwarning_history >= WARNING_NMAX)
+    return "";
+  return warning_historystr[((nwarning>WARNING_NMAX? (nwarning%WARNING_NMAX):0)
+	+ nwarning_history++)%WARNING_NMAX];
   }
 
 

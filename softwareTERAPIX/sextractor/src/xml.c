@@ -9,7 +9,7 @@
 *
 *	Contents:	XML logging.
 *
-*	Last modify:	06/07/2006
+*	Last modify:	09/07/2006
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -32,10 +32,11 @@
 #include "prefs.h"
 #include "xml.h"
 
-extern pkeystruct	key[];	
-extern char		keylist[][32];
+extern time_t		thetimet,thetimet2;	/* from makeit.c */
+extern pkeystruct	key[];			/* from preflist.h */
+extern char		keylist[][32];		/* from preflist.h */
 xmlstruct		*xmlstack = NULL;
-int			nxml, nxmlmax;
+int			nxml=0, nxmlmax=0;
 
 /****** init_xml ************************************************************
 PROTO	int	init_xml(void)
@@ -106,12 +107,12 @@ INPUT	-.
 OUTPUT	RETURN_OK if everything went fine, RETURN_ERROR otherwise.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	06/07/2006
+VERSION	09/07/2006
  ***/
 int	write_xml(void)
   {
    FILE			*file;
-   char			*pspath,*psuser, *pshost;
+   char			*pspath,*psuser, *pshost, *str;
    int			n;
 
 /* Username */
@@ -377,6 +378,11 @@ int	write_xml(void)
     fprintf(file, "  </MEASUREMENT_IMAGE>\n");
     fprintf(file, " </EXT_PROPS>\n");
     }
+
+/* Warnings */
+  for (str = warning_history(); *str; str = warning_history())
+    fprintf(file, " <WARNING>%s</WARNING>\n", str);
+
   fprintf(file, "</SOURCE_EXTRACTION>\n");
   fclose(file);
 
@@ -394,24 +400,24 @@ INPUT	a character string,
 OUTPUT	RETURN_OK if everything went fine, RETURN_ERROR otherwise.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	07/07/2006
+VERSION	09/07/2006
  ***/
 void	write_xmlerror(char *msg1, char *msg2)
   {
    FILE			*file;
-   time_t		thetime;
    struct tm		*tm;
    char			*pspath,*psuser, *pshost;
 
   if (!prefs.xml_flag)
     return;
 /* Processing date and time */
-  thetime = time(NULL);
-  tm = localtime(&thetime);
+  thetimet2 = time(NULL);
+  tm = localtime(&thetimet2);
   sprintf(prefs.sdate_end,"%04d-%02d-%02d",
         tm->tm_year+1900, tm->tm_mon+1, tm->tm_mday);
   sprintf(prefs.stime_end,"%02d:%02d:%02d",
         tm->tm_hour, tm->tm_min, tm->tm_sec);
+  prefs.time_diff = difftime(thetimet2, thetimet);
 
 /* Username */
   psuser = pspath = pshost = NULL;
@@ -435,6 +441,8 @@ void	write_xmlerror(char *msg1, char *msg2)
   fprintf(file, " <version type=\"char\">%s</version>\n", MYVERSION);
   fprintf(file, " <date type=\"char\">%s</date>\n", prefs.sdate_end);
   fprintf(file, " <time type=\"char\">%s</time>\n", prefs.stime_end);
+  fprintf(file, " <duration type=\"int\" unit=\"s\">%.0f</duration>\n",
+    	prefs.time_diff);
   fprintf(file, " <nthreads type=\"int\">%d</nthreads>\n",
     	prefs.nthreads);
   fprintf(file, " <user type=\"char\">%s</user>\n", psuser);
@@ -448,6 +456,9 @@ void	write_xmlerror(char *msg1, char *msg2)
   fprintf(file, "  <image_name type=\"char\">%s</image_name>\n",
     	prefs.image_name[1]? prefs.image_name[1] : prefs.image_name[0]);
   fprintf(file, " </MEASUREMENT_IMAGE>\n");
+  fprintf(file, " <nextens type=\"int\">%d</nextens>\n", nxmlmax);
+  fprintf(file, " <currextens type=\"int\">%d</currextens>\n",
+	nxml<nxmlmax? nxml+1 : nxml);
   fprintf(file, " <ERROR_MSG type=\"char\">%s%s</ERROR_MSG>\n", msg1,msg2);
   fprintf(file, "</SOURCE_EXTRACTION>\n");
   fclose(file);

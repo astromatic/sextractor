@@ -40,6 +40,7 @@
 #include	"weight.h"
 #include	"xml.h"
 
+time_t	thetimet, thetimet2;
 
 /******************************** makeit *************************************/
 /*
@@ -53,7 +54,6 @@ void	makeit()
    catstruct		*imacat;
    tabstruct		*imatab;
    static time_t        thetime1, thetime2;
-   time_t		thetimet, thetimet2;
    struct tm		*tm;
    int			i, nok, ntab, next;
 
