@@ -9,7 +9,7 @@
 *
 *	Contents:	XML logging.
 *
-*	Last modify:	09/07/2006
+*	Last modify:	10/07/2006
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -107,7 +107,7 @@ INPUT	-.
 OUTPUT	RETURN_OK if everything went fine, RETURN_ERROR otherwise.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	09/07/2006
+VERSION	10/07/2006
  ***/
 int	write_xml(void)
   {
@@ -126,12 +126,11 @@ int	write_xml(void)
 
   if ((file = fopen(prefs.xml_name, "wb")) == NULL)
     return RETURN_ERROR;
+/*
   fprintf(file, "<?xml version=\"1.0\"?>\n");
   fprintf(file, "<?xml-stylesheet type=\"text/xsl\" href=\"%s\"?>\n",
 	prefs.xsl_name);
-/*
   fprintf(file, "<!DOCTYPE INFO SYSTEM \"instfile.dtd\">\n");
-*/
   fprintf(file, "<SOURCE_EXTRACTION>\n");
   fprintf(file, " <software type=\"char\">%s</software>\n", BANNER);
   fprintf(file, " <version type=\"char\">%s</version>\n", MYVERSION);
@@ -153,6 +152,12 @@ int	write_xml(void)
     	prefs.image_name[1]? prefs.image_name[1] : prefs.image_name[0]);
   fprintf(file, " </MEASUREMENT_IMAGE>\n");
   fprintf(file, " <CONFIG>\n");
+  fprintf(file, "  <prefs_name type=\"char\">%s</prefs_name>\n",
+    	prefs.prefs_name);
+  fprintf(file, "  <command_line type=\"char\">%s", prefs.command_line[0]);
+  for (n=1; n<prefs.ncommand_line; n++)
+    fprintf(file, " %s", prefs.command_line[n]);
+  fprintf(file, "</command_line>\n");
   fprintf(file, "  <catalog_name type=\"char\">%s</catalog_name>\n",
     	prefs.cat_name);
   fprintf(file, "  <catalog_type type=\"char\">%s</catalog_type>\n",
@@ -338,6 +343,8 @@ int	write_xml(void)
     fprintf(file, " <EXT_PROPS>\n");
     fprintf(file, "  <extension type=\"int\">%d</extension>\n",
     	xmlstack[n].currext);
+    fprintf(file, "  <date type=\"char\">%s</date>\n", xmlstack[n].ext_date);
+    fprintf(file, "  <time type=\"char\">%s</time>\n", xmlstack[n].ext_time);
     fprintf(file, "  <duration type=\"int\" unit=\"s\">%.0f</duration>\n",
     	xmlstack[n].ext_elapsed);
     fprintf(file, "  <ndetect type=\"int\">%d</ndetect>\n",
@@ -379,11 +386,126 @@ int	write_xml(void)
     fprintf(file, " </EXT_PROPS>\n");
     }
 
-/* Warnings */
   for (str = warning_history(); *str; str = warning_history())
     fprintf(file, " <WARNING>%s</WARNING>\n", str);
-
+*/
   fprintf(file, "</SOURCE_EXTRACTION>\n");
+
+  fprintf(file, "<?xml version=\"1.0\"?>\n");
+  fprintf(file, "<?xml-stylesheet type=\"text/xsl\" href=\"%s\"?>\n",
+	prefs.xsl_name);
+  fprintf(file, "<VOTABLE "
+	"xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" "
+	"xsi:noNamespaceSchemaLocation="
+	"\"xmlns=http://www.ivoa.net/xml/VOTable/v1.1\">\n");
+  fprintf(file, " <RESOURCE name=\"source_extraction\"/>\n");
+  fprintf(file, "  <DESCRIPTION>%s meta-data</DESCRIPTION>\n", BANNER);
+  fprintf(file, "  <PARAM name=\"software\" datatype=\"char\" arraysize=\"*\""
+	" ucd=\"meta.title;meta.software\" value=\"%s\"/>\n",
+	BANNER);
+  fprintf(file, "  <PARAM name=\"version\" datatype=\"char\" arraysize=\"*\""
+	" ucd=\"meta.version;meta.software\" value=\"%s\"/>\n",
+	MYVERSION);
+  fprintf(file, "  <PARAM name=\"soft_url\" datatype=\"char\" arraysize=\"*\""
+	" ucd=\"meta.ref.url;meta.software\" value=\"%s\"/>\n",
+	WEBSITE);
+  fprintf(file, "  <PARAM name=\"soft_auth\" datatype=\"char\" arraysize=\"*\""
+	" ucd=\"meta.bib.author;meta.software\" value=\"%s\"/>\n",
+	"Emmanuel Bertin");
+  fprintf(file, "  <PARAM name=\"soft_ref\" datatype=\"char\" arraysize=\"*\""
+	" ucd=\"meta.bib.bibcode;meta.software\" value=\"%s\"/>\n",
+	"1996A&AS..117..393B");
+  fprintf(file, "  <PARAM name=\"nthreads\" datatype=\"int\""
+	"ucd=\"meta.number;meta.software\" value=\"%d\"/>\n",
+    	prefs.nthreads);
+  fprintf(file, "  <PARAM name=\"date\" datatype=\"char\" arraysize=\"*\""
+	" ucd=\"time.event.end;meta.software\" value=\"%s\"/>\n",
+	prefs.sdate_end);
+  fprintf(file, "  <PARAM name=\"time\" datatype=\"char\" arraysize=\"*\""
+	" ucd=\"time.event.end;meta.software\" value=\"%s\"/>\n",
+	prefs.stime_end);
+  fprintf(file, "  <PARAM name=\"duration\" datatype=\"float\""
+	" ucd=\"time.event;meta.software\" value=\"%.0f\" unit=\"s\"/>\n",
+	prefs.time_diff);
+
+  fprintf(file, "  <PARAM name=\"user\" datatype=\"char\" arraysize=\"*\""
+	" ucd=\"meta.curation\" value=\"%s\"/>\n",
+	psuser);
+  fprintf(file, "  <PARAM name=\"host\" datatype=\"char\" arraysize=\"*\""
+	" ucd=\"meta.curation\" value=\"%s\"/>\n",
+	pshost);
+  fprintf(file, "  <PARAM name=\"path\" datatype=\"char\" arraysize=\"*\""
+	" ucd=\"meta.dataset\" value=\"%s\"/>\n",
+	pspath);
+
+  fprintf(file, "  <RESOURCE name=\"config\">\n");
+  fprintf(file, "   <DESCRIPTION>%s configuration</DESCRIPTION>\n", BANNER);
+  fprintf(file,
+	"   <PARAM name=\"command_line\" datatype=\"char\" arraysize=\"*\""
+	" ucd=\"meta\" value=\"%s",
+	prefs.command_line[0]);
+  for (n=1; n<prefs.ncommand_line; n++)
+    fprintf(file, " %s", prefs.command_line[n]);
+  fprintf(file, "\"/>\n");
+  fprintf(file,
+	"   <PARAM name=\"prefs_name\" datatype=\"char\" arraysize=\"*\""
+	" ucd=\"meta;meta.file\" value=\"%s\"/>\n",
+	prefs.prefs_name);
+  fprintf(file,
+	"   <PARAM name=\"catalog_type\" datatype=\"char\" arraysize=\"*\""
+	" ucd=\"meta\" value=\"%s\"/>\n",
+    	key[findkeys("CATALOG_TYPE",keylist,
+			FIND_STRICT)].keylist[prefs.cat_type]);
+  fprintf(file,
+	"   <PARAM name=\"catalog_name\" datatype=\"char\" arraysize=\"*\""
+	" ucd=\"meta;meta.file\" value=\"%s\"/>\n",
+	prefs.cat_name);
+  fprintf(file,
+	"   <PARAM name=\"parameters_name\" datatype=\"char\" arraysize=\"*\""
+	" ucd=\"meta;meta.file\" value=\"%s\"/>\n",
+	prefs.param_name);
+  fprintf(file,
+	"   <PARAM name=\"detect_type\" datatype=\"char\" arraysize=\"*\""
+	" ucd=\"meta\" value=\"%s\"/>\n",
+    	key[findkeys("DETECT_TYPE", keylist,
+			FIND_STRICT)].keylist[prefs.detect_type]);
+  fprintf(file, "   <PARAM name=\"detect_minarea\" datatype=\"int\""
+	"ucd=\"meta.number;phys.area\" value=\"%d\" unit=\"pix2\"/>\n",
+    	prefs.ext_minarea);
+  fprintf(file, "   <PARAM name=\"deblend_nthresh\" datatype=\"int\""
+	"ucd=\"meta.number\" value=\"%d\"/>\n",
+    	prefs.deblend_nthresh);
+  fprintf(file, "   <PARAM name=\"deblend_mincont\" datatype=\"float\""
+	"ucd=\"meta;arith.ratio\" value=\"%g\"/>\n",
+    	prefs.deblend_mincont);
+  fprintf(file,
+	"   <PARAM name=\"filter_flag\" datatype=\"bool\""
+	" ucd=\"meta.code\" value=\"%c\"/>\n",
+    	prefs.filter_flag? 'T':'F');
+  fprintf(file,
+	"   <PARAM name=\"filter_name\" datatype=\"char\" arraysize=\"*\""
+	" ucd=\"meta;meta.file\" value=\"%s\"/>\n",
+	prefs.filter_name);
+
+  fprintf(file, "  </RESOURCE>\n");
+/* Warnings */
+  fprintf(file, "  <TABLE name=\"warnings\">\n");
+  fprintf(file,
+	"   <DESCRIPTION>%s warnings (limited to the last %d)</DESCRIPTION>\n",
+	BANNER, WARNING_NMAX);
+  fprintf(file, "   <FIELD name=\"date\" datatype=\"char\" arraysize=\"*\""
+	" ucd=\"meta;time.event.end\"/>\n");
+  fprintf(file, "   <FIELD name=\"time\" datatype=\"char\" arraysize=\"*\""
+	" ucd=\"meta;time.event.end\"/>\n");
+  fprintf(file, "   <FIELD name=\"msg\" datatype=\"char\" arraysize=\"*\""
+	" ucd=\"meta\"/>\n");
+  fprintf(file, "   <DATA><TABLEDATA>\n");
+  for (str = warning_history(); *str; str = warning_history())
+    fprintf(file, "    <TR><TD>%10.10s</TD><TD>%8.8s</TD><TD>%s</TD></TR>\n",
+	str, str+11, str+22);
+  fprintf(file, "   </TABLEDATA></DATA>\n");
+  fprintf(file, "  </TABLE>\n");
+  fprintf(file, " </RESOURCE>\n");
   fclose(file);
 
   free(xmlstack);
@@ -400,13 +522,13 @@ INPUT	a character string,
 OUTPUT	RETURN_OK if everything went fine, RETURN_ERROR otherwise.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	09/07/2006
+VERSION	10/07/2006
  ***/
 void	write_xmlerror(char *msg1, char *msg2)
   {
    FILE			*file;
    struct tm		*tm;
-   char			*pspath,*psuser, *pshost;
+   char			*pspath,*psuser, *pshost, *str;
 
   if (!prefs.xml_flag)
     return;
@@ -459,6 +581,8 @@ void	write_xmlerror(char *msg1, char *msg2)
   fprintf(file, " <nextens type=\"int\">%d</nextens>\n", nxmlmax);
   fprintf(file, " <currextens type=\"int\">%d</currextens>\n",
 	nxml<nxmlmax? nxml+1 : nxml);
+  for (str = warning_history(); *str; str = warning_history())
+    fprintf(file, " <WARNING>%s</WARNING>\n", str);
   fprintf(file, " <ERROR_MSG type=\"char\">%s%s</ERROR_MSG>\n", msg1,msg2);
   fprintf(file, "</SOURCE_EXTRACTION>\n");
   fclose(file);

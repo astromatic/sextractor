@@ -52,6 +52,8 @@ int	main(int argc, char *argv[])
   QMALLOC(argval, char *, argc);
 
 /*default parameters */
+  prefs.command_line = argv;
+  prefs.ncommand_line = argc;
   prefs.pipe_flag = 0;
   prefs.nimage_name = 1;
   prefs.image_name[0] = "image";

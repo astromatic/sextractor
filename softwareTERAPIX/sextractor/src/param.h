@@ -210,10 +210,10 @@ keystruct	objkey[] = {
 	"phot.flux.sb;stat.max", "ct"},
   {"ISOAREA_IMAGE", "Isophotal area above Analysis threshold",
 	&outobj.npix, H_INT, T_LONG, "%9d", "pixel**2",
-	"phys.size.area", "pix2"},
+	"phys.area", "pix2"},
   {"ISOAREAF_IMAGE", "Isophotal area (filtered) above Detection threshold",
 	&outobj.fdnpix, H_INT, T_LONG, "%9d", "pixel**2",
-	"phys.size.area", "pix2"},
+	"phys.area", "pix2"},
 
   {"XMIN_IMAGE", "Minimum x-coordinate among detected pixels",
 	&outobj.xmin, H_INT, T_LONG, "%10d", "pixel",

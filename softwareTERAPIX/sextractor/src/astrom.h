@@ -9,7 +9,7 @@
 *
 *	Contents:	Astrometrical stuff.
 *
-*	Last modify:	02/07/2006
+*	Last modify:	10/07/2006
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -43,7 +43,7 @@ typedef struct structastrom
   double	ap2000,dp2000;		/* J2000 coordinates of pole */
   double	ap1950,dp1950;		/* B1950 coordinates of pole */
   double	equinox;		/* Equinox of observations */
-  enum {RDSYS_FK5, RDSYS_FK4, RDSYS_FK4_NO_E, RDSYS_GAPPT}
+  enum {RDSYS_ICRS, RDSYS_FK5, RDSYS_FK4, RDSYS_FK4_NO_E, RDSYS_GAPPT}
 		radecsys;		/* FITS RADECSYS reference frame */
   int		wcs_flag;		/* WCSLIB: can it be used? */
   int		lat,lng;		/* longitude and latitude axes # */

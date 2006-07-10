@@ -9,7 +9,7 @@
 *
 *	Contents:	Simplified versin of the LDACTools: main include file
 *
-*	Last modify:	09/07/2006
+*	Last modify:	10/07/2006
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -22,7 +22,7 @@
 #endif
 
 #define	MAXCHARS	256	/* max. number of characters */
-#define WARNING_NMAX	10	/* max. number of recorded warnings */
+#define WARNING_NMAX	100	/* max. number of recorded warnings */
 
 /*---------------------------- return messages ------------------------------*/
 

@@ -9,7 +9,7 @@
 *
 *	Contents:	Keywords for the configuration file.
 *
-*	Last modify:	06/07/2006
+*	Last modify:	10/07/2006
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -27,6 +27,8 @@ One must have:	MAXLIST >= 1 (preferably >= 16!)
 /*------------------------------- preferences -------------------------------*/
 typedef struct
   {
+  char		**command_line;				/* Command line */
+  int		ncommand_line;				/* nb of params */
   char		prefs_name[MAXCHAR];			/* prefs filename*/
   char		*(image_name[2]);			/* image filenames */
   int		nimage_name;				/* nb of params */

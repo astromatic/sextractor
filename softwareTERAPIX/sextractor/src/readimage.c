@@ -9,7 +9,7 @@
 *
 *	Contents:	functions for input of image data.
 *
-*	Last modify:	07/07/2006
+*	Last modify:	10/07/2006
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -705,10 +705,18 @@ void	readimagehead(picstruct *field)
 /*-------- Well if really no date is found */
           as->equinox = 2000.0;
         }
-      as->equinox = FITSTOF("EQUINOX ", FITSTOF("EPOCH  ", as->equinox));
-      FITSTOS("RADECSYS", str, as->equinox<1984.0?"FK4":"FK5");
-      if (!strcmp(str, "FK5"))
+      FITSTOS("RADECSYS", str, as->equinox<1984.0?
+	"FK4": (as->equinox<1999.9999? "FK5" : "ICRS"));
+      if (!strcmp(str, "ICRS"))
+        {
+        as->radecsys = RDSYS_ICRS;
+        as->equinox = FITSTOF("EQUINOX ", 2000.0);
+        }
+      else if (!strcmp(str, "FK5"))
+        {
         as->radecsys = RDSYS_FK5;
+        as->equinox = FITSTOF("EQUINOX ", FITSTOF("EPOCH  ", 2000.0));
+        }
       else if (!strcmp(str, "FK4"))
         {
         if (as->equinox == 2000.0)
@@ -733,9 +741,10 @@ void	readimagehead(picstruct *field)
         }
       else
         {
-        warning("Using FK5 instead of unknown astrometric reference frame: ",
+        warning("Using ICRS instead of unknown astrometric reference frame: ",
 		str);
-        as->radecsys = RDSYS_FK5;
+        as->radecsys = RDSYS_ICRS;
+        as->equinox = FITSTOF("EQUINOX ", 2000.0);
         }
 
 /*---- Projection parameters */
