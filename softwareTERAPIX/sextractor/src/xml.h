@@ -9,7 +9,7 @@
 *
 *	Contents:	XML logging.
 *
-*	Last modify:	07/07/2005
+*	Last modify:	11/07/2005
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -38,13 +38,13 @@ typedef struct
   int		ntotal;
   char 		ext_date[16],ext_time[16];		/* date and time */
   double        ext_elapsed;				/* processing time */
-  char		dident[MAXCHAR],ident[MAXCHAR];		/* identifiants */
-  float		dbackmean, backmean;			/* mean background */
-  float		dbacksig, backsig;			/* mean back stddev */
-  float		dsigfac, sigfac;			/* mean weight scaling*/
-  float		dthresh, thresh;			/* thresholds (ADU) */
-  double	dpixscale, pixscale;			/* pixel scale (deg2) */
-  double	depoch, epoch;				/* epoch of coords */
+  char		ident[2][MAXCHAR];			/* identifiants */
+  float		backmean[2];				/* mean background */
+  float		backsig[2];				/* mean back stddev */
+  float		sigfac[2];				/* mean weight scaling*/
+  float		thresh[2];				/* thresholds (ADU) */
+  double	pixscale[2];				/* pixel scale (deg2) */
+  double	epoch[2];				/* epoch of coords */
   }	xmlstruct;
 
 /*------------------------------- functions ---------------------------------*/
