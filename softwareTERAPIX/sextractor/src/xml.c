@@ -9,7 +9,7 @@
 *
 *	Contents:	XML logging.
 *
-*	Last modify:	11/07/2006
+*	Last modify:	12/07/2006
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -53,6 +53,23 @@ int	init_xml(int next)
   QMALLOC(xmlstack, xmlstruct, next);
   nxml = 0;
   nxmlmax = next;
+
+  return EXIT_SUCCESS;
+  }
+
+
+/****** end_xml ************************************************************
+PROTO	int	end_xml(void)
+PURPOSE	Free the set of meta-data kept in memory.
+INPUT	-.
+OUTPUT	RETURN_OK if everything went fine, RETURN_ERROR otherwise.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	12/07/2006
+ ***/
+int	end_xml(void)
+  {
+  free(xmlstack);
 
   return EXIT_SUCCESS;
   }
@@ -107,25 +124,28 @@ INPUT	-.
 OUTPUT	RETURN_OK if everything went fine, RETURN_ERROR otherwise.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	11/07/2006
+VERSION	12/07/2006
  ***/
 int	write_xml(void)
   {
    FILE			*file;
+/*
    char			*pspath,*psuser, *pshost, *str;
    int			n;
-
-/* Username */
+*/
+/* Username
   psuser = pspath = pshost = NULL;
 #ifdef HAVE_GETENV
-  if (!(psuser=getenv("USERNAME")))	/* Cygwin,... */
-    psuser = getenv("LOGNAME");		/* Linux,... */
+  if (!(psuser=getenv("USERNAME")))	* Cygwin,... *
+    psuser = getenv("LOGNAME");		* Linux,... *
   pspath = getenv("PWD");
   pshost = getenv("HOSTNAME");
 #endif
+*/
 
-  if ((file = fopen(prefs.xml_name, "wb")) == NULL)
+  if ((file = fopen(prefs.xml_name, "w")) == NULL)
     return RETURN_ERROR;
+
 /*
   fprintf(file, "<?xml version=\"1.0\"?>\n");
   fprintf(file, "<?xml-stylesheet type=\"text/xsl\" href=\"%s\"?>\n",
@@ -402,8 +422,44 @@ int	write_xml(void)
 	"xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" "
 	"xsi:noNamespaceSchemaLocation="
 	"\"xmlns=http://www.ivoa.net/xml/VOTable/v1.1\">\n");
-  fprintf(file, " <RESOURCE name=\"source_extraction\"/>\n");
+  fprintf(file, "  <DESCRIPTION>produced by %s</DESCRIPTION>\n", BANNER);
+  write_xml_meta(file);
+  fprintf(file, "</VOTABLE>");
+
+  fclose(file);
+
+  free(xmlstack);
+
+  return RETURN_OK;
+  }
+
+
+/****** write_xml_meta ********************************************************
+PROTO	int	write_xml(void)
+PURPOSE	Save meta-data to an XML-VOTable file or stream
+INPUT	-.
+OUTPUT	RETURN_OK if everything went fine, RETURN_ERROR otherwise.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	12/07/2006
+ ***/
+int	write_xml_meta(FILE *file)
+  {
+   char			*pspath,*psuser, *pshost, *str;
+   int			n;
+
+/* Username */
+  psuser = pspath = pshost = NULL;
+#ifdef HAVE_GETENV
+  if (!(psuser=getenv("USERNAME")))	/* Cygwin,... */
+    psuser = getenv("LOGNAME");		/* Linux,... */
+  pspath = getenv("PWD");
+  pshost = getenv("HOSTNAME");
+#endif
+
+  fprintf(file, " <RESOURCE ID=\"meta_data\" name=\"meta_data\"/>\n");
   fprintf(file, "  <DESCRIPTION>%s meta-data</DESCRIPTION>\n", BANNER);
+  fprintf(file, "  <INFO name=\"QUERY_STATUS\" value=\"OK\" />\n");
   fprintf(file, "  <PARAM name=\"software\" datatype=\"char\" arraysize=\"*\""
 	" ucd=\"meta.title;meta.software\" value=\"%s\"/>\n",
 	BANNER);
@@ -442,7 +498,13 @@ int	write_xml(void)
 	" ucd=\"meta.dataset\" value=\"%s\"/>\n",
 	pspath);
 
-  fprintf(file, "  <RESOURCE name=\"config\">\n");
+  fprintf(file,
+	"  <PARAM name=\"image_name\" datatype=\"char\" arraysize=\"*s,\""
+	" ucd=\"obs.image;meta.fits\" value=\"%s", prefs.image_name[0]);
+  if (prefs.nimage_name>1)
+    fprintf(file, ",%s", prefs.image_name[1]);
+  fprintf(file, "\"/>\n");
+  fprintf(file, "  <RESOURCE ID=\"config\" name=\"config\">\n");
   fprintf(file, "   <DESCRIPTION>%s configuration</DESCRIPTION>\n", BANNER);
   fprintf(file,
 	"   <PARAM name=\"command_line\" datatype=\"char\" arraysize=\"*\""
@@ -784,8 +846,8 @@ int	write_xml(void)
   fprintf(file, "  </RESOURCE>\n");
 
 /* Meta-data for each extension */
-  fprintf(file, "  <TABLE name=\"extension_data\">\n");
-  fprintf(file, "   <DESCRIPTION>Data gathered by %s for every FITS"
+  fprintf(file, "  <TABLE ID=\"extension_data\" name=\"extension_data\">\n");
+  fprintf(file, "    <DESCRIPTION>Data gathered by %s for every FITS"
 	" extension</DESCRIPTION>\n", BANNER);
   fprintf(file, "   <PARAM name=\"nextensions\" datatype=\"int\""
 	" ucd=\"meta.number;meta.dataset\" value=\"%d\"/>\n",
@@ -825,13 +887,13 @@ int	write_xml(void)
   fprintf(file, "   <DATA><TABLEDATA>\n");
   for (n=0; n<nxmlmax; n++)
     if (prefs.nimage_name>1)
-      fprintf(file, "    <TR>\n"
-	"     <TD>%d</TD><TD>%s</TD><TD>%s</TD><TD>%.0f</TD>"
+      fprintf(file, "     <TR>\n"
+	"      <TD>%d</TD><TD>%s</TD><TD>%s</TD><TD>%.0f</TD>"
 	"<TD>%d</TD><TD>%d</TD>\n"
-	"     <TD>%s,%s</TD>\n"
-	"     <TD>%g %g</TD><TD>%g %g</TD><TD>%g %g</TD>"
+	"      <TD>%s,%s</TD>\n"
+	"      <TD>%g %g</TD><TD>%g %g</TD><TD>%g %g</TD>"
 	"<TD>%g %g</TD><TD>%g %g</TD>\n"
-	"    </TR>\n",
+	"     </TR>\n",
 	xmlstack[n].currext,
 	xmlstack[n].ext_date,
 	xmlstack[n].ext_time,
@@ -867,32 +929,27 @@ int	write_xml(void)
   fprintf(file, "  </TABLE>\n");
 
 /* Warnings */
-  fprintf(file, "  <TABLE name=\"warnings\">\n");
+  fprintf(file, "  <TABLE ID=\"warnings\" name=\"warnings\">\n");
   fprintf(file,
 	"   <DESCRIPTION>%s warnings (limited to the last %d)</DESCRIPTION>\n",
 	BANNER, WARNING_NMAX);
-  fprintf(file, "   <FIELD name=\"date\" datatype=\"char\" arraysize=\"*\""
+  fprintf(file, "    <FIELD name=\"date\" datatype=\"char\" arraysize=\"*\""
 	" ucd=\"meta;time.event.end\"/>\n");
-  fprintf(file, "   <FIELD name=\"time\" datatype=\"char\" arraysize=\"*\""
+  fprintf(file, "    <FIELD name=\"time\" datatype=\"char\" arraysize=\"*\""
 	" ucd=\"meta;time.event.end\"/>\n");
-  fprintf(file, "   <FIELD name=\"msg\" datatype=\"char\" arraysize=\"*\""
+  fprintf(file, "    <FIELD name=\"msg\" datatype=\"char\" arraysize=\"*\""
 	" ucd=\"meta\"/>\n");
-  fprintf(file, "   <DATA><TABLEDATA>\n");
+  fprintf(file, "    <DATA><TABLEDATA>\n");
   for (str = warning_history(); *str; str = warning_history())
-    fprintf(file, "    <TR><TD>%10.10s</TD><TD>%8.8s</TD><TD>%s</TD></TR>\n",
+    fprintf(file, "     <TR><TD>%10.10s</TD><TD>%8.8s</TD><TD>%s</TD></TR>\n",
 	str, str+11, str+22);
   fprintf(file, "   </TABLEDATA></DATA>\n");
   fprintf(file, "  </TABLE>\n");
   fprintf(file, " </RESOURCE>\n");
-  fclose(file);
-
-  free(xmlstack);
 
   return RETURN_OK;
   }
-
-
-/****** write_xmlerror ********************************************************
+/****** write_xmlerror ******************************************************
 PROTO	int	write_xmlerror(char *msg1, char *msg2)
 PURPOSE	Save meta-data to a simplified XML file in case of a catched error
 INPUT	a character string,
@@ -900,13 +957,13 @@ INPUT	a character string,
 OUTPUT	RETURN_OK if everything went fine, RETURN_ERROR otherwise.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	10/07/2006
+VERSION	12/07/2006
  ***/
 void	write_xmlerror(char *msg1, char *msg2)
   {
    FILE			*file;
    struct tm		*tm;
-   char			*pspath,*psuser, *pshost, *str;
+   char			*pspath,*psuser, *pshost;
 
   if (!prefs.xml_flag)
     return;
@@ -933,9 +990,63 @@ void	write_xmlerror(char *msg1, char *msg2)
   fprintf(file, "<?xml version=\"1.0\"?>\n");
   fprintf(file, "<?xml-stylesheet type=\"text/xsl\" href=\"%s\"?>\n",
 	prefs.xsl_name);
+  fprintf(file, "<VOTABLE "
+	"xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" "
+	"xsi:noNamespaceSchemaLocation="
+	"\"xmlns=http://www.ivoa.net/xml/VOTable/v1.1\">\n");
+  fprintf(file, "  <DESCRIPTION>produced by %s</DESCRIPTION>\n", BANNER);
 /*
   fprintf(file, "<!DOCTYPE INFO SYSTEM \"instfile.dtd\">\n");
 */
+  fprintf(file, " <RESOURCE ID=\"meta_data\" name=\"meta_data\"/>\n");
+  fprintf(file, "  <DESCRIPTION>%s meta-data</DESCRIPTION>\n", BANNER);
+  fprintf(file, "  <INFO name=\"QUERY_STATUS\" value=\"OK\" />\n");
+  fprintf(file, "  <PARAM name=\"software\" datatype=\"char\" arraysize=\"*\""
+	" ucd=\"meta.title;meta.software\" value=\"%s\"/>\n",
+	BANNER);
+  fprintf(file, "  <PARAM name=\"version\" datatype=\"char\" arraysize=\"*\""
+	" ucd=\"meta.version;meta.software\" value=\"%s\"/>\n",
+	MYVERSION);
+  fprintf(file, "  <PARAM name=\"soft_url\" datatype=\"char\" arraysize=\"*\""
+	" ucd=\"meta.ref.url;meta.software\" value=\"%s\"/>\n",
+	WEBSITE);
+  fprintf(file, "  <PARAM name=\"soft_auth\" datatype=\"char\" arraysize=\"*\""
+	" ucd=\"meta.bib.author;meta.software\" value=\"%s\"/>\n",
+	"Emmanuel Bertin");
+  fprintf(file, "  <PARAM name=\"soft_ref\" datatype=\"char\" arraysize=\"*\""
+	" ucd=\"meta.bib.bibcode;meta.software\" value=\"%s\"/>\n",
+	"1996A&AS..117..393B");
+  fprintf(file, "  <PARAM name=\"nthreads\" datatype=\"int\""
+	" ucd=\"meta.number;meta.software\" value=\"%d\"/>\n",
+    	prefs.nthreads);
+  fprintf(file, "  <PARAM name=\"date\" datatype=\"char\" arraysize=\"*\""
+	" ucd=\"time.event.end;meta.software\" value=\"%s\"/>\n",
+	prefs.sdate_end);
+  fprintf(file, "  <PARAM name=\"time\" datatype=\"char\" arraysize=\"*\""
+	" ucd=\"time.event.end;meta.software\" value=\"%s\"/>\n",
+	prefs.stime_end);
+  fprintf(file, "  <PARAM name=\"duration\" datatype=\"float\""
+	" ucd=\"time.event;meta.software\" value=\"%.0f\" unit=\"s\"/>\n",
+	prefs.time_diff);
+
+  fprintf(file, "  <PARAM name=\"user\" datatype=\"char\" arraysize=\"*\""
+	" ucd=\"meta.curation\" value=\"%s\"/>\n",
+	psuser);
+  fprintf(file, "  <PARAM name=\"host\" datatype=\"char\" arraysize=\"*\""
+	" ucd=\"meta.curation\" value=\"%s\"/>\n",
+	pshost);
+  fprintf(file, "  <PARAM name=\"path\" datatype=\"char\" arraysize=\"*\""
+	" ucd=\"meta.dataset\" value=\"%s\"/>\n",
+	pspath);
+
+  fprintf(file,
+	"  <PARAM name=\"image_name\" datatype=\"char\" arraysize=\"*s,\""
+	" ucd=\"obs.image;meta.fits\" value=\"%s", prefs.image_name[0]);
+  if (prefs.nimage_name>1)
+    fprintf(file, ",%s", prefs.image_name[1]);
+  fprintf(file, "\"/>\n");
+
+/*
   fprintf(file, "<SOURCE_EXTRACTION>\n");
   fprintf(file, " <software type=\"char\">%s</software>\n", BANNER);
   fprintf(file, " <version type=\"char\">%s</version>\n", MYVERSION);
@@ -963,6 +1074,9 @@ void	write_xmlerror(char *msg1, char *msg2)
     fprintf(file, " <WARNING>%s</WARNING>\n", str);
   fprintf(file, " <ERROR_MSG type=\"char\">%s%s</ERROR_MSG>\n", msg1,msg2);
   fprintf(file, "</SOURCE_EXTRACTION>\n");
+*/
+
+  fprintf(file, "</VOTABLE>");
   fclose(file);
 
   free(xmlstack);

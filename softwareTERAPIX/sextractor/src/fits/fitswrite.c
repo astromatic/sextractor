@@ -9,7 +9,7 @@
 *
 *	Contents:	low-level functions for writing LDAC FITS catalogs.
 *
-*	Last modify:	07/07/2006
+*	Last modify:	12/07/2006
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -385,7 +385,7 @@ INPUT	Output stream
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP & Leiden observatory)
-VERSION	07/07/2006
+VERSION	12/07/2006
  ***/
 void	print_obj(FILE *stream, tabstruct *tab)
 
@@ -404,16 +404,6 @@ void	print_obj(FILE *stream, tabstruct *tab)
     for (i = key->nbytes/esize; i--; ptr += esize)
       switch(key->ttype)
         {
-        case T_SHORT:
-          fprintf(stream, *key->printf?key->printf:"%d", *(short *)ptr);
-          if (i)
-            putc(' ', stream);
-          break;
-        case T_LONG:
-          fprintf(stream, *key->printf?key->printf:"%d", *(int *)ptr);
-          if (i)
-            putc(' ', stream);
-          break;
         case T_FLOAT:
           fprintf(stream, *key->printf?key->printf:"%g", *(float *)ptr);
           if (i)
@@ -421,6 +411,16 @@ void	print_obj(FILE *stream, tabstruct *tab)
           break;
         case T_DOUBLE:
           fprintf(stream, *key->printf?key->printf:"%f", *(double *)ptr);
+          if (i)
+            putc(' ', stream);
+          break;
+        case T_SHORT:
+          fprintf(stream, *key->printf?key->printf:"%d", *(short *)ptr);
+          if (i)
+            putc(' ', stream);
+          break;
+        case T_LONG:
+          fprintf(stream, *key->printf?key->printf:"%d", *(int *)ptr);
           if (i)
             putc(' ', stream);
           break;
@@ -461,8 +461,8 @@ INPUT	Output stream
 	Table structure.
 OUTPUT	-.
 NOTES	-.
-AUTHOR	G. TISSIER (IAP)
-VERSION	04/09/2004
+AUTHOR	G. Tissier & E.Bertin (IAP)
+VERSION	12/07/2006
  ***/
 void	voprint_obj(FILE *stream, tabstruct *tab)
 
@@ -474,7 +474,7 @@ void	voprint_obj(FILE *stream, tabstruct *tab)
   if (!(key = tab->key))
     error(EXIT_FAILURE, "*Error*: no key to print in table ", tab->extname);
 
-  fprintf(stream, "      <TR>");
+  fprintf(stream, "   <TR>");
 
   for (k=tab->nkey; k--; key = key->nextkey)
     {
@@ -485,16 +485,6 @@ void	voprint_obj(FILE *stream, tabstruct *tab)
     for (i = key->nbytes/esize; i--; ptr += esize)
       switch(key->ttype)
         {
-        case T_SHORT:
-          fprintf(stream, *key->printf?key->printf:"%d", *(short *)ptr);
-          if (i)
-            putc(' ', stream);
-          break;
-        case T_LONG:
-          fprintf(stream, *key->printf?key->printf:"%d", *(int *)ptr);
-          if (i)
-            putc(' ', stream);
-          break;
         case T_FLOAT:
           fprintf(stream, *key->printf?key->printf:"%g", *(float *)ptr);
           if (i)
@@ -502,6 +492,16 @@ void	voprint_obj(FILE *stream, tabstruct *tab)
           break;
         case T_DOUBLE:
           fprintf(stream, *key->printf?key->printf:"%f", *(double *)ptr);
+          if (i)
+            putc(' ', stream);
+          break;
+        case T_SHORT:
+          fprintf(stream, *key->printf?key->printf:"%d", *(short *)ptr);
+          if (i)
+            putc(' ', stream);
+          break;
+        case T_LONG:
+          fprintf(stream, *key->printf?key->printf:"%d", *(int *)ptr);
           if (i)
             putc(' ', stream);
           break;

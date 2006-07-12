@@ -60,11 +60,11 @@ void    readprefs(char *filename, char **argkey, char **argval, int narg)
 
   {
    FILE          *infile;
-   char          *cp, str[MAXCHAR], *keyword, *value, **dp;
+   char          *cp, str[MAXCHARL], *keyword, *value, **dp;
    int           i, ival, nkey, warn, argi, flagc, flagd, flage, flagz;
    float         dval;
 #ifndef	NO_ENVVAR
-   static char	value2[MAXCHAR],envname[MAXCHAR];
+   static char	value2[MAXCHARL],envname[MAXCHAR];
    char		*dolpos;
 #endif
 
@@ -105,7 +105,7 @@ void    readprefs(char *filename, char **argkey, char **argval, int narg)
         flagd = 0;
       }
     if (!flagc && !flagd)
-      if (flage || !fgets(str, MAXCHAR, infile))
+      if (flage || !fgets(str, MAXCHARL, infile))
         flagc=1;
 
     if (flagc)

@@ -9,7 +9,7 @@
 *
 *	Contents:	XML logging.
 *
-*	Last modify:	11/07/2005
+*	Last modify:	12/07/2005
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -49,10 +49,12 @@ typedef struct
 
 /*------------------------------- functions ---------------------------------*/
 
-extern int		init_xml(int next),
+extern int		end_xml(void),
+			init_xml(int next),
 			update_xml(sexcatstruct *sexcat, picstruct *dfield, 
 				picstruct *field, picstruct *dwfield,
 				picstruct *wfield),
-			write_xml(void);
+			write_xml(void),
+			write_xml_meta(FILE *file);
 
 extern void		write_xmlerror(char *msg1, char *msg2);

@@ -9,7 +9,7 @@
 *
 *	Contents:	functions for output of catalog data.
 *
-*	Last modify:	07/07/2006
+*	Last modify:	12/07/2006
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -30,6 +30,7 @@
 #include	"sexhead.h"
 #include	"sexhead1.h"
 #include	"sexheadsc.h"
+#include	"xml.h"
 
 catstruct	*fitscat;
 tabstruct	*objtab;
@@ -335,7 +336,8 @@ Initialize the catalog header
 void	initcat(void)
   {
    keystruct	*key;
-   char		datatype[40], arraysize[40], str[40];
+   char		datatype[40], arraysize[40], str[40],
+		*filename, *rfilename;
    int		d, i, n;
 
   if (prefs.cat_type == CAT_NONE)
@@ -379,29 +381,33 @@ void	initcat(void)
       }
     else if (prefs.cat_type == ASCII_VO && (key = objtab->key)) 
       {
+/*---- A short, "relative" version of the filename */
+      filename = prefs.image_name[prefs.nimage_name>1? 1:0];
+      if (!(rfilename = strrchr(filename, '/')))
+        rfilename = filename;
+      else
+        rfilename++;
+
       fprintf(ascfile, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
       fprintf(ascfile, "<VOTABLE "
 	"xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" "
 	"xsi:noNamespaceSchemaLocation="
 	"\"xmlns=http://www.ivoa.net/xml/VOTable/v1.1\">\n");
-        fprintf(ascfile, "<DESCRIPTION>\n");
-        fprintf(ascfile, "  SExtractor catalog\n");
-        fprintf(ascfile, "</DESCRIPTION>\n");
+        fprintf(ascfile, "<DESCRIPTION>produced by %s</DESCRIPTION>\n", BANNER);
         fprintf(ascfile, "<!-- VOTable description at "
-		"http://vizier.u-strasbg.fr/doc/VOTable/ -->\n");
+		"http://www.ivoa.net/Documents/latest/VOT.html -->\n");
         fprintf(ascfile,
-		"<RESOURCE ID=\"AVOCat\" name=\"%s\">\n", prefs.image_name[0]);
+		"<RESOURCE ID=\"AVOCat\" name=\"%s\">\n", rfilename);
         fprintf(ascfile,
-		"  <DESCRIPTION>Catalog of image extracted sources"
-		"</DESCRIPTION>\n");
-        fprintf(ascfile, "  <TABLE ID=\"Source_List\" name=\"%s\">\n",
-		prefs.image_name[0]);
+		" <DESCRIPTION>Catalog of sources extracted with %s"
+		"</DESCRIPTION>\n", BANNER);
+        fprintf(ascfile, " <INFO name=\"QUERY_STATUS\" value=\"OK\" />\n");
+        fprintf(ascfile, " <TABLE ID=\"Source_List\" name=\"%s/out\">\n",
+		rfilename);
         fprintf(ascfile,
-		"    <DESCRIPTION>Image detected sources</DESCRIPTION>\n");
-        fprintf(ascfile, "    <!-- RowName:  Each parameter of SExtractor "
-		"parameter file (default is default.param) -->\n");
+		"  <DESCRIPTION>Table of sources detected in image</DESCRIPTION>\n");
         fprintf(ascfile,
-	"    <!-- Now comes the definition of each field -->\n");
+	"  <!-- Now comes the definition of each %s parameter -->\n", BANNER);
         for (i=0; i++<objtab->nkey; key=key->nextkey)
           {
 /*--------- indicate datatype, arraysize, width and precision attributes */
@@ -427,14 +433,14 @@ void	initcat(void)
               error (EXIT_FAILURE, "*Internal Error*: Unknown datatype in ",
 		"initcat()");
             }
-          fprintf(ascfile, "    <FIELD name=\"%s\" ucd=\"%s\" "
-		"datatype=\"%s\" unit=\"%s\" %s>\n",
+          fprintf(ascfile, "  <FIELD name=\"%s\" ucd=\"%s\""
+		"datatype=\"%s\" unit=\"%s\"%s>\n",
 		key->name, key->voucd, datatype,key->vounit, arraysize);
-          fprintf(ascfile, "      <DESCRIPTION>%s</DESCRIPTION>\n",
+          fprintf(ascfile, "   <DESCRIPTION>%s</DESCRIPTION>\n",
 		key->comment);
-          fprintf(ascfile, "    </FIELD>\n");
+          fprintf(ascfile, "  </FIELD>\n");
           }
-        fprintf(ascfile, "    <DATA><TABLEDATA>\n");
+        fprintf(ascfile, "  <DATA><TABLEDATA>\n");
       }
     }
   else
@@ -625,8 +631,10 @@ void	endcat()
       break;
 
     case ASCII_VO:
-      fprintf(ascfile, "    </TABLEDATA></DATA>\n");
+      fprintf(ascfile, "   </TABLEDATA></DATA>\n");
       fprintf(ascfile, "  </TABLE>\n");
+/*---- Add configuration file meta-data */
+      write_xml_meta(ascfile);
       fprintf(ascfile, "</RESOURCE>\n");
       fprintf(ascfile, "</VOTABLE>\n");
 

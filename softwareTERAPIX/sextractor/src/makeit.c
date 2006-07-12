@@ -167,7 +167,7 @@ void	makeit()
   initcat();
 
 /* Initialize XML data */
-  if (prefs.xml_flag)
+  if (prefs.xml_flag || prefs.cat_type==ASCII_VO)
     init_xml(next);
 
 /* Go through all images */
@@ -377,7 +377,7 @@ void	makeit()
     reendcat();
 
 /* Update XML data */
-  if (prefs.xml_flag)
+  if (prefs.xml_flag || prefs.cat_type==ASCII_VO)
     update_xml(&thecat, dfield? dfield:field, field,
 	dwfield? dwfield:wfield, wfield);
 
@@ -447,6 +447,8 @@ void	makeit()
 /* Write XML */
   if (prefs.xml_flag)
     write_xml();
+  if (prefs.xml_flag || prefs.cat_type==ASCII_VO)
+    end_xml();
 
   return;
   }
