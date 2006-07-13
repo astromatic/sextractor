@@ -9,7 +9,7 @@
 *
 *	Contents:	XML logging.
 *
-*	Last modify:	12/07/2005
+*	Last modify:	13/07/2005
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -54,7 +54,7 @@ extern int		end_xml(void),
 			update_xml(sexcatstruct *sexcat, picstruct *dfield, 
 				picstruct *field, picstruct *dwfield,
 				picstruct *wfield),
-			write_xml(void),
-			write_xml_meta(FILE *file);
+			write_xml(FILE *file),
+			write_xml_meta(FILE *file, char *error);
 
-extern void		write_xmlerror(char *msg1, char *msg2);
+extern void		write_xmlerror(char *filename, char *error);

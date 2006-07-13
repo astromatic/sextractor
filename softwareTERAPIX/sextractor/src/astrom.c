@@ -9,7 +9,7 @@
 *
 *	Contents:	Astrometrical computations.
 *
-*	Last modify:	07/07/2006
+*	Last modify:	13/07/2006
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -274,7 +274,7 @@ void	computeastrom(picstruct *field, objstruct *obj)
     dx = obj2->posx - 0.5;
     dy = obj2->posy - 0.5;
     obj2->mamaposx = (as->crval[1]+lm[2]*dx+lm[3]*dy)
-			*(prefs.mama_corflex+1.0);	/* CDELT included! */
+			*(MAMA_CORFLEX+1.0);		/* CDELT included! */
     obj2->mamaposy = (as->crval[0]+lm[0]*dx+lm[1]*dy);	/* CDELT included! */
     }
 

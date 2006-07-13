@@ -9,7 +9,7 @@
 *
 *	Contents:	Keywords for the configuration file.
 *
-*	Last modify:	06/07/2006
+*	Last modify:	13/07/2006
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -99,7 +99,6 @@
    {"NONE","VAR_ONLY","ALL",""}, 1, 2, &prefs.ninterp_type},
   {"MAG_GAMMA", P_FLOAT, &prefs.mag_gamma, 0,0, 1e-10,1e+30},
   {"MAG_ZEROPOINT", P_FLOAT, &prefs.mag_zeropoint, 0,0, -100.0, 100.0},
-  {"MAMA_CORFLEX", P_FLOAT, &prefs.mama_corflex, 0,0, -1.0,1.0},
   {"MASK_TYPE", P_KEY, &prefs.mask_type, 0,0, 0.0,0.0,
    {"NONE","BLANK","CORRECT",""}},
   {"MEMORY_BUFSIZE", P_INT, &prefs.mem_bufsize, 8, 65534},
@@ -279,7 +278,6 @@ char *default_prefs[] =
 "*",
 "*#--------------------------- Experimental Stuff -----------------------------",
 "*",
-"*MAMA_CORFLEX     3.3e-5         # MAMA correction factor",
 "*PSF_NAME         default.psf    # File containing the PSF model",
 "*PSF_NMAX         9              # Max.number of PSFs fitted simultaneously",
 "*PSFDISPLAY_TYPE  SPLIT          # Catalog type for PSF-fitting: SPLIT or VECTOR",

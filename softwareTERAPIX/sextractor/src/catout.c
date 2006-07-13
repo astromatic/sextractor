@@ -9,7 +9,7 @@
 *
 *	Contents:	functions for output of catalog data.
 *
-*	Last modify:	12/07/2006
+*	Last modify:	13/07/2006
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -36,6 +36,7 @@ catstruct	*fitscat;
 tabstruct	*objtab;
 FILE		*ascfile;
 char		*buf;
+int		catopen_flag = 0;
 
 /******************************* readcatparams *******************************/
 /*
@@ -380,68 +381,7 @@ void	initcat(void)
       fprintf(ascfile, "\n------------------\n");
       }
     else if (prefs.cat_type == ASCII_VO && (key = objtab->key)) 
-      {
-/*---- A short, "relative" version of the filename */
-      filename = prefs.image_name[prefs.nimage_name>1? 1:0];
-      if (!(rfilename = strrchr(filename, '/')))
-        rfilename = filename;
-      else
-        rfilename++;
-
-      fprintf(ascfile, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
-      fprintf(ascfile, "<VOTABLE "
-	"xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" "
-	"xsi:noNamespaceSchemaLocation="
-	"\"xmlns=http://www.ivoa.net/xml/VOTable/v1.1\">\n");
-        fprintf(ascfile, "<DESCRIPTION>produced by %s</DESCRIPTION>\n", BANNER);
-        fprintf(ascfile, "<!-- VOTable description at "
-		"http://www.ivoa.net/Documents/latest/VOT.html -->\n");
-        fprintf(ascfile,
-		"<RESOURCE ID=\"AVOCat\" name=\"%s\">\n", rfilename);
-        fprintf(ascfile,
-		" <DESCRIPTION>Catalog of sources extracted with %s"
-		"</DESCRIPTION>\n", BANNER);
-        fprintf(ascfile, " <INFO name=\"QUERY_STATUS\" value=\"OK\" />\n");
-        fprintf(ascfile, " <TABLE ID=\"Source_List\" name=\"%s/out\">\n",
-		rfilename);
-        fprintf(ascfile,
-		"  <DESCRIPTION>Table of sources detected in image</DESCRIPTION>\n");
-        fprintf(ascfile,
-	"  <!-- Now comes the definition of each %s parameter -->\n", BANNER);
-        for (i=0; i++<objtab->nkey; key=key->nextkey)
-          {
-/*--------- indicate datatype, arraysize, width and precision attributes */
-/*-------- Handle multidimensional arrays */
-           arraysize[0] = '\0';
-          if (key->naxis>1)
-            {
-            for (d=0; d<key->naxis; d++)
-              {
-              sprintf(str, "%s%d", d?"x":" arraysize=\"", key->naxisn[d]);
-              strcat(arraysize, str);
-              }
-            strcat(arraysize, "\"");
-            }
-          switch(key->ttype)
-            {
-            case T_BYTE:	strcpy(datatype, "unsignedByte"); break;
-            case T_SHORT:	strcpy(datatype, "short"); break;
-            case T_LONG:	strcpy(datatype, "int"); break;
-            case T_FLOAT:	strcpy(datatype, "float"); break;
-            case T_DOUBLE:	strcpy(datatype, "double"); break;
-            default:
-              error (EXIT_FAILURE, "*Internal Error*: Unknown datatype in ",
-		"initcat()");
-            }
-          fprintf(ascfile, "  <FIELD name=\"%s\" ucd=\"%s\""
-		"datatype=\"%s\" unit=\"%s\"%s>\n",
-		key->name, key->voucd, datatype,key->vounit, arraysize);
-          fprintf(ascfile, "   <DESCRIPTION>%s</DESCRIPTION>\n",
-		key->comment);
-          fprintf(ascfile, "  </FIELD>\n");
-          }
-        fprintf(ascfile, "  <DATA><TABLEDATA>\n");
-      }
+      write_xml(ascfile);
     }
   else
     {
@@ -470,6 +410,8 @@ void	initcat(void)
 		"initcat()");
       }
     }
+
+  catopen_flag = 1;
 
   return;
   }
@@ -611,11 +553,18 @@ void	writecat(int n, objliststruct *objlist)
 /*
 Terminate the catalog output.
 */
-void	endcat()
+void	endcat(char *error)
   {
    keystruct	*key;
    int		i;
 
+  if (!catopen_flag)
+    {
+    if (prefs.cat_type == ASCII_VO)
+      write_xml(prefs.cat_name, error);
+    else
+      return;
+    }
   switch(prefs.cat_type)
     {
     case ASCII:
@@ -631,10 +580,11 @@ void	endcat()
       break;
 
     case ASCII_VO:
-      fprintf(ascfile, "   </TABLEDATA></DATA>\n");
+      fprintf(ascfile, "    </TABLEDATA>\n");
+      fprintf(ascfile, "   </DATA>\n");
       fprintf(ascfile, "  </TABLE>\n");
 /*---- Add configuration file meta-data */
-      write_xml_meta(ascfile);
+      write_xml_meta(ascfile, error);
       fprintf(ascfile, "</RESOURCE>\n");
       fprintf(ascfile, "</VOTABLE>\n");
 

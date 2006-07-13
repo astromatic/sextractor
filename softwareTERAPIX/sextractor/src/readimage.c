@@ -9,7 +9,7 @@
 *
 *	Contents:	functions for input of image data.
 *
-*	Last modify:	10/07/2006
+*	Last modify:	13/07/2006
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -705,6 +705,8 @@ void	readimagehead(picstruct *field)
 /*-------- Well if really no date is found */
           as->equinox = 2000.0;
         }
+      if (field->flags&MEASURE_FIELD)
+        prefs.epoch = as->equinox;
       FITSTOS("RADECSYS", str, as->equinox<1984.0?
 	"FK4": (as->equinox<1999.9999? "FK5" : "ICRS"));
       if (!strcmp(str, "ICRS"))
@@ -716,6 +718,8 @@ void	readimagehead(picstruct *field)
         {
         as->radecsys = RDSYS_FK5;
         as->equinox = FITSTOF("EQUINOX ", FITSTOF("EPOCH  ", 2000.0));
+        if (field->flags&MEASURE_FIELD)
+          sprintf(prefs.coosys, "eq_FK5");
         }
       else if (!strcmp(str, "FK4"))
         {

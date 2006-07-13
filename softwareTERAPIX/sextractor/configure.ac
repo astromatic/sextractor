@@ -1,12 +1,12 @@
 # configure.in for SExtractor
-# (C) E.Bertin 2002-2005
+# (C) E.Bertin 2002-2006
 # Process this file with autoconf to produce a configure script.
 # First, disable the annoying config.cache
 define([AC_CACHE_LOAD],)
 define([AC_CACHE_SAVE],)
 
 # This is your standard Bertin source code...
-AC_INIT(sextractor, 2.4.5, [bertin@iap.fr])
+AC_INIT(sextractor, 2.5.0, [bertin@iap.fr])
 AC_CONFIG_SRCDIR(src/makeit.c)
 AC_CONFIG_AUX_DIR(autoconf)
 AM_CONFIG_HEADER(config.h)

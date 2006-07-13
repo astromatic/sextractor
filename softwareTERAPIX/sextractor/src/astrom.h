@@ -9,7 +9,7 @@
 *
 *	Contents:	Astrometrical stuff.
 *
-*	Last modify:	10/07/2006
+*	Last modify:	13/07/2006
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -22,6 +22,7 @@
 #define		MJD1950	33281.92346	/* Modified Julian date for B1950.0 */
 #define		JU2TROP	1.0000214	/* 1 Julian century in tropical units*/
 #define		NAXIS	3		/* Max number of FITS axes */
+#define		MAMA_CORFLEX	3.3e-5	/* MAMA coordinate correction factor */
 
 /*------------------------------- structures --------------------------------*/
 

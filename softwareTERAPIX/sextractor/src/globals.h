@@ -9,7 +9,7 @@
 *
 *	Contents:	global declarations.
 *
-*	Last modify:	28/11/2003
+*	Last modify:	13/07/2006
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -30,7 +30,7 @@ char			gstr[MAXCHAR];
 extern void	allocparcelout(void),
 		analyse(picstruct *, picstruct *, int, objliststruct *),
 		blankit(char *, int),
-                endcat(void),
+                endcat(char *error),
                 reendcat(void),
                 closecheck(void),
 		copydata(picstruct *, int, int),
@@ -66,7 +66,8 @@ extern void	allocparcelout(void),
 		sexmove(double, double),
 		updateparamflags(void),
 		useprefs(void),
-		writecat(int, objliststruct *);
+		writecat(int, objliststruct *),
+		write_error(char *msg1, char *msg2);
 
 extern float	hmedian(float *, int);
 

@@ -405,6 +405,9 @@ void	useprefs()
 		|| FLAG(obj2.poserr_mx2w) || FLAG(obj2.winposerr_mx2w)
 		|| FLAG(obj2.npixw) || FLAG(obj2.fdnpixw)
 		|| FLAG(obj2.fwhmw);
+/* Default astrometric settings */
+  strcpy(prefs.coosys, "ICRS");
+  prefs.epoch = 2000.0;
 
 /*-------------------------------- Photometry ------------------------------*/
 

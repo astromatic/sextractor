@@ -2,6 +2,8 @@ Stephane Arnouts <Stephane.Arnouts@oamp.fr>
 	Suggestions and extensive testing
 Mark Calabretta <mcalabre@atnf.csiro.au>
 	SExtractor makes use of his nice WCS library
+Gerard Tissier <tissier@iap.fr>
+	Preliminary implementation of the VOTable output
 Jean-Paul Kneib <kneib@omp.fr>
 Ian Smail <Ian.Smail@durham.ac.uk>
 	Suggestions and spreading the software back in the early days! 

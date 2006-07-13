@@ -9,7 +9,7 @@
 *
 *	Contents:	Keywords for the configuration file.
 *
-*	Last modify:	11/07/2006
+*	Last modify:	13/07/2006
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -170,6 +170,8 @@ typedef struct
   int		ninterp_ytimeout;       		/* nb of params */
 /*----- astrometry */
   int		world_flag;				/* WORLD required */
+  char		coosys[16];				/* VOTable coord.sys */
+  double	epoch;					/* VOTable epoch */
 /*----- growth curve */
   int		growth_flag;				/* gr. curve needed */
   int		flux_growthsize;       			/* number of elem. */
@@ -198,7 +200,6 @@ typedef struct
   int		pc_flag;				/* PC-fit needed */
   int		pc_vectorsize;				/* nb of params */
 /*----- customize */
-  double	mama_corflex;
   int		fitsunsigned_flag;			/* Force unsign FITS */
   int		next;			     /* Number of extensions in file */
 /* Multithreading */

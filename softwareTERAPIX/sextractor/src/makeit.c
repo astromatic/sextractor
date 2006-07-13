@@ -9,7 +9,7 @@
 *
 *	Contents:	main program.
 *
-*	Last modify:	04/07/2006
+*	Last modify:	13/07/2006
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -55,10 +55,11 @@ void	makeit()
    tabstruct		*imatab;
    static time_t        thetime1, thetime2;
    struct tm		*tm;
+   FILE			*file;
    int			i, nok, ntab, next;
 
 /* Install error logging */
-  error_installfunc(write_xmlerror);
+  error_installfunc(write_error);
 
 /* Processing start date and time */
   thetimet = time(NULL);
@@ -406,7 +407,7 @@ void	makeit()
 
   NFPRINTF(OUTPUT, "Closing files");
 
-  endcat();
+  endcat((char *)NULL);
 
 /* End CHECK-image processing */
   if (prefs.check_flag)
@@ -445,8 +446,9 @@ void	makeit()
   prefs.time_diff = difftime(thetimet2, thetimet);
 
 /* Write XML */
-  if (prefs.xml_flag)
-    write_xml();
+  if (prefs.xml_flag && (file = fopen(prefs.xml_name, "w")))
+    write_xml(file);
+
   if (prefs.xml_flag || prefs.cat_type==ASCII_VO)
     end_xml();
 
@@ -472,12 +474,31 @@ void	initglob()
   return;
   }
 
-/*
-int matherr(struct exception *x)
-{
-printf("***MATH ERROR***: %d %s %f %f\n",
-x->type, x->name, x->arg1, x->retval);
-return (0);
-}
 
-*/
+/****** write_error ********************************************************
+PROTO	int	write_error(char *msg1, char *msg2)
+PURPOSE	Manage files in case of a catched error
+INPUT	a character string,
+	another character string
+OUTPUT	RETURN_OK if everything went fine, RETURN_ERROR otherwise.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	13/07/2006
+ ***/
+void	write_error(char *msg1, char *msg2)
+  {
+   FILE			*file;
+   char			error[MAXCHAR];
+
+  sprintf(error, "%s%s", msg1,msg2);
+  if (prefs.xml_flag)
+    write_xmlerror(prefs.xml_name, error);
+
+/* Also close existing catalog */
+  endcat(error);
+
+  end_xml();
+
+  return;
+  }
+
