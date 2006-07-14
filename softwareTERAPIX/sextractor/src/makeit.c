@@ -9,7 +9,7 @@
 *
 *	Contents:	main program.
 *
-*	Last modify:	13/07/2006
+*	Last modify:	14/07/2006
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -55,7 +55,6 @@ void	makeit()
    tabstruct		*imatab;
    static time_t        thetime1, thetime2;
    struct tm		*tm;
-   FILE			*file;
    int			i, nok, ntab, next;
 
 /* Install error logging */
@@ -407,8 +406,6 @@ void	makeit()
 
   NFPRINTF(OUTPUT, "Closing files");
 
-  endcat((char *)NULL);
-
 /* End CHECK-image processing */
   if (prefs.check_flag)
     for (i=0; i<MAXCHECK; i++)
@@ -446,8 +443,10 @@ void	makeit()
   prefs.time_diff = difftime(thetimet2, thetimet);
 
 /* Write XML */
-  if (prefs.xml_flag && (file = fopen(prefs.xml_name, "w")))
-    write_xml(file);
+  if (prefs.xml_flag)
+    write_xml(prefs.xml_name);
+
+  endcat((char *)NULL);
 
   if (prefs.xml_flag || prefs.cat_type==ASCII_VO)
     end_xml();
@@ -483,11 +482,10 @@ INPUT	a character string,
 OUTPUT	RETURN_OK if everything went fine, RETURN_ERROR otherwise.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	13/07/2006
+VERSION	14/07/2006
  ***/
 void	write_error(char *msg1, char *msg2)
   {
-   FILE			*file;
    char			error[MAXCHAR];
 
   sprintf(error, "%s%s", msg1,msg2);

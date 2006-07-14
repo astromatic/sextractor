@@ -9,13 +9,17 @@
 *
 *	Contents:	XML logging.
 *
-*	Last modify:	13/07/2005
+*	Last modify:	14/07/2005
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
 
 #ifdef HAVE_CONFIG_H
 #include	"config.h"
+#endif
+
+#ifndef _FITSCAT_H_
+#include "fits/fitscat.h"
 #endif
 
 /*----------------------------- Internal constants --------------------------*/
@@ -54,7 +58,8 @@ extern int		end_xml(void),
 			update_xml(sexcatstruct *sexcat, picstruct *dfield, 
 				picstruct *field, picstruct *dwfield,
 				picstruct *wfield),
-			write_xml(FILE *file),
+			write_xml(char *filename),
+			write_xml_header(FILE *file),
 			write_xml_meta(FILE *file, char *error);
 
 extern void		write_xmlerror(char *filename, char *error);

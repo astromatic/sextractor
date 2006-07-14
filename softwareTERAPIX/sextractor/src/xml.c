@@ -9,7 +9,7 @@
 *
 *	Contents:	XML logging.
 *
-*	Last modify:	13/07/2006
+*	Last modify:	14/07/2006
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -117,302 +117,60 @@ int	update_xml(sexcatstruct *sexcat, picstruct *dfield, picstruct *field,
   return EXIT_SUCCESS;
   }
 
+
 /****** write_xml ************************************************************
-PROTO	int	write_xml(FILE *file)
-PURPOSE	Save meta-data to an XML file/stream
+PROTO	int	write_xml(char *filename)
+PURPOSE	Save meta-data to an XML file/stream.
 INPUT	XML file name.
 OUTPUT	RETURN_OK if everything went fine, RETURN_ERROR otherwise.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	13/07/2006
+VERSION	14/07/2006
  ***/
-int	write_xml(FILE *file)
+int	write_xml(char *filename)
   {
-   char		datatype[40], arraysize[40], str[40],
-		*filename, *rfilename;
-   int		i;
-/*
-   char			*pspath,*psuser, *pshost, *str;
-   int			n;
-*/
-/* Username
-  psuser = pspath = pshost = NULL;
-#ifdef HAVE_GETENV
-  if (!(psuser=getenv("USERNAME")))	* Cygwin,... *
-    psuser = getenv("LOGNAME");		* Linux,... *
-  pspath = getenv("PWD");
-  pshost = getenv("HOSTNAME");
-#endif
-*/
+   FILE		*file;
 
-/*
-  fprintf(file, "<?xml version=\"1.0\"?>\n");
-  fprintf(file, "<?xml-stylesheet type=\"text/xsl\" href=\"%s\"?>\n",
-	prefs.xsl_name);
-  fprintf(file, "<!DOCTYPE INFO SYSTEM \"instfile.dtd\">\n");
-  fprintf(file, "<SOURCE_EXTRACTION>\n");
-  fprintf(file, " <software type=\"char\">%s</software>\n", BANNER);
-  fprintf(file, " <version type=\"char\">%s</version>\n", MYVERSION);
-  fprintf(file, " <date type=\"char\">%s</date>\n", prefs.sdate_end);
-  fprintf(file, " <time type=\"char\">%s</time>\n", prefs.stime_end);
-  fprintf(file, " <duration type=\"int\" unit=\"s\">%.0f</duration>\n",
-    	prefs.time_diff);
-  fprintf(file, " <nthreads type=\"int\">%d</nthreads>\n",
-    	prefs.nthreads);
-  fprintf(file, " <user type=\"char\">%s</user>\n", psuser);
-  fprintf(file, " <host type=\"char\">%s</host>\n", pshost);
-  fprintf(file, " <path type=\"char\">%s</path>\n", pspath);
-  fprintf(file, " <DETECTION_IMAGE>\n");
-  fprintf(file, "  <image_name type=\"char\">%s</image_name>\n",
-    	prefs.image_name[0]);
-  fprintf(file, " </DETECTION_IMAGE>\n");
-  fprintf(file, " <MEASUREMENT_IMAGE>\n");
-  fprintf(file, "  <image_name type=\"char\">%s</image_name>\n",
-    	prefs.image_name[1]? prefs.image_name[1] : prefs.image_name[0]);
-  fprintf(file, " </MEASUREMENT_IMAGE>\n");
-  fprintf(file, " <CONFIG>\n");
-  fprintf(file, "  <prefs_name type=\"char\">%s</prefs_name>\n",
-    	prefs.prefs_name);
-  fprintf(file, "  <command_line type=\"char\">%s", prefs.command_line[0]);
-  for (n=1; n<prefs.ncommand_line; n++)
-    fprintf(file, " %s", prefs.command_line[n]);
-  fprintf(file, "</command_line>\n");
-  fprintf(file, "  <catalog_name type=\"char\">%s</catalog_name>\n",
-    	prefs.cat_name);
-  fprintf(file, "  <catalog_type type=\"char\">%s</catalog_type>\n",
-    	key[findkeys("CATALOG_TYPE",keylist,
-			FIND_STRICT)].keylist[prefs.cat_type]);
-  fprintf(file, "  <parameters_name type=\"char\">%s</parameters_name>\n",
-    	prefs.param_name);
-  fprintf(file, "  <detect_type type=\"char\">%s</detect_type>\n",
-    key[findkeys("DETECT_TYPE",keylist,
-			FIND_STRICT)].keylist[prefs.detect_type]);
-  fprintf(file, "  <detect_minarea type=\"int\">%d</detect_minarea>\n",
-	prefs.ext_minarea);
-  fprintf(file, "  <deblend_nthresh type=\"int\">%d</deblend_nthresh>\n",
-	prefs.deblend_nthresh);
-  fprintf(file, "  <deblend_mincont type=\"float\">%g</deblend_mincont>\n",
-	prefs.deblend_mincont);
-  fprintf(file, "  <filter_flag type=\"bool\">%c</filter_flag>\n",
-    	prefs.filter_flag? 'T':'F');
-  fprintf(file, "  <filter_name type=\"char\">%s</filter_name>\n",
-    	prefs.filter_name);
-  fprintf(file, "  <clean_flag type=\"bool\">%c</clean_flag>\n",
-    	prefs.clean_flag? 'T':'F');
-  fprintf(file, "  <clean_param type=\"float\">%g</clean_param>\n",
-	prefs.clean_param);
-  fprintf(file, "  <mask_type type=\"char\">%s</mask_type>\n",
-	key[findkeys("MASK_TYPE",keylist,
-			FIND_STRICT)].keylist[prefs.mask_type]);
-  fprintf(file, "  <weight_gain type=\"bool\">%c</weight_gain>\n",
-    	prefs.weightgain_flag? 'T':'F');
-  for (n=0; n<prefs.naper; n++)
-    fprintf(file, "  <phot_apertures%d type=\"float\">%g</phot_apertures%d>\n",
-	n+1, prefs.apert[n], n+1);
-  for (n=0; n<prefs.nautoparam; n++)
-    fprintf(file, "  <phot_autoparams%d type=\"float\">%g</phot_autoparams%d>\n",
-	n+1, prefs.autoparam[n], n+1);
-  for (n=0; n<prefs.npetroparam; n++)
-    fprintf(file, "  <phot_petroparams%d type=\"float\">%g</phot_petroparams%d>\n",
-	n+1, prefs.petroparam[n], n+1);
-  for (n=0; n<prefs.nautoaper; n++)
-    fprintf(file, "  <phot_autoapers%d type=\"float\">%g</phot_autoapers%d>\n",
-	n+1, prefs.autoaper[n], n+1);
-  for (n=0; n<prefs.nflux_frac; n++)
-    fprintf(file, "  <phot_fluxfrac%d type=\"float\">%g</phot_fluxfrac%d>\n",
-	n+1, prefs.flux_frac[n], n+1);
-  fprintf(file, "  <satur_level type=\"float\">%g</satur_level>\n",
-	prefs.satur_level);
-  fprintf(file, "  <mag_zeropoint type=\"float\">%g</mag_zeropoint>\n",
-	prefs.mag_zeropoint);
-  fprintf(file, "  <mag_gamma type=\"float\">%g</mag_gamma>\n",
-	prefs.mag_gamma);
-  fprintf(file, "  <gain type=\"float\">%g</gain>\n",
-	prefs.gain);
-  fprintf(file, "  <pixel_scale type=\"float\">%g</pixel_scale>\n",
-	prefs.pixel_scale);
-  fprintf(file, "  <seeing_fwhm type=\"float\">%g</seeing_fwhm>\n",
-	prefs.seeing_fwhm);
-  fprintf(file, "  <starnnw_name type=\"char\">%s</starnnw_name>\n",
-    	prefs.nnw_name);
-  for (n=0; n<prefs.nbacksize; n++)
-    fprintf(file, "  <back_size%d type=\"int\">%d</back_size%d>\n",
-	n+1, prefs.backsize[n], n+1);
-  for (n=0; n<prefs.nbackfsize; n++)
-    fprintf(file, "  <back_filtersize%d type=\"int\">%d</back_filtersize%d>\n",
-	n+1, prefs.backfsize[n], n+1);
-  fprintf(file, "  <backphoto_type type=\"char\">%s</backphoto_type>\n",
-    key[findkeys("BACKPHOTO_TYPE",keylist,
-			FIND_STRICT)].keylist[prefs.pback_type]);
-  fprintf(file, "  <backphoto_thick type=\"int\">%d</backphoto_thick>\n",
-	prefs.pback_size);
-  fprintf(file, "  <back_filtthresh type=\"float\">%g</back_filtthresh>\n",
-	prefs.backfthresh);
-  for (n=0; n<prefs.ncheck_type; n++)
-    {
-    fprintf(file, "  <checkimage_type%d type=\"char\">%s</checkimage_type%d>\n",
-	n+1, key[findkeys("CHECKIMAGE_TYPE",keylist,
-			FIND_STRICT)].keylist[prefs.check_type[n]], n+1);
-    if (prefs.check_type[n] != CHECK_NONE)
-      fprintf(file, " <checkimage_name%d type=\"char\">%s</checkimage_name%d>\n",
-    	n+1, prefs.check_name[n], n+1);
-    }
-  fprintf(file, "  <memory_objstack type=\"int\">%d</memory_objstack>\n",
-	prefs.clean_stacksize);
-  fprintf(file, "  <memory_pixstack type=\"int\">%d</memory_pixstack>\n",
-	prefs.mem_pixstack);
-  fprintf(file, "  <memory_bufsize type=\"int\">%d</memory_bufsize>\n",
-	prefs.mem_bufsize);
-  fprintf(file, "  <assoc_name type=\"char\">%s</assoc_name>\n",
-    	prefs.assoc_name);
-  for (n=0; n<prefs.nassoc_data; n++)
-    fprintf(file, "  <assoc_data%d type=\"int\">%d</assoc_data%d>\n",
-	n+1, prefs.assoc_data[n], n+1);
-  for (n=0; n<prefs.nassoc_param; n++)
-    fprintf(file, "  <assoc_params%d type=\"int\">%d</assoc_params%d>\n",
-	n+1, prefs.assoc_param[n], n+1);
-  fprintf(file, "  <assoc_radius type=\"float\">%g</assoc_radius>\n",
-	prefs.assoc_radius);
-  fprintf(file, "  <assoc_type type=\"char\">%s</assoc_type>\n",
-    key[findkeys("ASSOC_TYPE",keylist,
-			FIND_STRICT)].keylist[prefs.assoc_type]);
-  fprintf(file, "  <assocselec_type type=\"char\">%s</assocselec_type>\n",
-    key[findkeys("ASSOCSELEC_TYPE",keylist,
-			FIND_STRICT)].keylist[prefs.assocselec_type]);
-  fprintf(file, "  <verbose_type type=\"char\">%s</verbose_type>\n",
-    key[findkeys("VERBOSE_TYPE",keylist,
-			FIND_STRICT)].keylist[prefs.verbose_type]);
-  fprintf(file, "  <fits_unsigned type=\"bool\">%c</fits_unsigned>\n",
-    	prefs.fitsunsigned_flag? 'T':'F');
-  fprintf(file, "  <psf_name type=\"char\">%s</psf_name>\n",
-    	prefs.psf_name[0]);
-  fprintf(file, "  <psf_nmax type=\"int\">%d</psf_nmax>\n",
-	prefs.psf_npsfmax);
-  fprintf(file, "  <psfdisplay_type type=\"char\">%s</psfdisplay_type>\n",
-    key[findkeys("PSFDISPLAY_TYPE",keylist,
-			FIND_STRICT)].keylist[prefs.psfdisplay_type]);
-  fprintf(file, "  <som_name type=\"char\">%s</som_name>\n",
-    	prefs.som_name);
+  if (!(file = fopen(prefs.xml_name, "w")))
+    return RETURN_ERROR;
 
-  fprintf(file, "  <DETECTION_IMAGE>\n");
-  fprintf(file, "   <thresh_type type=\"char\">%s</thresh_type>\n",
-	key[findkeys("THRESH_TYPE",keylist,
-			FIND_STRICT)].keylist[prefs.thresh_type[0]]);
-  fprintf(file, "   <weight_type type=\"char\">%s</weight_type>\n",
-	key[findkeys("WEIGHT_TYPE",keylist,
-			FIND_STRICT)].keylist[prefs.weight_type[0]]);
-  if (prefs.weight_type[0] != WEIGHT_NONE
-	&& prefs.weight_type[0] != WEIGHT_FROMBACK)
-    fprintf(file, "   <weight_image type=\"char\">%s</weight_image>\n",
-    	prefs.wimage_name[0]);
-  fprintf(file, "   <weight_thresh type=\"float\">%g</weight_thresh>\n",
-	prefs.weight_thresh[0]);
-  fprintf(file, "   <back_type type=\"char\">%s</back_type>\n",
-	key[findkeys("BACK_TYPE",keylist,
-			FIND_STRICT)].keylist[prefs.back_type[0]]);
-  fprintf(file, "   <back_value type=\"float\">%g</back_value>\n",
-	prefs.back_val[0]);
-  fprintf(file, "   <interp_maxxlag>%d</interp_maxxlag>\n",
-	prefs.interp_xtimeout[0]);
-  fprintf(file, "   <interp_maxylag>%d</interp_maxylag>\n",
-	prefs.interp_ytimeout[0]);
-  fprintf(file, "   <interp_type type=\"char\">%s</interp_type>\n",
-    key[findkeys("INTERP_TYPE",keylist,
-			FIND_STRICT)].keylist[prefs.interp_type[0]]);
-  fprintf(file, "  </DETECTION_IMAGE>\n");
- 
- fprintf(file, "  <MEASUREMENT_IMAGE>\n");
-  fprintf(file, "   <thresh_type type=\"char\">%s</thresh_type>\n",
-	key[findkeys("THRESH_TYPE",keylist,
-			FIND_STRICT)].keylist[prefs.thresh_type[1]]);
-  fprintf(file, "   <weight_type type=\"char\">%s</weight_type>\n",
-	key[findkeys("WEIGHT_TYPE",keylist,
-			FIND_STRICT)].keylist[prefs.weight_type[1]]);
-  if (prefs.weight_type[1] != WEIGHT_NONE
-	&& prefs.weight_type[1] != WEIGHT_FROMBACK)
-    fprintf(file, "   <weight_image type=\"char\">%s</weight_image>\n",
-    	prefs.wimage_name[1]);
-  fprintf(file, "   <weight_thresh type=\"float\">%g</weight_thresh>\n",
-	prefs.weight_thresh[1]);
-  fprintf(file, "   <back_type type=\"char\">%s</back_type>\n",
-	key[findkeys("BACK_TYPE",keylist,
-			FIND_STRICT)].keylist[prefs.back_type[1]]);
-  fprintf(file, "   <back_value type=\"float\">%g</back_value>\n",
-	prefs.back_val[1]);
-  fprintf(file, "   <interp_maxxlag>%d</interp_maxxlag>\n",
-	prefs.interp_xtimeout[1]);
-  fprintf(file, "   <interp_maxylag>%d</interp_maxylag>\n",
-	prefs.interp_ytimeout[1]);
-  fprintf(file, "   <interp_type type=\"char\">%s</interp_type>\n",
-    key[findkeys("INTERP_TYPE",keylist,
-			FIND_STRICT)].keylist[prefs.interp_type[1]]);
-  fprintf(file, "  </MEASUREMENT_IMAGE>\n");
+  write_xml_header(file);
+  write_vo_fields(file);
 
-  for (n=0; n<prefs.nimaflag; n++)
-    {
-    fprintf(file, " <FLAG_IMAGE>\n");
-    fprintf(file, "  <image_name type=\"char\">%s</image_name>\n",
-    	prefs.fimage_name[n]);
-    fprintf(file, "  <flag_type type=\"char\">%s</flag_type>\n",
-	key[findkeys("FLAG_TYPE",keylist,
-			FIND_STRICT)].keylist[prefs.flag_type[n]]);
-    fprintf(file, " </FLAG_IMAGE>\n");
-    }
-  fprintf(file, " </CONFIG>\n");
-  fprintf(file, " <nextens type=\"int\">%d</nextens>\n", nxmlmax);
-  for (n=0; n<nxmlmax; n++)
-    {
-    fprintf(file, " <EXT_PROPS>\n");
-    fprintf(file, "  <extension type=\"int\">%d</extension>\n",
-    	xmlstack[n].currext);
-    fprintf(file, "  <date type=\"char\">%s</date>\n", xmlstack[n].ext_date);
-    fprintf(file, "  <time type=\"char\">%s</time>\n", xmlstack[n].ext_time);
-    fprintf(file, "  <duration type=\"int\" unit=\"s\">%.0f</duration>\n",
-    	xmlstack[n].ext_elapsed);
-    fprintf(file, "  <ndetect type=\"int\">%d</ndetect>\n",
-    	xmlstack[n].ndetect);
-    fprintf(file, "  <nsextracted type=\"int\">%d</nsextracted>\n",
-    	xmlstack[n].ntotal);
-    fprintf(file, "  <DETECTION_IMAGE>\n");
-    fprintf(file, "   <image_ident type=\"char\">%s</image_ident>\n",
-    	xmlstack[n].dident);
-    fprintf(file, "   <background_mean type=\"float\">%g</background_mean>\n",
-	xmlstack[n].dbackmean);
-    fprintf(file, "   <background_stddev type=\"float\">%g</background_stddev>\n",
-	xmlstack[n].dbacksig);
-    fprintf(file, "   <threshold type=\"float\">%g</threshold>\n",
-	xmlstack[n].dthresh);
-    fprintf(file, "   <weight_scaling type=\"float\">%g</weight_scaling>\n",
-	xmlstack[n].dsigfac);
-    fprintf(file, "   <pixel_scale type=\"float\" unit=\"deg\">%g</pixel_scale>\n",
-	xmlstack[n].dpixscale/3600.0);
-    fprintf(file, "   <epoch type=\"float\">%g</epoch>\n",
-	xmlstack[n].depoch);
-    fprintf(file, "  </DETECTION_IMAGE>\n");
-    fprintf(file, "  <MEASUREMENT_IMAGE>\n");
-    fprintf(file, "   <image_ident type=\"char\">%s</image_ident>\n",
-    	xmlstack[n].ident);
-    fprintf(file, "   <background_mean type=\"float\">%g</background_mean>\n",
-	xmlstack[n].backmean);
-    fprintf(file, "   <background_stddev type=\"float\">%g</background_stddev>\n",
-	xmlstack[n].backsig);
-    fprintf(file, "   <threshold type=\"float\">%g</threshold>\n",
-	xmlstack[n].thresh);
-    fprintf(file, "   <weight_scaling type=\"float\">%g</weight_scaling>\n",
-	xmlstack[n].sigfac);
-    fprintf(file, "   <pixel_scale type=\"float\" unit=\"deg\">%g</pixel_scale>\n",
-	xmlstack[n].pixscale/3600.0);
-    fprintf(file, "   <epoch type=\"float\">%g</epoch>\n",
-	xmlstack[n].epoch);
-    fprintf(file, "  </MEASUREMENT_IMAGE>\n");
-    fprintf(file, " </EXT_PROPS>\n");
-    }
+  fprintf(file, "   <DATA>\n");
+  if (prefs.cat_type == FITS_LDAC || prefs.cat_type == FITS_TPX
+	|| prefs.cat_type == FITS_10)
+    fprintf(file,
+	"   <FITS extnum=\"%d\"><STREAM href=\"%s%s\" /> </FITS>",
+	prefs.cat_type == FITS_10? 1:2,
+	prefs.cat_name[0] == '/'? "file://" : "file:",
+	prefs.cat_name);
+  fprintf(file, "   </DATA>\n");
+  fprintf(file, "  </TABLE>\n");
 
-  for (str = warning_history(); *str; str = warning_history())
-    fprintf(file, " <WARNING>%s</WARNING>\n", str);
+  write_xml_meta(file, (char *)NULL);
 
-  fprintf(file, "</SOURCE_EXTRACTION>\n");
-*/
+  fprintf(file, "</RESOURCE>\n");
+  fprintf(file, "</VOTABLE>\n");
+
+  fclose(file);
+
+  return RETURN_OK;
+  }
+
+
+/****** write_xml_header ******************************************************
+PROTO	int	write_xml_header(FILE *file)
+PURPOSE	Save an XML-VOtable header to an XML file/stream
+INPUT	file or stream pointer.
+OUTPUT	RETURN_OK if everything went fine, RETURN_ERROR otherwise.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	14/07/2006
+ ***/
+int	write_xml_header(FILE *file)
+  {
+   char		*filename, *rfilename;
 
 /* A short, "relative" version of the filename */
   filename = prefs.image_name[prefs.nimage_name>1? 1:0];
@@ -422,14 +180,16 @@ int	write_xml(FILE *file)
     rfilename++;
 
   fprintf(file, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+  fprintf(file, "<?xml-stylesheet type=\"text/xsl\" href=\"%s\"?>\n",
+	prefs.xsl_name);
   fprintf(file, "<VOTABLE "
 	"xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" "
 	"xsi:noNamespaceSchemaLocation="
-	"\"xmlns=http://www.ivoa.net/xml/VOTable/v1.1\">\n");
+	"\"http://www.ivoa.net/xml/VOTable/v1.1\">\n");
   fprintf(file, "<DESCRIPTION>produced by %s</DESCRIPTION>\n", BANNER);
   fprintf(file, "<!-- VOTable description at "
 	"http://www.ivoa.net/Documents/latest/VOT.html -->\n");
-  fprintf(file, "<RESOURCE ID=\"AVOCat\" name=\"%s\">\n", rfilename);
+  fprintf(file, "<RESOURCE ID=\"%s\" name=\"%s\">\n", BANNER, rfilename);
   fprintf(file, " <DESCRIPTION>Catalog of sources extracted with %s"
 	"</DESCRIPTION>\n", BANNER);
   fprintf(file, " <INFO name=\"QUERY_STATUS\" value=\"OK\" />\n");
@@ -440,52 +200,6 @@ int	write_xml(FILE *file)
 	"  <DESCRIPTION>Table of sources detected in image</DESCRIPTION>\n");
   fprintf(file,
 	"  <!-- Now comes the definition of each %s parameter -->\n", BANNER);
-  for (i=0; i++<objtab->nkey; key=key->nextkey)
-    {
-/*--- indicate datatype, arraysize, width and precision attributes */
-/*--- Handle multidimensional arrays */
-    arraysize[0] = '\0';
-    if (key->naxis>1)
-      {
-      for (d=0; d<key->naxis; d++)
-        {
-        sprintf(str, "%s%d", d?"x":" arraysize=\"", key->naxisn[d]);
-        strcat(arraysize, str);
-        }
-      strcat(arraysize, "\"");
-      }
-    switch(key->ttype)
-      {
-      case T_BYTE:	strcpy(datatype, "unsignedByte"); break;
-      case T_SHORT:	strcpy(datatype, "short"); break;
-      case T_LONG:	strcpy(datatype, "int"); break;
-      case T_FLOAT:	strcpy(datatype, "float"); break;
-      case T_DOUBLE:	strcpy(datatype, "double"); break;
-      default:		error(EXIT_FAILURE,
-			"*Internal Error*: Unknown datatype in ",
-			"initcat()");
-      }
-    fprintf(file,
-	"  <FIELD name=\"%s\" ucd=\"%s\" datatype=\"%s\" unit=\"%s\"%s>\n",
-	key->name, key->voucd, datatype,key->vounit, arraysize);
-    fprintf(file, "   <DESCRIPTION>%s</DESCRIPTION>\n", key->comment);
-    fprintf(file, "  </FIELD>\n");
-    }
-  fprintf(file, "   <DATA>\n");
-  if (prefs.cat_type == ASCII_VO)
-    return RETURN_OK;
-  if (prefs.cat_type == FITS_LDAC || prefs.cat_type == FITS_TPX
-	|| prefs.cat_type == FITS_10)
-    fprintf(file,
-	"   <FITS extnum=\"%d\"><STREAM href=\"file://%s\" /> </FITS>",
-	prefs.cat_type == FITS_10? 1:2, prefs.cat_name);
-  fprintf(file, "   </DATA>\n");
-  fprintf(file, "  </TABLE>\n");
-
-  write_xml_meta(file, (char *)NULL);
-  fprintf(file, "</VOTABLE>");
-
-  fclose(file);
 
   return RETURN_OK;
   }
@@ -499,7 +213,7 @@ INPUT	Pointer to the output file (or stream),
 OUTPUT	RETURN_OK if everything went fine, RETURN_ERROR otherwise.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	13/07/2006
+VERSION	14/07/2006
  ***/
 int	write_xml_meta(FILE *file, char *error)
   {
@@ -570,16 +284,27 @@ int	write_xml_meta(FILE *file, char *error)
 	pspath);
 
   fprintf(file,
-	"  <PARAM name=\"Image_Name\" datatype=\"char\" arraysize=\"*s,\""
+	"  <PARAM name=\"Image_Name\" datatype=\"char\" arraysize=\"*\""
 	" ucd=\"obs.image;meta.fits\" value=\"%s", prefs.image_name[0]);
   if (prefs.nimage_name>1)
     fprintf(file, ",%s", prefs.image_name[1]);
   fprintf(file, "\"/>\n");
 
   if (error)
+    {
+    fprintf(file, "\n  <!-- !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+	"!!!!!!!!!!!!!!!!!!!! -->\n");
+    fprintf(file, "  <!-- !!!!!!!!!!!!!!!!!!!!!! an Error occured"
+	" !!!!!!!!!!!!!!!!!!!!! -->\n");
+    fprintf(file, "  <!-- !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+	"!!!!!!!!!!!!!!!!!!!! -->\n");
     fprintf(file,"  <PARAM name=\"Error_Msg\" datatype=\"char\" arraysize=\"*\""
 	" ucd=\"meta\" value=\"%s\"/>\n", error);
-
+    fprintf(file, "  <!-- !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+	"!!!!!!!!!!!!!!!!!!!! -->\n");
+    fprintf(file, "  <!-- !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+	"!!!!!!!!!!!!!!!!!!!! -->\n\n");
+    }
 
 /* Meta-data for each extension */
   fprintf(file, "  <TABLE ID=\"Extension_Data\" name=\"Extension_Data\">\n");
@@ -608,7 +333,7 @@ int	write_xml_meta(FILE *file, char *error)
   fprintf(file, "   <FIELD name=\"NSextracted\" datatype=\"int\""
 	" ucd=\"meta.number;src.sample\"/>\n");
   fprintf(file, "   <FIELD name=\"Image_Ident\" datatype=\"char\""
-	" arraysize=\"*s,\" ucd=\"meta.id;obs\"/>\n");
+	" arraysize=\"*\" ucd=\"meta.id;obs\"/>\n");
   fprintf(file, "   <FIELD name=\"Background_Mean\" datatype=\"float\""
 	" arraysize=\"%d\" ucd=\"instr.skyLevel;obs.image;stat.median\""
 	" unit=\"ct\"/>\n", prefs.nimage_name);
@@ -729,7 +454,7 @@ int	write_xml_meta(FILE *file, char *error)
     	prefs.ext_minarea);
 
     fprintf(file,
-	"   <PARAM name=\"Thresh_Type\" datatype=\"char\" arraysize=\"*s,\""
+	"   <PARAM name=\"Thresh_Type\" datatype=\"char\" arraysize=\"*\""
 	" ucd=\"meta.code;instr.sensitivity;obs.param\" value=\"%s",
     	key[findkeys("THRESH_TYPE", keylist,
 			FIND_STRICT)].keylist[prefs.thresh_type[0]]);
@@ -791,7 +516,7 @@ int	write_xml_meta(FILE *file, char *error)
 			FIND_STRICT)].keylist[prefs.mask_type]);
 
     fprintf(file,
-	"   <PARAM name=\"Weight_Type\" datatype=\"char\" arraysize=\"*s,\""
+	"   <PARAM name=\"Weight_Type\" datatype=\"char\" arraysize=\"*\""
 	" ucd=\"meta.code;obs.param\" value=\"%s",
     	key[findkeys("WEIGHT_TYPE", keylist,
 			FIND_STRICT)].keylist[prefs.weight_type[0]]);
@@ -813,7 +538,7 @@ int	write_xml_meta(FILE *file, char *error)
 		&& prefs.weight_type[1] != WEIGHT_FROMBACK))
       {
       fprintf(file,
-	"   <PARAM name=\"Weight_Image\" datatype=\"char\" arraysize=\"*s,\""
+	"   <PARAM name=\"Weight_Image\" datatype=\"char\" arraysize=\"*\""
 	" ucd=\"obs.image;meta.fits;obs.param\" value=\"%s",
     	(prefs.weight_type[0] != WEIGHT_NONE
 	&& prefs.weight_type[0] != WEIGHT_FROMBACK) ?
@@ -832,14 +557,14 @@ int	write_xml_meta(FILE *file, char *error)
     if (prefs.nimaflag)
       {
       fprintf(file,
-	"   <PARAM name=\"Flag_Image\" datatype=\"char\" arraysize=\"*s,\""
+	"   <PARAM name=\"Flag_Image\" datatype=\"char\" arraysize=\"*\""
 	" ucd=\"obs.image;meta.fits\" value=\"%s",
     	prefs.fimage_name[0]);
       for (n=1; n<prefs.nimaflag; n++)
         fprintf(file, ",%s", prefs.fimage_name[n]);
       fprintf(file, "\"/>\n");
       fprintf(file,
-	"   <PARAM name=\"Flag_Type\" datatype=\"char\" arraysize=\"*s,\""
+	"   <PARAM name=\"Flag_Type\" datatype=\"char\" arraysize=\"*\""
 	" ucd=\"meta.code\" value=\"%s",
     	key[findkeys("FLAG_TYPE", keylist,
 			FIND_STRICT)].keylist[prefs.flag_type[0]]);
@@ -936,7 +661,7 @@ int	write_xml_meta(FILE *file, char *error)
     	prefs.backfthresh);
 
     fprintf(file,
-	"   <PARAM name=\"CheckImage_Type\" datatype=\"char\" arraysize=\"*s,\""
+	"   <PARAM name=\"CheckImage_Type\" datatype=\"char\" arraysize=\"*\""
 	" ucd=\"meta.code\" value=\"%s",
     	key[findkeys("CHECKIMAGE_TYPE", keylist,
 			FIND_STRICT)].keylist[prefs.check_type[0]]);
@@ -948,7 +673,7 @@ int	write_xml_meta(FILE *file, char *error)
     fprintf(file, "\"/>\n");
 
     fprintf(file,
-	"   <PARAM name=\"CheckImage_Name\" datatype=\"char\" arraysize=\"*s,\""
+	"   <PARAM name=\"CheckImage_Name\" datatype=\"char\" arraysize=\"*\""
 	" ucd=\"meta.file\" value=\"%s",
     	prefs.check_name[0]);
     for (n=1; n<prefs.ncheck_type; n++)
@@ -1048,29 +773,25 @@ INPUT	a character string.
 OUTPUT	RETURN_OK if everything went fine, RETURN_ERROR otherwise.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	13/07/2006
+VERSION	14/07/2006
  ***/
 void	write_xmlerror(char *filename, char *error)
   {
    FILE			*file;
-   char			error[MAXCHAR];
 
-  if ((file = fopen(filename, "w")))
-    {
-    sprintf(error, "%s%s", msg1,msg2);
-    fprintf(file, "<?xml version=\"1.0\"?>\n");
-    fprintf(file, "<?xml-stylesheet type=\"text/xsl\" href=\"%s\"?>\n",
-	prefs.xsl_name);
-    fprintf(file, "<VOTABLE "
-	"xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" "
-	"xsi:noNamespaceSchemaLocation="
-	"\"xmlns=http://www.ivoa.net/xml/VOTable/v1.1\">\n");
-    fprintf(file, "  <DESCRIPTION>produced by %s</DESCRIPTION>\n", BANNER);
-    write_xml_meta(file, error);
-    fprintf(file, "</VOTABLE>");
+  if (!(file = fopen(filename, "w")))
+    return;
 
-    fclose(file);
-    }
+  write_xml_header(file);
+
+  fprintf(file, " </TABLE>\n");
+
+  write_xml_meta(file, error);
+
+  fprintf(file, "</RESOURCE>\n");
+  fprintf(file, "</VOTABLE>\n");
+
+  fclose(file);
 
   return;
   }

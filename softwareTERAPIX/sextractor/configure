@@ -851,12 +851,6 @@ Optional Features:
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
   --enable-icc            Enable special mode for compilation with the Intel
                           compiler (off by default)
-  --enable-assure         Enable special mode for compilation with the Assure
-                          debugger (off by default)
-  --enable-insure         Enable special mode for compilation with the
-                          Insure++ debugger (off by default)
-  --enable-efence         Enable linking with the -e-fence library (off by
-                          default)
   --enable-gprof          Enable special mode for compilation with the gprof
                           profiler (off by default)
   --enable-static         Enable static linking (off by default)
@@ -1789,53 +1783,6 @@ if test "${enable_icc+set}" = set; then
 echo "${ECHO_T}yes" >&6
 else
   use_icc="no"
-	echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-fi;
-
-# Provide special option for the Assure debugger
-echo "$as_me:$LINENO: checking for Assure debugger mode" >&5
-echo $ECHO_N "checking for Assure debugger mode... $ECHO_C" >&6
-# Check whether --enable-assure or --disable-assure was given.
-if test "${enable_assure+set}" = set; then
-  enableval="$enable_assure"
-  use_assure="yes"
-        cclist="assuretcc $cclist"
-	echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
-else
-  use_assure="no"
-	echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-fi;
-
-# Provide special option for the Insure++ debugger
-echo "$as_me:$LINENO: checking for Insure++ debugger mode" >&5
-echo $ECHO_N "checking for Insure++ debugger mode... $ECHO_C" >&6
-# Check whether --enable-insure or --disable-insure was given.
-if test "${enable_insure+set}" = set; then
-  enableval="$enable_insure"
-  use_insure="yes"
-        cclist="insure $cclist"
-	echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
-else
-  use_insure="no"
-	echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-fi;
-
-# Provide special option for the e-fence malloc checker
-echo "$as_me:$LINENO: checking for e-fence mode" >&5
-echo $ECHO_N "checking for e-fence mode... $ECHO_C" >&6
-# Check whether --enable-efence or --disable-efence was given.
-if test "${enable_efence+set}" = set; then
-  enableval="$enable_efence"
-  use_efence="yes"
-	echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
-else
-  use_efence="no"
 	echo "$as_me:$LINENO: result: no" >&5
 echo "${ECHO_T}no" >&6
 fi;
@@ -6795,27 +6742,12 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 
 
-# Special options for the Insure++ debugger
-if test $use_insure = "yes" -a $CC = "insure"; then
-  CFLAGS="$CFLAGS -g"
-  use_static="no"
-fi
+# href to the XSL style-sheet in preflist.h
+CFLAGS="$CFLAGS -DXSL_URL=\\\"file://$datadir/${PACKAGE_NAME}/${PACKAGE_NAME}.xsl\\\""
 
 # Special optimization options for the INTEL C compiler
 if test $use_icc = "yes" -a $CC = "icc"; then
   CFLAGS="$CFLAGS -O3 -axiMKW -ipo -ipo_obj -unroll"
-fi
-
-# Special options for the Assure debugger
-rootsrcdir=`pwd`
-if test $use_assure = "yes" -a $CC = "assuretcc"; then
-  CFLAGS="-WApname=$rootsrcdir/$PACKAGE"
-  LDFLAGS="-WApname=$rootsrcdir/$PACKAGE"
-fi
-
-# Link with e-fence option
-if test "$use_efence" = "yes"; then
-  LIBS="-lefence $LIBS"
 fi
 
 # Link with gprof option

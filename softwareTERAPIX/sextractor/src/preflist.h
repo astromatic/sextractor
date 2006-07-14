@@ -9,7 +9,7 @@
 *
 *	Contents:	Keywords for the configuration file.
 *
-*	Last modify:	13/07/2006
+*	Last modify:	14/07/2006
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -60,7 +60,7 @@
    {""}, 1, 2, &prefs.nback_val},
   {"CATALOG_NAME", P_STRING, prefs.cat_name},
   {"CATALOG_TYPE", P_KEY, &prefs.cat_type, 0,0, 0.0,0.0,
-   {"NONE", "ASCII","ASCII_HEAD", "ASCII_SKYCAT", "ASCII_VO",
+   {"NONE", "ASCII","ASCII_HEAD", "ASCII_SKYCAT", "ASCII_VOTABLE",
 	"FITS_LDAC", "FITS_TPX", "FITS_1.0",""}},
   {"CHECKIMAGE_NAME", P_STRINGLIST, prefs.check_name, 0,0,0.0,0.0,
     {""}, 0, MAXCHECK, &prefs.ncheck_name},
@@ -158,7 +158,7 @@ char *default_prefs[] =
 " ",
 "CATALOG_NAME     test.cat       # name of the output catalog",
 "CATALOG_TYPE     ASCII_HEAD     # NONE,ASCII,ASCII_HEAD, ASCII_SKYCAT,",
-"                                # ASCII_VO, FITS_1.0 or FITS_LDAC",
+"                                # ASCII_VOTABLE, FITS_1.0 or FITS_LDAC",
 "PARAMETERS_NAME  default.param  # name of the file containing catalog contents",
 " ",
 "#------------------------------- Extraction ----------------------------------",

@@ -9,7 +9,7 @@
 *
 *	Contents:	miscellaneous functions.
 *
-*	Last modify:	09/07/2006
+*	Last modify:	14/07/2006
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -24,16 +24,12 @@
 #include	<string.h>
 #include	<time.h>
 
-#ifdef HAVE_MPI
-#include	<mpi.h>
-#endif
-
 #include	"fitscat_defs.h"
 #include	"fitscat.h"
 
 static void	(*errorfunc)(char *msg1, char *msg2) = NULL;
 static char	warning_historystr[WARNING_NMAX][192]={""};
-static int	nwarning = 0, nwarning_history = 0;
+static int	nwarning = 0, nwarning_history = 0, nerror = 0;
 
 /********************************* error ************************************/
 /*
@@ -41,13 +37,12 @@ I hope it will never be used!
 */
 void	error(int num, char *msg1, char *msg2)
   {
-#ifdef HAVE_MPI
-  MPI_Finalize();
-#endif
-
   fprintf(stderr, "\n> %s%s\n\n",msg1,msg2);
-  if (num && errorfunc)
+  if (num && errorfunc && !nerror)
+    {
+    nerror = 1;
     errorfunc(msg1, msg2);
+    }
   exit(num);
   }
 
@@ -95,10 +90,20 @@ Return warning.
 */
 char    *warning_history(void)
   {
+   char		*str;
+
   if (nwarning_history >= WARNING_NMAX)
+    {
+    nwarning_history = 0;	/* So it can be accessed later on */
     return "";
-  return warning_historystr[((nwarning>WARNING_NMAX? (nwarning%WARNING_NMAX):0)
+    }
+
+  str = warning_historystr[((nwarning>WARNING_NMAX? (nwarning%WARNING_NMAX):0)
 	+ nwarning_history++)%WARNING_NMAX];
+  if (!*str)
+    nwarning_history = 0;	/* So it can be accessed later on */
+
+  return str;
   }
 
 

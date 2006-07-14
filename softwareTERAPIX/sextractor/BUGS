@@ -1,3 +1,6 @@
+V2.5 (2006-07-14)
+COOSYS epoch and system are not set to the proper values in ASCII_VOTABLE
+catalogs.
 V2.3 (2002-12-17)
 ASSOC options do not work properly with MEF images (this is not really a bug).
 

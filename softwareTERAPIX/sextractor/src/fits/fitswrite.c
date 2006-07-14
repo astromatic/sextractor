@@ -474,7 +474,7 @@ void	voprint_obj(FILE *stream, tabstruct *tab)
   if (!(key = tab->key))
     error(EXIT_FAILURE, "*Error*: no key to print in table ", tab->extname);
 
-  fprintf(stream, "   <TR>");
+  fprintf(stream, "    <TR>");
 
   for (k=tab->nkey; k--; key = key->nextkey)
     {

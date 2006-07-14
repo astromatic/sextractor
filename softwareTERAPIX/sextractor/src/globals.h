@@ -9,7 +9,7 @@
 *
 *	Contents:	global declarations.
 *
-*	Last modify:	13/07/2006
+*	Last modify:	14/07/2006
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -67,7 +67,8 @@ extern void	allocparcelout(void),
 		updateparamflags(void),
 		useprefs(void),
 		writecat(int, objliststruct *),
-		write_error(char *msg1, char *msg2);
+		write_error(char *msg1, char *msg2),
+		write_vo_fields(FILE *file);
 
 extern float	hmedian(float *, int);
 

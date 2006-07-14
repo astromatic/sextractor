@@ -33,7 +33,7 @@
 #include	"xml.h"
 
 catstruct	*fitscat;
-tabstruct	*objtab;
+tabstruct	*objtab = NULL;
 FILE		*ascfile;
 char		*buf;
 int		catopen_flag = 0;
@@ -337,13 +337,12 @@ Initialize the catalog header
 void	initcat(void)
   {
    keystruct	*key;
-   char		datatype[40], arraysize[40], str[40],
-		*filename, *rfilename;
-   int		d, i, n;
+   int		i, n;
 
   if (prefs.cat_type == CAT_NONE)
     return;
 
+  update_tab(objtab);
   if (prefs.cat_type == ASCII_HEAD || prefs.cat_type == ASCII ||
 	prefs.cat_type == ASCII_SKYCAT || prefs.cat_type == ASCII_VO)
     {
@@ -352,7 +351,6 @@ void	initcat(void)
     else
       if (!(ascfile = fopen(prefs.cat_name, "w+")))
         error(EXIT_FAILURE,"*Error*: cannot open ", prefs.cat_name);
-    update_tab(objtab);
     if (prefs.cat_type == ASCII_HEAD && (key = objtab->key))
       for (i=0,n=1; i++<objtab->nkey; key=key->nextkey)
         {
@@ -380,8 +378,12 @@ void	initcat(void)
         }
       fprintf(ascfile, "\n------------------\n");
       }
-    else if (prefs.cat_type == ASCII_VO && (key = objtab->key)) 
-      write_xml(ascfile);
+    else if (prefs.cat_type == ASCII_VO && objtab->key) 
+      {
+      write_xml_header(ascfile);
+      write_vo_fields(ascfile);
+      fprintf(ascfile, "   <DATA><TABLEDATA>\n");
+      }
     }
   else
     {
@@ -412,6 +414,60 @@ void	initcat(void)
     }
 
   catopen_flag = 1;
+
+  return;
+  }
+
+
+/****** write_vo_fields *******************************************************
+PROTO	int	write_vo_fields(FILE *file)
+PURPOSE	Write the list of columns to an XML-VOTable file or stream
+INPUT	Pointer to the output file (or stream).
+OUTPUT	-.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	14/07/2006
+ ***/
+void	write_vo_fields(FILE *file)
+  {
+   keystruct	*key;
+   char		datatype[40], arraysize[40], str[40];
+   int		i, d;
+
+  if (!objtab || !objtab->key)
+    return;
+  key=objtab->key;
+  for (i=0; i++<objtab->nkey; key=key->nextkey)
+    {
+/*--- indicate datatype, arraysize, width and precision attributes */
+/*--- Handle multidimensional arrays */
+    arraysize[0] = '\0';
+    if (key->naxis>1)
+      {
+      for (d=0; d<key->naxis; d++)
+        {
+        sprintf(str, "%s%d", d?"x":" arraysize=\"", key->naxisn[d]);
+        strcat(arraysize, str);
+        }
+      strcat(arraysize, "\"");
+      }
+    switch(key->ttype)
+      {
+      case T_BYTE:	strcpy(datatype, "unsignedByte"); break;
+      case T_SHORT:	strcpy(datatype, "short"); break;
+      case T_LONG:	strcpy(datatype, "int"); break;
+      case T_FLOAT:	strcpy(datatype, "float"); break;
+      case T_DOUBLE:	strcpy(datatype, "double"); break;
+      default:		error(EXIT_FAILURE,
+			"*Internal Error*: Unknown datatype in ",
+			"initcat()");
+      }
+    fprintf(file,
+	"  <FIELD name=\"%s\" ucd=\"%s\" datatype=\"%s\" unit=\"%s\"%s>\n",
+	key->name, key->voucd, datatype,key->vounit, arraysize);
+    fprintf(file, "   <DESCRIPTION>%s</DESCRIPTION>\n", key->comment);
+    fprintf(file, "  </FIELD>\n");
+    }
 
   return;
   }
@@ -561,9 +617,8 @@ void	endcat(char *error)
   if (!catopen_flag)
     {
     if (prefs.cat_type == ASCII_VO)
-      write_xml(prefs.cat_name, error);
-    else
-      return;
+      write_xmlerror(prefs.cat_name, error);
+    return;
     }
   switch(prefs.cat_type)
     {
@@ -580,8 +635,7 @@ void	endcat(char *error)
       break;
 
     case ASCII_VO:
-      fprintf(ascfile, "    </TABLEDATA>\n");
-      fprintf(ascfile, "   </DATA>\n");
+      fprintf(ascfile, "    </TABLEDATA></DATA>\n");
       fprintf(ascfile, "  </TABLE>\n");
 /*---- Add configuration file meta-data */
       write_xml_meta(ascfile, error);
@@ -614,6 +668,7 @@ void	endcat(char *error)
   objtab->key = NULL;
   objtab->nkey = 0;
   free_tab(objtab);
+  objtab = NULL;
 
   return;
   }
