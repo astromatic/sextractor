@@ -329,7 +329,7 @@ void	psf_fit(psfstruct *psf, picstruct *field, picstruct *wfield,
   int			i,j,p, npsf,npsfmax, npix, nppix, ix,iy,niter,
 			width, height, pwidth,pheight, x,y,
 			xmax,ymax, wbad, gainflag, convflag, npsfflag,
-			ival,kill;
+			ival,kill=0;
   
   checkdata = NULL;                    /* To avoid gcc -Wall warnings */
   dx = dy = 0.0;
@@ -745,7 +745,7 @@ void    double_psf_fit(psfstruct *ppsf, picstruct *pfield, picstruct *pwfield,
     val, ppix,ppix2, /* dflux, */
     gain, radmin2,radmax2,satlevel
     ,chi2,pwthresh,pbacknoise2, /* mr, */
-    r2, psf_fwhm,ppsf_fwhm ;
+    r2=0, psf_fwhm,ppsf_fwhm ;
   float         *pdh, *pwh, pixstep,ppixstep;
   PIXTYPE       *pdatah, *pweighth;
   int                   i,j,k,p, npsf, npix,ix,iy,

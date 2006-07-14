@@ -9,11 +9,115 @@
 *
 *       Contents:       log of changes made to the SExtractor source
 *
-*       Last modify:    19/10/2005
+*       Last modify:    14/07/2006
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
 
+------------------------------------------------------------------------
+r288 | bertin | 2006-07-14 20:13:39 +0200 (Fri, 14 Jul 2006) | 8 lines
+
+Yet another rewriting of the XML part. Meta-data, error messages and catalog info are now consistant between the catalog and the XML metadata file. Still some pb with the COOSYS epoch and system in the VOTable version of the catalog (but correct in the XML metadata file).
+CATALOG_TYPE ASCII_VO changed to ASCII_VOTABLE.
+Added a check in error catching to prevent recursive loops.
+Added reinit of the warning counter to allow multiple uses of the warning history.
+Cleaned up configure.ac and added a default path for the (still missing) XSL file.
+Updated config/default.sex, BUGS HISTORY and README files.
+Ready for release of V2.5.
+
+------------------------------------------------------------------------
+r286 | bertin | 2006-07-13 22:06:48 +0200 (Thu, 13 Jul 2006) | 5 lines
+
+XML VOTable approach changed again: support for error messaging in VO catalog (not only metadata) and FITS serialization of LDAC files in XML output.
+COOSYS tag added with relevant information.
+Removed MAMA_CORFLEX advanced config parameter (replaced with define).
+Version number pushed to 2.5.
+
+------------------------------------------------------------------------
+r285 | bertin | 2006-07-12 20:34:06 +0200 (Wed, 12 Jul 2006) | 4 lines
+
+Improved XML VOTable (still waiting for F.Ochsenbein comments, though).
+Added meta-data to VOTable catalog output.
+Fixed potential bug with long command lines.
+
+------------------------------------------------------------------------
+r283 | bertin | 2006-07-11 23:04:18 +0200 (Tue, 11 Jul 2006) | 2 lines
+
+Completed the conversion of XML output to the VOTable format.
+
+------------------------------------------------------------------------
+r280 | bertin | 2006-07-10 21:49:59 +0200 (Mon, 10 Jul 2006) | 6 lines
+
+Added support for ICRS in header WCS.
+Changed the way header WCS info is interpreted when EQUINOX is missing.
+Added dump of command line in XML meta-data.
+Pushed max number of recorded warnings to 100.
+Changed XML meta-data output format to VOTable (not complete yet).
+
+------------------------------------------------------------------------
+r278 | bertin | 2006-07-09 19:57:00 +0200 (Sun, 09 Jul 2006) | 4 lines
+
+Added support for warning history in the fits library.
+Added duration to XML error output.
+Added ten most recent warnings to XML output.
+
+------------------------------------------------------------------------
+r277 | bertin | 2006-07-07 20:30:30 +0200 (Fri, 07 Jul 2006) | 4 lines
+
+Added catching of error messages and forwarding to XML.
+Added ASCII_VO output catalog format (inspired by G.Tissier's VOTable patch)
+Fixed issue with conflicting CDi_j/CDELTi parameters (report by J.F. Bonnarel).
+
+------------------------------------------------------------------------
+r276 | bertin | 2006-07-05 20:11:29 +0200 (Wed, 05 Jul 2006) | 2 lines
+
+Added more configuration parameters to XML output.
+
+------------------------------------------------------------------------
+r273 | bertin | 2006-07-04 17:39:58 +0200 (Tue, 04 Jul 2006) | 3 lines
+
+Fixed a bug with the reentrant version of strtok in TNX.
+Added more XML info.
+
+------------------------------------------------------------------------
+r271 | bertin | 2006-07-03 21:31:15 +0200 (Mon, 03 Jul 2006) | 5 lines
+
+Updated display to the leatest "Bertin standards".
+Added comments to uncommonly used config parameters in default .sex.
+Changed default output channel for info about extraction to stdout.
+Added XML output.
+
+------------------------------------------------------------------------
+r269 | bertin | 2006-07-02 21:15:05 +0200 (Sun, 02 Jul 2006) | 5 lines
+
+Updated WCS lib to the latest SCAMP version.
+Added support for TNX distortions.
+Added support for WCS with more than 2D (NAXIS=3 right now).
+Added -g compilation flag for gcc.
+
+------------------------------------------------------------------------
+r268 | bertin | 2006-06-29 22:38:02 +0200 (Thu, 29 Jun 2006) | 7 lines
+
+Self Organizing Map code revived!
+The FITS body writing routine now complies with strict aliasing constraints, but:
+Strict-aliasing optimization option dropped in acx_prog_cc_optim.m4 because of too many problems with gcc 4.1 (missing X_IMAGE output, etc.): too much "fun" with pointers in the SExtractor code.
+Local background estimates work again after many years of oblivion, thanks to
+an increased top margin in the buffering mechanism (bug found by P.Astier).
+Overwriting of displayed infos fixed.
+
+------------------------------------------------------------------------
+r115 | bertin | 2006-01-12 20:12:04 +0100 (Thu, 12 Jan 2006) | 2 lines
+
+Preliminary merging with P.Delorme branch (improved PSF-fitting). 
+
+------------------------------------------------------------------------
+r54 | bertin | 2005-11-30 07:29:34 +0100 (Wed, 30 Nov 2005) | 3 lines
+
+Added preliminary support for FLAGS_WEIGHT. Null weights above detections are
+still missed.
+
+
+-------------------------------- old ChangeLog --------------------------------
 Who     When            Where(mostly)   What
 
 EB      03/07/97        clean.c         Make removal of LSB sources optional.
