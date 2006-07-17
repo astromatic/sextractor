@@ -9,7 +9,7 @@
 *
 *	Contents:	low-level functions for writing LDAC FITS catalogs.
 *
-*	Last modify:	12/07/2006
+*	Last modify:	17/07/2006
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -306,28 +306,29 @@ INPUT	Table structure,
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP & Leiden observatory)
-VERSION	26/09/2004
+VERSION	28/12/2004
  ***/
 int	write_obj(tabstruct *tab, char *buf)
 
   {
-   keystruct	*key;
-   char		*pin, *pout;
-   int		b,k;
-   int		esize;
+   keystruct    *key;
+   char         *pin, *pout, *pout2;
+   int          b,k;
+   int          esize;
 
   key = tab->key;
   pout = buf;
   for (k=tab->nkey; k--; key = key->nextkey)
     {
     pin = key->ptr;
+    pout2 = pout;
+    for (b=key->nbytes; b--;)
+      *(pout++) = *(pin++);
     if (bswapflag)
       {
       esize = t_size[key->ttype];
-      swapbytes(pin, esize, key->nbytes/esize);
+      swapbytes(pout2, esize, key->nbytes/esize);
       }
-    for (b=key->nbytes; b--;)
-      *(pout++) = *(pin++);
     }
 
   QFWRITE(buf, *tab->naxisn, tab->cat->file, tab->cat->filename);

@@ -13,13 +13,13 @@ rpm:	dist
 
 rpm-opteron:	dist
 	cp -f $(PACKAGE_NAME)-$(PACKAGE_VERSION).tar.gz $(RPM_SRCDIR)
-	GCCFLAGS="-O3 -g -funroll-loops -fomit-frame-pointer -Wall \
+	GCCFLAGS="-O -g -funroll-loops -fomit-frame-pointer -Wall \
 		-march=opteron" rpmbuild -ba --target=x86_64 \
 		--clean $(PACKAGE_NAME).spec                                                             
 
 rpm-athlon:	dist
 	cp -f $(PACKAGE_NAME)-$(PACKAGE_VERSION).tar.gz $(RPM_SRCDIR)
-	GCCFLAGS="-O3 -g -funroll-loops -fomit-frame-pointer -Wall -m32 \
+	GCCFLAGS="-O -g -funroll-loops -fomit-frame-pointer -Wall -m32 \
 		-march=i686 -msse -mfpmath=sse -mtune=athlon" rpmbuild \
 		-ba --target=i686 --clean $(PACKAGE_NAME).spec
 

@@ -17,18 +17,24 @@
 ------------------------------------------------------------------------
 r288 | bertin | 2006-07-14 20:13:39 +0200 (Fri, 14 Jul 2006) | 8 lines
 
-Yet another rewriting of the XML part. Meta-data, error messages and catalog info are now consistant between the catalog and the XML metadata file. Still some pb with the COOSYS epoch and system in the VOTable version of the catalog (but correct in the XML metadata file).
+Yet another rewriting of the XML part. Meta-data, error messages and catalog
+info are now consistant between the catalog and the XML metadata file. Still
+some pb with the COOSYS epoch and system in the VOTable version of the catalog
+(but correct in the XML metadata file).
 CATALOG_TYPE ASCII_VO changed to ASCII_VOTABLE.
 Added a check in error catching to prevent recursive loops.
-Added reinit of the warning counter to allow multiple uses of the warning history.
-Cleaned up configure.ac and added a default path for the (still missing) XSL file.
+Added reinit of the warning counter to allow multiple uses of the warning
+history.
+Cleaned up configure.ac and added a default path for the (still missing) XSL
+file.
 Updated config/default.sex, BUGS HISTORY and README files.
 Ready for release of V2.5.
 
 ------------------------------------------------------------------------
 r286 | bertin | 2006-07-13 22:06:48 +0200 (Thu, 13 Jul 2006) | 5 lines
 
-XML VOTable approach changed again: support for error messaging in VO catalog (not only metadata) and FITS serialization of LDAC files in XML output.
+XML VOTable approach changed again: support for error messaging in VO catalog
+(not only metadata) and FITS serialization of LDAC files in XML output.
 COOSYS tag added with relevant information.
 Removed MAMA_CORFLEX advanced config parameter (replaced with define).
 Version number pushed to 2.5.
@@ -99,8 +105,11 @@ Added -g compilation flag for gcc.
 r268 | bertin | 2006-06-29 22:38:02 +0200 (Thu, 29 Jun 2006) | 7 lines
 
 Self Organizing Map code revived!
-The FITS body writing routine now complies with strict aliasing constraints, but:
-Strict-aliasing optimization option dropped in acx_prog_cc_optim.m4 because of too many problems with gcc 4.1 (missing X_IMAGE output, etc.): too much "fun" with pointers in the SExtractor code.
+The FITS body writing routine now complies with strict aliasing constraints,
+but:
+Strict-aliasing optimization option dropped in acx_prog_cc_optim.m4 because of
+too many problems with gcc 4.1 (missing X_IMAGE output, etc.): too much "fun"
+with pointers in the SExtractor code.
 Local background estimates work again after many years of oblivion, thanks to
 an increased top margin in the buffering mechanism (bug found by P.Astier).
 Overwriting of displayed infos fixed.
