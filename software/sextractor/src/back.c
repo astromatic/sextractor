@@ -9,7 +9,7 @@
 *
 *	Contents:	functions dealing with background computation.
 *
-*	Last modify:	26/11/2003
+*	Last modify:	16/08/2006
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -380,7 +380,7 @@ void	backstat(backstruct *backmesh, backstruct *wbackmesh,
    double	pix,wpix, sig, mean,wmean, sigma,wsigma, step;
    PIXTYPE	*buft,*wbuft,
 		lcut,wlcut, hcut,whcut;
-   int		m,h,x,y, npix,wnpix, offset, lastbite, ngood;
+   int		m,h,x,y, npix,wnpix, offset, lastbite;
 
   h = bufsize/w;
   bm = backmesh;
@@ -398,7 +398,7 @@ void	backstat(backstruct *backmesh, backstruct *wbackmesh,
     mean = sigma = 0.0;
     buft=buf;
 /*-- We separate the weighted case at this level to avoid penalty in CPU */
-     ngood = 0;
+    npix = 0;
     if (wbackmesh)
       {
       wmean = wsigma = 0.0;
@@ -407,40 +407,39 @@ void	backstat(backstruct *backmesh, backstruct *wbackmesh,
         for (x=bw; x--;)
           {
           pix = *(buft++);
-          if ((wpix = *(wbuft++)) < wthresh)
+          if ((wpix = *(wbuft++)) < wthresh && pix > -BIG)
             {
             wmean += wpix;
             wsigma += wpix*wpix;
             mean += pix;
             sigma += pix*pix;
-            ngood++;
+            npix++;
             }
 	  }
       }
     else
       for (y=h; y--; buft+=offset)
         for (x=bw; x--;)
-          {
-          mean += (pix = *(buft++));
-          sigma += pix*pix;
-          }
-    npix = bw*h;
+          if ((pix = *(buft++)) > -BIG)
+            {
+            mean += pix;
+            sigma += pix*pix;
+            npix++;
+            }
+/*-- If not enough valid pixels, discard this mesh */
+    if ((float)npix < (float)(bw*h*BACK_MINGOODFRAC))
+      {
+      bm->mean = bm->sigma = -BIG;
+      if (wbackmesh)
+        {
+        wbm->mean = wbm->sigma = -BIG;
+        wbm++;
+        wbuf += bw;
+        }
+      continue;
+      }
     if (wbackmesh)
       {
-/*---- If not enough valid pixels, discard this mesh */
-      if ((float)ngood < (float)(npix*BACK_MINGOODFRAC))
-        {
-        bm->mean = bm->sigma = -BIG;
-        if (wbackmesh)
-          {
-          wbm->mean = wbm->sigma = -BIG;
-          wbm++;
-          wbuf += bw;
-          }
-        continue;
-        }
-      else
-        npix = ngood;
       wmean /= (double)npix;
       wsigma = (sig = wsigma/npix - wmean*wmean)>0.0? sqrt(sig):0.0;
       wlcut = wbm->lcut = (PIXTYPE)(wmean - 2.0*wsigma);
