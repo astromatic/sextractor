@@ -110,9 +110,6 @@ AC_FUNC_FSEEKO
 #AC_DEFINE(USE_THREADS, 1, [Triggers multhreading])
 AC_DEFINE_UNQUOTED(THREADS_NMAX, 1,[Maximum number of POSIX threads])
 
-# href to the XSL style-sheet in preflist.h
-CFLAGS="$CFLAGS -DXSL_URL=\\\"file://$datadir/${PACKAGE_NAME}/${PACKAGE_NAME}.xsl\\\""
-
 # Special optimization options for the INTEL C compiler
 if test $use_icc = "yes" -a $CC = "icc"; then
   CFLAGS="$CFLAGS -O3 -axiMKW -ipo -ipo_obj -unroll"

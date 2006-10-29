@@ -9,7 +9,7 @@
 *
 *	Contents:	parameter list for catalog data.
 *
-*	Last modify:	07/07/2006
+*	Last modify:	28/09/2006
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -422,10 +422,10 @@ keystruct	objkey[] = {
 	&outobj2.poserr_theta, H_FLOAT, T_FLOAT, "%5.1f", "deg",
 	"pos.posAng;pos.errorEllipse;instr.det;meta.main", "deg"},
   {"ERRA_WORLD", "World RMS position error along major axis",
-	&outobj2.poserr_aw, H_FLOAT, T_FLOAT, "%12.7g", "pixel",
+	&outobj2.poserr_aw, H_FLOAT, T_FLOAT, "%12.7g", "deg",
 	"stat.stdev;stat.max;pos.errorEllipse;meta.main", "deg"},
   {"ERRB_WORLD", "World RMS position error along minor axis",
-	&outobj2.poserr_bw, H_FLOAT, T_FLOAT, "%12.7g", "pixel",
+	&outobj2.poserr_bw, H_FLOAT, T_FLOAT, "%12.7g", "deg",
 	"stat.stdev;stat.min;pos.errorEllipse;meta.main", "deg"},
   {"ERRTHETA_WORLD", "Error ellipse pos. angle (CCW/world-x)",
 	&outobj2.poserr_thetaw, H_FLOAT, T_FLOAT, "%5.1f", "deg",
@@ -588,10 +588,10 @@ keystruct	objkey[] = {
 	&outobj2.winposerr_theta, H_FLOAT, T_FLOAT, "%5.1f", "deg",
 	"pos.posAng;pos.errorEllipse;instr.det", "deg"},
   {"ERRAWIN_WORLD", "World RMS windowed pos error along major axis",
-	&outobj2.winposerr_aw, H_FLOAT, T_FLOAT, "%12.7g", "pixel",
+	&outobj2.winposerr_aw, H_FLOAT, T_FLOAT, "%12.7g", "deg",
 	"stat.stdev;stat.max;pos.errorEllipse", "deg"},
   {"ERRBWIN_WORLD", "World RMS windowed pos error along minor axis",
-	&outobj2.winposerr_bw, H_FLOAT, T_FLOAT, "%12.7g", "pixel",
+	&outobj2.winposerr_bw, H_FLOAT, T_FLOAT, "%12.7g", "deg",
 	"stat.stdev;stat.min;pos.errorEllipse", "deg"},
   {"ERRTHETAWIN_WORLD", "Windowed error ellipse pos. angle (CCW/world-x)",
 	&outobj2.winposerr_thetaw, H_FLOAT, T_FLOAT, "%5.1f", "deg",

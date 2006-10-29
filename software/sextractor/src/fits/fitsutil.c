@@ -9,7 +9,7 @@
 *
 *	Contents:	functions for handling FITS keywords.
 *
-*	Last modify:	17/11/2004
+*	Last modify:	21/09/2006
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -162,7 +162,7 @@ OUTPUT	RETURN_OK if something was found, RETURN_ERROR otherwise.
 NOTES	-.
 AUTHOR	E. Bertin (IAP),
         E.R. Deul - Handling of NaN
-VERSION	04/08/2004
+VERSION	19/09/2006
  ***/
 int	fitspick(char *fitsline, char *keyword, void *ptr, h_type *htype,
 		t_type *ttype, char *comment)
@@ -241,7 +241,7 @@ int	fitspick(char *fitsline, char *keyword, void *ptr, h_type *htype,
       }
     else if (fitsline[i]==(char)'.') 
       {
-      fixexponent(fitsline+j);
+      fixexponent(fitsline);
       *((double *)ptr) = atof(fitsline+j);
       *htype = H_EXPO;
       *ttype = T_DOUBLE;
@@ -426,7 +426,7 @@ OUTPUT	RETURN_OK if the keyword was found, RETURN_ERROR otherwise.
 NOTES	The buffer MUST contain the ``END     '' keyword.
 	The keyword must already exist in the buffer (use fitsadd()).
 AUTHOR	E. Bertin (IAP & Leiden observatory)
-VERSION	17/11/2004
+VERSION	21/09/2006
  ***/
 int	fitswrite(char *fitsbuf, char *keyword, void *ptr, h_type htype,
 		t_type ttype)
@@ -457,7 +457,8 @@ int	fitswrite(char *fitsbuf, char *keyword, void *ptr, h_type htype,
 				*(double *)ptr: *(float *)ptr);
 			break;
 
-    case H_BOOL:	if (((ttype==T_SHORT)? *(short *)ptr : *(LONG *)ptr))
+    case H_BOOL:	if ((ttype==T_SHORT)? *(short *)ptr :
+				((ttype==T_BYTE)? *(BYTE *)ptr : *(LONG *)ptr))
 			  sprintf(str, "                   T");
 			else
 			  sprintf(str, "                   F");
@@ -538,7 +539,7 @@ int	fitswrite(char *fitsbuf, char *keyword, void *ptr, h_type htype,
   if (posoff==10 && i && (l=69-strlen(str))>0)
     {
     strncpy(str2, cstr, i);
-    str2[i+1] = 0;
+    str2[i] = 0;
     strcat(str, " ");
     strncat(str, str2, l);
     }
@@ -568,7 +569,7 @@ void	fixexponent(char *s)
    int	i;
 
   s += 9;
-  for (i=71; (int)*s != '/' && i--; s++)
+  for (i=71; ((int)*s) && (int)*s != '/' && i--; s++)
     if ((int)*s == 'D' || (int)*s == 'd')
       *s = (char)'E';
 

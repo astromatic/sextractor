@@ -606,6 +606,8 @@ rpm-athlon:	dist
 	GCCFLAGS="-O -g -funroll-loops -fomit-frame-pointer -Wall -m32 \
 		-march=i686 -msse -mfpmath=sse -mtune=athlon" rpmbuild \
 		-ba --target=i686 --clean $(PACKAGE_NAME).spec
+athlon:
+	$(MAKE) CFLAGS="-O -g -funroll-loops -fomit-frame-pointer -Wall -m32 -march=i686 -msse -mfpmath=sse -mtune=athlon" LIBS="-lm"
 
 debug:
 	$(MAKE) CFLAGS="-O3 -funroll-loops -fomit-frame-pointer -Wall -m32 -g"
