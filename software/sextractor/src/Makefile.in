@@ -160,7 +160,7 @@ target_alias = @target_alias@
 
 # Program Makefile for SEx
 # Copyright (C) 2004-2006 Emmanuel Bertin.
-SUBDIRS = fits wcs
+SUBDIRS = fits lmfit wcs
 sex_SOURCES = analyse.c assoc.c astrom.c back.c bpro.c catout.c \
 			  check.c clean.c extract.c field.c filter.c \
 			  flag.c graph.c growth.c image.c interpolate.c \
@@ -175,6 +175,7 @@ sex_SOURCES = analyse.c assoc.c astrom.c back.c bpro.c catout.c \
 			  preflist.h psf.h retina.h sexhead1.h sexhead.h \
 			  sexheadsc.h som.h types.h weight.h winpos.h xml.h
 
+AM_CPPFLAGS = -DXSL_URL=\"file://$(pkgdatadir)/${PACKAGE_NAME}.xsl\"
 sex_LDADD = $(top_builddir)/src/fits/libfits.a $(top_builddir)/src/wcs/libwcs_c.a
 DATE = `date +"%Y-%m-%d"`
 all: all-recursive
@@ -190,9 +191,9 @@ $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu  src/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  src/Makefile'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --gnu  src/Makefile
+	  $(AUTOMAKE) --foreign  src/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
