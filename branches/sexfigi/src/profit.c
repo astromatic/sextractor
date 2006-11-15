@@ -9,7 +9,7 @@
 *
 *	Contents:	Fit an arbitrary profile combination to a detection.
 *
-*	Last modify:	09/11/2006
+*	Last modify:	15/11/2006
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -81,15 +81,23 @@ INPUT	Array of profile structures,
 	Pointer to the obj.
 OUTPUT	Vector of residuals.
 AUTHOR	E. Bertin (IAP)
-VERSION	13/11/2006
+VERSION	15/11/2006
  ***/
-double	*prof_residuals(profstruct *prof, int nprof, psfstruct *psf,
-		picstruct *field, picstruct *wfield, objstruct *obj)
+double	*prof_residuals(profitstruct *profit, picstruct *field,
+		picstruct *wfield, objstruct *obj)
   {
 
-  prof_
+  nprof = profit->nprof;
+  pixout = profit->pix;
+  memset(pixout, 0, profit->naxisn[0]*profit->naxisn[1]*sizeof(double));
+  for (p=0; p<nprof; p++)
+    {
+    add_prof(prof[p], profit);
+    }
+  convolve_profit(profit);
+  compresi_profit(profit, field, wfield, obj);
 
-  return;
+  return profit->resi;
   }
 
 

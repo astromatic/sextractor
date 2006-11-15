@@ -9,7 +9,7 @@
 *
 *	Contents:	Include file for profit.c.
 *
-*	Last modify:	14/11/2006
+*	Last modify:	15/11/2006
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -34,9 +34,10 @@ typedef enum		{SERSIC, DEVAUCOULEURS, EXPONENTIAL, DIRAC}
 typedef struct
   {
   profcode	code;			/* Model code */
-  PIXTYPE	*pix;			/* Pixmap of the model */
+  double	*pix;			/* Pixmap of the model */
   int		naxis;			/* Number of pixmap dimensions */
   int		naxisn[PROFIT_MAXDIM];	/* Pixmap size for each axis */
+  double	sizemax;		/* Maximum size in pixels */
 /* Generic presentation parameters */
   double	*amp;			/* Amplitude */
   double	*x[PROFIT_NAXIS];	/* Pointer to coordinate vector */
@@ -54,6 +55,11 @@ typedef struct
   int		niter;		/* Number of iterations */
   profstruct	**prof;		/* Array of pointers to profiles */
   int		nprof;		/* Number of profiles to consider */
+  psfstruct	*psf;		/* PSF */
+  double	*pix;		/* Pixmap of the model */
+  int		naxisn[2];	/* Dimensions along each axis */
+  double	*resi;		/* Vector of residuals */
+  int		nresi;		/* Number of residual elements */
   }	profitstruct;
 
 /*----------------------------- Global variables ----------------------------*/
