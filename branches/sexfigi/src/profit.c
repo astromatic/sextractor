@@ -92,12 +92,44 @@ double	*prof_residuals(profitstruct *profit, picstruct *field,
   memset(pixout, 0, profit->naxisn[0]*profit->naxisn[1]*sizeof(double));
   for (p=0; p<nprof; p++)
     {
-    add_prof(prof[p], profit);
+    prof_add(prof[p], profit);
     }
   convolve_profit(profit);
   compresi_profit(profit, field, wfield, obj);
 
   return profit->resi;
+  }
+
+
+/****** prof_add **************************************************************
+PROTO	void prof_add(profstruct *prof, profitstruct *profit)
+PURPOSE	Add a model profile to an image.
+INPUT	Profile structure,
+	profile-fitting structure.
+OUTPUT	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	16/11/2006
+ ***/
+void	prof_add(profstruct *prof, profitstruct *profit)
+  {
+  npix = prof->naxisn[0]*prof->naxisn[1];
+  nextra = prof->naxis-2;
+  if (nextra>0)
+    {
+    inc = npix;
+    for (i=0; i<nextra; i++)
+      {
+      profrac1[i] = 1.0 - prof->extra[i] + (proint=(int)prof->extra[i]));
+      point1[i] = prof->pix[proint*inc];
+      point2[i] = point1[i] + inc;
+      for (i=npix; i--;)
+        {
+      inc *= prof->naxisn[i+2];
+      }
+      
+    }
+
+  return;
   }
 
 

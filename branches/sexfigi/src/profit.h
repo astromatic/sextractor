@@ -34,6 +34,7 @@ typedef enum		{SERSIC, DEVAUCOULEURS, EXPONENTIAL, DIRAC}
 typedef struct
   {
   profcode	code;			/* Model code */
+  double	*comppix;		/* Composited pixmap of the model */
   double	*pix;			/* Pixmap of the model */
   int		naxis;			/* Number of pixmap dimensions */
   int		naxisn[PROFIT_MAXDIM];	/* Pixmap size for each axis */
