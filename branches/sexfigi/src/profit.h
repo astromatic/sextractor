@@ -9,7 +9,7 @@
 *
 *	Contents:	Include file for profit.c.
 *
-*	Last modify:	15/11/2006
+*	Last modify:	28/11/2006
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -41,9 +41,9 @@ typedef struct
   double	sizemax;		/* Maximum size in pixels */
 /* Generic presentation parameters */
   double	*amp;			/* Amplitude */
-  double	*x[PROFIT_NAXIS];	/* Pointer to coordinate vector */
-  double	*rho[PROFIT_NAXIS];	/* Pointer to scaling vector */
-  double	*theta;			/* Pointer to pos. angle (CCW/NAXIS1)*/
+  double	*x[2];			/* Pointer to coordinate vector */
+  double	*scale[2];		/* Pointer to scaling vector */
+  double	*posangle;		/* Pointer to pos. angle (CCW/NAXIS1)*/
   double	*extra[PROFIT_MAXDIM-2]	/* Parameters along extra-dimension
   }	profstruct;
 
