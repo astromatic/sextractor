@@ -9,7 +9,7 @@
 *
 *	Contents:	Include file for profit.c.
 *
-*	Last modify:	28/11/2006
+*	Last modify:	29/11/2006
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -28,6 +28,8 @@ One must have:	PROFIT_NITER > 0
 
 typedef enum		{SERSIC, DEVAUCOULEURS, EXPONENTIAL, DIRAC}
 		codestruct; /* Profile code */
+typedef enum	{INTERP_NEARESTNEIGHBOUR, INTERP_BILINEAR, INTERP_LANCZOS2,
+		INTERP_LANCZOS3, INTERP_LANCZOS4}       interpenum;
 
 /*--------------------------- structure definitions -------------------------*/
 
@@ -44,7 +46,8 @@ typedef struct
   double	*x[2];			/* Pointer to coordinate vector */
   double	*scale[2];		/* Pointer to scaling vector */
   double	*posangle;		/* Pointer to pos. angle (CCW/NAXIS1)*/
-  double	*extra[PROFIT_MAXDIM-2]	/* Parameters along extra-dimension
+  double	*extra[PROFIT_MAXDIM-2]	/* Parameters along extra-dimension */
+  interpenum	interptype;		/* Interpolation type */
   }	profstruct;
 
 typedef struct
@@ -57,6 +60,7 @@ typedef struct
   profstruct	**prof;		/* Array of pointers to profiles */
   int		nprof;		/* Number of profiles to consider */
   psfstruct	*psf;		/* PSF */
+  double	*psfdft;	/* Compressed Fourier Transform of the PSF */
   double	*pix;		/* Pixmap of the model */
   int		naxisn[2];	/* Dimensions along each axis */
   double	*resi;		/* Vector of residuals */
