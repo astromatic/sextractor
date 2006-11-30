@@ -9,7 +9,7 @@
 *
 *	Contents:	Include file for profit.c.
 *
-*	Last modify:	29/11/2006
+*	Last modify:	30/11/2006
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -61,8 +61,11 @@ typedef struct
   int		nprof;		/* Number of profiles to consider */
   psfstruct	*psf;		/* PSF */
   double	*psfdft;	/* Compressed Fourier Transform of the PSF */
-  double	*pix;		/* Pixmap of the model */
-  int		naxisn[2];	/* Dimensions along each axis */
+  double	*fullpix;	/* Full resolution pixmap of the model */
+  int		fullnaxisn[2];	/* Dimensions along each axis */
+  double	objpix;		/* Copy of object pixmap */
+  double	objweight;	/* Copy of object weight-map */
+  int		objnaxisn[2];	/* Dimensions along each axis */
   double	*resi;		/* Vector of residuals */
   int		nresi;		/* Number of residual elements */
   }	profitstruct;

@@ -124,6 +124,59 @@ double	*profit_residuals(profitstruct *profit, picstruct *field,
   }
 
 
+/****** profit_compresi ******************************************************
+PROTO	double *prof_compresi(profitstruct *profit,
+			picstruct *field, picstruct *wfield, objstruct *obj)
+PURPOSE	Compute the vector of residuals between the data and the galaxy
+	profile model.
+INPUT	Profile-fitting structure,
+	Pointer to the field,
+	Pointer to the field weight,
+	Pointer to the obj.
+OUTPUT	Vector of residuals.
+AUTHOR	E. Bertin (IAP)
+VERSION	30/11/2006
+ ***/
+double	*profit_compresi(profitstruct *profit, picstruct *field,
+		picstruct *wfield, objstruct *obj)
+  {
+   int		p;
+  
+  ixcout = profit->naxisn[0]/2;
+  iycout = profit->naxisn[1]/2;
+  ixcin = profit->fullnaxisn[0]/2;
+  iycin = profit->fullnaxisn[1]/2;
+  invpixstep = 1.0/profit->psf->pixstep;
+
+/* Initialize multi-dimensional counters */
+  for (d=0; d<2; d++)
+    {
+    posout[d] = 0.0;
+    dnaxisn[d] = profit->objnaxisn[d] - 0.00001;
+    }
+
+/* Remap each pixel */
+  pixout = profit->objpix;
+  weightout = profit->objweight;
+  for (i=npix; i--;)
+    {
+    x1 = posout[0] - dx1;
+    x2 = posout[1] - dx2;
+    posin[0] = (posout[0] - ixcout)*invpixstep + ixcin;
+    posin[1] = (posout[1] - iycout)*invpixstep + iycin;
+    *(resi++) = (*(pixout++) - interpolate_pix(posin, prof->fullpix,
+		profit->fullnaxisn, INTERP_LANCZOS3));
+    for (d=0; d<2; d++)
+      if ((posout[d]+=1.0) < dnaxisn[d])
+        break;
+      else
+        posout[d] = 0.0;
+    }
+
+  return profit->resi;
+  }
+
+
 /****** profit_convolve *******************************************************
 PROTO	void profit_convolve(profitstruct *profit)
 PURPOSE	Convolve the composite profile model with PSF.
@@ -249,7 +302,8 @@ void	prof_add(profstruct *prof, profitstruct *profit)
     x2 = posout[1] - dx2;
     posin[0] = cd11*x1 + cd12*x2;
     posin[1] = cd21*x1 + cd22*x2;
-    *(pixout++) = prof_interpolate(prof, posin);
+    *(pixout++) = interpolate_pix(posin, prof->comppix, prof->naxisn,
+		prof->interptype);
     for (d=0; d<2; d++)
       if ((posout[d]+=1.0) < dnaxisn[d])
         break;
@@ -261,8 +315,9 @@ void	prof_add(profstruct *prof, profitstruct *profit)
   }
 
 
-/****** prof_interpolate ******************************************************
-PROTO	void prof_mapcoords(profstruct *prof, double *posin)
+/****** interpolate_pix ******************************************************
+PROTO	void interpolate_pix(double *posin, double *pix, int naxisn,
+		interpernum interptype)
 PURPOSE	Interpolate a model profile at a given position.
 INPUT	Profile structure,
 	Position vector.
@@ -270,7 +325,8 @@ OUTPUT	-.
 AUTHOR	E. Bertin (IAP)
 VERSION	29/11/2006
  ***/
-double	prof_interpolate(profstruct *prof, double *posin)
+static double	interpolate_pix(double *posin, double *pix, int naxisn,
+		interpernum interptype)
   {
    double	buffer[INTERP_MAXKERNELWIDTH],
 		kernel[INTERP_MAXKERNELWIDTH], dpos[2],
@@ -279,15 +335,15 @@ double	prof_interpolate(profstruct *prof, double *posin)
    int		fac, ival, kwidth, start, width,
 		i,j, n;
 
-  kwidth = interp_kernwidth[prof->interptype]);
+  kwidth = interp_kernwidth[interptype]);
   start = 0;
   fac = 1;
   for (n=0; n<2; n++)
     {
     val = *(posin++);
-    width = prof->naxisn[n];
+    width = naxisn[n];
 /*-- Get the integer part of the current coordinate or nearest neighbour */
-    ival = (prof->interptype==INTERP_NEARESTNEIGHBOUR)?
+    ival = (interptype==INTERP_NEARESTNEIGHBOUR)?
                                         (int)(val-0.50001):(int)val;
 /*-- Store the fractional part of the current coordinate */
     dpos[n] = val - ival;
@@ -303,8 +359,8 @@ double	prof_interpolate(profstruct *prof, double *posin)
 
 /* First step: interpolate along NAXIS1 from the data themselves */
   make_kernel(dpos[0], kernel, prof->interptype);
-  step = prof->naxisn[0]-kwidth;
-  pixin = prof->comppix+start;
+  step = naxisn[0]-kwidth;
+  pixin = pix+start;
   pixout = buffer;
   for (j=kwidth; j--;)
     {
@@ -317,7 +373,7 @@ double	prof_interpolate(profstruct *prof, double *posin)
     }
 
 /* Second step: interpolate along NAXIS2 from the interpolation buffer */
-  make_kernel(dpos[1], kernel, prof->interptype);
+  make_kernel(dpos[1], kernel, interptype);
   pixin = buffer;
   val = 0.0;
   kvector = kernel;
@@ -339,7 +395,7 @@ NOTES   -.
 AUTHOR  E. Bertin (IAP)
 VERSION 18/04/2003
  ***/
-void    make_kernel(double pos, double *kernel, interpenum interptype)
+static void	make_kernel(double pos, double *kernel, interpenum interptype)
   {
    double       x, val, sinx1,sinx2,sinx3,sinx4;
 
