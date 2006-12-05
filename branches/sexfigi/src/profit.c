@@ -9,7 +9,7 @@
 *
 *	Contents:	Fit an arbitrary profile combination to a detection.
 *
-*	Last modify:	29/11/2006
+*	Last modify:	05/12/2006
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -35,6 +35,12 @@
 /*------------------------------- variables ---------------------------------*/
 
 int		interp_kernwidth[5]={1,2,4,6,8};
+
+/* "Local" global variables; it seems dirty but it simplifies a lot */
+/* interfacing to the LM routines */
+static objstruct	*the_obj;
+static picstruct	*the_field, *the_wfield;
+static profitstruct	*profit;
 
 /****** profit_init ***********************************************************
 PROTO	profitstruct profit_init(void)
@@ -85,20 +91,127 @@ INPUT	Array of profile structures,
 	Pointer to the obj.
 OUTPUT	Pointer to an allocated fit structure (containing details about the
 	fit).
+NOTES	It is a modified version of the lm_minimize() of lmfit.
 AUTHOR	E. Bertin (IAP)
 VERSION	10/11/2006
  ***/
 fitstruct	*prof_fit(profstruct *prof, int nprof, psfstruct *psf,
 		picstruct *field, picstruct *wfield, objstruct *obj)
   {
-  
+    profitstruct	*profit;
+    double		*diag, *fjac, *qtf, *wa1, *wa2, *wa3, *wa4;
+    int			*ipvt;
+
+
+/* Use (dirty) global variables to interface with lmfit */
+   the_profit = profit = profit_init(psf);
+   the_field = field;
+   the_wfield = wfield;
+   the_obj = obj;
+
+/* Allocate work space */
+   n = profit->nparam;
+   m = profit->nresi;
+
+   lm_control_type	control;
+   lm_initialize_control(&control);
+
+   QMALLOC(diag, double,n);
+   QMALLOC(qtf, double, n);
+   QMALLOC(fjac, double,n*m);
+   QMALLOC(wa1, double, n);
+   QMALLOC(wa2, double, n);
+   QMALLOC(wa3, double, n);
+   QMALLOC(wa4, double,   m);
+   QMALLOC(ipvt, int,   n);
+
+/* Perform fit */
+
+   control->info = 0;
+   control->nfev = 0;
+
+/* This goes through the modified legacy interface */
+   lm_lmdif( m, n, profit->param, profit->resi,
+		control->ftol, control->xtol, control->gtol,
+              control->maxcall*(n+1), control->epsilon, diag, 1,
+              control->stepbound, &(control->info),
+              &(control->nfev), fjac, ipvt, qtf, wa1, wa2, wa3, wa4,
+              profit_evaluate, profit_printout, NULL);
+
+   control->fnorm = lm_enorm(m, profit->resi);
+   if (control->info < 0 )
+     control->info = 10;
+
+/* clean up. */
+
+   free(diag);
+   free(qtf); 
+   free(fjac);
+   free(wa1); 
+   free(wa2); 
+   free(wa3 );
+   free(wa4); 
+   free(ipvt);
+
 
   return;
   }
 
+
+/****** profit_printout *******************************************************
+PROTO	void profit_printout(int n_par, double* par, int m_dat, double* fvec,
+		void *data, int iflag, int iter, int nfev )
+PURPOSE	Provide a function to print out results to lmfit.
+INPUT	Number of fitted parameters,
+	pointer to the vector of parameters,
+	number of data points,
+	pointer to the vector of residuals (output),
+	pointer to the data structure (unused),
+	0 (init) 1 (outer loop) 2(inner loop) -1(terminated),
+	outer loop counter,
+	number of calls to evaluate().
+OUTPUT	-.
+NOTES	Input arguments are there only for compatibility purposes (unused)
+AUTHOR	E. Bertin (IAP)
+VERSION	05/12/2006
+ ***/
+void	profit_evaluate(int n_par, double* par, int m_dat, double* fvec,
+		void *data, int iflag, int iter, int nfev )
+  {
+
+  if (0)
+    lm_print_default(n_par, par, m_dat, fvec, data, iflag, iter, nfev);
+
+  return;
+  }
+
+
+/****** profit_evaluate *******************************************************
+PROTO	void profit_evaluate(double *par, int m_dat, double *fvec,
+		void *data, int *info)
+PURPOSE	Provide a function returning residuals to lmfit.
+INPUT	Pointer to the vector of parameters,
+	number of data points,
+	pointer to the vector of residuals (output),
+	pointer to the data structure (unused),
+	pointer to the info structure (unused).
+OUTPUT	-.
+NOTES	Input arguments are there only for compatibility purposes (unused)
+AUTHOR	E. Bertin (IAP)
+VERSION	05/12/2006
+ ***/
+void	profit_evaluate(double *par, int m_dat, double *fvec,
+			void *data, int *info)
+  {
+  profit_residuals(the_profit, the_field, the_wfield, the_obj);
+
+  return;
+  }
+
+
 /****** profit_residuals ******************************************************
-PROTO	double *prof_residuals(profit
-			picstruct *field, picstruct *wfield, objstruct *obj)
+PROTO	double *prof_residuals(profitstruct *profit, picstruct *field,
+		picstruct *wfield, objstruct *obj)
 PURPOSE	Compute the vector of residuals between the data and the galaxy
 	profile model.
 INPUT	Profile-fitting structure,
