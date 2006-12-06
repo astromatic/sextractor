@@ -9,7 +9,7 @@
 *
 *	Contents:	Include file for profit.c.
 *
-*	Last modify:	30/11/2006
+*	Last modify:	06/12/2006
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -17,17 +17,17 @@
 /*----------------------------- Internal constants --------------------------*/
 
 #define	PROFIT_NITER	1	/* Max. nb of iterations in profile fitting */
-#define	PROFIT_MAXDIM	4	/* Max. nb of dimensions of profiles */
-
+#define	PROFIT_MAXEXTRA	2	/* Max. nb of extra free params of profiles */
+#define PROFIT_RESOL	1024	/* Pixmap size of models */
 /* NOTES:
 One must have:	PROFIT_NITER > 0
-		PROFIT_MAXDIM > 2
+		PROFIT_MAXEXTRA > 0
 */
 
 /*--------------------------------- typedefs --------------------------------*/
 
-typedef enum		{SERSIC, DEVAUCOULEURS, EXPONENTIAL, DIRAC}
-		codestruct; /* Profile code */
+typedef enum		{PROF_SERSIC, PROF_DEVAUCOULEURS, PROF_EXPONENTIAL,
+			PROF_DIRAC}	proftypestruct; /* Profile code */
 typedef enum	{INTERP_NEARESTNEIGHBOUR, INTERP_BILINEAR, INTERP_LANCZOS2,
 		INTERP_LANCZOS3, INTERP_LANCZOS4}       interpenum;
 
@@ -35,18 +35,18 @@ typedef enum	{INTERP_NEARESTNEIGHBOUR, INTERP_BILINEAR, INTERP_LANCZOS2,
 
 typedef struct
   {
-  profcode	code;			/* Model code */
+  proftypestruct	code;		/* Model code */
   double	*comppix;		/* Composited pixmap of the model */
   double	*pix;			/* Pixmap of the model */
   int		naxis;			/* Number of pixmap dimensions */
-  int		naxisn[PROFIT_MAXDIM];	/* Pixmap size for each axis */
+  int		naxisn[2+PROFIT_MAXEXTRA];	/* Pixmap size for each axis */
   double	sizemax;		/* Maximum size in pixels */
 /* Generic presentation parameters */
   double	*amp;			/* Amplitude */
   double	*x[2];			/* Pointer to coordinate vector */
   double	*scale[2];		/* Pointer to scaling vector */
   double	*posangle;		/* Pointer to pos. angle (CCW/NAXIS1)*/
-  double	*extra[PROFIT_MAXDIM-2]	/* Parameters along extra-dimension */
+  double	*extra[PROFIT_MAXEXTRA]	/* Parameters along extra-dimension */
   interpenum	interptype;		/* Interpolation type */
   }	profstruct;
 
@@ -61,10 +61,10 @@ typedef struct
   int		nprof;		/* Number of profiles to consider */
   psfstruct	*psf;		/* PSF */
   double	*psfdft;	/* Compressed Fourier Transform of the PSF */
-  double	*fullpix;	/* Full resolution pixmap of the model */
-  int		fullnaxisn[2];	/* Dimensions along each axis */
-  double	objpix;		/* Copy of object pixmap */
-  double	objweight;	/* Copy of object weight-map */
+  double	*modpix;	/* Full resolution pixmap of the model */
+  int		modnaxisn[2];	/* Dimensions along each axis */
+  double	*objpix;	/* Copy of object pixmap */
+  double	*objweight;	/* Copy of object weight-map */
   int		objnaxisn[2];	/* Dimensions along each axis */
   double	*resi;		/* Vector of residuals */
   int		nresi;		/* Number of residual elements */
