@@ -34,12 +34,14 @@ POST_INSTALL = :
 NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
+build_triplet = @build@
+host_triplet = @host@
 bin_PROGRAMS = sex$(EXEEXT)
 subdir = src
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/acx_prog_cc_optim.m4 \
-	$(top_srcdir)/configure.ac
+am__aclocal_m4_deps = $(top_srcdir)/acx_fftw.m4 \
+	$(top_srcdir)/acx_prog_cc_optim.m4 $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(SHELL) $(top_srcdir)/autoconf/mkinstalldirs
@@ -50,18 +52,20 @@ binPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(bin_PROGRAMS)
 am_sex_OBJECTS = analyse.$(OBJEXT) assoc.$(OBJEXT) astrom.$(OBJEXT) \
 	back.$(OBJEXT) bpro.$(OBJEXT) catout.$(OBJEXT) check.$(OBJEXT) \
-	clean.$(OBJEXT) extract.$(OBJEXT) field.$(OBJEXT) \
-	filter.$(OBJEXT) flag.$(OBJEXT) graph.$(OBJEXT) \
-	growth.$(OBJEXT) image.$(OBJEXT) interpolate.$(OBJEXT) \
-	main.$(OBJEXT) makeit.$(OBJEXT) manobjlist.$(OBJEXT) \
-	misc.$(OBJEXT) neurro.$(OBJEXT) pc.$(OBJEXT) photom.$(OBJEXT) \
-	plist.$(OBJEXT) poly.$(OBJEXT) prefs.$(OBJEXT) psf.$(OBJEXT) \
+	clean.$(OBJEXT) extract.$(OBJEXT) fft.$(OBJEXT) \
+	field.$(OBJEXT) filter.$(OBJEXT) flag.$(OBJEXT) \
+	graph.$(OBJEXT) growth.$(OBJEXT) image.$(OBJEXT) \
+	interpolate.$(OBJEXT) main.$(OBJEXT) makeit.$(OBJEXT) \
+	manobjlist.$(OBJEXT) misc.$(OBJEXT) neurro.$(OBJEXT) \
+	pc.$(OBJEXT) photom.$(OBJEXT) plist.$(OBJEXT) poly.$(OBJEXT) \
+	prefs.$(OBJEXT) profit.$(OBJEXT) psf.$(OBJEXT) \
 	readimage.$(OBJEXT) refine.$(OBJEXT) retina.$(OBJEXT) \
 	scan.$(OBJEXT) som.$(OBJEXT) weight.$(OBJEXT) winpos.$(OBJEXT) \
 	xml.$(OBJEXT)
 sex_OBJECTS = $(am_sex_OBJECTS)
 sex_DEPENDENCIES = $(top_builddir)/src/fits/libfits.a \
-	$(top_builddir)/src/wcs/libwcs_c.a
+	$(top_builddir)/src/wcs/libwcs_c.a \
+	$(top_builddir)/src/lmfit/liblmfit.a
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/autoconf/depcomp
 am__depfiles_maybe = depfiles
@@ -104,6 +108,8 @@ ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
 EXEEXT = @EXEEXT@
+FFTW_CFLAGS = @FFTW_CFLAGS@
+FFTW_LIBS = @FFTW_LIBS@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
@@ -130,6 +136,8 @@ VERSION = @VERSION@
 ac_ct_CC = @ac_ct_CC@
 ac_ct_RANLIB = @ac_ct_RANLIB@
 ac_ct_STRIP = @ac_ct_STRIP@
+acx_fftwdt_ok = @acx_fftwdt_ok@
+acx_fftwft_ok = @acx_fftwft_ok@
 am__fastdepCC_FALSE = @am__fastdepCC_FALSE@
 am__fastdepCC_TRUE = @am__fastdepCC_TRUE@
 am__include = @am__include@
@@ -138,10 +146,18 @@ am__quote = @am__quote@
 am__tar = @am__tar@
 am__untar = @am__untar@
 bindir = @bindir@
+build = @build@
 build_alias = @build_alias@
+build_cpu = @build_cpu@
+build_os = @build_os@
+build_vendor = @build_vendor@
 datadir = @datadir@
 exec_prefix = @exec_prefix@
+host = @host@
 host_alias = @host_alias@
+host_cpu = @host_cpu@
+host_os = @host_os@
+host_vendor = @host_vendor@
 includedir = @includedir@
 infodir = @infodir@
 install_sh = @install_sh@
@@ -162,21 +178,25 @@ target_alias = @target_alias@
 # Copyright (C) 2004-2006 Emmanuel Bertin.
 SUBDIRS = fits lmfit wcs
 sex_SOURCES = analyse.c assoc.c astrom.c back.c bpro.c catout.c \
-			  check.c clean.c extract.c field.c filter.c \
+			  check.c clean.c extract.c fft.c field.c filter.c \
 			  flag.c graph.c growth.c image.c interpolate.c \
 			  main.c makeit.c manobjlist.c misc.c neurro.c pc.c \
-			  photom.c plist.c poly.c prefs.c psf.c readimage.c \
-			  refine.c retina.c scan.c som.c weight.c winpos.c \
-			  xml.c \
+			  photom.c plist.c poly.c prefs.c profit.c psf.c \
+			  readimage.c refine.c retina.c scan.c som.c weight.c \
+			  winpos.c xml.c \
 			  assoc.h astrom.h back.h bpro.h check.h clean.h \
-			  define.h extract.h field.h filter.h flag.h \
+			  define.h extract.h fft.h field.h filter.h flag.h \
 			  globals.h growth.h image.h interpolate.h key.h \
 			  neurro.h param.h photom.h plist.h poly.h prefs.h \
-			  preflist.h psf.h retina.h sexhead1.h sexhead.h \
-			  sexheadsc.h som.h types.h weight.h winpos.h xml.h
+			  preflist.h profit.h psf.h retina.h sexhead1.h \
+			  sexhead.h sexheadsc.h som.h types.h weight.h \
+			  winpos.h xml.h
 
 AM_CPPFLAGS = -DXSL_URL=\"file://$(pkgdatadir)/${PACKAGE_NAME}.xsl\"
-sex_LDADD = $(top_builddir)/src/fits/libfits.a $(top_builddir)/src/wcs/libwcs_c.a
+sex_LDADD = $(top_builddir)/src/fits/libfits.a \
+			  $(top_builddir)/src/wcs/libwcs_c.a \
+			  $(top_builddir)/src/lmfit/liblmfit.a 
+
 DATE = `date +"%Y-%m-%d"`
 all: all-recursive
 
@@ -253,6 +273,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/clean.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/extract.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fft.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/field.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/filter.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/flag.Po@am__quote@
@@ -270,6 +291,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/plist.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/poly.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/prefs.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/profit.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/psf.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/readimage.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/refine.Po@am__quote@

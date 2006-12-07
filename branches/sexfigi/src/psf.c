@@ -10,7 +10,7 @@
 *
 *	Contents:	Fit the PSF to a detection.
 *
-*	Last modify:	12/01/2006
+*	Last modify:	07/12/2006
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -84,10 +84,13 @@ void	psf_end(psfstruct *psf, psfitstruct *psfit)
   free(psf->masksize);
   free(psf);
 
-  free(psfit->x);
-  free(psfit->y);
-  free(psfit->flux);
-  free(psfit);
+  if (psfit)
+    {
+    free(psfit->x);
+    free(psfit->y);
+    free(psfit->flux);
+    free(psfit);
+    }
 
   return;
   }

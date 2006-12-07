@@ -9,7 +9,7 @@
 *
 *       Contents:       Routines dealing with double precision FFT.
 *
-*       Last modify:    29/11/2006
+*       Last modify:    07/12/2006
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -105,7 +105,7 @@ OUTPUT	-.
 NOTES	For data1 and fdata2, memory must be allocated for
 	size[0]* ... * 2*(size[naxis-1]/2+1) doubles (padding required).
 AUTHOR	E. Bertin (IAP)
-VERSION	29/11/2006
+VERSION	07/12/2006
  ***/
 void    fft_conv(double *data1, double *fdata2, int *size)
   {
@@ -154,7 +154,7 @@ void    fft_conv(double *data1, double *fdata2, int *size)
 #ifdef USE_THREADS
   QPTHREAD_MUTEX_LOCK(&fftmutex);
 #endif
-  plan = fftw_plan_dft_c2r_2d(width, height, (fftw_complex *)fdata1, 
+  plan = fftw_plan_dft_c2r_2d(size[0], size[1], (fftw_complex *)fdata1, 
         data1, FFTW_ESTIMATE|FFTW_BACKWARD|FFTW_DESTROY_INPUT);
 #ifdef USE_THREADS
   QPTHREAD_MUTEX_UNLOCK(&fftmutex);

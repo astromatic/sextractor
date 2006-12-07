@@ -9,6 +9,20 @@
 /* Define to 1 if you have the <fcntl.h> header file. */
 #undef HAVE_FCNTL_H
 
+/* Define if you have the FFTW double precision libraries and header files. */
+#undef HAVE_FFTW
+
+/* Define if you have the FFTW single precision libraries and header files. */
+#undef HAVE_FFTWF
+
+/* Define if you have the FFTW threaded single precision libraries and header
+   files. */
+#undef HAVE_FFTWFT
+
+/* Define if you have the FFTW threaded double precision libraries and header
+   files. */
+#undef HAVE_FFTWT
+
 /* Define to 1 if fseeko (and presumably ftello) exists and is declared. */
 #undef HAVE_FSEEKO
 

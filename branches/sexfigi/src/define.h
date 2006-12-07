@@ -9,7 +9,7 @@
 *
 *	Contents:	global definitions.
 *
-*	Last modify:	12/07/2006
+*	Last modify:	07/12/2006
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -51,6 +51,7 @@
 #define	OUTPUT			stdout		/* where all msgs are sent */
 #define PSF_NPSFMAX		9		/* Max number of fitted PSFs */
 
+#define	DEG			(PI/180.0)	/* 1 deg in radians */
 #ifndef PI
 #define	PI			3.1415926535898	/* never met before? */
 #endif

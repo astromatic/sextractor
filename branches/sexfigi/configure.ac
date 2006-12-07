@@ -20,6 +20,7 @@ AC_SUBST(DATE2, "$date2")
 AC_SUBST(DATE3, "$date3")
 
 # Include macros
+sinclude(acx_fftw.m4)
 sinclude(acx_prog_cc_optim.m4)
 
 # Display pakage and version number
@@ -102,17 +103,47 @@ AC_FUNC_STAT
 AC_FUNC_STRFTIME
 AC_CHECK_FUNCS([atexit getenv memcpy memmove memset mkdir munmap strstr])
 
+# Set flags for multithreading
+AC_ARG_ENABLE(threads,
+        [AC_HELP_STRING([--enable-threads@<:@=<max_number_of_threads>@:>@],
+                [Enable multhreading (off by default)])],
+    if test "$enableval" = "yes"; then
+      n_pthreads=16
+    else
+      n_pthreads=$enableval
+    fi
+    use_pthreads=yes,
+    n_pthreads=1
+    use_pthreads=no
+    )
+
+
 # Check support for large files
 AC_SYS_LARGEFILE
 AC_FUNC_FSEEKO
 
 ########################### No multithreading yet! ###########################
 #AC_DEFINE(USE_THREADS, 1, [Triggers multhreading])
-AC_DEFINE_UNQUOTED(THREADS_NMAX, 1,[Maximum number of POSIX threads])
+AC_DEFINE_UNQUOTED(THREADS_NMAX, $n_pthreads,[Maximum number of POSIX threads])
+
+################ handle the FFTW library (Fourier transforms) ################
+ACX_FFTW(,[use_fftw=yes],[use_fftw=no])
+if test "$use_fftw" = "yes"; then
+  if test "$use_pthreads" = "yes"; then
+    if  test "$acx_fftwft_ok" = "no"; then
+      AC_MSG_ERROR([Threaded version of the FFTW library not found! Exiting.])
+    fi
+    LIBS="$FFTWT_LIBS $LIBS"
+  else
+    LIBS="$FFTW_LIBS $LIBS"
+  fi
+else
+  AC_MSG_ERROR([FFTW library not found! Exiting.])
+fi
 
 # Special optimization options for the INTEL C compiler
 if test $use_icc = "yes" -a $CC = "icc"; then
-  CFLAGS="$CFLAGS -O3 -axiMKW -ipo -ipo_obj -unroll"
+  CFLAGS="$CFLAGS -O3 -axPK -ip -unroll"
 fi
 
 # Link with gprof option

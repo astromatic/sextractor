@@ -424,6 +424,8 @@ void	reendcheck(picstruct *field, checkstruct *check)
     case CHECK_SUBPCPROTOS:
     case CHECK_PCPROTOS:
     case CHECK_PCOPROTOS:
+    case CHECK_SUBPROFILES:
+    case CHECK_PROFILES:
     case CHECK_ASSOC:
       if (bswapflag)
         swapbytes(check->pix, sizeof(PIXTYPE), (int)check->npix);

@@ -9,7 +9,7 @@
 *
 *	Contents:	Functions to handle the configuration file.
 *
-*	Last modify:	12/01/2006
+*	Last modify:	07/12/2006
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -23,6 +23,14 @@
 #include	<stdio.h>
 #include	<stdlib.h>
 #include	<string.h>
+#include        <unistd.h>
+#if defined(USE_THREADS) \
+&& (defined(__APPLE__) || defined(FREEBSD) || defined(NETBSD))	/* BSD, Apple */
+ #include	<sys/types.h>
+ #include	<sys/sysctl.h>
+#elif defined(USE_THREADS) && defined(HAVE_MPCTL)		/* HP/UX */
+ #include	<sys/mpctl.h>
+#endif
 
 #include	"define.h"
 #include	"globals.h"
@@ -380,9 +388,57 @@ void	useprefs()
    unsigned short	ashort=1;
    int			i, margin, naper;
    char			*str;
+#ifdef USE_THREADS
+   int			nproc;
+#endif
 
 /* Test if byteswapping will be needed */
   bswapflag = *((char *)&ashort);
+
+/* Multithreading */
+#ifdef USE_THREADS
+  if (!prefs.nthreads)
+    {
+/*-- Get the number of processors for parallel builds */
+/*-- See, e.g. http://ndevilla.free.fr/threads */
+    nproc = -1;
+#if defined(_SC_NPROCESSORS_ONLN)		/* AIX, Solaris, Linux */
+    nproc = (int)sysconf(_SC_NPROCESSORS_ONLN);
+#elif defined(_SC_NPROCESSORS_CONF)
+    nproc = (int)sysconf(_SC_NPROCESSORS_CONF);
+#elif defined(__APPLE__) || defined(FREEBSD) || defined(NETBSD)	/* BSD, Apple */
+    {
+     int        mib[2];
+     size_t     len;
+
+     mib[0] = CTL_HW;
+     mib[1] = HW_NCPU;
+     len = sizeof(nproc);
+     sysctl(mib, 2, &nproc, &len, NULL, 0);
+     }
+#elif defined (_SC_NPROC_ONLN)			/* SGI IRIX */
+    nproc = sysconf(_SC_NPROC_ONLN);
+#elif defined(HAVE_MPCTL)			/* HP/UX */
+    nproc =  mpctl(MPC_GETNUMSPUS_SYS, 0, 0);
+#endif
+
+    if (nproc>0)
+      prefs.nthreads = nproc;
+    else
+      {
+      prefs.nthreads = 2;
+      warning("Cannot find the number of CPUs on this system:",
+		"NTHREADS defaulted to 2");
+      }
+    }
+#else
+  if (prefs.nthreads != 1)
+    {
+    prefs.nthreads = 1;
+    warning("NTHREADS != 1 ignored: ",
+	"this build of " BANNER " is single-threaded");
+    }
+#endif
 
 /*-------------------------------- Images ----------------------------------*/
   prefs.dimage_flag = (prefs.nimage_name>1);
@@ -512,6 +568,19 @@ void	useprefs()
 		|| prefs.check_type[i] == CHECK_PCPROTOS
 		|| prefs.check_type[i] == CHECK_PCOPROTOS)
           prefs.pc_flag = 1;
+    }
+
+
+/*-------------------------- Profile-fitting -------------------------------*/
+/* Profile-fitting is possible only if a PSF file is loaded */
+  if (prefs.psf_flag)
+    {
+    prefs.prof_flag = FLAG(obj2.prof_vector);
+    if (prefs.check_flag)
+      for (i=0; i<prefs.ncheck_type; i++)
+        if (prefs.check_type[i] == CHECK_SUBPROFILES
+		|| prefs.check_type[i] == CHECK_PROFILES)
+          prefs.prof_flag = 1;
     }
 
 /*----------------------------- WEIGHT-images ------------------------------*/

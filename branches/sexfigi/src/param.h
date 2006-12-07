@@ -9,7 +9,7 @@
 *
 *	Contents:	parameter list for catalog data.
 *
-*	Last modify:	28/09/2006
+*	Last modify:	07/12/2006
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -865,6 +865,12 @@ keystruct	objkey[] = {
   {"PC", "Principal components",
 	&outobj2.vector_pc, H_FLOAT, T_FLOAT, "%15.10e", "",
 	"src.morph.param", "", 1, &prefs.pc_vectorsize},
+  {"VECTOR_PROF", "profile-fitting coefficients",
+	&outobj2.prof_vector, H_FLOAT, T_FLOAT, "%8.2f", "",
+	"src.morph.param", "", 1, &prefs.prof_vectorsize},
+  {"NITER_PROF", "Number of iterations for profile-fitting",
+	&outobj2.prof_niter, H_INT, T_SHORT, "%3d", "",
+	"meta.number", ""},
 /*
 	{"RETINOUT", T_FLOAT, &outobj.retinout, "%13g "},
 */

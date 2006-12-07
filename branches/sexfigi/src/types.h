@@ -9,7 +9,7 @@
 *
 *	Contents:	global type definitions.
 *
-*	Last modify:	12/01/2006
+*	Last modify:	07/12/2006
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -60,7 +60,7 @@ typedef  enum {CHECK_NONE, CHECK_IDENTICAL, CHECK_BACKGROUND,
 	CHECK_SEGMENTATION, CHECK_ASSOC, CHECK_SUBOBJECTS,
 	CHECK_SUBPSFPROTOS, CHECK_PSFPROTOS,
 	CHECK_SUBPCPROTOS, CHECK_PCPROTOS, CHECK_PCOPROTOS,
-		CHECK_MAPSOM}	checkenum;
+	CHECK_MAPSOM, CHECK_SUBPROFILES, CHECK_PROFILES}	checkenum;
 	/* CHECK_IMAGE type */
 
 typedef  enum {WEIGHT_NONE, WEIGHT_FROMBACK, WEIGHT_FROMRMSMAP,
@@ -298,6 +298,9 @@ typedef struct
   float		fluxerr_galfit;			/* RMS error on galfit flux */
   float		mag_galfit;			/* Galaxy tot. mag from fit */
   float		magerr_galfit;			/* RMS error on galfit mag */
+/* ---- Profile-fitting */
+  float		*prof_vector;			/* Profile parameters */
+  short		prof_niter;			/* # of prof-fitting iter. */
 /* ---- MEF */
   short		ext_number;			/* FITS extension number */
   }	obj2struct;

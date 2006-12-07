@@ -30,8 +30,8 @@
 /*--------------------------- structure definitions -------------------------*/
 
 /*---------------------------------- protos --------------------------------*/
-extern void	fft_conv(float *data1, float *fdata2, int *size),
+extern void	fft_conv(double *data1, double *fdata2, int *size),
 		fft_end(),
 		fft_init();
 
-extern double	*fft_rtf(float *data, int *size);
+extern double	*fft_rtf(double *data, int *size);

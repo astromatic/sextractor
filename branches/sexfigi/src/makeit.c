@@ -9,7 +9,7 @@
 *
 *	Contents:	main program.
 *
-*	Last modify:	14/07/2006
+*	Last modify:	07/12/2006
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -31,6 +31,7 @@
 #include	"assoc.h"
 #include	"back.h"
 #include	"check.h"
+#include	"fft.h"
 #include	"field.h"
 #include	"filter.h"
 #include	"growth.h"
@@ -84,7 +85,7 @@ void	makeit()
   readcatparams(prefs.param_name);
   useprefs();			/* update things accor. to prefs parameters */
 
-  if (prefs.psf_flag)
+  if (prefs.psf_flag || prefs.prof_flag)
     {
     NFPRINTF(OUTPUT, "Reading PSF information");
     thepsf = psf_load(prefs.psf_name[0]); 
@@ -94,6 +95,9 @@ void	makeit()
     updateparamflags();
     useprefs();
     }
+
+  if (prefs.prof_flag)
+    fft_init();
 
   if (prefs.filter_flag)
     {
@@ -424,7 +428,10 @@ void	makeit()
   if (prefs.growth_flag)
     endgrowth();
 
-  if (prefs.psf_flag)
+  if (prefs.prof_flag)
+    fft_end();
+
+  if (prefs.psf_flag || prefs.prof_flag)
     psf_end(thepsf,thepsfit); /*?*/
 
   if (prefs.dpsf_flag)

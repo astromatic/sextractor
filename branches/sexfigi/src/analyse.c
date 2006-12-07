@@ -9,7 +9,7 @@
 *
 *	Contents:	analyse(), endobject()...: measurements on detections.
 *
-*	Last modify:	12/01/2006
+*	Last modify:	07/12/2006
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -37,6 +37,7 @@
 #include	"image.h"
 #include	"photom.h"
 #include	"psf.h"
+#include	"profit.h"
 #include	"retina.h"
 #include	"som.h"
 #include	"winpos.h"
@@ -654,6 +655,11 @@ void	endobject(picstruct *field, picstruct *dfield, picstruct *wfield,
 		prefs.mag_zeropoint -2.5*log10(thepsfit->flux[j]) : 99.0;
           }
       }
+
+/*----------------------------- Profile fitting -----------------------------*/
+    nsub = 1;
+    if (prefs.prof_flag)
+      prof_fit(thepsf, field, wfield, obj, obj2);
 
 /*-------------------------------- Astrometry ------------------------------*/
     if (prefs.world_flag)
