@@ -319,6 +319,8 @@ void	updateparamflags()
 			| FLAG(obj2.chi2_psf)
 			| FLAG(obj2.mx2_pc);
 
+  FLAG(obj2.prof_vector) |= FLAG(obj2.prof_niter);
+
 /*-------------------------------- Others -----------------------------------*/
   FLAG(obj.fwhm) |= FLAG(obj2.fwhmw);
 

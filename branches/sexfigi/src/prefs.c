@@ -573,15 +573,12 @@ void	useprefs()
 
 /*-------------------------- Profile-fitting -------------------------------*/
 /* Profile-fitting is possible only if a PSF file is loaded */
-  if (prefs.psf_flag)
-    {
-    prefs.prof_flag = FLAG(obj2.prof_vector);
-    if (prefs.check_flag)
-      for (i=0; i<prefs.ncheck_type; i++)
-        if (prefs.check_type[i] == CHECK_SUBPROFILES
-		|| prefs.check_type[i] == CHECK_PROFILES)
-          prefs.prof_flag = 1;
-    }
+  prefs.prof_flag = FLAG(obj2.prof_vector);
+  if (prefs.check_flag)
+    for (i=0; i<prefs.ncheck_type; i++)
+      if (prefs.check_type[i] == CHECK_SUBPROFILES
+	|| prefs.check_type[i] == CHECK_PROFILES)
+        prefs.prof_flag = 1;
 
 /*----------------------------- WEIGHT-images ------------------------------*/
   if (prefs.nweight_type<2)

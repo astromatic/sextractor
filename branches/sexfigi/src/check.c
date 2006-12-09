@@ -9,7 +9,7 @@
 *
 *	Contents:	handling of "check-images".
 *
-*	Last modify:	15/06/2004
+*	Last modify:	08/12/2006
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -242,6 +242,8 @@ void	reinitcheck(picstruct *field, checkstruct *check)
     case CHECK_SUBPCPROTOS:
     case CHECK_PCPROTOS:
     case CHECK_PCOPROTOS:
+    case CHECK_SUBPROFILES:
+    case CHECK_PROFILES:
       ival = -32;
       fitswrite(check->fitshead, "BITPIX  ", &ival, H_INT, T_LONG);
       check->width = field->width;
@@ -348,7 +350,7 @@ void	reinitcheck(picstruct *field, checkstruct *check)
       break;
 
     default:
-      error(EXIT_FAILURE, "*Internal Error* in ", "initcheck()!");
+      error(EXIT_FAILURE, "*Internal Error* in ", "reinitcheck()!");
     }
 
   return;
@@ -363,7 +365,8 @@ void	writecheck(checkstruct *check, PIXTYPE *data, int w)
 
   {
   if (check->type == CHECK_APERTURES || check->type == CHECK_SUBPSFPROTOS
-	|| check->type == CHECK_SUBPCPROTOS || check->type == CHECK_PCOPROTOS)
+	|| check->type == CHECK_SUBPCPROTOS || check->type == CHECK_PCOPROTOS
+	|| check->type == CHECK_SUBPROFILES)
     {
     memcpy((PIXTYPE *)check->pix + w*(check->y++), data, w*sizeof(PIXTYPE));
     return;

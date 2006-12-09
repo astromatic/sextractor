@@ -9,17 +9,17 @@
 *
 *	Contents:	Include file for profit.c.
 *
-*	Last modify:	07/12/2006
+*	Last modify:	08/12/2006
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
 
 /*----------------------------- Internal constants --------------------------*/
 
-#define	PROFIT_MAXITER	100	/* Max. nb of iterations in profile fitting */
+#define	PROFIT_MAXITER	1	/* Max. nb of iterations in profile fitting */
 #define	PROFIT_MAXPROF	8	/* Max. nb of profile components */
 #define	PROFIT_MAXEXTRA	2	/* Max. nb of extra free params of profiles */
-#define PROFIT_PROFRES	1024	/* Pixmap size of model components */
+#define PROFIT_PROFRES	256	/* Pixmap size of model components */
 #define PROFIT_RES	256	/* Pixmap size of model */
 #define INTERP_MAXKERNELWIDTH	8	/* Max. range of kernel (pixels) */
 /* NOTES:
@@ -58,8 +58,10 @@ typedef struct
 
 typedef struct
   {
+  double	*initparam;	/* Vector of parameter guesses */
   double	*param;		/* Vector of parameters to be fitted */
   int		nparam;		/* Number of parameters to be fitted */
+  double	*paraminit;	/* Vector of parameter guesses */
   double	*parammin;	/* Parameter lower limit */
   double	*parammax;	/* Parameter upper limit */
   int		niter;		/* Number of iterations */
@@ -86,9 +88,10 @@ profitstruct	*profit_init(psfstruct *psf, proftypenum *profcode,
 profstruct	*prof_init(profitstruct *profit, proftypenum profcode);
 
 double		*profit_compresi(profitstruct *profit, picstruct *field,
-			picstruct *wfield, objstruct *obj),
+			picstruct *wfield, objstruct *obj, double *resi),
 		*profit_residuals(profitstruct *profit, picstruct *field,
-			picstruct *wfield, objstruct *obj);
+			picstruct *wfield, objstruct *obj, double *param,
+			double *resi);
 
 PIXTYPE		*profit_resample(profitstruct *profit);
 

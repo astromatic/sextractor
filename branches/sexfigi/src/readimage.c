@@ -9,7 +9,7 @@
 *
 *	Contents:	functions for input of image data.
 *
-*	Last modify:	13/07/2006
+*	Last modify:	08/12/2006
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -108,6 +108,8 @@ void	*loadstrip(picstruct *field, picstruct *wfield)
               writecheck(check, data, w);
             if ((check = prefs.check[CHECK_SUBPCPROTOS]))
               writecheck(check, data, w);
+            if ((check = prefs.check[CHECK_SUBPROFILES]))
+              writecheck(check, data, w);
             }
           if ((flags&DETECT_FIELD) && (check=prefs.check[CHECK_BACKRMS]))
             {
@@ -174,6 +176,8 @@ void	*loadstrip(picstruct *field, picstruct *wfield)
           if ((check = prefs.check[CHECK_SUBPSFPROTOS]))
             writecheck(check, data, w);
           if ((check = prefs.check[CHECK_SUBPCPROTOS]))
+            writecheck(check, data, w);
+          if ((check = prefs.check[CHECK_SUBPROFILES]))
             writecheck(check, data, w);
           }
         if ((flags&DETECT_FIELD) && (check=prefs.check[CHECK_BACKRMS]))

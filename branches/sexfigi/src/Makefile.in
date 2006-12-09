@@ -41,7 +41,8 @@ subdir = src
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/acx_fftw.m4 \
-	$(top_srcdir)/acx_prog_cc_optim.m4 $(top_srcdir)/configure.ac
+	$(top_srcdir)/acx_prog_cc_optim.m4 \
+	$(top_srcdir)/acx_pthread.m4 $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(SHELL) $(top_srcdir)/autoconf/mkinstalldirs
@@ -128,10 +129,15 @@ PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
+PTHREAD_CC = @PTHREAD_CC@
+PTHREAD_CFLAGS = @PTHREAD_CFLAGS@
+PTHREAD_LIBS = @PTHREAD_LIBS@
 RANLIB = @RANLIB@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
+USE_THREADS_FALSE = @USE_THREADS_FALSE@
+USE_THREADS_TRUE = @USE_THREADS_TRUE@
 VERSION = @VERSION@
 ac_ct_CC = @ac_ct_CC@
 ac_ct_RANLIB = @ac_ct_RANLIB@
@@ -189,8 +195,8 @@ sex_SOURCES = analyse.c assoc.c astrom.c back.c bpro.c catout.c \
 			  globals.h growth.h image.h interpolate.h key.h \
 			  neurro.h param.h photom.h plist.h poly.h prefs.h \
 			  preflist.h profit.h psf.h retina.h sexhead1.h \
-			  sexhead.h sexheadsc.h som.h types.h weight.h \
-			  winpos.h xml.h
+			  sexhead.h sexheadsc.h som.h threads.h types.h \
+			  weight.h winpos.h xml.h
 
 AM_CPPFLAGS = -DXSL_URL=\"file://$(pkgdatadir)/${PACKAGE_NAME}.xsl\"
 sex_LDADD = $(top_builddir)/src/fits/libfits.a \

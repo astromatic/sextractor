@@ -9,7 +9,7 @@
 *
 *       Contents:       Routines dealing with double precision FFT.
 *
-*       Last modify:    07/12/2006
+*       Last modify:    08/12/2006
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -34,7 +34,7 @@
 
  int    firsttimeflag;
 #ifdef USE_THREADS
-extern pthread_mutex_t        fftmutex;
+ pthread_mutex_t	fftmutex;
 #endif
 
 #define SWAP(a,b)       tempr=(a);(a)=(b);(b)=tempr
@@ -53,11 +53,9 @@ void    fft_init(void)
   if (!firsttimeflag)
     {
 #ifdef USE_THREADS
-/*
     if (!fftw_init_threads())
       error(EXIT_FAILURE, "*Error*: thread initialization failed in ", "FFTW");
     fftw_plan_with_nthreads(prefs.nthreads);
-*/
     QPTHREAD_MUTEX_INIT(&fftmutex, NULL);
 #endif
     firsttimeflag = 1;
@@ -83,9 +81,7 @@ void    fft_end(void)
     {
     firsttimeflag = 0;
 #ifdef USE_THREADS
-/*
     fftw_cleanup_threads();
-*/
     QPTHREAD_MUTEX_DESTROY(&fftmutex);
 #endif
     fftw_cleanup();
@@ -139,7 +135,7 @@ void    fft_conv(double *data1, double *fdata2, int *size)
 #endif
 
 /* Actual convolution (Fourier product) */
-  fac = 1.0/(npix/2);  
+  fac = 1.0/npix;  
   fdata1p = fdata1;
   fdata2p = fdata2;
   for (i=npix2/2; i--; fdata2p+=2)
