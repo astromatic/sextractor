@@ -101,7 +101,7 @@ OUTPUT	-.
 NOTES	For data1 and fdata2, memory must be allocated for
 	size[0]* ... * 2*(size[naxis-1]/2+1) doubles (padding required).
 AUTHOR	E. Bertin (IAP)
-VERSION	07/12/2006
+VERSION	09/12/2006
  ***/
 void    fft_conv(double *data1, double *fdata2, int *size)
   {
@@ -112,14 +112,14 @@ void    fft_conv(double *data1, double *fdata2, int *size)
 
 /* Convert axis indexing to that of FFTW */
   npix = size[0]*size[1];
-  npix2 = (((size[0]>>1) + 1)<< 1) * size[1];
+  npix2 = (((size[0]/2) + 1)*2) * size[1];
 
 /* Forward FFT "in place" for data1 */
 #ifdef USE_THREADS
   QPTHREAD_MUTEX_LOCK(&fftmutex);
 #endif
   QFFTWMALLOC(fdata1, double, npix2);
-  plan = fftw_plan_dft_r2c_2d(size[0], size[1], data1,
+  plan = fftw_plan_dft_r2c_2d(size[1], size[0], data1,
         (fftw_complex *)fdata1, FFTW_ESTIMATE|FFTW_FORWARD|FFTW_DESTROY_INPUT);
 #ifdef USE_THREADS
   QPTHREAD_MUTEX_UNLOCK(&fftmutex);
@@ -150,7 +150,7 @@ void    fft_conv(double *data1, double *fdata2, int *size)
 #ifdef USE_THREADS
   QPTHREAD_MUTEX_LOCK(&fftmutex);
 #endif
-  plan = fftw_plan_dft_c2r_2d(size[0], size[1], (fftw_complex *)fdata1, 
+  plan = fftw_plan_dft_c2r_2d(size[1], size[0], (fftw_complex *)fdata1, 
         data1, FFTW_ESTIMATE|FFTW_BACKWARD|FFTW_DESTROY_INPUT);
 #ifdef USE_THREADS
   QPTHREAD_MUTEX_UNLOCK(&fftmutex);
@@ -180,24 +180,24 @@ INPUT	ptr to the image,
 OUTPUT	Pointer to the compressed, memory-allocated Fourier transform.
 NOTES	Input data may end up corrupted.
 AUTHOR	E. Bertin (IAP)
-VERSION	29/11/2006
+VERSION	10/12/2006
  ***/
 double	*fft_rtf(double *data, int *size)
   {
-   fftw_plan   plan;
-   double	*fdata;
+   fftw_plan   	plan;
+   fftw_complex	*fdata;
    int		npix2;
 
 /* Convert axis indexing to that of FFTW */
-  npix2 = (((size[0]>>1) + 1)<< 1) * size[1];
+  npix2 = ((size[0]/2) + 1) * size[1];
 
 /* Forward FFT "in place" for data1 */
 #ifdef USE_THREADS
   QPTHREAD_MUTEX_LOCK(&fftmutex);
 #endif
-  QFFTWMALLOC(fdata, double, npix2);
-  plan = fftw_plan_dft_r2c_2d(size[0], size[1], data,
-        (fftw_complex *)fdata, FFTW_ESTIMATE|FFTW_FORWARD|FFTW_DESTROY_INPUT);
+  QFFTWMALLOC(fdata, fftw_complex, npix2);
+  plan = fftw_plan_dft_r2c_2d(size[1], size[0], data,
+        fdata, FFTW_ESTIMATE|FFTW_FORWARD|FFTW_DESTROY_INPUT);
 #ifdef USE_THREADS
   QPTHREAD_MUTEX_UNLOCK(&fftmutex);
 #endif
@@ -212,7 +212,7 @@ double	*fft_rtf(double *data, int *size)
   QPTHREAD_MUTEX_UNLOCK(&fftmutex);
 #endif
 
-  return fdata;
+  return (double *)fdata;
   }
 
 

@@ -61,8 +61,8 @@ void	addcheck(checkstruct *check, float *psf,
     }
   if (xmin<0)
     {
-    psf += -xmin;
-    w2 -= -xmin;
+    psf -= xmin;
+    w2 += xmin;
     xmin = 0;
     }
 

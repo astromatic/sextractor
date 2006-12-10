@@ -9,7 +9,7 @@
 *
 *	Contents:	main program.
 *
-*	Last modify:	07/12/2006
+*	Last modify:	09/12/2006
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -37,11 +37,13 @@
 #include	"growth.h"
 #include	"interpolate.h"
 #include	"psf.h"
+#include	"profit.h"
 #include	"som.h"
 #include	"weight.h"
 #include	"xml.h"
 
-time_t	thetimet, thetimet2;
+time_t			thetimet, thetimet2;
+extern profitstruct	*theprofit;
 
 /******************************** makeit *************************************/
 /*
@@ -54,6 +56,7 @@ void	makeit()
    picstruct		*dfield, *field,*pffield[MAXFLAG], *wfield,*dwfield;
    catstruct		*imacat;
    tabstruct		*imatab;
+   proftypenum		proflist[PROFIT_MAXPROF];
    static time_t        thetime1, thetime2;
    struct tm		*tm;
    int			i, nok, ntab, next;
@@ -97,7 +100,14 @@ void	makeit()
     }
 
   if (prefs.prof_flag)
+    {
     fft_init();
+/* Create profiles at full resolution */
+    NFPRINTF(OUTPUT, "Preparing profile models");
+    proflist[0] = PROF_EXPONENTIAL;
+    proflist[1] = PROF_DEVAUCOULEURS;
+    theprofit = profit_init(thepsf, proflist, 2);
+    }
 
   if (prefs.filter_flag)
     {
@@ -429,7 +439,10 @@ void	makeit()
     endgrowth();
 
   if (prefs.prof_flag)
+    {
+    profit_end(theprofit);
     fft_end();
+    }
 
   if (prefs.psf_flag || prefs.prof_flag)
     psf_end(thepsf,thepsfit); /*?*/

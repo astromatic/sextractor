@@ -43,6 +43,7 @@
 #include	"winpos.h"
 
 static obj2struct	*obj2 = &outobj2;
+extern profitstruct	*theprofit;
 
 /********************************* analyse ***********************************/
 void  analyse(picstruct *field, picstruct *dfield, int objnb,
@@ -659,7 +660,7 @@ void	endobject(picstruct *field, picstruct *dfield, picstruct *wfield,
 /*----------------------------- Profile fitting -----------------------------*/
     nsub = 1;
     if (prefs.prof_flag)
-      prof_fit(thepsf, field, wfield, obj, obj2);
+      prof_fit(theprofit, field, wfield, obj, obj2);
 
 /*-------------------------------- Astrometry ------------------------------*/
     if (prefs.world_flag)

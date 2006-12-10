@@ -9,18 +9,18 @@
 *
 *	Contents:	Include file for profit.c.
 *
-*	Last modify:	08/12/2006
+*	Last modify:	10/12/2006
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
 
 /*----------------------------- Internal constants --------------------------*/
 
-#define	PROFIT_MAXITER	1	/* Max. nb of iterations in profile fitting */
+#define	PROFIT_MAXITER	100	/* Max. nb of iterations in profile fitting */
 #define	PROFIT_MAXPROF	8	/* Max. nb of profile components */
 #define	PROFIT_MAXEXTRA	2	/* Max. nb of extra free params of profiles */
-#define PROFIT_PROFRES	256	/* Pixmap size of model components */
-#define PROFIT_RES	256	/* Pixmap size of model */
+#define PROFIT_PROFRES	1024	/* Pixmap size of model components */
+#define PROFIT_PROFSRES	64	/* Number of model subcomponents */
 #define INTERP_MAXKERNELWIDTH	8	/* Max. range of kernel (pixels) */
 /* NOTES:
 One must have:	PROFIT_NITER > 0
@@ -39,11 +39,10 @@ typedef enum	{INTERP_NEARESTNEIGHBOUR, INTERP_BILINEAR, INTERP_LANCZOS2,
 typedef struct
   {
   proftypenum	code;			/* Model code */
-  double	*interpix;		/* Composited pixmap of the model */
   double	*pix;			/* Full pixmap of the model */
   int		naxis;			/* Number of pixmap dimensions */
   int		naxisn[2+PROFIT_MAXEXTRA];	/* Pixmap size for each axis */
-  double	sizemax;		/* Maximum size in pixels */
+  double	typscale;		/* Typical scale in prof pixels */
 /* Generic presentation parameters */
   double	*amp;			/* Amplitude */
   double	*x[2];			/* Pointer to coordinate vector */
@@ -53,7 +52,10 @@ typedef struct
   double	extrazero[PROFIT_MAXEXTRA]; /* Zero-point along extra-dim. */
   double	extrascale[PROFIT_MAXEXTRA]; /* Scaling along extra-dim. */
   int		extracycleflag[PROFIT_MAXEXTRA]; /* !=0 for cycling dim. */
-  interpenum	interptype;		/* Interpolation type */
+  interpenum	interptype[2+PROFIT_MAXEXTRA];	/* Interpolation type */
+  int		kernelwidth[2+PROFIT_MAXEXTRA];	/* Kernel size */
+  double	*kernelbuf;		/* Kernel buffer */
+  int		kernelnlines;		/* Number of interp kernel lines */
   }	profstruct;
 
 typedef struct
@@ -77,6 +79,7 @@ typedef struct
   int		objnaxisn[2];	/* Dimensions along each axis */
   double	*resi;		/* Vector of residuals */
   int		nresi;		/* Number of residual elements */
+  double	sigma;		/* Standard deviation of the pixel values */
   }	profitstruct;
 
 /*----------------------------- Global variables ----------------------------*/
@@ -100,12 +103,13 @@ int		profit_copyobjpix(profitstruct *profit, picstruct *field,
 
 void		prof_add(profstruct *prof, profitstruct *profit),
 		prof_end(profstruct *prof),
-		prof_fit(psfstruct *psf, picstruct *field, picstruct *wfield,
+		prof_fit(profitstruct *profit,
+			picstruct *field, picstruct *wfield,
 			objstruct *obj, obj2struct *obj2),
-		prof_interpextra(profstruct *prof),
 		profit_convolve(profitstruct *profit),
 		profit_end(profitstruct *profit),
 		profit_evaluate(double *par, int m_dat, double *fvec,
 			void *data, int *info),
+		profit_makedft(profitstruct *profit),
 		profit_printout(int n_par, double* par, int m_dat, double* fvec,
 			void *data, int iflag, int iter, int nfev );
