@@ -1,20 +1,43 @@
-# Program Makefile for SEx
-# Copyright (C) 2004-2006 Emmanuel Bertin.
-SUBDIRS			= fits wcs
-bin_PROGRAMS		= sex
-sex_SOURCES		= analyse.c assoc.c astrom.c back.c bpro.c catout.c \
-			  check.c clean.c extract.c field.c filter.c \
-			  flag.c graph.c growth.c image.c interpolate.c \
-			  main.c makeit.c manobjlist.c misc.c neurro.c pc.c \
-			  photom.c plist.c poly.c prefs.c psf.c readimage.c \
-			  refine.c retina.c scan.c som.c weight.c winpos.c \
-			  xml.c \
-			  assoc.h astrom.h back.h bpro.h check.h clean.h \
-			  define.h extract.h field.h filter.h flag.h \
-			  globals.h growth.h image.h interpolate.h key.h \
-			  neurro.h param.h photom.h plist.h poly.h prefs.h \
-			  preflist.h psf.h retina.h sexhead1.h sexhead.h \
-			  sexheadsc.h som.h types.h weight.h winpos.h xml.h
-AM_CPPFLAGS		= -DXSL_URL=\"file://$(pkgdatadir)/${PACKAGE_NAME}.xsl\"
-sex_LDADD		= $(top_builddir)/src/fits/libfits.a $(top_builddir)/src/wcs/libwcs_c.a
-DATE=`date +"%Y-%m-%d"`
+# Main Makefile for SExtractor
+# Copyright (C) 2002-2007 Emmanuel Bertin.
+AUTOMAKE_OPTIONS	= foreign no-dependencies
+SUBDIRS			= man src
+EXTRA_DIST		= config doc AUTHORS BUGS ChangeLog COPYING HISTORY \
+			  INSTALL README THANKS \
+			  acx_prog_cc_optim.m4
+RPM_ROOTDIR		= /usr/src/RPM
+RPM_SRCDIR		= $(RPM_ROOTDIR)/SOURCES
+rpm:	dist
+	cp -f $(PACKAGE_NAME)-$(PACKAGE_VERSION).tar.gz $(RPM_SRCDIR)
+	rpmbuild -ba --clean $(PACKAGE_NAME).spec $(PACKAGE_NAME)-mp.spec
+
+rpm-opteron:	dist
+	cp -f $(PACKAGE_NAME)-$(PACKAGE_VERSION).tar.gz $(RPM_SRCDIR)
+	TPXCC="gcc" TPXFLAGS="-O -g -funroll-loops -fomit-frame-pointer -Wall \
+		-march=opteron" rpmbuild -ba --target=x86_64 \
+		--clean $(PACKAGE_NAME).spec                                                             
+
+rpm-athlon:	dist
+	cp -f $(PACKAGE_NAME)-$(PACKAGE_VERSION).tar.gz $(RPM_SRCDIR)
+	TPXCC="gcc" TPXFLAGS="-O -g -funroll-loops -fomit-frame-pointer -Wall -m32 \
+		-march=i686 -msse -mfpmath=sse -mtune=athlon" rpmbuild \
+		-ba --target=i686 --clean $(PACKAGE_NAME).spec
+
+rpm-opteron-icc:	dist
+	cp -f $(PACKAGE_NAME)-$(PACKAGE_VERSION).tar.gz $(RPM_SRCDIR)
+	TPXCC="icc" TPXFLAGS="-O3 -axWP -ip -unroll" rpmbuild -ba --target=x86_64 \
+		--clean $(PACKAGE_NAME).spec                                                             
+
+rpm-athlon-icc:	dist
+	cp -f $(PACKAGE_NAME)-$(PACKAGE_VERSION).tar.gz $(RPM_SRCDIR)
+	TPXCC="icc32" TPXFLAGS="-O3 -axWP -ip -unroll" rpmbuild \
+		-ba --target=i686 --clean $(PACKAGE_NAME).spec
+
+icc:
+	$(MAKE) CC="icc" CFLAGS="-O3 -axWP -ip -unroll" LIBS="-lm"
+
+athlon:
+	$(MAKE) CFLAGS="-O -g -funroll-loops -fomit-frame-pointer -Wall -m32 -march=i686 -msse -mfpmath=sse -mtune=athlon" LIBS="-lm"
+
+debug:
+	$(MAKE) CFLAGS="-O3 -funroll-loops -fomit-frame-pointer -Wall -m32 -g"
