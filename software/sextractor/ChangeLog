@@ -9,10 +9,67 @@
 *
 *       Contents:       log of changes made to the SExtractor source
 *
-*       Last modify:    14/07/2006
+*       Last modify:    17/01/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
+
+------------------------------------------------------------------------
+r380 | bertin | 2007-01-17 17:52:49 +0100 (Wed, 17 Jan 2007) | 3 lines
+
+Added options for compiling with icc (Intel compiler).
+Pushed version number to 2.5.1.
+
+------------------------------------------------------------------------
+r365 | bertin | 2006-11-09 18:39:27 +0100 (Thu, 09 Nov 2006) | 2 lines
+
+Undo previous changes (wrong repository!!).
+
+------------------------------------------------------------------------
+r364 | bertin | 2006-11-09 17:58:18 +0100 (Thu, 09 Nov 2006) | 2 lines
+
+Added lmfit routines by Joachim Wuttke in the form of a library.
+
+------------------------------------------------------------------------
+r358 | bertin | 2006-10-29 21:04:25 +0100 (Sun, 29 Oct 2006) | 5 lines
+
+Updated FITS library to the latest version.
+Fixed some UCDs in output parameters.
+Applied patch by Sergio Pascual for configuring the path to the XSL file.
+Updated the BUGS section.
+
+------------------------------------------------------------------------
+r327 | bertin | 2006-08-16 18:06:49 +0200 (Wed, 16 Aug 2006) | 2 lines
+
+Discard NaN pixels in non-weighted background measurements (as in SWarp).
+
+------------------------------------------------------------------------
+r305 | baillard | 2006-07-19 15:28:15 +0200 (Wed, 19 Jul 2006) | 2 lines
+
+Change name
+
+------------------------------------------------------------------------
+r303 | baillard | 2006-07-19 15:05:48 +0200 (Wed, 19 Jul 2006) | 2 lines
+
+Change names
+
+------------------------------------------------------------------------
+r295 | baillard | 2006-07-18 13:54:43 +0200 (Tue, 18 Jul 2006) | 2 lines
+
+Move sextractor to public repository
+
+------------------------------------------------------------------------
+r290 | bertin | 2006-07-17 19:56:12 +0200 (Mon, 17 Jul 2006) | 4 lines
+
+Doc: keyword list updated.
+ChangeLog updated.
+Back-propagated destructive byte-swapping bugfix in FITS library.
+
+------------------------------------------------------------------------
+r289 | bertin | 2006-07-14 20:25:09 +0200 (Fri, 14 Jul 2006) | 3 lines
+
+Removed warnings in psf.c (P.Delorme's edits) using brute-force.
+Switched ChangeLog to SVN format.
 
 ------------------------------------------------------------------------
 r288 | bertin | 2006-07-14 20:13:39 +0200 (Fri, 14 Jul 2006) | 8 lines
