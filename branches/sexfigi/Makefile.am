@@ -20,8 +20,8 @@ rpm-opteron:	dist
 	cp -f $(PACKAGE_NAME)-$(PACKAGE_VERSION).tar.gz $(RPM_SRCDIR)
 	TPXCC="gcc" TPXFLAGS="-O -g -pthread -funroll-loops \
 		-fomit-frame-pointer -Wall -march=opteron" \
-		TPXLIBS="-lpthread -lfftw3 -lm" \
-		rpmbuild -ba --target=x86_64 --clean  $(PACKAGE_NAME)-mp.spec
+		TPXLIBS="-lpthread -lfftw3 -lfftw3_threads -lm" \
+		rpmbuild -ba --target=x86_64 --clean $(PACKAGE_NAME)-mp.spec
 
 rpm-athlon:	dist
 	cp -f $(PACKAGE_NAME)-$(PACKAGE_VERSION).tar.gz $(RPM_SRCDIR)
@@ -34,7 +34,8 @@ rpm-athlon:	dist
 	TPXCC="gcc" TPXFLAGS="-O -g -pthread -funroll-loops \
 		-fomit-frame-pointer -Wall -m32 -march=i686 -msse -mfpmath=sse \
 		-mtune=athlon" \
-		TPXLIBS="-L/usr/lib/ -lpthread -lm -L/usr/local/lib/ -lfftw3" \
+		TPXLIBS="-L/usr/lib/ -lpthread -lm -L/usr/local/lib/ \
+		-lfftw3 -lfftw3_threads" \
 		rpmbuild -ba --target=i686 --clean $(PACKAGE_NAME)-mp.spec
 
 rpm-opteron-icc:	dist
@@ -44,7 +45,7 @@ rpm-opteron-icc:	dist
 
 	cp -f $(PACKAGE_NAME)-$(PACKAGE_VERSION).tar.gz $(RPM_SRCDIR)
 	TPXCC="icc" TPXFLAGS="-O3 -g -axWP -ip -unroll -pthread" \
-	TPXLIBS="-lpthread -lfftw3 -lm" \
+	TPXLIBS="-lpthread -lfftw3 -lfftw3_threads -lm" \
 	rpmbuild -ba --target=x86_64 --clean $(PACKAGE_NAME)-mp.spec
 
 rpm-athlon-icc:	dist
@@ -55,13 +56,15 @@ rpm-athlon-icc:	dist
 
 	cp -f $(PACKAGE_NAME)-$(PACKAGE_VERSION).tar.gz $(RPM_SRCDIR)
 	TPXCC="icc32" TPXFLAGS="-O3 -g -axKWNPB -ip -unroll -pthread" \
-	TPXLIBS="-L/usr/local/lib/ -L/usr/lib/ -lpthread -lfftw3f -lm" \
+	TPXLIBS="-L/usr/lib/ -lm -lpthread -L/usr/local/lib/ \
+	-lfftw3 -lfftw3_threads" \
 	rpmbuild -ba --target=i686 --clean $(PACKAGE_NAME)-mp.spec
 
 athlon:
 	$(MAKE) CFLAGS="-O -g -pthread -funroll-loops -fomit-frame-pointer \
 		-Wall -m32 -march=i686 -msse -mfpmath=sse -mtune=athlon" \
-		LIBS="-L/usr/lib/ -L/usr/local/lib/ -lfftw3 -lm"
+		LIBS="-L/usr/lib/ -lpthread -lm -L/usr/local/lib/ \
+		-lfftw3 -lfftw3_threads"
 
 icc:
 	$(MAKE) CC="icc" CFLAGS="-O3 -g -axWP -ip -unroll -pthread"

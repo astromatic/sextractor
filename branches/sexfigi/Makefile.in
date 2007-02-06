@@ -37,10 +37,11 @@ build_triplet = @build@
 host_triplet = @host@
 DIST_COMMON = README $(am__configure_deps) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in $(srcdir)/config.h.in \
-	$(srcdir)/sextractor.spec.in $(top_srcdir)/configure AUTHORS \
-	COPYING ChangeLog INSTALL THANKS autoconf/config.guess \
-	autoconf/config.sub autoconf/depcomp autoconf/install-sh \
-	autoconf/ltmain.sh autoconf/missing autoconf/mkinstalldirs
+	$(srcdir)/sextractor-mp.spec.in $(srcdir)/sextractor.spec.in \
+	$(top_srcdir)/configure AUTHORS COPYING ChangeLog INSTALL \
+	THANKS autoconf/config.guess autoconf/config.sub \
+	autoconf/depcomp autoconf/install-sh autoconf/ltmain.sh \
+	autoconf/missing autoconf/mkinstalldirs
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/acx_fftw.m4 \
@@ -52,7 +53,7 @@ am__CONFIG_DISTCLEAN_FILES = config.status config.cache config.log \
  configure.lineno configure.status.lineno
 mkinstalldirs = $(SHELL) $(top_srcdir)/autoconf/mkinstalldirs
 CONFIG_HEADER = config.h
-CONFIG_CLEAN_FILES = sextractor.spec
+CONFIG_CLEAN_FILES = sextractor.spec sextractor-mp.spec
 depcomp =
 am__depfiles_maybe =
 SOURCES =
@@ -236,6 +237,8 @@ $(srcdir)/config.h.in:  $(am__configure_deps)
 distclean-hdr:
 	-rm -f config.h stamp-h1
 sextractor.spec: $(top_builddir)/config.status $(srcdir)/sextractor.spec.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+sextractor-mp.spec: $(top_builddir)/config.status $(srcdir)/sextractor-mp.spec.in
 	cd $(top_builddir) && $(SHELL) ./config.status $@
 uninstall-info-am:
 
@@ -621,8 +624,8 @@ rpm-opteron:	dist
 	cp -f $(PACKAGE_NAME)-$(PACKAGE_VERSION).tar.gz $(RPM_SRCDIR)
 	TPXCC="gcc" TPXFLAGS="-O -g -pthread -funroll-loops \
 		-fomit-frame-pointer -Wall -march=opteron" \
-		TPXLIBS="-lpthread -lfftw3 -lm" \
-		rpmbuild -ba --target=x86_64 --clean  $(PACKAGE_NAME)-mp.spec
+		TPXLIBS="-lpthread -lfftw3 -lfftw3_threads -lm" \
+		rpmbuild -ba --target=x86_64 --clean $(PACKAGE_NAME)-mp.spec
 
 rpm-athlon:	dist
 	cp -f $(PACKAGE_NAME)-$(PACKAGE_VERSION).tar.gz $(RPM_SRCDIR)
@@ -635,7 +638,8 @@ rpm-athlon:	dist
 	TPXCC="gcc" TPXFLAGS="-O -g -pthread -funroll-loops \
 		-fomit-frame-pointer -Wall -m32 -march=i686 -msse -mfpmath=sse \
 		-mtune=athlon" \
-		TPXLIBS="-L/usr/lib/ -lpthread -lm -L/usr/local/lib/ -lfftw3" \
+		TPXLIBS="-L/usr/lib/ -lpthread -lm -L/usr/local/lib/ \
+		-lfftw3 -lfftw3_threads" \
 		rpmbuild -ba --target=i686 --clean $(PACKAGE_NAME)-mp.spec
 
 rpm-opteron-icc:	dist
@@ -645,7 +649,7 @@ rpm-opteron-icc:	dist
 
 	cp -f $(PACKAGE_NAME)-$(PACKAGE_VERSION).tar.gz $(RPM_SRCDIR)
 	TPXCC="icc" TPXFLAGS="-O3 -g -axWP -ip -unroll -pthread" \
-	TPXLIBS="-lpthread -lfftw3 -lm" \
+	TPXLIBS="-lpthread -lfftw3 -lfftw3_threads -lm" \
 	rpmbuild -ba --target=x86_64 --clean $(PACKAGE_NAME)-mp.spec
 
 rpm-athlon-icc:	dist
@@ -656,13 +660,15 @@ rpm-athlon-icc:	dist
 
 	cp -f $(PACKAGE_NAME)-$(PACKAGE_VERSION).tar.gz $(RPM_SRCDIR)
 	TPXCC="icc32" TPXFLAGS="-O3 -g -axKWNPB -ip -unroll -pthread" \
-	TPXLIBS="-L/usr/local/lib/ -L/usr/lib/ -lpthread -lfftw3f -lm" \
+	TPXLIBS="-L/usr/lib/ -lm -lpthread -L/usr/local/lib/ \
+	-lfftw3 -lfftw3_threads" \
 	rpmbuild -ba --target=i686 --clean $(PACKAGE_NAME)-mp.spec
 
 athlon:
 	$(MAKE) CFLAGS="-O -g -pthread -funroll-loops -fomit-frame-pointer \
 		-Wall -m32 -march=i686 -msse -mfpmath=sse -mtune=athlon" \
-		LIBS="-L/usr/lib/ -L/usr/local/lib/ -lfftw3 -lm"
+		LIBS="-L/usr/lib/ -lpthread -lm -L/usr/local/lib/ \
+		-lfftw3 -lfftw3_threads"
 
 icc:
 	$(MAKE) CC="icc" CFLAGS="-O3 -g -axWP -ip -unroll -pthread"

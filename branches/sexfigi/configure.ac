@@ -185,5 +185,5 @@ AC_MSG_RESULT([I will link using:     $CC $LDFLAGS $LIBS])
 
 AC_CONFIG_FILES([Makefile src/Makefile src/fits/Makefile src/lmfit/Makefile \
 src/wcs/Makefile man/Makefile tests/Makefile \
-sextractor.spec man/sex.1])
+sextractor.spec sextractor-mp.spec man/sex.1])
 AC_OUTPUT
