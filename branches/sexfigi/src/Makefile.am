@@ -1,7 +1,8 @@
 # Program Makefile for SEx
-# Copyright (C) 2004-2006 Emmanuel Bertin.
+# Copyright (C) 2004-2007 Emmanuel Bertin.
 SUBDIRS			= fits lmfit wcs
 bin_PROGRAMS		= sex
+check_PROGRAMS		= sex
 sex_SOURCES		= analyse.c assoc.c astrom.c back.c bpro.c catout.c \
 			  check.c clean.c extract.c fft.c field.c filter.c \
 			  flag.c graph.c growth.c image.c interpolate.c \

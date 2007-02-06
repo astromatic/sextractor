@@ -6,7 +6,7 @@ define([AC_CACHE_LOAD],)
 define([AC_CACHE_SAVE],)
 
 # This is your standard Bertin source code...
-AC_INIT(sextractor, 2.6.0, [bertin@iap.fr])
+AC_INIT(sextractor, 2.6.1, [bertin@iap.fr])
 AC_CONFIG_SRCDIR(src/makeit.c)
 AC_CONFIG_AUX_DIR(autoconf)
 AM_CONFIG_HEADER(config.h)
@@ -154,7 +154,7 @@ fi
 
 # Special optimization options for the INTEL C compiler
 if test $use_icc = "yes" -a $CC = "icc"; then
-  CFLAGS="$CFLAGS -O3 -axPK -ip -unroll"
+  CFLAGS="$CFLAGS -O -axWP -ip -unroll"
 fi
 
 # Link with gprof option
@@ -183,6 +183,7 @@ fi
 AC_MSG_RESULT([I will compile using:  $CC $CFLAGS])
 AC_MSG_RESULT([I will link using:     $CC $LDFLAGS $LIBS])
 
-AC_CONFIG_FILES([Makefile man/Makefile src/Makefile src/fits/Makefile \
-src/lmfit/Makefile src/wcs/Makefile sextractor.spec sextractor-tpx.spec man/sex.1])
+AC_CONFIG_FILES([Makefile src/Makefile src/fits/Makefile src/lmfit/Makefile \
+src/wcs/Makefile man/Makefile tests/Makefile \
+sextractor.spec man/sex.1])
 AC_OUTPUT

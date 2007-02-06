@@ -175,9 +175,9 @@ void	prof_fit(profitstruct *profit,
   profit->modnaxisn[0] = (int)(profit->objnaxisn[0] / psf->pixstep +0.4999); 
   profit->modnaxisn[1] = (int)(profit->objnaxisn[1] / psf->pixstep +0.4999); 
 if (profit->modnaxisn[1] < profit->modnaxisn[0])
-profit->modnaxisn[1] = profit->modnaxisn[0] = 256;
+profit->modnaxisn[1] = profit->modnaxisn[0] = 64;
 else
-profit->modnaxisn[0] = profit->modnaxisn[1] = 256;
+profit->modnaxisn[0] = profit->modnaxisn[1] = 64;
 
   QCALLOC(profit->modpix, double, profit->modnaxisn[0]*profit->modnaxisn[1]);
   scaling = psf->pixstep / profit->prof[0]->typscale;
@@ -273,7 +273,9 @@ profit->modnaxisn[0] = profit->modnaxisn[1] = 256;
   control.fnorm = lm_enorm(m, profit->resi);
   if (control.info < 0 )
     control.info = 10;
+/*
 printf("%d\n", control.info);
+*/
 /* CHECK-Images */
   if ((check = prefs.check[CHECK_SUBPROFILES]))
     {

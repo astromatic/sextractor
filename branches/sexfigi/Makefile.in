@@ -37,11 +37,10 @@ build_triplet = @build@
 host_triplet = @host@
 DIST_COMMON = README $(am__configure_deps) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in $(srcdir)/config.h.in \
-	$(srcdir)/sextractor-tpx.spec.in $(srcdir)/sextractor.spec.in \
-	$(top_srcdir)/configure AUTHORS COPYING ChangeLog INSTALL \
-	THANKS autoconf/config.guess autoconf/config.sub \
-	autoconf/depcomp autoconf/install-sh autoconf/ltmain.sh \
-	autoconf/missing autoconf/mkinstalldirs
+	$(srcdir)/sextractor.spec.in $(top_srcdir)/configure AUTHORS \
+	COPYING ChangeLog INSTALL THANKS autoconf/config.guess \
+	autoconf/config.sub autoconf/depcomp autoconf/install-sh \
+	autoconf/ltmain.sh autoconf/missing autoconf/mkinstalldirs
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/acx_fftw.m4 \
@@ -53,7 +52,7 @@ am__CONFIG_DISTCLEAN_FILES = config.status config.cache config.log \
  configure.lineno configure.status.lineno
 mkinstalldirs = $(SHELL) $(top_srcdir)/autoconf/mkinstalldirs
 CONFIG_HEADER = config.h
-CONFIG_CLEAN_FILES = sextractor.spec sextractor-tpx.spec
+CONFIG_CLEAN_FILES = sextractor.spec
 depcomp =
 am__depfiles_maybe =
 SOURCES =
@@ -173,9 +172,9 @@ sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 
 # Main Makefile for SExtractor
-# Copyright (C) 2002-2005 Emmanuel Bertin.
+# Copyright (C) 2002-2007 Emmanuel Bertin.
 AUTOMAKE_OPTIONS = foreign no-dependencies
-SUBDIRS = man src
+SUBDIRS = man src tests
 EXTRA_DIST = config doc AUTHORS BUGS ChangeLog COPYING HISTORY \
 			  INSTALL README THANKS \
 			  acx_prog_cc_optim.m4
@@ -237,8 +236,6 @@ $(srcdir)/config.h.in:  $(am__configure_deps)
 distclean-hdr:
 	-rm -f config.h stamp-h1
 sextractor.spec: $(top_builddir)/config.status $(srcdir)/sextractor.spec.in
-	cd $(top_builddir) && $(SHELL) ./config.status $@
-sextractor-tpx.spec: $(top_builddir)/config.status $(srcdir)/sextractor-tpx.spec.in
 	cd $(top_builddir) && $(SHELL) ./config.status $@
 uninstall-info-am:
 
@@ -617,20 +614,58 @@ rpm:	dist
 
 rpm-opteron:	dist
 	cp -f $(PACKAGE_NAME)-$(PACKAGE_VERSION).tar.gz $(RPM_SRCDIR)
-	GCCFLAGS="-O -g -funroll-loops -fomit-frame-pointer -Wall \
-		-march=opteron" rpmbuild -ba --target=x86_64 \
-		--clean $(PACKAGE_NAME).spec                                                             
+	TPXCC="gcc" TPXFLAGS="-O -g -funroll-loops -fomit-frame-pointer -Wall \
+		-march=opteron" TPXLIBS="-lfftw3 -lm" \
+		rpmbuild -ba --target=x86_64 --clean $(PACKAGE_NAME).spec
+
+	cp -f $(PACKAGE_NAME)-$(PACKAGE_VERSION).tar.gz $(RPM_SRCDIR)
+	TPXCC="gcc" TPXFLAGS="-O -g -pthread -funroll-loops \
+		-fomit-frame-pointer -Wall -march=opteron" \
+		TPXLIBS="-lpthread -lfftw3 -lm" \
+		rpmbuild -ba --target=x86_64 --clean  $(PACKAGE_NAME)-mp.spec
 
 rpm-athlon:	dist
 	cp -f $(PACKAGE_NAME)-$(PACKAGE_VERSION).tar.gz $(RPM_SRCDIR)
-	GCCFLAGS="-O -g -funroll-loops -fomit-frame-pointer -Wall -m32 \
-		-march=i686 -msse -mfpmath=sse -mtune=athlon" rpmbuild \
-		-ba --target=i686 --clean $(PACKAGE_NAME).spec
-athlon:
-	$(MAKE) CFLAGS="-O -g -funroll-loops -fomit-frame-pointer -Wall -m32 -march=i686 -msse -mfpmath=sse -mtune=athlon" LIBS="-lm"
+	TPXCC="gcc" TPXFLAGS="-O -g -funroll-loops -fomit-frame-pointer -Wall \
+		-m32 -march=i686 -msse -mfpmath=sse -mtune=athlon" \
+		TPXLIBS="-L/usr/lib/ -lm -L/usr/local/lib/ -lfftw3" \
+		rpmbuild -ba --target=i686 --clean $(PACKAGE_NAME).spec
 
-debug:
-	$(MAKE) CFLAGS="-O3 -funroll-loops -fomit-frame-pointer -Wall -m32 -g"
+	cp -f $(PACKAGE_NAME)-$(PACKAGE_VERSION).tar.gz $(RPM_SRCDIR)
+	TPXCC="gcc" TPXFLAGS="-O -g -pthread -funroll-loops \
+		-fomit-frame-pointer -Wall -m32 -march=i686 -msse -mfpmath=sse \
+		-mtune=athlon" \
+		TPXLIBS="-L/usr/lib/ -lpthread -lm -L/usr/local/lib/ -lfftw3" \
+		rpmbuild -ba --target=i686 --clean $(PACKAGE_NAME)-mp.spec
+
+rpm-opteron-icc:	dist
+	cp -f $(PACKAGE_NAME)-$(PACKAGE_VERSION).tar.gz $(RPM_SRCDIR)
+	TPXCC="icc" TPXFLAGS="-O3 -g -axWP -ip -unroll" TPXLIBS="-lfftw3 -lm" \
+		rpmbuild -ba --target=x86_64 --clean $(PACKAGE_NAME).spec
+
+	cp -f $(PACKAGE_NAME)-$(PACKAGE_VERSION).tar.gz $(RPM_SRCDIR)
+	TPXCC="icc" TPXFLAGS="-O3 -g -axWP -ip -unroll -pthread" \
+	TPXLIBS="-lpthread -lfftw3 -lm" \
+	rpmbuild -ba --target=x86_64 --clean $(PACKAGE_NAME)-mp.spec
+
+rpm-athlon-icc:	dist
+	cp -f $(PACKAGE_NAME)-$(PACKAGE_VERSION).tar.gz $(RPM_SRCDIR)
+	TPXCC="icc32" TPXFLAGS="-O3 -g -axKWNPB -ip -unroll" \
+	TPXLIBS="-L/usr/local/lib/ -L/usr/lib/ -lfftw3 -lm" \
+	rpmbuild -ba --target=i686 --clean $(PACKAGE_NAME).spec
+
+	cp -f $(PACKAGE_NAME)-$(PACKAGE_VERSION).tar.gz $(RPM_SRCDIR)
+	TPXCC="icc32" TPXFLAGS="-O3 -g -axKWNPB -ip -unroll -pthread" \
+	TPXLIBS="-L/usr/local/lib/ -L/usr/lib/ -lpthread -lfftw3f -lm" \
+	rpmbuild -ba --target=i686 --clean $(PACKAGE_NAME)-mp.spec
+
+athlon:
+	$(MAKE) CFLAGS="-O -g -pthread -funroll-loops -fomit-frame-pointer \
+		-Wall -m32 -march=i686 -msse -mfpmath=sse -mtune=athlon" \
+		LIBS="-L/usr/lib/ -L/usr/local/lib/ -lfftw3 -lm"
+
+icc:
+	$(MAKE) CC="icc" CFLAGS="-O3 -g -axWP -ip -unroll -pthread"
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
