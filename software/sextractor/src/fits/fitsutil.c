@@ -9,7 +9,7 @@
 *
 *	Contents:	functions for handling FITS keywords.
 *
-*	Last modify:	21/09/2006
+*	Last modify:	18/02/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -162,7 +162,7 @@ OUTPUT	RETURN_OK if something was found, RETURN_ERROR otherwise.
 NOTES	-.
 AUTHOR	E. Bertin (IAP),
         E.R. Deul - Handling of NaN
-VERSION	19/09/2006
+VERSION	18/02/2007
  ***/
 int	fitspick(char *fitsline, char *keyword, void *ptr, h_type *htype,
 		t_type *ttype, char *comment)
@@ -233,13 +233,7 @@ int	fitspick(char *fitsline, char *keyword, void *ptr, h_type *htype,
     {
     for (i=j; i<80 && fitsline[i]!=(char)'/' && fitsline[i]!=(char)'.'; i++);
 /*-- Handle floats*/
-    if (i==80)
-      {
-      *((int *)ptr) = 0;
-      *htype = H_INT;
-      *ttype = T_LONG;
-      }
-    else if (fitsline[i]==(char)'.') 
+    if (fitsline[i]==(char)'.') 
       {
       fixexponent(fitsline);
       *((double *)ptr) = atof(fitsline+j);
