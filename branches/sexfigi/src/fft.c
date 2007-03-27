@@ -9,7 +9,7 @@
 *
 *       Contents:       Routines dealing with double precision FFT.
 *
-*       Last modify:    08/12/2006
+*       Last modify:    26/03/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -101,7 +101,7 @@ OUTPUT	-.
 NOTES	For data1 and fdata2, memory must be allocated for
 	size[0]* ... * 2*(size[naxis-1]/2+1) doubles (padding required).
 AUTHOR	E. Bertin (IAP)
-VERSION	09/12/2006
+VERSION	26/03/2007
  ***/
 void    fft_conv(double *data1, double *fdata2, int *size)
   {
@@ -120,7 +120,7 @@ void    fft_conv(double *data1, double *fdata2, int *size)
 #endif
   QFFTWMALLOC(fdata1, double, npix2);
   plan = fftw_plan_dft_r2c_2d(size[1], size[0], data1,
-        (fftw_complex *)fdata1, FFTW_ESTIMATE|FFTW_FORWARD|FFTW_DESTROY_INPUT);
+        (fftw_complex *)fdata1, FFTW_ESTIMATE|FFTW_DESTROY_INPUT);
 #ifdef USE_THREADS
   QPTHREAD_MUTEX_UNLOCK(&fftmutex);
 #endif
@@ -151,7 +151,7 @@ void    fft_conv(double *data1, double *fdata2, int *size)
   QPTHREAD_MUTEX_LOCK(&fftmutex);
 #endif
   plan = fftw_plan_dft_c2r_2d(size[1], size[0], (fftw_complex *)fdata1, 
-        data1, FFTW_ESTIMATE|FFTW_BACKWARD|FFTW_DESTROY_INPUT);
+        data1, FFTW_ESTIMATE|FFTW_DESTROY_INPUT);
 #ifdef USE_THREADS
   QPTHREAD_MUTEX_UNLOCK(&fftmutex);
 #endif
@@ -180,7 +180,7 @@ INPUT	ptr to the image,
 OUTPUT	Pointer to the compressed, memory-allocated Fourier transform.
 NOTES	Input data may end up corrupted.
 AUTHOR	E. Bertin (IAP)
-VERSION	10/12/2006
+VERSION	26/03/2007
  ***/
 double	*fft_rtf(double *data, int *size)
   {
@@ -197,13 +197,11 @@ double	*fft_rtf(double *data, int *size)
 #endif
   QFFTWMALLOC(fdata, fftw_complex, npix2);
   plan = fftw_plan_dft_r2c_2d(size[1], size[0], data,
-        fdata, FFTW_ESTIMATE|FFTW_FORWARD|FFTW_DESTROY_INPUT);
+        fdata, FFTW_ESTIMATE|FFTW_DESTROY_INPUT);
 #ifdef USE_THREADS
   QPTHREAD_MUTEX_UNLOCK(&fftmutex);
 #endif
-
   fftw_execute(plan);
-
 #ifdef USE_THREADS
   QPTHREAD_MUTEX_LOCK(&fftmutex);
 #endif

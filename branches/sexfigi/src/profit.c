@@ -152,8 +152,8 @@ void	prof_fit(profitstruct *profit,
 
 /* Create pixmaps at image resolution */
   psf_fwhm = psf->masksize[0]*psf->pixstep;
-  profit->objnaxisn[0] = (int)((obj->xmax - obj->xmin)*2.0 + psf_fwhm + 0.499);
-  profit->objnaxisn[1] = (int)((obj->ymax - obj->ymin)*2.0 + psf_fwhm + 0.499);
+  profit->objnaxisn[0] = (int)((obj->xmax - obj->xmin) + psf_fwhm + 0.499);
+  profit->objnaxisn[1] = (int)((obj->ymax - obj->ymin) + psf_fwhm + 0.499);
   ix = (int)(obj2->posx+0.49999);
   iy = (int)(obj2->posy+0.49999);
   QMALLOC(profit->objpix, PIXTYPE, profit->objnaxisn[0]*profit->objnaxisn[1]);
@@ -172,13 +172,14 @@ void	prof_fit(profitstruct *profit,
     }
 
 /* Create pixmap at PSF resolution */
-  profit->modnaxisn[0] = (int)(profit->objnaxisn[0] / psf->pixstep +0.4999); 
-  profit->modnaxisn[1] = (int)(profit->objnaxisn[1] / psf->pixstep +0.4999); 
-if (profit->modnaxisn[1] < profit->modnaxisn[0])
-profit->modnaxisn[1] = profit->modnaxisn[0] = 64;
-else
-profit->modnaxisn[0] = profit->modnaxisn[1] = 64;
-
+  profit->modnaxisn[0] = (int)((profit->objnaxisn[0] / psf->pixstep +0.4999)
+			/2.0)*1.2; 
+  profit->modnaxisn[1] = (int)((profit->objnaxisn[1] / psf->pixstep +0.4999)
+			/2.0)*1.2; 
+  if (profit->modnaxisn[1] < profit->modnaxisn[0])
+    profit->modnaxisn[1] = profit->modnaxisn[0];
+  else
+    profit->modnaxisn[0] = profit->modnaxisn[1];
   QCALLOC(profit->modpix, double, profit->modnaxisn[0]*profit->modnaxisn[1]);
   scaling = psf->pixstep / profit->prof[0]->typscale;
 
@@ -539,7 +540,6 @@ void	profit_makedft(profitstruct *profit)
   height = profit->modnaxisn[1];
   npix = width*height;
   QCALLOC(mask, double, npix);
-
   cpwidth = (width>psfwidth)?psfwidth:width;
   hcpwidth = cpwidth>>1;
   cpwidth = hcpwidth<<1;
