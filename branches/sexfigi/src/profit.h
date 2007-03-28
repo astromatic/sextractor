@@ -16,7 +16,7 @@
 
 /*----------------------------- Internal constants --------------------------*/
 
-#define	PROFIT_MAXITER	100	/* Max. nb of iterations in profile fitting */
+#define	PROFIT_MAXITER	200	/* Max. nb of iterations in profile fitting */
 #define	PROFIT_MAXPROF	8	/* Max. nb of profile components */
 #define	PROFIT_MAXEXTRA	2	/* Max. nb of extra free params of profiles */
 #define PROFIT_PROFRES	1024	/* Pixmap size of model components */
@@ -110,6 +110,8 @@ void		prof_add(profstruct *prof, profitstruct *profit),
 		profit_end(profitstruct *profit),
 		profit_evaluate(double *par, int m_dat, double *fvec,
 			void *data, int *info),
+		profit_evaluate2(double *par, double *fvec, int m, int n,
+			void *adata),
 		profit_makedft(profitstruct *profit),
 		profit_printout(int n_par, double* par, int m_dat, double* fvec,
 			void *data, int iflag, int iter, int nfev );

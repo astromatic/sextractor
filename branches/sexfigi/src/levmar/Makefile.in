@@ -36,7 +36,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-subdir = src/wcs
+subdir = src/levmar
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/acx_fftw.m4 \
@@ -50,12 +50,11 @@ CONFIG_CLEAN_FILES =
 LIBRARIES = $(noinst_LIBRARIES)
 AR = ar
 ARFLAGS = cru
-libwcs_c_a_AR = $(AR) $(ARFLAGS)
-libwcs_c_a_LIBADD =
-am_libwcs_c_a_OBJECTS = cel.$(OBJEXT) lin.$(OBJEXT) poly.$(OBJEXT) \
-	proj.$(OBJEXT) sph.$(OBJEXT) tnx.$(OBJEXT) wcs.$(OBJEXT) \
-	wcstrig.$(OBJEXT)
-libwcs_c_a_OBJECTS = $(am_libwcs_c_a_OBJECTS)
+liblevmar_a_AR = $(AR) $(ARFLAGS)
+liblevmar_a_LIBADD =
+am_liblevmar_a_OBJECTS = lm.$(OBJEXT) Axb.$(OBJEXT) misc.$(OBJEXT) \
+	lmlec.$(OBJEXT) lmbc.$(OBJEXT)
+liblevmar_a_OBJECTS = $(am_liblevmar_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/autoconf/depcomp
 am__depfiles_maybe = depfiles
@@ -63,8 +62,8 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(libwcs_c_a_SOURCES)
-DIST_SOURCES = $(libwcs_c_a_SOURCES)
+SOURCES = $(liblevmar_a_SOURCES)
+DIST_SOURCES = $(liblevmar_a_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -162,13 +161,12 @@ sharedstatedir = @sharedstatedir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 
-# Program Makefile for the WCS library
-# Copyright (C) 2002 Emmanuel Bertin.
-noinst_LIBRARIES = libwcs_c.a
-libwcs_c_a_SOURCES = cel.c lin.c poly.c proj.c sph.c tnx.c wcs.c \
-			  wcstrig.c \
-			  cel.h lin.h poly.h proj.h sph.h tnx.h wcs.h \
-			  wcsmath.h wcstrig.h
+# Program Makefile for making the LMFit routine behave as a library
+# Copyright (C) 2006 Emmanuel Bertin.
+# levmar code by Manolis Lourakis <lourakis@ics.forth.gr> 
+noinst_LIBRARIES = liblevmar.a
+liblevmar_a_SOURCES = lm.c Axb.c misc.c lmlec.c lmbc.c \
+			  lm.h misc.h
 
 all: all-am
 
@@ -183,9 +181,9 @@ $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu  src/wcs/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu  src/levmar/Makefile'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --gnu  src/wcs/Makefile
+	  $(AUTOMAKE) --gnu  src/levmar/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -206,10 +204,10 @@ $(ACLOCAL_M4):  $(am__aclocal_m4_deps)
 
 clean-noinstLIBRARIES:
 	-test -z "$(noinst_LIBRARIES)" || rm -f $(noinst_LIBRARIES)
-libwcs_c.a: $(libwcs_c_a_OBJECTS) $(libwcs_c_a_DEPENDENCIES) 
-	-rm -f libwcs_c.a
-	$(libwcs_c_a_AR) libwcs_c.a $(libwcs_c_a_OBJECTS) $(libwcs_c_a_LIBADD)
-	$(RANLIB) libwcs_c.a
+liblevmar.a: $(liblevmar_a_OBJECTS) $(liblevmar_a_DEPENDENCIES) 
+	-rm -f liblevmar.a
+	$(liblevmar_a_AR) liblevmar.a $(liblevmar_a_OBJECTS) $(liblevmar_a_LIBADD)
+	$(RANLIB) liblevmar.a
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -217,14 +215,11 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cel.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lin.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/poly.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/proj.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sph.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tnx.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wcs.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wcstrig.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Axb.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lm.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lmbc.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lmlec.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/misc.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	if $(COMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \

@@ -9,7 +9,7 @@
 *
 *	Contents:	Fit an arbitrary profile combination to a detection.
 *
-*	Last modify:	10/12/2006
+*	Last modify:	28/03/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -27,6 +27,7 @@
 #include	"globals.h"
 #include	"prefs.h"
 #include	"fits/fitscat.h"
+#include	"levmar/lm.h"
 #include	"lmfit/lmmin.h"
 #include	"fft.h"
 #include	"check.h"
@@ -136,7 +137,7 @@ void	prof_fit(profitstruct *profit,
     double		*diag, *fjac, *qtf, *wa1, *wa2, *wa3, *wa4,
 			psf_fwhm, scaling;
     int			*ipvt,
-			ix,iy, m,n,p;
+			ix,iy, m,n,p, niter;
 
 
   if (profit->psfdft)
@@ -152,18 +153,14 @@ void	prof_fit(profitstruct *profit,
 
 /* Create pixmaps at image resolution */
   psf_fwhm = psf->masksize[0]*psf->pixstep;
-  profit->objnaxisn[0] = (int)((obj->xmax - obj->xmin) + psf_fwhm + 0.499);
-  profit->objnaxisn[1] = (int)((obj->ymax - obj->ymin) + psf_fwhm + 0.499);
+  profit->objnaxisn[0] = (int)((obj->xmax - obj->xmin) + psf_fwhm + 0.499)*1.2;
+  profit->objnaxisn[1] = (int)((obj->ymax - obj->ymin) + psf_fwhm + 0.499)*1.2;
   ix = (int)(obj2->posx+0.49999);
   iy = (int)(obj2->posy+0.49999);
   QMALLOC(profit->objpix, PIXTYPE, profit->objnaxisn[0]*profit->objnaxisn[1]);
   QMALLOC(profit->lmodpix, PIXTYPE, profit->objnaxisn[0]*profit->objnaxisn[1]);
   profit->nresi = profit_copyobjpix(profit, field, ix,iy);
-  if (profit->nresi >= profit->nparam)
-    {
-    QMALLOC(profit->resi, double, profit->nresi);
-    }
-  else
+  if (profit->nresi < profit->nparam)
     {
     for (p=0; p<profit->nparam; p++)
       obj2->prof_vector[p] = 0.0;
@@ -171,11 +168,11 @@ void	prof_fit(profitstruct *profit,
     return;
     }
 
+  QCALLOC(profit->resi, double, profit->nresi);
+
 /* Create pixmap at PSF resolution */
-  profit->modnaxisn[0] = (int)((profit->objnaxisn[0] / psf->pixstep +0.4999)
-			/2.0)*1.2; 
-  profit->modnaxisn[1] = (int)((profit->objnaxisn[1] / psf->pixstep +0.4999)
-			/2.0)*1.2; 
+  profit->modnaxisn[0] = (int)(profit->objnaxisn[0] / psf->pixstep +0.4999); 
+  profit->modnaxisn[1] = (int)(profit->objnaxisn[1] / psf->pixstep +0.4999); 
   if (profit->modnaxisn[1] < profit->modnaxisn[0])
     profit->modnaxisn[1] = profit->modnaxisn[0];
   else
@@ -209,8 +206,8 @@ void	prof_fit(profitstruct *profit,
   profit->parammax[5] = 3.0*profit->paraminit[5];
 
   profit->paraminit[6] = obj->theta;
-  profit->parammin[6] = 0.0;
-  profit->parammax[6] = 180.0;
+  profit->parammin[6] = -360.0;
+  profit->parammax[6] = 360.0;
 
   profit->paraminit[7] = obj->peak/2.0;
   profit->parammin[7] = 0.0;
@@ -225,8 +222,8 @@ void	prof_fit(profitstruct *profit,
   profit->parammax[9] = 3.0*profit->paraminit[9];
 
   profit->paraminit[10] = obj->theta;
-  profit->parammin[10] = 0.0;
-  profit->parammax[10] = 180.0;
+  profit->parammin[10] = -360.0;
+  profit->parammax[10] = 360.0;
 /*
   profit->paraminit[11] = 4.0;
   profit->parammin[11] = 0.2;
@@ -243,11 +240,11 @@ void	prof_fit(profitstruct *profit,
   n = profit->nparam;
   m = profit->nresi;
 
-  control.ftol =      1.0e-7;
-  control.xtol =      1.0e-7;
-  control.gtol =      1.0e-7;
+  control.ftol =      1.0e-10;
+  control.xtol =      1.0e-10;
+  control.gtol =      1.0e-10;
   control.maxcall =   PROFIT_MAXITER;
-  control.epsilon =   1.0e-2;
+  control.epsilon =   1.0e-5;
   control.stepbound = 100.0;
 
   QMALLOC(diag, double,n);
@@ -264,19 +261,23 @@ void	prof_fit(profitstruct *profit,
   control.nfev = 0;
 
 /* This goes through the modified legacy interface */
-  lm_lmdif( m, n, profit->paraminit, profit->resi,
-	control.ftol, control.xtol, control.gtol,
-	control.maxcall*(n+1), control.epsilon, diag, 1,
-	control.stepbound, &(control.info),
-	&(control.nfev), fjac, ipvt, qtf, wa1, wa2, wa3, wa4,
-	profit_evaluate, profit_printout, NULL);
 
-  control.fnorm = lm_enorm(m, profit->resi);
-  if (control.info < 0 )
-    control.info = 10;
-/*
-printf("%d\n", control.info);
-*/
+//  lm_lmdif( m, n, profit->paraminit, profit->resi,
+//	control.ftol, control.xtol, control.gtol,
+//	control.maxcall*(n+1), control.epsilon, diag, 1,
+//	control.stepbound, &(control.info),
+//	&(control.nfev), fjac, ipvt, qtf, wa1, wa2, wa3, wa4,
+//	profit_evaluate, profit_printout, NULL);
+//
+//  control.fnorm = lm_enorm(m, profit->resi);
+//  if (control.info < 0 )
+//    control.info = 10;
+
+  niter = dlevmar_dif(profit_evaluate2, profit->paraminit, profit->resi,
+	n, m,  /*profit->parammin, profit->parammax, */ PROFIT_MAXITER, 
+	NULL, NULL, NULL, NULL, profit);
+printf("%d\n", niter);
+profit->paraminit[0] = 0.0;
 /* CHECK-Images */
   if ((check = prefs.check[CHECK_SUBPROFILES]))
     {
@@ -298,7 +299,9 @@ printf("%d\n", control.info);
     obj2->prof_vector[5] *= profit->prof[0]->typscale / psf->pixstep;
     obj2->prof_vector[8] *= profit->prof[1]->typscale / psf->pixstep;
     obj2->prof_vector[9] *= profit->prof[1]->typscale / psf->pixstep;
+/*
     obj2->prof_niter = control.nfev;
+*/
     }
 
 /* clean up. */
@@ -343,7 +346,7 @@ void	profit_printout(int n_par, double* par, int m_dat, double* fvec,
 printf("%d:	%g	%g	%g	%g	%g	%g	%g\n",
 	iter, par[0],par[1],par[2],par[3],par[4],par[5],par[6]);
 */
-  if (0)
+  if (1)
     lm_print_default(n_par, par, m_dat, fvec, data, iflag, iter, nfev);
 
   return;
@@ -368,6 +371,39 @@ void	profit_evaluate(double *par, int m_dat, double *fvec,
 			void *data, int *info)
   {
   profit_residuals(theprofit, the_field, the_wfield, the_obj,
+		par, fvec);
+
+  return;
+  }
+
+
+/****** profit_evaluate2 ******************************************************
+PROTO	void profit_evaluate2(double *par, int m_dat, double *fvec,
+		void *data, int *info)
+PURPOSE	Provide a function returning residuals to lmfit.
+INPUT	Pointer to the vector of parameters,
+	number of data points,
+	pointer to the vector of residuals (output),
+	pointer to the data structure (unused),
+	pointer to the info structure (unused).
+OUTPUT	-.
+NOTES	Input arguments are there only for compatibility purposes (unused)
+AUTHOR	E. Bertin (IAP)
+VERSION	28/03/2007
+ ***/
+void	profit_evaluate2(double *par, double *fvec, int m, int n,
+			void *adata)
+  {
+   profitstruct	*profit;
+
+  profit = (profitstruct *)adata;
+/*
+printf("%d %g %g %g %g %g %g\n", profit->nresi,
+	par[0], par[1],
+	par[2], par[3],
+	par[4], par[5]);
+*/
+  profit_residuals(profit, the_field, the_wfield, the_obj,
 		par, fvec);
 
   return;
@@ -467,7 +503,7 @@ PIXTYPE	*profit_resample(profitstruct *profit)
   ixcin = profit->modnaxisn[0]/2;
   iycin = profit->modnaxisn[1]/2;
   invpixstep = 1.0/profit->psf->pixstep;
-  
+
 /* Initialize multi-dimensional counters */
   for (d=0; d<2; d++)
     {
