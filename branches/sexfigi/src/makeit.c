@@ -104,9 +104,13 @@ void	makeit()
     fft_init();
 /* Create profiles at full resolution */
     NFPRINTF(OUTPUT, "Preparing profile models");
-    proflist[0] = PROF_EXPONENTIAL;
+/*
+proflist[0] = PROF_SERSIC;
+*/
+    proflist[0] = PROF_BACK;
     proflist[1] = PROF_DEVAUCOULEURS;
-    theprofit = profit_init(thepsf, proflist, 2);
+    proflist[2] = PROF_EXPONENTIAL;
+    theprofit = profit_init(thepsf, proflist, 3);
     }
 
   if (prefs.filter_flag)

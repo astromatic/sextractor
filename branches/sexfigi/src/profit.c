@@ -9,7 +9,7 @@
 *
 *	Contents:	Fit an arbitrary profile combination to a detection.
 *
-*	Last modify:	28/03/2007
+*	Last modify:	30/03/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -60,7 +60,7 @@ INPUT	Pointer to PSF structure,
 	number of profile types.
 OUTPUT	A pointer to an allocated profit structure.
 AUTHOR	E. Bertin (IAP)
-VERSION	07/12/2006
+VERSION	30/03/2007
  ***/
 profitstruct	*profit_init(psfstruct *psf, proftypenum *profcode, int nprof)
   {
@@ -68,19 +68,15 @@ profitstruct	*profit_init(psfstruct *psf, proftypenum *profcode, int nprof)
    int			p;
 
   QCALLOC(profit, profitstruct, 1);
+  profit->psf = psf;
+  profit->psfdft = NULL;
+
   profit->nprof = nprof;
-  profit->nparam = 11;
-  QMALLOC(profit->param, double, profit->nparam);
-  QMALLOC(profit->paraminit, double, profit->nparam);
-  QMALLOC(profit->parammin, double, profit->nparam);
-  QMALLOC(profit->parammax, double, profit->nparam);
+  profit->nparam = 0;
   QMALLOC(profit->prof, profstruct *, nprof);
 
   for (p=0; p<nprof; p++)
     profit->prof[p] = prof_init(profit, profcode[p]);
-
-  profit->psf = psf;
-  profit->psfdft = NULL;
 
   return profit;
   }  
@@ -101,10 +97,6 @@ void	profit_end(profitstruct *profit)
   for (p=0; p<profit->nprof; p++)
     prof_end(profit->prof[p]);
   free(profit->prof);
-  free(profit->param);
-  free(profit->paraminit);
-  free(profit->parammin);
-  free(profit->parammax);
   free(profit);
 
   return;
@@ -135,7 +127,7 @@ void	prof_fit(profitstruct *profit,
     lm_control_type	control;
     checkstruct		*check;
     double		*diag, *fjac, *qtf, *wa1, *wa2, *wa3, *wa4,
-			psf_fwhm, scaling;
+			psf_fwhm;
     int			*ipvt,
 			ix,iy, m,n,p, niter;
 
@@ -178,58 +170,10 @@ void	prof_fit(profitstruct *profit,
   else
     profit->modnaxisn[0] = profit->modnaxisn[1];
   QCALLOC(profit->modpix, double, profit->modnaxisn[0]*profit->modnaxisn[1]);
-  scaling = psf->pixstep / profit->prof[0]->typscale;
 
 /* Set initial guesses and boundaries */
-  profit->paraminit[0] = 0.0;
-  profit->parammin[0] = -6.0*field->backsig;
-  profit->parammax[0] = 6.0*field->backsig;
-
-  profit->paraminit[1] = 0.0;
-  profit->parammin[1] = (double)(obj->xmin - ix);
-  profit->parammax[1] = (double)(obj->xmax - ix);
-
-  profit->paraminit[2] = 0.0;
-  profit->parammin[2] = (double)(obj->ymin - iy);
-  profit->parammax[2] = (double)(obj->ymax - iy);
-
-  profit->paraminit[3] = obj->peak/2.0;
-  profit->parammin[3] = 0.0;
-  profit->parammax[3] = 1000.0*obj->peak;
-
-  profit->paraminit[4] = obj->a*scaling;
-  profit->parammin[4] = 0.0;
-  profit->parammax[4] = 3.0*profit->paraminit[4];
-
-  profit->paraminit[5] = obj->b*scaling;
-  profit->parammin[5] = 0.0;
-  profit->parammax[5] = 3.0*profit->paraminit[5];
-
-  profit->paraminit[6] = obj->theta;
-  profit->parammin[6] = -360.0;
-  profit->parammax[6] = 360.0;
-
-  profit->paraminit[7] = obj->peak/2.0;
-  profit->parammin[7] = 0.0;
-  profit->parammax[7] = 1000.0*obj->peak;
-
-  profit->paraminit[8] = obj->b*scaling;
-  profit->parammin[8] = 0.0;
-  profit->parammax[8] = 3.0*profit->paraminit[8];
-
-  profit->paraminit[9] = obj->b*scaling;
-  profit->parammin[9] = 0.0;
-  profit->parammax[9] = 3.0*profit->paraminit[9];
-
-  profit->paraminit[10] = obj->theta;
-  profit->parammin[10] = -360.0;
-  profit->parammax[10] = 360.0;
-/*
-  profit->paraminit[11] = 4.0;
-  profit->parammin[11] = 0.2;
-  profit->parammax[11] = 8.2;
-*/
-  profit->sigma = field->backsig;
+  profit_resetparams(profit, obj, obj2);
+  profit->sigma = obj->sigbkg;
 
 /* Use (dirty) global variables to interface with lmfit */
   the_field = field;
@@ -272,12 +216,19 @@ void	prof_fit(profitstruct *profit,
 //  control.fnorm = lm_enorm(m, profit->resi);
 //  if (control.info < 0 )
 //    control.info = 10;
+for (p=0; p<profit->nparam; p++)
+printf("%g ", profit->paraminit[p]);
+printf("\n");
 
   niter = dlevmar_dif(profit_evaluate2, profit->paraminit, profit->resi,
-	n, m,  /*profit->parammin, profit->parammax, */ PROFIT_MAXITER, 
+	n, m,  /*profit->parammin, profit->parammax,*/ PROFIT_MAXITER, 
 	NULL, NULL, NULL, NULL, profit);
-printf("%d\n", niter);
-profit->paraminit[0] = 0.0;
+
+printf("--> ");
+for (p=0; p<profit->nparam; p++)
+printf("%g ", profit->paraminit[p]);
+printf("(%d)\n", niter);
+
 /* CHECK-Images */
   if ((check = prefs.check[CHECK_SUBPROFILES]))
     {
@@ -294,11 +245,7 @@ profit->paraminit[0] = 0.0;
   if (FLAG(obj2.prof_vector))
     {
     for (p=0; p<profit->nparam; p++)
-      obj2->prof_vector[p]= profit->paraminit[p];
-    obj2->prof_vector[4] *= profit->prof[0]->typscale / psf->pixstep;
-    obj2->prof_vector[5] *= profit->prof[0]->typscale / psf->pixstep;
-    obj2->prof_vector[8] *= profit->prof[1]->typscale / psf->pixstep;
-    obj2->prof_vector[9] *= profit->prof[1]->typscale / psf->pixstep;
+      obj2->prof_vector[p]= profit->param[p];
 /*
     obj2->prof_niter = control.nfev;
 */
@@ -488,12 +435,12 @@ PURPOSE	Resample the current full resolution model to image resolution.
 INPUT	Profile-fitting structure.
 OUTPUT	Resampled pixmap.
 AUTHOR	E. Bertin (IAP)
-VERSION	08/12/2006
+VERSION	30/03/2007
  ***/
 PIXTYPE	*profit_resample(profitstruct *profit)
   {
    double	posin[2], posout[2], dnaxisn[2],
-		invpixstep, back;
+		invpixstep;
    PIXTYPE	*pixout;
    int		ixcout,iycout, ixcin,iycin,
 		d,i;
@@ -513,13 +460,12 @@ PIXTYPE	*profit_resample(profitstruct *profit)
 
 /* Remap each pixel */
   pixout = profit->lmodpix;
-  back = profit->param[0];
   for (i=profit->objnaxisn[0]*profit->objnaxisn[1]; i--;)
     {
     posin[0] = (posout[0] - ixcout)*invpixstep + ixcin;
     posin[1] = (posout[1] - iycout)*invpixstep + iycin;
     (*(pixout++) = (PIXTYPE)(interpolate_pix(posin, profit->modpix,
-		profit->modnaxisn, INTERP_BILINEAR)) + back);
+		profit->modnaxisn, INTERP_BILINEAR)));
     for (d=0; d<2; d++)
       if ((posout[d]+=1.0) < dnaxisn[d])
         break;
@@ -734,6 +680,136 @@ int	profit_copyobjpix(profitstruct *profit, picstruct *field,
   }
 
 
+/****** profit_addparam *******************************************************
+PROTO	void profit_addparam(profitstruct *profit, paramenum paramindex,
+		double **param)
+PURPOSE	Add a profile parameter to the list of fitted items.
+INPUT	Pointer to the profit structure,
+	Parameter index,
+	Pointer to the parameter pointer.
+OUTPUT	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	29/03/2007
+ ***/
+void	profit_addparam(profitstruct *profit, paramenum paramindex,
+		double **param)
+  {
+/* Check whether the parameter has already be registered */
+  if (profit->paramlist[paramindex])
+/*-- Yes */
+    *param = profit->paramlist[paramindex];
+  else
+/*-- No */
+    *param = profit->paramlist[paramindex] = &profit->param[profit->nparam++];
+
+  return;
+  }
+
+
+/****** profit_resetparams ****************************************************
+PROTO	void profit_resetparams(profitstruct *profit, objstruct *obj,
+		*obj2struct *obj)
+PURPOSE	Set the initial, lower and upper boundary values of a profile parameter.
+INPUT	Pointer to the profit structure,
+	Parameter index,
+	Initial parameter guess,
+	Lower boundary to the parameter,
+	Upper boundary to the parameter.
+OUTPUT	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	30/03/2007
+ ***/
+void	profit_resetparams(profitstruct *profit, objstruct *obj,
+		obj2struct *obj2)
+  {
+   double	*paramptr,
+		param, parammin,parammax;
+   int		p, index;
+
+
+  for (p=0; p<PARAM_NPARAM; p++)
+/*-- Check whether the parameter has already be registered */
+    if ((paramptr=profit->paramlist[p]))
+      {
+      param = parammin = parammax = 0.0;	/* Avoid gcc -Wall warnings*/
+      switch((paramenum)p)
+        {
+        case PARAM_BACK:
+          param = 0.0;
+          parammin = -6.0*obj->sigbkg;
+          parammax =  6.0*obj->sigbkg;
+          break;
+        case PARAM_X:
+          param = 0.0;
+          parammin = (double)(obj->xmin - (int)(obj2->posx+0.49999));
+          parammax = (double)(obj->xmax - (int)(obj2->posx+0.49999));
+          break;
+        case PARAM_Y:
+          param = 0.0;
+          parammin = (double)(obj->ymin - (int)(obj2->posy+0.49999));
+          parammax = (double)(obj->ymax - (int)(obj2->posy+0.49999));
+          break;
+        case PARAM_DEVAUC_AMP:
+        case PARAM_SERSIC_AMP:
+          param = obj->peak;
+          parammin = 0.0;
+          parammax = 1000.0*obj->peak;
+          break;
+        case PARAM_EXPO_AMP:
+          param = obj->peak;
+          parammin = 0.0;
+          parammax = 1000.0*obj->peak;
+          break;
+        case PARAM_DEVAUC_MAJ:
+        case PARAM_SERSIC_MAJ:
+          param = obj->a;
+          parammin = 0.0;
+          parammax = 10.0*obj->a;
+          break;
+        case PARAM_EXPO_MAJ:
+          param = obj->a;
+          parammin = 0.0;
+          parammax = 10.0*obj->a;
+          break;
+        case PARAM_DEVAUC_MIN:
+        case PARAM_SERSIC_MIN:
+          param = obj->b;
+          parammin = 0.0;
+          parammax = 10.0*obj->b;
+          break;
+        case PARAM_EXPO_MIN:
+          param = obj->b;
+          parammin = 0.0;
+          parammax = 10.0*obj->b;
+          break;
+        case PARAM_DEVAUC_PANG:
+        case PARAM_EXPO_PANG:
+        case PARAM_SERSIC_PANG:
+          param = obj->theta;
+          parammin = -3600.0;
+          parammax =  3600.0;
+          break;
+        case PARAM_SERSIC_N:
+          param = 4.0;
+          parammin = 0.1;
+          parammax = 10.0;
+          break;
+        default:
+          error(EXIT_FAILURE, "*Internal Error*: Unknown profile parameter in ",
+		"profit_resetparams()");
+          break;
+        }
+
+      index = paramptr - profit->param;
+      profit->paraminit[index] = param;
+      profit->parammin[index] = parammin;
+      profit->parammax[index] = parammax;
+      }
+
+  return;
+  }
+
+
 /****** prof_init *************************************************************
 PROTO	profstruct prof_init(profitstruct *profit, proftypenum profcode)
 PURPOSE	Allocate and initialize a new profile structure.
@@ -741,7 +817,7 @@ INPUT	Pointer to the profile-fittinh structure,
 	profile type.
 OUTPUT	A pointer to an allocated prof structure.
 AUTHOR	E. Bertin (IAP)
-VERSION	10/12/2006
+VERSION	29/03/2007
  ***/
 profstruct	*prof_init(profitstruct *profit, proftypenum profcode)
   {
@@ -755,6 +831,67 @@ profstruct	*prof_init(profitstruct *profit, proftypenum profcode)
   prof->code = profcode;
   switch(profcode)
     {
+    case PROF_BACK:
+      prof->naxis = 2;
+      prof->pix = NULL;
+      profit_addparam(profit, PARAM_BACK, &prof->amp);
+      prof->typscale = 1.0;
+      break;
+    case PROF_DEVAUCOULEURS:
+      prof->naxis = 2;
+      width =  prof->naxisn[0] = PROFIT_PROFRES;
+      height = prof->naxisn[1] = PROFIT_PROFRES;
+      QCALLOC(prof->pix, double, width*height);
+      ixc = width/2;
+      iyc = height/2;
+      rmax2 = (ixc - 1.0)*(ixc - 1.0);
+      re2 = width/64.0;
+      prof->typscale = re2;
+      re2 *= re2;
+      pix = prof->pix;
+      for (iy=0; iy<height; iy++)
+        {
+        dy2 = (iy-iyc)*(iy-iyc);
+        for (ix=0; ix<width; ix++)
+          {
+          r2 = dy2 + (ix-ixc)*(ix-ixc);
+          *(pix++) = (r2<rmax2)? exp(-7.6692*pow(r2/re2,0.125)) : 0.0;
+          }
+        }
+      profit_addparam(profit, PARAM_X, &prof->x[0]);
+      profit_addparam(profit, PARAM_Y, &prof->x[1]);
+      profit_addparam(profit, PARAM_DEVAUC_AMP, &prof->amp);
+      profit_addparam(profit, PARAM_DEVAUC_MAJ, &prof->scale[0]);
+      profit_addparam(profit, PARAM_DEVAUC_MIN, &prof->scale[1]);
+      profit_addparam(profit, PARAM_DEVAUC_PANG, &prof->posangle);
+      break;
+    case PROF_EXPONENTIAL:
+      prof->naxis = 2;
+      width =  prof->naxisn[0] = PROFIT_PROFRES;
+      height = prof->naxisn[1] = PROFIT_PROFRES;
+      QCALLOC(prof->pix, double, width*height);
+      ixc = width/2;
+      iyc = height/2;
+      rmax2 = (ixc - 1.0)*(ixc - 1.0);
+      rh = width/128.0;
+      prof->typscale = rh;
+      pix = prof->pix;
+      for (iy=0; iy<height; iy++)
+        {
+        dy2 = (iy-iyc)*(iy-iyc);
+        for (ix=0; ix<width; ix++)
+          {
+          r2 = dy2 + (ix-ixc)*(ix-ixc);
+          *(pix++) = (r2<rmax2)? exp(-sqrt(r2)/rh) : 0.0;
+          }
+        }
+      profit_addparam(profit, PARAM_X, &prof->x[0]);
+      profit_addparam(profit, PARAM_Y, &prof->x[1]);
+      profit_addparam(profit, PARAM_EXPO_AMP, &prof->amp);
+      profit_addparam(profit, PARAM_EXPO_MAJ, &prof->scale[0]);
+      profit_addparam(profit, PARAM_EXPO_MIN, &prof->scale[1]);
+      profit_addparam(profit, PARAM_EXPO_PANG, &prof->posangle);
+      break;
     case PROF_SERSIC:
       prof->naxis = 3;
       width =  prof->naxisn[0] = PROFIT_PROFRES;
@@ -764,7 +901,8 @@ profstruct	*prof_init(profitstruct *profit, proftypenum profcode)
       ixc = width/2;
       iyc = height/2;
       rmax2 = (ixc - 1.0)*(ixc - 1.0);
-      re2 = prof->typscale = width/64.0;
+      re2 = width/64.0;
+      prof->typscale = re2;
       re2 *= re2;
       zero = prof->extrazero[0] = 0.2;
       scale = prof->extrascale[0]= 8.0/PROFIT_PROFSRES;
@@ -785,72 +923,22 @@ profstruct	*prof_init(profitstruct *profit, proftypenum profcode)
             }
           }
         }
-      prof->x[0] = &profit->param[1];
-      prof->x[1] = &profit->param[2];
-      prof->amp = &profit->param[7];
-      prof->scale[0] = &profit->param[8];
-      prof->scale[1] = &profit->param[9];
-      prof->posangle = &profit->param[10];
-      prof->extra[0] = &profit->param[11];
-      break;
-    case PROF_DEVAUCOULEURS:
-      prof->naxis = 2;
-      width =  prof->naxisn[0] = PROFIT_PROFRES;
-      height = prof->naxisn[1] = PROFIT_PROFRES;
-      QCALLOC(prof->pix, double, width*height);
-      ixc = width/2;
-      iyc = height/2;
-      rmax2 = (ixc - 1.0)*(ixc - 1.0);
-      rh = prof->typscale = width/128.0;
-      rh *= rh;
-      pix = prof->pix;
-      for (iy=0; iy<height; iy++)
-        {
-        dy2 = (iy-iyc)*(iy-iyc);
-        for (ix=0; ix<width; ix++)
-          {
-          r2 = dy2 + (ix-ixc)*(ix-ixc);
-          *(pix++) = (r2<rmax2)? exp(-pow(r2/rh,0.125)) : 0.0;
-          }
-        }
-      prof->x[0] = &profit->param[1];
-      prof->x[1] = &profit->param[2];
-      prof->amp = &profit->param[7];
-      prof->scale[0] = &profit->param[8];
-      prof->scale[1] = &profit->param[9];
-      prof->posangle = &profit->param[10];
-      break;
-    case PROF_EXPONENTIAL:
-      prof->naxis = 2;
-      width =  prof->naxisn[0] = PROFIT_PROFRES;
-      height = prof->naxisn[1] = PROFIT_PROFRES;
-      QCALLOC(prof->pix, double, width*height);
-      ixc = width/2;
-      iyc = height/2;
-      rmax2 = (ixc - 1.0)*(ixc - 1.0);
-      rh = prof->typscale = width/128.0;
-      pix = prof->pix;
-      for (iy=0; iy<height; iy++)
-        {
-        dy2 = (iy-iyc)*(iy-iyc);
-        for (ix=0; ix<width; ix++)
-          {
-          r2 = dy2 + (ix-ixc)*(ix-ixc);
-          *(pix++) = (r2<rmax2)? exp(-sqrt(r2)/rh) : 0.0;
-          }
-        }
-      prof->x[0] = &profit->param[1];
-      prof->x[1] = &profit->param[2];
-      prof->amp = &profit->param[3];
-      prof->scale[0] = &profit->param[4];
-      prof->scale[1] = &profit->param[5];
-      prof->posangle = &profit->param[6];
+      profit_addparam(profit, PARAM_X, &prof->x[0]);
+      profit_addparam(profit, PARAM_Y, &prof->x[1]);
+      profit_addparam(profit, PARAM_SERSIC_AMP, &prof->amp);
+      profit_addparam(profit, PARAM_SERSIC_MAJ, &prof->scale[0]);
+      profit_addparam(profit, PARAM_SERSIC_MIN, &prof->scale[1]);
+      profit_addparam(profit, PARAM_SERSIC_PANG, &prof->posangle);
+      profit_addparam(profit, PARAM_SERSIC_N, &prof->extra[0]);
       break;
     default:
+      error(EXIT_FAILURE, "*Internal Error*: Unknown profile in ",
+		"prof_init()");
       break;
     }
 
   prof->kernelnlines = 1;
+  prof->scaling = profit->psf->pixstep / prof->typscale;
   for (d=0; d<prof->naxis; d++)
     {
     prof->interptype[d] = INTERP_BILINEAR;
@@ -890,7 +978,7 @@ INPUT	Profile structure,
 	profile-fitting structure.
 OUTPUT	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	10/12/2006
+VERSION	29/03/2007
  ***/
 void	prof_add(profstruct *prof, profitstruct *profit)
   {
@@ -900,6 +988,16 @@ void	prof_add(profstruct *prof, profitstruct *profit)
 		x1cin,x2cin, x1cout,x2cout, xscale,yscale;
    int		npix,
 		d,e,i;
+
+  if (prof->code==PROF_BACK)
+    {
+    pixout = profit->modpix;
+    npix = profit->modnaxisn[0]*profit->modnaxisn[1];
+    amp = *prof->amp;
+    for (i=npix; i--;)
+      *(pixout++) += amp;
+    return;
+    }
 
 /* Initialize multi-dimensional counters */
   for (d=0; d<prof->naxis; d++)
@@ -934,8 +1032,8 @@ void	prof_add(profstruct *prof, profitstruct *profit)
 /* Compute Profile CD matrix */
   ctheta = cos(*prof->posangle*DEG);
   stheta = sin(*prof->posangle*DEG);
-  xscale = (*prof->scale[0] == 0.0)? 0.0 : 1.0 / *prof->scale[0];
-  yscale = (*prof->scale[1] == 0.0)? 0.0 : 1.0 / *prof->scale[1];
+  xscale = (*prof->scale[0] == 0.0)? 0.0 : 1.0/(*prof->scale[0]*prof->scaling);
+  yscale = (*prof->scale[1] == 0.0)? 0.0 : 1.0/(*prof->scale[1]*prof->scaling);
   cd11 = xscale*ctheta;
   cd12 = xscale*stheta;
   cd21 =-yscale*stheta;

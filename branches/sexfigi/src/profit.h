@@ -9,7 +9,7 @@
 *
 *	Contents:	Include file for profit.c.
 *
-*	Last modify:	10/12/2006
+*	Last modify:	30/03/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -29,10 +29,18 @@ One must have:	PROFIT_NITER > 0
 
 /*--------------------------------- typedefs --------------------------------*/
 
-typedef enum		{PROF_SERSIC, PROF_DEVAUCOULEURS, PROF_EXPONENTIAL,
-			PROF_DIRAC}	proftypenum; /* Profile code */
+typedef enum		{PROF_BACK, PROF_SERSIC, PROF_DEVAUCOULEURS,
+			PROF_EXPONENTIAL}	proftypenum; /* Profile code */
 typedef enum	{INTERP_NEARESTNEIGHBOUR, INTERP_BILINEAR, INTERP_LANCZOS2,
 		INTERP_LANCZOS3, INTERP_LANCZOS4}       interpenum;
+
+typedef enum	{PARAM_BACK, PARAM_X, PARAM_Y,
+		PARAM_DEVAUC_AMP, PARAM_DEVAUC_MAJ, PARAM_DEVAUC_MIN,
+		PARAM_DEVAUC_PANG,
+		PARAM_EXPO_AMP, PARAM_EXPO_MAJ, PARAM_EXPO_MIN, PARAM_EXPO_PANG,
+		PARAM_SERSIC_AMP, PARAM_SERSIC_MAJ, PARAM_SERSIC_MIN,
+		PARAM_SERSIC_PANG, PARAM_SERSIC_N,
+		PARAM_NPARAM}	paramenum;
 
 /*--------------------------- structure definitions -------------------------*/
 
@@ -43,6 +51,7 @@ typedef struct
   int		naxis;			/* Number of pixmap dimensions */
   int		naxisn[2+PROFIT_MAXEXTRA];	/* Pixmap size for each axis */
   double	typscale;		/* Typical scale in prof pixels */
+  double	scaling;		/* Scaling factor for lengths */
 /* Generic presentation parameters */
   double	*amp;			/* Amplitude */
   double	*x[2];			/* Pointer to coordinate vector */
@@ -60,12 +69,12 @@ typedef struct
 
 typedef struct
   {
-  double	*initparam;	/* Vector of parameter guesses */
-  double	*param;		/* Vector of parameters to be fitted */
   int		nparam;		/* Number of parameters to be fitted */
-  double	*paraminit;	/* Vector of parameter guesses */
-  double	*parammin;	/* Parameter lower limit */
-  double	*parammax;	/* Parameter upper limit */
+  double	*paramlist[PARAM_NPARAM];	/* flat parameter list */
+  double	param[PARAM_NPARAM];	/* Vector of parameters to be fitted */
+  double	paraminit[PARAM_NPARAM];/* Parameter initial guesses */
+  double	parammin[PARAM_NPARAM];	/* Parameter lower limits */
+  double	parammax[PARAM_NPARAM];	/* Parameter upper limits */
   int		niter;		/* Number of iterations */
   profstruct	**prof;		/* Array of pointers to profiles */
   int		nprof;		/* Number of profiles to consider */
@@ -102,6 +111,8 @@ int		profit_copyobjpix(profitstruct *profit, picstruct *field,
 				int ix, int iy);
 
 void		prof_add(profstruct *prof, profitstruct *profit),
+		profit_addparam(profitstruct *profit, paramenum paramindex,
+			double **param),
 		prof_end(profstruct *prof),
 		prof_fit(profitstruct *profit,
 			picstruct *field, picstruct *wfield,
@@ -114,4 +125,6 @@ void		prof_add(profstruct *prof, profitstruct *profit),
 			void *adata),
 		profit_makedft(profitstruct *profit),
 		profit_printout(int n_par, double* par, int m_dat, double* fvec,
-			void *data, int iflag, int iter, int nfev );
+			void *data, int iflag, int iter, int nfev ),
+		profit_resetparams(profitstruct *profit, objstruct *obj,
+			obj2struct *obj2);
