@@ -32,13 +32,13 @@
 
 
 #ifndef HAVE_LAPACK
-
+/*
 #ifdef _MSC_VER
 #pragma message("Linearly constrained optimization requires LAPACK and was not compiled!")
 #else
 #warning Linearly constrained optimization requires LAPACK and was not compiled!
 #endif // _MSC_VER
-
+*/
 #else // LAPACK present
 
 /* single precision (float) definitions */

@@ -1,5 +1,5 @@
 # configure.in for SExtractor
-# (C) E.Bertin 2002-2006
+# (C) E.Bertin 2002-2007
 # Process this file with autoconf to produce a configure script.
 # First, disable the annoying config.cache
 define([AC_CACHE_LOAD],)
@@ -103,6 +103,35 @@ AC_TYPE_SIGNAL
 AC_FUNC_STAT
 AC_FUNC_STRFTIME
 AC_CHECK_FUNCS([atexit getenv memcpy memmove memset mkdir munmap strstr])
+
+# Set the data directory to a true absolute path
+if test "x${datadir}" = 'x${prefix}/share'; then
+  if test "x${prefix}" = "xNONE"; then
+    datadir2="${ac_default_prefix}/share"
+  else
+    datadir2="${prefix}/share"
+  fi
+elif test "x${datadir}" = 'x${datarootdir}'; then
+  if test "x${datarootdir}" = 'x${prefix}/share'; then
+    if test "x${prefix}" = "xNONE"; then
+      datadir2="${ac_default_prefix}/share"
+    else
+      datadir2="${prefix}/share"
+    fi
+  fi
+else
+  datadir2="${datadir}"
+fi
+
+# Provide a special option for the default XSLT URL
+AC_ARG_WITH(xsl_url,
+	[AC_HELP_STRING([--with-xsl_url=<default URL for XSLT filter>],
+	[Provide an alternative default URL of the XSLT filter])],
+	[xsl_url=$withval],
+	[xsl_url="file://$datadir2/$PACKAGE_NAME/$PACKAGE_NAME.xsl"]
+	)
+
+AC_DEFINE_UNQUOTED([XSL_URL], "$xsl_url",[Default URL of the XSLT filter])
 
 # Set flags for multithreading
 AC_ARG_ENABLE(threads,

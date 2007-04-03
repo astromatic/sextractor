@@ -1039,10 +1039,10 @@ void	prof_add(profstruct *prof, profitstruct *profit)
   cd21 =-yscale*stheta;
   cd22 = yscale*ctheta;
 
-  x1cout = (double)(profit->modnaxisn[0]/2);
-  x2cout = (double)(profit->modnaxisn[1]/2);
-  x1cin = (double)(prof->naxisn[0]/2);
-  x2cin = (double)(prof->naxisn[1]/2);
+  x1cout = (double)(profit->modnaxisn[0]/2 + 1);
+  x2cout = (double)(profit->modnaxisn[1]/2 + 1);
+  x1cin = (double)(prof->naxisn[0]/2 + 1);
+  x2cin = (double)(prof->naxisn[1]/2 + 1);
 
   dx1 = *prof->x[0];
   dx2 = *prof->x[1];

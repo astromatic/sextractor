@@ -864,6 +864,13 @@ Optional Features:
                           Enable multhreading (off by default)
   --disable-largefile     omit support for large files
 
+Optional Packages:
+  --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
+  --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
+  --with-xsl_url=<default URL for XSLT filter>
+                          Provide an alternative default URL of the XSLT
+                          filter
+
 Some influential environment variables:
   CC          C compiler command
   CFLAGS      C compiler flags
@@ -5971,6 +5978,42 @@ _ACEOF
 
 fi
 done
+
+
+# Set the data directory to a true absolute path
+if test "x${datadir}" = 'x${prefix}/share'; then
+  if test "x${prefix}" = "xNONE"; then
+    datadir2="${ac_default_prefix}/share"
+  else
+    datadir2="${prefix}/share"
+  fi
+elif test "x${datadir}" = 'x${datarootdir}'; then
+  if test "x${datarootdir}" = 'x${prefix}/share'; then
+    if test "x${prefix}" = "xNONE"; then
+      datadir2="${ac_default_prefix}/share"
+    else
+      datadir2="${prefix}/share"
+    fi
+  fi
+else
+  datadir2="${datadir}"
+fi
+
+# Provide a special option for the default XSLT URL
+
+# Check whether --with-xsl_url or --without-xsl_url was given.
+if test "${with_xsl_url+set}" = set; then
+  withval="$with_xsl_url"
+  xsl_url=$withval
+else
+  xsl_url="file://$datadir2/$PACKAGE_NAME/$PACKAGE_NAME.xsl"
+
+fi;
+
+
+cat >>confdefs.h <<_ACEOF
+#define XSL_URL "$xsl_url"
+_ACEOF
 
 
 # Set flags for multithreading

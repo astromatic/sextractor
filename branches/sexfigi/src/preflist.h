@@ -9,7 +9,7 @@
 *
 *	Contents:	Keywords for the configuration file.
 *
-*	Last modify:	14/07/2006
+*	Last modify:	03/04/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -265,7 +265,7 @@ char *default_prefs[] =
 "*XSL_URL          " XSL_URL,
 "*                                # Filename for XSL style-sheet",
 #ifdef USE_THREADS
-"*NTHREADS         0              # Number of simultaneous threads for",
+"NTHREADS          0              # Number of simultaneous threads for",
 "*                                # the SMP version of " BANNER,
 "*                                # 0 = automatic",
 #else

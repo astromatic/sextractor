@@ -9,7 +9,7 @@
 *
 *	Contents:	global definitions.
 *
-*	Last modify:	07/12/2006
+*	Last modify:	03/04/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -24,12 +24,14 @@
 /*------------------------ what, who, when and where ------------------------*/
 
 #define		BANNER		"SExtractor"
-#define         EXECUTABLE      "sex"
+#ifdef USE_THREADS
+#define		MYVERSION	VERSION "-MP"
+#else
 #define		MYVERSION	VERSION
-#define		COPYRIGHT	"Emmanuel BERTIN (bertin@iap.fr)"
+#endif
+#define		EXECUTABLE	"sex"
+#define		COPYRIGHT	"Emmanuel BERTIN <bertin@iap.fr>"
 #define		WEBSITE		"http://terapix.iap.fr/soft/sextractor"
-#define	       	MAILINGLIST	"sextractor@iap.fr"
-#define	       	MAILINGLISTREQ	"sextractor-request@iap.fr"
 #define		INSTITUTE	"TERAPIX team at IAP  http://terapix.iap.fr"
 
 /*--------------------------- Internal constants ----------------------------*/

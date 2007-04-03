@@ -146,6 +146,9 @@
 /* Version number of package */
 #undef VERSION
 
+/* Default URL of the XSLT filter */
+#undef XSL_URL
+
 /* Number of bits in a file offset, on hosts where this is settable. */
 #undef _FILE_OFFSET_BITS
 
