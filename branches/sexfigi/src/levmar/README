@@ -1,3 +1,3 @@
 The levmar library has been included in this package untouched, except for three
-warnings removed and an AutoMakefile added).
+warnings removed, a memory leak fixed and an AutoMakefile added).
 			Emmanuel Bertin <bertin@iap.fr>

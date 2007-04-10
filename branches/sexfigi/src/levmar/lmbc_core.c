@@ -499,8 +499,8 @@ int numactive;
     }
     //p_L2=sqrt(p_L2);
 
-#if 0
-if(!(k%100)){
+#if 1
+if(1){
   printf("Current estimate: ");
   for(i=0; i<m; ++i)
     printf("%.9g ", p[i]);

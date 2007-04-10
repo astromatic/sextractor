@@ -9,7 +9,7 @@
 *
 *	Contents:	Include file for profit.c.
 *
-*	Last modify:	30/03/2007
+*	Last modify:	09/04/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -19,7 +19,7 @@
 #define	PROFIT_MAXITER	200	/* Max. nb of iterations in profile fitting */
 #define	PROFIT_MAXPROF	8	/* Max. nb of profile components */
 #define	PROFIT_MAXEXTRA	2	/* Max. nb of extra free params of profiles */
-#define PROFIT_PROFRES	1024	/* Pixmap size of model components */
+#define PROFIT_PROFRES	256	/* Pixmap size of model components */
 #define PROFIT_PROFSRES	64	/* Number of model subcomponents */
 #define INTERP_MAXKERNELWIDTH	8	/* Max. range of kernel (pixels) */
 /* NOTES:
@@ -30,7 +30,8 @@ One must have:	PROFIT_NITER > 0
 /*--------------------------------- typedefs --------------------------------*/
 
 typedef enum		{PROF_BACK, PROF_SERSIC, PROF_DEVAUCOULEURS,
-			PROF_EXPONENTIAL}	proftypenum; /* Profile code */
+			PROF_EXPONENTIAL, PROF_SERSIC_TABEX}
+				proftypenum; /* Profile code */
 typedef enum	{INTERP_NEARESTNEIGHBOUR, INTERP_BILINEAR, INTERP_LANCZOS2,
 		INTERP_LANCZOS3, INTERP_LANCZOS4}       interpenum;
 

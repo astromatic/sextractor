@@ -97,6 +97,7 @@ void	profit_end(profitstruct *profit)
   for (p=0; p<profit->nprof; p++)
     prof_end(profit->prof[p]);
   free(profit->prof);
+  free(profit->psfdft);
   free(profit);
 
   return;
@@ -126,7 +127,8 @@ void	prof_fit(profitstruct *profit,
     psfstruct		*psf;
     lm_control_type	control;
     checkstruct		*check;
-    double		*diag, *fjac, *qtf, *wa1, *wa2, *wa3, *wa4,
+    double		lm_opts[5],lm_info[LM_INFO_SZ],
+			*diag, *fjac, *qtf, *wa1, *wa2, *wa3, *wa4,
 			psf_fwhm;
     int			*ipvt,
 			ix,iy, m,n,p, niter;
@@ -184,12 +186,12 @@ void	prof_fit(profitstruct *profit,
   n = profit->nparam;
   m = profit->nresi;
 
-  control.ftol =      1.0e-10;
-  control.xtol =      1.0e-10;
-  control.gtol =      1.0e-10;
+  control.ftol =      1.0e-12;
+  control.xtol =      1.0e-12;
+  control.gtol =      1.0e-12;
   control.maxcall =   PROFIT_MAXITER;
-  control.epsilon =   1.0e-5;
-  control.stepbound = 100.0;
+  control.epsilon =   1.0e-6;
+  control.stepbound = 0.1;
 
   QMALLOC(diag, double,n);
   QMALLOC(qtf, double, n);
@@ -206,28 +208,35 @@ void	prof_fit(profitstruct *profit,
 
 /* This goes through the modified legacy interface */
 
+for (p=0; p<profit->nparam; p++)
+printf("%g ", profit->paraminit[p]);
+printf("\n");
+
+//  control.fnorm = lm_enorm(m, profit->resi);
+//  if (control.info < 0 )
+//    control.info = 10;
 //  lm_lmdif( m, n, profit->paraminit, profit->resi,
 //	control.ftol, control.xtol, control.gtol,
 //	control.maxcall*(n+1), control.epsilon, diag, 1,
 //	control.stepbound, &(control.info),
 //	&(control.nfev), fjac, ipvt, qtf, wa1, wa2, wa3, wa4,
 //	profit_evaluate, profit_printout, NULL);
-//
-//  control.fnorm = lm_enorm(m, profit->resi);
-//  if (control.info < 0 )
-//    control.info = 10;
-for (p=0; p<profit->nparam; p++)
-printf("%g ", profit->paraminit[p]);
-printf("\n");
+
+  lm_opts[0] = 1.0e-6;
+  lm_opts[1] = 1.0e-12;
+  lm_opts[2] = 1.0e-12;
+  lm_opts[3] = 1.0e-12;
+  lm_opts[4] = 1.0e-6;
 
   niter = dlevmar_dif(profit_evaluate2, profit->paraminit, profit->resi,
-	n, m,  /*profit->parammin, profit->parammax,*/ PROFIT_MAXITER, 
-	NULL, NULL, NULL, NULL, profit);
+	n, m, /*profit->parammin, profit->parammax,*/ PROFIT_MAXITER, 
+	lm_opts, lm_info, NULL, NULL, profit);
 
 printf("--> ");
 for (p=0; p<profit->nparam; p++)
 printf("%g ", profit->paraminit[p]);
-printf("(%d)\n", niter);
+//printf("(%d)\n", control.nfev);
+printf("(%d / %g / %g /%.0f)\n", niter, lm_info[0], lm_info[1], lm_info[6]);
 
 /* CHECK-Images */
   if ((check = prefs.check[CHECK_SUBPROFILES]))
@@ -344,14 +353,13 @@ void	profit_evaluate2(double *par, double *fvec, int m, int n,
    profitstruct	*profit;
 
   profit = (profitstruct *)adata;
-/*
-printf("%d %g %g %g %g %g %g\n", profit->nresi,
+
+printf("%g %g %g %g %g %g %g\n",
 	par[0], par[1],
 	par[2], par[3],
-	par[4], par[5]);
-*/
-  profit_residuals(profit, the_field, the_wfield, the_obj,
-		par, fvec);
+	par[4], par[5], par[6]);
+
+  profit_residuals(profit, the_field, the_wfield, the_obj, par, fvec);
 
   return;
   }
@@ -813,17 +821,17 @@ void	profit_resetparams(profitstruct *profit, objstruct *obj,
 /****** prof_init *************************************************************
 PROTO	profstruct prof_init(profitstruct *profit, proftypenum profcode)
 PURPOSE	Allocate and initialize a new profile structure.
-INPUT	Pointer to the profile-fittinh structure,
+INPUT	Pointer to the profile-fitting structure,
 	profile type.
 OUTPUT	A pointer to an allocated prof structure.
 AUTHOR	E. Bertin (IAP)
-VERSION	29/03/2007
+VERSION	09/04/2007
  ***/
 profstruct	*prof_init(profitstruct *profit, proftypenum profcode)
   {
    profstruct	*prof;
    double	*pix,
-		rmax2, rh, re2, dy2,r2, scale, zero, k,n, hinvn;
+		rmax2, re2, dy2,r2, scale, zero, k,n, hinvn;
    int		width,height, ixc,iyc, ix,iy, nsub,
 		d,s;
 
@@ -837,27 +845,22 @@ profstruct	*prof_init(profitstruct *profit, proftypenum profcode)
       profit_addparam(profit, PARAM_BACK, &prof->amp);
       prof->typscale = 1.0;
       break;
+    case PROF_SERSIC:
+      prof->naxis = 3;
+      prof->pix = NULL;
+      prof->typscale = 1.0;
+      profit_addparam(profit, PARAM_X, &prof->x[0]);
+      profit_addparam(profit, PARAM_Y, &prof->x[1]);
+      profit_addparam(profit, PARAM_SERSIC_AMP, &prof->amp);
+      profit_addparam(profit, PARAM_SERSIC_MAJ, &prof->scale[0]);
+      profit_addparam(profit, PARAM_SERSIC_MIN, &prof->scale[1]);
+      profit_addparam(profit, PARAM_SERSIC_PANG, &prof->posangle);
+      profit_addparam(profit, PARAM_SERSIC_N, &prof->extra[0]);
+      break;
     case PROF_DEVAUCOULEURS:
       prof->naxis = 2;
-      width =  prof->naxisn[0] = PROFIT_PROFRES;
-      height = prof->naxisn[1] = PROFIT_PROFRES;
-      QCALLOC(prof->pix, double, width*height);
-      ixc = width/2;
-      iyc = height/2;
-      rmax2 = (ixc - 1.0)*(ixc - 1.0);
-      re2 = width/64.0;
-      prof->typscale = re2;
-      re2 *= re2;
-      pix = prof->pix;
-      for (iy=0; iy<height; iy++)
-        {
-        dy2 = (iy-iyc)*(iy-iyc);
-        for (ix=0; ix<width; ix++)
-          {
-          r2 = dy2 + (ix-ixc)*(ix-ixc);
-          *(pix++) = (r2<rmax2)? exp(-7.6692*pow(r2/re2,0.125)) : 0.0;
-          }
-        }
+      prof->pix = NULL;
+      prof->typscale = 1.0;
       profit_addparam(profit, PARAM_X, &prof->x[0]);
       profit_addparam(profit, PARAM_Y, &prof->x[1]);
       profit_addparam(profit, PARAM_DEVAUC_AMP, &prof->amp);
@@ -867,24 +870,8 @@ profstruct	*prof_init(profitstruct *profit, proftypenum profcode)
       break;
     case PROF_EXPONENTIAL:
       prof->naxis = 2;
-      width =  prof->naxisn[0] = PROFIT_PROFRES;
-      height = prof->naxisn[1] = PROFIT_PROFRES;
-      QCALLOC(prof->pix, double, width*height);
-      ixc = width/2;
-      iyc = height/2;
-      rmax2 = (ixc - 1.0)*(ixc - 1.0);
-      rh = width/128.0;
-      prof->typscale = rh;
-      pix = prof->pix;
-      for (iy=0; iy<height; iy++)
-        {
-        dy2 = (iy-iyc)*(iy-iyc);
-        for (ix=0; ix<width; ix++)
-          {
-          r2 = dy2 + (ix-ixc)*(ix-ixc);
-          *(pix++) = (r2<rmax2)? exp(-sqrt(r2)/rh) : 0.0;
-          }
-        }
+      prof->pix = NULL;
+      prof->typscale = 1.0;
       profit_addparam(profit, PARAM_X, &prof->x[0]);
       profit_addparam(profit, PARAM_Y, &prof->x[1]);
       profit_addparam(profit, PARAM_EXPO_AMP, &prof->amp);
@@ -892,7 +879,7 @@ profstruct	*prof_init(profitstruct *profit, proftypenum profcode)
       profit_addparam(profit, PARAM_EXPO_MIN, &prof->scale[1]);
       profit_addparam(profit, PARAM_EXPO_PANG, &prof->posangle);
       break;
-    case PROF_SERSIC:
+    case PROF_SERSIC_TABEX:	/* An example of tabulated profile */
       prof->naxis = 3;
       width =  prof->naxisn[0] = PROFIT_PROFRES;
       height = prof->naxisn[1] = PROFIT_PROFRES;
@@ -937,16 +924,19 @@ profstruct	*prof_init(profitstruct *profit, proftypenum profcode)
       break;
     }
 
-  prof->kernelnlines = 1;
   prof->scaling = profit->psf->pixstep / prof->typscale;
-  for (d=0; d<prof->naxis; d++)
+  if (prof->pix)
     {
-    prof->interptype[d] = INTERP_BILINEAR;
-    prof->kernelnlines *= 
+    prof->kernelnlines = 1;
+    for (d=0; d<prof->naxis; d++)
+      {
+      prof->interptype[d] = INTERP_BILINEAR;
+      prof->kernelnlines *= 
 	(prof->kernelwidth[d] = interp_kernwidth[prof->interptype[d]]);
+      }
+    prof->kernelnlines /= prof->kernelwidth[0];
+    QMALLOC(prof->kernelbuf, double, prof->kernelnlines);
     }
-  prof->kernelnlines /= prof->kernelwidth[0];
-  QMALLOC(prof->kernelbuf, double, prof->kernelnlines);
 
   return prof;
   }  
@@ -958,13 +948,15 @@ PURPOSE	End (deallocate) a profile structure.
 INPUT	Prof structure.
 OUTPUT	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	10/12/2006
+VERSION	09/04/2007
  ***/
 void	prof_end(profstruct *prof)
   {
-  free(prof->pix);
-  free(prof->kernelbuf);
-
+  if (prof->pix)
+    {
+    free(prof->pix);
+    free(prof->kernelbuf);
+    }
   free(prof);
 
   return;
@@ -985,50 +977,21 @@ void	prof_add(profstruct *prof, profitstruct *profit)
    double	posin[PROFIT_MAXEXTRA], posout[2], dnaxisn[2],
 		*pixout,
 		amp,ctheta,stheta,cd11,cd12,cd21,cd22, dx1,dx2, x1,x2,
-		x1cin,x2cin, x1cout,x2cout, xscale,yscale;
+		x1cin,x2cin, x1cout,x2cout, xscale,yscale, x1in,x2in;
    int		npix,
-		d,e,i;
+		d,e,i, ix1,ix2;
+
+  amp = *prof->amp;
+  pixout = profit->modpix;
 
   if (prof->code==PROF_BACK)
     {
-    pixout = profit->modpix;
     npix = profit->modnaxisn[0]*profit->modnaxisn[1];
-    amp = *prof->amp;
     for (i=npix; i--;)
       *(pixout++) += amp;
     return;
     }
 
-/* Initialize multi-dimensional counters */
-  for (d=0; d<prof->naxis; d++)
-    {
-    posout[d] = 1.0;	/* FITS standard */
-    dnaxisn[d] = profit->modnaxisn[d] + 0.99999;
-    }
-
-  for (e=0; e<prof->naxis - 2; e++)
-    {
-    d = 2+e;
-/*-- Compute position along axis */
-    posin[d] = (*prof->extra[e]-prof->extrazero[e])/prof->extrascale[e]+1.0;
-/*-- Keep position within boundaries and let interpolation do the rest */
-    if (posin[d] < 0.99999)
-      {
-      if (prof->extracycleflag[e])
-        posin[d] += (double)prof->naxisn[d];
-      else
-        posin[d] = 1.0;
-      }
-    else if (posin[d] > (double)prof->naxisn[d])
-      {
-      if (prof->extracycleflag[e])
-        posin[d] = (prof->extracycleflag[e])?
-		  fmod(posin[d], (double)prof->naxisn[d])
-		: (double)prof->naxisn[d];
-      }
-    }
-
-  amp = *prof->amp;
 /* Compute Profile CD matrix */
   ctheta = cos(*prof->posangle*DEG);
   stheta = sin(*prof->posangle*DEG);
@@ -1039,29 +1002,120 @@ void	prof_add(profstruct *prof, profitstruct *profit)
   cd21 =-yscale*stheta;
   cd22 = yscale*ctheta;
 
-  x1cout = (double)(profit->modnaxisn[0]/2 + 1);
-  x2cout = (double)(profit->modnaxisn[1]/2 + 1);
-  x1cin = (double)(prof->naxisn[0]/2 + 1);
-  x2cin = (double)(prof->naxisn[1]/2 + 1);
-
   dx1 = *prof->x[0];
   dx2 = *prof->x[1];
 
-/* Remap each pixel */
-  pixout = profit->modpix;
-  npix = profit->modnaxisn[0]*profit->modnaxisn[1];
-  for (i=npix; i--;)
+  x1cout = (double)(profit->modnaxisn[0]/2);
+  x2cout = (double)(profit->modnaxisn[1]/2);
+
+  if (prof->code==PROF_SERSIC)
     {
-    x1 = posout[0] - x1cout - dx1;
-    x2 = posout[1] - x2cout - dx2;
-    posin[0] = cd11*x1 + cd12*x2 + x1cin;
-    posin[1] = cd21*x1 + cd22*x2 + x2cin;
-    *(pixout++) += amp*prof_interpolate(prof, posin);
+     double	re2, n, k, hinvn;
+
+    re2 = prof->typscale*prof->typscale;
+    n = *prof->extra[0];
+    k = -1.0/3.0 + 2.0*n + 4.0/(405.0*n) + 46.0/(25515.0*n*n)
+		+ 131.0/(1148175*n*n*n);
+    hinvn = 0.5/n;
+    x1 = -x1cout - dx1;
+    x2 = -x2cout - dx2;
+    for (ix2=profit->modnaxisn[1]; ix2--; x2+=1.0)
+      {
+      x1in = cd12*x2 + cd11*x1;
+      x2in = cd22*x2 + cd21*x1;
+      for (ix1=profit->modnaxisn[0]; ix1--;)
+          {
+          x1in += cd11;
+          x2in += cd21;
+          *(pixout++) += amp*exp(-k*pow((x1in*x1in+x2in*x2in)/re2,hinvn));
+          }
+      }
+    }
+  else if (prof->code==PROF_DEVAUCOULEURS)
+    {
+     double	re2;
+
+    re2 = prof->typscale*prof->typscale;
+    x1 = -x1cout - dx1;
+    x2 = -x2cout - dx2;
+    for (ix2=profit->modnaxisn[1]; ix2--; x2+=1.0)
+      {
+      x1in = cd12*x2 + cd11*x1;
+      x2in = cd22*x2 + cd21*x1;
+      for (ix1=profit->modnaxisn[0]; ix1--;)
+          {
+          x1in += cd11;
+          x2in += cd21;
+          *(pixout++) += amp*exp(-7.6692*pow((x1in*x1in+x2in*x2in)/re2,0.125));
+          }
+      }
+    }
+  else if (prof->code==PROF_EXPONENTIAL)
+    {
+     double	rh;
+
+    rh = prof->typscale;
+    x1 = -x1cout - dx1;
+    x2 = -x2cout - dx2;
+    for (ix2=profit->modnaxisn[1]; ix2--; x2+=1.0)
+      {
+      x1in = cd12*x2 + cd11*x1;
+      x2in = cd22*x2 + cd21*x1;
+      for (ix1=profit->modnaxisn[0]; ix1--;)
+          {
+          x1in += cd11;
+          x2in += cd21;
+          *(pixout++) += amp*exp(-sqrt(x1in*x1in+x2in*x2in)/rh);
+          }
+      }
+    }
+  else
+    {
+/*-- Tabulated profile: remap each pixel */
+/*-- Initialize multi-dimensional counters */
     for (d=0; d<2; d++)
-      if ((posout[d]+=1.0) < dnaxisn[d])
-        break;
-      else
-        posout[d] = 1.0;
+      {
+      posout[d] = 1.0;	/* FITS standard */
+      dnaxisn[d] = profit->modnaxisn[d] + 0.99999;
+      }
+
+    for (e=0; e<prof->naxis - 2; e++)
+      {
+      d = 2+e;
+/*---- Compute position along axis */
+      posin[d] = (*prof->extra[e]-prof->extrazero[e])/prof->extrascale[e]+1.0;
+/*---- Keep position within boundaries and let interpolation do the rest */
+      if (posin[d] < 0.99999)
+        {
+        if (prof->extracycleflag[e])
+          posin[d] += (double)prof->naxisn[d];
+        else
+          posin[d] = 1.0;
+        }
+      else if (posin[d] > (double)prof->naxisn[d])
+        {
+        if (prof->extracycleflag[e])
+          posin[d] = (prof->extracycleflag[e])?
+		  fmod(posin[d], (double)prof->naxisn[d])
+		: (double)prof->naxisn[d];
+        }
+      }
+    x1cin = (double)(prof->naxisn[0]/2);
+    x2cin = (double)(prof->naxisn[1]/2);
+    npix = profit->modnaxisn[0]*profit->modnaxisn[1];
+    for (i=npix; i--;)
+      {
+      x1 = posout[0] - x1cout - 1.0 - dx1;
+      x2 = posout[1] - x2cout - 1.0 - dx2;
+      posin[0] = cd11*x1 + cd12*x2 + x1cin + 1.0;
+      posin[1] = cd21*x1 + cd22*x2 + x2cin + 1.0;
+      *(pixout++) += amp*prof_interpolate(prof, posin);
+      for (d=0; d<2; d++)
+        if ((posout[d]+=1.0) < dnaxisn[d])
+          break;
+        else
+          posout[d] = 1.0;
+      }
     }
 
   return;

@@ -831,7 +831,10 @@ LM_REAL *a, *work, max, sum, tmp;
 
 #ifdef LINSOLVERS_RETAIN_MEMORY
     if(!A){
-      if(buf) free(buf);
+      if(buf){
+        free(buf);
+        buf = NULL;
+        }
       buf_sz=0;
       return 1;
     }

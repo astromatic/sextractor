@@ -594,8 +594,8 @@ const int nm=n*m;
       //p_L2=sqrt(p_L2);
     }
 
-#if 0
-if(!(k%100)){
+#if 1
+if(1){
   printf("Current estimate: ");
   for(i=0; i<m; ++i)
     printf("%.9g ", p[i]);
@@ -746,6 +746,12 @@ if(!(k%100)){
   if(freework) free(work);
 
   if(wrk2) free(wrk2);
+#ifdef LINSOLVERS_RETAIN_MEMORY
+/* Free memory */
+#ifndef HAVE_LAPACK
+AX_EQ_B_LU(NULL, NULL, 0, 0);
+#endif
+#endif
 
   return (stop!=4)?  k : -1;
 }

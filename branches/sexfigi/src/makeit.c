@@ -104,13 +104,10 @@ void	makeit()
     fft_init();
 /* Create profiles at full resolution */
     NFPRINTF(OUTPUT, "Preparing profile models");
-/*
-proflist[0] = PROF_SERSIC;
-*/
     proflist[0] = PROF_BACK;
     proflist[1] = PROF_DEVAUCOULEURS;
-    proflist[2] = PROF_EXPONENTIAL;
-    theprofit = profit_init(thepsf, proflist, 3);
+//    proflist[2] = PROF_EXPONENTIAL;
+    theprofit = profit_init(thepsf, proflist, 2);
     }
 
   if (prefs.filter_flag)
@@ -170,15 +167,14 @@ proflist[0] = PROF_SERSIC;
 
     NFPRINTF(OUTPUT, "Initializing check-image(s)");
     for (i=0; i<prefs.ncheck_type; i++)
-    if ((c=prefs.check_type[i]) != CHECK_NONE)
-      {
-      if (prefs.check[c])
-         error(EXIT_FAILURE,"*Error*: 2 CHECK_IMAGEs cannot have the same ",
+      if ((c=prefs.check_type[i]) != CHECK_NONE)
+        {
+        if (prefs.check[c])
+           error(EXIT_FAILURE,"*Error*: 2 CHECK_IMAGEs cannot have the same ",
 			" CHECK_IMAGE_TYPE");
-      prefs.check[c] = initcheck(prefs.check_name[i], prefs.check_type[i],
+        prefs.check[c] = initcheck(prefs.check_name[i], prefs.check_type[i],
 			next);
-      free(prefs.check_name[i]);
-      }
+        }
     }
 
   NFPRINTF(OUTPUT, "Initializing catalog");
