@@ -9,7 +9,7 @@
 *
 *	Contents:	Keywords for the configuration file.
 *
-*	Last modify:	13/07/2006
+*	Last modify:	10/04/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -212,6 +212,7 @@ typedef struct
 extern int	cistrcmp(char *cs, char *ct, int mode);
 
 extern void	dumpprefs(int state),
+		endprefs(void),
 		readprefs(char *filename,char **argkey,char **argval,int narg),
 		useprefs(void);
 #endif

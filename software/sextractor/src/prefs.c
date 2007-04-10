@@ -9,7 +9,7 @@
 *
 *	Contents:	Functions to handle the configuration file.
 *
-*	Last modify:	12/01/2006
+*	Last modify:	10/04/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -598,3 +598,23 @@ void	useprefs()
   }
 
 
+/********************************* endprefs *********************************/
+/*
+Mostly free memory allocate for static arrays.
+*/
+void	endprefs(void)
+
+  {
+    int i;
+
+  for (i=0; i<prefs.nfimage_name; i++)
+      free(prefs.fimage_name[i]);
+  for (i=0; i<prefs.nwimage_name; i++)
+      free(prefs.wimage_name[i]);
+  for (i=0; i<prefs.npsf_name; i++)
+      free(prefs.psf_name[i]);
+  for (i=0; i<prefs.ncheck_name; i++)
+      free(prefs.check_name[i]);
+
+  return;
+  }

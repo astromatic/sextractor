@@ -9,7 +9,7 @@
 *
 *	Contents:	main program.
 *
-*	Last modify:	14/07/2006
+*	Last modify:	10/04/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -159,7 +159,6 @@ void	makeit()
 			" CHECK_IMAGE_TYPE");
       prefs.check[c] = initcheck(prefs.check_name[i], prefs.check_type[i],
 			next);
-      free(prefs.check_name[i]);
       }
     }
 
