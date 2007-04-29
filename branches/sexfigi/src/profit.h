@@ -16,7 +16,7 @@
 
 /*----------------------------- Internal constants --------------------------*/
 
-#define	PROFIT_MAXITER	200	/* Max. nb of iterations in profile fitting */
+#define	PROFIT_MAXITER	400	/* Max. nb of iterations in profile fitting */
 #define	PROFIT_MAXPROF	8	/* Max. nb of profile components */
 #define	PROFIT_MAXEXTRA	2	/* Max. nb of extra free params of profiles */
 #define PROFIT_PROFRES	256	/* Pixmap size of model components */

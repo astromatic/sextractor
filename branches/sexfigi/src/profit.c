@@ -9,7 +9,7 @@
 *
 *	Contents:	Fit an arbitrary profile combination to a detection.
 *
-*	Last modify:	30/03/2007
+*	Last modify:	29/04/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -180,6 +180,7 @@ void	prof_fit(profitstruct *profit,
 /* Use (dirty) global variables to interface with lmfit */
   the_field = field;
   the_wfield = wfield;
+  theprofit = profit;
   the_obj = obj;
 
 /* Allocate work space */
@@ -191,7 +192,7 @@ void	prof_fit(profitstruct *profit,
   control.gtol =      1.0e-12;
   control.maxcall =   PROFIT_MAXITER;
   control.epsilon =   1.0e-6;
-  control.stepbound = 0.1;
+  control.stepbound = 10.0;
 
   QMALLOC(diag, double,n);
   QMALLOC(qtf, double, n);
@@ -211,16 +212,15 @@ void	prof_fit(profitstruct *profit,
 for (p=0; p<profit->nparam; p++)
 printf("%g ", profit->paraminit[p]);
 printf("\n");
-
-//  control.fnorm = lm_enorm(m, profit->resi);
-//  if (control.info < 0 )
-//    control.info = 10;
-//  lm_lmdif( m, n, profit->paraminit, profit->resi,
-//	control.ftol, control.xtol, control.gtol,
-//	control.maxcall*(n+1), control.epsilon, diag, 1,
-//	control.stepbound, &(control.info),
-//	&(control.nfev), fjac, ipvt, qtf, wa1, wa2, wa3, wa4,
-//	profit_evaluate, profit_printout, NULL);
+  control.fnorm = lm_enorm(m, profit->resi);
+  if (control.info < 0 )
+    control.info = 10;
+  lm_lmdif( m, n, profit->paraminit, profit->resi,
+	control.ftol, control.xtol, control.gtol,
+	control.maxcall*(n+1), control.epsilon, diag, 1,
+	control.stepbound, &(control.info),
+	&(control.nfev), fjac, ipvt, qtf, wa1, wa2, wa3, wa4,
+	profit_evaluate, profit_printout, NULL);
 
   lm_opts[0] = 1.0e-6;
   lm_opts[1] = 1.0e-12;
@@ -228,15 +228,15 @@ printf("\n");
   lm_opts[3] = 1.0e-12;
   lm_opts[4] = 1.0e-6;
 
-  niter = dlevmar_dif(profit_evaluate2, profit->paraminit, profit->resi,
-	n, m, /*profit->parammin, profit->parammax,*/ PROFIT_MAXITER, 
-	lm_opts, lm_info, NULL, NULL, profit);
+//  niter = dlevmar_dif(profit_evaluate2, profit->paraminit, profit->resi,
+//	n, m, /*profit->parammin, profit->parammax,*/ PROFIT_MAXITER, 
+//	lm_opts, lm_info, NULL, NULL, profit);
 
 printf("--> ");
 for (p=0; p<profit->nparam; p++)
 printf("%g ", profit->paraminit[p]);
-//printf("(%d)\n", control.nfev);
-printf("(%d / %g / %g /%.0f)\n", niter, lm_info[0], lm_info[1], lm_info[6]);
+printf("(%d)\n", control.nfev);
+//printf("(%d / %g / %g /%.0f)\n", niter, lm_info[0], lm_info[1], lm_info[6]);
 
 /* CHECK-Images */
   if ((check = prefs.check[CHECK_SUBPROFILES]))
@@ -302,7 +302,7 @@ void	profit_printout(int n_par, double* par, int m_dat, double* fvec,
 printf("%d:	%g	%g	%g	%g	%g	%g	%g\n",
 	iter, par[0],par[1],par[2],par[3],par[4],par[5],par[6]);
 */
-  if (1)
+  if (0)
     lm_print_default(n_par, par, m_dat, fvec, data, iflag, iter, nfev);
 
   return;
@@ -353,11 +353,12 @@ void	profit_evaluate2(double *par, double *fvec, int m, int n,
    profitstruct	*profit;
 
   profit = (profitstruct *)adata;
-
+/*
 printf("%g %g %g %g %g %g %g\n",
 	par[0], par[1],
 	par[2], par[3],
 	par[4], par[5], par[6]);
+*/
 
   profit_residuals(profit, the_field, the_wfield, the_obj, par, fvec);
 
@@ -798,7 +799,7 @@ void	profit_resetparams(profitstruct *profit, objstruct *obj,
           parammax =  3600.0;
           break;
         case PARAM_SERSIC_N:
-          param = 4.0;
+          param = 1.0;
           parammin = 0.1;
           parammax = 10.0;
           break;
@@ -970,18 +971,19 @@ INPUT	Profile structure,
 	profile-fitting structure.
 OUTPUT	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	29/03/2007
+VERSION	29/04/2007
  ***/
 void	prof_add(profstruct *prof, profitstruct *profit)
   {
    double	posin[PROFIT_MAXEXTRA], posout[2], dnaxisn[2],
 		*pixout,
 		amp,ctheta,stheta,cd11,cd12,cd21,cd22, dx1,dx2, x1,x2,
-		x1cin,x2cin, x1cout,x2cout, xscale,yscale, x1in,x2in;
+		x1cin,x2cin, x1cout,x2cout, xscale,yscale, x1in,x2in,
+		rh, re,re2, n,k, hinvn;
    int		npix,
 		d,e,i, ix1,ix2;
 
-  amp = *prof->amp;
+  amp = fabs(*prof->amp);
   pixout = profit->modpix;
 
   if (prof->code==PROF_BACK)
@@ -995,8 +997,8 @@ void	prof_add(profstruct *prof, profitstruct *profit)
 /* Compute Profile CD matrix */
   ctheta = cos(*prof->posangle*DEG);
   stheta = sin(*prof->posangle*DEG);
-  xscale = (*prof->scale[0] == 0.0)? 0.0 : 1.0/(*prof->scale[0]*prof->scaling);
-  yscale = (*prof->scale[1] == 0.0)? 0.0 : 1.0/(*prof->scale[1]*prof->scaling);
+  xscale = (*prof->scale[0] == 0.0)? 0.0 : 1.0/fabs(*prof->scale[0]*prof->scaling);
+  yscale = (*prof->scale[1] == 0.0)? 0.0 : 1.0/fabs(*prof->scale[1]*prof->scaling);
   cd11 = xscale*ctheta;
   cd12 = xscale*stheta;
   cd21 =-yscale*stheta;
@@ -1008,114 +1010,107 @@ void	prof_add(profstruct *prof, profitstruct *profit)
   x1cout = (double)(profit->modnaxisn[0]/2);
   x2cout = (double)(profit->modnaxisn[1]/2);
 
-  if (prof->code==PROF_SERSIC)
+  switch(prof->code)
     {
-     double	re2, n, k, hinvn;
-
-    re2 = prof->typscale*prof->typscale;
-    n = *prof->extra[0];
-    k = -1.0/3.0 + 2.0*n + 4.0/(405.0*n) + 46.0/(25515.0*n*n)
+    case PROF_SERSIC:
+      re2 = prof->typscale*prof->typscale;
+      n = fabs(*prof->extra[0]);
+      k = -1.0/3.0 + 2.0*n + 4.0/(405.0*n) + 46.0/(25515.0*n*n)
 		+ 131.0/(1148175*n*n*n);
-    hinvn = 0.5/n;
-    x1 = -x1cout - dx1;
-    x2 = -x2cout - dx2;
-    for (ix2=profit->modnaxisn[1]; ix2--; x2+=1.0)
-      {
-      x1in = cd12*x2 + cd11*x1;
-      x2in = cd22*x2 + cd21*x1;
-      for (ix1=profit->modnaxisn[0]; ix1--;)
+      hinvn = 0.5/n;
+      x1 = -x1cout - dx1;
+      x2 = -x2cout - dx2;
+      for (ix2=profit->modnaxisn[1]; ix2--; x2+=1.0)
+        {
+        x1in = cd12*x2 + cd11*x1;
+        x2in = cd22*x2 + cd21*x1;
+        for (ix1=profit->modnaxisn[0]; ix1--;)
           {
           x1in += cd11;
           x2in += cd21;
           *(pixout++) += amp*exp(-k*pow((x1in*x1in+x2in*x2in)/re2,hinvn));
           }
-      }
-    }
-  else if (prof->code==PROF_DEVAUCOULEURS)
-    {
-     double	re2;
-
-    re2 = prof->typscale*prof->typscale;
-    x1 = -x1cout - dx1;
-    x2 = -x2cout - dx2;
-    for (ix2=profit->modnaxisn[1]; ix2--; x2+=1.0)
-      {
-      x1in = cd12*x2 + cd11*x1;
-      x2in = cd22*x2 + cd21*x1;
-      for (ix1=profit->modnaxisn[0]; ix1--;)
+        }
+      break;
+    case PROF_DEVAUCOULEURS:
+      re2 = prof->typscale*prof->typscale;
+      x1 = -x1cout - dx1;
+      x2 = -x2cout - dx2;
+      for (ix2=profit->modnaxisn[1]; ix2--; x2+=1.0)
+        {
+        x1in = cd12*x2 + cd11*x1;
+        x2in = cd22*x2 + cd21*x1;
+        for (ix1=profit->modnaxisn[0]; ix1--;)
           {
           x1in += cd11;
           x2in += cd21;
           *(pixout++) += amp*exp(-7.6692*pow((x1in*x1in+x2in*x2in)/re2,0.125));
           }
-      }
-    }
-  else if (prof->code==PROF_EXPONENTIAL)
-    {
-     double	rh;
-
-    rh = prof->typscale;
-    x1 = -x1cout - dx1;
-    x2 = -x2cout - dx2;
-    for (ix2=profit->modnaxisn[1]; ix2--; x2+=1.0)
-      {
-      x1in = cd12*x2 + cd11*x1;
-      x2in = cd22*x2 + cd21*x1;
-      for (ix1=profit->modnaxisn[0]; ix1--;)
+        }
+      break;
+    case PROF_EXPONENTIAL:
+      rh = prof->typscale;
+      x1 = -x1cout - dx1;
+      x2 = -x2cout - dx2;
+      for (ix2=profit->modnaxisn[1]; ix2--; x2+=1.0)
+        {
+        x1in = cd12*x2 + cd11*x1;
+        x2in = cd22*x2 + cd21*x1;
+        for (ix1=profit->modnaxisn[0]; ix1--;)
           {
           x1in += cd11;
           x2in += cd21;
           *(pixout++) += amp*exp(-sqrt(x1in*x1in+x2in*x2in)/rh);
           }
-      }
-    }
-  else
-    {
-/*-- Tabulated profile: remap each pixel */
-/*-- Initialize multi-dimensional counters */
-    for (d=0; d<2; d++)
-      {
-      posout[d] = 1.0;	/* FITS standard */
-      dnaxisn[d] = profit->modnaxisn[d] + 0.99999;
-      }
-
-    for (e=0; e<prof->naxis - 2; e++)
-      {
-      d = 2+e;
-/*---- Compute position along axis */
-      posin[d] = (*prof->extra[e]-prof->extrazero[e])/prof->extrascale[e]+1.0;
-/*---- Keep position within boundaries and let interpolation do the rest */
-      if (posin[d] < 0.99999)
-        {
-        if (prof->extracycleflag[e])
-          posin[d] += (double)prof->naxisn[d];
-        else
-          posin[d] = 1.0;
         }
-      else if (posin[d] > (double)prof->naxisn[d])
+      break;
+    default:
+/*---- Tabulated profile: remap each pixel */
+/*---- Initialize multi-dimensional counters */
+      for (d=0; d<2; d++)
         {
-        if (prof->extracycleflag[e])
+        posout[d] = 1.0;	/* FITS standard */
+        dnaxisn[d] = profit->modnaxisn[d] + 0.99999;
+        }
+
+      for (e=0; e<prof->naxis - 2; e++)
+        {
+        d = 2+e;
+/*------ Compute position along axis */
+        posin[d] = (*prof->extra[e]-prof->extrazero[e])/prof->extrascale[e]+1.0;
+/*------ Keep position within boundaries and let interpolation do the rest */
+        if (posin[d] < 0.99999)
+          {
+          if (prof->extracycleflag[e])
+            posin[d] += (double)prof->naxisn[d];
+          else
+            posin[d] = 1.0;
+          }
+        else if (posin[d] > (double)prof->naxisn[d])
+          {
+          if (prof->extracycleflag[e])
           posin[d] = (prof->extracycleflag[e])?
 		  fmod(posin[d], (double)prof->naxisn[d])
 		: (double)prof->naxisn[d];
+          }
         }
-      }
-    x1cin = (double)(prof->naxisn[0]/2);
-    x2cin = (double)(prof->naxisn[1]/2);
-    npix = profit->modnaxisn[0]*profit->modnaxisn[1];
-    for (i=npix; i--;)
-      {
-      x1 = posout[0] - x1cout - 1.0 - dx1;
-      x2 = posout[1] - x2cout - 1.0 - dx2;
-      posin[0] = cd11*x1 + cd12*x2 + x1cin + 1.0;
-      posin[1] = cd21*x1 + cd22*x2 + x2cin + 1.0;
-      *(pixout++) += amp*prof_interpolate(prof, posin);
-      for (d=0; d<2; d++)
-        if ((posout[d]+=1.0) < dnaxisn[d])
-          break;
-        else
-          posout[d] = 1.0;
-      }
+      x1cin = (double)(prof->naxisn[0]/2);
+      x2cin = (double)(prof->naxisn[1]/2);
+      npix = profit->modnaxisn[0]*profit->modnaxisn[1];
+      for (i=npix; i--;)
+        {
+        x1 = posout[0] - x1cout - 1.0 - dx1;
+        x2 = posout[1] - x2cout - 1.0 - dx2;
+        posin[0] = cd11*x1 + cd12*x2 + x1cin + 1.0;
+        posin[1] = cd21*x1 + cd22*x2 + x2cin + 1.0;
+        *(pixout++) += amp*prof_interpolate(prof, posin);
+        for (d=0; d<2; d++)
+          if ((posout[d]+=1.0) < dnaxisn[d])
+            break;
+          else
+            posout[d] = 1.0;
+        }
+    break;
     }
 
   return;
