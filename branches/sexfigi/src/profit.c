@@ -251,14 +251,14 @@ printf("(%d)\n", control.nfev);
     addcheck(check, profit->lmodpix, profit->objnaxisn[0],profit->objnaxisn[1],
 		ix,iy, 1.0);
     }
-  if (FLAG(obj2.prof_vector))
-    {
-    for (p=0; p<profit->nparam; p++)
-      obj2->prof_vector[p]= profit->param[p];
+//  if (FLAG(obj2.prof_vector))
+//    {
+//    for (p=0; p<profit->nparam; p++)
+//      obj2->prof_vector[p]= profit->param[p];
 /*
     obj2->prof_niter = control.nfev;
 */
-    }
+//    }
 
 /* clean up. */
   free(diag);
@@ -803,6 +803,26 @@ void	profit_resetparams(profitstruct *profit, objstruct *obj,
           parammin = 0.1;
           parammax = 10.0;
           break;
+        case PARAM_EXPO_ARMAMP:
+          param = obj->peak/4.0;
+          parammin = 0.0;
+          parammax = 1000.0*obj->peak;
+          break;
+        case PARAM_EXPO_ARMPITCH:
+          param = 0.0;
+          parammin = -1000.0;
+          parammax = 1000.0;
+          break;
+        case PARAM_EXPO_ARMPOSANG:
+          param = 0.0;
+          parammin = -3600.0;
+          parammax = 3600.0;
+          break;
+        case PARAM_EXPO_ARMWIDTH:
+          param = 0.2;
+          parammin = 0.0;
+          parammax = 1.0;
+          break;
         default:
           error(EXIT_FAILURE, "*Internal Error*: Unknown profile parameter in ",
 		"profit_resetparams()");
@@ -879,6 +899,20 @@ profstruct	*prof_init(profitstruct *profit, proftypenum profcode)
       profit_addparam(profit, PARAM_EXPO_MAJ, &prof->scale[0]);
       profit_addparam(profit, PARAM_EXPO_MIN, &prof->scale[1]);
       profit_addparam(profit, PARAM_EXPO_PANG, &prof->posangle);
+      break;
+    case PROF_EXPONENTIAL_ARMS:
+      prof->naxis = 2;
+      prof->pix = NULL;
+      prof->typscale = 1.0;
+      profit_addparam(profit, PARAM_X, &prof->x[0]);
+      profit_addparam(profit, PARAM_Y, &prof->x[1]);
+      profit_addparam(profit, PARAM_EXPO_MAJ, &prof->scale[0]);
+      profit_addparam(profit, PARAM_EXPO_MIN, &prof->scale[1]);
+      profit_addparam(profit, PARAM_EXPO_PANG, &prof->posangle);
+      profit_addparam(profit, PARAM_EXPO_ARMAMP, &prof->armamp);
+      profit_addparam(profit, PARAM_EXPO_ARMPITCH, &prof->armpitch);
+      profit_addparam(profit, PARAM_EXPO_ARMPOSANG, &prof->armposang);
+      profit_addparam(profit, PARAM_EXPO_ARMWIDTH, &prof->armwidth);
       break;
     case PROF_SERSIC_TABEX:	/* An example of tabulated profile */
       prof->naxis = 3;
@@ -971,7 +1005,7 @@ INPUT	Profile structure,
 	profile-fitting structure.
 OUTPUT	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	29/04/2007
+VERSION	01/05/2007
  ***/
 void	prof_add(profstruct *prof, profitstruct *profit)
   {
@@ -979,11 +1013,11 @@ void	prof_add(profstruct *prof, profitstruct *profit)
 		*pixout,
 		amp,ctheta,stheta,cd11,cd12,cd21,cd22, dx1,dx2, x1,x2,
 		x1cin,x2cin, x1cout,x2cout, xscale,yscale, x1in,x2in,
-		rh, re,re2, n,k, hinvn;
+		rh, re,re2, n,k, hinvn, x1t,x2t, ca,sa, u,
+		armamp,armpitch,armposang,armwidth;
    int		npix,
 		d,e,i, ix1,ix2;
 
-  amp = fabs(*prof->amp);
   pixout = profit->modpix;
 
   if (prof->code==PROF_BACK)
@@ -1013,6 +1047,7 @@ void	prof_add(profstruct *prof, profitstruct *profit)
   switch(prof->code)
     {
     case PROF_SERSIC:
+      amp = fabs(*prof->amp);
       re2 = prof->typscale*prof->typscale;
       n = fabs(*prof->extra[0]);
       k = -1.0/3.0 + 2.0*n + 4.0/(405.0*n) + 46.0/(25515.0*n*n)
@@ -1033,6 +1068,7 @@ void	prof_add(profstruct *prof, profitstruct *profit)
         }
       break;
     case PROF_DEVAUCOULEURS:
+      amp = fabs(*prof->amp);
       re2 = prof->typscale*prof->typscale;
       x1 = -x1cout - dx1;
       x2 = -x2cout - dx2;
@@ -1049,6 +1085,7 @@ void	prof_add(profstruct *prof, profitstruct *profit)
         }
       break;
     case PROF_EXPONENTIAL:
+      amp = fabs(*prof->amp);
       rh = prof->typscale;
       x1 = -x1cout - dx1;
       x2 = -x2cout - dx2;
@@ -1064,9 +1101,35 @@ void	prof_add(profstruct *prof, profitstruct *profit)
           }
         }
       break;
+    case PROF_EXPONENTIAL_ARMS:
+      rh = prof->typscale;
+      armamp = fabs(*prof->armamp);
+      armpitch = (90.0-*prof->armpitch)*DEG;
+      armposang = *prof->armposang*DEG;
+      armwidth = *prof->armwidth;
+      x1 = -x1cout - dx1;
+      x2 = -x2cout - dx2;
+      for (ix2=profit->modnaxisn[1]; ix2--; x2+=1.0)
+        {
+        x1t = cd12*x2 + cd11*x1;
+        x2t = cd22*x2 + cd21*x1;
+        for (ix1=profit->modnaxisn[0]; ix1--;)
+          {
+          x1t += cd11;
+          x2t += cd21;
+          u = log((x1t*x1t+x2t*x2t)/(rh*rh)+0.00001);
+          ca = cos(armpitch*u+armposang);
+          sa = sin(armpitch*u+armposang);
+          x1in = x1t*ca - x2t*sa;
+          x2in = armwidth*(x1t*sa + x2t*ca);
+          *(pixout++) += armamp*exp(-sqrt(x1in*x1in+x2in*x2in)/rh);
+          }
+        }
+      break;
     default:
 /*---- Tabulated profile: remap each pixel */
 /*---- Initialize multi-dimensional counters */
+      amp = fabs(*prof->amp);
       for (d=0; d<2; d++)
         {
         posout[d] = 1.0;	/* FITS standard */

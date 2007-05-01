@@ -30,7 +30,8 @@ One must have:	PROFIT_NITER > 0
 /*--------------------------------- typedefs --------------------------------*/
 
 typedef enum		{PROF_BACK, PROF_SERSIC, PROF_DEVAUCOULEURS,
-			PROF_EXPONENTIAL, PROF_SERSIC_TABEX}
+			PROF_EXPONENTIAL, PROF_EXPONENTIAL_ARMS,
+			PROF_SERSIC_TABEX}
 				proftypenum; /* Profile code */
 typedef enum	{INTERP_NEARESTNEIGHBOUR, INTERP_BILINEAR, INTERP_LANCZOS2,
 		INTERP_LANCZOS3, INTERP_LANCZOS4}       interpenum;
@@ -41,6 +42,8 @@ typedef enum	{PARAM_BACK, PARAM_X, PARAM_Y,
 		PARAM_EXPO_AMP, PARAM_EXPO_MAJ, PARAM_EXPO_MIN, PARAM_EXPO_PANG,
 		PARAM_SERSIC_AMP, PARAM_SERSIC_MAJ, PARAM_SERSIC_MIN,
 		PARAM_SERSIC_PANG, PARAM_SERSIC_N,
+		PARAM_EXPO_ARMAMP, PARAM_EXPO_ARMPOSANG, PARAM_EXPO_ARMPITCH,
+		PARAM_EXPO_ARMWIDTH,
 		PARAM_NPARAM}	paramenum;
 
 /*--------------------------- structure definitions -------------------------*/
@@ -54,10 +57,14 @@ typedef struct
   double	typscale;		/* Typical scale in prof pixels */
   double	scaling;		/* Scaling factor for lengths */
 /* Generic presentation parameters */
-  double	*amp;			/* Amplitude */
+  double	*amp;			/* Pointer to amplitude */
   double	*x[2];			/* Pointer to coordinate vector */
   double	*scale[2];		/* Pointer to scaling vector */
   double	*posangle;		/* Pointer to pos. angle (CCW/NAXIS1)*/
+  double	*armamp;		/* Pointer to arm amplitude */
+  double	*armposang;		/* Pointer to arm position angle */
+  double	*armpitch;		/* Pointer to arm pitch */
+  double	*armwidth;		/* Pointer to arm width*/
   double	*extra[PROFIT_MAXEXTRA];/* Parameters along extra-dimension */
   double	extrazero[PROFIT_MAXEXTRA]; /* Zero-point along extra-dim. */
   double	extrascale[PROFIT_MAXEXTRA]; /* Scaling along extra-dim. */
