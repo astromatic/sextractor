@@ -9,7 +9,7 @@
 *
 *	Contents:	Include file for profit.c.
 *
-*	Last modify:	09/04/2007
+*	Last modify:	03/05/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -42,8 +42,9 @@ typedef enum	{PARAM_BACK, PARAM_X, PARAM_Y,
 		PARAM_EXPO_AMP, PARAM_EXPO_MAJ, PARAM_EXPO_MIN, PARAM_EXPO_PANG,
 		PARAM_SERSIC_AMP, PARAM_SERSIC_MAJ, PARAM_SERSIC_MIN,
 		PARAM_SERSIC_PANG, PARAM_SERSIC_N,
-		PARAM_EXPO_ARMAMP, PARAM_EXPO_ARMPOSANG, PARAM_EXPO_ARMPITCH,
-		PARAM_EXPO_ARMWIDTH,
+		PARAM_EXPO_ARMAMP, PARAM_EXPO_ARMSTART, PARAM_EXPO_ARMPOSANG,
+		PARAM_EXPO_ARMPITCH, PARAM_EXPO_ARMWIDTH,
+		PARAM_EXPO_BARAMP, PARAM_EXPO_BARWIDTH,
 		PARAM_NPARAM}	paramenum;
 
 /*--------------------------- structure definitions -------------------------*/
@@ -62,9 +63,12 @@ typedef struct
   double	*scale[2];		/* Pointer to scaling vector */
   double	*posangle;		/* Pointer to pos. angle (CCW/NAXIS1)*/
   double	*armamp;		/* Pointer to arm amplitude */
+  double	*armstart;		/* Pointer to arm starting radius */
   double	*armposang;		/* Pointer to arm position angle */
   double	*armpitch;		/* Pointer to arm pitch */
-  double	*armwidth;		/* Pointer to arm width*/
+  double	*armwidth;		/* Pointer to arm width */
+  double	*baramp;		/* Pointer to bar amplitude */
+  double	*barwidth;		/* Pointer to bar width */
   double	*extra[PROFIT_MAXEXTRA];/* Parameters along extra-dimension */
   double	extrazero[PROFIT_MAXEXTRA]; /* Zero-point along extra-dim. */
   double	extrascale[PROFIT_MAXEXTRA]; /* Scaling along extra-dim. */

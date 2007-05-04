@@ -9,7 +9,7 @@
 *
 *	Contents:	Fit an arbitrary profile combination to a detection.
 *
-*	Last modify:	29/04/2007
+*	Last modify:	02/05/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -726,7 +726,7 @@ INPUT	Pointer to the profit structure,
 	Upper boundary to the parameter.
 OUTPUT	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	30/03/2007
+VERSION	03/05/2007
  ***/
 void	profit_resetparams(profitstruct *profit, objstruct *obj,
 		obj2struct *obj2)
@@ -776,7 +776,7 @@ void	profit_resetparams(profitstruct *profit, objstruct *obj,
           parammax = 10.0*obj->a;
           break;
         case PARAM_EXPO_MAJ:
-          param = obj->a;
+          param = obj->a*2.0;
           parammin = 0.0;
           parammax = 10.0*obj->a;
           break;
@@ -787,7 +787,7 @@ void	profit_resetparams(profitstruct *profit, objstruct *obj,
           parammax = 10.0*obj->b;
           break;
         case PARAM_EXPO_MIN:
-          param = obj->b;
+          param = obj->b*2.0;
           parammin = 0.0;
           parammax = 10.0*obj->b;
           break;
@@ -804,12 +804,17 @@ void	profit_resetparams(profitstruct *profit, objstruct *obj,
           parammax = 10.0;
           break;
         case PARAM_EXPO_ARMAMP:
-          param = obj->peak/4.0;
+          param = obj->peak/2.0;
           parammin = 0.0;
           parammax = 1000.0*obj->peak;
           break;
+        case PARAM_EXPO_ARMSTART:
+          param = 0.5;
+          parammin = 0.0;
+          parammax = 10.0*obj->b;
+          break;
         case PARAM_EXPO_ARMPITCH:
-          param = 0.0;
+          param = 80.0;
           parammin = -1000.0;
           parammax = 1000.0;
           break;
@@ -819,6 +824,16 @@ void	profit_resetparams(profitstruct *profit, objstruct *obj,
           parammax = 3600.0;
           break;
         case PARAM_EXPO_ARMWIDTH:
+          param = 0.4;
+          parammin = 0.0;
+          parammax = 1.0;
+          break;
+        case PARAM_EXPO_BARAMP:
+          param = obj->peak/6.0;
+          parammin = 0.0;
+          parammax = 1000.0*obj->peak;
+          break;
+        case PARAM_EXPO_BARWIDTH:
           param = 0.2;
           parammin = 0.0;
           parammax = 1.0;
@@ -910,9 +925,12 @@ profstruct	*prof_init(profitstruct *profit, proftypenum profcode)
       profit_addparam(profit, PARAM_EXPO_MIN, &prof->scale[1]);
       profit_addparam(profit, PARAM_EXPO_PANG, &prof->posangle);
       profit_addparam(profit, PARAM_EXPO_ARMAMP, &prof->armamp);
+      profit_addparam(profit, PARAM_EXPO_ARMSTART, &prof->armstart);
       profit_addparam(profit, PARAM_EXPO_ARMPITCH, &prof->armpitch);
       profit_addparam(profit, PARAM_EXPO_ARMPOSANG, &prof->armposang);
       profit_addparam(profit, PARAM_EXPO_ARMWIDTH, &prof->armwidth);
+      profit_addparam(profit, PARAM_EXPO_BARAMP, &prof->baramp);
+      profit_addparam(profit, PARAM_EXPO_BARWIDTH, &prof->barwidth);
       break;
     case PROF_SERSIC_TABEX:	/* An example of tabulated profile */
       prof->naxis = 3;
@@ -1005,7 +1023,7 @@ INPUT	Profile structure,
 	profile-fitting structure.
 OUTPUT	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	01/05/2007
+VERSION	02/05/2007
  ***/
 void	prof_add(profstruct *prof, profitstruct *profit)
   {
@@ -1013,8 +1031,9 @@ void	prof_add(profstruct *prof, profitstruct *profit)
 		*pixout,
 		amp,ctheta,stheta,cd11,cd12,cd21,cd22, dx1,dx2, x1,x2,
 		x1cin,x2cin, x1cout,x2cout, xscale,yscale, x1in,x2in,
-		rh, re,re2, n,k, hinvn, x1t,x2t, ca,sa, u,
-		armamp,armpitch,armposang,armwidth;
+		rh, re2, n,k, hinvn, x1t,x2t, ca,sa, u,
+		armamp,armpitch,armposang,armwidth, r2,r2min,
+		baramp, barwidth;
    int		npix,
 		d,e,i, ix1,ix2;
 
@@ -1022,6 +1041,7 @@ void	prof_add(profstruct *prof, profitstruct *profit)
 
   if (prof->code==PROF_BACK)
     {
+    amp = fabs(*prof->amp);
     npix = profit->modnaxisn[0]*profit->modnaxisn[1];
     for (i=npix; i--;)
       *(pixout++) += amp;
@@ -1103,26 +1123,44 @@ void	prof_add(profstruct *prof, profitstruct *profit)
       break;
     case PROF_EXPONENTIAL_ARMS:
       rh = prof->typscale;
+      r2min = *prof->armstart**prof->armstart;
+      baramp = fabs(*prof->baramp);
+      barwidth = fabs(1.0 / *prof->barwidth);
       armamp = fabs(*prof->armamp);
-      armpitch = (90.0-*prof->armpitch)*DEG;
+      armpitch = *prof->armpitch*DEG;
       armposang = *prof->armposang*DEG;
-      armwidth = *prof->armwidth;
+      armwidth = fabs(1.0 / *prof->armwidth);
       x1 = -x1cout - dx1;
       x2 = -x2cout - dx2;
       for (ix2=profit->modnaxisn[1]; ix2--; x2+=1.0)
         {
         x1t = cd12*x2 + cd11*x1;
         x2t = cd22*x2 + cd21*x1;
-        for (ix1=profit->modnaxisn[0]; ix1--;)
+        for (ix1=profit->modnaxisn[0]; ix1--; pixout++)
           {
           x1t += cd11;
           x2t += cd21;
-          u = log((x1t*x1t+x2t*x2t)/(rh*rh)+0.00001);
-          ca = cos(armpitch*u+armposang);
-          sa = sin(armpitch*u+armposang);
-          x1in = x1t*ca - x2t*sa;
-          x2in = armwidth*(x1t*sa + x2t*ca);
-          *(pixout++) += armamp*exp(-sqrt(x1in*x1in+x2in*x2in)/rh);
+          r2 = x1t*x1t+x2t*x2t;
+          if (r2<r2min)
+            {
+            u = log(r2min/(rh*rh) + 0.00001);
+            ca = cos(armpitch*u+armposang);
+            sa = sin(armpitch*u+armposang);
+            x1in = x1t*ca - x2t*sa;
+            x2in = barwidth*(x1t*sa + x2t*ca);
+            r2 = 1.0-(x1in*x1in+x2in*x2in)/r2min;
+            if (r2>0.0)
+              *pixout += baramp*sqrt(r2);
+            }
+          else
+            {
+            u = log(r2/(rh*rh) + 0.00001);
+            ca = cos(armpitch*u+armposang);
+            sa = sin(armpitch*u+armposang);
+            x1in = x1t*ca - x2t*sa;
+            x2in = armwidth*(x1t*sa + x2t*ca);
+            *pixout += armamp*(exp(-sqrt(x1in*x1in+x2in*x2in)/rh));
+            }
           }
         }
       break;
