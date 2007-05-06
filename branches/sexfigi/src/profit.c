@@ -809,7 +809,7 @@ void	profit_resetparams(profitstruct *profit, objstruct *obj,
           parammax = 1000.0*obj->peak;
           break;
         case PARAM_EXPO_ARMSTART:
-          param = 0.5;
+          param = 0.8;
           parammin = 0.0;
           parammax = 10.0*obj->b;
           break;
@@ -1159,7 +1159,7 @@ void	prof_add(profstruct *prof, profitstruct *profit)
             sa = sin(armpitch*u+armposang);
             x1in = x1t*ca - x2t*sa;
             x2in = armwidth*(x1t*sa + x2t*ca);
-            *pixout += armamp*(exp(-sqrt(x1in*x1in+x2in*x2in)/rh));
+            *pixout += armamp*x1in*x1in*(exp(-(x1in*x1in+x2in*x2in)/rh));
             }
           }
         }
