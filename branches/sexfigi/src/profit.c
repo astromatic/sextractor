@@ -104,9 +104,9 @@ void	profit_end(profitstruct *profit)
   }
 
 
-/****** prof_fit ************************************************************
-PROTO	void prof_fit(profitstruct *profit, picstruct *field, picstruct *wfield,
-		objstruct *obj, obj2struct *obj2)
+/****** profit_fit ************************************************************
+PROTO	void profit_fit(profitstruct *profit, picstruct *field,
+		picstruct *wfield, objstruct *obj, obj2struct *obj2)
 PURPOSE	Fit profile(s) convolved with the PSF to a detected object.
 INPUT	Array of profile structures,
 	Number of profiles,
@@ -118,20 +118,17 @@ OUTPUT	Pointer to an allocated fit structure (containing details about the
 	fit).
 NOTES	It is a modified version of the lm_minimize() of lmfit.
 AUTHOR	E. Bertin (IAP)
-VERSION	09/12/2006
+VERSION	18/05/2007
  ***/
-void	prof_fit(profitstruct *profit,
+void	profit_fit(profitstruct *profit,
 		picstruct *field, picstruct *wfield,
 		objstruct *obj, obj2struct *obj2)
   {
     psfstruct		*psf;
-    lm_control_type	control;
     checkstruct		*check;
     double		lm_opts[5],lm_info[LM_INFO_SZ],
-			*diag, *fjac, *qtf, *wa1, *wa2, *wa3, *wa4,
 			psf_fwhm;
-    int			*ipvt,
-			ix,iy, m,n,p, niter;
+    int			ix,iy, p, niter;
 
 
   if (profit->psfdft)
@@ -183,59 +180,32 @@ void	prof_fit(profitstruct *profit,
   theprofit = profit;
   the_obj = obj;
 
-/* Allocate work space */
-  n = profit->nparam;
-  m = profit->nresi;
-
-  control.ftol =      1.0e-12;
-  control.xtol =      1.0e-12;
-  control.gtol =      1.0e-12;
-  control.maxcall =   PROFIT_MAXITER;
-  control.epsilon =   1.0e-6;
-  control.stepbound = 10.0;
-
-  QMALLOC(diag, double,n);
-  QMALLOC(qtf, double, n);
-  QMALLOC(fjac, double,n*m);
-  QMALLOC(wa1, double, n);
-  QMALLOC(wa2, double, n);
-  QMALLOC(wa3, double, n);
-  QMALLOC(wa4, double,   m);
-  QMALLOC(ipvt, int,   n);
-
-/* Perform fit */
-  control.info = 0;
-  control.nfev = 0;
-
 /* This goes through the modified legacy interface */
-
+for (p=0; p<profit->nparam; p++)
+{
+profit->parammin[p] = -10000.0;
+profit->parammax[p] = 10000.0;
+}
 for (p=0; p<profit->nparam; p++)
 printf("%g ", profit->paraminit[p]);
 printf("\n");
-  control.fnorm = lm_enorm(m, profit->resi);
-  if (control.info < 0 )
-    control.info = 10;
-  lm_lmdif( m, n, profit->paraminit, profit->resi,
-	control.ftol, control.xtol, control.gtol,
-	control.maxcall*(n+1), control.epsilon, diag, 1,
-	control.stepbound, &(control.info),
-	&(control.nfev), fjac, ipvt, qtf, wa1, wa2, wa3, wa4,
-	profit_evaluate, profit_printout, NULL);
 
-  lm_opts[0] = 1.0e-6;
-  lm_opts[1] = 1.0e-12;
-  lm_opts[2] = 1.0e-12;
-  lm_opts[3] = 1.0e-12;
-  lm_opts[4] = 1.0e-6;
-
-//  niter = dlevmar_dif(profit_evaluate2, profit->paraminit, profit->resi,
-//	n, m, /*profit->parammin, profit->parammax,*/ PROFIT_MAXITER, 
-//	lm_opts, lm_info, NULL, NULL, profit);
+  niter = profit_minimize(profit, PROFIT_MAXITER);
 
 printf("--> ");
 for (p=0; p<profit->nparam; p++)
 printf("%g ", profit->paraminit[p]);
-printf("(%d)\n", control.nfev);
+printf("(%d)\n", niter);
+
+//  lm_opts[0] = 1.0e-6;
+//  lm_opts[1] = 1.0e-12;
+//  lm_opts[2] = 1.0e-12;
+//  lm_opts[3] = 1.0e-12;
+//  lm_opts[4] = 1.0e-6;
+
+//  niter = dlevmar_dif(profit_evaluate2, profit->paraminit, profit->resi,
+//	n, m, /*profit->parammin, profit->parammax,*/ PROFIT_MAXITER, 
+//	lm_opts, lm_info, NULL, NULL, profit);
 //printf("(%d / %g / %g /%.0f)\n", niter, lm_info[0], lm_info[1], lm_info[6]);
 
 /* CHECK-Images */
@@ -256,9 +226,74 @@ printf("(%d)\n", control.nfev);
 //    for (p=0; p<profit->nparam; p++)
 //      obj2->prof_vector[p]= profit->param[p];
 /*
-    obj2->prof_niter = control.nfev;
+    obj2->prof_niter = niter;
 */
 //    }
+
+/* clean up. */
+  free(profit->modpix);
+  free(profit->lmodpix);
+  free(profit->objpix);
+  free(profit->resi);
+
+  return;
+  }
+
+
+/****** profit_minimize *******************************************************
+PROTO	void profit_minimize(profitstruct *profit)
+PURPOSE	Provide a function returning residuals to lmfit.
+INPUT	Pointer to the profit structure involved in the fit,
+	maximum number of iterations.
+OUTPUT	Number of iterations used.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	18/05/2007
+ ***/
+int	profit_minimize(profitstruct *profit, int niter)
+  {
+   lm_control_type	control;
+   double		*diag, *fjac, *qtf, *wa1, *wa2, *wa3, *wa4;
+   int			*ipvt,
+			m,n;
+
+/* Allocate work space */
+  n = profit->nparam;
+  m = profit->nresi;
+
+  control.ftol =      1.0e-12;
+  control.xtol =      1.0e-12;
+  control.gtol =      1.0e-12;
+  control.maxcall =   niter;
+  control.epsilon =   1.0e-6;
+  control.stepbound = 1.0;
+
+  control.info = 0;
+  control.nfev = 0;
+
+  QMALLOC(diag, double,n);
+  QMALLOC(qtf, double, n);
+  QMALLOC(fjac, double,n*m);
+  QMALLOC(wa1, double, n);
+  QMALLOC(wa2, double, n);
+  QMALLOC(wa3, double, n);
+  QMALLOC(wa4, double,   m);
+  QMALLOC(ipvt, int,   n);
+  control.fnorm = lm_enorm(m, profit->resi);
+  if (control.info < 0 )
+    control.info = 10;
+
+  profit_boundtounbound(profit, profit->paraminit);
+
+/* Perform fit */
+  lm_lmdif(profit->nresi, profit->nparam, profit->paraminit, profit->resi,
+	control.ftol, control.xtol, control.gtol,
+	control.maxcall*(n+1), control.epsilon, diag, 1,
+	control.stepbound, &(control.info),
+	&(control.nfev), fjac, ipvt, qtf, wa1, wa2, wa3, wa4,
+	profit_evaluate, profit_printout, profit);
+
+  profit_unboundtobound(profit, profit->paraminit);
 
 /* clean up. */
   free(diag);
@@ -269,12 +304,8 @@ printf("(%d)\n", control.nfev);
   free(wa3 );
   free(wa4); 
   free(ipvt);
-  free(profit->modpix);
-  free(profit->lmodpix);
-  free(profit->objpix);
-  free(profit->resi);
 
-  return;
+  return control.nfev;
   }
 
 
@@ -321,13 +352,18 @@ INPUT	Pointer to the vector of parameters,
 OUTPUT	-.
 NOTES	Input arguments are there only for compatibility purposes (unused)
 AUTHOR	E. Bertin (IAP)
-VERSION	05/12/2006
+VERSION	18/05/2007
  ***/
 void	profit_evaluate(double *par, int m_dat, double *fvec,
 			void *data, int *info)
   {
+   profitstruct *profit;
+
+  profit = (profitstruct *)data;
+  profit_unboundtobound(profit, par);
   profit_residuals(theprofit, the_field, the_wfield, the_obj,
 		par, fvec);
+  profit_boundtounbound(profit, par);
 
   return;
   }
@@ -824,7 +860,7 @@ void	profit_resetparams(profitstruct *profit, objstruct *obj,
           parammax = 3600.0;
           break;
         case PARAM_EXPO_ARMWIDTH:
-          param = 0.4;
+          param = 0.5;
           parammin = 0.0;
           parammax = 1.0;
           break;
@@ -849,6 +885,53 @@ void	profit_resetparams(profitstruct *profit, objstruct *obj,
       profit->parammin[index] = parammin;
       profit->parammax[index] = parammax;
       }
+
+  return;
+  }
+
+
+  
+/****** profit_boundtounbound ****************************************************
+PROTO	void profit_boundtounbound(profitstruct *profit)
+PURPOSE	Convert parameters from bounded to unbounded space.
+INPUT	Pointer to the profit structure.
+OUTPUT	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	18/05/2007
+ ***/
+void	profit_boundtounbound(profitstruct *profit, double *param)
+  {
+   double	num,den;
+   int		p;
+
+  for (p=0; p<profit->nparam; p++)
+    {
+    num = param[p] - profit->parammin[p];
+    den = profit->parammax[p] - param[p];
+    param[p] = num>0.0? (den>0.0? log(num/den): BIG) : -BIG;
+    }
+
+  return;
+
+  }
+
+
+/****** profit_unboundtobound ****************************************************
+PROTO	void profit_unboundtobound(profitstruct *profit)
+PURPOSE	Convert parameters from unbounded to bounded space.
+INPUT	Pointer to the profit structure.
+OUTPUT	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	18/05/2007
+ ***/
+void	profit_unboundtobound(profitstruct *profit, double *param)
+  {
+   int		p;
+
+  for (p=0; p<profit->nparam; p++)
+    param[p] = (profit->parammax[p] - profit->parammin[p])
+		/ (1.0 + exp(-(param[p]>70.0? 70.0 : param[p])))
+		+ profit->parammin[p];
 
   return;
   }

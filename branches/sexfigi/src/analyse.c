@@ -9,7 +9,7 @@
 *
 *	Contents:	analyse(), endobject()...: measurements on detections.
 *
-*	Last modify:	07/12/2006
+*	Last modify:	18/05/2006
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -660,7 +660,7 @@ void	endobject(picstruct *field, picstruct *dfield, picstruct *wfield,
 /*----------------------------- Profile fitting -----------------------------*/
     nsub = 1;
     if (prefs.prof_flag)
-      prof_fit(theprofit, field, wfield, obj, obj2);
+      profit_fit(theprofit, field, wfield, obj, obj2);
 
 /*-------------------------------- Astrometry ------------------------------*/
     if (prefs.world_flag)
