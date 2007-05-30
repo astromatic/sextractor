@@ -107,8 +107,9 @@ void	makeit()
 //   proflist[0] = PROF_BACK;
     proflist[0] = PROF_DEVAUCOULEURS;
     proflist[1] = PROF_EXPONENTIAL;
-    proflist[2] = PROF_EXPONENTIAL_ARMS;
-    theprofit = profit_init(thepsf, proflist, 3);
+    proflist[2] = PROF_ARMS;
+    proflist[3] = PROF_BAR;
+    theprofit = profit_init(thepsf, proflist, 4);
     }
 
   if (prefs.filter_flag)

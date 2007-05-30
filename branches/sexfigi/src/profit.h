@@ -9,14 +9,14 @@
 *
 *	Contents:	Include file for profit.c.
 *
-*	Last modify:	18/05/2007
+*	Last modify:	30/05/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
 
 /*----------------------------- Internal constants --------------------------*/
 
-#define	PROFIT_MAXITER	400	/* Max. nb of iterations in profile fitting */
+#define	PROFIT_MAXITER	100	/* Max. nb of iterations in profile fitting */
 #define	PROFIT_MAXPROF	8	/* Max. nb of profile components */
 #define	PROFIT_MAXEXTRA	2	/* Max. nb of extra free params of profiles */
 #define PROFIT_PROFRES	256	/* Pixmap size of model components */
@@ -30,21 +30,23 @@ One must have:	PROFIT_NITER > 0
 /*--------------------------------- typedefs --------------------------------*/
 
 typedef enum		{PROF_BACK, PROF_SERSIC, PROF_DEVAUCOULEURS,
-			PROF_EXPONENTIAL, PROF_EXPONENTIAL_ARMS,
+			PROF_EXPONENTIAL, PROF_ARMS, PROF_BAR,
 			PROF_SERSIC_TABEX}
 				proftypenum; /* Profile code */
 typedef enum	{INTERP_NEARESTNEIGHBOUR, INTERP_BILINEAR, INTERP_LANCZOS2,
 		INTERP_LANCZOS3, INTERP_LANCZOS4}       interpenum;
 
 typedef enum	{PARAM_BACK, PARAM_X, PARAM_Y,
-		PARAM_DEVAUC_AMP, PARAM_DEVAUC_MAJ, PARAM_DEVAUC_MIN,
-		PARAM_DEVAUC_PANG,
-		PARAM_EXPO_AMP, PARAM_EXPO_MAJ, PARAM_EXPO_MIN, PARAM_EXPO_PANG,
-		PARAM_SERSIC_AMP, PARAM_SERSIC_MAJ, PARAM_SERSIC_MIN,
-		PARAM_SERSIC_PANG, PARAM_SERSIC_N,
-		PARAM_EXPO_ARMAMP, PARAM_EXPO_ARMSTART, PARAM_EXPO_ARMPOSANG,
-		PARAM_EXPO_ARMPITCH, PARAM_EXPO_ARMWIDTH,
-		PARAM_EXPO_BARAMP, PARAM_EXPO_BARWIDTH,
+		PARAM_DEVAUC_AMP, PARAM_DEVAUC_MAJ, PARAM_DEVAUC_ASPECT,
+		PARAM_DEVAUC_POSANG,
+		PARAM_EXPO_AMP, PARAM_EXPO_MAJ, PARAM_EXPO_ASPECT,
+		PARAM_EXPO_POSANG,
+		PARAM_SERSIC_AMP, PARAM_SERSIC_MAJ, PARAM_SERSIC_ASPECT,
+		PARAM_SERSIC_POSANG, PARAM_SERSIC_N,
+		PARAM_ARMS_AMP, PARAM_ARMS_AMP2, PARAM_ARMS_SCALE,
+		PARAM_ARMS_START, PARAM_ARMS_POSANG, PARAM_ARMS_PITCH,
+		PARAM_ARMS_WIDTH,
+		PARAM_BAR_AMP, PARAM_BAR_ASPECT, PARAM_BAR_POSANG,
 		PARAM_NPARAM}	paramenum;
 
 /*--------------------------- structure definitions -------------------------*/
@@ -60,15 +62,18 @@ typedef struct
 /* Generic presentation parameters */
   double	*amp;			/* Pointer to amplitude */
   double	*x[2];			/* Pointer to coordinate vector */
-  double	*scale[2];		/* Pointer to scaling vector */
+  double	*scale;			/* Pointer to scaling vector */
+  double	*aspect;		/* Pointer to aspect ratio */
   double	*posangle;		/* Pointer to pos. angle (CCW/NAXIS1)*/
-  double	*armamp;		/* Pointer to arm amplitude */
+  double	*armamp, *armamp2;	/* Pointers to arm amplitudes */
+  double	*armscale;		/* Arm scalelength relative to disk */
   double	*armstart;		/* Pointer to arm starting radius */
   double	*armposang;		/* Pointer to arm position angle */
   double	*armpitch;		/* Pointer to arm pitch */
   double	*armwidth;		/* Pointer to arm width */
   double	*baramp;		/* Pointer to bar amplitude */
-  double	*barwidth;		/* Pointer to bar width */
+  double	*baraspect;		/* Pointer to bar aspect ratio */
+  double	*barposang;		/* Pointer to bar position angle */
   double	*extra[PROFIT_MAXEXTRA];/* Parameters along extra-dimension */
   double	extrazero[PROFIT_MAXEXTRA]; /* Zero-point along extra-dim. */
   double	extrascale[PROFIT_MAXEXTRA]; /* Scaling along extra-dim. */
