@@ -37,6 +37,7 @@ rm -rf $RPM_BUILD_ROOT
 %files
 %defattr(-,root,root)
 /usr/local/bin/sex
+/usr/local/bin/ldactoasc
 /usr/local/man/man1/sex.1
 /usr/local/man/manx/sex.x
 %doc AUTHORS BUGS ChangeLog COPYING HISTORY INSTALL README THANKS doc/README.DOC doc/sextractor.pdf
