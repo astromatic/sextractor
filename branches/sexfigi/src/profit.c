@@ -9,7 +9,7 @@
 *
 *	Contents:	Fit an arbitrary profile combination to a detection.
 *
-*	Last modify:	02/05/2007
+*	Last modify:	06/06/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -35,6 +35,7 @@
 #include	"profit.h"
 
 
+static double	gammln(double);
 static double	prof_interpolate(profstruct *prof, double *posin);
 static double	interpolate_pix(double *posin, double *pix, int *naxisn,
 		interpenum interptype);
@@ -348,7 +349,7 @@ addcheck(check, profit->lmodpix, profit->objnaxisn[0],profit->objnaxisn[1],
 reendcheck(the_field, check);
 endcheck(check);
 }
-  if (1)
+  if (0)
     lm_print_default(n_par, par, m_dat, fvec, data, iflag, iter, nfev);
   return;
   }
@@ -486,7 +487,7 @@ tot = 0.0;
     if ((val=*(objpix++))>-BIG)
       {
       val2 = (double)(val - *lmodpix)*invsig;
-      val2 = val2>0.0? sqrt(val2) : -sqrt(-val2);
+//      val2 = val2>0.0? sqrt(val2) : -sqrt(-val2);
       *(resit++) = val2;
       tot += val2*val2;
       }
@@ -818,18 +819,18 @@ void	profit_resetparams(profitstruct *profit, objstruct *obj,
           break;
         case PARAM_DEVAUC_AMP:
         case PARAM_SERSIC_AMP:
-          param = obj->peak;
+          param = obj->flux;
           parammin = 0.0;
-          parammax = 1000.0*obj->peak;
+          parammax = 10.0*obj->flux;
           break;
         case PARAM_EXPO_AMP:
-          param = 0.0;
+          param = obj->flux;
           parammin = 0.0;
-          parammax = 1000.0*obj->peak;
+          parammax = 10.0*obj->flux;
           break;
         case PARAM_DEVAUC_MAJ:
         case PARAM_SERSIC_MAJ:
-          param = obj->a;
+          param = obj->a*2;
           parammin = 0.0;
           parammax = 10.0*obj->a;
           break;
@@ -877,7 +878,7 @@ void	profit_resetparams(profitstruct *profit, objstruct *obj,
           parammax = 10.0;
           break;
         case PARAM_ARMS_START:
-          param = 0.2;
+          param = 0.5;
           parammin = 0.0;
           parammax = 10.0*obj->b;
           break;
@@ -887,12 +888,12 @@ void	profit_resetparams(profitstruct *profit, objstruct *obj,
           parammax = 120.0;
           break;
         case PARAM_ARMS_POSANG:
-          param = 30.0;
+          param = 0.0;
           parammin = -3600.0;
           parammax = 3600.0;
           break;
         case PARAM_ARMS_WIDTH:
-          param = 0.6;
+          param = 0.3;
           parammin = 0.0;
           parammax = 0.8;
           break;
@@ -1202,12 +1203,13 @@ void	prof_add(profstruct *prof, profitstruct *profit)
   switch(prof->code)
     {
     case PROF_SERSIC:
-      amp = fabs(*prof->amp);
       re2 = prof->typscale*prof->typscale;
       n = fabs(*prof->extra[0]);
       k = -1.0/3.0 + 2.0*n + 4.0/(405.0*n) + 46.0/(25515.0*n*n)
 		+ 131.0/(1148175*n*n*n);
       hinvn = 0.5/n;
+      amp = fabs(*prof->amp*pow(k, 2.0*n) / (2.0*PI*n*exp(gammln(2*n))
+		**prof->scale**prof->scale**prof->aspect*prof->scaling));
       x1 = -x1cout - dx1;
       x2 = -x2cout - dx2;
       for (ix2=profit->modnaxisn[1]; ix2--; x2+=1.0)
@@ -1223,8 +1225,10 @@ void	prof_add(profstruct *prof, profitstruct *profit)
         }
       break;
     case PROF_DEVAUCOULEURS:
-      amp = fabs(*prof->amp);
+      amp = fabs(*prof->amp)*exp(7.6692);
       re2 = prof->typscale*prof->typscale;
+      amp = fabs(*prof->amp / (0.01058394 *
+		*prof->scale**prof->scale**prof->aspect*prof->scaling*re2));
       x1 = -x1cout - dx1;
       x2 = -x2cout - dx2;
       for (ix2=profit->modnaxisn[1]; ix2--; x2+=1.0)
@@ -1240,8 +1244,9 @@ void	prof_add(profstruct *prof, profitstruct *profit)
         }
       break;
     case PROF_EXPONENTIAL:
-      amp = fabs(*prof->amp);
       rh = prof->typscale;
+      amp = fabs(*prof->amp
+	/ (2.0*PI**prof->scale**prof->scale**prof->aspect*prof->scaling*rh*rh));
       x1 = -x1cout - dx1;
       x2 = -x2cout - dx2;
       for (ix2=profit->modnaxisn[1]; ix2--; x2+=1.0)
@@ -1370,6 +1375,33 @@ void	prof_add(profstruct *prof, profitstruct *profit)
     }
 
   return;
+  }
+
+
+/****i* gammln ***************************************************************
+PROTO	double gammln(double xx)
+PURPOSE	Returns the log of the Gamma function (from Num. Recipes in C, p.168).
+INPUT	A double.
+OUTPUT	Log of the Gamma function.
+NOTES	-.
+AUTHOR	E. Bertin (IAP
+VERSION	29/10/97
+*/
+static double	gammln(double xx)
+
+  {
+   double               x,tmp,ser;
+   static double        cof[6]={76.18009173,-86.50532033,24.01409822,
+                        -1.231739516,0.120858003e-2,-0.536382e-5};
+   int                  j;
+
+  tmp=(x=xx-1.0)+5.5;
+  tmp -= (x+0.5)*log(tmp);
+  ser=1.0;
+  for (j=0;j<6;j++)
+    ser += cof[j]/(x+=1.0);
+
+  return log(2.50662827465*ser)-tmp;
   }
 
 
