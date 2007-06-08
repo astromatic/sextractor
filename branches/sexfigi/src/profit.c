@@ -337,7 +337,7 @@ profit = (profitstruct *)data;
 printf("%d:	%g	%g	%g	%g	%g	%g	%g\n",
 	iter, par[0],par[1],par[2],par[3],par[4],par[5],par[6]);
 */
-if (iter!=itero)
+if (0 && iter!=itero)
 {
 itero = iter;
 sprintf(filename, "check_%d_%04d.fits", the_gal, iter);
@@ -487,7 +487,7 @@ tot = 0.0;
     if ((val=*(objpix++))>-BIG)
       {
       val2 = (double)(val - *lmodpix)*invsig;
-//      val2 = val2>0.0? sqrt(val2) : -sqrt(-val2);
+      val2 = val2>0.0? log(1.0+val2) : -log(1.0-val2);
       *(resit++) = val2;
       tot += val2*val2;
       }
@@ -830,12 +830,12 @@ void	profit_resetparams(profitstruct *profit, objstruct *obj,
           break;
         case PARAM_DEVAUC_MAJ:
         case PARAM_SERSIC_MAJ:
-          param = obj->a*2;
+          param = obj->a;
           parammin = 0.0;
           parammax = 10.0*obj->a;
           break;
         case PARAM_EXPO_MAJ:
-          param = obj->a*2.0;
+          param = obj->a;
           parammin = 0.0;
           parammax = 10.0*obj->a;
           break;

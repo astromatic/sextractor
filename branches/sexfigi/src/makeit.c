@@ -105,7 +105,7 @@ void	makeit()
 /* Create profiles at full resolution */
     NFPRINTF(OUTPUT, "Preparing profile models");
 //   proflist[0] = PROF_BACK;
-    proflist[0] = PROF_DEVAUCOULEURS;
+    proflist[0] = PROF_SERSIC;
     proflist[1] = PROF_EXPONENTIAL;
 //    proflist[2] = PROF_ARMS;
 //    proflist[3] = PROF_BAR;
