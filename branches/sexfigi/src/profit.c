@@ -220,14 +220,12 @@ printf("(%d)\n", niter);
     addcheck(check, profit->lmodpix, profit->objnaxisn[0],profit->objnaxisn[1],
 		ix,iy, 1.0);
     }
-//  if (FLAG(obj2.prof_vector))
-//    {
-//    for (p=0; p<profit->nparam; p++)
-//      obj2->prof_vector[p]= profit->param[p];
-/*
-    obj2->prof_niter = niter;
-*/
-//    }
+  if (FLAG(obj2.prof_vector))
+    {
+    for (p=0; p<profit->nparam; p++)
+      obj2->prof_vector[p]= profit->param[p];
+    }
+  obj2->prof_niter = niter;
 
 /* clean up. */
   free(profit->modpix);

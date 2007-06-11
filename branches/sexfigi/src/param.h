@@ -867,7 +867,7 @@ keystruct	objkey[] = {
 	"src.morph.param", "", 1, &prefs.pc_vectorsize},
   {"VECTOR_PROF", "profile-fitting coefficients",
 	&outobj2.prof_vector, H_FLOAT, T_FLOAT, "%8.2f", "",
-	"src.morph.param", "", 1, &prefs.prof_vectorsize},
+	"src.morph.param;stat.fit.param", "", 1, &prefs.prof_vectorsize},
   {"NITER_PROF", "Number of iterations for profile-fitting",
 	&outobj2.prof_niter, H_INT, T_SHORT, "%3d", "",
 	"meta.number", ""},

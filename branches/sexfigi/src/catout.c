@@ -9,7 +9,7 @@
 *
 *	Contents:	functions for output of catalog data.
 *
-*	Last modify:	13/07/2006
+*	Last modify:	11/06/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -103,6 +103,19 @@ void	readcatparams(char *filename)
   memset(&outobj2, 0, sizeof(outobj2));
   updateparamflags();
 
+  return;
+  }
+
+
+/******************************* alloccatparams ******************************/
+/*
+Allocate memory for parameter arrays
+*/
+void	alloccatparams(void)
+  {
+   keystruct	*key;
+   int		i;
+
 /* Go back to multi-dimensional arrays for memory allocation */
   if (thecat.nparam)
     for (i=objtab->nkey, key=objtab->key; i--; key = key->nextkey) 
@@ -120,6 +133,30 @@ void	readcatparams(char *filename)
   return;
   }
 
+/*************************** changecatparamarrays ****************************/
+/*
+Change parameter array dimensions
+*/
+void	changecatparamarrays(char *keyword, int *axisn, int naxis)
+  {
+   keystruct	*key;
+   int		d,i, size;
+
+  if (thecat.nparam)
+    for (i=objtab->nkey, key=objtab->key; i--; key = key->nextkey) 
+      if (key->naxis && !strcmp(keyword, key->name))
+        {
+        size = t_size[key->ttype];
+        if (key->naxis != naxis)
+          key->naxis = naxis;
+        for (d=0; d<naxis; d++)
+          size *= (key->naxisn[d]=axisn[d]);
+        key->nbytes = size;
+        break;
+        }
+
+  return;
+  }
 
 /***************************** updateparamflags ******************************/
 /*

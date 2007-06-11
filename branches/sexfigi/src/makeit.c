@@ -110,6 +110,7 @@ void	makeit()
 //    proflist[2] = PROF_ARMS;
 //    proflist[3] = PROF_BAR;
     theprofit = profit_init(thepsf, proflist, 2);
+    changecatparamarrays("VECTOR_PROF", &theprofit->nparam, 1);
     }
 
   if (prefs.filter_flag)
@@ -144,6 +145,10 @@ void	makeit()
 /* Prepare growth-curve buffer */
   if (prefs.growth_flag)
     initgrowth();
+
+/* Allocate memory for multidimensional catalog parameter arrays */
+  alloccatparams();
+  useprefs();
 
 /* Compute the number of valid input extensions */
   if (!(imacat = read_cat(prefs.image_name[0])))
