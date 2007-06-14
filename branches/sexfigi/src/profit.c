@@ -829,12 +829,12 @@ void	profit_resetparams(profitstruct *profit, objstruct *obj,
         case PARAM_DEVAUC_MAJ:
         case PARAM_SERSIC_MAJ:
           param = obj->a;
-          parammin = 0.0;
+          parammin = 0.01;
           parammax = 10.0*obj->a;
           break;
         case PARAM_EXPO_MAJ:
           param = obj->a;
-          parammin = 0.0;
+          parammin = 0.01;
           parammax = 10.0*obj->a;
           break;
         case PARAM_DEVAUC_ASPECT:
