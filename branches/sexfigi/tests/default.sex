@@ -28,7 +28,7 @@ CLEAN_PARAM      1.0            # Cleaning efficiency
 MASK_TYPE        CORRECT        # type of detection MASKing: can be one of
                                 # NONE, BLANK or CORRECT
 
-WEIGHT_TYPE      MAP_WEIGHT
+WEIGHT_TYPE      NONE
 
 #------------------------------ Photometry -----------------------------------
  

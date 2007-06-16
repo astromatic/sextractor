@@ -9,7 +9,7 @@
 *
 *	Contents:	Fit an arbitrary profile combination to a detection.
 *
-*	Last modify:	06/06/2007
+*	Last modify:	16/06/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -145,8 +145,8 @@ void	profit_fit(profitstruct *profit,
 
 /* Create pixmaps at image resolution */
   psf_fwhm = psf->masksize[0]*psf->pixstep;
-  profit->objnaxisn[0] = (int)((obj->xmax - obj->xmin) + psf_fwhm + 0.499)*1.2;
-  profit->objnaxisn[1] = (int)((obj->ymax - obj->ymin) + psf_fwhm + 0.499)*1.2;
+  profit->objnaxisn[0] = (int)((obj->xmax-obj->xmin+1) + psf_fwhm + 0.499)*1.2;
+  profit->objnaxisn[1] = (int)((obj->ymax-obj->ymin+1) + psf_fwhm + 0.499)*1.2;
   ix = (int)(obj2->posx+0.49999);
   iy = (int)(obj2->posy+0.49999);
 the_x = ix;
@@ -501,18 +501,23 @@ PURPOSE	Resample the current full resolution model to image resolution.
 INPUT	Profile-fitting structure.
 OUTPUT	Resampled pixmap.
 AUTHOR	E. Bertin (IAP)
-VERSION	30/03/2007
+VERSION	16/06/2007
  ***/
 PIXTYPE	*profit_resample(profitstruct *profit)
   {
    double	posin[2], posout[2], dnaxisn[2],
-		invpixstep;
+		*dx,*dy,
+		xcout,ycout, invpixstep;
    PIXTYPE	*pixout;
-   int		ixcout,iycout, ixcin,iycin,
+   int		ixcin,iycin,
 		d,i;
 
-  ixcout = profit->objnaxisn[0]/2;
-  iycout = profit->objnaxisn[1]/2;
+  xcout = (double)(profit->objnaxisn[0]/2);
+  if ((dx=(profit->paramlist[PARAM_X])))
+    xcout -= *dx;
+  ycout = (double)(profit->objnaxisn[1]/2);
+  if ((dy=(profit->paramlist[PARAM_Y])))
+    ycout -= *dy;
   ixcin = profit->modnaxisn[0]/2;
   iycin = profit->modnaxisn[1]/2;
   invpixstep = 1.0/profit->psf->pixstep;
@@ -528,10 +533,10 @@ PIXTYPE	*profit_resample(profitstruct *profit)
   pixout = profit->lmodpix;
   for (i=profit->objnaxisn[0]*profit->objnaxisn[1]; i--;)
     {
-    posin[0] = (posout[0] - ixcout)*invpixstep + ixcin;
-    posin[1] = (posout[1] - iycout)*invpixstep + iycin;
+    posin[0] = (posout[0] - xcout)*invpixstep + ixcin;
+    posin[1] = (posout[1] - ycout)*invpixstep + iycin;
     (*(pixout++) = (PIXTYPE)(interpolate_pix(posin, profit->modpix,
-		profit->modnaxisn, INTERP_BILINEAR)));
+		profit->modnaxisn, INTERP_LANCZOS3)));
     for (d=0; d<2; d++)
       if ((posout[d]+=1.0) < dnaxisn[d])
         break;
@@ -783,7 +788,7 @@ INPUT	Pointer to the profit structure,
 	Upper boundary to the parameter.
 OUTPUT	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	29/05/2007
+VERSION	16/06/2007
  ***/
 void	profit_resetparams(profitstruct *profit, objstruct *obj,
 		obj2struct *obj2)
@@ -806,36 +811,36 @@ void	profit_resetparams(profitstruct *profit, objstruct *obj,
           parammax =  6.0*obj->sigbkg;
           break;
         case PARAM_X:
-          param = 0.0;
-          parammin = (double)(obj->xmin - (int)(obj2->posx+0.49999));
-          parammax = (double)(obj->xmax - (int)(obj2->posx+0.49999));
+          param = obj2->posx - (int)(obj2->posx+0.49999);
+          parammin = -obj2->hl_radius*4;
+          parammax =  obj2->hl_radius*4;
           break;
         case PARAM_Y:
-          param = 0.0;
-          parammin = (double)(obj->ymin - (int)(obj2->posy+0.49999));
-          parammax = (double)(obj->ymax - (int)(obj2->posy+0.49999));
+          param = obj2->posy - (int)(obj2->posy+0.49999);
+          parammin = -obj2->hl_radius*4;
+          parammax =  obj2->hl_radius*4;
           break;
         case PARAM_DEVAUC_AMP:
         case PARAM_SERSIC_AMP:
-          param = obj->flux;
+          param = obj2->flux_auto / 2.0;
           parammin = 0.0;
-          parammax = 10.0*obj->flux;
+          parammax = 5.0*param;
           break;
         case PARAM_EXPO_AMP:
-          param = obj->flux;
+          param = obj2->flux_auto / 2.0;
           parammin = 0.0;
-          parammax = 10.0*obj->flux;
+          parammax = 5.0*param;
           break;
         case PARAM_DEVAUC_MAJ:
         case PARAM_SERSIC_MAJ:
-          param = obj->a;
-          parammin = 0.01;
-          parammax = 10.0*obj->a;
+          param = obj2->hl_radius;
+          parammin = 0.1;
+          parammax = param * 4.0;
           break;
         case PARAM_EXPO_MAJ:
-          param = obj->a;
-          parammin = 0.01;
-          parammax = 10.0*obj->a;
+          param = obj2->hl_radius/1.67835;	/* From scalelength to Re */
+          parammin = param / 4.0;
+          parammax = param * 4.0;
           break;
         case PARAM_DEVAUC_ASPECT:
         case PARAM_SERSIC_ASPECT:
@@ -845,8 +850,8 @@ void	profit_resetparams(profitstruct *profit, objstruct *obj,
           break;
         case PARAM_EXPO_ASPECT:
           param = obj->b/obj->a;
-          parammin = 0.0;
-          parammax = 10.0;
+          parammin = 0.01;
+          parammax = 100.0;
           break;
         case PARAM_DEVAUC_POSANG:
         case PARAM_EXPO_POSANG:
@@ -856,8 +861,8 @@ void	profit_resetparams(profitstruct *profit, objstruct *obj,
           parammax =  3600.0;
           break;
         case PARAM_SERSIC_N:
-          param = 1.0;
-          parammin = 0.1;
+          param = 4.0;
+          parammin = 2.0;
           parammax = 10.0;
           break;
         case PARAM_ARMS_AMP:
@@ -1163,7 +1168,7 @@ void	prof_add(profstruct *prof, profitstruct *profit)
    double	posin[PROFIT_MAXEXTRA], posout[2], dnaxisn[2],
 		*pixout,
 		amp,ctheta,stheta,cd11,cd12,cd21,cd22, dx1,dx2, x1,x2,
-		x1cin,x2cin, x1cout,x2cout, xscale,yscale, x1in,x2in,
+		x1cin,x2cin, x1cout,x2cout, xscale,yscale, saspect, x1in,x2in,
 		rh, re2, n,k, hinvn, x1t,x2t, ca,sa, u,
 		armamp,arm2amp, armpitch,armposang,armwidth, r2,r2min, arh,
 		baramp, barwidth, barposang;
@@ -1184,16 +1189,18 @@ void	prof_add(profstruct *prof, profitstruct *profit)
 /* Compute Profile CD matrix */
   ctheta = cos(*prof->posangle*DEG);
   stheta = sin(*prof->posangle*DEG);
-  xscale = (*prof->scale == 0.0)? 0.0 : 1.0/fabs(*prof->scale*prof->scaling);
-  yscale = (*prof->scale**prof->aspect == 0.0)?
-		0.0 : 1.0/fabs(*prof->scale**prof->aspect*prof->scaling);
+  saspect = sqrt(*prof->aspect);
+  xscale = (*prof->scale==0.0)?
+			0.0 : fabs(saspect*prof->scaling / *prof->scale);
+  yscale = (*prof->scale*saspect == 0.0)?
+		0.0 : fabs(prof->scaling / (*prof->scale*saspect));
   cd11 = xscale*ctheta;
   cd12 = xscale*stheta;
   cd21 =-yscale*stheta;
   cd22 = yscale*ctheta;
 
-  dx1 = *prof->x[0];
-  dx2 = *prof->x[1];
+  dx1 = 0.0;	/* Shifting operations have been moved to profit_resample() */
+  dx2 = 0.0;	/* Shifting operations have been moved to profit_resample() */
 
   x1cout = (double)(profit->modnaxisn[0]/2);
   x2cout = (double)(profit->modnaxisn[1]/2);
@@ -1206,8 +1213,9 @@ void	prof_add(profstruct *prof, profitstruct *profit)
       k = -1.0/3.0 + 2.0*n + 4.0/(405.0*n) + 46.0/(25515.0*n*n)
 		+ 131.0/(1148175*n*n*n);
       hinvn = 0.5/n;
-      amp = fabs(*prof->amp*pow(k, 2.0*n) / (2.0*PI*n*exp(gammln(2*n))
-		**prof->scale**prof->scale**prof->aspect*prof->scaling));
+/*---- The consequence of sampling on flux is compensated by PSF normalisation*/
+      amp = fabs(*prof->amp*pow(k, 2.0*n)*xscale*yscale)
+		/ (2.0*PI*n*exp(gammln(2*n))*re2);
       x1 = -x1cout - dx1;
       x2 = -x2cout - dx2;
       for (ix2=profit->modnaxisn[1]; ix2--; x2+=1.0)
@@ -1225,8 +1233,8 @@ void	prof_add(profstruct *prof, profitstruct *profit)
     case PROF_DEVAUCOULEURS:
       amp = fabs(*prof->amp)*exp(7.6692);
       re2 = prof->typscale*prof->typscale;
-      amp = fabs(*prof->amp / (0.01058394 *
-		*prof->scale**prof->scale**prof->aspect*prof->scaling*re2));
+/*---- The consequence of sampling on flux is compensated by PSF normalisation*/
+      amp = fabs(*prof->amp*xscale*yscale / (0.01058394*re2));
       x1 = -x1cout - dx1;
       x2 = -x2cout - dx2;
       for (ix2=profit->modnaxisn[1]; ix2--; x2+=1.0)
@@ -1243,8 +1251,7 @@ void	prof_add(profstruct *prof, profitstruct *profit)
       break;
     case PROF_EXPONENTIAL:
       rh = prof->typscale;
-      amp = fabs(*prof->amp
-	/ (2.0*PI**prof->scale**prof->scale**prof->aspect*prof->scaling*rh*rh));
+      amp = fabs(*prof->amp*xscale*yscale / (2.0*PI*rh*rh));
       x1 = -x1cout - dx1;
       x2 = -x2cout - dx2;
       for (ix2=profit->modnaxisn[1]; ix2--; x2+=1.0)
@@ -1526,8 +1533,7 @@ static double	interpolate_pix(double *posin, double *pix, int *naxisn,
     val = *(posin++);
     width = naxisn[n];
 /*-- Get the integer part of the current coordinate or nearest neighbour */
-    ival = (interptype==INTERP_NEARESTNEIGHBOUR)?
-                                        (int)(val-0.50001):(int)val;
+    ival = (interptype==INTERP_NEARESTNEIGHBOUR)? (int)(val-0.50001):(int)val;
 /*-- Store the fractional part of the current coordinate */
     dpos[n] = val - ival;
 /*-- Check if interpolation start/end exceed image boundary... */

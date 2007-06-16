@@ -9,7 +9,7 @@
 *
 *	Contents:	functions for output of catalog data.
 *
-*	Last modify:	11/06/2007
+*	Last modify:	16/06/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -167,6 +167,10 @@ void	updateparamflags()
   {
    int	i;
 
+/*----------------------------- Profile-fitting -----------------------------*/
+
+  FLAG(obj2.prof_vector) |= FLAG(obj2.prof_niter);
+
 /*------------------------------ Astrometry ---------------------------------*/
   FLAG(obj2.win_aw) |= FLAG(obj2.win_bw) | FLAG(obj2.win_polarw);
   FLAG(obj2.win_cxxw) |= FLAG(obj2.win_cyyw) | FLAG(obj2.win_cxyw);
@@ -276,7 +280,7 @@ void	updateparamflags()
 
   FLAG(obj2.flux_best) |= FLAG(obj2.mag_best) | FLAG(obj2.fluxerr_best);
 
-  FLAG(obj2.hl_radius) |= FLAG(obj2.winpos_x);
+  FLAG(obj2.hl_radius) |= FLAG(obj2.winpos_x) | FLAG(obj2.prof_vector);
 
   FLAG(obj2.flux_auto)  |= FLAG(obj2.mag_auto) | FLAG(obj2.magerr_auto)
 			| FLAG(obj2.fluxerr_auto)
@@ -355,8 +359,6 @@ void	updateparamflags()
 			| FLAG(obj2.niter_psf)
 			| FLAG(obj2.chi2_psf)
 			| FLAG(obj2.mx2_pc);
-
-  FLAG(obj2.prof_vector) |= FLAG(obj2.prof_niter);
 
 /*-------------------------------- Others -----------------------------------*/
   FLAG(obj.fwhm) |= FLAG(obj2.fwhmw);
