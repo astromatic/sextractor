@@ -127,8 +127,7 @@ void	profit_fit(profitstruct *profit,
   {
     psfstruct		*psf;
     checkstruct		*check;
-    double		lm_opts[5],lm_info[LM_INFO_SZ],
-			psf_fwhm;
+    double		psf_fwhm;
     int			ix,iy, p, niter;
 
 
@@ -196,16 +195,6 @@ for (p=0; p<profit->nparam; p++)
 printf("%g     %g %g\n", profit->paraminit[p], profit->parammin[p], profit->parammax[p]);
 printf("(%d)\n", niter);
 
-//  lm_opts[0] = 1.0e-6;
-//  lm_opts[1] = 1.0e-12;
-//  lm_opts[2] = 1.0e-12;
-//  lm_opts[3] = 1.0e-12;
-//  lm_opts[4] = 1.0e-6;
-
-//  niter = dlevmar_dif(profit_evaluate2, profit->paraminit, profit->resi,
-//	n, m, /*profit->parammin, profit->parammax,*/ PROFIT_MAXITER, 
-//	lm_opts, lm_info, NULL, NULL, profit);
-//printf("(%d / %g / %g /%.0f)\n", niter, lm_info[0], lm_info[1], lm_info[6]);
 
 /* CHECK-Images */
   if ((check = prefs.check[CHECK_SUBPROFILES]))
@@ -245,12 +234,13 @@ INPUT	Pointer to the profit structure involved in the fit,
 OUTPUT	Number of iterations used.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	18/05/2007
+VERSION	17/06/2007
  ***/
 int	profit_minimize(profitstruct *profit, int niter)
   {
    lm_control_type	control;
-   double		*diag, *fjac, *qtf, *wa1, *wa2, *wa3, *wa4;
+   double		lm_opts[5],lm_info[LM_INFO_SZ],
+			*diag, *fjac, *qtf, *wa1, *wa2, *wa3, *wa4;
    int			*ipvt,
 			m,n;
 
@@ -258,37 +248,50 @@ int	profit_minimize(profitstruct *profit, int niter)
   n = profit->nparam;
   m = profit->nresi;
 
-  control.ftol =      1.0e-12;
-  control.xtol =      1.0e-12;
-  control.gtol =      1.0e-12;
-  control.maxcall =   niter;
-  control.epsilon =   1.0e-6;
-  control.stepbound = 100.0;
-
-  control.info = 0;
-  control.nfev = 0;
-
-  QMALLOC(diag, double,n);
-  QMALLOC(qtf, double, n);
-  QMALLOC(fjac, double,n*m);
-  QMALLOC(wa1, double, n);
-  QMALLOC(wa2, double, n);
-  QMALLOC(wa3, double, n);
-  QMALLOC(wa4, double,   m);
-  QMALLOC(ipvt, int,   n);
-//  control.fnorm = lm_enorm(m, profit->resi);
-//  if (control.info < 0 )
-//    control.info = 10;
-
   profit_boundtounbound(profit, profit->paraminit);
 
 /* Perform fit */
-  lm_lmdif(profit->nresi, profit->nparam, profit->paraminit, profit->resi,
+  if (1)
+    {
+    lm_opts[0] = 1.0e-6;
+    lm_opts[1] = 1.0e-12;
+    lm_opts[2] = 1.0e-12;
+    lm_opts[3] = 1.0e-12;
+    lm_opts[4] = 1.0e-6;
+
+    niter = dlevmar_dif(profit_evaluate2, profit->paraminit, profit->resi,
+	n, m, /*profit->parammin, profit->parammax,*/ niter, 
+	lm_opts, lm_info, NULL, NULL, profit);
+    }
+  else
+    {
+    control.ftol =      1.0e-12;
+    control.xtol =      1.0e-12;
+    control.gtol =      1.0e-12;
+    control.maxcall =   niter;
+    control.epsilon =   1.0e-6;
+    control.stepbound = 100.0;
+    control.info = 0;
+    control.nfev = 0;
+//  control.fnorm = lm_enorm(m, profit->resi);
+//  if (control.info < 0 )
+//    control.info = 10;
+    QMALLOC(diag, double,n);
+    QMALLOC(qtf, double, n);
+    QMALLOC(fjac, double,n*m);
+    QMALLOC(wa1, double, n);
+    QMALLOC(wa2, double, n);
+    QMALLOC(wa3, double, n);
+    QMALLOC(wa4, double,   m);
+    QMALLOC(ipvt, int,   n);
+    lm_lmdif(profit->nresi, profit->nparam, profit->paraminit, profit->resi,
 	control.ftol, control.xtol, control.gtol,
 	control.maxcall*(n+1), control.epsilon, diag, 1,
 	control.stepbound, &(control.info),
 	&(control.nfev), fjac, ipvt, qtf, wa1, wa2, wa3, wa4,
 	profit_evaluate, profit_printout, profit);
+    niter = control.nfev;
+    }
 
   profit_unboundtobound(profit, profit->paraminit);
 
@@ -302,7 +305,7 @@ int	profit_minimize(profitstruct *profit, int niter)
   free(wa4); 
   free(ipvt);
 
-  return control.nfev;
+  return niter;
   }
 
 
@@ -346,9 +349,8 @@ addcheck(check, profit->lmodpix, profit->objnaxisn[0],profit->objnaxisn[1],
 
 reendcheck(the_field, check);
 endcheck(check);
+lm_print_default(n_par, par, m_dat, fvec, data, iflag, iter, nfev);
 }
-  if (0)
-    lm_print_default(n_par, par, m_dat, fvec, data, iflag, iter, nfev);
   return;
   }
 
@@ -402,14 +404,9 @@ void	profit_evaluate2(double *par, double *fvec, int m, int n,
    profitstruct	*profit;
 
   profit = (profitstruct *)adata;
-/*
-printf("%g %g %g %g %g %g %g\n",
-	par[0], par[1],
-	par[2], par[3],
-	par[4], par[5], par[6]);
-*/
-
+  profit_unboundtobound(profit, par);
   profit_residuals(profit, the_field, the_wfield, the_obj, par, fvec);
+  profit_boundtounbound(profit, par);
 
   return;
   }
@@ -1189,7 +1186,7 @@ void	prof_add(profstruct *prof, profitstruct *profit)
 /* Compute Profile CD matrix */
   ctheta = cos(*prof->posangle*DEG);
   stheta = sin(*prof->posangle*DEG);
-  saspect = sqrt(*prof->aspect);
+  saspect = sqrt(fabs(*prof->aspect));
   xscale = (*prof->scale==0.0)?
 			0.0 : fabs(saspect*prof->scaling / *prof->scale);
   yscale = (*prof->scale*saspect == 0.0)?
