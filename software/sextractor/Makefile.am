@@ -2,9 +2,10 @@
 # Copyright (C) 2002-2007 Emmanuel Bertin.
 AUTOMAKE_OPTIONS	= foreign no-dependencies
 SUBDIRS			= man src
+dist_pkgdata_DATA       = xsl/sextractor.xsl
 EXTRA_DIST		= config doc AUTHORS BUGS ChangeLog COPYING HISTORY \
 			  INSTALL README THANKS \
-			  acx_prog_cc_optim.m4
+			  acx_prog_cc_optim.m4 acx_urbi_resolve_dir.m4
 RPM_ROOTDIR		= `rpmbuild --nobuild -E %_topdir`
 RPM_SRCDIR		= $(RPM_ROOTDIR)/SOURCES
 rpm:	dist

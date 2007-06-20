@@ -21,10 +21,10 @@ SExtractor stands for ``Source Extractor'': a software for making catalog of sou
 
 %build
 if test "$TPXFLAGS"; then
-./configure --enable-static --prefix=$RPM_BUILD_ROOT/usr/local/ --mandir=$RPM_BUILD_ROOT/usr/local/man/
+./configure --enable-static --prefix=$RPM_BUILD_ROOT/usr/local/ --mandir=$RPM_BUILD_ROOT/usr/local/man/ --with-xsl_url=file:///usr/local/share/@PACKAGE_NAME@/sextractor.xsl
 make CC="$TPXCC" CFLAGS="$TPXFLAGS"
 else
-./configure --prefix=$RPM_BUILD_ROOT/usr/local/ --mandir=$RPM_BUILD_ROOT/usr/local/man/
+./configure --prefix=$RPM_BUILD_ROOT/usr/local/ --mandir=$RPM_BUILD_ROOT/usr/local/man/ --with-xsl_url=file:///usr/local/share/@PACKAGE_NAME@/sextractor.xsl
 make
 fi
 
@@ -40,6 +40,7 @@ rm -rf $RPM_BUILD_ROOT
 /usr/local/bin/ldactoasc
 /usr/local/man/man1/sex.1
 /usr/local/man/manx/sex.x
+/usr/local/share/@PACKAGE_NAME@
 %doc AUTHORS BUGS ChangeLog COPYING HISTORY INSTALL README THANKS doc/README.DOC doc/sextractor.pdf
 
 %changelog
