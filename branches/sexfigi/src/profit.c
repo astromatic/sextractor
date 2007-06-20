@@ -9,7 +9,7 @@
 *
 *	Contents:	Fit an arbitrary profile combination to a detection.
 *
-*	Last modify:	16/06/2007
+*	Last modify:	20/06/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -119,7 +119,7 @@ OUTPUT	Pointer to an allocated fit structure (containing details about the
 	fit).
 NOTES	It is a modified version of the lm_minimize() of lmfit.
 AUTHOR	E. Bertin (IAP)
-VERSION	18/05/2007
+VERSION	20/06/2007
  ***/
 void	profit_fit(profitstruct *profit,
 		picstruct *field, picstruct *wfield,
@@ -127,7 +127,8 @@ void	profit_fit(profitstruct *profit,
   {
     psfstruct		*psf;
     checkstruct		*check;
-    double		psf_fwhm;
+    double		*param,
+			psf_fwhm;
     int			ix,iy, p, niter;
 
 
@@ -209,12 +210,19 @@ printf("(%d)\n", niter);
     addcheck(check, profit->lmodpix, profit->objnaxisn[0],profit->objnaxisn[1],
 		ix,iy, 1.0);
     }
+
+/* Fill measurement parameters */
   if (FLAG(obj2.prof_vector))
     {
     for (p=0; p<profit->nparam; p++)
       obj2->prof_vector[p]= profit->param[p];
     }
   obj2->prof_niter = niter;
+  if ((param=profit->paramlist[PARAM_X]))
+    obj2->x_prof = ix + *param;
+  if ((param=profit->paramlist[PARAM_Y]))
+    obj2->y_prof = iy + *param;
+  obj2->flux_prof = profit->flux;
 
 /* clean up. */
   free(profit->modpix);
@@ -260,8 +268,7 @@ int	profit_minimize(profitstruct *profit, int niter)
     lm_opts[4] = 1.0e-6;
 
     niter = dlevmar_dif(profit_evaluate2, profit->paraminit, profit->resi,
-	n, m, /*profit->parammin, profit->parammax,*/ niter, 
-	lm_opts, lm_info, NULL, NULL, profit);
+	n, m, niter,  lm_opts, lm_info, NULL, NULL, profit);
     }
   else
     {
@@ -338,10 +345,13 @@ profit = (profitstruct *)data;
 printf("%d:	%g	%g	%g	%g	%g	%g	%g\n",
 	iter, par[0],par[1],par[2],par[3],par[4],par[5],par[6]);
 */
-if (0 && iter!=itero)
+if (0 && (iter!=itero || iter<0))
 {
-itero = iter;
-sprintf(filename, "check_%d_%04d.fits", the_gal, iter);
+if (iter<0)
+  itero++;
+else
+  itero = iter;
+sprintf(filename, "check_%d_%04d.fits", the_gal, itero);
 check=initcheck(filename, CHECK_PROFILES, 0);
 reinitcheck(the_field, check);
 addcheck(check, profit->lmodpix, profit->objnaxisn[0],profit->objnaxisn[1],
@@ -349,7 +359,7 @@ addcheck(check, profit->lmodpix, profit->objnaxisn[0],profit->objnaxisn[1],
 
 reendcheck(the_field, check);
 endcheck(check);
-lm_print_default(n_par, par, m_dat, fvec, data, iflag, iter, nfev);
+//lm_print_default(n_par, par, m_dat, fvec, data, iflag, iter, nfev);
 }
   return;
   }
@@ -385,14 +395,14 @@ void	profit_evaluate(double *par, int m_dat, double *fvec,
 
 
 /****** profit_evaluate2 ******************************************************
-PROTO	void profit_evaluate2(double *par, int m_dat, double *fvec,
-		void *data, int *info)
-PURPOSE	Provide a function returning residuals to lmfit.
+PROTO	void profit_evaluate2(double *par, double *fvec, int m, int n,
+		void *adata)
+PURPOSE	Provide a function returning residuals to levmar.
 INPUT	Pointer to the vector of parameters,
-	number of data points,
 	pointer to the vector of residuals (output),
-	pointer to the data structure (unused),
-	pointer to the info structure (unused).
+	number of model parameters,
+	number of data points,
+	pointer to a data structure (unused).
 OUTPUT	-.
 NOTES	Input arguments are there only for compatibility purposes (unused)
 AUTHOR	E. Bertin (IAP)
@@ -407,7 +417,7 @@ void	profit_evaluate2(double *par, double *fvec, int m, int n,
   profit_unboundtobound(profit, par);
   profit_residuals(profit, the_field, the_wfield, the_obj, par, fvec);
   profit_boundtounbound(profit, par);
-
+  profit_printout(m, par, n, fvec, adata, 0, -1, 0 );
   return;
   }
 
@@ -459,7 +469,7 @@ INPUT	Profile-fitting structure,
 	vector of residuals (output).
 OUTPUT	Vector of residuals.
 AUTHOR	E. Bertin (IAP)
-VERSION	09/12/2006
+VERSION	19/06/2007
  ***/
 double	*profit_compresi(profitstruct *profit, picstruct *field,
 		picstruct *wfield, objstruct *obj, double *resi)
@@ -467,9 +477,8 @@ double	*profit_compresi(profitstruct *profit, picstruct *field,
    double	*resit,
 		invsig;
    PIXTYPE	*objpix, *objweight, *lmodpix,
-		val;
+		val,val2;
    int		i;
-double tot, val2;
   
 /* Compute vector of residuals */
   resit = resi;
@@ -477,16 +486,13 @@ double tot, val2;
   objweight = profit->objweight;
   lmodpix = profit->lmodpix;
   invsig = 1.0/profit->sigma;
-tot = 0.0;
   for (i=profit->objnaxisn[0]*profit->objnaxisn[1]; i--; lmodpix++)
     if ((val=*(objpix++))>-BIG)
       {
       val2 = (double)(val - *lmodpix)*invsig;
       val2 = val2>0.0? log(1.0+val2) : -log(1.0-val2);
       *(resit++) = val2;
-      tot += val2*val2;
       }
-//printf("err = %g\n", tot);
 
   return resi;
   }
@@ -504,7 +510,7 @@ PIXTYPE	*profit_resample(profitstruct *profit)
   {
    double	posin[2], posout[2], dnaxisn[2],
 		*dx,*dy,
-		xcout,ycout, invpixstep;
+		xcout,ycout, invpixstep, flux;
    PIXTYPE	*pixout;
    int		ixcin,iycin,
 		d,i;
@@ -528,18 +534,21 @@ PIXTYPE	*profit_resample(profitstruct *profit)
 
 /* Remap each pixel */
   pixout = profit->lmodpix;
+  flux = 0.0;
   for (i=profit->objnaxisn[0]*profit->objnaxisn[1]; i--;)
     {
     posin[0] = (posout[0] - xcout)*invpixstep + ixcin;
     posin[1] = (posout[1] - ycout)*invpixstep + iycin;
-    (*(pixout++) = (PIXTYPE)(interpolate_pix(posin, profit->modpix,
-		profit->modnaxisn, INTERP_LANCZOS3)));
+    flux += ((*(pixout++) = (PIXTYPE)(interpolate_pix(posin, profit->modpix,
+		profit->modnaxisn, INTERP_LANCZOS3))));
     for (d=0; d<2; d++)
       if ((posout[d]+=1.0) < dnaxisn[d])
         break;
       else
         posout[d] = 1.0;
     }
+
+  profit->flux = flux;
 
   return profit->lmodpix;
   }
@@ -819,14 +828,14 @@ void	profit_resetparams(profitstruct *profit, objstruct *obj,
           break;
         case PARAM_DEVAUC_AMP:
         case PARAM_SERSIC_AMP:
-          param = obj2->flux_auto / 2.0;
-          parammin = 0.0;
-          parammax = 5.0*param;
+          param = obj2->flux_auto;
+          parammin = -obj2->flux_auto;
+          parammax = 2*obj2->flux_auto;
           break;
         case PARAM_EXPO_AMP:
-          param = obj2->flux_auto / 2.0;
-          parammin = 0.0;
-          parammax = 5.0*param;
+          param = obj2->flux_auto;
+          parammin = -obj2->flux_auto;
+          parammax = 2*obj2->flux_auto;
           break;
         case PARAM_DEVAUC_MAJ:
         case PARAM_SERSIC_MAJ:
@@ -842,8 +851,8 @@ void	profit_resetparams(profitstruct *profit, objstruct *obj,
         case PARAM_DEVAUC_ASPECT:
         case PARAM_SERSIC_ASPECT:
           param = obj->b/obj->a;
-          parammin = 0.25;
-          parammax = 4.0;
+          parammin = 0.5;
+          parammax = 2.0;
           break;
         case PARAM_EXPO_ASPECT:
           param = obj->b/obj->a;
@@ -858,8 +867,8 @@ void	profit_resetparams(profitstruct *profit, objstruct *obj,
           parammax =  3600.0;
           break;
         case PARAM_SERSIC_N:
-          param = 4.0;
-          parammin = 2.0;
+          param = 2.0;
+          parammin = 1.0;
           parammax = 10.0;
           break;
         case PARAM_ARMS_AMP:
@@ -880,11 +889,11 @@ void	profit_resetparams(profitstruct *profit, objstruct *obj,
         case PARAM_ARMS_START:
           param = 0.5;
           parammin = 0.0;
-          parammax = 10.0*obj->b;
+          parammax = 5.0*obj2->hl_radius/1.67835;
           break;
         case PARAM_ARMS_PITCH:
           param = 80.0;
-          parammin = 60.0;
+          parammin = 50.0;
           parammax = 120.0;
           break;
         case PARAM_ARMS_POSANG:
@@ -893,22 +902,22 @@ void	profit_resetparams(profitstruct *profit, objstruct *obj,
           parammax = 3600.0;
           break;
         case PARAM_ARMS_WIDTH:
-          param = 0.3;
+          param = 0.7;
           parammin = 0.0;
-          parammax = 0.8;
+          parammax = 1.0;
           break;
         case PARAM_BAR_AMP:
-          param = obj->peak/6.0;
+          param = obj->peak/10.0;
           parammin = 0.0;
-          parammax = 1000.0*obj->peak;
+          parammax = 10.0*obj->peak;
           break;
         case PARAM_BAR_ASPECT:
-          param = 0.2;
-          parammin = 0.1;
-          parammax = 0.4;
+          param = 0.3;
+          parammin = 0.2;
+          parammax = 0.5;
           break;
         case PARAM_BAR_POSANG:
-          param = obj->theta;
+          param = 0.0;
           parammin = -3600.0;
           parammax = 3600.0;
           break;
@@ -943,11 +952,12 @@ void	profit_boundtounbound(profitstruct *profit, double *param)
    int		p;
 
   for (p=0; p<profit->nparam; p++)
-    {
-    num = param[p] - profit->parammin[p];
-    den = profit->parammax[p] - param[p];
-    param[p] = num>1e-100? (den>1e-100? log(num/den): 200.0) : -200.0;
-    }
+    if (profit->parammin[p]!=profit->parammax[p])
+      {
+      num = param[p] - profit->parammin[p];
+      den = profit->parammax[p] - param[p];
+      param[p] = num>1e-100? (den>1e-100? log(num/den): 200.0) : -200.0;
+      }
 
   return;
 
@@ -967,7 +977,8 @@ void	profit_unboundtobound(profitstruct *profit, double *param)
    int		p;
 
   for (p=0; p<profit->nparam; p++)
-    param[p] = (profit->parammax[p] - profit->parammin[p])
+    if (profit->parammin[p]!=profit->parammax[p])
+      param[p] = (profit->parammax[p] - profit->parammin[p])
 		/ (1.0 + exp(-(param[p]>200.0? 200.0 : param[p])))
 		+ profit->parammin[p];
 
@@ -1320,8 +1331,8 @@ void	prof_add(profstruct *prof, profitstruct *profit)
             x1in = x1t*ca - x2t*sa;
             x2in = barwidth*(x1t*sa + x2t*ca);
             r2 = 1.0-(x1in*x1in+x2in*x2in)/r2min;
-            if (r2>0.0)
-              *pixout += baramp*sqrt(r2);
+            *pixout += baramp
+		*exp(-pow(x1in*x1in*x1in*x1in+x2in*x2in*x2in*x2in, 0.25));
             }
           }
         }

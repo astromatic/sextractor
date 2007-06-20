@@ -9,7 +9,7 @@
 *
 *	Contents:	global type definitions.
 *
-*	Last modify:	07/12/2006
+*	Last modify:	20/06/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -81,8 +81,6 @@ typedef struct
   float		dflux;				/* integrated det. flux */
   float		flux;				/* integrated mes. flux */
   float		fluxerr;			/* integrated variance */
-  float		flux_prof;			/* PROFILE flux*/
-  float		fluxerr_prof;			/* PROFILE flux variance */
   PIXTYPE	fdpeak;				/* peak intensity (ADU) */
   PIXTYPE	dpeak;				/* peak intensity (ADU) */
   PIXTYPE	peak;				/* peak intensity (ADU) */
@@ -144,10 +142,6 @@ typedef struct
   float		*fluxerr_aper;			/* APER flux error vector  */
   float		*mag_aper;			/* APER magnitude vector */
   float		*magerr_aper;			/* APER mag error vector */
-  float		flux_prof;			/* PROFILE flux*/
-  float		fluxerr_prof;			/* PROFILE flux error */
-  float		mag_prof;			/* PROFILE magnitude */
-  float		magerr_prof;			/* PROFILE magnitude error */
   float		flux_win;			/* WINdowed flux*/
   float		fluxerr_win;			/* WINdowed flux error */
   float		mag_win;			/* WINdowed magnitude */
@@ -301,6 +295,11 @@ typedef struct
 /* ---- Profile-fitting */
   float		*prof_vector;			/* Profile parameters */
   short		prof_niter;			/* # of prof-fitting iter. */
+  float		flux_prof;			/* Flux from profile-fitting */
+  float		fluxerr_prof;			/* RMS error on profile flux */
+  float		mag_prof;			/* Mag from profile-fitting */
+  float		magerr_prof;			/* RMS mag from prof-fitting */
+  float		x_prof, y_prof;			/* Coords from profile-fitting*/
 /* ---- MEF */
   short		ext_number;			/* FITS extension number */
   }	obj2struct;

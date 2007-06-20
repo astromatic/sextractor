@@ -9,7 +9,7 @@
 *
 *	Contents:	parameter list for catalog data.
 *
-*	Last modify:	07/12/2006
+*	Last modify:	20/06/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -101,19 +101,6 @@ keystruct	objkey[] = {
 	"phot.mag", "mag"},
   {"MAGERR_BEST", "RMS error for MAG_BEST",
 	&outobj2.magerr_best, H_FLOAT, T_FLOAT, "%8.4f", "mag",
-	"stat.stdev;phot.mag", "mag"},
-
-  {"FLUX_PROFILE", "Flux weighted by the FILTERed profile",
-	&outobj2.flux_prof, H_FLOAT, T_FLOAT, "%12.7g", "count"
-	"phot.flux", "ct"},
-  {"FLUXERR_PROFILE", "RMS error for PROFILE flux",
-	&outobj2.fluxerr_prof, H_FLOAT, T_FLOAT, "%12.7g", "count",
-	"stat.stdev;phot.flux", "ct"},
-  {"MAG_PROFILE", "Magnitude weighted by the FILTERed profile",
-	&outobj2.mag_prof, H_FLOAT, T_FLOAT, "%8.4f", "mag",
-	"phot.mag", "mag"},
-  {"MAGERR_PROFILE", "RMS error for MAG_PROFILE",
-	&outobj2.magerr_prof, H_FLOAT, T_FLOAT, "%8.4f", "mag",
 	"stat.stdev;phot.mag", "mag"},
 
   {"FLUX_WIN", "Gaussian-weighted flux",
@@ -871,9 +858,18 @@ keystruct	objkey[] = {
   {"NITER_PROF", "Number of iterations for profile-fitting",
 	&outobj2.prof_niter, H_INT, T_SHORT, "%3d", "",
 	"meta.number", ""},
-/*
-	{"RETINOUT", T_FLOAT, &outobj.retinout, "%13g "},
-*/
+  {"XPROF_IMAGE", "X coordinate from profile-fitting",
+	&outobj2.x_prof, H_FLOAT, T_FLOAT, "%10.3f", "pixel",
+	"pos.cartesian.x;stat.fit.param;instr.det;meta.main", "pix"},
+  {"YPROF_IMAGE", "Y coordinate from profile-fitting",
+	&outobj2.y_prof, H_FLOAT, T_FLOAT, "%10.3f", "pixel",
+	"pos.cartesian.y;stat.fit.param;instr.det;meta.main", "pix"},
+  {"FLUX_PROF", "Flux from profile-fitting",
+	&outobj2.flux_prof, H_FLOAT, T_FLOAT, "%12.7g", "count",
+	"phot.count;stat.fit.param", "ct"},
+  {"MAG_PROF", "Magnitude from profile-fitting",
+	&outobj2.mag_prof, H_FLOAT, T_FLOAT, "%8.4f", "mag",
+	"phot.mag;stat.fit.param", "mag"},
   {""}
   };
 

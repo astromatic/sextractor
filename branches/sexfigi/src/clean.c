@@ -10,7 +10,7 @@
 *	Contents:	functions that remove spurious detections from the
 *			catalog
 *
-*	Last modify:	15/02/2005
+*	Last modify:	20/06/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -250,15 +250,6 @@ void	mergeobject(objstruct *objslave,objstruct *objmaster)
           *pix = colormaster;
     }
 
-  if (FLAG(obj.flux_prof))
-    {
-    objmaster->flux_prof = (objmaster->flux_prof*objmaster->fdflux
-			+ objslave->flux_prof*objslave->fdflux)
-			/ (objmaster->fdflux + objslave->fdflux);
-    objmaster->fluxerr_prof = (objmaster->fluxerr_prof*objmaster->fdflux
-			+ objslave->fluxerr_prof*objslave->fdflux)
-			/ (objmaster->fdflux + objslave->fdflux);
-    }
   objmaster->fdnpix += objslave->fdnpix;
   objmaster->dnpix += objslave->dnpix;
   objmaster->fdflux += objslave->fdflux;

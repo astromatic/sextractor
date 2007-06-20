@@ -9,7 +9,7 @@
 *
 *	Contents:	functions for output of catalog data.
 *
-*	Last modify:	16/06/2007
+*	Last modify:	20/06/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -169,7 +169,9 @@ void	updateparamflags()
 
 /*----------------------------- Profile-fitting -----------------------------*/
 
-  FLAG(obj2.prof_vector) |= FLAG(obj2.prof_niter);
+  FLAG(obj2.prof_vector) |= FLAG(obj2.prof_niter)
+			| FLAG(obj2.x_prof) | FLAG(obj2.y_prof)
+			| FLAG(obj2.flux_prof) | FLAG(obj2.mag_prof);
 
 /*------------------------------ Astrometry ---------------------------------*/
   FLAG(obj2.win_aw) |= FLAG(obj2.win_bw) | FLAG(obj2.win_polarw);
@@ -300,9 +302,6 @@ void	updateparamflags()
 
   FLAG(obj2.flux_aper) |= FLAG(obj2.mag_aper)|FLAG(obj2.magerr_aper)
 			    | FLAG(obj2.fluxerr_aper);
-
-  FLAG(obj.flux_prof) |= FLAG(obj2.mag_prof)|FLAG(obj2.magerr_prof)
-			    | FLAG(obj2.flux_prof) | FLAG(obj2.fluxerr_prof);
 
   FLAG(obj2.flux_galfit) |= FLAG(obj2.mag_galfit) | FLAG(obj2.magerr_galfit)
 			    | FLAG(obj2.fluxerr_galfit);
