@@ -166,8 +166,8 @@ the_y = iy;
   QCALLOC(profit->resi, double, profit->nresi);
 
 /* Create pixmap at PSF resolution */
-  profit->modnaxisn[0] = (int)(profit->objnaxisn[0] / psf->pixstep +0.4999); 
-  profit->modnaxisn[1] = (int)(profit->objnaxisn[1] / psf->pixstep +0.4999); 
+  profit->modnaxisn[0] = ((int)(profit->objnaxisn[0]/psf->pixstep +0.4999)/2)*2; 
+  profit->modnaxisn[1] = ((int)(profit->objnaxisn[1]/psf->pixstep +0.4999)/2)*2; 
   if (profit->modnaxisn[1] < profit->modnaxisn[0])
     profit->modnaxisn[1] = profit->modnaxisn[0];
   else
@@ -517,10 +517,10 @@ PIXTYPE	*profit_resample(profitstruct *profit)
 
   xcout = (double)(profit->objnaxisn[0]/2);
   if ((dx=(profit->paramlist[PARAM_X])))
-    xcout -= *dx;
+    xcout += *dx;
   ycout = (double)(profit->objnaxisn[1]/2);
   if ((dy=(profit->paramlist[PARAM_Y])))
-    ycout -= *dy;
+    ycout += *dy;
   ixcin = profit->modnaxisn[0]/2;
   iycin = profit->modnaxisn[1]/2;
   invpixstep = 1.0/profit->psf->pixstep;
