@@ -119,7 +119,7 @@ OUTPUT	Pointer to an allocated fit structure (containing details about the
 	fit).
 NOTES	It is a modified version of the lm_minimize() of lmfit.
 AUTHOR	E. Bertin (IAP)
-VERSION	20/06/2007
+VERSION	22/06/2007
  ***/
 void	profit_fit(profitstruct *profit,
 		picstruct *field, picstruct *wfield,
@@ -142,13 +142,14 @@ void	profit_fit(profitstruct *profit,
 /* Compute the local PSF */
   psf_build(psf);
 
-
 /* Create pixmaps at image resolution */
   psf_fwhm = psf->masksize[0]*psf->pixstep;
-  profit->objnaxisn[0] = (int)((obj->xmax-obj->xmin+1) + psf_fwhm + 0.499)*1.2;
-  profit->objnaxisn[1] = (int)((obj->ymax-obj->ymin+1) + psf_fwhm + 0.499)*1.2;
-  ix = (int)(obj2->posx+0.49999);
-  iy = (int)(obj2->posy+0.49999);
+  profit->objnaxisn[0] = (((int)((obj->xmax-obj->xmin+1) + psf_fwhm + 0.499)
+		*1.2)/2)*2 + 1;
+  profit->objnaxisn[1] = (((int)((obj->ymax-obj->ymin+1) + psf_fwhm + 0.499)
+		*1.2)/2)*2 + 1;
+  ix = (int)(obj->mx + 0.49999);	/* internal convention: 1st pix = 0 */
+  iy = (int)(obj->my + 0.49999);	/* internal convention: 1st pix = 0 */
 the_x = ix;
 the_y = iy;
 
@@ -219,9 +220,9 @@ printf("(%d)\n", niter);
     }
   obj2->prof_niter = niter;
   if ((param=profit->paramlist[PARAM_X]))
-    obj2->x_prof = ix + *param;
+    obj2->x_prof = ix + 1.0 + *param;		/* FITS convention */
   if ((param=profit->paramlist[PARAM_Y]))
-    obj2->y_prof = iy + *param;
+    obj2->y_prof = iy + 1.0 + *param;		/* FITS convention */
   obj2->flux_prof = profit->flux;
 
 /* clean up. */
@@ -298,19 +299,19 @@ int	profit_minimize(profitstruct *profit, int niter)
 	&(control.nfev), fjac, ipvt, qtf, wa1, wa2, wa3, wa4,
 	profit_evaluate, profit_printout, profit);
     niter = control.nfev;
+/*-- clean up. */
+    free(diag);
+    free(qtf); 
+    free(fjac);
+    free(wa1); 
+    free(wa2); 
+    free(wa3 );
+    free(wa4); 
+    free(ipvt);
     }
 
   profit_unboundtobound(profit, profit->paraminit);
 
-/* clean up. */
-  free(diag);
-  free(qtf); 
-  free(fjac);
-  free(wa1); 
-  free(wa2); 
-  free(wa3 );
-  free(wa4); 
-  free(ipvt);
 
   return niter;
   }
@@ -504,31 +505,30 @@ PURPOSE	Resample the current full resolution model to image resolution.
 INPUT	Profile-fitting structure.
 OUTPUT	Resampled pixmap.
 AUTHOR	E. Bertin (IAP)
-VERSION	16/06/2007
+VERSION	22/06/2007
  ***/
 PIXTYPE	*profit_resample(profitstruct *profit)
   {
    double	posin[2], posout[2], dnaxisn[2],
 		*dx,*dy,
-		xcout,ycout, invpixstep, flux;
+		xcout,ycout, xcin,ycin, invpixstep, flux;
    PIXTYPE	*pixout;
-   int		ixcin,iycin,
-		d,i;
+   int		d,i;
 
-  xcout = (double)(profit->objnaxisn[0]/2);
+  xcout = (double)(profit->objnaxisn[0]/2) + 1.0;	/* FITS convention */
   if ((dx=(profit->paramlist[PARAM_X])))
     xcout += *dx;
-  ycout = (double)(profit->objnaxisn[1]/2);
+  ycout = (double)(profit->objnaxisn[1]/2) + 1.0;	/* FITS convention */
   if ((dy=(profit->paramlist[PARAM_Y])))
     ycout += *dy;
-  ixcin = profit->modnaxisn[0]/2;
-  iycin = profit->modnaxisn[1]/2;
+  xcin = (profit->modnaxisn[0]/2) + 1.0;		/* FITS convention */
+  ycin = (profit->modnaxisn[1]/2) + 1.0;		/* FITS convention */
   invpixstep = 1.0/profit->psf->pixstep;
 
 /* Initialize multi-dimensional counters */
   for (d=0; d<2; d++)
     {
-    posout[d] = 1.0;					/* FITS standard */
+    posout[d] = 1.0;					/* FITS convention */
     dnaxisn[d] = profit->objnaxisn[d] + 0.99999;
     }
 
@@ -537,8 +537,8 @@ PIXTYPE	*profit_resample(profitstruct *profit)
   flux = 0.0;
   for (i=profit->objnaxisn[0]*profit->objnaxisn[1]; i--;)
     {
-    posin[0] = (posout[0] - xcout)*invpixstep + ixcin;
-    posin[1] = (posout[1] - ycout)*invpixstep + iycin;
+    posin[0] = (posout[0] - xcout)*invpixstep + xcin;
+    posin[1] = (posout[1] - ycout)*invpixstep + ycin;
     flux += ((*(pixout++) = (PIXTYPE)(interpolate_pix(posin, profit->modpix,
 		profit->modnaxisn, INTERP_LANCZOS3))));
     for (d=0; d<2; d++)
@@ -692,8 +692,8 @@ PROTO	int profit_copyobjpix(profitstruct *profit, picstruct *field,
 PURPOSE	Copy a piece of the input field image to a profit structure.
 INPUT	Pointer to the profit structure,
 	Pointer to the field structure,
-	integer position in X,
-	integer position in Y.
+	integer position in X (SExtractor convention),
+	integer position in Y (SExtractor convention).
 OUTPUT	The number of valid pixels copied.
 AUTHOR	E. Bertin (IAP)
 VERSION	10/12/2006
@@ -817,12 +817,12 @@ void	profit_resetparams(profitstruct *profit, objstruct *obj,
           parammax =  6.0*obj->sigbkg;
           break;
         case PARAM_X:
-          param = obj2->posx - (int)(obj2->posx+0.49999);
+          param = obj->mx - (int)(obj->mx+0.49999);
           parammin = -obj2->hl_radius*4;
           parammax =  obj2->hl_radius*4;
           break;
         case PARAM_Y:
-          param = obj2->posy - (int)(obj2->posy+0.49999);
+          param = obj->my - (int)(obj->my+0.49999);
           parammin = -obj2->hl_radius*4;
           parammax =  obj2->hl_radius*4;
           break;
@@ -1343,7 +1343,7 @@ void	prof_add(profstruct *prof, profitstruct *profit)
       amp = fabs(*prof->amp);
       for (d=0; d<2; d++)
         {
-        posout[d] = 1.0;	/* FITS standard */
+        posout[d] = 1.0;	/* FITS convention */
         dnaxisn[d] = profit->modnaxisn[d] + 0.99999;
         }
 
@@ -1524,7 +1524,7 @@ AUTHOR	E. Bertin (IAP)
 VERSION	07/12/2006
  ***/
 static double	interpolate_pix(double *posin, double *pix, int *naxisn,
-		interpenum interptype)
+			interpenum interptype)
   {
    double	buffer[INTERP_MAXKERNELWIDTH],
 		kernel[INTERP_MAXKERNELWIDTH], dpos[2],
