@@ -9,7 +9,7 @@
 *
 *	Contents:	Fit an arbitrary profile combination to a detection.
 *
-*	Last modify:	20/06/2007
+*	Last modify:	23/06/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -529,7 +529,7 @@ PIXTYPE	*profit_resample(profitstruct *profit)
   for (d=0; d<2; d++)
     {
     posout[d] = 1.0;					/* FITS convention */
-    dnaxisn[d] = profit->objnaxisn[d] + 0.99999;
+    dnaxisn[d] = profit->objnaxisn[d]+0.5;
     }
 
 /* Remap each pixel */
@@ -1169,7 +1169,7 @@ INPUT	Profile structure,
 	profile-fitting structure.
 OUTPUT	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	29/05/2007
+VERSION	23/06/2007
  ***/
 void	prof_add(profstruct *prof, profitstruct *profit)
   {
@@ -1232,9 +1232,9 @@ void	prof_add(profstruct *prof, profitstruct *profit)
         x2in = cd22*x2 + cd21*x1;
         for (ix1=profit->modnaxisn[0]; ix1--;)
           {
+          *(pixout++) += amp*exp(-k*pow((x1in*x1in+x2in*x2in)/re2,hinvn));
           x1in += cd11;
           x2in += cd21;
-          *(pixout++) += amp*exp(-k*pow((x1in*x1in+x2in*x2in)/re2,hinvn));
           }
         }
       break;
@@ -1251,9 +1251,9 @@ void	prof_add(profstruct *prof, profitstruct *profit)
         x2in = cd22*x2 + cd21*x1;
         for (ix1=profit->modnaxisn[0]; ix1--;)
           {
+          *(pixout++) += amp*exp(-7.6692*pow((x1in*x1in+x2in*x2in)/re2,0.125));
           x1in += cd11;
           x2in += cd21;
-          *(pixout++) += amp*exp(-7.6692*pow((x1in*x1in+x2in*x2in)/re2,0.125));
           }
         }
       break;
@@ -1268,9 +1268,9 @@ void	prof_add(profstruct *prof, profitstruct *profit)
         x2in = cd22*x2 + cd21*x1;
         for (ix1=profit->modnaxisn[0]; ix1--;)
           {
+          *(pixout++) += amp*exp(-sqrt(x1in*x1in+x2in*x2in)/rh);
           x1in += cd11;
           x2in += cd21;
-          *(pixout++) += amp*exp(-sqrt(x1in*x1in+x2in*x2in)/rh);
           }
         }
       break;
@@ -1291,8 +1291,6 @@ void	prof_add(profstruct *prof, profitstruct *profit)
         x2t = cd22*x2 + cd21*x1;
         for (ix1=profit->modnaxisn[0]; ix1--; pixout++)
           {
-          x1t += cd11;
-          x2t += cd21;
           r2 = x1t*x1t+x2t*x2t;
           if (r2>r2min)
             {
@@ -1304,7 +1302,9 @@ void	prof_add(profstruct *prof, profitstruct *profit)
             *pixout += (armamp*x1in*x1in)
 			*(exp(-(x1in*x1in+x2in*x2in)/arh));
             }
-          }
+          x1t += cd11;
+          x2t += cd21; 
+         }
         }
       break;
     case PROF_BAR:
@@ -1323,8 +1323,6 @@ void	prof_add(profstruct *prof, profitstruct *profit)
         x2t = cd22*x2 + cd21*x1;
         for (ix1=profit->modnaxisn[0]; ix1--; pixout++)
           {
-          x1t += cd11;
-          x2t += cd21;
           r2 = x1t*x1t+x2t*x2t;
           if (r2<r2min)
             {
@@ -1334,6 +1332,8 @@ void	prof_add(profstruct *prof, profitstruct *profit)
             *pixout += baramp
 		*exp(-pow(x1in*x1in*x1in*x1in+x2in*x2in*x2in*x2in, 0.25));
             }
+          x1t += cd11;
+          x2t += cd21;
           }
         }
       break;
