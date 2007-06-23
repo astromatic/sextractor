@@ -9,14 +9,14 @@
 *
 *	Contents:	Include file for profit.c.
 *
-*	Last modify:	20/06/2007
+*	Last modify:	23/06/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
 
 /*----------------------------- Internal constants --------------------------*/
 
-#define	PROFIT_MAXITER	1000	/* Max. nb of iterations in profile fitting */
+#define	PROFIT_MAXITER	000	/* Max. nb of iterations in profile fitting */
 #define	PROFIT_MAXPROF	8	/* Max. nb of profile components */
 #define	PROFIT_MAXEXTRA	2	/* Max. nb of extra free params of profiles */
 #define PROFIT_PROFRES	256	/* Pixmap size of model components */
@@ -107,6 +107,7 @@ typedef struct
   int		nresi;		/* Number of residual elements */
   double	sigma;		/* Standard deviation of the pixel values */
   double	flux;		/* Total flux in final convolved model */
+  double	spirindex;	/* Spiral index (>0 for CCW) */
   }	profitstruct;
 
 /*----------------------------- Global variables ----------------------------*/
@@ -121,7 +122,9 @@ double		*profit_compresi(profitstruct *profit, picstruct *field,
 			picstruct *wfield, objstruct *obj, double *resi),
 		*profit_residuals(profitstruct *profit, picstruct *field,
 			picstruct *wfield, objstruct *obj, double *param,
-			double *resi);
+			double *resi),
+		profit_spiralindex(profitstruct *profit, objstruct *obj,
+			obj2struct *obj2);
 
 PIXTYPE		*profit_resample(profitstruct *profit);
 

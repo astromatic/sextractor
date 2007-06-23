@@ -178,6 +178,7 @@ the_y = iy;
 /* Set initial guesses and boundaries */
   profit_resetparams(profit, obj, obj2);
   profit->sigma = obj->sigbkg;
+  printf("%g  \n", profit_spiralindex(profit, obj, obj2));
 
 /* Use (dirty) global variables to interface with lmfit */
   the_field = field;
@@ -337,31 +338,30 @@ VERSION	07/12/2006
 void	profit_printout(int n_par, double* par, int m_dat, double* fvec,
 		void *data, int iflag, int iter, int nfev )
   {
-checkstruct *check;
-profitstruct *profit;
-char	filename[256];
-static int itero;
-profit = (profitstruct *)data;
-/*
-printf("%d:	%g	%g	%g	%g	%g	%g	%g\n",
-	iter, par[0],par[1],par[2],par[3],par[4],par[5],par[6]);
-*/
-if (0 && (iter!=itero || iter<0))
-{
-if (iter<0)
-  itero++;
-else
-  itero = iter;
-sprintf(filename, "check_%d_%04d.fits", the_gal, itero);
-check=initcheck(filename, CHECK_PROFILES, 0);
-reinitcheck(the_field, check);
-addcheck(check, profit->lmodpix, profit->objnaxisn[0],profit->objnaxisn[1],
+   checkstruct	*check;
+   profitstruct	*profit;
+   char		filename[256];
+   static int	itero;
+
+  profit = (profitstruct *)data;
+
+  if (0 && (iter!=itero || iter<0))
+    {
+    if (iter<0)
+      itero++;
+    else
+      itero = iter;
+    sprintf(filename, "check_%d_%04d.fits", the_gal, itero);
+    check=initcheck(filename, CHECK_PROFILES, 0);
+    reinitcheck(the_field, check);
+    addcheck(check, profit->lmodpix, profit->objnaxisn[0],profit->objnaxisn[1],
 		the_x,the_y, 1.0);
 
-reendcheck(the_field, check);
-endcheck(check);
-//lm_print_default(n_par, par, m_dat, fvec, data, iflag, iter, nfev);
-}
+    reendcheck(the_field, check);
+    endcheck(check);
+//    lm_print_default(n_par, par, m_dat, fvec, data, iflag, iter, nfev);
+    }
+
   return;
   }
 
@@ -754,6 +754,114 @@ int	profit_copyobjpix(profitstruct *profit, picstruct *field,
     }
 
   return npix;
+  }
+
+
+/****** profit_spiralindex ****************************************************
+PROTO	double profit_spiralindex(profitstruct *profit, objstruct *obj,
+			obj2struct *obj2)
+PURPOSE	Compute the spiral index of a galaxy image (positive for arms
+	extending counter-clockwise and negative for arms extending CW, 0 for
+	no spiral pattern).
+INPUT	Profile-fitting structure,
+	pointer to the obj,
+	pointer to the obj2.
+OUTPUT	Vector of residuals.
+AUTHOR	E. Bertin (IAP)
+VERSION	23/06/2007
+ ***/
+double profit_spiralindex(profitstruct *profit, objstruct *obj,
+			obj2struct *obj2)
+  {
+   double	*dx,*dy, *fdx,*fdy, *gdx,*gdy, *gdxt,*gdyt, *pix,
+		fwhm, invtwosigma2, hw,hh, ohw,ohh, x,y,xstart, tx,ty,txstart,
+		gx,gy, r2, spirindex;
+   int		i,j, npix;
+  
+  npix = profit->objnaxisn[0]*profit->objnaxisn[1];
+
+/* Compute simple derivative vectors at a fraction of the object scale */
+  fwhm = obj2->hl_radius * 2.0 / 8.0;
+  if (fwhm < 2.0)
+    fwhm = 2.0;
+
+  invtwosigma2 = -(2.35*2.35/(2.0*fwhm*fwhm));
+  hw = (double)(profit->objnaxisn[0]/2);
+  ohw = profit->objnaxisn[0] - hw;
+  hh = (double)(profit->objnaxisn[1]/2);
+  ohh = profit->objnaxisn[1] - hh;
+  txstart = -hw;
+  ty = -hh;
+  QMALLOC(dx, double, npix);
+  pix = dx;
+  for (j=profit->objnaxisn[1]; j--; ty+=1.0)
+    {
+    tx = txstart;
+    y = ty < -0.5? ty + hh : ty - ohh;
+    for (i=profit->objnaxisn[0]; i--; tx+=1.0)
+      {
+      x = tx < -0.5? tx + hw : tx - ohw;
+      *(pix++) = exp(invtwosigma2*((x+fwhm)*(x+fwhm)+y*y))
+		- exp(invtwosigma2*((x-fwhm)*(x-fwhm)+y*y));
+      }
+    }
+  QMALLOC(dy, double, npix);
+  pix = dy;
+  ty = -hh;
+  for (j=profit->objnaxisn[1]; j--; ty+=1.0)
+    {
+    tx = txstart;
+    y = ty < -0.5? ty + hh : ty - ohh;
+    for (i=profit->objnaxisn[0]; i--; tx+=1.0)
+      {
+      x = tx < -0.5? tx + hw : tx - ohw;
+      *(pix++) = exp(invtwosigma2*(x*x+(y+fwhm)*(y+fwhm)))
+		- exp(invtwosigma2*(x*x+(y-fwhm)*(y-fwhm)));
+      }
+    }
+
+  QMEMCPY(profit->objpix, gdx, double, npix);
+  gdxt = gdx;
+  for (i=npix; i--;)
+    {
+    if (*gdxt <= -1e29)
+      *gdxt = 0.0;
+    *(gdxt++) /= (double)npix;
+    }
+  QMEMCPY(gdx, gdy, double, npix);
+  fdx = fft_rtf(dx, profit->objnaxisn);
+  fft_conv(gdx, fdx, profit->objnaxisn);
+  fdy = fft_rtf(dy, profit->objnaxisn);
+  fft_conv(gdy, fdy, profit->objnaxisn);
+
+/* Compute estimator */
+  invtwosigma2 = -1.18*1.18/(2.0*obj2->hl_radius*obj2->hl_radius);
+  xstart = -hw;
+  y = -hh;
+  spirindex = 0.0;
+  gdxt = gdx;
+  gdyt = gdy;
+  for (j=profit->objnaxisn[1]; j--; y+=1.0)
+    {
+    x = xstart;
+    for (i=profit->objnaxisn[0]; i--; x+=1.0)
+      {
+      gx = *(gdxt++);
+      gy = *(gdyt++);
+      if ((r2=x*x+y*y)>0.0)
+        spirindex += (x*y*(gy*gy-gx*gx)+gx*gy*(y*y-x*x))/r2
+			* exp(invtwosigma2*r2);
+      }
+    }
+
+  free(dx);
+  free(dy);
+  free(fdx);
+  free(fdy);
+  free(gdx);
+  free(gdy);
+
+  return spirindex;
   }
 
 
