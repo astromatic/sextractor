@@ -9,7 +9,7 @@
 *
 *	Contents:	Fit an arbitrary profile combination to a detection.
 *
-*	Last modify:	23/06/2007
+*	Last modify:	24/06/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -119,7 +119,7 @@ OUTPUT	Pointer to an allocated fit structure (containing details about the
 	fit).
 NOTES	It is a modified version of the lm_minimize() of lmfit.
 AUTHOR	E. Bertin (IAP)
-VERSION	22/06/2007
+VERSION	24/06/2007
  ***/
 void	profit_fit(profitstruct *profit,
 		picstruct *field, picstruct *wfield,
@@ -150,8 +150,14 @@ void	profit_fit(profitstruct *profit,
 		*1.2)/2)*2 + 1;
   ix = (int)(obj->mx + 0.49999);	/* internal convention: 1st pix = 0 */
   iy = (int)(obj->my + 0.49999);	/* internal convention: 1st pix = 0 */
-the_x = ix;
-the_y = iy;
+
+/* Use (dirty) global variables to interface with lmfit */
+  the_field = field;
+  the_wfield = wfield;
+  theprofit = profit;
+  the_obj = obj;
+  the_x = ix;
+  the_y = iy;
 
   QMALLOC(profit->objpix, PIXTYPE, profit->objnaxisn[0]*profit->objnaxisn[1]);
   QMALLOC(profit->lmodpix, PIXTYPE, profit->objnaxisn[0]*profit->objnaxisn[1]);
@@ -176,15 +182,9 @@ the_y = iy;
   QCALLOC(profit->modpix, double, profit->modnaxisn[0]*profit->modnaxisn[1]);
 
 /* Set initial guesses and boundaries */
-  profit_resetparams(profit, obj, obj2);
   profit->sigma = obj->sigbkg;
-  printf("%g  \n", profit_spiralindex(profit, obj, obj2));
+  profit_resetparams(profit, obj, obj2);
 
-/* Use (dirty) global variables to interface with lmfit */
-  the_field = field;
-  the_wfield = wfield;
-  theprofit = profit;
-  the_obj = obj;
 
 /* This goes through the modified legacy interface */
 for (p=0; p<profit->nparam; p++)
@@ -768,22 +768,24 @@ INPUT	Profile-fitting structure,
 	pointer to the obj2.
 OUTPUT	Vector of residuals.
 AUTHOR	E. Bertin (IAP)
-VERSION	23/06/2007
+VERSION	24/06/2007
  ***/
 double profit_spiralindex(profitstruct *profit, objstruct *obj,
 			obj2struct *obj2)
   {
    double	*dx,*dy, *fdx,*fdy, *gdx,*gdy, *gdxt,*gdyt, *pix,
 		fwhm, invtwosigma2, hw,hh, ohw,ohh, x,y,xstart, tx,ty,txstart,
-		gx,gy, r2, spirindex;
+		gx,gy, r2, spirindex, invsig, val, sep;
+   PIXTYPE	*fpix;
    int		i,j, npix;
-  
+
   npix = profit->objnaxisn[0]*profit->objnaxisn[1];
 
 /* Compute simple derivative vectors at a fraction of the object scale */
-  fwhm = obj2->hl_radius * 2.0 / 8.0;
+  fwhm = obj2->hl_radius * 2.0 / 4.0;
   if (fwhm < 2.0)
     fwhm = 2.0;
+  sep = 2.0;
 
   invtwosigma2 = -(2.35*2.35/(2.0*fwhm*fwhm));
   hw = (double)(profit->objnaxisn[0]/2);
@@ -801,8 +803,8 @@ double profit_spiralindex(profitstruct *profit, objstruct *obj,
     for (i=profit->objnaxisn[0]; i--; tx+=1.0)
       {
       x = tx < -0.5? tx + hw : tx - ohw;
-      *(pix++) = exp(invtwosigma2*((x+fwhm)*(x+fwhm)+y*y))
-		- exp(invtwosigma2*((x-fwhm)*(x-fwhm)+y*y));
+      *(pix++) = exp(invtwosigma2*((x+sep)*(x+sep)+y*y))
+		- exp(invtwosigma2*((x-sep)*(x-sep)+y*y));
       }
     }
   QMALLOC(dy, double, npix);
@@ -815,18 +817,19 @@ double profit_spiralindex(profitstruct *profit, objstruct *obj,
     for (i=profit->objnaxisn[0]; i--; tx+=1.0)
       {
       x = tx < -0.5? tx + hw : tx - ohw;
-      *(pix++) = exp(invtwosigma2*(x*x+(y+fwhm)*(y+fwhm)))
-		- exp(invtwosigma2*(x*x+(y-fwhm)*(y-fwhm)));
+      *(pix++) = exp(invtwosigma2*(x*x+(y+sep)*(y+sep)))
+		- exp(invtwosigma2*(x*x+(y-sep)*(y-sep)));
       }
     }
 
-  QMEMCPY(profit->objpix, gdx, double, npix);
+  QMALLOC(gdx, double, npix);
   gdxt = gdx;
-  for (i=npix; i--;)
+  fpix = profit->objpix;
+  invsig = npix/profit->sigma;
+  for (i=npix; i--; fpix++)
     {
-    if (*gdxt <= -1e29)
-      *gdxt = 0.0;
-    *(gdxt++) /= (double)npix;
+    val = *fpix > -1e29? *fpix*invsig : 0.0;
+    *(gdxt++) = (val>0.0? log(1.0+val) : -log(1.0-val));
     }
   QMEMCPY(gdx, gdy, double, npix);
   fdx = fft_rtf(dx, profit->objnaxisn);
@@ -836,8 +839,8 @@ double profit_spiralindex(profitstruct *profit, objstruct *obj,
 
 /* Compute estimator */
   invtwosigma2 = -1.18*1.18/(2.0*obj2->hl_radius*obj2->hl_radius);
-  xstart = -hw;
-  y = -hh;
+  xstart = -hw - obj->mx + (int)(obj->mx+0.49999);;
+  y = -hh -  obj->my + (int)(obj->my+0.49999);;
   spirindex = 0.0;
   gdxt = gdx;
   gdyt = gdy;
@@ -849,7 +852,7 @@ double profit_spiralindex(profitstruct *profit, objstruct *obj,
       gx = *(gdxt++);
       gy = *(gdyt++);
       if ((r2=x*x+y*y)>0.0)
-        spirindex += (x*y*(gy*gy-gx*gx)+gx*gy*(y*y-x*x))/r2
+        spirindex += (x*y*(gx*gx-gy*gy)+gx*gy*(y*y-x*x))/r2
 			* exp(invtwosigma2*r2);
       }
     }
@@ -1003,6 +1006,13 @@ void	profit_resetparams(profitstruct *profit, objstruct *obj,
           param = 80.0;
           parammin = 50.0;
           parammax = 120.0;
+          if ((profit->spirindex=profit_spiralindex(profit, obj, obj2)) > 0.0)
+            {
+            param = -param;
+            parammin = -parammax;
+            parammax = -parammin;
+            }
+          printf("spiral index: %g  \n", profit->spirindex);
           break;
         case PARAM_ARMS_POSANG:
           param = 0.0;
