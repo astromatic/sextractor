@@ -358,9 +358,9 @@ int	write_xml_meta(FILE *file, char *error)
       fprintf(file, "     <TR>\n"
 	"      <TD>%d</TD><TD>%s</TD><TD>%s</TD><TD>%.0f</TD>"
 	"<TD>%d</TD><TD>%d</TD>\n"
-	"      <TD>%s,%s</TD>\n"
+	"      <TD>%s,%s</TD><TD>%g %g</TD>\n"
 	"      <TD>%g %g</TD><TD>%g %g</TD><TD>%g %g</TD>"
-	"<TD>%g %g</TD><TD>%g %g</TD>\n"
+	"<TD>%g %g</TD><TD>%f %f</TD>\n"
 	"     </TR>\n",
 	xmlstack[n].currext,
 	xmlstack[n].ext_date,
@@ -373,13 +373,14 @@ int	write_xml_meta(FILE *file, char *error)
 	xmlstack[n].backsig[0], xmlstack[n].backsig[1],
 	xmlstack[n].sigfac[0], xmlstack[n].sigfac[1],
 	xmlstack[n].thresh[0], xmlstack[n].thresh[1],
-	xmlstack[n].pixscale[0], xmlstack[n].pixscale[1]);
+	xmlstack[n].pixscale[0], xmlstack[n].pixscale[1],
+	xmlstack[n].epoch[0], xmlstack[n].epoch[1]);
     else
       fprintf(file, "    <TR>\n"
 	"     <TD>%d</TD><TD>%s</TD><TD>%s</TD><TD>%.0f</TD>"
 	"<TD>%d</TD><TD>%d</TD>\n"
-	"     <TD>%s</TD>\n"
-	"     <TD>%g</TD><TD>%g</TD><TD>%g</TD><TD>%g</TD><TD>%g</TD>\n"
+	"     <TD>%s</TD><TD>%g</TD>\n"
+	"     <TD>%g</TD><TD>%g</TD><TD>%g</TD><TD>%g</TD><TD>%f</TD>\n"
 	"    </TR>\n",
 	xmlstack[n].currext,
 	xmlstack[n].ext_date,
@@ -392,7 +393,8 @@ int	write_xml_meta(FILE *file, char *error)
 	xmlstack[n].backsig[0],
 	xmlstack[n].sigfac[0],
 	xmlstack[n].thresh[0],
-	xmlstack[n].pixscale[0]);
+	xmlstack[n].pixscale[0],
+        xmlstack[n].epoch[0]);
   fprintf(file, "   </TABLEDATA></DATA>\n");
   fprintf(file, "  </TABLE>\n");
 
