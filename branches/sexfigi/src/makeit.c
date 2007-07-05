@@ -56,7 +56,6 @@ void	makeit()
    picstruct		*dfield, *field,*pffield[MAXFLAG], *wfield,*dwfield;
    catstruct		*imacat;
    tabstruct		*imatab;
-   proftypenum		proflist[PROFIT_MAXPROF];
    static time_t        thetime1, thetime2;
    struct tm		*tm;
    int			i, nok, ntab, next;
@@ -104,12 +103,8 @@ void	makeit()
     fft_init();
 /* Create profiles at full resolution */
     NFPRINTF(OUTPUT, "Preparing profile models");
-//   proflist[0] = PROF_BACK;
-    proflist[0] = PROF_SERSIC;
-    proflist[1] = PROF_EXPONENTIAL;
-    proflist[2] = PROF_ARMS;
-    proflist[3] = PROF_BAR;
-    theprofit = profit_init(thepsf, proflist, 4);
+    theprofit = profit_init(thepsf, (proftypenum *)prefs.prof_type,
+			prefs.nprof_type);
     changecatparamarrays("VECTOR_PROF", &theprofit->nparam, 1);
     }
 

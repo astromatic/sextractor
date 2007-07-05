@@ -9,10 +9,15 @@
 *
 *	Contents:	Keywords for the configuration file.
 *
-*	Last modify:	10/04/2007
+*	Last modify:	25/06/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
+
+
+#ifndef _PROFIT_H_
+#include        "profit.h"
+#endif
 
 #ifndef _PREFS_H_
 #define _PREFS_H_
@@ -202,6 +207,9 @@ typedef struct
   int		prof_flag;				/* Profile-fitting */
 /*----- Profile-fitting */
   int		prof_vectorsize;			/* nb of params */
+  proftypenum	prof_type[PROF_NPROF];			/* profile components*/
+  int		nprof_type;				/* nb of components */
+
 /*----- customize */
   int		fitsunsigned_flag;			/* Force unsign FITS */
   int		next;			     /* Number of extensions in file */

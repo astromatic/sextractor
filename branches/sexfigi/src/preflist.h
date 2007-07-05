@@ -9,7 +9,7 @@
 *
 *	Contents:	Keywords for the configuration file.
 *
-*	Last modify:	03/04/2007
+*	Last modify:	25/06/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -118,6 +118,9 @@
   {"PHOT_PETROPARAMS", P_FLOATLIST, prefs.petroparam, 0,0, 0.0,10.0,
    {""}, 2,2, &prefs.npetroparam},
   {"PIXEL_SCALE", P_FLOAT, &prefs.pixel_scale, 0,0, 0.0, 1e+10},
+  {"PROFILE_TYPE", P_KEYLIST, prefs.prof_type, 0,0, 0.0,0.0,
+   {"BACKGROUND","SERSIC","DEVAUCOULEURS", "EXPONENTIAL", "ARMS", "BAR",""},
+    1, 6, &prefs.nprof_type},
   {"PSF_NAME", P_STRINGLIST, prefs.psf_name, 0,0, 0.0,0.0,
    {""}, 1, 2, &prefs.npsf_name},	/*?*/
   {"PSF_NMAX", P_INT, &prefs.psf_npsfmax, 1, PSF_NPSFMAX},
@@ -279,9 +282,11 @@ char *default_prefs[] =
 "*",
 "*#--------------------------- Experimental Stuff -----------------------------",
 "*",
-"*PSF_NAME         default.psf    # File containing the PSF model",
-"*PSF_NMAX         9              # Max.number of PSFs fitted simultaneously",
+"PSF_NAME         default.psf    # File containing the PSF model",
+"PSF_NMAX         9              # Max.number of PSFs fitted simultaneously",
 "*PSFDISPLAY_TYPE  SPLIT          # Catalog type for PSF-fitting: SPLIT or VECTOR",
+"PROFILE_TYPE     SERSIC         # Profile components to fit: BACK, SERSIC,",
+"                                # DEVAUCOULEURS, EXPONENTIAL, ARMS and/or BAR",
 "*SOM_NAME         default.som    # File containing Self-Organizing Map weights",
 ""
  };

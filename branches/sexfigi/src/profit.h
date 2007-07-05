@@ -9,15 +9,20 @@
 *
 *	Contents:	Include file for profit.c.
 *
-*	Last modify:	23/06/2007
+*	Last modify:	05/07/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
 
+#ifndef _PROFIT_H_
+#define _PROFIT_H_
+
 /*----------------------------- Internal constants --------------------------*/
 
-#define	PROFIT_MAXITER	000	/* Max. nb of iterations in profile fitting */
+#define	PROFIT_MAXITER	1000	/* Max. nb of iterations in profile fitting */
+#define	PROFIT_OVERSAMP	3	/* Profile oversampling factor on each axis */
 #define	PROFIT_MAXPROF	8	/* Max. nb of profile components */
+#define	PROFIT_DYNPARAM	10.0	/* Dynamic compression param. in sigma units */
 #define	PROFIT_MAXEXTRA	2	/* Max. nb of extra free params of profiles */
 #define PROFIT_PROFRES	256	/* Pixmap size of model components */
 #define PROFIT_PROFSRES	64	/* Number of model subcomponents */
@@ -31,7 +36,7 @@ One must have:	PROFIT_NITER > 0
 
 typedef enum		{PROF_BACK, PROF_SERSIC, PROF_DEVAUCOULEURS,
 			PROF_EXPONENTIAL, PROF_ARMS, PROF_BAR,
-			PROF_SERSIC_TABEX}
+			PROF_SERSIC_TABEX, PROF_NPROF}
 				proftypenum; /* Profile code */
 typedef enum	{INTERP_NEARESTNEIGHBOUR, INTERP_BILINEAR, INTERP_LANCZOS2,
 		INTERP_LANCZOS3, INTERP_LANCZOS4}       interpenum;
@@ -95,7 +100,7 @@ typedef struct
   int		niter;		/* Number of iterations */
   profstruct	**prof;		/* Array of pointers to profiles */
   int		nprof;		/* Number of profiles to consider */
-  psfstruct	*psf;		/* PSF */
+  struct psf	*psf;		/* PSF */
   double	*psfdft;	/* Compressed Fourier Transform of the PSF */
   double	*modpix;	/* Full resolution pixmap of the model */
   int		modnaxisn[2];	/* Dimensions along each axis */
@@ -105,6 +110,7 @@ typedef struct
   int		objnaxisn[2];	/* Dimensions along each axis */
   double	*resi;		/* Vector of residuals */
   int		nresi;		/* Number of residual elements */
+  double	error;		/* Std error per residual element */
   double	sigma;		/* Standard deviation of the pixel values */
   double	flux;		/* Total flux in final convolved model */
   double	spirindex;	/* Spiral index (>0 for CCW) */
@@ -113,7 +119,7 @@ typedef struct
 /*----------------------------- Global variables ----------------------------*/
 /*-------------------------------- functions --------------------------------*/
 
-profitstruct	*profit_init(psfstruct *psf, proftypenum *profcode,
+profitstruct	*profit_init(struct psf *psf, proftypenum *profcode,
 			int nprof);
 
 profstruct	*prof_init(profitstruct *profit, proftypenum profcode);
@@ -130,7 +136,9 @@ PIXTYPE		*profit_resample(profitstruct *profit);
 
 int		profit_copyobjpix(profitstruct *profit, picstruct *field,
 				int ix, int iy),
-		profit_minimize(profitstruct *profit, int niter);
+		profit_minimize(profitstruct *profit, int niter),
+		profit_resetparam(profitstruct *profit, proftypenum proftype,
+			double param, double parammin, double parammax);
 
 void		prof_add(profstruct *prof, profitstruct *profit),
 		prof_end(profstruct *prof),
@@ -153,3 +161,4 @@ void		prof_add(profstruct *prof, profitstruct *profit),
 			obj2struct *obj2),
 		profit_unboundtobound(profitstruct *profit, double *param);
 
+#endif
