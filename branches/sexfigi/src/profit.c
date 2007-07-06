@@ -192,7 +192,7 @@ printf("\n");
 the_gal++;
   profit->niter = profit_minimize(profit, PROFIT_MAXITER);
   QMEMCPY(profit->paraminit, oldparaminit, double, profit->nparam);
-  if (profit_resetparam(profit, PARAM_ARMS_PITCH, -80.0, -120.0, -50.0)==RETURN_OK)
+  if (profit_resetparam(profit, PARAM_ARMS_PITCH, 160.0, 120.0, 170.0)==RETURN_OK)
     {
 //    profit_resetparam(profit, PARAM_ARMS_AMP, obj->peak, 0.0, 1000.0*obj->peak);
 //    profit_resetparam(profit, PARAM_ARMS_SCALE, 1.0, 0.5, 10.0);
@@ -203,7 +203,7 @@ the_gal++;
     olderror = profit->error;
     oldniter = profit->niter;
     profit_resetparams(profit, obj, obj2);
-    profit_resetparam(profit, PARAM_ARMS_PITCH, -80.0, -120.0, -50.0);
+    profit_resetparam(profit, PARAM_ARMS_PITCH, 160.0, 120.0, 170.0);
     profit->niter = profit_minimize(profit, PROFIT_MAXITER);
     if (profit->error > olderror);
       {
@@ -1008,29 +1008,29 @@ void	profit_resetparams(profitstruct *profit, objstruct *obj,
         parammax = 10.0;
         break;
       case PARAM_ARMS_AMP:
-        param = obj->peak;
+        param = obj->peak/4.0;
         parammin = 0.0;
         parammax = 1000.0*obj->peak;
         break;
       case PARAM_ARMS_AMP2:
-        param = obj->peak;
+        param = obj->peak/4.0;
         parammin = 0.0;
         parammax = 1000.0*obj->peak;
         break;
       case PARAM_ARMS_SCALE:
-        param = 1.0;
+        param = 4.0;
         parammin = 0.5;
         parammax = 10.0;
         break;
       case PARAM_ARMS_START:
-        param = 0.5;
+        param = 2.0;
         parammin = 0.0;
         parammax = 5.0*obj2->hl_radius/1.67835;
         break;
       case PARAM_ARMS_PITCH:
-        param = 80.0;
-        parammin = 50.0;
-        parammax = 120.0;
+        param = 20.0;
+        parammin = 10.0;
+        parammax = 60.0;
 //        if ((profit->spirindex=profit_spiralindex(profit, obj, obj2)) > 0.0)
 //          {
 //          param = -param;
@@ -1045,12 +1045,12 @@ void	profit_resetparams(profitstruct *profit, objstruct *obj,
         parammax = 3600.0;
         break;
       case PARAM_ARMS_WIDTH:
-        param = 0.7;
+        param = 1.0;
         parammin = 0.0;
-        parammax = 1.0;
+        parammax = 4.0;
         break;
       case PARAM_BAR_AMP:
-        param = obj->peak/10.0;
+        param = obj->peak;
         parammin = 0.0;
         parammax = 10.0*obj->peak;
         break;
@@ -1350,7 +1350,7 @@ void	prof_add(profstruct *prof, profitstruct *profit)
 		x1,x10,x2, x1cin,x2cin, x1cout,x2cout, xscale,yscale, saspect,
 		x1in,x2in, odx2, ostep,
 		rh, re2, n,k, hinvn, x1t,x2t, ca,sa, u,
-		armamp,arm2amp, armpitch,armposang,armwidth, r2,r2min, arh,
+		armamp,arm2amp, armrdphidr,armposang,armwidth, r2,r2min, arh,
 		baramp, barwidth, barposang, val;
    int		npix,
 		d,e,i, ix1,ix2, idx1,idx2;
@@ -1464,10 +1464,10 @@ void	prof_add(profstruct *prof, profitstruct *profit)
       r2min = *prof->armstart**prof->armstart;
       armamp = fabs(*prof->armamp);
       arm2amp = fabs(*prof->armamp2);
-      armpitch = *prof->armpitch*DEG;
+      armrdphidr = 1.0/tan(*prof->armpitch*DEG);
       armposang = *prof->armposang*DEG;
-      armwidth = fabs(1.0 / *prof->armwidth);
-      arh = fabs(*prof->armscale)*rh;
+      armwidth = fabs(sin(*prof->armpitch*DEG) / *prof->armwidth);
+      arh = fabs(*prof->armscale**prof->armscale)*rh;
       x1 = -x1cout - dx1;
       x2 = -x2cout - dx2;
       for (ix2=profit->modnaxisn[1]; ix2--; x2+=1.0)
@@ -1480,12 +1480,12 @@ void	prof_add(profstruct *prof, profitstruct *profit)
           if (r2>r2min)
             {
             u = log(r2/(rh*rh) + 0.00001);
-            ca = cos(armpitch*u+armposang);
-            sa = sin(armpitch*u+armposang);
-            x1in = x1t*ca - x2t*sa;
-            x2in = armwidth*(x1t*sa + x2t*ca);
-            *pixout += (armamp*x1in*x1in)
-			*(exp(-(x1in*x1in+x2in*x2in)/arh));
+            ca = cos(armrdphidr*u+armposang);
+            sa = sin(armrdphidr*u+armposang);
+            x1in = armwidth*(x1t*ca - x2t*sa)/rh;
+            x2in = armwidth*(x1t*sa + x2t*ca)/rh;
+            *pixout += r2*(armamp*exp(-x1in*x1in)+arm2amp*exp(-x2in*x2in))
+			*exp(-(x1t*x1t+x2t*x2t)/arh);
             }
           x1t += cd11;
           x2t += cd21; 
@@ -1496,7 +1496,7 @@ void	prof_add(profstruct *prof, profitstruct *profit)
       rh = prof->typscale;
       r2min = *prof->armstart**prof->armstart;
       baramp = fabs(*prof->baramp);
-      barwidth = fabs(1.0 / *prof->baraspect);
+      barwidth = fabs(1.0 / (*prof->armstart**prof->baraspect));
       barposang = *prof->barposang*DEG;
       ca = cos(barposang);
       sa = sin(barposang);
@@ -1513,9 +1513,7 @@ void	prof_add(profstruct *prof, profitstruct *profit)
             {
             x1in = x1t*ca - x2t*sa;
             x2in = barwidth*(x1t*sa + x2t*ca);
-            r2 = 1.0-(x1in*x1in+x2in*x2in)/r2min;
-            *pixout += baramp
-		*exp(-pow(x1in*x1in*x1in*x1in+x2in*x2in*x2in*x2in, 0.25));
+            *pixout += baramp*exp(-x2in*x2in);
             }
           x1t += cd11;
           x2t += cd21;
