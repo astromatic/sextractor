@@ -9,7 +9,7 @@
 *
 *	Contents:	Fit an arbitrary profile combination to a detection.
 *
-*	Last modify:	05/07/2007
+*	Last modify:	09/07/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -192,7 +192,7 @@ printf("\n");
 the_gal++;
   profit->niter = profit_minimize(profit, PROFIT_MAXITER);
   QMEMCPY(profit->paraminit, oldparaminit, double, profit->nparam);
-  if (profit_resetparam(profit, PARAM_ARMS_PITCH, 160.0, 120.0, 170.0)==RETURN_OK)
+  if (profit_resetparam(profit, PARAM_ARMS_PITCH, 150.0, 120.0, 170.0)==RETURN_OK)
     {
 //    profit_resetparam(profit, PARAM_ARMS_AMP, obj->peak, 0.0, 1000.0*obj->peak);
 //    profit_resetparam(profit, PARAM_ARMS_SCALE, 1.0, 0.5, 10.0);
@@ -203,9 +203,9 @@ the_gal++;
     olderror = profit->error;
     oldniter = profit->niter;
     profit_resetparams(profit, obj, obj2);
-    profit_resetparam(profit, PARAM_ARMS_PITCH, 160.0, 120.0, 170.0);
+    profit_resetparam(profit, PARAM_ARMS_PITCH, 150.0, 120.0, 170.0);
     profit->niter = profit_minimize(profit, PROFIT_MAXITER);
-    if (profit->error > olderror);
+    if (0 && profit->error > olderror)
       {
       memcpy(profit->paraminit, oldparaminit, profit->nparam*sizeof(double));
       profit->error = olderror;
@@ -514,7 +514,7 @@ double	*profit_compresi(profitstruct *profit, picstruct *field,
     if ((val=*(objpix++))>-BIG)
       {
       val2 = (double)(val - *lmodpix)*invsig;
-//      val2 = val2>0.0? log(1.0+val2) : -log(1.0-val2);
+      val2 = val2>0.0? log(1.0+val2) : -log(1.0-val2);
       *(resit++) = val2;
       error += val2*val2;
       }
@@ -964,12 +964,12 @@ void	profit_resetparams(profitstruct *profit, objstruct *obj,
         break;
       case PARAM_DEVAUC_AMP:
       case PARAM_SERSIC_AMP:
-        param = obj2->flux_auto;
+        param = obj2->flux_auto/2.0;
         parammin = -obj2->flux_auto;
         parammax = 2*obj2->flux_auto;
         break;
       case PARAM_EXPO_AMP:
-        param = obj2->flux_auto;
+        param = obj2->flux_auto/2.0;
         parammin = -obj2->flux_auto;
         parammax = 2*obj2->flux_auto;
         break;
@@ -1008,27 +1008,27 @@ void	profit_resetparams(profitstruct *profit, objstruct *obj,
         parammax = 10.0;
         break;
       case PARAM_ARMS_AMP:
-        param = obj->peak/4.0;
+        param = obj2->flux_auto/2.0;
         parammin = 0.0;
         parammax = 1000.0*obj->peak;
         break;
       case PARAM_ARMS_AMP2:
-        param = obj->peak/4.0;
+        param = obj2->flux_auto/2.0;
         parammin = 0.0;
         parammax = 1000.0*obj->peak;
         break;
       case PARAM_ARMS_SCALE:
-        param = 4.0;
+        param = 1.0;
         parammin = 0.5;
         parammax = 10.0;
         break;
       case PARAM_ARMS_START:
-        param = 2.0;
+        param = 1.0;
         parammin = 0.0;
         parammax = 5.0*obj2->hl_radius/1.67835;
         break;
       case PARAM_ARMS_PITCH:
-        param = 20.0;
+        param = 30.0;
         parammin = 10.0;
         parammax = 60.0;
 //        if ((profit->spirindex=profit_spiralindex(profit, obj, obj2)) > 0.0)
@@ -1045,12 +1045,12 @@ void	profit_resetparams(profitstruct *profit, objstruct *obj,
         parammax = 3600.0;
         break;
       case PARAM_ARMS_WIDTH:
-        param = 1.0;
-        parammin = 0.0;
+        param = 0.5;
+        parammin = 0.1;
         parammax = 4.0;
         break;
       case PARAM_BAR_AMP:
-        param = obj->peak;
+        param = obj->peak/32.0;
         parammin = 0.0;
         parammax = 10.0*obj->peak;
         break;
@@ -1164,7 +1164,7 @@ INPUT	Pointer to the profile-fitting structure,
 	profile type.
 OUTPUT	A pointer to an allocated prof structure.
 AUTHOR	E. Bertin (IAP)
-VERSION	09/04/2007
+VERSION	09/07/2007
  ***/
 profstruct	*prof_init(profitstruct *profit, proftypenum profcode)
   {
@@ -1233,7 +1233,7 @@ profstruct	*prof_init(profitstruct *profit, proftypenum profcode)
       profit_addparam(profit, PARAM_ARMS_START, &prof->armstart);
       profit_addparam(profit, PARAM_ARMS_PITCH, &prof->armpitch);
       profit_addparam(profit, PARAM_ARMS_POSANG, &prof->armposang);
-      profit_addparam(profit, PARAM_ARMS_WIDTH, &prof->armwidth);
+//      profit_addparam(profit, PARAM_ARMS_WIDTH, &prof->armwidth);
       break;
     case PROF_BAR:
       prof->naxis = 2;
@@ -1247,7 +1247,7 @@ profstruct	*prof_init(profitstruct *profit, proftypenum profcode)
       profit_addparam(profit, PARAM_ARMS_START, &prof->armstart);
       profit_addparam(profit, PARAM_BAR_AMP, &prof->baramp);
       profit_addparam(profit, PARAM_BAR_ASPECT, &prof->baraspect);
-      profit_addparam(profit, PARAM_BAR_POSANG, &prof->barposang);
+      profit_addparam(profit, PARAM_ARMS_POSANG, &prof->armposang);
       break;
     case PROF_SERSIC_TABEX:	/* An example of tabulated profile */
       prof->naxis = 3;
@@ -1340,7 +1340,7 @@ INPUT	Profile structure,
 	profile-fitting structure.
 OUTPUT	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	03/07/2007
+VERSION	09/07/2007
  ***/
 void	prof_add(profstruct *prof, profitstruct *profit)
   {
@@ -1350,8 +1350,9 @@ void	prof_add(profstruct *prof, profitstruct *profit)
 		x1,x10,x2, x1cin,x2cin, x1cout,x2cout, xscale,yscale, saspect,
 		x1in,x2in, odx2, ostep,
 		rh, re2, n,k, hinvn, x1t,x2t, ca,sa, u,
-		armamp,arm2amp, armrdphidr,armposang,armwidth, r2,r2min, arh,
-		baramp, barwidth, barposang, val;
+		armamp,arm2amp, armrdphidr,armposang,armwidth, arh,
+		r2,r2min, r2minxin, r2minxout, invr2xdif,
+		baramp, barwidth, barposang, val, theta;
    int		npix,
 		d,e,i, ix1,ix2, idx1,idx2;
 
@@ -1462,8 +1463,14 @@ void	prof_add(profstruct *prof, profitstruct *profit)
     case PROF_ARMS:
       rh = prof->typscale;
       r2min = *prof->armstart**prof->armstart;
-      armamp = fabs(*prof->armamp);
-      arm2amp = fabs(*prof->armamp2);
+      r2minxin = r2min * (1.0 - PROFIT_BARXFADE) * (1.0 - PROFIT_BARXFADE);
+      r2minxout = r2min * (1.0 + PROFIT_BARXFADE) * (1.0 + PROFIT_BARXFADE);
+      if ((invr2xdif = (r2minxout - r2minxin)) > 0.0)
+        invr2xdif = 1.0 / invr2xdif;
+      else
+        invr2xdif = 1.0;
+      armamp = fabs(*prof->armamp*xscale*yscale / (2.0*PI*rh*rh));
+      arm2amp = fabs(*prof->armamp2*xscale*yscale / (2.0*PI*rh*rh));
       armrdphidr = 1.0/tan(*prof->armpitch*DEG);
       armposang = *prof->armposang*DEG;
       armwidth = fabs(sin(*prof->armpitch*DEG) / *prof->armwidth);
@@ -1477,15 +1484,23 @@ void	prof_add(profstruct *prof, profitstruct *profit)
         for (ix1=profit->modnaxisn[0]; ix1--; pixout++)
           {
           r2 = x1t*x1t+x2t*x2t;
-          if (r2>r2min)
+          if (r2>r2minxin)
             {
             u = log(r2/(rh*rh) + 0.00001);
-            ca = cos(armrdphidr*u+armposang);
-            sa = sin(armrdphidr*u+armposang);
-            x1in = armwidth*(x1t*ca - x2t*sa)/rh;
-            x2in = armwidth*(x1t*sa + x2t*ca)/rh;
-            *pixout += r2*(armamp*exp(-x1in*x1in)+arm2amp*exp(-x2in*x2in))
-			*exp(-(x1t*x1t+x2t*x2t)/arh);
+            theta = armrdphidr*u+armposang;
+            ca = cos(theta);
+            sa = sin(theta);
+//            x1in = armwidth*(x1t*ca - x2t*sa)/rh;
+//            x2in = armwidth*(x1t*sa + x2t*ca)/rh;
+            x1in = (x1t*ca - x2t*sa)/rh;
+            x2in = (x1t*sa + x2t*ca)/rh;
+            amp = exp(-sqrt(x1t*x1t+x2t*x2t)/arh);
+            if (r2<r2minxout)
+              amp *= (r2 - r2minxin)*invr2xdif;
+            *pixout += amp * (armamp*(x1in*x1in/r2)*(x1in*x1in/r2)
+				+ arm2amp*(x2in*x2in/r2)*(x2in*x2in/r2));
+//            *pixout += (armamp*exp(-x1in*x1in)+arm2amp*exp(-x2in*x2in))
+//			*exp(-sqrt(x1t*x1t+x2t*x2t)/arh);
             }
           x1t += cd11;
           x2t += cd21; 
@@ -1495,9 +1510,15 @@ void	prof_add(profstruct *prof, profitstruct *profit)
     case PROF_BAR:
       rh = prof->typscale;
       r2min = *prof->armstart**prof->armstart;
+      r2minxin = r2min * (1.0 - PROFIT_BARXFADE) * (1.0 - PROFIT_BARXFADE);
+      r2minxout = r2min * (1.0 + PROFIT_BARXFADE) * (1.0 + PROFIT_BARXFADE);
+      if ((invr2xdif = (r2minxout - r2minxin)) > 0.0)
+        invr2xdif = 1.0 / invr2xdif;
+      else
+        invr2xdif = 1.0;
       baramp = fabs(*prof->baramp);
       barwidth = fabs(1.0 / (*prof->armstart**prof->baraspect));
-      barposang = *prof->barposang*DEG;
+      barposang = *prof->armposang*DEG;
       ca = cos(barposang);
       sa = sin(barposang);
       x1 = -x1cout - dx1;
@@ -1509,11 +1530,14 @@ void	prof_add(profstruct *prof, profitstruct *profit)
         for (ix1=profit->modnaxisn[0]; ix1--; pixout++)
           {
           r2 = x1t*x1t+x2t*x2t;
-          if (r2<r2min)
+          if (r2<r2minxout)
             {
             x1in = x1t*ca - x2t*sa;
             x2in = barwidth*(x1t*sa + x2t*ca);
-            *pixout += baramp*exp(-x2in*x2in);
+            amp = baramp;
+            if (r2>r2minxin)
+              amp *= (r2minxout - r2)*invr2xdif;
+            *pixout += amp*exp(-x2in*x2in);
             }
           x1t += cd11;
           x2t += cd21;

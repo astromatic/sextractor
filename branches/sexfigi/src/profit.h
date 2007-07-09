@@ -9,7 +9,7 @@
 *
 *	Contents:	Include file for profit.c.
 *
-*	Last modify:	05/07/2007
+*	Last modify:	09/07/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -22,7 +22,8 @@
 #define	PROFIT_MAXITER	1000	/* Max. nb of iterations in profile fitting */
 #define	PROFIT_OVERSAMP	1	/* Profile oversampling factor on each axis */
 #define	PROFIT_MAXPROF	8	/* Max. nb of profile components */
-#define	PROFIT_DYNPARAM	10.0	/* Dynamic compression param. in sigma units */
+#define	PROFIT_DYNPARAM	100.0	/* Dynamic compression param. in sigma units */
+#define	PROFIT_BARXFADE	0.1	/* Fract. of bar length crossfaded with arms */
 #define	PROFIT_MAXEXTRA	2	/* Max. nb of extra free params of profiles */
 #define PROFIT_PROFRES	256	/* Pixmap size of model components */
 #define PROFIT_PROFSRES	64	/* Number of model subcomponents */
