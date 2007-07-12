@@ -9,7 +9,7 @@
 *
 *	Contents:	Include file for profit.c.
 *
-*	Last modify:	09/07/2007
+*	Last modify:	12/07/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -17,12 +17,16 @@
 #ifndef _PROFIT_H_
 #define _PROFIT_H_
 
+/*-------------------------------- flags ------------------------------------*/
+
+#define		PROFIT_FLIPPED	0x0001
+
 /*----------------------------- Internal constants --------------------------*/
 
 #define	PROFIT_MAXITER	1000	/* Max. nb of iterations in profile fitting */
 #define	PROFIT_OVERSAMP	1	/* Profile oversampling factor on each axis */
 #define	PROFIT_MAXPROF	8	/* Max. nb of profile components */
-#define	PROFIT_DYNPARAM	100.0	/* Dynamic compression param. in sigma units */
+#define	PROFIT_DYNPARAM	10.0	/* Dynamic compression param. in sigma units */
 #define	PROFIT_BARXFADE	0.1	/* Fract. of bar length crossfaded with arms */
 #define	PROFIT_MAXEXTRA	2	/* Max. nb of extra free params of profiles */
 #define PROFIT_PROFRES	256	/* Pixmap size of model components */
@@ -111,7 +115,7 @@ typedef struct
   int		objnaxisn[2];	/* Dimensions along each axis */
   double	*resi;		/* Vector of residuals */
   int		nresi;		/* Number of residual elements */
-  double	error;		/* Std error per residual element */
+  double	chi2;		/* Std error per residual element */
   double	sigma;		/* Standard deviation of the pixel values */
   double	flux;		/* Total flux in final convolved model */
   double	spirindex;	/* Spiral index (>0 for CCW) */

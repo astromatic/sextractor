@@ -9,7 +9,7 @@
 *
 *	Contents:	parameter list for catalog data.
 *
-*	Last modify:	20/06/2007
+*	Last modify:	12/07/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -852,12 +852,18 @@ keystruct	objkey[] = {
   {"PC", "Principal components",
 	&outobj2.vector_pc, H_FLOAT, T_FLOAT, "%15.10e", "",
 	"src.morph.param", "", 1, &prefs.pc_vectorsize},
-  {"VECTOR_PROF", "profile-fitting coefficients",
+  {"VECTOR_PROF", "Profile-fitting coefficients",
 	&outobj2.prof_vector, H_FLOAT, T_FLOAT, "%8.2f", "",
-	"src.morph.param;stat.fit.param", "", 1, &prefs.prof_vectorsize},
+	"stat.fit.param;src.morph.param", "", 1, &prefs.prof_vectorsize},
+  {"CHI2_PROF", "Reduced Chi2 of the fit",
+	&outobj2.prof_chi2, H_FLOAT, T_FLOAT, "%12.7g", "",
+	"stat.fit.chi2;src.morph", ""},
+  {"FLAGS_PROF", "Profile-fitting flags",
+	&outobj2.prof_flag, H_INT, T_BYTE, "%3d", "",
+	"meta.code;stat.fit;src.morph", ""},
   {"NITER_PROF", "Number of iterations for profile-fitting",
 	&outobj2.prof_niter, H_INT, T_SHORT, "%3d", "",
-	"meta.number", ""},
+	"meta.number;stat.fit;src.morph", ""},
   {"XPROF_IMAGE", "X coordinate from profile-fitting",
 	&outobj2.x_prof, H_FLOAT, T_FLOAT, "%10.3f", "pixel",
 	"pos.cartesian.x;stat.fit.param;instr.det;meta.main", "pix"},

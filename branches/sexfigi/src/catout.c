@@ -9,7 +9,7 @@
 *
 *	Contents:	functions for output of catalog data.
 *
-*	Last modify:	20/06/2007
+*	Last modify:	12/07/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -169,7 +169,8 @@ void	updateparamflags()
 
 /*----------------------------- Profile-fitting -----------------------------*/
 
-  FLAG(obj2.prof_vector) |= FLAG(obj2.prof_niter)
+  FLAG(obj2.prof_vector) |= FLAG(obj2.prof_niter) | FLAG(obj2.prof_chi2)
+			| FLAG(obj2.prof_flag)
 			| FLAG(obj2.x_prof) | FLAG(obj2.y_prof)
 			| FLAG(obj2.flux_prof) | FLAG(obj2.mag_prof);
 

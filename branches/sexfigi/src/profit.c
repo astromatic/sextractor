@@ -9,7 +9,7 @@
 *
 *	Contents:	Fit an arbitrary profile combination to a detection.
 *
-*	Last modify:	09/07/2007
+*	Last modify:	12/07/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -119,7 +119,7 @@ OUTPUT	Pointer to an allocated fit structure (containing details about the
 	fit).
 NOTES	It is a modified version of the lm_minimize() of lmfit.
 AUTHOR	E. Bertin (IAP)
-VERSION	24/06/2007
+VERSION	12/07/2007
  ***/
 void	profit_fit(profitstruct *profit,
 		picstruct *field, picstruct *wfield,
@@ -128,8 +128,8 @@ void	profit_fit(profitstruct *profit,
     psfstruct		*psf;
     checkstruct		*check;
     double		*param, *oldparaminit,
-			psf_fwhm, olderror;
-    int			ix,iy, p, oldniter;
+			psf_fwhm, oldchi2;
+    int			ix,iy, p, oldniter, flags;
 
 
   if (profit->psfdft)
@@ -182,6 +182,7 @@ void	profit_fit(profitstruct *profit,
   QCALLOC(profit->modpix, double, profit->modnaxisn[0]*profit->modnaxisn[1]);
 
 /* Set initial guesses and boundaries */
+  obj2->prof_flag = 0;
   profit->sigma = obj->sigbkg;
   profit_resetparams(profit, obj, obj2);
 
@@ -200,17 +201,19 @@ the_gal++;
 //			5.0*obj2->hl_radius/1.67835);
 //    profit_resetparam(profit, PARAM_ARMS_POSANG, 0.0, -3600.0, 3600.0);
 //    profit_resetparam(profit, PARAM_ARMS_WIDTH, 0.7, 0.0, 1.0);
-    olderror = profit->error;
+    oldchi2 = profit->chi2;
     oldniter = profit->niter;
     profit_resetparams(profit, obj, obj2);
     profit_resetparam(profit, PARAM_ARMS_PITCH, 150.0, 120.0, 170.0);
     profit->niter = profit_minimize(profit, PROFIT_MAXITER);
-    if (0 && profit->error > olderror)
+    if (profit->chi2 > oldchi2)
       {
       memcpy(profit->paraminit, oldparaminit, profit->nparam*sizeof(double));
-      profit->error = olderror;
+      profit->chi2 = oldchi2;
       profit->niter = oldniter;
       }
+    else
+      obj2->prof_flag |= PROFIT_FLIPPED;
     }  
 
 printf("--> ");
@@ -245,6 +248,7 @@ printf("(%d)\n", profit->niter);
   if ((param=profit->paramlist[PARAM_Y]))
     obj2->y_prof = iy + 1.0 + *param;		/* FITS convention */
   obj2->flux_prof = profit->flux;
+  obj2->prof_chi2 = profit->chi2;
 
 /* clean up. */
   free(profit->modpix);
@@ -491,7 +495,7 @@ INPUT	Profile-fitting structure,
 	vector of residuals (output).
 OUTPUT	Vector of residuals.
 AUTHOR	E. Bertin (IAP)
-VERSION	05/07/2007
+VERSION	12/07/2007
  ***/
 double	*profit_compresi(profitstruct *profit, picstruct *field,
 		picstruct *wfield, objstruct *obj, double *resi)
@@ -519,7 +523,7 @@ double	*profit_compresi(profitstruct *profit, picstruct *field,
       error += val2*val2;
       }
 
-  profit->error = sqrt(error/npix);
+  profit->chi2 = PROFIT_DYNPARAM*PROFIT_DYNPARAM*error/npix;
 
   return resi;
   }
@@ -1045,8 +1049,8 @@ void	profit_resetparams(profitstruct *profit, objstruct *obj,
         parammax = 3600.0;
         break;
       case PARAM_ARMS_WIDTH:
-        param = 0.5;
-        parammin = 0.1;
+        param = 2.0;
+        parammin = 1.0;
         parammax = 4.0;
         break;
       case PARAM_BAR_AMP:
@@ -1233,7 +1237,7 @@ profstruct	*prof_init(profitstruct *profit, proftypenum profcode)
       profit_addparam(profit, PARAM_ARMS_START, &prof->armstart);
       profit_addparam(profit, PARAM_ARMS_PITCH, &prof->armpitch);
       profit_addparam(profit, PARAM_ARMS_POSANG, &prof->armposang);
-//      profit_addparam(profit, PARAM_ARMS_WIDTH, &prof->armwidth);
+      profit_addparam(profit, PARAM_ARMS_WIDTH, &prof->armwidth);
       break;
     case PROF_BAR:
       prof->naxis = 2;
@@ -1473,7 +1477,8 @@ void	prof_add(profstruct *prof, profitstruct *profit)
       arm2amp = fabs(*prof->armamp2*xscale*yscale / (2.0*PI*rh*rh));
       armrdphidr = 1.0/tan(*prof->armpitch*DEG);
       armposang = *prof->armposang*DEG;
-      armwidth = fabs(sin(*prof->armpitch*DEG) / *prof->armwidth);
+//      armwidth = fabs(sin(*prof->armpitch*DEG) / *prof->armwidth);
+      armwidth = fabs(*prof->armwidth);
       arh = fabs(*prof->armscale**prof->armscale)*rh;
       x1 = -x1cout - dx1;
       x2 = -x2cout - dx2;
@@ -1497,8 +1502,8 @@ void	prof_add(profstruct *prof, profitstruct *profit)
             amp = exp(-sqrt(x1t*x1t+x2t*x2t)/arh);
             if (r2<r2minxout)
               amp *= (r2 - r2minxin)*invr2xdif;
-            *pixout += amp * (armamp*(x1in*x1in/r2)*(x1in*x1in/r2)
-				+ arm2amp*(x2in*x2in/r2)*(x2in*x2in/r2));
+            *pixout += amp * (armamp*pow(x1in*x1in/r2,armwidth)
+				+ arm2amp*pow(x2in*x2in/r2,armwidth));
 //            *pixout += (armamp*exp(-x1in*x1in)+arm2amp*exp(-x2in*x2in))
 //			*exp(-sqrt(x1t*x1t+x2t*x2t)/arh);
             }

@@ -9,7 +9,7 @@
 *
 *	Contents:	global type definitions.
 *
-*	Last modify:	20/06/2007
+*	Last modify:	12/07/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -294,6 +294,8 @@ typedef struct
   float		magerr_galfit;			/* RMS error on galfit mag */
 /* ---- Profile-fitting */
   float		*prof_vector;			/* Profile parameters */
+  float		prof_chi2;			/* Reduced chi2 */
+  BYTE		prof_flag;				/* Profile-fitting flags */
   short		prof_niter;			/* # of prof-fitting iter. */
   float		flux_prof;			/* Flux from profile-fitting */
   float		fluxerr_prof;			/* RMS error on profile flux */
