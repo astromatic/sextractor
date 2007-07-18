@@ -9,7 +9,7 @@
 *
 *	Contents:	Fit an arbitrary profile combination to a detection.
 *
-*	Last modify:	12/07/2007
+*	Last modify:	18/07/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -119,7 +119,7 @@ OUTPUT	Pointer to an allocated fit structure (containing details about the
 	fit).
 NOTES	It is a modified version of the lm_minimize() of lmfit.
 AUTHOR	E. Bertin (IAP)
-VERSION	12/07/2007
+VERSION	18/07/2007
  ***/
 void	profit_fit(profitstruct *profit,
 		picstruct *field, picstruct *wfield,
@@ -179,7 +179,10 @@ void	profit_fit(profitstruct *profit,
     profit->modnaxisn[1] = profit->modnaxisn[0];
   else
     profit->modnaxisn[0] = profit->modnaxisn[1];
+/* Allocate memory for the complete model */
   QCALLOC(profit->modpix, double, profit->modnaxisn[0]*profit->modnaxisn[1]);
+/* Allocate memory for the partial model */
+  QMALLOC(profit->pmodpix, double, profit->modnaxisn[0]*profit->modnaxisn[1]);
 
 /* Set initial guesses and boundaries */
   obj2->prof_flag = 0;
@@ -252,6 +255,7 @@ printf("(%d)\n", profit->niter);
 
 /* clean up. */
   free(profit->modpix);
+  free(profit->pmodpix);
   free(profit->lmodpix);
   free(profit->objpix);
   free(profit->resi);
@@ -1113,7 +1117,7 @@ int	profit_resetparam(profitstruct *profit, proftypenum proftype,
   }
 
   
-/****** profit_boundtounbound ****************************************************
+/****** profit_boundtounbound *************************************************
 PROTO	void profit_boundtounbound(profitstruct *profit)
 PURPOSE	Convert parameters from bounded to unbounded space.
 INPUT	Pointer to the profit structure.
@@ -1139,7 +1143,7 @@ void	profit_boundtounbound(profitstruct *profit, double *param)
   }
 
 
-/****** profit_unboundtobound ****************************************************
+/****** profit_unboundtobound *************************************************
 PROTO	void profit_unboundtobound(profitstruct *profit)
 PURPOSE	Convert parameters from unbounded to bounded space.
 INPUT	Pointer to the profit structure.
@@ -1344,28 +1348,28 @@ INPUT	Profile structure,
 	profile-fitting structure.
 OUTPUT	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	09/07/2007
+VERSION	18/07/2007
  ***/
 void	prof_add(profstruct *prof, profitstruct *profit)
   {
    double	posin[PROFIT_MAXEXTRA], posout[2], dnaxisn[2],
-		*pixout,
+		*pixin, *pixout,
 		amp,ctheta,stheta,cd11,cd12,cd21,cd22, dcd11,dcd21, dx1,dx2,
 		x1,x10,x2, x1cin,x2cin, x1cout,x2cout, xscale,yscale, saspect,
 		x1in,x2in, odx2, ostep,
 		rh, re2, n,k, hinvn, x1t,x2t, ca,sa, u,
 		armamp,arm2amp, armrdphidr,armposang,armwidth, arh,
-		r2,r2min, r2minxin, r2minxout, invr2xdif,
-		baramp, barwidth, barposang, val, theta;
+		r, r2, rmin, r2min, r2minxin, r2minxout, rmax, r2max, invr2xdif,
+		baramp, barwidth, barposang, val, theta, thresh, flux,fluxfac;
    int		npix,
 		d,e,i, ix1,ix2, idx1,idx2;
 
-  pixout = profit->modpix;
+  npix = profit->modnaxisn[0]*profit->modnaxisn[1];
 
   if (prof->code==PROF_BACK)
     {
     amp = fabs(*prof->amp);
-    npix = profit->modnaxisn[0]*profit->modnaxisn[1];
+    pixout = profit->modpix;
     for (i=npix; i--;)
       *(pixout++) += amp;
     return;
@@ -1406,6 +1410,7 @@ void	prof_add(profstruct *prof, profitstruct *profit)
 		/ (2.0*PI*n*exp(gammln(2*n))*re2);
       x10 = -x1cout - dx1 + 0.5*(ostep-1.0);
       x2 = -x2cout - dx2;
+      pixin = profit->pmodpix;
       for (ix2=profit->modnaxisn[1]; ix2--; x2+=1.0)
         {
         x1 = x10;
@@ -1424,7 +1429,7 @@ void	prof_add(profstruct *prof, profitstruct *profit)
               x2in += dcd21;
               }
             }
-          *(pixout++) += val*ostep*ostep;
+          *(pixin++) = val*ostep*ostep;
           }
         }
       break;
@@ -1435,13 +1440,14 @@ void	prof_add(profstruct *prof, profitstruct *profit)
       amp = fabs(*prof->amp*xscale*yscale / (0.01058394*re2));
       x1 = -x1cout - dx1;
       x2 = -x2cout - dx2;
+      pixin = profit->pmodpix;
       for (ix2=profit->modnaxisn[1]; ix2--; x2+=1.0)
         {
         x1in = cd12*x2 + cd11*x1;
         x2in = cd22*x2 + cd21*x1;
         for (ix1=profit->modnaxisn[0]; ix1--;)
           {
-          *(pixout++) += amp*exp(-7.6692*pow((x1in*x1in+x2in*x2in)/re2,0.125));
+          *(pixin++) = amp*exp(-7.6692*pow((x1in*x1in+x2in*x2in)/re2,0.125));
           x1in += cd11;
           x2in += cd21;
           }
@@ -1452,13 +1458,14 @@ void	prof_add(profstruct *prof, profitstruct *profit)
       amp = fabs(*prof->amp*xscale*yscale / (2.0*PI*rh*rh));
       x1 = -x1cout - dx1;
       x2 = -x2cout - dx2;
+      pixin = profit->pmodpix;
       for (ix2=profit->modnaxisn[1]; ix2--; x2+=1.0)
         {
         x1in = cd12*x2 + cd11*x1;
         x2in = cd22*x2 + cd21*x1;
         for (ix1=profit->modnaxisn[0]; ix1--;)
           {
-          *(pixout++) += amp*exp(-sqrt(x1in*x1in+x2in*x2in)/rh);
+          *(pixin++) = amp*exp(-sqrt(x1in*x1in+x2in*x2in)/rh);
           x1in += cd11;
           x2in += cd21;
           }
@@ -1482,11 +1489,12 @@ void	prof_add(profstruct *prof, profitstruct *profit)
       arh = fabs(*prof->armscale**prof->armscale)*rh;
       x1 = -x1cout - dx1;
       x2 = -x2cout - dx2;
+      pixin = profit->pmodpix;
       for (ix2=profit->modnaxisn[1]; ix2--; x2+=1.0)
         {
         x1t = cd12*x2 + cd11*x1;
         x2t = cd22*x2 + cd21*x1;
-        for (ix1=profit->modnaxisn[0]; ix1--; pixout++)
+        for (ix1=profit->modnaxisn[0]; ix1--; pixin++)
           {
           r2 = x1t*x1t+x2t*x2t;
           if (r2>r2minxin)
@@ -1502,9 +1510,9 @@ void	prof_add(profstruct *prof, profitstruct *profit)
             amp = exp(-sqrt(x1t*x1t+x2t*x2t)/arh);
             if (r2<r2minxout)
               amp *= (r2 - r2minxin)*invr2xdif;
-            *pixout += amp * (armamp*pow(x1in*x1in/r2,armwidth)
+            *pixin = amp * (armamp*pow(x1in*x1in/r2,armwidth)
 				+ arm2amp*pow(x2in*x2in/r2,armwidth));
-//            *pixout += (armamp*exp(-x1in*x1in)+arm2amp*exp(-x2in*x2in))
+//            *pixin = (armamp*exp(-x1in*x1in)+arm2amp*exp(-x2in*x2in))
 //			*exp(-sqrt(x1t*x1t+x2t*x2t)/arh);
             }
           x1t += cd11;
@@ -1528,11 +1536,12 @@ void	prof_add(profstruct *prof, profitstruct *profit)
       sa = sin(barposang);
       x1 = -x1cout - dx1;
       x2 = -x2cout - dx2;
+      pixin = profit->pmodpix;
       for (ix2=profit->modnaxisn[1]; ix2--; x2+=1.0)
         {
         x1t = cd12*x2 + cd11*x1;
         x2t = cd22*x2 + cd21*x1;
-        for (ix1=profit->modnaxisn[0]; ix1--; pixout++)
+        for (ix1=profit->modnaxisn[0]; ix1--; pixin++)
           {
           r2 = x1t*x1t+x2t*x2t;
           if (r2<r2minxout)
@@ -1542,7 +1551,7 @@ void	prof_add(profstruct *prof, profitstruct *profit)
             amp = baramp;
             if (r2>r2minxin)
               amp *= (r2minxout - r2)*invr2xdif;
-            *pixout += amp*exp(-x2in*x2in);
+            *pixin = amp*exp(-x2in*x2in);
             }
           x1t += cd11;
           x2t += cd21;
@@ -1582,14 +1591,14 @@ void	prof_add(profstruct *prof, profitstruct *profit)
         }
       x1cin = (double)(prof->naxisn[0]/2);
       x2cin = (double)(prof->naxisn[1]/2);
-      npix = profit->modnaxisn[0]*profit->modnaxisn[1];
+      pixin = profit->pmodpix;
       for (i=npix; i--;)
         {
         x1 = posout[0] - x1cout - 1.0 - dx1;
         x2 = posout[1] - x2cout - 1.0 - dx2;
         posin[0] = cd11*x1 + cd12*x2 + x1cin + 1.0;
         posin[1] = cd21*x1 + cd22*x2 + x2cin + 1.0;
-        *(pixout++) += amp*prof_interpolate(prof, posin);
+        *(pixin++) = amp*prof_interpolate(prof, posin);
         for (d=0; d<2; d++)
           if ((posout[d]+=1.0) < dnaxisn[d])
             break;
@@ -1598,6 +1607,61 @@ void	prof_add(profstruct *prof, profitstruct *profit)
         }
     break;
     }
+
+/* Now find truncation threshold */
+/* Find the shortest distance to a vignet border */
+  rmax = profit->modnaxisn[0] - x1cout;
+  if (rmax > (r = profit->modnaxisn[1] - x2cout))
+    rmax = r;
+  rmax -= 0.99;
+  if (rmax<1.0)
+    rmax = 1.0;
+  r2max = rmax*rmax;
+  rmin = rmax - 1.0;
+  r2min = rmin*rmin;
+
+/* Find best threshold (the max around the circle with radius rmax */
+  dx2 = -x2cout;
+  pixin = profit->pmodpix;
+  if (*prof->amp>=0.0)
+    {
+    thresh = -BIG;
+    for (ix2=profit->modnaxisn[1]; ix2--; dx2 += 1.0)
+      {
+      dx1 = -x1cout;
+      for (ix1=profit->modnaxisn[0]; ix1--; dx1 += 1.0)
+        if ((val=*(pixin++))>thresh && (r=dx1*dx1+dx2*dx2)>r2min && r2<r2max)
+          thresh = val;
+      }
+    }
+  else
+    {
+    thresh = BIG;
+    for (ix2=profit->modnaxisn[1]; ix2--; dx2 += 1.0)
+      {
+      dx1 = -x1cout;
+      for (ix1=profit->modnaxisn[0]; ix1--; dx1 += 1.0)
+        if ((val=*(pixin++))<thresh && (r=dx1*dx1+dx2*dx2)>r2min && r2<r2max)
+          thresh = val;
+      }
+    }
+
+/* Threshold and measure the flux */
+  flux = 0.0;
+  pixin = profit->pmodpix;
+  for (n=npix; n--; pixin++)
+    if (*pixin >= thresh)
+      flux += *pixin;
+    else
+      *pixin = 0.0;
+
+/* Correct final flux */
+//  fluxfac = fabs(flux)>0.0? *prof->amp / flux : 1.0;
+fluxfac = 1.0;
+  pixin = profit->pmodpix;
+  pixout = profit->modpix;
+  for (n=npix; n--;)
+    *(pixout++) += fluxfac * *(pixin++);
 
   return;
   }

@@ -9,7 +9,7 @@
 *
 *	Contents:	Simplified version of the LDACTools: internal defs
 *
-*	Last modify:	16/08/2004
+*	Last modify:	26/09/2006
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -44,6 +44,7 @@ extern int	bswapflag;		/* != 0 if bytes are swapped/IEEE */
 #define	BODY_DEFSWAPDIR	"/tmp"		/* OK at least for Unix systems */
 
 #define	BIG		1e+30		/* a huge number */
+#define	TINY		(1.0/BIG)	/* a tiny number */
 #ifndef PI
 #define	PI		3.14159265359	/* never met before? */
 #endif

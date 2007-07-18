@@ -9,7 +9,7 @@
 *
 *	Contents:	Include file for profit.c.
 *
-*	Last modify:	12/07/2007
+*	Last modify:	18/07/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -107,7 +107,8 @@ typedef struct
   int		nprof;		/* Number of profiles to consider */
   struct psf	*psf;		/* PSF */
   double	*psfdft;	/* Compressed Fourier Transform of the PSF */
-  double	*modpix;	/* Full resolution pixmap of the model */
+  double	*modpix;	/* Full res. pixmap of the complete model */
+  double	*pmodpix;	/* Full res. pixmap of the partial model */
   int		modnaxisn[2];	/* Dimensions along each axis */
   PIXTYPE	*lmodpix;	/* Low resolution pixmap of the model */
   PIXTYPE	*objpix;	/* Copy of object pixmap */

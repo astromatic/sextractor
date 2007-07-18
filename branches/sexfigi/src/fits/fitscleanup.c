@@ -9,7 +9,7 @@
 *
 *       Contents:       Signal-catching routines to clean-up temporary files
 *
-*       Last modify:    10/01/2003
+*       Last modify:    16/07/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -96,7 +96,7 @@ INPUT	pointer to filename char string.
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	21/08/2000
+VERSION	16/07/2007
  ***/
 void	remove_cleanupfilename(char *filename)
   {
@@ -113,22 +113,17 @@ void	remove_cleanupfilename(char *filename)
       {
 /* Match found: update the list and free memory is necessary*/
       filename3 = filename2 - 1;
+      free(*filename3);
       for (j=i; j--;)
         *(filename3++) = *(filename2++);
       if (!((--cleanup_nfiles)%CLEANUP_NFILES))
         {
         if (cleanup_nfiles)
           {
-          filename2 = cleanup_filename + cleanup_nfiles;
-          for (i=CLEANUP_NFILES; i--;)
-            free(*(filename2++));
           QREALLOC(cleanup_filename, char *, cleanup_nfiles);
           }
         else
-          {
-          free(*cleanup_filename);
           free(cleanup_filename);
-          }
         }
       break;
       }

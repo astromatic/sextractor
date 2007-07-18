@@ -9,7 +9,7 @@
 *
 *	Contents:	functions for handling FITS keywords.
 *
-*	Last modify:	21/09/2006
+*	Last modify:	12/06/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -38,8 +38,8 @@ NOTES	For all keywords except commentary ones (like COMMENT, HISTORY or
 	blank), it is checked that they do not exist already.
 	Enough memory should be provided for the FITS header to contain one
 	more line of 80 char.
-AUTHOR	E. Bertin (IAP & Leiden observatory)
-VERSION	13/06/2004
+AUTHOR	E. Bertin (IAP & Leiden observatory) C. Marmo (IAP)
+VERSION	13/06/2007
  ***/
 int	fitsadd(char *fitsbuf, char *keyword, char *comment)
 
@@ -76,6 +76,26 @@ int	fitsadd(char *fitsbuf, char *keyword, char *comment)
       else
         return RETURN_ERROR;
       }
+/*-- Special case of PCOUNT/GCOUNT parameters */
+    if (!strncmp(keyword, "PCOUNT", 6))
+      {
+      headpos=fitsfind(fitsbuf, "NAXIS   ");
+      sscanf(fitsbuf+80*headpos, "NAXIS   =                    %d", &n);
+      if (headpos>0)
+        headpos+=(n+1);
+      else
+        return RETURN_ERROR;
+      }
+    if (!strncmp(keyword, "GCOUNT", 6))
+      {
+      headpos=fitsfind(fitsbuf, "NAXIS   ");
+      sscanf(fitsbuf+80*headpos, "NAXIS   =                    %d", &n);
+      if (headpos>0)
+        headpos+=(n+2);
+      else
+        return RETURN_ERROR;
+      }
+
     key_ptr = fitsbuf+80*headpos;
     memmove(key_ptr+80, key_ptr, 80*(headpos2-headpos+1));
 
@@ -88,7 +108,6 @@ int	fitsadd(char *fitsbuf, char *keyword, char *comment)
     else
       sprintf(str, "%-8.8s=                        %-47.47s",
 	      keyword, " ");
-
     memcpy(key_ptr, str, 80);
     }
 
@@ -162,7 +181,7 @@ OUTPUT	RETURN_OK if something was found, RETURN_ERROR otherwise.
 NOTES	-.
 AUTHOR	E. Bertin (IAP),
         E.R. Deul - Handling of NaN
-VERSION	19/09/2006
+VERSION	04/06/2007
  ***/
 int	fitspick(char *fitsline, char *keyword, void *ptr, h_type *htype,
 		t_type *ttype, char *comment)
@@ -233,13 +252,7 @@ int	fitspick(char *fitsline, char *keyword, void *ptr, h_type *htype,
     {
     for (i=j; i<80 && fitsline[i]!=(char)'/' && fitsline[i]!=(char)'.'; i++);
 /*-- Handle floats*/
-    if (i==80)
-      {
-      *((int *)ptr) = 0;
-      *htype = H_INT;
-      *ttype = T_LONG;
-      }
-    else if (fitsline[i]==(char)'.') 
+    if (fitsline[i]==(char)'.') 
       {
       fixexponent(fitsline);
       *((double *)ptr) = atof(fitsline+j);

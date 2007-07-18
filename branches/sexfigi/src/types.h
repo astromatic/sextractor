@@ -295,7 +295,7 @@ typedef struct
 /* ---- Profile-fitting */
   float		*prof_vector;			/* Profile parameters */
   float		prof_chi2;			/* Reduced chi2 */
-  BYTE		prof_flag;				/* Profile-fitting flags */
+  BYTE		prof_flag;			/* Profile-fitting flags */
   short		prof_niter;			/* # of prof-fitting iter. */
   float		flux_prof;			/* Flux from profile-fitting */
   float		fluxerr_prof;			/* RMS error on profile flux */

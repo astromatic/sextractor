@@ -9,7 +9,7 @@
 *
 *	Contents:	general functions for handling FITS file headers.
 *
-*	Last modify:	25/09/2004
+*	Last modify:	20/06/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -315,7 +315,7 @@ INPUT	Table structure.
 OUTPUT	RETURN_OK if tab is a binary table, or RETURN_ERROR otherwise.
 NOTES	The headbuf pointer in the tabstruct might be reallocated.
 AUTHOR	E. Bertin (IAP & Leiden observatory)
-VERSION	25/09/2004
+VERSION	11/06/2007
  ***/
 int	update_head(tabstruct *tab)
 
@@ -353,13 +353,13 @@ int	update_head(tabstruct *tab)
     }
 
 /*First, remove all existing TTYPE, TFORM, etc...*/
-  fitsremove(tab->headbuf, "TTYPE???");
-  fitsremove(tab->headbuf, "TFORM???");
-  fitsremove(tab->headbuf, "TUNIT???");
-  fitsremove(tab->headbuf, "TZERO???");
-  fitsremove(tab->headbuf, "TSCAL???");
-  fitsremove(tab->headbuf, "TDIM???");
-  fitsremove(tab->headbuf, "TDISP???");
+  removekeywordfrom_head(tab, "TTYPE???");
+  removekeywordfrom_head(tab, "TFORM???");
+  removekeywordfrom_head(tab, "TUNIT???");
+  removekeywordfrom_head(tab, "TZERO???");
+  removekeywordfrom_head(tab, "TSCAL???");
+  removekeywordfrom_head(tab, "TDIM???");
+  removekeywordfrom_head(tab, "TDISP???");
 
 
 /*Change NAXIS1 in order to take into account changes in width*/
@@ -465,8 +465,8 @@ PURPOSE	Update a FITS header to make it "primary" (not extension)
 INPUT	Table structure.
 OUTPUT	RETURN_OK if tab header was already primary, or RETURN_ERROR otherwise.
 NOTES	-.
-AUTHOR	E. Bertin (IAP & Leiden observatory)
-VERSION	08/05/2002
+AUTHOR	E. Bertin (IAP & Leiden observatory) C. Marmo (IAP)
+VERSION	11/06/2007
  ***/
 int	prim_head(tabstruct *tab)
 
@@ -477,8 +477,13 @@ int	prim_head(tabstruct *tab)
       {
       strncpy(tab->headbuf, "SIMPLE  =                    T  "
 	"/ This is a FITS file                            ", 80);
+/* fitsverify 4.13 (CFITSIO V3.002) return an error
+   if PCOUNT and GCOUNT are in a primary header (23/05/2007)*/
+      removekeywordfrom_head(tab, "PCOUNT");      
+      removekeywordfrom_head(tab, "GCOUNT");      
       return RETURN_ERROR;
       }
+
   return RETURN_OK;
   }
 
@@ -490,8 +495,8 @@ INPUT	Table structure.
 OUTPUT	RETURN_OK if tab header was already extension, or RETURN_ERROR
 	otherwise.
 NOTES	-.
-AUTHOR	E. Bertin (IAP & Leiden observatory)
-VERSION	08/05/2002
+AUTHOR	E. Bertin (IAP & Leiden observatory) C. Marmo (IAP)
+VERSION	20/06/2007
  ***/
 int	ext_head(tabstruct *tab)
 
@@ -502,6 +507,15 @@ int	ext_head(tabstruct *tab)
       {
       strncpy(tab->headbuf, "XTENSION= 'IMAGE   '           "
 		"/ Image extension                                ", 80);
+/* fitsverify 4.13 (CFITSIO V3.002) return an error
+   if EXTEND are in an extension header (20/06/2007)*/
+      removekeywordfrom_head(tab, "EXTEND");      
+/* fitsverify 4.13 (CFITSIO V3.002) return an error
+   if PCOUNT and GCOUNT are not in the extension header (23/05/2007) */
+      addkeywordto_head(tab, "PCOUNT  ", "required keyword; must = 0");      
+      addkeywordto_head(tab, "GCOUNT  ", "required keyword; must = 1");
+      fitswrite(tab->headbuf,"PCOUNT  ", &tab->pcount, H_INT, T_LONG);     
+      fitswrite(tab->headbuf,"GCOUNT  ", &tab->gcount, H_INT, T_LONG);
       return RETURN_ERROR;
       }
 
@@ -561,6 +575,36 @@ int	addkeywordto_head(tabstruct *tab, char *keyword, char *comment)
   n = fitsadd(tab->headbuf, keyword, comment);
 
   return n;
+  }
+
+
+/****** removekeywordfrom_head ************************************************
+PROTO	int removekeywordfrom_head(tabstruct *tab, char *keyword)
+PURPOSE	Remove a keyword from a table header.
+INPUT	Table structure,
+	String containing the keyword.
+OUTPUT	RETURN_OK if the keyword was found, RETURN_ERROR otherwise..
+NOTES	The headbuf pointer in the tabstruct might be reallocated.
+        '?' wildcard allowed; Don't remove the ``END'' keyword with this!!!
+AUTHOR	E. Bertin (IAP)
+VERSION	11/06/2007
+ ***/
+int	removekeywordfrom_head(tabstruct *tab, char *keyword)
+
+  {
+   int	nb;
+
+  if (fitsremove(tab->headbuf, keyword) == RETURN_OK)
+    {
+    if ((nb=fitsfind(tab->headbuf, "END     ")/(FBSIZE/80)+1) < tab->headnblock)
+      {
+      tab->headnblock = nb;
+      QREALLOC(tab->headbuf, char, tab->headnblock*FBSIZE);
+      }
+    return RETURN_OK;
+    }
+  else
+    return RETURN_ERROR;
   }
 
 
