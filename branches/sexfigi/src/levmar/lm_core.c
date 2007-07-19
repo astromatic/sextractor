@@ -594,7 +594,7 @@ const int nm=n*m;
       //p_L2=sqrt(p_L2);
     }
 
-#if 1
+#if 0
 if(1){
   printf("Current estimate: ");
   for(i=0; i<m; ++i)

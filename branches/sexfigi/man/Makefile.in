@@ -39,9 +39,11 @@ subdir = man
 DIST_COMMON = $(dist_man_MANS) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in $(srcdir)/sex.1.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/acx_fftw.m4 \
-	$(top_srcdir)/acx_prog_cc_optim.m4 \
-	$(top_srcdir)/acx_pthread.m4 $(top_srcdir)/configure.ac
+am__aclocal_m4_deps = $(top_srcdir)/acx_atlas.m4 \
+	$(top_srcdir)/acx_fftw.m4 $(top_srcdir)/acx_prog_cc_optim.m4 \
+	$(top_srcdir)/acx_pthread.m4 \
+	$(top_srcdir)/acx_urbi_resolve_dir.m4 \
+	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(SHELL) $(top_srcdir)/autoconf/mkinstalldirs
@@ -59,6 +61,8 @@ ACLOCAL = @ACLOCAL@
 AMDEP_FALSE = @AMDEP_FALSE@
 AMDEP_TRUE = @AMDEP_TRUE@
 AMTAR = @AMTAR@
+ATLAS_CFLAGS = @ATLAS_CFLAGS@
+ATLAS_LIBS = @ATLAS_LIBS@
 AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@

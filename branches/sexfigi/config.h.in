@@ -1,10 +1,31 @@
 /* config.h.in.  Generated from configure.ac by autoheader.  */
 
+/* BLAS header filename. */
+#undef ATLAS_BLAS_H
+
+/* LAPACK header filename. */
+#undef ATLAS_LAPACK_H
+
 /* Archive creation date */
 #undef DATE
 
 /* Define to 1 if you have the `atexit' function. */
 #undef HAVE_ATEXIT
+
+/* Define if you have the ATLAS libraries and header files. */
+#undef HAVE_ATLAS
+
+/* Define to 1 if you have the <atlas/cblas.h> header file. */
+#undef HAVE_ATLAS_CBLAS_H
+
+/* Define to 1 if you have the <atlas/clapack.h> header file. */
+#undef HAVE_ATLAS_CLAPACK_H
+
+/* Define to 1 if you have the <cblas.h> header file. */
+#undef HAVE_CBLAS_H
+
+/* Define to 1 if you have the <clapack.h> header file. */
+#undef HAVE_CLAPACK_H
 
 /* Define to 1 if you have the <fcntl.h> header file. */
 #undef HAVE_FCNTL_H
@@ -34,6 +55,12 @@
 
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
+
+/* Define to 1 if you have the `cblas' library (-lcblas). */
+#undef HAVE_LIBCBLAS
+
+/* Define to 1 if you have the `lapack' library (-llapack). */
+#undef HAVE_LIBLAPACK
 
 /* Define to 1 if you have the `m' library (-lm). */
 #undef HAVE_LIBM

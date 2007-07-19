@@ -6,7 +6,7 @@ define([AC_CACHE_LOAD],)
 define([AC_CACHE_SAVE],)
 
 # This is your standard Bertin source code...
-AC_INIT(sextractor, 2.6.1, [bertin@iap.fr])
+AC_INIT(sextractor, 2.6.2, [bertin@iap.fr])
 AC_CONFIG_SRCDIR(src/makeit.c)
 AC_CONFIG_AUX_DIR(autoconf)
 AM_CONFIG_HEADER(config.h)
@@ -20,9 +20,11 @@ AC_SUBST(DATE2, "$date2")
 AC_SUBST(DATE3, "$date3")
 
 # Include macros
+sinclude(acx_atlas.m4)
 sinclude(acx_fftw.m4)
 sinclude(acx_prog_cc_optim.m4)
 sinclude(acx_pthread.m4)
+sinclude(acx_urbi_resolve_dir.m4)
 
 # Display pakage and version number
 AC_MSG_RESULT([*********** Configuring:  $PACKAGE $VERSION ($date) **********])
@@ -104,24 +106,20 @@ AC_FUNC_STAT
 AC_FUNC_STRFTIME
 AC_CHECK_FUNCS([atexit getenv memcpy memmove memset mkdir munmap strstr])
 
+# Check support for large files
+AC_SYS_LARGEFILE
+AC_FUNC_FSEEKO
+
 # Set the data directory to a true absolute path
-if test "x${datadir}" = 'x${prefix}/share'; then
-  if test "x${prefix}" = "xNONE"; then
-    datadir2="${ac_default_prefix}/share"
-  else
-    datadir2="${prefix}/share"
-  fi
-elif test "x${datadir}" = 'x${datarootdir}'; then
-  if test "x${datarootdir}" = 'x${prefix}/share'; then
-    if test "x${prefix}" = "xNONE"; then
-      datadir2="${ac_default_prefix}/share"
-    else
-      datadir2="${prefix}/share"
-    fi
-  fi
-else
-  datadir2="${datadir}"
-fi
+datadir2=$(URBI_RESOLVE_DIR([$datadir]))
+
+# Provide a special option for ATLAS
+AC_ARG_WITH(atlas_libpath,
+        [AC_HELP_STRING([--with-atlas_libpath=<ATLAS library path>],
+        [Provide an alternative path to the ATLAS library])],
+    atlas_libdir=$withval,
+    atlas_libdir=""
+    )
 
 # Provide a special option for the default XSLT URL
 AC_ARG_WITH(xsl_url,
@@ -146,11 +144,6 @@ AC_ARG_ENABLE(threads,
     n_pthreads=1
     use_pthreads=no
     )
-
-
-# Check support for large files
-AC_SYS_LARGEFILE
-AC_FUNC_FSEEKO
 
 ################# Actions to complete in case of multhreading ################
 AC_DEFINE_UNQUOTED(THREADS_NMAX, $n_pthreads,[Maximum number of POSIX threads])
@@ -181,6 +174,18 @@ else
   AC_MSG_ERROR([FFTW library not found! Exiting.])
 fi
 
+################## handle the ATLAS library(linear algebra) ##################
+ACX_ATLAS($atlas_libdir,[use_atlas=yes],[use_atlas=no])
+if test "$use_atlas" = "yes"; then
+  if test "$use_pthreads" = "yes"; then
+    LIBS="-llapack -lptcblas -lcblas -latlas $LIBS"
+  else
+    LIBS="-llapack -lcblas -latlas $LIBS"
+  fi
+else
+  AC_MSG_ERROR([CBLAS/LAPack library not found! Exiting.])
+fi
+
 # Special optimization options for the INTEL C compiler
 if test $use_icc = "yes" -a $CC = "icc"; then
   CFLAGS="$CFLAGS -O -axWP -ip -unroll"
@@ -209,8 +214,11 @@ LDFLAGS="$myldflags"
 fi
 
 # Display compiler and linker flags
-AC_MSG_RESULT([I will compile using:  $CC $CFLAGS])
-AC_MSG_RESULT([I will link using:     $CC $LDFLAGS $LIBS])
+AC_MSG_RESULT([***************************************************************])
+AC_MSG_RESULT([Compile cmdline:  $CC $CFLAGS])
+AC_MSG_RESULT([Link    cmdline:  $CC $LDFLAGS $LIBS])
+AC_MSG_RESULT([Default XSLT URL: $xsl_url])
+AC_MSG_RESULT([***************************************************************])
 
 AC_CONFIG_FILES([
 Makefile

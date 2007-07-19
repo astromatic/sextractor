@@ -802,6 +802,19 @@ int info, rank, worksz, *iwork, iworksz;
 #else // no LAPACK
 
 /* precision-specific definitions */
+/* Added by EB */
+#ifdef HAVE_CONFIG_H
+#include        "config.h"
+#endif
+#include        ATLAS_LAPACK_H
+#define ATLAS_POTRF	LM_CAT_(clapack_, LM_ADD_PREFIX(potrf))
+#define ATLAS_POTRS	LM_CAT_(clapack_, LM_ADD_PREFIX(potrs))
+#define GETRF LM_ADD_PREFIX(getrf_)
+#define GETRS LM_ADD_PREFIX(getrs_)
+extern int GETRF(int *m, int *n, LM_REAL *a, int *lda, int *ipiv, int *info);
+extern int GETRS(char *trans, int *n, int *nrhs, LM_REAL *a, int *lda, int *ipiv, LM_REAL *b, int *ldb, int *info);
+/* End added by EB */
+
 #define AX_EQ_B_LU LM_ADD_PREFIX(Ax_eq_b_LU_noLapack)
 
 /*
@@ -822,144 +835,102 @@ int info, rank, worksz, *iwork, iworksz;
  */
 int AX_EQ_B_LU(LM_REAL *A, LM_REAL *B, LM_REAL *x, int m)
 {
-__STATIC__ void *buf=NULL;
+
+__STATIC__ LM_REAL *buf=NULL;
 __STATIC__ int buf_sz=0;
 
-register int i, j, k;
-int *idx, maxi=-1, idx_sz, a_sz, work_sz, tot_sz;
-LM_REAL *a, *work, max, sum, tmp;
-
+int a_sz, ipiv_sz, b_sz, work_sz, tot_sz;
+register int i, j;
+int info, *ipiv;
+LM_REAL *a, *b, *work;
+   
 #ifdef LINSOLVERS_RETAIN_MEMORY
     if(!A){
-      if(buf){
-        free(buf);
-        buf = NULL;
-        }
+      if(buf) free(buf);
+      buf=NULL;
       buf_sz=0;
       return 1;
     }
 #endif /* LINSOLVERS_RETAIN_MEMORY */
    
-  /* calculate required memory size */
-  idx_sz=m;
-  a_sz=m*m;
-  work_sz=m;
-  tot_sz=idx_sz*sizeof(int) + (a_sz+work_sz)*sizeof(LM_REAL);
+    /* calculate required memory size */
+    ipiv_sz=m;
+    a_sz=m*m;
+    b_sz=m;
+    work_sz=100*m; /* this is probably too much */
+    tot_sz=ipiv_sz + a_sz + b_sz + work_sz; // ipiv_sz counted as LM_REAL here, no harm is done though
 
 #ifdef LINSOLVERS_RETAIN_MEMORY
-  if(tot_sz>buf_sz){ /* insufficient memory, allocate a "big" memory chunk at once */
-    if(buf) free(buf); /* free previously allocated memory */
+    if(tot_sz>buf_sz){ /* insufficient memory, allocate a "big" memory chunk at once */
+      if(buf) free(buf); /* free previously allocated memory */
 
-    buf_sz=tot_sz;
-    buf=(void *)malloc(tot_sz);
-    if(!buf){
-      fprintf(stderr, RCAT("memory allocation in ", AX_EQ_B_LU) "() failed!\n");
-      exit(1);
+      buf_sz=tot_sz;
+      buf=(LM_REAL *)malloc(buf_sz*sizeof(LM_REAL));
+      if(!buf){
+        fprintf(stderr, RCAT("memory allocation in ", AX_EQ_B_LU) "() failed!\n");
+        exit(1);
+      }
     }
-  }
 #else
-    buf_sz=tot_sz;
-    buf=(void *)malloc(tot_sz);
-    if(!buf){
-      fprintf(stderr, RCAT("memory allocation in ", AX_EQ_B_LU) "() failed!\n");
-      exit(1);
-    }
+      buf_sz=tot_sz;
+      buf=(LM_REAL *)malloc(buf_sz*sizeof(LM_REAL));
+      if(!buf){
+        fprintf(stderr, RCAT("memory allocation in ", AX_EQ_B_LU) "() failed!\n");
+        exit(1);
+      }
 #endif /* LINSOLVERS_RETAIN_MEMORY */
 
-  idx=(int *)buf;
-  a=(LM_REAL *)(idx + idx_sz);
-  work=a + a_sz;
+    ipiv=(int *)buf;
+    a=(LM_REAL *)(ipiv + ipiv_sz);
+    b=a+a_sz;
+    work=b+b_sz;
 
-  /* avoid destroying A, B by copying them to a, x resp. */
-  for(i=0; i<m; ++i){ // B & 1st row of A
-    a[i]=A[i];
-    x[i]=B[i];
-  }
-  for(  ; i<a_sz; ++i) a[i]=A[i]; // copy A's remaining rows
-  /****
-  for(i=0; i<m; ++i){
-    for(j=0; j<m; ++j)
-      a[i*m+j]=A[i*m+j];
-    x[i]=B[i];
-  }
-  ****/
+    /* store A (column major!) into a and B into b */
+	  for(i=0; i<m; i++){
+		  for(j=0; j<m; j++)
+        a[i+j*m]=A[i*m+j];
 
-  /* compute the LU decomposition of a row permutation of matrix a; the permutation itself is saved in idx[] */
-	for(i=0; i<m; ++i){
-		max=0.0;
-		for(j=0; j<m; ++j)
-			if((tmp=FABS(a[i*m+j]))>max)
-        max=tmp;
-		  if(max==0.0){
-        fprintf(stderr, RCAT("Singular matrix A in ", AX_EQ_B_LU) "()!\n");
+      b[i]=B[i];
+    }
+
+  /* LU decomposition for A */
+        info = ATLAS_POTRF(CblasRowMajor, CblasUpper, m, a, m);
+	if(info!=0){
+		if(info<0){
+      fprintf(stderr, RCAT(RCAT("argument %d of ", GETRF) " illegal in ", AX_EQ_B_LU) "()\n", -info);
+			exit(1);
+		}
+		else{
+      fprintf(stderr, RCAT(RCAT("singular matrix A for ", GETRF) " in ", AX_EQ_B_LU) "()\n");
 #ifndef LINSOLVERS_RETAIN_MEMORY
-        free(buf);
+      free(buf);
 #endif
 
-        return 0;
-      }
-		  work[i]=CNST(1.0)/max;
-	}
-
-	for(j=0; j<m; ++j){
-		for(i=0; i<j; ++i){
-			sum=a[i*m+j];
-			for(k=0; k<i; ++k)
-        sum-=a[i*m+k]*a[k*m+j];
-			a[i*m+j]=sum;
-		}
-		max=0.0;
-		for(i=j; i<m; ++i){
-			sum=a[i*m+j];
-			for(k=0; k<j; ++k)
-        sum-=a[i*m+k]*a[k*m+j];
-			a[i*m+j]=sum;
-			if((tmp=work[i]*FABS(sum))>=max){
-				max=tmp;
-				maxi=i;
-			}
-		}
-		if(j!=maxi){
-			for(k=0; k<m; ++k){
-				tmp=a[maxi*m+k];
-				a[maxi*m+k]=a[j*m+k];
-				a[j*m+k]=tmp;
-			}
-			work[maxi]=work[j];
-		}
-		idx[j]=maxi;
-		if(a[j*m+j]==0.0)
-      a[j*m+j]=LM_REAL_EPSILON;
-		if(j!=m-1){
-			tmp=CNST(1.0)/(a[j*m+j]);
-			for(i=j+1; i<m; ++i)
-        a[i*m+j]*=tmp;
+			return 0;
 		}
 	}
 
-  /* The decomposition has now replaced a. Solve the linear system using
-   * forward and back substitution
-   */
-	for(i=k=0; i<m; ++i){
-		j=idx[i];
-		sum=x[j];
-		x[j]=x[i];
-		if(k!=0)
-			for(j=k-1; j<i; ++j)
-        sum-=a[i*m+j]*x[j];
-		else
-      if(sum!=0.0)
-			  k=i+1;
-		x[i]=sum;
+  /* solve the system with the computed LU */
+        info = ATLAS_POTRS(CblasRowMajor, CblasUpper, m, 1, a, m, b, m);
+	if(info!=0){
+		if(info<0){
+			fprintf(stderr, RCAT(RCAT("argument %d of ", GETRS) " illegal in ", AX_EQ_B_LU) "()\n", -info);
+			exit(1);
+		}
+		else{
+			fprintf(stderr, RCAT(RCAT("unknown error for ", GETRS) " in ", AX_EQ_B_LU) "()\n");
+#ifndef LINSOLVERS_RETAIN_MEMORY
+      free(buf);
+#endif
+
+			return 0;
+		}
 	}
 
-	for(i=m-1; i>=0; --i){
-		sum=x[i];
-		for(j=i+1; j<m; ++j)
-      sum-=a[i*m+j]*x[j];
-		x[i]=sum/a[i*m+i];
+	/* copy the result in x */
+	for(i=0; i<m; i++){
+		x[i]=b[i];
 	}
-
 #ifndef LINSOLVERS_RETAIN_MEMORY
   free(buf);
 #endif
@@ -969,5 +940,8 @@ LM_REAL *a, *work, max, sum, tmp;
 
 /* undefine all. IT MUST REMAIN IN THIS POSITION IN FILE */
 #undef AX_EQ_B_LU
-
+/* Added by EB */
+#undef GETRF
+#undef GETRS
+/* End Added by EB */
 #endif /* HAVE_LAPACK */

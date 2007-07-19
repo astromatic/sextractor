@@ -9,7 +9,7 @@
 *
 *	Contents:	Include file for profit.c.
 *
-*	Last modify:	18/07/2007
+*	Last modify:	19/07/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -47,16 +47,16 @@ typedef enum	{INTERP_NEARESTNEIGHBOUR, INTERP_BILINEAR, INTERP_LANCZOS2,
 		INTERP_LANCZOS3, INTERP_LANCZOS4}       interpenum;
 
 typedef enum	{PARAM_BACK, PARAM_X, PARAM_Y,
-		PARAM_DEVAUC_AMP, PARAM_DEVAUC_MAJ, PARAM_DEVAUC_ASPECT,
+		PARAM_DEVAUC_FLUX, PARAM_DEVAUC_MAJ, PARAM_DEVAUC_ASPECT,
 		PARAM_DEVAUC_POSANG,
-		PARAM_EXPO_AMP, PARAM_EXPO_MAJ, PARAM_EXPO_ASPECT,
+		PARAM_EXPO_FLUX, PARAM_EXPO_MAJ, PARAM_EXPO_ASPECT,
 		PARAM_EXPO_POSANG,
-		PARAM_SERSIC_AMP, PARAM_SERSIC_MAJ, PARAM_SERSIC_ASPECT,
+		PARAM_SERSIC_FLUX, PARAM_SERSIC_MAJ, PARAM_SERSIC_ASPECT,
 		PARAM_SERSIC_POSANG, PARAM_SERSIC_N,
-		PARAM_ARMS_AMP, PARAM_ARMS_AMP2, PARAM_ARMS_SCALE,
+		PARAM_ARMS_FLUX, PARAM_ARMS_QUADFRAC, PARAM_ARMS_SCALE,
 		PARAM_ARMS_START, PARAM_ARMS_POSANG, PARAM_ARMS_PITCH,
 		PARAM_ARMS_WIDTH,
-		PARAM_BAR_AMP, PARAM_BAR_ASPECT, PARAM_BAR_POSANG,
+		PARAM_BAR_FLUX, PARAM_BAR_ASPECT, PARAM_BAR_POSANG,
 		PARAM_NPARAM}	paramenum;
 
 /*--------------------------- structure definitions -------------------------*/
@@ -70,12 +70,12 @@ typedef struct
   double	typscale;		/* Typical scale in prof pixels */
   double	scaling;		/* Scaling factor for lengths */
 /* Generic presentation parameters */
-  double	*amp;			/* Pointer to amplitude */
+  double	*flux;			/* Pointer to integrated flux */
   double	*x[2];			/* Pointer to coordinate vector */
   double	*scale;			/* Pointer to scaling vector */
   double	*aspect;		/* Pointer to aspect ratio */
   double	*posangle;		/* Pointer to pos. angle (CCW/NAXIS1)*/
-  double	*armamp, *armamp2;	/* Pointers to arm amplitudes */
+  double	*armsquadfrac;		/* Pointer to the quad. arm fraction */
   double	*armscale;		/* Arm scalelength relative to disk */
   double	*armstart;		/* Pointer to arm starting radius */
   double	*armposang;		/* Pointer to arm position angle */

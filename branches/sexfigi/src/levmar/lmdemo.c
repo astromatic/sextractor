@@ -579,9 +579,9 @@ char *probname[]={
       //9; // Hock - Schittkowski problem 51
 #else // no LAPACK
 #ifdef _MSC_VER
-#pragma message("LAPACK not available, some test problems cannot be used")
+// #pragma message("LAPACK not available, some test problems cannot be used")
 #else
-#warning LAPACK not available, some test problems cannot be used
+// #warning LAPACK not available, some test problems cannot be used
 #endif // _MSC_VER
 
 #endif /* HAVE_LAPACK */
