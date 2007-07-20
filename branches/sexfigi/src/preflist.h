@@ -9,7 +9,7 @@
 *
 *	Contents:	Keywords for the configuration file.
 *
-*	Last modify:	25/06/2007
+*	Last modify:	20/07/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -119,7 +119,8 @@
    {""}, 2,2, &prefs.npetroparam},
   {"PIXEL_SCALE", P_FLOAT, &prefs.pixel_scale, 0,0, 0.0, 1e+10},
   {"PROFILE_TYPE", P_KEYLIST, prefs.prof_type, 0,0, 0.0,0.0,
-   {"BACKGROUND","SERSIC","DEVAUCOULEURS", "EXPONENTIAL", "ARMS", "BAR",""},
+   {"BACKGROUND","SERSIC","DEVAUCOULEURS", "EXPONENTIAL", "ARMS", "BAR",
+	"INTRING", ""},
     1, 6, &prefs.nprof_type},
   {"PSF_NAME", P_STRINGLIST, prefs.psf_name, 0,0, 0.0,0.0,
    {""}, 1, 2, &prefs.npsf_name},	/*?*/

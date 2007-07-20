@@ -9,7 +9,7 @@
 *
 *	Contents:	Include file for profit.c.
 *
-*	Last modify:	19/07/2007
+*	Last modify:	20/07/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -40,7 +40,7 @@ One must have:	PROFIT_NITER > 0
 /*--------------------------------- typedefs --------------------------------*/
 
 typedef enum		{PROF_BACK, PROF_SERSIC, PROF_DEVAUCOULEURS,
-			PROF_EXPONENTIAL, PROF_ARMS, PROF_BAR,
+			PROF_EXPONENTIAL, PROF_ARMS, PROF_BAR, PROF_INRING,
 			PROF_SERSIC_TABEX, PROF_NPROF}
 				proftypenum; /* Profile code */
 typedef enum	{INTERP_NEARESTNEIGHBOUR, INTERP_BILINEAR, INTERP_LANCZOS2,
@@ -57,6 +57,7 @@ typedef enum	{PARAM_BACK, PARAM_X, PARAM_Y,
 		PARAM_ARMS_START, PARAM_ARMS_POSANG, PARAM_ARMS_PITCH,
 		PARAM_ARMS_WIDTH,
 		PARAM_BAR_FLUX, PARAM_BAR_ASPECT, PARAM_BAR_POSANG,
+		PARAM_INRING_FLUX, PARAM_INRING_WIDTH,
 		PARAM_NPARAM}	paramenum;
 
 /*--------------------------- structure definitions -------------------------*/
@@ -70,20 +71,18 @@ typedef struct
   double	typscale;		/* Typical scale in prof pixels */
   double	scaling;		/* Scaling factor for lengths */
 /* Generic presentation parameters */
-  double	*flux;			/* Pointer to integrated flux */
-  double	*x[2];			/* Pointer to coordinate vector */
-  double	*scale;			/* Pointer to scaling vector */
-  double	*aspect;		/* Pointer to aspect ratio */
-  double	*posangle;		/* Pointer to pos. angle (CCW/NAXIS1)*/
-  double	*armsquadfrac;		/* Pointer to the quad. arm fraction */
-  double	*armscale;		/* Arm scalelength relative to disk */
-  double	*armstart;		/* Pointer to arm starting radius */
-  double	*armposang;		/* Pointer to arm position angle */
-  double	*armpitch;		/* Pointer to arm pitch */
-  double	*armwidth;		/* Pointer to arm width */
-  double	*baramp;		/* Pointer to bar amplitude */
-  double	*baraspect;		/* Pointer to bar aspect ratio */
-  double	*barposang;		/* Pointer to bar position angle */
+  double	*flux;			/* Integrated flux */
+  double	*x[2];			/* Coordinate vector */
+  double	*scale;			/* Scaling vector */
+  double	*aspect;		/* Aspect ratio */
+  double	*posangle;		/* Position angle (CCW/NAXIS1)*/
+  double	*featfrac;		/* Feature flux fraction */
+  double	*featscale;		/* Feature relative scalelength */
+  double	*featstart;		/* Feature relative starting radius */
+  double	*featposang;		/* Feature position angle */
+  double	*featpitch;		/* Feature pitch */
+  double	*featwidth;		/* Feature width */
+  double	*feataspect;		/* Feature aspect ratio */
   double	*extra[PROFIT_MAXEXTRA];/* Parameters along extra-dimension */
   double	extrazero[PROFIT_MAXEXTRA]; /* Zero-point along extra-dim. */
   double	extrascale[PROFIT_MAXEXTRA]; /* Scaling along extra-dim. */
