@@ -9,7 +9,7 @@
 *
 *	Contents:	Include file for profit.c.
 *
-*	Last modify:	20/07/2007
+*	Last modify:	23/07/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -21,10 +21,15 @@
 
 #define		PROFIT_FLIPPED	0x0001
 
+/*-------------------------------- macros -----------------------------------*/
+
+#define		PROFIT_POW(x,a)		(x>0.01? exp(a*log(x)) : pow(x,a))
+#define		PROFIT_POWF(x,a)	(x>0.01? expf(a*logf(x)) : powf(x,a))
+
 /*----------------------------- Internal constants --------------------------*/
 
 #define	PROFIT_MAXITER	1000	/* Max. nb of iterations in profile fitting */
-#define	PROFIT_OVERSAMP	1	/* Profile oversampling factor on each axis */
+#define	PROFIT_OVERSAMP	5	/* Max. profile oversamp. factor on each axis */
 #define	PROFIT_MAXPROF	8	/* Max. nb of profile components */
 #define	PROFIT_DYNPARAM	10.0	/* Dynamic compression param. in sigma units */
 #define	PROFIT_BARXFADE	0.1	/* Fract. of bar length crossfaded with arms */
@@ -107,7 +112,7 @@ typedef struct
   struct psf	*psf;		/* PSF */
   double	*psfdft;	/* Compressed Fourier Transform of the PSF */
   double	*modpix;	/* Full res. pixmap of the complete model */
-  double	*pmodpix;	/* Full res. pixmap of the partial model */
+  float		*pmodpix;	/* Full res. pixmap of the partial model */
   int		modnaxisn[2];	/* Dimensions along each axis */
   PIXTYPE	*lmodpix;	/* Low resolution pixmap of the model */
   PIXTYPE	*objpix;	/* Copy of object pixmap */

@@ -182,7 +182,7 @@ void	profit_fit(profitstruct *profit,
 /* Allocate memory for the complete model */
   QCALLOC(profit->modpix, double, profit->modnaxisn[0]*profit->modnaxisn[1]);
 /* Allocate memory for the partial model */
-  QMALLOC(profit->pmodpix, double, profit->modnaxisn[0]*profit->modnaxisn[1]);
+  QMALLOC(profit->pmodpix, float, profit->modnaxisn[0]*profit->modnaxisn[1]);
 
 /* Set initial guesses and boundaries */
   obj2->prof_flag = 0;
@@ -1371,20 +1371,22 @@ INPUT	Profile structure,
 	profile-fitting structure.
 OUTPUT	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	19/07/2007
+VERSION	23/07/2007
  ***/
 void	prof_add(profstruct *prof, profitstruct *profit)
   {
    double	posin[PROFIT_MAXEXTRA], posout[2], dnaxisn[2],
-		*pixin, *pixout,
+		*pixout,
+		flux,fluxfac;
+   float	*pixin,
 		amp,ctheta,stheta,cd11,cd12,cd21,cd22, dcd11,dcd21, dx1,dx2,
 		x1,x10,x2, x1cin,x2cin, x1cout,x2cout, xscale,yscale, saspect,
 		x1in,x2in, odx2, ostep,
-		rh, re2, n,k, hinvn, x1t,x2t, ca,sa, u,
-		armamp,arm2amp, armrdphidr, posang, width, invwidth2, arh,
+		n,k, hinvn, x1t,x2t, ca,sa, u,
+		armamp,arm2amp, armrdphidr, posang, width, invwidth2,
 		r, r2, rmin, r2min, r2minxin, r2minxout, rmax, r2max, invr2xdif,
-		val, theta, thresh, flux,fluxfac;
-   int		npix,
+		val, theta, thresh, ra,rb;
+   int		npix, noversamp,
 		d,e,i, ix1,ix2, idx1,idx2;
 
   npix = profit->modnaxisn[0]*profit->modnaxisn[1];
@@ -1399,14 +1401,15 @@ void	prof_add(profstruct *prof, profitstruct *profit)
     }
 
 /* Compute Profile CD matrix */
-  ostep = 1.0/PROFIT_OVERSAMP;
   ctheta = cos(*prof->posangle*DEG);
   stheta = sin(*prof->posangle*DEG);
   saspect = sqrt(fabs(*prof->aspect));
   xscale = (*prof->scale==0.0)?
-			0.0 : fabs(saspect*prof->scaling / *prof->scale);
+			0.0 : fabs(saspect*prof->scaling
+				/ (*prof->scale*prof->typscale));
   yscale = (*prof->scale*saspect == 0.0)?
-		0.0 : fabs(prof->scaling / (*prof->scale*saspect));
+		0.0 : fabs(prof->scaling
+				/ (*prof->scale*prof->typscale*saspect));
   cd11 = xscale*ctheta;
   cd12 = xscale*stheta;
   cd21 =-yscale*stheta;
@@ -1423,10 +1426,9 @@ void	prof_add(profstruct *prof, profitstruct *profit)
   switch(prof->code)
     {
     case PROF_SERSIC:
-      re2 = prof->typscale*prof->typscale;
       n = fabs(*prof->extra[0]);
-      k = -1.0/3.0 + 2.0*n + 4.0/(405.0*n) + 46.0/(25515.0*n*n)
-		+ 131.0/(1148175*n*n*n);
+      k = 1.0/3.0 - 2.0*n - 4.0/(405.0*n) - 46.0/(25515.0*n*n)
+		- 131.0/(1148175*n*n*n);
       hinvn = 0.5/n;
 /*---- The consequence of sampling on flux is compensated by PSF normalisation*/
       x10 = -x1cout - dx1 + 0.5*(ostep-1.0);
@@ -1437,25 +1439,36 @@ void	prof_add(profstruct *prof, profitstruct *profit)
         x1 = x10;
         for (ix1=profit->modnaxisn[0]; ix1--; x1+=1.0)
           {
-          val = 0.0;
-          odx2 = 0.5*(ostep-1.0);
-          for (idx2=PROFIT_OVERSAMP; idx2--; odx2+=ostep)
+          x1in = cd12*x2 + cd11*x1;
+          x2in = cd22*x2 + cd21*x1;
+          ra = x1in*x1in+x2in*x2in;
+          val = expf(k*PROFIT_POWF(ra,hinvn));
+          noversamp  = (int)(val*PROFIT_OVERSAMP+0.1);
+          if (noversamp < 2)
+            *(pixin++) = val;
+          else
             {
-            x1in = cd12*(x2+odx2) + cd11*x1;
-            x2in = cd22*(x2+odx2) + cd21*x1;
-            for (idx1=PROFIT_OVERSAMP; idx1--;)
+            ostep = 1.0/noversamp;
+            odx2 = 0.5*(ostep-1.0);
+            val = 0.0;
+            for (idx2=noversamp; idx2--; odx2+=ostep)
               {
-              val += exp(-k*pow((x1in*x1in+x2in*x2in)/re2,hinvn));
-              x1in += dcd11;
-              x2in += dcd21;
+              x1in = cd12*(x2+odx2) + cd11*x1;
+              x2in = cd22*(x2+odx2) + cd21*x1;
+              for (idx1=noversamp; idx1--;)
+                {
+                ra = x1in*x1in+x2in*x2in;
+                val += expf(k*PROFIT_POWF(ra,hinvn));
+                x1in += dcd11;
+                x2in += dcd21;
+                }
               }
+            *(pixin++) = val*ostep*ostep;
             }
-          *(pixin++) = val*ostep*ostep;
           }
         }
       break;
     case PROF_DEVAUCOULEURS:
-      re2 = prof->typscale*prof->typscale;
 /*---- The consequence of sampling on flux is compensated by PSF normalisation*/
       x1 = -x1cout - dx1;
       x2 = -x2cout - dx2;
@@ -1466,14 +1479,14 @@ void	prof_add(profstruct *prof, profitstruct *profit)
         x2in = cd22*x2 + cd21*x1;
         for (ix1=profit->modnaxisn[0]; ix1--;)
           {
-          *(pixin++) = exp(-7.6692*pow((x1in*x1in+x2in*x2in)/re2,0.125));
+          ra = x1in*x1in+x2in*x2in;
+          *(pixin++) = expf(-7.6692f*PROFIT_POWF(ra,0.125));
           x1in += cd11;
           x2in += cd21;
           }
         }
       break;
     case PROF_EXPONENTIAL:
-      rh = prof->typscale;
       x1 = -x1cout - dx1;
       x2 = -x2cout - dx2;
       pixin = profit->pmodpix;
@@ -1483,14 +1496,13 @@ void	prof_add(profstruct *prof, profitstruct *profit)
         x2in = cd22*x2 + cd21*x1;
         for (ix1=profit->modnaxisn[0]; ix1--;)
           {
-          *(pixin++) = exp(-sqrt(x1in*x1in+x2in*x2in)/rh);
+          *(pixin++) = exp(-sqrt(x1in*x1in+x2in*x2in));
           x1in += cd11;
           x2in += cd21;
           }
         }
       break;
     case PROF_ARMS:
-      rh = prof->typscale;
       r2min = *prof->featstart**prof->featstart;
       r2minxin = r2min * (1.0 - PROFIT_BARXFADE) * (1.0 - PROFIT_BARXFADE);
       r2minxout = r2min * (1.0 + PROFIT_BARXFADE) * (1.0 + PROFIT_BARXFADE);
@@ -1504,7 +1516,6 @@ void	prof_add(profstruct *prof, profitstruct *profit)
       posang = *prof->featposang*DEG;
       width = fabs(*prof->featwidth);
 width = 2.0;
-      arh = fabs(*prof->featscale**prof->featscale)*rh;
       x1 = -x1cout - dx1;
       x2 = -x2cout - dx2;
       pixin = profit->pmodpix;
@@ -1517,17 +1528,19 @@ width = 2.0;
           r2 = x1t*x1t+x2t*x2t;
           if (r2>r2minxin)
             {
-            u = log(r2/(rh*rh) + 0.00001);
+            u = logf(r2 + 0.00001);
             theta = armrdphidr*u+posang;
-            ca = cos(theta);
-            sa = sin(theta);
-            x1in = (x1t*ca - x2t*sa)/rh;
-            x2in = (x1t*sa + x2t*ca)/rh;
-            amp = exp(-sqrt(x1t*x1t+x2t*x2t)/arh);
+            ca = cosf(theta);
+            sa = sinf(theta);
+            x1in = (x1t*ca - x2t*sa);
+            x2in = (x1t*sa + x2t*ca);
+            amp = expf(-sqrtf(x1t*x1t+x2t*x2t));
             if (r2<r2minxout)
               amp *= (r2 - r2minxin)*invr2xdif;
-            *(pixin++) = amp * (armamp*pow(x1in*x1in/r2,width)
-				+ arm2amp*pow(x2in*x2in/r2,width));
+            ra = x1in*x1in/r2;
+            rb = x2in*x2in/r2;
+            *(pixin++) = amp * (armamp*PROFIT_POWF(ra,width)
+				+ arm2amp*PROFIT_POWF(rb,width));
             }
           else
             *(pixin++) = 0.0;
@@ -1537,7 +1550,6 @@ width = 2.0;
         }
       break;
     case PROF_BAR:
-      rh = prof->typscale;
       r2min = *prof->featstart**prof->featstart;
       r2minxin = r2min * (1.0 - PROFIT_BARXFADE) * (1.0 - PROFIT_BARXFADE);
       r2minxout = r2min * (1.0 + PROFIT_BARXFADE) * (1.0 + PROFIT_BARXFADE);
@@ -1547,8 +1559,8 @@ width = 2.0;
         invr2xdif = 1.0;
       invwidth2 = fabs(1.0 / (*prof->featstart**prof->feataspect));
       posang = *prof->featposang*DEG;
-      ca = cos(posang);
-      sa = sin(posang);
+      ca = cosf(posang);
+      sa = sinf(posang);
       x1 = -x1cout - dx1;
       x2 = -x2cout - dx2;
       pixin = profit->pmodpix;
@@ -1563,8 +1575,9 @@ width = 2.0;
             {
             x1in = x1t*ca - x2t*sa;
             x2in = invwidth2*(x1t*sa + x2t*ca);
-            *(pixin++) = (r2>r2minxin) ? (r2minxout - r2)*invr2xdif*exp(-x2in*x2in)
-				: exp(-x2in*x2in);
+            *(pixin++) = (r2>r2minxin) ?
+				(r2minxout - r2)*invr2xdif*expf(-x2in*x2in)
+				: expf(-x2in*x2in);
             }
           else
             *(pixin++) = 0.0;
@@ -1574,7 +1587,6 @@ width = 2.0;
         }
       break;
     case PROF_INRING:
-      rh = prof->typscale;
       rmin = *prof->featstart;
       r2minxin = *prof->featstart-4.0**prof->featwidth;
       if (r2minxin < 0.0)
@@ -1596,7 +1608,7 @@ width = 2.0;
           if (r2>r2minxin && r2<r2minxout)
             {
             r = sqrt(r2) - rmin;
-            *(pixin++) = exp(-invwidth2*r*r);
+            *(pixin++) = expf(-invwidth2*r*r);
             }
           else
             *(pixin++) = 0.0;
