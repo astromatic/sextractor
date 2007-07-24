@@ -9,7 +9,7 @@
 *
 *	Contents:	Include file for profit.c.
 *
-*	Last modify:	23/07/2007
+*	Last modify:	24/07/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -46,7 +46,7 @@ One must have:	PROFIT_NITER > 0
 
 typedef enum		{PROF_BACK, PROF_SERSIC, PROF_DEVAUCOULEURS,
 			PROF_EXPONENTIAL, PROF_ARMS, PROF_BAR, PROF_INRING,
-			PROF_SERSIC_TABEX, PROF_NPROF}
+			PROF_OUTRING, PROF_SERSIC_TABEX, PROF_NPROF}
 				proftypenum; /* Profile code */
 typedef enum	{INTERP_NEARESTNEIGHBOUR, INTERP_BILINEAR, INTERP_LANCZOS2,
 		INTERP_LANCZOS3, INTERP_LANCZOS4}       interpenum;
@@ -63,6 +63,7 @@ typedef enum	{PARAM_BACK, PARAM_X, PARAM_Y,
 		PARAM_ARMS_WIDTH,
 		PARAM_BAR_FLUX, PARAM_BAR_ASPECT, PARAM_BAR_POSANG,
 		PARAM_INRING_FLUX, PARAM_INRING_WIDTH,
+		PARAM_OUTRING_FLUX, PARAM_OUTRING_START, PARAM_OUTRING_WIDTH,
 		PARAM_NPARAM}	paramenum;
 
 /*--------------------------- structure definitions -------------------------*/
@@ -112,7 +113,7 @@ typedef struct
   struct psf	*psf;		/* PSF */
   double	*psfdft;	/* Compressed Fourier Transform of the PSF */
   double	*modpix;	/* Full res. pixmap of the complete model */
-  float		*pmodpix;	/* Full res. pixmap of the partial model */
+  double	*pmodpix;	/* Full res. pixmap of the partial model */
   int		modnaxisn[2];	/* Dimensions along each axis */
   PIXTYPE	*lmodpix;	/* Low resolution pixmap of the model */
   PIXTYPE	*objpix;	/* Copy of object pixmap */

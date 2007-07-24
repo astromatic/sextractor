@@ -9,7 +9,7 @@
 *
 *	Contents:	Fit an arbitrary profile combination to a detection.
 *
-*	Last modify:	18/07/2007
+*	Last modify:	24/07/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -939,7 +939,7 @@ INPUT	Pointer to the profit structure,
 	Upper boundary to the parameter.
 OUTPUT	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	19/07/2007
+VERSION	24/07/2007
  ***/
 void	profit_resetparams(profitstruct *profit, objstruct *obj,
 		obj2struct *obj2)
@@ -1033,7 +1033,7 @@ void	profit_resetparams(profitstruct *profit, objstruct *obj,
       case PARAM_ARMS_START:
         param = 1.0;
         parammin = 0.0;
-        parammax = 5.0;
+        parammax = 3.0;
         break;
       case PARAM_ARMS_PITCH:
         param = 30.0;
@@ -1078,9 +1078,24 @@ void	profit_resetparams(profitstruct *profit, objstruct *obj,
         parammax = 2.0*obj2->flux_auto;
         break;
       case PARAM_INRING_WIDTH:
-        param = 0.2;
+        param = 0.3;
         parammin = 0.0;
-        parammax = 1.0;
+        parammax = 0.5;
+        break;
+      case PARAM_OUTRING_FLUX:
+        param = obj2->flux_auto/10.0;
+        parammin = 0.0;
+        parammax = 2.0*obj2->flux_auto;
+        break;
+      case PARAM_OUTRING_START:
+        param = 4.0;
+        parammin = 3.5;
+        parammax = 6.0;
+        break;
+      case PARAM_OUTRING_WIDTH:
+        param = 0.3;
+        parammin = 0.0;
+        parammax = 0.5;
         break;
       default:
         error(EXIT_FAILURE, "*Internal Error*: Unknown profile parameter in ",
@@ -1182,7 +1197,7 @@ INPUT	Pointer to the profile-fitting structure,
 	profile type.
 OUTPUT	A pointer to an allocated prof structure.
 AUTHOR	E. Bertin (IAP)
-VERSION	20/07/2007
+VERSION	24/07/2007
  ***/
 profstruct	*prof_init(profitstruct *profit, proftypenum profcode)
   {
@@ -1280,6 +1295,19 @@ profstruct	*prof_init(profitstruct *profit, proftypenum profcode)
       profit_addparam(profit, PARAM_INRING_FLUX, &prof->flux);
       profit_addparam(profit, PARAM_INRING_WIDTH, &prof->featwidth);
       break;
+    case PROF_OUTRING:
+      prof->naxis = 2;
+      prof->pix = NULL;
+      prof->typscale = 1.0;
+      profit_addparam(profit, PARAM_X, &prof->x[0]);
+      profit_addparam(profit, PARAM_Y, &prof->x[1]);
+      profit_addparam(profit, PARAM_EXPO_MAJ, &prof->scale);
+      profit_addparam(profit, PARAM_EXPO_ASPECT, &prof->aspect);
+      profit_addparam(profit, PARAM_EXPO_POSANG, &prof->posangle);
+      profit_addparam(profit, PARAM_OUTRING_START, &prof->featstart);
+      profit_addparam(profit, PARAM_OUTRING_FLUX, &prof->flux);
+      profit_addparam(profit, PARAM_OUTRING_WIDTH, &prof->featwidth);
+      break;
     case PROF_SERSIC_TABEX:	/* An example of tabulated profile */
       prof->naxis = 3;
       width =  prof->naxisn[0] = PROFIT_PROFRES;
@@ -1371,7 +1399,7 @@ INPUT	Profile structure,
 	profile-fitting structure.
 OUTPUT	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	23/07/2007
+VERSION	24/07/2007
  ***/
 void	prof_add(profstruct *prof, profitstruct *profit)
   {
@@ -1587,6 +1615,37 @@ width = 2.0;
         }
       break;
     case PROF_INRING:
+      rmin = *prof->featstart;
+      r2minxin = *prof->featstart-4.0**prof->featwidth;
+      if (r2minxin < 0.0)
+        r2minxin = 0.0;
+      r2minxin *= r2minxin;
+      r2minxout = *prof->featstart+4.0**prof->featwidth;
+      r2minxout *= r2minxout;
+      invwidth2 = 0.5 / (*prof->featwidth**prof->featwidth);
+      x1 = -x1cout - dx1;
+      x2 = -x2cout - dx2;
+      pixin = profit->pmodpix;
+      for (ix2=profit->modnaxisn[1]; ix2--; x2+=1.0)
+        {
+        x1t = cd12*x2 + cd11*x1;
+        x2t = cd22*x2 + cd21*x1;
+        for (ix1=profit->modnaxisn[0]; ix1--;)
+          {
+          r2 = x1t*x1t+x2t*x2t;
+          if (r2>r2minxin && r2<r2minxout)
+            {
+            r = sqrt(r2) - rmin;
+            *(pixin++) = expf(-invwidth2*r*r);
+            }
+          else
+            *(pixin++) = 0.0;
+          x1t += cd11;
+          x2t += cd21;
+          }
+        }
+      break;
+    case PROF_OUTRING:
       rmin = *prof->featstart;
       r2minxin = *prof->featstart-4.0**prof->featwidth;
       if (r2minxin < 0.0)

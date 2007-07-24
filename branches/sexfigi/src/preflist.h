@@ -120,7 +120,7 @@
   {"PIXEL_SCALE", P_FLOAT, &prefs.pixel_scale, 0,0, 0.0, 1e+10},
   {"PROFILE_TYPE", P_KEYLIST, prefs.prof_type, 0,0, 0.0,0.0,
    {"BACKGROUND","SERSIC","DEVAUCOULEURS", "EXPONENTIAL", "ARMS", "BAR",
-	"INTRING", ""},
+	"INTRING", "OUTRING", ""},
     1, 6, &prefs.nprof_type},
   {"PSF_NAME", P_STRINGLIST, prefs.psf_name, 0,0, 0.0,0.0,
    {""}, 1, 2, &prefs.npsf_name},	/*?*/
