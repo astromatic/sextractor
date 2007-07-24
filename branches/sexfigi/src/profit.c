@@ -499,16 +499,16 @@ INPUT	Profile-fitting structure,
 	vector of residuals (output).
 OUTPUT	Vector of residuals.
 AUTHOR	E. Bertin (IAP)
-VERSION	12/07/2007
+VERSION	24/07/2007
  ***/
 double	*profit_compresi(profitstruct *profit, picstruct *field,
 		picstruct *wfield, objstruct *obj, double *resi)
   {
    double	*resit,
-		invsig, error;
+		invsig, error, x1c,x1,x2,r2,rmin;
    PIXTYPE	*objpix, *objweight, *lmodpix,
 		val,val2;
-   int		i, npix;
+   int		i, npix, ix1,ix2;
   
 /* Compute vector of residuals */
   npix = profit->objnaxisn[0]*profit->objnaxisn[1];
@@ -518,14 +518,22 @@ double	*profit_compresi(profitstruct *profit, picstruct *field,
   lmodpix = profit->lmodpix;
   invsig = 1.0/(PROFIT_DYNPARAM*profit->sigma);
   error = 0.0;
-  for (i=npix; i--; lmodpix++)
-    if ((val=*(objpix++))>-BIG)
-      {
-      val2 = (double)(val - *lmodpix)*invsig;
-      val2 = val2>0.0? log(1.0+val2) : -log(1.0-val2);
-      *(resit++) = val2;
-      error += val2*val2;
-      }
+  x1c = (double)(profit->objnaxisn[0]/2);
+  rmin = x1c/10.0 + 1.0;
+  x2 = -(double)(profit->objnaxisn[1]/2);
+  for (ix2=profit->objnaxisn[1]; ix2--; x2+=1.0)
+    {
+    x1 = -x1c;
+    for (ix1=profit->objnaxisn[0]; ix1--; x1+=1.0, lmodpix++)
+      if ((val=*(objpix++))>-BIG)
+        {
+        r2 = x1*x1+x2*x2;
+        val2 = (double)(val - *lmodpix)*invsig;
+        val2 = val2>0.0? log(1.0+val2) : -log(1.0-val2);
+        *(resit++) = val2*(rmin/(sqrt(r2)+rmin));
+        error += val2*val2;
+        }
+    }
 
   profit->chi2 = PROFIT_DYNPARAM*PROFIT_DYNPARAM*error/npix;
 
@@ -1082,6 +1090,11 @@ void	profit_resetparams(profitstruct *profit, objstruct *obj,
         parammin = 0.0;
         parammax = 0.5;
         break;
+      case PARAM_INRING_ASPECT:
+        param = 0.8;
+        parammin = 0.4;
+        parammax = 1.0;
+        break;
       case PARAM_OUTRING_FLUX:
         param = obj2->flux_auto/10.0;
         parammin = 0.0;
@@ -1294,6 +1307,7 @@ profstruct	*prof_init(profitstruct *profit, proftypenum profcode)
       profit_addparam(profit, PARAM_ARMS_START, &prof->featstart);
       profit_addparam(profit, PARAM_INRING_FLUX, &prof->flux);
       profit_addparam(profit, PARAM_INRING_WIDTH, &prof->featwidth);
+      profit_addparam(profit, PARAM_INRING_ASPECT, &prof->feataspect);
       break;
     case PROF_OUTRING:
       prof->naxis = 2;
@@ -1623,6 +1637,8 @@ width = 2.0;
       r2minxout = *prof->featstart+4.0**prof->featwidth;
       r2minxout *= r2minxout;
       invwidth2 = 0.5 / (*prof->featwidth**prof->featwidth);
+      cd22 /= *prof->feataspect;
+      cd21 /= *prof->feataspect;
       x1 = -x1cout - dx1;
       x2 = -x2cout - dx2;
       pixin = profit->pmodpix;
