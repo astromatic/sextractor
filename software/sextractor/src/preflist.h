@@ -9,7 +9,7 @@
 *
 *	Contents:	Keywords for the configuration file.
 *
-*	Last modify:	14/07/2006
+*	Last modify:	31/07/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -91,6 +91,7 @@
   {"FLAG_TYPE",  P_KEYLIST, prefs.flag_type, 0,0, 0.0,0.0,
    {"OR","AND","MIN", "MAX", "MOST",""}, 0, MAXFLAG, &idummy},
   {"GAIN", P_FLOAT, &prefs.gain, 0,0, 0.0, 1e+30},
+  {"GAIN_KEY", P_STRING, prefs.gain_key},
   {"INTERP_MAXXLAG", P_INTLIST, prefs.interp_xtimeout, 1,1000000, 0.0,0.0,
    {""}, 1, 2, &prefs.ninterp_xtimeout},
   {"INTERP_MAXYLAG", P_INTLIST, prefs.interp_ytimeout, 1,1000000, 0.0,0.0,
@@ -123,6 +124,7 @@
   {"PSFDISPLAY_TYPE", P_KEY, &prefs.psfdisplay_type, 0,0, 0.0,0.0,
    {"SPLIT","VECTOR",""}},
   {"SATUR_LEVEL", P_FLOAT, &prefs.satur_level, 0,0, -1e+30, 1e+30},
+  {"SATUR_KEY", P_STRING, prefs.satur_key},
   {"SEEING_FWHM", P_FLOAT, &prefs.seeing_fwhm, 0,0, 1e-10, 1e+10},
   {"SOM_NAME", P_STRING, prefs.som_name},
   {"STARNNW_NAME", P_STRING, prefs.nnw_name},
@@ -210,9 +212,12 @@ char *default_prefs[] =
 " ",
 "SATUR_LEVEL      50000.0        # level (in ADUs) at which arises saturation",
 " ",
+"SATUR_KEY        SATURATE       # keyword for saturation level (in ADUs)",
+" ",
 "MAG_ZEROPOINT    0.0            # magnitude zero-point",
 "MAG_GAMMA        4.0            # gamma of emulsion (for photographic scans)",
 "GAIN             0.0            # detector gain in e-/ADU",
+"GAIN_KEY         GAIN           # keyword for detector gain in e-/ADU",
 "PIXEL_SCALE      1.0            # size of pixel in arcsec (0=use FITS WCS info)",
 " ",
 "#------------------------- Star/Galaxy Separation ----------------------------",

@@ -9,7 +9,7 @@
 *
 *	Contents:	main program.
 *
-*	Last modify:	10/04/2007
+*	Last modify:	31/07/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -56,6 +56,7 @@ void	makeit()
    static time_t        thetime1, thetime2;
    struct tm		*tm;
    int			i, nok, ntab, next;
+   void			*gptr, *sptr;
 
 /* Install error logging */
   error_installfunc(write_error);
@@ -192,7 +193,7 @@ void	makeit()
       dfield = newfield(prefs.image_name[0], DETECT_FIELD, nok);
       field = newfield(prefs.image_name[1], MEASURE_FIELD, nok);
       if ((field->width!=dfield->width) || (field->height!=dfield->height))
-        error(EXIT_FAILURE, "*Error*: Frames have different sizes","");
+        error(EXIT_FAILURE, "*Error*: Frames have different sizes","");      
 /*---- Prepare interpolation */
       if (prefs.dweight_flag && prefs.interp_type[0] == INTERP_ALL)
         init_interpolate(dfield, -1, -1);
@@ -207,6 +208,14 @@ void	makeit()
 	&& prefs.interp_type[0] == INTERP_ALL)
       init_interpolate(field, -1, -1);       /* 0.0 or anything else */
       }
+
+/*---- Prepare photometry Measurements: gain and saturation definition */
+    if (fitsread(field->fitshead, prefs.gain_key, &gptr, H_FLOAT, T_DOUBLE)
+	  ==RETURN_OK)
+      prefs.gain = *(double *)&gptr;
+    if (fitsread(field->fitshead, prefs.satur_key, &sptr, H_FLOAT, T_DOUBLE)
+	  ==RETURN_OK)
+      prefs.satur_level = *(double *)&sptr;
 
 /*-- Init the WEIGHT-images */
     if (prefs.dweight_flag || prefs.weight_flag) 
