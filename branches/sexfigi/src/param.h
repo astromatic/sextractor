@@ -9,7 +9,7 @@
 *
 *	Contents:	parameter list for catalog data.
 *
-*	Last modify:	12/07/2007
+*	Last modify:	08/08/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -852,6 +852,7 @@ keystruct	objkey[] = {
   {"PC", "Principal components",
 	&outobj2.vector_pc, H_FLOAT, T_FLOAT, "%15.10e", "",
 	"src.morph.param", "", 1, &prefs.pc_vectorsize},
+
   {"VECTOR_PROF", "Profile-fitting coefficients",
 	&outobj2.prof_vector, H_FLOAT, T_FLOAT, "%8.2f", "",
 	"stat.fit.param;src.morph.param", "", 1, &prefs.prof_vectorsize},
@@ -864,18 +865,33 @@ keystruct	objkey[] = {
   {"NITER_PROF", "Number of iterations for profile-fitting",
 	&outobj2.prof_niter, H_INT, T_SHORT, "%3d", "",
 	"meta.number;stat.fit;src.morph", ""},
-  {"XPROF_IMAGE", "X coordinate from profile-fitting",
-	&outobj2.x_prof, H_FLOAT, T_FLOAT, "%10.3f", "pixel",
-	"pos.cartesian.x;stat.fit.param;instr.det;meta.main", "pix"},
-  {"YPROF_IMAGE", "Y coordinate from profile-fitting",
-	&outobj2.y_prof, H_FLOAT, T_FLOAT, "%10.3f", "pixel",
-	"pos.cartesian.y;stat.fit.param;instr.det;meta.main", "pix"},
   {"FLUX_PROF", "Flux from profile-fitting",
 	&outobj2.flux_prof, H_FLOAT, T_FLOAT, "%12.7g", "count",
 	"phot.count;stat.fit.param", "ct"},
   {"MAG_PROF", "Magnitude from profile-fitting",
 	&outobj2.mag_prof, H_FLOAT, T_FLOAT, "%8.4f", "mag",
 	"phot.mag;stat.fit.param", "mag"},
+  {"XPROF_IMAGE", "X coordinate from profile-fitting",
+	&outobj2.x_prof, H_FLOAT, T_FLOAT, "%10.3f", "pixel",
+	"pos.cartesian.x;stat.fit.param;instr.det;meta.main", "pix"},
+  {"YPROF_IMAGE", "Y coordinate from profile-fitting",
+	&outobj2.y_prof, H_FLOAT, T_FLOAT, "%10.3f", "pixel",
+	"pos.cartesian.y;stat.fit.param;instr.det;meta.main", "pix"},
+  {"X2PROF_IMAGE", "Variance along x from profile-fitting",
+	&outobj2.prof_mx2, H_EXPO, T_DOUBLE, "%15.10e", "pixel**2",
+	"src.impactParam;stat.fit;instr.det", "pix2"},
+  {"Y2PROF_IMAGE", "Variance along y from profile-fitting",
+	&outobj2.prof_my2, H_EXPO, T_DOUBLE, "%15.10e", "pixel**2",
+	"src.impactParam;stat.fit;instr.det", "pix2"},
+  {"XYPROF_IMAGE", "Covariance between x and y from profile-fitting",
+	&outobj2.prof_mxy, H_EXPO, T_DOUBLE, "%15.10e", "pixel**2",
+	"src.impactParam;stat.fit;instr.det", "pix2"},
+  {"EPS1PROF_IMAGE", "Ellipticity vector eps1 from profile-fitting",
+	&outobj2.prof_eps1, H_FLOAT, T_FLOAT, "%10.6f", "pixel**2",
+	"src.ellipticity;stat.fit;instr.det", "pix2"},
+  {"EPS2PROF_IMAGE", "Ellipticity vector eps2 from profile-fitting",
+	&outobj2.prof_eps2, H_FLOAT, T_FLOAT, "%10.6f", "pixel**2",
+	"src.ellipticity;stat.fit;instr.det", "pix2"},
   {""}
   };
 

@@ -287,7 +287,7 @@ char *default_prefs[] =
 "PSF_NMAX         9              # Max.number of PSFs fitted simultaneously",
 "*PSFDISPLAY_TYPE  SPLIT          # Catalog type for PSF-fitting: SPLIT or VECTOR",
 "PROFILE_TYPE     SERSIC         # Profile components to fit: BACK, SERSIC,",
-"                                # DEVAUCOULEURS, EXPONENTIAL, ARMS and/or BAR",
+"                                # DEVAUCOULEURS, or EXPONENTIAL",
 "*SOM_NAME         default.som    # File containing Self-Organizing Map weights",
 ""
  };

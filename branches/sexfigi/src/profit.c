@@ -9,7 +9,7 @@
 *
 *	Contents:	Fit an arbitrary profile combination to a detection.
 *
-*	Last modify:	24/07/2007
+*	Last modify:	08/08/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -119,7 +119,7 @@ OUTPUT	Pointer to an allocated fit structure (containing details about the
 	fit).
 NOTES	It is a modified version of the lm_minimize() of lmfit.
 AUTHOR	E. Bertin (IAP)
-VERSION	18/07/2007
+VERSION	08/08/2007
  ***/
 void	profit_fit(profitstruct *profit,
 		picstruct *field, picstruct *wfield,
@@ -189,9 +189,9 @@ void	profit_fit(profitstruct *profit,
   profit->sigma = obj->sigbkg;
   profit_resetparams(profit, obj, obj2);
 
-for (p=0; p<profit->nparam; p++)
-printf("%g ", profit->paraminit[p]);
-printf("\n");
+//for (p=0; p<profit->nparam; p++)
+//printf("%g ", profit->paraminit[p]);
+//printf("\n");
 
 the_gal++;
   profit->niter = profit_minimize(profit, PROFIT_MAXITER);
@@ -219,11 +219,10 @@ the_gal++;
       obj2->prof_flag |= PROFIT_FLIPPED;
     }  
 
-printf("--> ");
-for (p=0; p<profit->nparam; p++)
-printf("%g     %g %g\n", profit->paraminit[p], profit->parammin[p], profit->parammax[p]);
-printf("(%d)\n", profit->niter);
-
+//printf("--> ");
+//for (p=0; p<profit->nparam; p++)
+//printf("%g     %g %g\n", profit->paraminit[p], profit->parammin[p], profit->parammax[p]);
+//printf("(%d)\n", profit->niter);
 
 /* CHECK-Images */
   if ((check = prefs.check[CHECK_SUBPROFILES]))
@@ -243,8 +242,9 @@ printf("(%d)\n", profit->niter);
   if (FLAG(obj2.prof_vector))
     {
     for (p=0; p<profit->nparam; p++)
-      obj2->prof_vector[p]= profit->param[p];
+      obj2->prof_vector[p]= profit->paraminit[p];
     }
+
   obj2->prof_niter = profit->niter;
   if ((param=profit->paramlist[PARAM_X]))
     obj2->x_prof = ix + 1.0 + *param;		/* FITS convention */
@@ -252,6 +252,16 @@ printf("(%d)\n", profit->niter);
     obj2->y_prof = iy + 1.0 + *param;		/* FITS convention */
   obj2->flux_prof = profit->flux;
   obj2->prof_chi2 = profit->chi2;
+  if (FLAG(obj2.prof_mx2))
+    {
+    memset(profit->modpix, 0,
+	profit->modnaxisn[0]*profit->modnaxisn[1]*sizeof(double));
+    for (p=0; p<profit->nparam; p++)
+      profit->param[p] = profit->paraminit[p];
+    for (p=0; p<profit->nprof; p++)
+      prof_add(profit->prof[p], profit);
+    profit_moments(profit, obj, obj2);
+    }
 
 /* clean up. */
   free(profit->modpix);
@@ -530,7 +540,8 @@ double	*profit_compresi(profitstruct *profit, picstruct *field,
         r2 = x1*x1+x2*x2;
         val2 = (double)(val - *lmodpix)*invsig;
         val2 = val2>0.0? log(1.0+val2) : -log(1.0-val2);
-        *(resit++) = val2*(rmin/(sqrt(r2)+rmin));
+        *(resit++) = val2;
+//        *(resit++) = val2*(rmin/(sqrt(r2)+rmin));
         error += val2*val2;
         }
     }
@@ -910,6 +921,65 @@ double profit_spiralindex(profitstruct *profit, objstruct *obj,
   }
 
 
+/****** profit_moments ****************************************************
+PROTO	void profit_moments(profitstruct *profit, objstruct *obj,
+			obj2struct *obj2)
+PURPOSE	Compute the 2nd order moments from the unconvolved object model.
+INPUT	Profile-fitting structure,
+	pointer to the obj,
+	pointer to the obj2.
+OUTPUT	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	08/08/2007
+ ***/
+void	 profit_moments(profitstruct *profit, objstruct *obj,
+			obj2struct *obj2)
+  {
+   double	*pix,
+		fwhm, invtwosigma2, hw,hh, x,y,xstart, val,
+		mx,my, sum, mx2,my2,mxy;
+   int		ix,iy;
+
+  hw = (double)(profit->modnaxisn[0]/2);
+  hh = (double)(profit->modnaxisn[1]/2);
+  xstart = -hw;
+  y = -hh;
+  pix = profit->modpix;
+  mx2 = my2 = mxy = mx = my = sum = 0.0;
+  for (iy=profit->modnaxisn[1]; iy--; y+=1.0)
+    {
+    x = xstart;
+    for (ix=profit->modnaxisn[0]; ix--; x+=1.0)
+      {
+      val = *(pix++);
+      sum += val;
+      mx  += val*x;
+      my  += val*y;
+      mx2 += val*x*x;
+      mxy += val*x*y;
+      my2 += val*y*y;
+      }
+    }
+
+  if (sum <= 1.0/BIG)
+    sum = 1.0;
+  mx /= sum;
+  my /= sum;
+  obj2->prof_mx2 = mx2 = mx2/sum - mx*mx;
+  obj2->prof_my2 = my2 = my2/sum - my*my;
+  obj2->prof_mxy = mxy = mxy/sum - mx*my;
+  if (mx2+my2 > 1.0/BIG)
+    {
+    obj2->prof_eps1 = (mx2 - my2) / (mx2+my2);
+    obj2->prof_eps2 = 2.0*mxy / (mx2 + my2);
+    }
+  else
+    obj2->prof_eps1 = obj2->prof_eps2 = 0.0;
+
+  return;
+  }
+
+
 /****** profit_addparam *******************************************************
 PROTO	void profit_addparam(profitstruct *profit, paramenum paramindex,
 		double **param)
@@ -1003,8 +1073,8 @@ void	profit_resetparams(profitstruct *profit, objstruct *obj,
       case PARAM_DEVAUC_ASPECT:
       case PARAM_SERSIC_ASPECT:
         param = obj->b/obj->a;
-        parammin = 0.5;
-        parammax = 2.0;
+        parammin = profit->nprof>1? 0.5 : 0.01;
+        parammax = profit->nprof>1? 2.0 : 100.0;
         break;
       case PARAM_EXPO_ASPECT:
         param = obj->b/obj->a;

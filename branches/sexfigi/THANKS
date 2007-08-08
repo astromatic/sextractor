@@ -12,10 +12,13 @@ Jean-Paul Kneib <kneib@omp.fr>, Ian Smail <Ian.Smail@durham.ac.uk>
 	Suggestions and spreading the software back in the early days! 
 Ville Laurikari	<vl@iki.fi>
 	For his VL_PROG_CC_WARNINGS (modified to ACX_PROG_CC_OPTIM)
+Chiara Marmo <marmo@iap.fr>
+	For providing the VOTable to HTML XSLT filter and testing.
 Gerard Tissier <tissier@iap.fr>
 	Preliminary implementation of the VOTable output
 Joachim Wuttke <J.Wuttke@fz-juelich.de>
 	For his implementation of the Levenberg-Marquardt algorithm
+
 ESO
 	Financial support
 Too many people to list

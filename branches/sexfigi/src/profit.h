@@ -9,7 +9,7 @@
 *
 *	Contents:	Include file for profit.c.
 *
-*	Last modify:	24/07/2007
+*	Last modify:	08/08/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -166,6 +166,8 @@ void		prof_add(profstruct *prof, profitstruct *profit),
 		profit_evaluate2(double *par, double *fvec, int m, int n,
 			void *adata),
 		profit_makedft(profitstruct *profit),
+		profit_moments(profitstruct *profit, objstruct *obj,
+			obj2struct *obj2),
 		profit_printout(int n_par, double* par, int m_dat, double* fvec,
 			void *data, int iflag, int iter, int nfev ),
 		profit_resetparams(profitstruct *profit, objstruct *obj,

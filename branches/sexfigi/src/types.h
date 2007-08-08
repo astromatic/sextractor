@@ -9,7 +9,7 @@
 *
 *	Contents:	global type definitions.
 *
-*	Last modify:	12/07/2007
+*	Last modify:	08/08/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -302,6 +302,8 @@ typedef struct
   float		mag_prof;			/* Mag from profile-fitting */
   float		magerr_prof;			/* RMS mag from prof-fitting */
   float		x_prof, y_prof;			/* Coords from profile-fitting*/
+  double	prof_mx2, prof_my2, prof_mxy;	/* Profile model moments */
+  float		prof_eps1, prof_eps2;		/* Profile model ellip.vector */
 /* ---- MEF */
   short		ext_number;			/* FITS extension number */
   }	obj2struct;
