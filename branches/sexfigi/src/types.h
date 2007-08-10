@@ -9,7 +9,7 @@
 *
 *	Contents:	global type definitions.
 *
-*	Last modify:	08/08/2007
+*	Last modify:	09/08/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -304,6 +304,7 @@ typedef struct
   float		x_prof, y_prof;			/* Coords from profile-fitting*/
   double	prof_mx2, prof_my2, prof_mxy;	/* Profile model moments */
   float		prof_eps1, prof_eps2;		/* Profile model ellip.vector */
+  float		prof_e1, prof_e2;		/* Profile model ellip.vector */
 /* ---- MEF */
   short		ext_number;			/* FITS extension number */
   }	obj2struct;

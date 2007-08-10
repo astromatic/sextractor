@@ -9,7 +9,7 @@
 *
 *	Contents:	Fit an arbitrary profile combination to a detection.
 *
-*	Last modify:	08/08/2007
+*	Last modify:	09/08/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -119,7 +119,7 @@ OUTPUT	Pointer to an allocated fit structure (containing details about the
 	fit).
 NOTES	It is a modified version of the lm_minimize() of lmfit.
 AUTHOR	E. Bertin (IAP)
-VERSION	08/08/2007
+VERSION	09/08/2007
  ***/
 void	profit_fit(profitstruct *profit,
 		picstruct *field, picstruct *wfield,
@@ -219,21 +219,25 @@ the_gal++;
       obj2->prof_flag |= PROFIT_FLIPPED;
     }  
 
+/* Equate param and paraminit vectors to avoid confusion later on */
+  for (p=0; p<profit->nparam; p++)
+    profit->param[p] = profit->paraminit[p];
+
 //printf("--> ");
 //for (p=0; p<profit->nparam; p++)
-//printf("%g     %g %g\n", profit->paraminit[p], profit->parammin[p], profit->parammax[p]);
+//printf("%g     %g %g\n", profit->param[p], profit->parammin[p], profit->parammax[p]);
 //printf("(%d)\n", profit->niter);
 
 /* CHECK-Images */
   if ((check = prefs.check[CHECK_SUBPROFILES]))
     {
-    profit_residuals(profit,field,wfield,obj,profit->paraminit,profit->resi);
+    profit_residuals(profit,field,wfield,obj,profit->param,profit->resi);
     addcheck(check, profit->lmodpix, profit->objnaxisn[0],profit->objnaxisn[1],
 		ix,iy, -1.0);
     }
   if ((check = prefs.check[CHECK_PROFILES]))
     {
-    profit_residuals(profit,field,wfield,obj,profit->paraminit,profit->resi);
+    profit_residuals(profit,field,wfield,obj,profit->param,profit->resi);
     addcheck(check, profit->lmodpix, profit->objnaxisn[0],profit->objnaxisn[1],
 		ix,iy, 1.0);
     }
@@ -242,7 +246,7 @@ the_gal++;
   if (FLAG(obj2.prof_vector))
     {
     for (p=0; p<profit->nparam; p++)
-      obj2->prof_vector[p]= profit->paraminit[p];
+      obj2->prof_vector[p]= profit->param[p];
     }
 
   obj2->prof_niter = profit->niter;
@@ -256,8 +260,6 @@ the_gal++;
     {
     memset(profit->modpix, 0,
 	profit->modnaxisn[0]*profit->modnaxisn[1]*sizeof(double));
-    for (p=0; p<profit->nparam; p++)
-      profit->param[p] = profit->paraminit[p];
     for (p=0; p<profit->nprof; p++)
       prof_add(profit->prof[p], profit);
     profit_moments(profit, obj, obj2);
@@ -930,7 +932,7 @@ INPUT	Profile-fitting structure,
 	pointer to the obj2.
 OUTPUT	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	08/08/2007
+VERSION	09/08/2007
  ***/
 void	 profit_moments(profitstruct *profit, objstruct *obj,
 			obj2struct *obj2)
@@ -972,9 +974,11 @@ void	 profit_moments(profitstruct *profit, objstruct *obj,
     {
     obj2->prof_eps1 = (mx2 - my2) / (mx2+my2);
     obj2->prof_eps2 = 2.0*mxy / (mx2 + my2);
+    obj2->prof_e1 = (mx2 - my2) / (mx2+my2+2.0*(mx2+my2-mxy*mxy));
+    obj2->prof_e2 = 2.0*mxy / (mx2+my2+2.0*(mx2+my2-mxy*mxy));
     }
   else
-    obj2->prof_eps1 = obj2->prof_eps2 = 0.0;
+    obj2->prof_eps1 = obj2->prof_eps2 = obj2->prof_e1 = obj2->prof_e2 = 0.0;
 
   return;
   }

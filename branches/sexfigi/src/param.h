@@ -9,7 +9,7 @@
 *
 *	Contents:	parameter list for catalog data.
 *
-*	Last modify:	08/08/2007
+*	Last modify:	09/08/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -886,12 +886,18 @@ keystruct	objkey[] = {
   {"XYPROF_IMAGE", "Covariance between x and y from profile-fitting",
 	&outobj2.prof_mxy, H_EXPO, T_DOUBLE, "%15.10e", "pixel**2",
 	"src.impactParam;stat.fit;instr.det", "pix2"},
-  {"EPS1PROF_IMAGE", "Ellipticity vector eps1 from profile-fitting",
-	&outobj2.prof_eps1, H_FLOAT, T_FLOAT, "%10.6f", "pixel**2",
-	"src.ellipticity;stat.fit;instr.det", "pix2"},
-  {"EPS2PROF_IMAGE", "Ellipticity vector eps2 from profile-fitting",
-	&outobj2.prof_eps2, H_FLOAT, T_FLOAT, "%10.6f", "pixel**2",
-	"src.ellipticity;stat.fit;instr.det", "pix2"},
+  {"E1PROF_IMAGE", "Ellipticity component from profile-fitting",
+	&outobj2.prof_e1, H_FLOAT, T_FLOAT, "%10.6f", "",
+	"src.ellipticity;stat.fit;instr.det", ""},
+  {"E2PROF_IMAGE", "Ellipticity component from profile-fitting",
+	&outobj2.prof_e2, H_FLOAT, T_FLOAT, "%10.6f", "",
+	"src.ellipticity;stat.fit;instr.det", ""},
+  {"EPS1PROF_IMAGE", "Ellipticity component (quadratic) from profile-fitting",
+	&outobj2.prof_eps1, H_FLOAT, T_FLOAT, "%10.6f", "",
+	"src.ellipticity;stat.fit;instr.det", ""},
+  {"EPS2PROF_IMAGE", "Ellipticity component (quadratic) from profile-fitting",
+	&outobj2.prof_eps2, H_FLOAT, T_FLOAT, "%10.6f", "",
+	"src.ellipticity;stat.fit;instr.det", ""},
   {""}
   };
 

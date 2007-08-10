@@ -9,7 +9,7 @@
 *
 *	Contents:	functions for output of catalog data.
 *
-*	Last modify:	08/08/2007
+*	Last modify:	09/08/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -170,7 +170,8 @@ void	updateparamflags()
 /*----------------------------- Profile-fitting -----------------------------*/
 
   FLAG(obj2.prof_mx2) |= FLAG(obj2.prof_my2) | FLAG(obj2.prof_mxy)
-			| FLAG(obj2.prof_eps1) |FLAG(obj2.prof_eps2);
+			| FLAG(obj2.prof_e1) |FLAG(obj2.prof_e2)
+			| FLAG(obj2.prof_eps1) |FLAG(obj2.prof_eps2);;
   FLAG(obj2.prof_chi2) |= FLAG(obj2.prof_niter) | FLAG(obj2.prof_vector)
 			| FLAG(obj2.prof_flag)
 			| FLAG(obj2.x_prof) | FLAG(obj2.y_prof)
@@ -286,7 +287,7 @@ void	updateparamflags()
 
   FLAG(obj2.flux_best) |= FLAG(obj2.mag_best) | FLAG(obj2.fluxerr_best);
 
-  FLAG(obj2.hl_radius) |= FLAG(obj2.winpos_x) | FLAG(obj2.prof_vector);
+  FLAG(obj2.hl_radius) |= FLAG(obj2.winpos_x) | FLAG(obj2.prof_chi2);
 
   FLAG(obj2.flux_auto)  |= FLAG(obj2.mag_auto) | FLAG(obj2.magerr_auto)
 			| FLAG(obj2.fluxerr_auto)
