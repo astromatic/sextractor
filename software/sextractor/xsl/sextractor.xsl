@@ -198,32 +198,63 @@
 
 <!-- ******************** XSL template for Source List ******************** -->
  <xsl:template name="sources">
-  <xsl:if test="DATA/TABLEDATA">
-   <p>
-    <BUTTON type="button" style="background:#CCEECC; font-family: sans-serif; font-weight: bold;" onclick="showhideTable('sources')">
-    Source List
-    </BUTTON>
-    <TABLE id="sources" class="sortable" style="display: none">
-     <TR>
-      <xsl:for-each select="FIELD">
-       <TH BGCOLOR="#FFEECC" align="center"><xsl:value-of select="@name"/>
-        (<xsl:value-of select="@unit"/>)</TH>
+  <xsl:choose> 
+   <xsl:when test="DATA/TABLEDATA">
+    <p>
+     <BUTTON type="button" style="background:#CCEECC; font-family: sans-serif; font-weight: bold;" onclick="showhideTable('sources')">
+     Source List
+     </BUTTON>
+     <TABLE id="sources" class="sortable" style="display: none">
+      <TR>
+       <xsl:for-each select="FIELD">
+        <TH BGCOLOR="#FFEECC" align="center"><xsl:attribute name="title"><xsl:value-of select="DESCRIPTION"/></xsl:attribute>
+         <xsl:value-of select="@name"/>
+         <xsl:text disable-output-escaping="yes">&#13;&#10;
+
+
+         </xsl:text>
+         <xsl:value-of select="@unit"/>
+        </TH>
+       </xsl:for-each>
+      </TR>
+      <xsl:for-each select="DATA/TABLEDATA">
+       <xsl:for-each select="TR">
+        <tr>
+         <xsl:for-each select="TD">
+          <td align="right" BGCOLOR="#EEEEEE">
+           <el><xsl:value-of select="self::TD"/></el>
+          </td>
+         </xsl:for-each>
+        </tr>
+       </xsl:for-each>
       </xsl:for-each>
-     </TR>
-     <xsl:for-each select="DATA/TABLEDATA">
-      <xsl:for-each select="TR">
+     </TABLE>
+    </p>
+   </xsl:when>
+   <xsl:otherwise>
+    <p>
+     <BUTTON type="button" style="background:#CCEECC; font-family: sans-serif; font-weight: bold;" onclick="showhideTable('catparam')">
+     Parameter List
+     </BUTTON>
+     <TABLE id="catparam" class="sortable" style="display: none">
+      <TR>
+       <TH BGCOLOR="#FFEECC" align="center">Parameter Name</TH>
+       <TH BGCOLOR="#FFEECC" align="center">Description</TH>
+      </TR>
+      <xsl:for-each select="FIELD">
        <tr>
-        <xsl:for-each select="TD">
-         <td align="right" BGCOLOR="#EEEEEE">
-          <el><xsl:value-of select="self::TD"/></el>
-         </td>
-        </xsl:for-each>
+        <td align="left" BGCOLOR="#EEEEEE">
+         <el><xsl:value-of select="@name"/></el>
+        </td>
+        <td align="left" BGCOLOR="#EEEEEE">
+         <el><xsl:value-of select="DESCRIPTION"/></el>
+        </td>
        </tr>
       </xsl:for-each>
-     </xsl:for-each>
-    </TABLE>
-   </p>
-  </xsl:if>
+     </TABLE>
+    </p>
+   </xsl:otherwise> 
+  </xsl:choose>  
  </xsl:template>
 
 <!-- ******************* XSL template for Extension Data ****************** -->
