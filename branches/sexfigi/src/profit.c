@@ -9,7 +9,7 @@
 *
 *	Contents:	Fit an arbitrary profile combination to a detection.
 *
-*	Last modify:	09/08/2007
+*	Last modify:	15/08/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -1487,7 +1487,7 @@ INPUT	Profile structure,
 	profile-fitting structure.
 OUTPUT	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	24/07/2007
+VERSION	15/08/2007
  ***/
 void	prof_add(profstruct *prof, profitstruct *profit)
   {
@@ -1547,7 +1547,7 @@ void	prof_add(profstruct *prof, profitstruct *profit)
 		- 131.0/(1148175*n*n*n);
       hinvn = 0.5/n;
 /*---- The consequence of sampling on flux is compensated by PSF normalisation*/
-      x10 = -x1cout - dx1 + 0.5*(ostep-1.0);
+      x10 = -x1cout - dx1;
       x2 = -x2cout - dx2;
       pixin = profit->pmodpix;
       for (ix2=profit->modnaxisn[1]; ix2--; x2+=1.0)
@@ -1817,10 +1817,10 @@ width = 2.0;
 
 /* Now find truncation threshold */
 /* Find the shortest distance to a vignet border */
-  rmax = profit->modnaxisn[0] - x1cout;
-  if (rmax > (r = profit->modnaxisn[1] - x2cout))
+  rmax = x1cout;
+  if (rmax > (r = x2cout))
     rmax = r;
-  rmax -= 0.99;
+  rmax += 0.01;
   if (rmax<1.0)
     rmax = 1.0;
   r2max = rmax*rmax;
