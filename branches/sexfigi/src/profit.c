@@ -932,14 +932,14 @@ INPUT	Profile-fitting structure,
 	pointer to the obj2.
 OUTPUT	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	09/08/2007
+VERSION	15/08/2007
  ***/
 void	 profit_moments(profitstruct *profit, objstruct *obj,
 			obj2struct *obj2)
   {
    double	*pix,
 		fwhm, invtwosigma2, hw,hh, x,y,xstart, val,
-		mx,my, sum, mx2,my2,mxy;
+		mx,my, sum, mx2,my2,mxy, den;
    int		ix,iy;
 
   hw = (double)(profit->modnaxisn[0]/2);
@@ -974,8 +974,9 @@ void	 profit_moments(profitstruct *profit, objstruct *obj,
     {
     obj2->prof_eps1 = (mx2 - my2) / (mx2+my2);
     obj2->prof_eps2 = 2.0*mxy / (mx2 + my2);
-    obj2->prof_e1 = (mx2 - my2) / (mx2+my2+2.0*(mx2+my2-mxy*mxy));
-    obj2->prof_e2 = 2.0*mxy / (mx2+my2+2.0*(mx2+my2-mxy*mxy));
+    den = mx2+my2+2.0*sqrt(mx2+my2-mxy*mxy);
+    obj2->prof_e1 = (mx2 - my2) / den;
+    obj2->prof_e2 = 2.0*mxy / den;
     }
   else
     obj2->prof_eps1 = obj2->prof_eps2 = obj2->prof_e1 = obj2->prof_e2 = 0.0;
@@ -1497,7 +1498,7 @@ void	prof_add(profstruct *prof, profitstruct *profit)
    float	*pixin,
 		amp,ctheta,stheta,cd11,cd12,cd21,cd22, dcd11,dcd21, dx1,dx2,
 		x1,x10,x2, x1cin,x2cin, x1cout,x2cout, xscale,yscale, saspect,
-		x1in,x2in, odx2, ostep,
+		x1in,x2in, odx, ostep,
 		n,k, hinvn, x1t,x2t, ca,sa, u,
 		armamp,arm2amp, armrdphidr, posang, width, invwidth2,
 		r, r2, rmin, r2min, r2minxin, r2minxout, rmax, r2max, invr2xdif,
@@ -1530,8 +1531,6 @@ void	prof_add(profstruct *prof, profitstruct *profit)
   cd12 = xscale*stheta;
   cd21 =-yscale*stheta;
   cd22 = yscale*ctheta;
-  dcd11 = cd11*ostep;
-  dcd21 = cd21*ostep;
 
   dx1 = 0.0;	/* Shifting operations have been moved to profit_resample() */
   dx2 = 0.0;	/* Shifting operations have been moved to profit_resample() */
@@ -1565,12 +1564,15 @@ void	prof_add(profstruct *prof, profitstruct *profit)
           else
             {
             ostep = 1.0/noversamp;
-            odx2 = 0.5*(ostep-1.0);
+            dcd11 = cd11*ostep;
+            dcd21 = cd21*ostep;
+            odx = 0.5*(ostep-1.0);
+            x1t = x1+odx;
             val = 0.0;
-            for (idx2=noversamp; idx2--; odx2+=ostep)
+            for (idx2=noversamp; idx2--; odx+=ostep)
               {
-              x1in = cd12*(x2+odx2) + cd11*x1;
-              x2in = cd22*(x2+odx2) + cd21*x1;
+              x1in = cd12*(x2+odx) + cd11*x1t;
+              x2in = cd22*(x2+odx) + cd21*x1t;
               for (idx1=noversamp; idx1--;)
                 {
                 ra = x1in*x1in+x2in*x2in;
@@ -1586,19 +1588,43 @@ void	prof_add(profstruct *prof, profitstruct *profit)
       break;
     case PROF_DEVAUCOULEURS:
 /*---- The consequence of sampling on flux is compensated by PSF normalisation*/
-      x1 = -x1cout - dx1;
+      x10 = -x1cout - dx1;
       x2 = -x2cout - dx2;
       pixin = profit->pmodpix;
       for (ix2=profit->modnaxisn[1]; ix2--; x2+=1.0)
         {
-        x1in = cd12*x2 + cd11*x1;
-        x2in = cd22*x2 + cd21*x1;
-        for (ix1=profit->modnaxisn[0]; ix1--;)
+        x1 = x10;
+        for (ix1=profit->modnaxisn[0]; ix1--; x1+=1.0)
           {
+          x1in = cd12*x2 + cd11*x1;
+          x2in = cd22*x2 + cd21*x1;
           ra = x1in*x1in+x2in*x2in;
-          *(pixin++) = expf(-7.6692f*PROFIT_POWF(ra,0.125));
-          x1in += cd11;
-          x2in += cd21;
+          val = expf(k*PROFIT_POWF(ra,0.125));
+          noversamp  = (int)(val*PROFIT_OVERSAMP+0.1);
+          if (noversamp < 2)
+            *(pixin++) = val;
+          else
+            {
+            ostep = 1.0/noversamp;
+            dcd11 = cd11*ostep;
+            dcd21 = cd21*ostep;
+            odx = 0.5*(ostep-1.0);
+            x1t = x1+odx;
+            val = 0.0;
+            for (idx2=noversamp; idx2--; odx+=ostep)
+              {
+              x1in = cd12*(x2+odx) + cd11*x1t;
+              x2in = cd22*(x2+odx) + cd21*x1t;
+              for (idx1=noversamp; idx1--;)
+                {
+                ra = x1in*x1in+x2in*x2in;
+                val += expf(k*PROFIT_POWF(ra,0.125));
+                x1in += dcd11;
+                x2in += dcd21;
+                }
+              }
+            *(pixin++) = val*ostep*ostep;
+            }
           }
         }
       break;
