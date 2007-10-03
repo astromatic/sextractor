@@ -82,14 +82,21 @@ int	main(int argc, char *argv[])
       strcpy(catname, argv[a]);
     }
 
-  cat = read_cat(catname);
-  tab = cat->tab;
-  for (t=cat->ntab; t--; tab=tab->nexttab)
-    if (!strcmp("LDAC_OBJECTS", tab->extname)
-	|| !strcmp("OBJECTS", tab->extname))
-      show_keys(tab, NULL, NULL, 0, NULL, stdout, 1, 1, 0, SHOW_ASCII);
-  free_cat(&cat, 1);
+  if ((cat = read_cat(catname)))
+    {
+    tab = cat->tab;
+    for (t=cat->ntab; t--; tab=tab->nexttab)
+      if (!strcmp("LDAC_OBJECTS", tab->extname)
+	  || !strcmp("OBJECTS", tab->extname))
+        show_keys(tab, NULL, NULL, 0, NULL, stdout, 1, 1, 0, SHOW_ASCII);
+    free_cat(&cat, 1);
 
-  exit(EXIT_SUCCESS);
+    exit(EXIT_SUCCESS);
+    }
+  else
+    {
+    error(EXIT_FAILURE,"Cannot open ",catname);
+    return RETURN_ERROR;
+    }
   }
 
