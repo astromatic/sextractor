@@ -9,7 +9,7 @@
 *
 *	Contents:	analyse(), endobject()...: measurements on detections.
 *
-*	Last modify:	18/05/2006
+*	Last modify:	08/10/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -90,7 +90,7 @@ void  examineiso(picstruct *field, picstruct *dfield, objstruct *obj,
    checkstruct		*check;
    pliststruct		*pixt;
    int			i,j,k,h, photoflag,area,errflag, cleanflag,
-			pospeakflag, profflag, minarea, gainflag;
+			pospeakflag, minarea, gainflag;
    double		tv,sigtv, ngamma,
 			esum, emx2,emy2,emxy, err,gain,backnoise2,dbacknoise2,
 			xm,ym, x,y,var,var2;

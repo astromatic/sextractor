@@ -3,7 +3,7 @@ dnl This macro figures out if the ATLAS library and header files
 dnl are installed.
 dnl You may wish to use these variables in your default LIBS and CFLAGS:
 dnl
-dnl        LIBS="$ATLAS_LIBS $LIBS"
+dnl        LIBS="$ATLAS_LIBPATH -llapack -lcblas -latlas  $LIBS"
 dnl        CFLAGS="$CFLAGS $ATLAS_CFLAGS"
 dnl
 dnl ACTION-IF-FOUND is a list of shell commands to run if BLAS/LAPACK
@@ -25,6 +25,12 @@ if test x$acx_atlas_ok = xno; then
         [BLAS header filename.])
       AC_DEFINE(ATLAS_LAPACK_H, "atlas/clapack.h",
         [LAPACK header filename.])
+    else
+      AC_DEFINE_UNQUOTED(ATLAS_BLAS_H, "$1/include/cblas.h",
+        [BLAS header filename.])
+      AC_DEFINE_UNQUOTED(ATLAS_LAPACK_H, "$1/include/clapack.h",
+        [LAPACK header filename.])
+      AC_CHECK_HEADERS([$1/include/cblas.h $1/include/clapack.h],[acx_atlas_ok=yes])
     fi
 else
     AC_DEFINE(ATLAS_BLAS_H, "cblas.h",
@@ -40,17 +46,29 @@ if test x$acx_atlas_ok = xyes; then
 		[-lcblas -latlas -lm])
       AC_CHECK_LIB(cblas, cblas_sgemm,, [acx_atlas_ok=no],
 		[-latlas -lm])
+      ATLAS_LIBPATH=""
     else
       AC_CHECK_LIB(lapack, [clapack_dpotrf],, [acx_atlas_ok=no],
 		[-L$1 -lcblas -latlas -lm])
       AC_CHECK_LIB(cblas, cblas_sgemm,, [acx_atlas_ok=no],
 		[-L$1 -latlas -lm])
+      if test x$acx_atlas_ok = xyes; then
+        ATLAS_LIBPATH="-L$1"
+      else
+        acx_atlas_ok=yes
+        unset ac_cv_lib_lapack_clapack_dpotrf
+        AC_CHECK_LIB(lapack, [clapack_dpotrf],, [acx_atlas_ok=no],
+		[-L$1/lib -lcblas -latlas -lm])
+        unset ac_cv_lib_cblas_cblas_sgemm
+        AC_CHECK_LIB(cblas, cblas_sgemm,, [acx_atlas_ok=no],
+		[-L$1/lib -latlas -lm])
+        ATLAS_LIBPATH="-L$1/lib"
+      fi
     fi
-    ATLAS_LIBS="$LIBS"
     LIBS="$OLIBS"
 fi
 
-AC_SUBST(ATLAS_LIBS)
+AC_SUBST(ATLAS_LIBPATH)
 AC_SUBST(ATLAS_CFLAGS)
 
 # Finally, execute ACTION-IF-FOUND/ACTION-IF-NOT-FOUND:

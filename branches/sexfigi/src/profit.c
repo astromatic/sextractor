@@ -9,7 +9,7 @@
 *
 *	Contents:	Fit an arbitrary profile combination to a detection.
 *
-*	Last modify:	15/08/2007
+*	Last modify:	08/10/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -129,7 +129,7 @@ void	profit_fit(profitstruct *profit,
     checkstruct		*check;
     double		*param, *oldparaminit,
 			psf_fwhm, oldchi2;
-    int			ix,iy, p, oldniter, flags;
+    int			ix,iy, p, oldniter;
 
 
   if (profit->psfdft)
@@ -285,12 +285,12 @@ INPUT	Pointer to the profit structure involved in the fit,
 OUTPUT	Number of iterations used.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	17/06/2007
+VERSION	08/10/2007
  ***/
 int	profit_minimize(profitstruct *profit, int niter)
   {
    lm_control_type	control;
-   double		lm_opts[5],lm_info[LM_INFO_SZ],
+   double		lm_opts[5],
 			*diag, *fjac, *qtf, *wa1, *wa2, *wa3, *wa4;
    int			*ipvt,
 			m,n;
@@ -520,7 +520,7 @@ double	*profit_compresi(profitstruct *profit, picstruct *field,
 		invsig, error, x1c,x1,x2,r2,rmin;
    PIXTYPE	*objpix, *objweight, *lmodpix,
 		val,val2;
-   int		i, npix, ix1,ix2;
+   int		npix, ix1,ix2;
   
 /* Compute vector of residuals */
   npix = profit->objnaxisn[0]*profit->objnaxisn[1];
@@ -932,13 +932,13 @@ INPUT	Profile-fitting structure,
 	pointer to the obj2.
 OUTPUT	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	15/08/2007
+VERSION	08/10/2007
  ***/
 void	 profit_moments(profitstruct *profit, objstruct *obj,
 			obj2struct *obj2)
   {
    double	*pix,
-		fwhm, invtwosigma2, hw,hh, x,y,xstart, val,
+		hw,hh, x,y, xstart, val,
 		mx,my, sum, mx2,my2,mxy, den;
    int		ix,iy;
 
@@ -1022,14 +1022,13 @@ INPUT	Pointer to the profit structure,
 	Upper boundary to the parameter.
 OUTPUT	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	24/07/2007
+VERSION	08/10/2007
  ***/
 void	profit_resetparams(profitstruct *profit, objstruct *obj,
 		obj2struct *obj2)
   {
-   double	*paramptr,
-		param, parammin,parammax;
-   int		p, index;
+   double	param, parammin,parammax;
+   int		p;
 
 
   for (p=0; p<PARAM_NPARAM; p++)
@@ -1488,7 +1487,7 @@ INPUT	Profile structure,
 	profile-fitting structure.
 OUTPUT	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	15/08/2007
+VERSION	08/10/2007
  ***/
 void	prof_add(profstruct *prof, profitstruct *profit)
   {
@@ -1501,7 +1500,7 @@ void	prof_add(profstruct *prof, profitstruct *profit)
 		x1in,x2in, odx, ostep,
 		n,k, hinvn, x1t,x2t, ca,sa, u,
 		armamp,arm2amp, armrdphidr, posang, width, invwidth2,
-		r, r2, rmin, r2min, r2minxin, r2minxout, rmax, r2max, invr2xdif,
+		r,r2,rmin,r2min, r2minxin,r2minxout, rmax, r2max, invr2xdif,
 		val, theta, thresh, ra,rb;
    int		npix, noversamp,
 		d,e,i, ix1,ix2, idx1,idx2;
@@ -1599,7 +1598,7 @@ void	prof_add(profstruct *prof, profitstruct *profit)
           x1in = cd12*x2 + cd11*x1;
           x2in = cd22*x2 + cd21*x1;
           ra = x1in*x1in+x2in*x2in;
-          val = expf(k*PROFIT_POWF(ra,0.125));
+          val = expf(-7.6692f*PROFIT_POWF(ra,0.125));
           noversamp  = (int)(val*PROFIT_OVERSAMP+0.1);
           if (noversamp < 2)
             *(pixin++) = val;
@@ -1618,7 +1617,7 @@ void	prof_add(profstruct *prof, profitstruct *profit)
               for (idx1=noversamp; idx1--;)
                 {
                 ra = x1in*x1in+x2in*x2in;
-                val += expf(k*PROFIT_POWF(ra,0.125));
+                val += expf(-7.6692f*PROFIT_POWF(ra,0.125));
                 x1in += dcd11;
                 x2in += dcd21;
                 }
@@ -1863,7 +1862,7 @@ width = 2.0;
       {
       dx1 = -x1cout;
       for (ix1=profit->modnaxisn[0]; ix1--; dx1 += 1.0)
-        if ((val=*(pixin++))>thresh && (r=dx1*dx1+dx2*dx2)>r2min && r2<r2max)
+        if ((val=*(pixin++))>thresh && (r2=dx1*dx1+dx2*dx2)>r2min && r2<r2max)
           thresh = val;
       }
     }
@@ -1874,7 +1873,7 @@ width = 2.0;
       {
       dx1 = -x1cout;
       for (ix1=profit->modnaxisn[0]; ix1--; dx1 += 1.0)
-        if ((val=*(pixin++))<thresh && (r=dx1*dx1+dx2*dx2)>r2min && r2<r2max)
+        if ((val=*(pixin++))<thresh && (r2=dx1*dx1+dx2*dx2)>r2min && r2<r2max)
           thresh = val;
       }
     }

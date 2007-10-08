@@ -9,7 +9,7 @@
 *
 *	Contents:	Handling of field structures.
 *
-*	Last modify:	29/06/2006
+*	Last modify:	08/10/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -82,7 +82,7 @@ picstruct	*newfield(char *filename, int flags, int nok)
 /* Check the image exists and read important info (image size, etc...) */
   readimagehead(field);
   if (cat->ntab>1)
-    sprintf(gstr, "[%d/%d]", nok2, cat->ntab-1);
+    sprintf(gstr, "[%d/%d]", nok2, cat->tab->naxis<2? cat->ntab-1 : cat->ntab);
   QPRINTF(OUTPUT, "%s \"%.20s\" %s / %d x %d / %d bits %s data\n",
 	flags&FLAG_FIELD?   "Flagging  from:" :
        (flags&(RMS_FIELD|VAR_FIELD|WEIGHT_FIELD)?
@@ -143,8 +143,6 @@ picstruct	*newfield(char *filename, int flags, int nok)
   if (prefs.filter_flag)
     {
 /*-- If filtering is on, one should consider the height of the conv. mask */
-     int	margin;
-
     if (field->stripheight < thefilter->convh)
       field->stripheight = thefilter->convh;
     if (field->stripmargin < (margin = (thefilter->convh-1)/2))

@@ -9,7 +9,7 @@
 *
 *	Contents:	main program.
 *
-*	Last modify:	06/02/2006
+*	Last modify:	08/10/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -42,6 +42,7 @@
 #include	"weight.h"
 #include	"xml.h"
 
+static int		selectext(char *filename);
 time_t			thetimet, thetimet2;
 extern profitstruct	*theprofit;
 
@@ -58,7 +59,9 @@ void	makeit()
    tabstruct		*imatab;
    static time_t        thetime1, thetime2;
    struct tm		*tm;
-   int			i, nok, ntab, next;
+   int			nflag[MAXFLAG],
+			i, nok, ntab, next, ntabmax, forcextflag,
+			nima0,nima1, nweight0,nweight1;
 
 /* Install error logging */
   error_installfunc(write_error);
@@ -145,21 +148,43 @@ void	makeit()
   alloccatparams();
   useprefs();
 
-/* Compute the number of valid input extensions */
+/* Check if a specific extension should be loaded */
+  if ((nima0=selectext(prefs.image_name[0])) != RETURN_ERROR)
+    {
+    forcextflag = 1;
+    ntabmax = next = 1;
+    }
+  else
+    forcextflag = 0;
+
   if (!(imacat = read_cat(prefs.image_name[0])))
     error(EXIT_FAILURE, "*Error*: cannot open ", prefs.image_name[0]);
   close_cat(imacat);
   imatab = imacat->tab;
-  next = 0;
-  for (ntab = 0 ; ntab<imacat->ntab; ntab++, imatab = imatab->nexttab)
+
+  if (!forcextflag)
     {
-/*--  Check for the next valid image extension */
-    if ((imatab->naxis < 2)
+    ntabmax = imacat->ntab;
+/*-- Compute the number of valid input extensions */
+    next = 0;
+    for (ntab = 0 ; ntab<imacat->ntab; ntab++, imatab = imatab->nexttab)
+      {
+/*---- Check for the next valid image extension */
+      if ((imatab->naxis < 2)
 	|| !strncmp(imatab->xtension, "BINTABLE", 8)
 	|| !strncmp(imatab->xtension, "ASCTABLE", 8))
-      continue;
-    next++;
+        continue;
+      next++;
+      }
     }
+
+/* Do the same for other data (but do not force single extension mode) */
+  nima1 = selectext(prefs.image_name[1]);
+  nweight0 = selectext(prefs.wimage_name[0]);
+  nweight1 = selectext(prefs.wimage_name[1]);
+  for (i=0; i<prefs.nfimage_name; i++)
+    nflag[i] = selectext(prefs.fimage_name[i]);
+
   thecat.next = next;
 
 /*-- Init the CHECK-images */
@@ -188,12 +213,12 @@ void	makeit()
 
 /* Go through all images */
   nok = -1;
-  for (ntab = 0 ; ntab<imacat->ntab; ntab++, imatab = imatab->nexttab)
+  for (ntab = 0 ; ntab<ntabmax; ntab++, imatab = imatab->nexttab)
     {
 /*--  Check for the next valid image extension */
-    if ((imatab->naxis < 2)
+    if (!forcextflag && ((imatab->naxis < 2)
 	|| !strncmp(imatab->xtension, "BINTABLE", 8)
-	|| !strncmp(imatab->xtension, "ASCTABLE", 8))
+	|| !strncmp(imatab->xtension, "ASCTABLE", 8)))
       continue;
     nok++;
 
@@ -206,8 +231,10 @@ void	makeit()
     if (prefs.dimage_flag)
       {
 /*---- Init the Detection and Measurement-images */
-      dfield = newfield(prefs.image_name[0], DETECT_FIELD, nok);
-      field = newfield(prefs.image_name[1], MEASURE_FIELD, nok);
+      dfield = newfield(prefs.image_name[0], DETECT_FIELD,
+	nima0<0? nok:nima0);
+      field = newfield(prefs.image_name[1], MEASURE_FIELD,
+	nima1<0? nok:nima1);
       if ((field->width!=dfield->width) || (field->height!=dfield->height))
         error(EXIT_FAILURE, "*Error*: Frames have different sizes","");
 /*---- Prepare interpolation */
@@ -218,7 +245,9 @@ void	makeit()
       }
     else
       {
-      field = newfield(prefs.image_name[0], DETECT_FIELD | MEASURE_FIELD, nok);
+      field = newfield(prefs.image_name[0], DETECT_FIELD | MEASURE_FIELD,
+		nima0<0? nok:nima0);
+
 /*-- Prepare interpolation */
       if ((prefs.dweight_flag || prefs.weight_flag)
 	&& prefs.interp_type[0] == INTERP_ALL)
@@ -238,7 +267,7 @@ void	makeit()
           {
 /*-------- First: the "measurement" weights */
           wfield = newweight(prefs.wimage_name[1],field,prefs.weight_type[1],
-		nok);
+		nweight1<0? nok:nweight1);
           wtype = prefs.weight_type[1];
           interpthresh = prefs.weight_thresh[1];
 /*-------- Convert the interpolation threshold to variance units */
@@ -255,13 +284,13 @@ void	makeit()
           if (prefs.weight_type[0] == WEIGHT_FROMINTERP)
             {
             dwfield=newweight(prefs.wimage_name[0],wfield,prefs.weight_type[0],
-		nok);
+		nweight0<0? nok:nweight0);
             weight_to_var(wfield, &interpthresh, 1);
             }
           else
             {
             dwfield = newweight(prefs.wimage_name[0], dfield?dfield:field,
-		prefs.weight_type[0], nok);
+		prefs.weight_type[0], nweight0<0? nok:nweight0);
             weight_to_var(dwfield, &interpthresh, 1);
             }
           dwfield->weight_thresh = interpthresh;
@@ -274,7 +303,7 @@ void	makeit()
         {
 /*------ Single-weight-map mode */
         wfield = newweight(prefs.wimage_name[0], dfield?dfield:field,
-			prefs.weight_type[0], nok);
+			prefs.weight_type[0], nweight0<0? nok:nweight0);
         wtype = prefs.weight_type[0];
         interpthresh = prefs.weight_thresh[0];
 /*------ Convert the interpolation threshold to variance units */
@@ -289,7 +318,8 @@ void	makeit()
 /*-- Init the FLAG-images */
     for (i=0; i<prefs.nimaflag; i++)
       {
-      pffield[i] = newfield(prefs.fimage_name[i], FLAG_FIELD, nok);
+      pffield[i] = newfield(prefs.fimage_name[i], FLAG_FIELD,
+		nflag[i]<0? nok:nflag[i]);
       if ((pffield[i]->width!=field->width)
 	|| (pffield[i]->height!=field->height))
         error(EXIT_FAILURE,
@@ -493,6 +523,34 @@ void	initglob()
 
 
   return;
+  }
+
+
+/****** selectext ************************************************************
+PROTO	int selectext(char *filename)
+PURPOSE	Return the user-selected extension number [%d] from the file name.
+INPUT	Filename character string.
+OUTPUT	Extension number, or RETURN_ERROR if nos extension specified.
+NOTES	The bracket and its extension number are removed from the filename if
+	found.
+AUTHOR  E. Bertin (IAP)
+VERSION 08/10/2007
+ ***/
+static int	selectext(char *filename)
+  {
+   char	*bracl,*bracr;
+   int	next;
+
+  if (filename && (bracl=strrchr(filename, '[')))
+    {
+    *bracl = '\0';
+    if ((bracr=strrchr(bracl+1, ']')))
+      *bracr = '\0';
+    next = strtol(bracl+1, NULL, 0);
+    return next;
+    }
+
+  return RETURN_ERROR;
   }
 
 
