@@ -9,7 +9,7 @@
 *
 *	Contents:	functions for output of catalog data.
 *
-*	Last modify:	09/08/2007
+*	Last modify:	11/10/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -539,9 +539,9 @@ void	reinitcat(picstruct *field)
       case FITS_LDAC:
 /*------ We create a dummy table (only used through its header) */
         QCALLOC(asctab, tabstruct, 1);
-        asctab->headnblock = field->fitsheadsize/FBSIZE;
-        QMALLOC(asctab->headbuf, char, asctab->headnblock*FBSIZE);
-        memcpy(asctab->headbuf, field->fitshead, asctab->headnblock*FBSIZE);
+        asctab->headnblock = field->tab->headnblock;
+        QMEMCPY(field->tab->headbuf, asctab->headbuf, char,
+		asctab->headnblock*FBSIZE);
         key = headkey;
         while (*key->name)
           addkeyto_head(asctab, key++);
@@ -567,9 +567,9 @@ void	reinitcat(picstruct *field)
       case FITS_TPX:
 /*------ We create a dummy table (only used through its header) */
         QCALLOC(asctab, tabstruct, 1);
-        asctab->headnblock = field->fitsheadsize/FBSIZE;
-        QMALLOC(asctab->headbuf, char, asctab->headnblock*FBSIZE);
-        memcpy(asctab->headbuf, field->fitshead, asctab->headnblock*FBSIZE);
+        asctab->headnblock = field->tab->headnblock;
+        QMEMCPY(field->tab->headbuf, asctab->headbuf, char,
+		asctab->headnblock*FBSIZE);
         key = headkey;
         while (*key->name)
           addkeyto_head(asctab, key++);

@@ -9,7 +9,7 @@
 *
 *	Contents:	functions dealing with background computation.
 *
-*	Last modify:	16/08/2006
+*	Last modify:	11/10/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -129,10 +129,10 @@ void	makeback(picstruct *field, picstruct *wfield)
 /*---- The image is small enough so that we can make exhaustive stats */
       if (j == ny-1 && field->npix%bufsize)
         bufsize = field->npix%bufsize;
-      readdata(field, buf, bufsize);
+      read_body(field->tab, buf, bufsize);
       if (wfield)
         {
-        readdata(wfield, wbuf, bufsize);
+        read_body(wfield->tab, wbuf, bufsize);
         weight_to_var(wfield, wbuf, bufsize);
         }
 /*---- Build the histograms */
@@ -185,7 +185,7 @@ void	makeback(picstruct *field, picstruct *wfield)
       buft = buf;
       for (i=nlines; i--; buft += w)
         {
-        readdata(field, buft, w);
+        read_body(field->tab, buft, w);
         if (i)
           QFSEEK(field->file, jumpsize*(OFF_T)field->bytepix, SEEK_CUR,
 		field->filename);
@@ -199,7 +199,7 @@ void	makeback(picstruct *field, picstruct *wfield)
         wbuft = wbuf;
         for (i=nlines; i--; wbuft += w)
           {
-          readdata(wfield, wbuft, w);
+          read_body(wfield->tab, wbuft, w);
           weight_to_var(wfield, wbuft, w);
           if (i)
             QFSEEK(wfield->file, jumpsize*(OFF_T)wfield->bytepix, SEEK_CUR,
@@ -230,10 +230,10 @@ void	makeback(picstruct *field, picstruct *wfield)
         {
         if (bufsize2>size)
           bufsize2 = size;
-        readdata(field, buf, bufsize2);
+        read_body(field->tab, buf, bufsize2);
         if (wfield)
           {
-          readdata(wfield, wbuf, bufsize2);
+          read_body(wfield->tab, wbuf, bufsize2);
           weight_to_var(wfield, wbuf, bufsize2);
           }
         backhisto(backmesh, wbackmesh, buf, wbuf, bufsize2, nx, w, bw,

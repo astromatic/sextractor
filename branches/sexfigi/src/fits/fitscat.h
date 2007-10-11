@@ -9,7 +9,7 @@
 *
 *	Contents:	Simplified versin of the LDACTools: main include file
 *
-*	Last modify:	17/07/2007
+*	Last modify:	10/10/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -75,6 +75,7 @@ typedef enum		{SHOW_ASCII, SHOW_SKYCAT}
 				output_type;    /* Type of output */
 
 typedef	float		PIXTYPE;		/* Pixel type */
+typedef	unsigned int	FLAGTYPE;		/* Flag type */
 
 #ifdef	HAVE_UNSIGNED_LONG_LONG
 typedef	unsigned long long	KINGSIZE_T;	/* for large sizes */
@@ -212,6 +213,7 @@ extern void	add_cleanupfilename(char *filename),
 			int nkeys, unsigned char *mask),
 		read_basic(tabstruct *tab),
 		read_body(tabstruct *tab, PIXTYPE *ptr, size_t size),
+		read_ibody(tabstruct *tab, FLAGTYPE *ptr, size_t size),
 		readbasic_head(tabstruct *tab),
 		remove_cleanupfilename(char *filename),
 		save_cat(catstruct *cat, char *filename),

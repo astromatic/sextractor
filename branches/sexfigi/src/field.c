@@ -9,7 +9,7 @@
 *
 *	Contents:	Handling of field structures.
 *
-*	Last modify:	08/10/2007
+*	Last modify:	11/10/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -32,6 +32,7 @@
 #include	"back.h"
 #include	"field.h"
 #include	"filter.h"
+#include	"fitswcs.h"
 #include	"interpolate.h"
 
 /********************************* newfield **********************************/
@@ -44,13 +45,16 @@ picstruct	*newfield(char *filename, int flags, int nok)
    picstruct	*field;
    catstruct	*cat;
    tabstruct	*tab;
-   OFF_T	mefpos = 0;		/* To avoid gcc -Wall warnings */
    int		nok2, ntab, margin;
 
 /* Move to nok'th valid FITS image extension */
   if (!(cat = read_cat(filename)))
     error(EXIT_FAILURE, "*Error*: cannot open ", filename);
-  close_cat(cat);
+
+/* First allocate memory for the new field (and nullify pointers) */
+  QCALLOC(field, picstruct, 1);
+  field->flags = flags;
+  field->cat = cat;
   tab = cat->tab;
   nok++;	/* At least one pass through the loop */
   nok2 = nok;
@@ -60,16 +64,12 @@ picstruct	*newfield(char *filename, int flags, int nok)
 	|| !strncmp(tab->xtension, "BINTABLE", 8)
 	|| !strncmp(tab->xtension, "ASCTABLE", 8))
       continue;
-    mefpos = tab->headpos;
+    field->tab = tab;
     nok--;
     }
   if (ntab<0)
     error(EXIT_FAILURE, "Not enough valid FITS image extensions in ",filename);
 
-/* First allocate memory for the new field (and nullify pointers) */
-  QCALLOC(field, picstruct, 1);
-  field->mefpos = mefpos;
-  field->flags = flags;
   strcpy (field->filename, filename);
 /* A short, "relative" version of the filename */
   if (!(field->rfilename = strrchr(field->filename, '/')))
@@ -80,7 +80,10 @@ picstruct	*newfield(char *filename, int flags, int nok)
   sprintf(gstr, "Looking for %s", field->rfilename);
   NFPRINTF(OUTPUT, gstr);
 /* Check the image exists and read important info (image size, etc...) */
+  field->file = cat->file;
+  
   readimagehead(field);
+
   if (cat->ntab>1)
     sprintf(gstr, "[%d/%d]", nok2, cat->tab->naxis<2? cat->ntab-1 : cat->ntab);
   QPRINTF(OUTPUT, "%s \"%.20s\" %s / %d x %d / %d bits %s data\n",
@@ -93,12 +96,8 @@ picstruct	*newfield(char *filename, int flags, int nok)
         cat->ntab>1? gstr : "",
 	field->width, field->height, field->bytepix*8,
 	field->bitpix>0?
-		(field->compress_type!=ICOMPRESS_NONE?"COMPRESSED":"INTEGER")
-		:"FLOATING POINT");
-
-/* Provide a buffer for compressed data */
-  if (field->compress_type != ICOMPRESS_NONE)
-    QMALLOC(field->compress_buf, char, FBSIZE);
+	(field->tab->compress_type!=COMPRESS_NONE?"COMPRESSED":"INTEGER")
+	:"FLOATING POINT");
 
 /* Check the astrometric system and do the setup of the astrometric stuff */
   if (prefs.world_flag && (flags & (MEASURE_FIELD|DETECT_FIELD)))
@@ -149,8 +148,6 @@ picstruct	*newfield(char *filename, int flags, int nok)
       field->stripmargin = margin;
     }
 
-  free_cat(&cat, 1);
-
   return field;
   }
 
@@ -170,15 +167,13 @@ picstruct	*inheritfield(picstruct *infield, int flags)
 /* Copy what is important and reset the remaining */
   *field = *infield;
   field->flags = flags;
-  copyastrom(infield, field);
-  QMEMCPY(infield->fitshead, field->fitshead, char, infield->fitsheadsize);
+  if (infield->wcs)
+    field->wcs = copy_wcs(infield->wcs);
   field->interp_flag = 0;
   field->assoc = NULL;
   field->strip = NULL;
   field->fstrip = NULL;
   field->reffield = infield;
-  field->compress_buf = NULL;
-  field->compress_type = ICOMPRESS_NONE;
   field->file = NULL;
 
   return field;
@@ -192,15 +187,14 @@ Free and close everything related to a field structure.
 void	endfield(picstruct *field)
 
   {
-  if (field->file)
-    fclose(field->file);
 
-  free(field->fitshead);
+/* Free cat only if associated with an open file */
+  if (field->file)
+    free_cat(&field->cat, 1);
   free(field->strip);
   free(field->fstrip);
-  free(field->compress_buf);
-  if (field->astrom)
-    endastrom(field);
+  if (field->wcs)
+    end_wcs(field->wcs);
   if (field->interp_flag)
     end_interpolate(field);
   endback(field);

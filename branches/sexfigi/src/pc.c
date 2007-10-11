@@ -9,7 +9,7 @@
 *
 *	Contents:	Stuff related to Principal Component Analysis (PCA).
 *
-*	Last modify:	27/11/2003
+*	Last modify:	11/10/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -29,7 +29,7 @@
 #include	"fits/fitscat.h"
 #include	"check.h"
 #include	"image.h"
-#include	"poly.h"
+#include	"wcs/poly.h"
 #include	"psf.h"
 
 static  obj2struct	*obj2 = &outobj2;

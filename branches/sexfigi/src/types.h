@@ -9,7 +9,7 @@
 *
 *	Contents:	global type definitions.
 *
-*	Last modify:	09/08/2007
+*	Last modify:	11/10/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -18,6 +18,9 @@
 
 #ifndef _FITSCAT_H_
 #include "fits/fitscat.h"
+#endif
+#ifndef _FITSWCS_H_
+#include "fitswcs.h"
 #endif
 
 /*-------------------------------- flags ------------------------------------*/
@@ -45,7 +48,6 @@
 /*--------------------------------- typedefs --------------------------------*/
 typedef	unsigned char	BYTE;			/* a byte */
 typedef	unsigned short	USHORT;			/* 0 to 65535 integers */
-typedef unsigned int	FLAGTYPE;		/* flag type */
 typedef	char		pliststruct;		/* Dummy type for plist */
 
 typedef	int		LONG;
@@ -148,6 +150,7 @@ typedef struct
   float		magerr_win;			/* WINdowed magnitude error */
 /* ---- astrometric data */
   double	posx,posy;			/* "FITS" pos. in pixels */
+  double	jacob[NAXIS*NAXIS];		/* Local deproject. Jacobian */
   double	mamaposx,mamaposy;		/* "MAMA" pos. in pixels */
   float		sposx,sposy;			/* single precision pos. */
   float		poserr_a, poserr_b,
@@ -328,9 +331,9 @@ typedef struct pic
   char		*rfilename;		/* pointer to the reduced image name */
   char		ident[MAXCHAR];		/* field identifier (read from FITS)*/
   char		rident[MAXCHAR];	/* field identifier (relative) */
+  catstruct	*cat;			/* FITS structure */
+  tabstruct	*tab;			/* FITS extension structure */
   FILE		*file;			/* pointer the image file structure */
-  char		*fitshead;		/* pointer to the FITS header */
-  int		fitsheadsize;		/* FITS header size */
 /* ---- main image parameters */
   int		bitpix, bytepix;	/* nb of bits and bytes per pixel */
   int		bitsgn;			/* non-zero if signed integer data */
@@ -352,14 +355,6 @@ typedef struct pic
   int		stripy;			/* y position in buffer */
   int		stripylim;		/* y limit in buffer */
   int		stripysclim;		/* y scroll limit in buffer */
-/* ---- image (de-)compression */
-  enum {ICOMPRESS_NONE, ICOMPRESS_BASEBYTE, ICOMPRESS_PREVPIX}
-		compress_type;		/* image compression type */
-  char		*compress_buf;		/* de-compression buffer */
-  char		*compress_bufptr;	/* present pixel in buffer */
-  int		compress_curval;	/* current pixel or checksum value */
-  int		compress_checkval;	/* foreseen pixel or checksum value */
-  int		compress_npix;		/* remaining pixels in buffer */
 /* ---- basic astrometric parameters */
    double	pixscale;		/* pixel size in arcsec.pix-1 */
    double	epoch;			/* epoch of coordinates */
@@ -381,7 +376,7 @@ typedef struct pic
   PIXTYPE	thresh;			/* analysis threshold */
   backenum	back_type;		/* Background type */
 /* ---- astrometric parameters */
-  struct structastrom	*astrom;	/* astrometric data */
+  struct wcs	*wcs;			/* astrometric data */
   struct structassoc	*assoc;		/* ptr to the assoc-list */
   int		flags;			/* flags defining the field type */
 /* ---- image interpolation */

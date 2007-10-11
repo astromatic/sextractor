@@ -10,7 +10,7 @@
 *
 *	Contents:	Fit the PSF to a detection.
 *
-*	Last modify:	07/12/2006
+*	Last modify:	11/10/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -31,7 +31,7 @@
 #include	"check.h"
 #include	"filter.h"
 #include	"image.h"
-#include	"poly.h"
+#include	"wcs/poly.h"
 #include	"psf.h"
 
 /*------------------------------- variables ---------------------------------*/
@@ -291,7 +291,7 @@ void	psf_readcontext(psfstruct *psf, picstruct *field)
       {
       psf->context[i] = &contextval[i];
       psf->contexttyp[i] = T_DOUBLE;
-      if (fitsread(field->fitshead, psf->contextname[i]+1, &contextval[i],
+      if (fitsread(field->tab->headbuf, psf->contextname[i]+1, &contextval[i],
 		H_FLOAT,T_DOUBLE) == RETURN_ERROR)
         {
         sprintf(gstr, "*Error*: %s parameter not found in the header of ",
