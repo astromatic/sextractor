@@ -559,7 +559,6 @@ wcsstruct	*read_wcs(tabstruct *tab)
           FITSREADF(buf, str, wcs->projp[j], 0.0);
           }
 /*---- New convention */
-/*
       if (fitsfind(buf, "PV?_????") != RETURN_ERROR)
         for (l=0; l<naxis; l++)
           for (j=0; j<100; j++)
@@ -567,7 +566,6 @@ wcsstruct	*read_wcs(tabstruct *tab)
             sprintf(str, "PV%d_%d", l+1, j);
             FITSREADF(buf, str, wcs->projp[j+l*100], 0.0);
             }
-*/
       }
     }
 
