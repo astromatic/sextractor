@@ -9,7 +9,7 @@
 *
 *	Contents:	Keywords for the configuration file.
 *
-*	Last modify:	20/07/2007
+*	Last modify:	14/10/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -257,7 +257,7 @@ char *default_prefs[] =
 "*ASSOC_DATA       2,3,4          # columns of the data to replicate (0=all)",
 "*ASSOC_PARAMS     2,3,4          # columns of xpos,ypos[,mag]",
 "*ASSOC_RADIUS     2.0            # cross-matching radius (pixels)",
-"*ASSOC_TYPE       MAG_SUM        # ASSOCiation method: FIRST, NEAREST, MEAN,",
+"*ASSOC_TYPE       NEAREST        # ASSOCiation method: FIRST, NEAREST, MEAN,",
 "*                                # MAG_MEAN, SUM, MAG_SUM, MIN or MAX",
 "*ASSOCSELEC_TYPE  MATCHED        # ASSOC selection type: ALL, MATCHED or -MATCHED",
 "*",
