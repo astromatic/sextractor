@@ -9,7 +9,7 @@
 *
 *	Contents:	Fit an arbitrary profile combination to a detection.
 *
-*	Last modify:	08/10/2007
+*	Last modify:	15/10/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -1022,7 +1022,7 @@ INPUT	Pointer to the profit structure,
 	Upper boundary to the parameter.
 OUTPUT	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	08/10/2007
+VERSION	15/10/2007
  ***/
 void	profit_resetparams(profitstruct *profit, objstruct *obj,
 		obj2struct *obj2)
@@ -1055,12 +1055,12 @@ void	profit_resetparams(profitstruct *profit, objstruct *obj,
       case PARAM_DEVAUC_FLUX:
       case PARAM_SERSIC_FLUX:
         param = obj2->flux_auto/2.0;
-        parammin = -obj2->flux_auto;
+        parammin = -obj2->flux_auto/1000.0;
         parammax = 2*obj2->flux_auto;
         break;
       case PARAM_EXPO_FLUX:
         param = obj2->flux_auto/2.0;
-        parammin = -obj2->flux_auto;
+        parammin = -obj2->flux_auto/1000.0;
         parammax = 2*obj2->flux_auto;
         break;
       case PARAM_DEVAUC_MAJ:
@@ -1487,7 +1487,7 @@ INPUT	Profile structure,
 	profile-fitting structure.
 OUTPUT	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	08/10/2007
+VERSION	15/10/2007
  ***/
 void	prof_add(profstruct *prof, profitstruct *profit)
   {
@@ -1855,27 +1855,13 @@ width = 2.0;
 /* Find best threshold (the max around the circle with radius rmax */
   dx2 = -x2cout;
   pixin = profit->pmodpix;
-  if (*prof->flux>=0.0)
+  thresh = -BIG;
+  for (ix2=profit->modnaxisn[1]; ix2--; dx2 += 1.0)
     {
-    thresh = -BIG;
-    for (ix2=profit->modnaxisn[1]; ix2--; dx2 += 1.0)
-      {
-      dx1 = -x1cout;
-      for (ix1=profit->modnaxisn[0]; ix1--; dx1 += 1.0)
-        if ((val=*(pixin++))>thresh && (r2=dx1*dx1+dx2*dx2)>r2min && r2<r2max)
-          thresh = val;
-      }
-    }
-  else
-    {
-    thresh = BIG;
-    for (ix2=profit->modnaxisn[1]; ix2--; dx2 += 1.0)
-      {
-      dx1 = -x1cout;
-      for (ix1=profit->modnaxisn[0]; ix1--; dx1 += 1.0)
-        if ((val=*(pixin++))<thresh && (r2=dx1*dx1+dx2*dx2)>r2min && r2<r2max)
-          thresh = val;
-      }
+    dx1 = -x1cout;
+    for (ix1=profit->modnaxisn[0]; ix1--; dx1 += 1.0)
+      if ((val=*(pixin++))>thresh && (r2=dx1*dx1+dx2*dx2)>r2min && r2<r2max)
+        thresh = val;
     }
 
 /* Threshold and measure the flux */

@@ -114,8 +114,8 @@ AC_FUNC_FSEEKO
 datadir2=$(URBI_RESOLVE_DIR([$datadir]))
 
 # Provide a special option for ATLAS
-AC_ARG_WITH(atlas_libpath,
-        [AC_HELP_STRING([--with-atlas_libpath=<ATLAS library path>],
+AC_ARG_WITH(atlas,
+        [AC_HELP_STRING([--with-atlas=<ATLAS library path>],
         [Provide an alternative path to the ATLAS library])],
     atlas_libdir=$withval,
     atlas_libdir=""

@@ -867,7 +867,7 @@ Optional Features:
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
-  --with-atlas_libpath=<ATLAS library path>
+  --with-atlas=<ATLAS library path>
                           Provide an alternative path to the ATLAS library
   --with-xsl_url=<default URL for XSLT filter>
                           Provide an alternative default URL of the XSLT
@@ -6576,9 +6576,9 @@ urbi_resolve_dir '$datadir')
 
 # Provide a special option for ATLAS
 
-# Check whether --with-atlas_libpath or --without-atlas_libpath was given.
-if test "${with_atlas_libpath+set}" = set; then
-  withval="$with_atlas_libpath"
+# Check whether --with-atlas or --without-atlas was given.
+if test "${with_atlas+set}" = set; then
+  withval="$with_atlas"
   atlas_libdir=$withval
 else
   atlas_libdir=""
