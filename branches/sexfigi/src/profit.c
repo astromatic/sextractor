@@ -1599,7 +1599,7 @@ void	prof_add(profstruct *prof, profitstruct *profit)
           x2in = cd22*x2 + cd21*x1;
           ra = x1in*x1in+x2in*x2in;
           val = expf(-7.6692f*PROFIT_POWF(ra,0.125));
-          noversamp  = (int)(val*PROFIT_OVERSAMP+0.1);
+          noversamp  = (int)(sqrt(val)*PROFIT_OVERSAMP+0.1);
           if (noversamp < 2)
             *(pixin++) = val;
           else
