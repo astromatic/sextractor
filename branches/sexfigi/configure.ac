@@ -6,7 +6,7 @@ define([AC_CACHE_LOAD],)
 define([AC_CACHE_SAVE],)
 
 # This is your standard Bertin source code...
-AC_INIT(sextractor, 2.6.4, [bertin@iap.fr])
+AC_INIT(sextractor, 2.6.5, [bertin@iap.fr])
 AC_CONFIG_SRCDIR(src/makeit.c)
 AC_CONFIG_AUX_DIR(autoconf)
 AM_CONFIG_HEADER(config.h)
@@ -113,12 +113,32 @@ AC_FUNC_FSEEKO
 # Set the data directory to a true absolute path
 datadir2=$(URBI_RESOLVE_DIR([$datadir]))
 
-# Provide a special option for ATLAS
+# Provide special options for ATLAS
 AC_ARG_WITH(atlas,
         [AC_HELP_STRING([--with-atlas=<ATLAS library path>],
         [Provide an alternative path to the ATLAS library])],
     atlas_libdir=$withval,
     atlas_libdir=""
+    )
+AC_ARG_WITH(atlas-incdir,
+        [AC_HELP_STRING([--with-atlas-incdir=<ATLAS include dir>],
+        [Provide an alternative path to the ATLAS include directory])],
+    atlas_incdir=$withval,
+    atlas_incdir=""
+    )
+
+# Provide special options for FFTW
+AC_ARG_WITH(fftw,
+        [AC_HELP_STRING([--with-fftw=<FFTW library path>],
+        [Provide an alternative path to the FFTW library])],
+    fftw_libdir=$withval,
+    fftw_libdir=""
+    )
+AC_ARG_WITH(fftw-incdir,
+        [AC_HELP_STRING([--with-fftw-incdir=<FFTW include dir>],
+        [Provide an alternative path to the FFTW include directory])],
+    fftw_incdir=$withval,
+    fftw_incdir=""
     )
 
 # Provide a special option for the default XSLT URL
@@ -160,30 +180,20 @@ fi
 AM_CONDITIONAL(USE_THREADS, test $use_pthreads = "yes")
 
 ################ handle the FFTW library (Fourier transforms) ################
-ACX_FFTW(,[use_fftw=yes],[use_fftw=no])
+ACX_FFTW($fftw_libdir,$fftw_incdir,$use_pthreads,no,[use_fftw=yes],[use_fftw=no])
 if test "$use_fftw" = "yes"; then
-  if test "$use_pthreads" = "yes"; then
-    if  test "$acx_fftwt_ok" = "no"; then
-      AC_MSG_ERROR([Threaded version of the FFTW library not found! Exiting.])
-    fi
-    LIBS="$FFTWT_LIBS $LIBS"
-  else
-    LIBS="$FFTW_LIBS $LIBS"
-  fi
+  LIBS="$FFTW_LIBS $LIBS"
 else
-  AC_MSG_ERROR([FFTW library not found! Exiting.])
+  AC_MSG_ERROR([$FFTW_ERROR Exiting.])
 fi
 
 ################## handle the ATLAS library(linear algebra) ##################
-ACX_ATLAS($atlas_libdir,[use_atlas=yes],[use_atlas=no])
+ACX_ATLAS($atlas_libdir,$atlas_incdir,$use_pthreads,
+	[use_atlas=yes],[use_atlas=no])
 if test "$use_atlas" = "yes"; then
-  if test "$use_pthreads" = "yes"; then
-    LIBS="$ATLAS_LIBPATH -llapack -lptcblas -lcblas -latlas $LIBS"
-  else
-    LIBS="$ATLAS_LIBPATH -llapack -lcblas -latlas $LIBS"
-  fi
+  LIBS="$ATLAS_LIB $LIBS"
 else
-  AC_MSG_ERROR([CBLAS/LAPack library not found! Exiting.])
+  AC_MSG_ERROR([$ATLAS_ERROR Exiting.])
 fi
 
 # Special optimization options for the INTEL C compiler
