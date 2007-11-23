@@ -166,7 +166,7 @@ if test x"$acx_atlas_ok" = xyes; then
 	[Define if you have the ATLAS libraries and header files.])
   if test x$3 = xyes; then
 dnl Check whether the multithreaded version of ATLAS is there too:
-    AC_CHECK_LIB(ptcblas, cblas_dptgemm,, [acx_atlas_ok=no],
+    AC_CHECK_LIB(ptcblas, cblas_dgemm,, [acx_atlas_ok=no],
 	[-L$ATLAS_LIBPATH -lcblas -latlas -lm])
     if test x$acx_atlas_ok = xyes; then
       ATLAS_LIB="$ATLAS_LIBPATH -llapack -lptcblas -lcblas -latlas"

@@ -9,7 +9,7 @@
 *
 *	Contents:	Astrometrical computations.
 *
-*	Last modify:	11/10/2007
+*	Last modify:	23/11/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -81,11 +81,14 @@ Compute real WORLD coordinates and dimensions according to FITS info.
 void	computeastrom(picstruct *field, objstruct *obj)
 
   {
-  wcsstruct	*wcs;
-  double	rawpos[NAXIS], wcspos[NAXIS],
+   wcsstruct	*wcs;
+   double	rawpos[NAXIS], wcspos[NAXIS],
 		pixscale2;
+   int		lng,lat;
 
   wcs = field->wcs;
+  lng = wcs->lng;
+  lat = wcs->lat;
 
 /* If working with WCS, compute WORLD coordinates and local matrix */
   if (FLAG(obj2.mxw))
@@ -95,19 +98,19 @@ void	computeastrom(picstruct *field, objstruct *obj)
     raw_to_wcs(wcs, rawpos, wcspos);
     obj2->mxw = wcspos[0];
     obj2->myw = wcspos[1];
-    if (wcs->lng != wcs->lat)
+    if (lng != lat)
       {
-      obj2->alphas = obj2->mxw;
-      obj2->deltas = obj2->myw;
+      obj2->alphas = lng<lat? obj2->mxw : obj2->myw;
+      obj2->deltas = lng<lat? obj2->myw : obj2->mxw;
       if (FLAG(obj2.alpha2000))
         {
         if (fabs(wcs->equinox-2000.0)>0.003)
-          precess(wcs->equinox, wcspos[0], wcspos[1],
+          precess(wcs->equinox, wcspos[lng<lat?0:1], wcspos[lng<lat?1:0],
 		2000.0, &obj2->alpha2000, &obj2->delta2000);
         else
           {
-          obj2->alpha2000 = obj2->mxw;
-          obj2->delta2000 = obj2->myw;
+          obj2->alpha2000 = lng<lat? obj2->mxw : obj2->myw;
+          obj2->delta2000 = lng<lat? obj2->myw : obj2->mxw;
           }
         if (FLAG(obj2.alpha1950))
           j2b(wcs->equinox, obj2->alpha2000, obj2->delta2000,
@@ -124,19 +127,19 @@ void	computeastrom(picstruct *field, objstruct *obj)
     raw_to_wcs(wcs, rawpos, wcspos);
     obj2->peakxw = wcspos[0];
     obj2->peakyw = wcspos[1];
-    if (wcs->lng != wcs->lat)
+    if (lng != lat)
       {
-      obj2->peakalphas = obj2->peakxw;
-      obj2->peakdeltas = obj2->peakyw;
+      obj2->peakalphas = lng<lat? obj2->peakxw : obj2->peakyw;
+      obj2->peakdeltas = lng<lat? obj2->peakyw : obj2->peakxw;
       if (FLAG(obj2.peakalpha2000))
         {
         if (fabs(wcs->equinox-2000.0)>0.003)
-          precess(wcs->equinox, wcspos[0], wcspos[1],
+          precess(wcs->equinox, wcspos[lng<lat?0:1], wcspos[lng<lat?1:0],
 		2000.0, &obj2->peakalpha2000, &obj2->peakdelta2000);
         else
           {
-          obj2->peakalpha2000 = obj2->peakxw;
-          obj2->peakdelta2000 = obj2->peakyw;
+          obj2->peakalpha2000 = lng<lat? obj2->peakxw : obj2->peakyw;
+          obj2->peakdelta2000 = lng<lat? obj2->peakyw : obj2->peakxw;
           }
         if (FLAG(obj2.peakalpha1950))
           j2b(wcs->equinox, obj2->peakalpha2000, obj2->peakdelta2000,
@@ -153,10 +156,10 @@ void	computeastrom(picstruct *field, objstruct *obj)
     raw_to_wcs(wcs, rawpos, wcspos);
     obj2->winpos_xw = wcspos[0];
     obj2->winpos_yw = wcspos[1];
-    if (wcs->lng != wcs->lat)
+    if (lng != lat)
       {
-      obj2->winpos_alphas = obj2->winpos_xw;
-      obj2->winpos_deltas = obj2->winpos_yw;
+      obj2->winpos_alphas = lng<lat? obj2->winpos_xw : obj2->winpos_yw;
+      obj2->winpos_deltas = lng<lat? obj2->winpos_yw : obj2->winpos_xw;
       if (FLAG(obj2.winpos_alpha2000))
         {
         if (fabs(wcs->equinox-2000.0)>0.003)
@@ -164,8 +167,8 @@ void	computeastrom(picstruct *field, objstruct *obj)
 		2000.0, &obj2->winpos_alpha2000, &obj2->winpos_delta2000);
         else
           {
-          obj2->winpos_alpha2000 = obj2->winpos_xw;
-          obj2->winpos_delta2000 = obj2->winpos_yw;
+          obj2->winpos_alpha2000 = lng<lat? obj2->winpos_xw : obj2->winpos_yw;
+          obj2->winpos_delta2000 = lng<lat? obj2->winpos_yw : obj2->winpos_xw;
           }
         if (FLAG(obj2.winpos_alpha1950))
           j2b(wcs->equinox, obj2->winpos_alpha2000, obj2->winpos_delta2000,
@@ -267,7 +270,8 @@ void	astrom_shapeparam(picstruct *field, objstruct *obj)
        double	da,dd;
 
       if (FLAG(obj2.thetas))
-        obj2->thetas = obj2->thetaw + (obj2->thetaw>0.0?-90:90.0);
+        obj2->thetas = lng<lat? ((obj2->thetaw>0.0?90:-90.0) - obj2->thetaw)
+				: obj2->thetaw;
       if (FLAG(obj2.theta2000))
         {
         da = wcs->ap2000 - obj2->alpha2000;
@@ -360,7 +364,9 @@ void	astrom_winshapeparam(picstruct *field, objstruct *obj)
        double	da,dd;
 
       if (FLAG(obj2.win_thetas))
-        obj2->win_thetas = obj2->win_thetaw + (obj2->win_thetaw>0.0?-90:90.0);
+        obj2->win_thetas = lng<lat?
+			((obj2->win_thetaw>0.0?90:-90.0) - obj2->win_thetaw)
+			: obj2->win_thetaw;
       if (FLAG(obj2.win_theta2000))
         {
         da = wcs->ap2000 - obj2->winpos_alpha2000;
@@ -453,8 +459,9 @@ void	astrom_errparam(picstruct *field, objstruct *obj)
        double	da,dd;
 
       if (FLAG(obj2.poserr_thetas))
-        obj2->poserr_thetas = obj2->poserr_thetaw
-				+ (obj2->poserr_thetaw>0.0? -90:90.0);
+        obj2->poserr_thetas = lng<lat?
+		((obj2->poserr_thetaw>0.0?90:-90.0) - obj2->poserr_thetaw)
+		: obj2->poserr_thetaw;
       if (FLAG(obj2.poserr_theta2000))
         {
         da = wcs->ap2000 - obj2->alpha2000;
@@ -546,8 +553,9 @@ void	astrom_winerrparam(picstruct *field, objstruct *obj)
        double	da,dd;
 
       if (FLAG(obj2.winposerr_thetas))
-        obj2->winposerr_thetas = obj2->winposerr_thetaw
-				+ (obj2->winposerr_thetaw>0.0? -90:90.0);
+        obj2->winposerr_thetas = lng<lat?
+		((obj2->winposerr_thetaw>0.0?90:-90.0) - obj2->winposerr_thetaw)
+		: obj2->winposerr_thetaw;
       if (FLAG(obj2.winposerr_theta2000))
         {
         da = wcs->ap2000 - obj2->winpos_alpha2000;

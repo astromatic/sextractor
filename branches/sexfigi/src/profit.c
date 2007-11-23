@@ -974,7 +974,11 @@ void	 profit_moments(profitstruct *profit, objstruct *obj,
     {
     obj2->prof_eps1 = (mx2 - my2) / (mx2+my2);
     obj2->prof_eps2 = 2.0*mxy / (mx2 + my2);
-    den = mx2+my2+2.0*sqrt(mx2+my2-mxy*mxy);
+    den = mx2+my2-mxy*mxy;
+    if (den>=0.0)
+      den = mx2+my2+2.0*sqrt(den);
+    else
+      den = mx2+my2;
     obj2->prof_e1 = (mx2 - my2) / den;
     obj2->prof_e2 = 2.0*mxy / den;
     }

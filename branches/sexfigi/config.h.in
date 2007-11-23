@@ -3,14 +3,14 @@
 /* BLAS header filename. */
 #undef ATLAS_BLAS_H
 
-/* FFTW header filename. */
-#undef ATLAS_FFTW_H
-
 /* CLAPACK header filename. */
 #undef ATLAS_LAPACK_H
 
 /* Archive creation date */
 #undef DATE
+
+/* FFTW header filename. */
+#undef FFTW_H
 
 /* Define to 1 if you have the `atexit' function. */
 #undef HAVE_ATEXIT
