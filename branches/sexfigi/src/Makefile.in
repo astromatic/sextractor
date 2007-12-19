@@ -36,7 +36,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-bin_PROGRAMS = sex$(EXEEXT)
+bin_PROGRAMS = sex$(EXEEXT) ldactoasc$(EXEEXT)
 check_PROGRAMS = sex$(EXEEXT)
 subdir = src
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
@@ -54,6 +54,9 @@ CONFIG_CLEAN_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)"
 binPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(bin_PROGRAMS)
+am_ldactoasc_OBJECTS = ldactoasc.$(OBJEXT)
+ldactoasc_OBJECTS = $(am_ldactoasc_OBJECTS)
+ldactoasc_DEPENDENCIES = $(top_builddir)/src/fits/libfits.a
 am_sex_OBJECTS = analyse.$(OBJEXT) assoc.$(OBJEXT) astrom.$(OBJEXT) \
 	back.$(OBJEXT) bpro.$(OBJEXT) catout.$(OBJEXT) check.$(OBJEXT) \
 	clean.$(OBJEXT) extract.$(OBJEXT) fft.$(OBJEXT) \
@@ -77,8 +80,8 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(sex_SOURCES)
-DIST_SOURCES = $(sex_SOURCES)
+SOURCES = $(ldactoasc_SOURCES) $(sex_SOURCES)
+DIST_SOURCES = $(ldactoasc_SOURCES) $(sex_SOURCES)
 RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	html-recursive info-recursive install-data-recursive \
 	install-exec-recursive install-info-recursive \
@@ -203,10 +206,12 @@ sex_SOURCES = analyse.c assoc.c astrom.c back.c bpro.c catout.c \
 			  sexhead.h sexheadsc.h som.h threads.h types.h \
 			  wcscelsys.h weight.h winpos.h xml.h
 
+ldactoasc_SOURCES = ldactoasc.c ldactoasc.h
 sex_LDADD = $(top_builddir)/src/fits/libfits.a \
 			  $(top_builddir)/src/wcs/libwcs_c.a \
 			  $(top_builddir)/src/levmar/liblevmar.a 
 
+ldactoasc_LDADD = $(top_builddir)/src/fits/libfits.a
 DATE = `date +"%Y-%m-%d"`
 all: all-recursive
 
@@ -267,6 +272,9 @@ clean-binPROGRAMS:
 
 clean-checkPROGRAMS:
 	-test -z "$(check_PROGRAMS)" || rm -f $(check_PROGRAMS)
+ldactoasc$(EXEEXT): $(ldactoasc_OBJECTS) $(ldactoasc_DEPENDENCIES) 
+	@rm -f ldactoasc$(EXEEXT)
+	$(LINK) $(ldactoasc_LDFLAGS) $(ldactoasc_OBJECTS) $(ldactoasc_LDADD) $(LIBS)
 sex$(EXEEXT): $(sex_OBJECTS) $(sex_DEPENDENCIES) 
 	@rm -f sex$(EXEEXT)
 	$(LINK) $(sex_LDFLAGS) $(sex_OBJECTS) $(sex_LDADD) $(LIBS)
@@ -295,6 +303,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/growth.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/image.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/interpolate.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ldactoasc.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/main.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/makeit.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/manobjlist.Po@am__quote@
