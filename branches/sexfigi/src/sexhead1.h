@@ -9,7 +9,7 @@
 *
 *	Contents:	header (FITS format #1) and templates for catalog data.
 *
-*	Last modify:	16/12/2002
+*	Last modify:	19/12/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -62,7 +62,7 @@ keystruct	headkey1[] = {
   {"SEXNNWF ", "CLASSIFICATION NNW FILENAME",
 	thecat.nnw_name, H_STRING, T_STRING, "%18s"},
   {"SEXGAIN ", "GAIN (IN E- PER ADU)",
-	&prefs.gain, H_EXPO, T_DOUBLE, "%7.3F"},
+	&thefield2.gain, H_EXPO, T_DOUBLE, "%7.3F"},
   {"SEXBKGND", "MEDIAN BACKGROUND (ADU)",
 	&thefield1.backmean, H_EXPO, T_FLOAT, "%12G"},
   {"SEXBKDEV", "MEDIAN RMS (ADU)",
@@ -104,7 +104,7 @@ keystruct	headkey1[] = {
   {"SEXAPEK3", "KRON MINIMUM RADIUS",
 	&prefs.autoparam[1], H_FLOAT, T_DOUBLE, "%4.1f"},
   {"SEXSATLV", "SATURATION LEVEL (ADU)",
-	&prefs.satur_level, H_EXPO, T_DOUBLE, "%12G"},
+	&thefield2.satur_level, H_EXPO, T_DOUBLE, "%12G"},
   {"SEXMGZPT", "MAGNITUDE ZERO-POINT",
 	&prefs.mag_zeropoint, H_FLOAT, T_DOUBLE, "%8.4f"},
   {"SEXMGGAM", "MAGNITUDE GAMMA",

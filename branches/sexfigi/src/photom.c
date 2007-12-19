@@ -9,7 +9,7 @@
 *
 *	Contents:	Compute magnitudes and other photometrical parameters.
 *
-*	Last modify:	24/08/2005
+*	Last modify:	19/12/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -61,7 +61,7 @@ void  computeaperflux(picstruct *field, picstruct *wfield,
   corrflag = (prefs.mask_type==MASK_CORRECT);
   gainflag = wfield && prefs.weightgain_flag;
   var = backnoise2 = field->backsig*field->backsig;
-  gain = prefs.gain;
+  gain = field->gain;
 /* Integration radius */
   raper = prefs.apert[i]/2.0;
   raper2 = raper*raper;
@@ -235,7 +235,7 @@ void  computepetroflux(picstruct *field, picstruct *dfield, picstruct *wfield,
   mx = obj->mx;
   my = obj->my;
   var = backnoise2 = field->backsig*field->backsig;
-  gain = prefs.gain;
+  gain = field->gain;
   pflag = (prefs.detect_type==PHOTO)? 1:0;
   corrflag = (prefs.mask_type==MASK_CORRECT);
   gainflag = wfield && prefs.weightgain_flag;
@@ -534,7 +534,7 @@ void  computeautoflux(picstruct *field, picstruct *dfield, picstruct *wfield,
   mx = obj->mx;
   my = obj->my;
   var = backnoise2 = field->backsig*field->backsig;
-  gain = prefs.gain;
+  gain = field->gain;
   pflag = (prefs.detect_type==PHOTO)? 1:0;
   corrflag = (prefs.mask_type==MASK_CORRECT);
   gainflag = wfield && prefs.weightgain_flag;

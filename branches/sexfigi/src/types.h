@@ -9,7 +9,7 @@
 *
 *	Contents:	global type definitions.
 *
-*	Last modify:	11/10/2007
+*	Last modify:	19/12/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -358,6 +358,9 @@ typedef struct pic
 /* ---- basic astrometric parameters */
    double	pixscale;		/* pixel size in arcsec.pix-1 */
    double	epoch;			/* epoch of coordinates */
+/* ---- basic photometric parameters */
+   double	gain;			/* conversion factor in e-/ADU */
+   double	satur_level;		/* saturation level in ADUs */
 /* ---- background parameters */
   float		*back;			/* ptr to the background map in mem */
   float		*dback;			/* ptr to the background deriv. map */

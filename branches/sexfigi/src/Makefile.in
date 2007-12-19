@@ -69,7 +69,6 @@ am_sex_OBJECTS = analyse.$(OBJEXT) assoc.$(OBJEXT) astrom.$(OBJEXT) \
 sex_OBJECTS = $(am_sex_OBJECTS)
 sex_DEPENDENCIES = $(top_builddir)/src/fits/libfits.a \
 	$(top_builddir)/src/wcs/libwcs_c.a \
-	$(top_builddir)/src/lmfit/liblmfit.a \
 	$(top_builddir)/src/levmar/liblevmar.a
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/autoconf/depcomp
@@ -188,7 +187,7 @@ target_alias = @target_alias@
 
 # Program Makefile for SEx
 # Copyright (C) 2004-2007 Emmanuel Bertin.
-SUBDIRS = fits lmfit levmar wcs
+SUBDIRS = fits levmar wcs
 sex_SOURCES = analyse.c assoc.c astrom.c back.c bpro.c catout.c \
 			  check.c clean.c extract.c fft.c field.c filter.c \
 			  fitswcs.c flag.c graph.c growth.c image.c \
@@ -206,7 +205,6 @@ sex_SOURCES = analyse.c assoc.c astrom.c back.c bpro.c catout.c \
 
 sex_LDADD = $(top_builddir)/src/fits/libfits.a \
 			  $(top_builddir)/src/wcs/libwcs_c.a \
-			  $(top_builddir)/src/lmfit/liblmfit.a \
 			  $(top_builddir)/src/levmar/liblevmar.a 
 
 DATE = `date +"%Y-%m-%d"`

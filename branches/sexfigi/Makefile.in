@@ -452,6 +452,9 @@ distdir: $(DISTFILES)
 	      || exit 1; \
 	  fi; \
 	done
+	$(MAKE) $(AM_MAKEFLAGS) \
+	  top_distdir="$(top_distdir)" distdir="$(distdir)" \
+	  dist-hook
 	-find $(distdir) -type d ! -perm -777 -exec chmod a+rwx {} \; -o \
 	  ! -type d ! -perm -444 -links 1 -exec chmod a+r {} \; -o \
 	  ! -type d ! -perm -400 -exec chmod a+r {} \; -o \
@@ -634,20 +637,22 @@ uninstall-info: uninstall-info-recursive
 
 .PHONY: $(RECURSIVE_TARGETS) CTAGS GTAGS all all-am am--refresh check \
 	check-am clean clean-generic clean-recursive ctags \
-	ctags-recursive dist dist-all dist-bzip2 dist-gzip dist-shar \
-	dist-tarZ dist-zip distcheck distclean distclean-generic \
-	distclean-hdr distclean-recursive distclean-tags \
-	distcleancheck distdir distuninstallcheck dvi dvi-am html \
-	html-am info info-am install install-am install-data \
-	install-data-am install-dist_pkgdataDATA install-exec \
-	install-exec-am install-info install-info-am install-man \
-	install-strip installcheck installcheck-am installdirs \
-	installdirs-am maintainer-clean maintainer-clean-generic \
-	maintainer-clean-recursive mostlyclean mostlyclean-generic \
-	mostlyclean-recursive pdf pdf-am ps ps-am tags tags-recursive \
-	uninstall uninstall-am uninstall-dist_pkgdataDATA \
-	uninstall-info-am
+	ctags-recursive dist dist-all dist-bzip2 dist-gzip dist-hook \
+	dist-shar dist-tarZ dist-zip distcheck distclean \
+	distclean-generic distclean-hdr distclean-recursive \
+	distclean-tags distcleancheck distdir distuninstallcheck dvi \
+	dvi-am html html-am info info-am install install-am \
+	install-data install-data-am install-dist_pkgdataDATA \
+	install-exec install-exec-am install-info install-info-am \
+	install-man install-strip installcheck installcheck-am \
+	installdirs installdirs-am maintainer-clean \
+	maintainer-clean-generic maintainer-clean-recursive \
+	mostlyclean mostlyclean-generic mostlyclean-recursive pdf \
+	pdf-am ps ps-am tags tags-recursive uninstall uninstall-am \
+	uninstall-dist_pkgdataDATA uninstall-info-am
 
+dist-hook:
+	rm -rf `find $(distdir) -name .svn`
 rpm:	dist
 	cp -f $(PACKAGE_NAME)-$(PACKAGE_VERSION).tar.gz $(RPM_SRCDIR)
 	rpmbuild -ba --clean $(PACKAGE_NAME).spec $(PACKAGE_NAME)-mp.spec
@@ -671,7 +676,7 @@ rpm-athlon:	dist
 	TPXCC="gcc" TPXFLAGS="-O -g -funroll-loops -fomit-frame-pointer -Wall \
 		-m32 -march=i686 -msse -mfpmath=sse -mtune=athlon" \
 		TPXLIBS="-L/usr/lib/ -lm -L/usr/local/lib/ -lfftw3 \
-		-llapack -lptcblas -latlas -lm" \
+		-llapack -lcblas -latlas -lm" \
 		rpmbuild -ba --target=i686 --clean $(PACKAGE_NAME).spec
 
 	cp -f $(PACKAGE_NAME)-$(PACKAGE_VERSION).tar.gz $(RPM_SRCDIR)
@@ -685,24 +690,24 @@ rpm-athlon:	dist
 
 rpm-opteron-icc:	dist
 	cp -f $(PACKAGE_NAME)-$(PACKAGE_VERSION).tar.gz $(RPM_SRCDIR)
-	TPXCC="icc" TPXFLAGS="-O3 -g -axWP -ip -unroll" TPXLIBS="-lfftw3 \
+	TPXCC="icc" TPXFLAGS="-O3 -g -axWPT -ip -unroll" TPXLIBS="-lfftw3 \
 		-llapack -lcblas -latlas -lm" \
 		rpmbuild -ba --target=x86_64 --clean $(PACKAGE_NAME).spec
 
 	cp -f $(PACKAGE_NAME)-$(PACKAGE_VERSION).tar.gz $(RPM_SRCDIR)
-		TPXCC="icc" TPXFLAGS="-O3 -g -axWP -ip -unroll -pthread" \
+		TPXCC="icc" TPXFLAGS="-O3 -g -axWPT -ip -unroll -pthread" \
 		TPXLIBS="-lpthread -lfftw3 -lfftw3_threads \
 		-llapack -lptcblas -latlas -lm" \
 		rpmbuild -ba --target=x86_64 --clean $(PACKAGE_NAME)-mp.spec
 
 rpm-athlon-icc:	dist
 	cp -f $(PACKAGE_NAME)-$(PACKAGE_VERSION).tar.gz $(RPM_SRCDIR)
-		TPXCC="icc32" TPXFLAGS="-O3 -g -axKWNPB -ip -unroll" \
+		TPXCC="icc32" TPXFLAGS="-O3 -g -axKWNPT -ip -unroll" \
 		TPXLIBS="-L/usr/local/lib/ -L/usr/lib/ -lfftw3 -lm" \
 		rpmbuild -ba --target=i686 --clean $(PACKAGE_NAME).spec
 
 	cp -f $(PACKAGE_NAME)-$(PACKAGE_VERSION).tar.gz $(RPM_SRCDIR)
-		TPXCC="icc32" TPXFLAGS="-O3 -g -axKWNPB -ip -unroll -pthread" \
+		TPXCC="icc32" TPXFLAGS="-O3 -g -axKWNPT -ip -unroll -pthread" \
 		TPXLIBS="-L/usr/lib/ -lm -lpthread -L/usr/local/lib/ \
 		-lfftw3 -lfftw3_threads \
 		-llapack -lptcblas -latlas -lm" \
@@ -716,7 +721,7 @@ athlon:
 		-llapack -lcblas -latlas -lm"
 
 icc:
-	$(MAKE) CC="icc" CFLAGS="-O3 -g -axWP -ip -unroll -pthread"
+	$(MAKE) CC="icc" CFLAGS="-O3 -g -axWPT -ip -unroll -pthread"
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

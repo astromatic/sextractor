@@ -64,8 +64,8 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(liblevmar_a_SOURCES)
-DIST_SOURCES = $(liblevmar_a_SOURCES)
+SOURCES = $(liblevmar_a_SOURCES) $(EXTRA_liblevmar_a_SOURCES)
+DIST_SOURCES = $(liblevmar_a_SOURCES) $(EXTRA_liblevmar_a_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -165,12 +165,15 @@ sharedstatedir = @sharedstatedir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 
-# Program Makefile for making the LMFit routine behave as a library
-# Copyright (C) 2006 Emmanuel Bertin.
+# Program Makefile for making the LevMar routine behave as a library
+# Copyright (C) 2006-2007 Emmanuel Bertin.
 # levmar code by Manolis Lourakis <lourakis@ics.forth.gr> 
 noinst_LIBRARIES = liblevmar.a
-liblevmar_a_SOURCES = lm.c Axb.c misc.c lmlec.c lmbc.c \
+liblevmar_a_SOURCES = lm.c Axb.c  misc.c lmlec.c  lmbc.c  \
 			  lm.h misc.h
+
+EXTRA_liblevmar_a_SOURCES = lm_core.c Axb_core.c misc_core.c lmlec_core.c \
+			  lmbc_core.c
 
 all: all-am
 
@@ -220,10 +223,15 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Axb.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Axb_core.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lm.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lm_core.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lmbc.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lmbc_core.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lmlec.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lmlec_core.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/misc.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/misc_core.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	if $(COMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \

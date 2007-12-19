@@ -9,7 +9,7 @@
 *
 *	Contents:	XML logging.
 *
-*	Last modify:	14/07/2006
+*	Last modify:	19/12/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -82,7 +82,7 @@ INPUT	-.
 OUTPUT	RETURN_OK if everything went fine, RETURN_ERROR otherwise.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	11/07/2006
+VERSION	19/12/2007
  ***/
 int	update_xml(sexcatstruct *sexcat, picstruct *dfield, picstruct *field,
 		picstruct *dwfield, picstruct *wfield)
@@ -113,6 +113,10 @@ int	update_xml(sexcatstruct *sexcat, picstruct *dfield, picstruct *field,
   x->pixscale[1] = field->pixscale;
   x->epoch[0] = dfield->epoch;
   x->epoch[1] = field->epoch;
+  x->gain[0] = dfield->gain;
+  x->gain[1] = field->gain;
+  x->satur_level[0] = dfield->satur_level;
+  x->satur_level[1] = field->satur_level;
 
   return EXIT_SUCCESS;
   }
@@ -213,7 +217,7 @@ INPUT	Pointer to the output file (or stream),
 OUTPUT	RETURN_OK if everything went fine, RETURN_ERROR otherwise.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	14/07/2006
+VERSION	19/12/2007
  ***/
 int	write_xml_meta(FILE *file, char *error)
   {
@@ -352,15 +356,22 @@ int	write_xml_meta(FILE *file, char *error)
   fprintf(file, "   <FIELD name=\"Epoch\" datatype=\"float\""
 	" arraysize=\"%d\" ucd=\"time.epoch;obs\" unit=\"yr\"/>\n",
 	prefs.nimage_name);
+  fprintf(file, "   <FIELD name=\"Gain\" datatype=\"float\""
+	" arraysize=\"%d\" ucd=\"instr.param;obs.param\"/>\n",
+	prefs.nimage_name);
+  fprintf(file, "   <FIELD name=\"Satur_Level\" datatype=\"float\""
+	" arraysize=\"%d\" ucd=\"instr.saturation;phot.count\" unit=\"ct\"/>\n",
+	prefs.nimage_name);
   fprintf(file, "   <DATA><TABLEDATA>\n");
   for (n=0; n<nxml; n++)
     if (prefs.nimage_name>1)
       fprintf(file, "     <TR>\n"
 	"      <TD>%d</TD><TD>%s</TD><TD>%s</TD><TD>%.0f</TD>"
 	"<TD>%d</TD><TD>%d</TD>\n"
-	"      <TD>%s,%s</TD>\n"
+	"      <TD>%s,%s</TD><TD>%g %g</TD>\n"
 	"      <TD>%g %g</TD><TD>%g %g</TD><TD>%g %g</TD>"
-	"<TD>%g %g</TD><TD>%g %g</TD>\n"
+	"<TD>%g %g</TD><TD>%f %f</TD>\n"
+	"      <TD>%g %g</TD><TD>%g %g</TD>\n"
 	"     </TR>\n",
 	xmlstack[n].currext,
 	xmlstack[n].ext_date,
@@ -373,13 +384,17 @@ int	write_xml_meta(FILE *file, char *error)
 	xmlstack[n].backsig[0], xmlstack[n].backsig[1],
 	xmlstack[n].sigfac[0], xmlstack[n].sigfac[1],
 	xmlstack[n].thresh[0], xmlstack[n].thresh[1],
-	xmlstack[n].pixscale[0], xmlstack[n].pixscale[1]);
+	xmlstack[n].pixscale[0], xmlstack[n].pixscale[1],
+	xmlstack[n].epoch[0], xmlstack[n].epoch[1],
+	xmlstack[n].gain[0], xmlstack[n].gain[1],
+	xmlstack[n].satur_level[0], xmlstack[n].satur_level[1]);
     else
       fprintf(file, "    <TR>\n"
 	"     <TD>%d</TD><TD>%s</TD><TD>%s</TD><TD>%.0f</TD>"
 	"<TD>%d</TD><TD>%d</TD>\n"
-	"     <TD>%s</TD>\n"
-	"     <TD>%g</TD><TD>%g</TD><TD>%g</TD><TD>%g</TD><TD>%g</TD>\n"
+	"     <TD>%s</TD><TD>%g</TD>\n"
+	"     <TD>%g</TD><TD>%g</TD><TD>%g</TD><TD>%g</TD><TD>%f</TD>\n"
+	"     <TD>%g</TD><TD>%g</TD>\n"
 	"    </TR>\n",
 	xmlstack[n].currext,
 	xmlstack[n].ext_date,
@@ -392,7 +407,10 @@ int	write_xml_meta(FILE *file, char *error)
 	xmlstack[n].backsig[0],
 	xmlstack[n].sigfac[0],
 	xmlstack[n].thresh[0],
-	xmlstack[n].pixscale[0]);
+	xmlstack[n].pixscale[0],
+        xmlstack[n].epoch[0],
+	xmlstack[n].gain[0],
+	xmlstack[n].satur_level[0]);
   fprintf(file, "   </TABLEDATA></DATA>\n");
   fprintf(file, "  </TABLE>\n");
 

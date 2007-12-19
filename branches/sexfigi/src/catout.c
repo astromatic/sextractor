@@ -9,7 +9,7 @@
 *
 *	Contents:	functions for output of catalog data.
 *
-*	Last modify:	11/10/2007
+*	Last modify:	19/12/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -748,8 +748,8 @@ void	reendcat()
       head = key->ptr;
       fitswrite(head, "SEXNDET ", &thecat.ndetect,H_INT,T_LONG);
       fitswrite(head, "SEXNFIN ", &thecat.ntotal, H_INT,T_LONG);
-      fitswrite(head, "SEXDATE ", thecat.ext_date, H_STRING, 0);
-      fitswrite(head, "SEXTIME ", thecat.ext_time, H_STRING, 0);
+      fitswrite(head, "SEXDATE ", thecat.ext_date, H_STRING, T_STRING);
+      fitswrite(head, "SEXTIME ", thecat.ext_time, H_STRING, T_STRING);
       fitswrite(head, "SEXELAPS", &thecat.ext_elapsed, H_FLOAT, T_DOUBLE);
       QFTELL(fitscat->file, pos, fitscat->filename);
       QFSEEK(fitscat->file, tab->headpos, SEEK_SET, fitscat->filename);

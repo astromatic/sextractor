@@ -9,7 +9,7 @@
 *
 *	Contents:	Keywords for the configuration file.
 *
-*	Last modify:	14/10/2007
+*	Last modify:	19/12/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -92,6 +92,7 @@
   {"FLAG_TYPE",  P_KEYLIST, prefs.flag_type, 0,0, 0.0,0.0,
    {"OR","AND","MIN", "MAX", "MOST",""}, 0, MAXFLAG, &idummy},
   {"GAIN", P_FLOAT, &prefs.gain, 0,0, 0.0, 1e+30},
+  {"GAIN_KEY", P_STRING, prefs.gain_key},
   {"INTERP_MAXXLAG", P_INTLIST, prefs.interp_xtimeout, 1,1000000, 0.0,0.0,
    {""}, 1, 2, &prefs.ninterp_xtimeout},
   {"INTERP_MAXYLAG", P_INTLIST, prefs.interp_ytimeout, 1,1000000, 0.0,0.0,
@@ -127,6 +128,7 @@
   {"PSF_NMAX", P_INT, &prefs.psf_npsfmax, 1, PSF_NPSFMAX},
   {"PSFDISPLAY_TYPE", P_KEY, &prefs.psfdisplay_type, 0,0, 0.0,0.0,
    {"SPLIT","VECTOR",""}},
+  {"SATUR_KEY", P_STRING, prefs.satur_key},
   {"SATUR_LEVEL", P_FLOAT, &prefs.satur_level, 0,0, -1e+30, 1e+30},
   {"SEEING_FWHM", P_FLOAT, &prefs.seeing_fwhm, 0,0, 1e-10, 1e+10},
   {"SOM_NAME", P_STRING, prefs.som_name},
@@ -214,10 +216,12 @@ char *default_prefs[] =
 "*PHOT_FLUXFRAC    0.5            # flux fraction[s] used for FLUX_RADIUS",
 " ",
 "SATUR_LEVEL      50000.0        # level (in ADUs) at which arises saturation",
+"SATUR_KEY        SATURATE       # keyword for saturation level (in ADUs)",
 " ",
 "MAG_ZEROPOINT    0.0            # magnitude zero-point",
 "MAG_GAMMA        4.0            # gamma of emulsion (for photographic scans)",
 "GAIN             0.0            # detector gain in e-/ADU",
+"GAIN_KEY         GAIN           # keyword for detector gain in e-/ADU",
 "PIXEL_SCALE      1.0            # size of pixel in arcsec (0=use FITS WCS info)",
 " ",
 "#------------------------- Star/Galaxy Separation ----------------------------",
@@ -283,11 +287,11 @@ char *default_prefs[] =
 "*",
 "*#--------------------------- Experimental Stuff -----------------------------",
 "*",
-"PSF_NAME         default.psf    # File containing the PSF model",
-"PSF_NMAX         9              # Max.number of PSFs fitted simultaneously",
+"*PSF_NAME         default.psf    # File containing the PSF model",
+"*PSF_NMAX         9              # Max.number of PSFs fitted simultaneously",
 "*PSFDISPLAY_TYPE  SPLIT          # Catalog type for PSF-fitting: SPLIT or VECTOR",
-"PROFILE_TYPE     SERSIC         # Profile components to fit: BACK, SERSIC,",
-"                                # DEVAUCOULEURS, or EXPONENTIAL",
+"*PROFILE_TYPE     SERSIC         # Profile components to fit: BACK, SERSIC,",
+"*                                # DEVAUCOULEURS, or EXPONENTIAL",
 "*SOM_NAME         default.som    # File containing Self-Organizing Map weights",
 ""
  };

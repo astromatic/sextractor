@@ -10,7 +10,7 @@
 *
 *	Contents:	Fit the PSF to a detection.
 *
-*	Last modify:	11/10/2007
+*	Last modify:	19/12/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -339,9 +339,9 @@ void	psf_fit(psfstruct *psf, picstruct *field, picstruct *wfield,
   niter = 0;
   npsfmax = prefs.psf_npsfmax;
   pixstep = 1.0/psf->pixstep;
-  gain = prefs.gain;
+  gain = field->gain;
   backnoise2 = field->backsig*field->backsig;
-  satlevel = prefs.satur_level - obj->bkg;
+  satlevel = field->satur_level - obj->bkg;
   wthresh = wfield?wfield->weight_thresh:BIG;
   gainflag = prefs.weightgain_flag;
   psf_fwhm = psf->fwhm*psf->pixstep;
@@ -763,10 +763,10 @@ void    double_psf_fit(psfstruct *ppsf, picstruct *pfield, picstruct *pwfield,
   pdx = pdy =dx = dy = 0.0;
   ppixstep = 1.0/ppsf->pixstep;
   pixstep = 1.0/psf->pixstep;
-  gain = prefs.gain;
+  gain = field->gain;
   npsfmax=prefs.psf_npsfmax;
   pbacknoise2 = pfield->backsig*pfield->backsig;
-  satlevel = prefs.satur_level - obj->bkg;
+  satlevel = field->satur_level - obj->bkg;
   gainflag = prefs.weightgain_flag;
   psf_fwhm = psf->fwhm*psf->pixstep;
   ppsf_fwhm = ppsf->fwhm*ppsf->pixstep;

@@ -9,7 +9,7 @@
 *
 *	Contents:	Fit an arbitrary profile combination to a detection.
 *
-*	Last modify:	15/10/2007
+*	Last modify:	19/12/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -28,7 +28,6 @@
 #include	"prefs.h"
 #include	"fits/fitscat.h"
 #include	"levmar/lm.h"
-#include	"lmfit/lmmin.h"
 #include	"fft.h"
 #include	"check.h"
 #include	"psf.h"
@@ -285,15 +284,12 @@ INPUT	Pointer to the profit structure involved in the fit,
 OUTPUT	Number of iterations used.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	08/10/2007
+VERSION	19/12/2007
  ***/
 int	profit_minimize(profitstruct *profit, int niter)
   {
-   lm_control_type	control;
-   double		lm_opts[5],
-			*diag, *fjac, *qtf, *wa1, *wa2, *wa3, *wa4;
-   int			*ipvt,
-			m,n;
+   double		lm_opts[5];
+   int			m,n;
 
 /* Allocate work space */
   n = profit->nparam;
@@ -302,55 +298,14 @@ int	profit_minimize(profitstruct *profit, int niter)
   profit_boundtounbound(profit, profit->paraminit);
 
 /* Perform fit */
-  if (1)
-    {
-    lm_opts[0] = 1.0e-6;
-    lm_opts[1] = 1.0e-12;
-    lm_opts[2] = 1.0e-12;
-    lm_opts[3] = 1.0e-12;
-    lm_opts[4] = 1.0e-6;
+  lm_opts[0] = 1.0e-6;
+  lm_opts[1] = 1.0e-12;
+  lm_opts[2] = 1.0e-12;
+  lm_opts[3] = 1.0e-12;
+  lm_opts[4] = 1.0e-6;
 
-    niter = dlevmar_dif(profit_evaluate2, profit->paraminit, profit->resi,
+  niter = dlevmar_dif(profit_evaluate, profit->paraminit, profit->resi,
 	n, m, niter,  lm_opts, NULL, NULL, NULL, profit);
-    }
-  else
-    {
-    control.ftol =      1.0e-12;
-    control.xtol =      1.0e-12;
-    control.gtol =      1.0e-12;
-    control.maxcall =   niter;
-    control.epsilon =   1.0e-6;
-    control.stepbound = 100.0;
-    control.info = 0;
-    control.nfev = 0;
-//  control.fnorm = lm_enorm(m, profit->resi);
-//  if (control.info < 0 )
-//    control.info = 10;
-    QMALLOC(diag, double,n);
-    QMALLOC(qtf, double, n);
-    QMALLOC(fjac, double,n*m);
-    QMALLOC(wa1, double, n);
-    QMALLOC(wa2, double, n);
-    QMALLOC(wa3, double, n);
-    QMALLOC(wa4, double,   m);
-    QMALLOC(ipvt, int,   n);
-    lm_lmdif(profit->nresi, profit->nparam, profit->paraminit, profit->resi,
-	control.ftol, control.xtol, control.gtol,
-	control.maxcall*(n+1), control.epsilon, diag, 1,
-	control.stepbound, &(control.info),
-	&(control.nfev), fjac, ipvt, qtf, wa1, wa2, wa3, wa4,
-	profit_evaluate, profit_printout, profit);
-    niter = control.nfev;
-/*-- clean up. */
-    free(diag);
-    free(qtf); 
-    free(fjac);
-    free(wa1); 
-    free(wa2); 
-    free(wa3 );
-    free(wa4); 
-    free(ipvt);
-    }
 
   profit_unboundtobound(profit, profit->paraminit);
 
@@ -400,44 +355,14 @@ void	profit_printout(int n_par, double* par, int m_dat, double* fvec,
 
     reendcheck(the_field, check);
     endcheck(check);
-//    lm_print_default(n_par, par, m_dat, fvec, data, iflag, iter, nfev);
     }
 
   return;
   }
 
 
-/****** profit_evaluate *******************************************************
-PROTO	void profit_evaluate(double *par, int m_dat, double *fvec,
-		void *data, int *info)
-PURPOSE	Provide a function returning residuals to lmfit.
-INPUT	Pointer to the vector of parameters,
-	number of data points,
-	pointer to the vector of residuals (output),
-	pointer to the data structure (unused),
-	pointer to the info structure (unused).
-OUTPUT	-.
-NOTES	Input arguments are there only for compatibility purposes (unused)
-AUTHOR	E. Bertin (IAP)
-VERSION	18/05/2007
- ***/
-void	profit_evaluate(double *par, int m_dat, double *fvec,
-			void *data, int *info)
-  {
-   profitstruct *profit;
-
-  profit = (profitstruct *)data;
-  profit_unboundtobound(profit, par);
-  profit_residuals(theprofit, the_field, the_wfield, the_obj,
-		par, fvec);
-  profit_boundtounbound(profit, par);
-
-  return;
-  }
-
-
-/****** profit_evaluate2 ******************************************************
-PROTO	void profit_evaluate2(double *par, double *fvec, int m, int n,
+/****** profit_evaluate ******************************************************
+PROTO	void profit_evaluate(double *par, double *fvec, int m, int n,
 		void *adata)
 PURPOSE	Provide a function returning residuals to levmar.
 INPUT	Pointer to the vector of parameters,
@@ -450,7 +375,7 @@ NOTES	Input arguments are there only for compatibility purposes (unused)
 AUTHOR	E. Bertin (IAP)
 VERSION	28/03/2007
  ***/
-void	profit_evaluate2(double *par, double *fvec, int m, int n,
+void	profit_evaluate(double *par, double *fvec, int m, int n,
 			void *adata)
   {
    profitstruct	*profit;
@@ -1026,7 +951,7 @@ INPUT	Pointer to the profit structure,
 	Upper boundary to the parameter.
 OUTPUT	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	15/10/2007
+VERSION	19/12/2007
  ***/
 void	profit_resetparams(profitstruct *profit, objstruct *obj,
 		obj2struct *obj2)
@@ -1193,7 +1118,7 @@ void	profit_resetparams(profitstruct *profit, objstruct *obj,
 		"profit_resetparams()");
         break;
       }
-    profit_resetparam(profit, (proftypenum)p, param, parammin,parammax);
+    profit_resetparam(profit, (paramenum)p, param, parammin,parammax);
     }
 
   return;
@@ -1201,7 +1126,7 @@ void	profit_resetparams(profitstruct *profit, objstruct *obj,
 
 
 /****** profit_resetparam ****************************************************
-PROTO	void profit_resetparam(profitstruct *profit, proftypenum proftype,
+PROTO	void profit_resetparam(profitstruct *profit, paramenum proftype,
 		double param, double parammin, double parammax)
 PURPOSE	Set the initial, lower and upper boundary values of a profile parameter.
 INPUT	Pointer to the profit structure,
@@ -1211,16 +1136,16 @@ INPUT	Pointer to the profit structure,
 	Upper boundary to the parameter.
 OUTPUT	RETURN_OK if the parameter is registered, RETURN_ERROR otherwise.
 AUTHOR	E. Bertin (IAP)
-VERSION	25/06/2007
+VERSION	19/12/2007
  ***/
-int	profit_resetparam(profitstruct *profit, proftypenum proftype,
+int	profit_resetparam(profitstruct *profit, paramenum paramtype,
 		double param, double parammin, double parammax)
   {
    double	*paramptr;
    int		index;
 
 /* Check whether the parameter has already be registered */
-  if ((paramptr=profit->paramlist[(int)proftype]))
+  if ((paramptr=profit->paramlist[(int)paramtype]))
     {
     index = paramptr - profit->param;
     profit->paraminit[index] = param;

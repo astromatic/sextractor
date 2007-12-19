@@ -9,7 +9,7 @@
 *
 *	Contents:	Implementation of Kohonen's Self Organizing Map (V3.0).
 *
-*	Last modify:	28/11/2003
+*	Last modify:	19/12/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -128,7 +128,7 @@ int	som_mkweight(somstruct *som, float back, float backnoise, float gain)
   wt = som->inputw;
   nima = som->ninput-som->nextrainput;
   llim = -5.0*backnoise;
-  hlim = prefs.satur_level-back;
+  hlim = thefield2.satur_level-back;
   backnoise *= backnoise;
   ngood = 0;
   for (i=nima; i--;)

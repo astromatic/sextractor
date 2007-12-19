@@ -1,6 +1,6 @@
 # Program Makefile for SEx
 # Copyright (C) 2004-2007 Emmanuel Bertin.
-SUBDIRS			= fits lmfit levmar wcs
+SUBDIRS			= fits levmar wcs
 bin_PROGRAMS		= sex
 check_PROGRAMS		= sex
 sex_SOURCES		= analyse.c assoc.c astrom.c back.c bpro.c catout.c \
@@ -19,6 +19,5 @@ sex_SOURCES		= analyse.c assoc.c astrom.c back.c bpro.c catout.c \
 			  wcscelsys.h weight.h winpos.h xml.h
 sex_LDADD		= $(top_builddir)/src/fits/libfits.a \
 			  $(top_builddir)/src/wcs/libwcs_c.a \
-			  $(top_builddir)/src/lmfit/liblmfit.a \
 			  $(top_builddir)/src/levmar/liblevmar.a 
 DATE=`date +"%Y-%m-%d"`

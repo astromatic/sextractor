@@ -9,7 +9,7 @@
 *
 *	Contents:	Keywords for the configuration file.
 *
-*	Last modify:	25/06/2007
+*	Last modify:	19/12/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -56,6 +56,7 @@ typedef struct
   int		nfilter_thresh;				/* nb of params */
   int		deblend_nthresh;			/* threshold number */
   double	deblend_mincont;			/* minimum contrast */
+  char		satur_key[8];				/* saturation keyword */
   double	satur_level;				/* saturation level */
   enum	{CCD, PHOTO}			detect_type;	/* detection type */
 /*----- Flagging */
@@ -96,6 +97,7 @@ typedef struct
   double	mag_zeropoint;				/* magnitude offsets */
   double	mag_gamma;				/* for emulsions */
   double	gain;					/* only for CCD */
+  char		gain_key[8];				/* gain keyword */
 /*----- S/G separation */
   double	pixel_scale;				/* in arcsec */
   double	seeing_fwhm;				/* in arcsec */

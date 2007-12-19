@@ -9,7 +9,7 @@
 *
 *	Contents:	Astrometrical computations.
 *
-*	Last modify:	23/11/2007
+*	Last modify:	19/12/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -89,6 +89,7 @@ void	computeastrom(picstruct *field, objstruct *obj)
   wcs = field->wcs;
   lng = wcs->lng;
   lat = wcs->lat;
+  pixscale2 = 0.0;	/* To avoid gcc -Wall warnings */
 
 /* If working with WCS, compute WORLD coordinates and local matrix */
   if (FLAG(obj2.mxw))
@@ -217,7 +218,7 @@ void	computeastrom(picstruct *field, objstruct *obj)
 	field->pixscale/3600.0*field->pixscale/3600.0 : pixscale2);
   if (FLAG(obj2.fdnpixw))
     obj2->fdnpixw = obj->fdnpix * (prefs.pixel_scale?
-	field->pixscale/3600.0*field->pixscale/3600.0 :pixscale2);
+	field->pixscale/3600.0*field->pixscale/3600.0 : pixscale2);
 
   if (FLAG(obj2.fwhmw))
     obj2->fwhmw = obj->fwhm * (prefs.pixel_scale?

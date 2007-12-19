@@ -9,7 +9,7 @@
 *
 *	Contents:	analyse(), endobject()...: measurements on detections.
 *
-*	Last modify:	08/10/2007
+*	Last modify:	19/12/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -114,7 +114,7 @@ void  examineiso(picstruct *field, picstruct *dfield, objstruct *obj,
     xm = ym = dbacknoise2 = 0.0;	/* to avoid gcc -Wall warnings */
 
   pospeakflag = FLAG(obj.peakx);
-  gain = prefs.gain;
+  gain = field->gain;
   ngamma = field->ngamma;
   photoflag = (prefs.detect_type==PHOTO);
   gainflag = PLISTEXIST(var) && prefs.weightgain_flag;
@@ -337,7 +337,7 @@ void  examineiso(picstruct *field, picstruct *dfield, objstruct *obj,
       mx = obj->mx;
       my = obj->my;
       dbkg = obj->dbkg;
-      sat = (double)(prefs.satur_level - obj->bkg);
+      sat = (double)(field->satur_level - obj->bkg);
       s = sx = sy = sxx = sxy = 0.0;
       for (pixt=pixel+obj->firstpix;pixt>=pixel;pixt=pixel+PLIST(pixt,nextpix))
         {
@@ -496,7 +496,7 @@ void	endobject(picstruct *field, picstruct *dfield, picstruct *wfield,
       compute_winpos(field, wfield, obj);
 
 /*-- What about the peak of the profile? */
-    if (obj->peak+obj->bkg >= prefs.satur_level)
+    if (obj->peak+obj->bkg >= field->satur_level)
       obj->flag |= OBJ_SATUR;
 
 /*-- Check-image CHECK_APERTURES option */
@@ -586,7 +586,7 @@ void	endobject(picstruct *field, picstruct *dfield, picstruct *wfield,
         }
 
       som_phot(thesom, obj->bkg, field->backsig,
-        (float)prefs.gain, obj->mx-ix, obj->my-iy,
+        (float)field->gain, obj->mx-ix, obj->my-iy,
         FLAG(obj2.vector_somfit)?outobj2.vector_somfit:NULL, -1.0);
       obj2->stderr_somfit = thesom->stderror;
       obj2->flux_somfit = thesom->amp;

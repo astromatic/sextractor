@@ -121,6 +121,9 @@
  <xsl:template name="sextractor">
   <xsl:for-each select="RESOURCE[@ID='MetaData']">
    <xsl:call-template name="RunInfo"/>
+   <xsl:for-each select="/VOTABLE/RESOURCE[@ID='SExtractor']/TABLE[@ID='Source_List']">
+    <xsl:call-template name="sources"/>
+   </xsl:for-each>
    <xsl:for-each select="TABLE[@ID='Extension_Data']">
     <xsl:call-template name="extdata"/>
    </xsl:for-each>
@@ -191,6 +194,67 @@
   <p>
   <sans-serif><i>click to expand or hide tables</i></sans-serif>
   </p>
+ </xsl:template>
+
+<!-- ******************** XSL template for Source List ******************** -->
+ <xsl:template name="sources">
+  <xsl:choose> 
+   <xsl:when test="DATA/TABLEDATA">
+    <p>
+     <BUTTON type="button" style="background:#CCEECC; font-family: sans-serif; font-weight: bold;" onclick="showhideTable('sources')">
+     Source List
+     </BUTTON>
+     <TABLE id="sources" class="sortable" style="display: none">
+      <TR>
+       <xsl:for-each select="FIELD">
+        <TH BGCOLOR="#FFEECC" align="center"><xsl:attribute name="title"><xsl:value-of select="DESCRIPTION"/></xsl:attribute>
+         <xsl:value-of select="@name"/>
+         <xsl:text disable-output-escaping="yes">&#13;&#10;
+
+
+         </xsl:text>
+         <xsl:value-of select="@unit"/>
+        </TH>
+       </xsl:for-each>
+      </TR>
+      <xsl:for-each select="DATA/TABLEDATA">
+       <xsl:for-each select="TR">
+        <tr>
+         <xsl:for-each select="TD">
+          <td align="right" BGCOLOR="#EEEEEE">
+           <el><xsl:value-of select="self::TD"/></el>
+          </td>
+         </xsl:for-each>
+        </tr>
+       </xsl:for-each>
+      </xsl:for-each>
+     </TABLE>
+    </p>
+   </xsl:when>
+   <xsl:otherwise>
+    <p>
+     <BUTTON type="button" style="background:#CCEECC; font-family: sans-serif; font-weight: bold;" onclick="showhideTable('catparam')">
+     Parameter List
+     </BUTTON>
+     <TABLE id="catparam" class="sortable" style="display: none">
+      <TR>
+       <TH BGCOLOR="#FFEECC" align="center">Parameter Name</TH>
+       <TH BGCOLOR="#FFEECC" align="center">Description</TH>
+      </TR>
+      <xsl:for-each select="FIELD">
+       <tr>
+        <td align="left" BGCOLOR="#EEEEEE">
+         <el><xsl:value-of select="@name"/></el>
+        </td>
+        <td align="left" BGCOLOR="#EEEEEE">
+         <el><xsl:value-of select="DESCRIPTION"/></el>
+        </td>
+       </tr>
+      </xsl:for-each>
+     </TABLE>
+    </p>
+   </xsl:otherwise> 
+  </xsl:choose>  
  </xsl:template>
 
 <!-- ******************* XSL template for Extension Data ****************** -->
@@ -288,222 +352,12 @@
       <TH BGCOLOR="#FFEECC">Config Parameter</TH>
       <TH BGCOLOR="#FFEECC">Value</TH>
      </TR>
-     <tr BGCOLOR="#EEEEEE">
-      <td><el>CATALOG_TYPE</el></td>
-      <td><el><xsl:value-of select="PARAM[@name='Catalog_Type']/@value"/></el></td>
-     </tr>
-     <tr BGCOLOR="#EEEEEE">
-      <td><el>CATALOG_NAME</el></td>
-      <td><el><xsl:value-of select="PARAM[@name='Catalog_Name']/@value"/></el></td>
-     </tr>
-     <tr BGCOLOR="#EEEEEE">
-      <td><el>PARAMETERS_NAME</el></td>
-      <td><el><xsl:value-of select="PARAM[@name='Parameters_Name']/@value"/></el></td>
-     </tr>
-     <tr BGCOLOR="#EEEEEE">
-      <td><el>DETECT_TYPE</el></td>
-      <td><el><xsl:value-of select="PARAM[@name='Detect_Type']/@value"/></el></td>
-     </tr>
-     <tr BGCOLOR="#EEEEEE">
-      <td><el>DETECT_MINAREA</el></td>
-      <td><el><xsl:value-of select="PARAM[@name='Detect_MinArea']/@value"/></el></td>
-     </tr>
-     <tr BGCOLOR="#EEEEEE">
-      <td><el>THRESH_TYPE</el></td>
-      <td><el><xsl:value-of select="PARAM[@name='Thresh_Type']/@value"/></el></td>
-     </tr>
-     <tr BGCOLOR="#EEEEEE">
-      <td><el>DETECT_THRESH</el></td>
-      <td><el><xsl:value-of select="PARAM[@name='Detect_Thresh']/@value"/></el></td>
-     </tr>
-     <tr BGCOLOR="#EEEEEE">
-      <td><el>ANALYSIS_THRESH</el></td>
-      <td><el><xsl:value-of select="PARAM[@name='Analysis_Thresh']/@value"/></el></td>
-     </tr>
-     <tr BGCOLOR="#EEEEEE">
-      <td><el>FILTER</el></td>
-      <td><el><xsl:value-of select="PARAM[@name='Filter']/@value"/></el></td>
-     </tr>
-     <tr BGCOLOR="#EEEEEE">
-      <td><el>FILTER_NAME</el></td>
-      <td><el><xsl:value-of select="PARAM[@name='Filter_Name']/@value"/></el></td>
-     </tr>
-     <tr BGCOLOR="#EEEEEE">
-      <td><el>DEBLEND_NTHRESH</el></td>
-      <td><el><xsl:value-of select="PARAM[@name='Deblend_NThresh']/@value"/></el></td>
-     </tr>
-     <tr BGCOLOR="#EEEEEE">
-      <td><el>DEBLEND_MINCONT</el></td>
-      <td><el><xsl:value-of select="PARAM[@name='Deblend_MinCont']/@value"/></el></td>
-     </tr>
-     <tr BGCOLOR="#EEEEEE">
-      <td><el>CLEAN</el></td>
-      <td><el><xsl:value-of select="PARAM[@name='Clean']/@value"/></el></td>
-     </tr>
-     <tr BGCOLOR="#EEEEEE">
-      <td><el>CLEAN_PARAM</el></td>
-      <td><el><xsl:value-of select="PARAM[@name='Clean_Param']/@value"/></el></td>
-     </tr>
-     <tr BGCOLOR="#EEEEEE">
-      <td><el>MASK_TYPE</el></td>
-      <td><el><xsl:value-of select="PARAM[@name='Mask_Type']/@value"/></el></td>
-     </tr>
-     <tr BGCOLOR="#EEEEEE">
-      <td><el>WEIGHT_TYPE</el></td>
-      <td><el><xsl:value-of select="PARAM[@name='Weight_Type']/@value"/></el></td>
-     </tr>
-     <tr BGCOLOR="#EEEEEE">
-      <td><el>WEIGHT_THRESH</el></td>
-      <td><el><xsl:value-of select="PARAM[@name='Weight_Thresh']/@value"/></el></td>
-     </tr>
-     <tr BGCOLOR="#EEEEEE">
-      <td><el>WEIGHT_IMAGE</el></td>
-      <td><el><xsl:value-of select="PARAM[@name='Weight_Image']/@value"/></el></td>
-     </tr>
-     <tr BGCOLOR="#EEEEEE">
-      <td><el>WEIGHT_GAIN</el></td>
-      <td><el><xsl:value-of select="PARAM[@name='Weight_Gain']/@value"/></el></td>
-     </tr>
-     <tr BGCOLOR="#EEEEEE">
-      <td><el>FLAG_IMAGE</el></td>
-      <td><el><xsl:value-of select="PARAM[@name='Flag_Image']/@value"/></el></td>
-     </tr>
-     <tr BGCOLOR="#EEEEEE">
-      <td><el>FLAG_TYPE</el></td>
-      <td><el><xsl:value-of select="PARAM[@name='Flag_Type']/@value"/></el></td>
-     </tr>
-     <tr BGCOLOR="#EEEEEE">
-      <td><el>PHOT_APERTURES</el></td>
-      <td><el><xsl:value-of select="PARAM[@name='Phot_Apertures']/@value"/></el></td>
-     </tr>
-     <tr BGCOLOR="#EEEEEE">
-      <td><el>PHOT_AUTOPARAMS</el></td>
-      <td><el><xsl:value-of select="PARAM[@name='Phot_AutoParams']/@value"/></el></td>
-     </tr>
-     <tr BGCOLOR="#EEEEEE">
-      <td><el>PHOT_PETROPARAMS</el></td>
-      <td><el><xsl:value-of select="PARAM[@name='Phot_PetroParams']/@value"/></el></td>
-     </tr>
-     <tr BGCOLOR="#EEEEEE">
-      <td><el>PHOT_AUTOAPERS</el></td>
-      <td><el><xsl:value-of select="PARAM[@name='Phot_AutoApers']/@value"/></el></td>
-     </tr>
-     <tr BGCOLOR="#EEEEEE">
-      <td><el>PHOT_FLUXFRAC</el></td>
-      <td><el><xsl:value-of select="PARAM[@name='Phot_FluxFrac']/@value"/></el></td>
-     </tr>
-     <tr BGCOLOR="#EEEEEE">
-      <td><el>SATUR_LEVEL</el></td>
-      <td><el><xsl:value-of select="PARAM[@name='Satur_Level']/@value"/></el></td>
-     </tr>
-     <tr BGCOLOR="#EEEEEE">
-      <td><el>MAG_ZEROPOINT</el></td>
-      <td><el><xsl:value-of select="PARAM[@name='Mag_ZeroPoint']/@value"/></el></td>
-     </tr>
-     <tr BGCOLOR="#EEEEEE">
-      <td><el>MAG_GAMMA</el></td>
-      <td><el><xsl:value-of select="PARAM[@name='Mag_Gamma']/@value"/></el></td>
-     </tr>
-     <tr BGCOLOR="#EEEEEE">
-      <td><el>GAIN</el></td>
-      <td><el><xsl:value-of select="PARAM[@name='Gain']/@value"/></el></td>
-     </tr>
-     <tr BGCOLOR="#EEEEEE">
-      <td><el>PIXEL_SCALE</el></td>
-      <td><el><xsl:value-of select="PARAM[@name='Pixel_Scale']/@value"/></el></td>
-     </tr>
-     <tr BGCOLOR="#EEEEEE">
-      <td><el>SEEING_FWHM</el></td>
-      <td><el><xsl:value-of select="PARAM[@name='Seeing_FWHM']/@value"/></el></td>
-     </tr>
-     <tr BGCOLOR="#EEEEEE">
-      <td><el>STARNNW_NAME</el></td>
-      <td><el><xsl:value-of select="PARAM[@name='StarNNW_Name']/@value"/></el></td>
-     </tr>
-     <tr BGCOLOR="#EEEEEE">
-      <td><el>BACK_SIZE</el></td>
-      <td><el><xsl:value-of select="PARAM[@name='Back_Size']/@value"/></el></td>
-     </tr>
-     <tr BGCOLOR="#EEEEEE">
-      <td><el>BACK_FILTERSIZE</el></td>
-      <td><el><xsl:value-of select="PARAM[@name='Back_FilterSize']/@value"/></el></td>
-     </tr>
-     <tr BGCOLOR="#EEEEEE">
-      <td><el>BACKPHOTO_TYPE</el></td>
-      <td><el><xsl:value-of select="PARAM[@name='BackPhoto_Type']/@value"/></el></td>
-     </tr>
-     <tr BGCOLOR="#EEEEEE">
-      <td><el>BACKPHOTO_THICK</el></td>
-      <td><el><xsl:value-of select="PARAM[@name='BackPhoto_Thick']/@value"/></el></td>
-     </tr>
-     <tr BGCOLOR="#EEEEEE">
-      <td><el>CHECKIMAGE_TYPE</el></td>
-      <td><el><xsl:value-of select="PARAM[@name='CheckImage_Type']/@value"/></el></td>
-     </tr>
-     <tr BGCOLOR="#EEEEEE">
-      <td><el>CHECKIMAGE_NAME</el></td>
-      <td><el><xsl:value-of select="PARAM[@name='CheckImage_Name']/@value"/></el></td>
-     </tr>
-     <tr BGCOLOR="#EEEEEE">
-      <td><el>MEMORY_OBJSTACK</el></td>
-      <td><el><xsl:value-of select="PARAM[@name='Memory_ObjStack']/@value"/></el></td>
-     </tr>
-     <tr BGCOLOR="#EEEEEE">
-      <td><el>MEMORY_PIXSTACK</el></td>
-      <td><el><xsl:value-of select="PARAM[@name='Memory_PixStack']/@value"/></el></td>
-     </tr>
-     <tr BGCOLOR="#EEEEEE">
-      <td><el>MEMORY_BUFSIZE</el></td>
-      <td><el><xsl:value-of select="PARAM[@name='Memory_BufSize']/@value"/></el></td>
-     </tr>
-     <tr BGCOLOR="#EEEEEE">
-      <td><el>ASSOC_NAME</el></td>
-      <td><el><xsl:value-of select="PARAM[@name='Assoc_Name']/@value"/></el></td>
-     </tr>
-     <tr BGCOLOR="#EEEEEE">
-      <td><el>ASSOC_DATA</el></td>
-      <td><el><xsl:value-of select="PARAM[@name='Assoc_Data']/@value"/></el></td>
-     </tr>
-     <tr BGCOLOR="#EEEEEE">
-      <td><el>ASSOC_PARAMS</el></td>
-      <td><el><xsl:value-of select="PARAM[@name='Assoc_Params']/@value"/></el></td>
-     </tr>
-     <tr BGCOLOR="#EEEEEE">
-      <td><el>ASSOC_RADIUS</el></td>
-      <td><el><xsl:value-of select="PARAM[@name='Assoc_Radius']/@value"/></el></td>
-     </tr>
-     <tr BGCOLOR="#EEEEEE">
-      <td><el>ASSOC_TYPE</el></td>
-      <td><el><xsl:value-of select="PARAM[@name='Assoc_Type']/@value"/></el></td>
-     </tr>
-     <tr BGCOLOR="#EEEEEE">
-      <td><el>ASSOCSELEC_TYPE</el></td>
-      <td><el><xsl:value-of select="PARAM[@name='AssocSelec_Type']/@value"/></el></td>
-     </tr>
-     <tr BGCOLOR="#EEEEEE">
-      <td><el>VERBOSE_TYPE</el></td>
-      <td><el><xsl:value-of select="PARAM[@name='Verbose_Type']/@value"/></el></td>
-     </tr>
-     <tr BGCOLOR="#EEEEEE">
-      <td><el>FITS_UNSIGNED</el></td>
-      <td><el><xsl:value-of select="PARAM[@name='FITS_Unsigned']/@value"/></el></td>
-     </tr>
-     <tr BGCOLOR="#EEEEEE">
-      <td><el>PSF_NAME</el></td>
-      <td><el><xsl:value-of select="PARAM[@name='PSF_Name']/@value"/></el></td>
-     </tr>
-     <tr BGCOLOR="#EEEEEE">
-      <td><el>PSF_NMAX</el></td>
-      <td><el><xsl:value-of select="PARAM[@name='PSF_NMax']/@value"/></el></td>
-     </tr>
-     <tr BGCOLOR="#EEEEEE">
-      <td><el>PSFDISPLAY_TYPE</el></td>
-      <td><el><xsl:value-of select="PARAM[@name='PSFDisplay_Type']/@value"/></el></td>
-     </tr>
-     <tr BGCOLOR="#EEEEEE">
-      <td><el>SOM_NAME</el></td>
-      <td><el><xsl:value-of select="PARAM[@name='SOM_Name']/@value"/></el></td>
-     </tr>
+     <xsl:for-each select="PARAM[position()>2]">
+      <tr BGCOLOR="#EEEEEE">
+       <td><el><xsl:value-of select="@name"/></el></td>
+       <td><el><xsl:value-of select="@value"/></el></td>
+      </tr>
+     </xsl:for-each>
     </TABLE>
    </p>
    <p>

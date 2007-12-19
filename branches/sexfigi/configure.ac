@@ -6,7 +6,7 @@ define([AC_CACHE_LOAD],)
 define([AC_CACHE_SAVE],)
 
 # This is your standard Bertin source code...
-AC_INIT(sextractor, 2.6.6, [bertin@iap.fr])
+AC_INIT(sextractor, 2.6.7, [bertin@iap.fr])
 AC_CONFIG_SRCDIR(src/makeit.c)
 AC_CONFIG_AUX_DIR(autoconf)
 AM_CONFIG_HEADER(config.h)
@@ -198,7 +198,7 @@ fi
 
 # Special optimization options for the INTEL C compiler
 if test $use_icc = "yes" -a $CC = "icc"; then
-  CFLAGS="$CFLAGS -O -axWP -ip -unroll"
+  CFLAGS="$CFLAGS -O -axWPT -ip -unroll"
 fi
 
 # Link with gprof option
@@ -234,7 +234,6 @@ AC_CONFIG_FILES([
 Makefile
 src/Makefile
 src/fits/Makefile
-src/lmfit/Makefile
 src/levmar/Makefile
 src/wcs/Makefile
 man/Makefile

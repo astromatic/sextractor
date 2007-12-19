@@ -8,25 +8,10 @@ input image is a MEF.
 - The (main) default config file can be dumped by typing "sex -d". Secondary
 configuration files like default.param are still needed, though.
 
-In case of problems, questions or suggestions related to the software,
-please don't hesitate to send a mail (preferably in english) to the
-official mailing list:
-sextractor@iap.fr
-These questions and answers to them are posted on the Web at:
-http://terapix.iap.fr/soft/sextractor/
-In any case you can still reach me at bertin@iap.fr. I cannot garantee
-that I will reply immediately, but I will try for sure to provide
-an answer.
------------
-Notes:
-- A version "sextractor-2.3.1_lanl" of SExtractor is available on
-SourceForge thanks to Mark Galassi and Dan Starr:
-http://sourceforge.net/projects/sextractor/
-It is a reconditioned version of SExtractor 2.2.2. The LanL and the TERAPIX
-(present one) versions follow two different development branches.
-- Benne Holwerda <holwerda@stsci.edu> has written a SExtractor handbook and a
-GUI which can be found in the doc/ subdirectory or at
-http://www-int.stsci.edu/~holwerda/OldHomepage/se.html
-
+The SExtractor homepage is
+http://terapix.iap.fr/soft/sextractor
+In case of problems, questions or suggestions related to the software, please
+refer to the TERAPIX forum:
+http://terapix.iap.fr/forum/
 
 					Emmanuel Bertin.

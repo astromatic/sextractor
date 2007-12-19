@@ -9,7 +9,7 @@
 *
 *	Contents:	Include file for profit.c.
 *
-*	Last modify:	08/10/2007
+*	Last modify:	19/12/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -148,7 +148,7 @@ PIXTYPE		*profit_resample(profitstruct *profit);
 int		profit_copyobjpix(profitstruct *profit, picstruct *field,
 				int ix, int iy),
 		profit_minimize(profitstruct *profit, int niter),
-		profit_resetparam(profitstruct *profit, proftypenum proftype,
+		profit_resetparam(profitstruct *profit, paramenum paramtype,
 			double param, double parammin, double parammax);
 
 void		prof_add(profstruct *prof, profitstruct *profit),
@@ -161,9 +161,7 @@ void		prof_add(profstruct *prof, profitstruct *profit),
 			objstruct *obj, obj2struct *obj2),
 		profit_convolve(profitstruct *profit),
 		profit_end(profitstruct *profit),
-		profit_evaluate(double *par, int m_dat, double *fvec,
-			void *data, int *info),
-		profit_evaluate2(double *par, double *fvec, int m, int n,
+		profit_evaluate(double *par, double *fvec, int m, int n,
 			void *adata),
 		profit_makedft(profitstruct *profit),
 		profit_moments(profitstruct *profit, objstruct *obj,

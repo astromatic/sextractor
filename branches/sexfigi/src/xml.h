@@ -9,7 +9,7 @@
 *
 *	Contents:	XML logging.
 *
-*	Last modify:	14/07/2005
+*	Last modify:	19/12/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -49,6 +49,8 @@ typedef struct
   float		thresh[2];				/* thresholds (ADU) */
   double	pixscale[2];				/* pixel scale (deg2) */
   double	epoch[2];				/* epoch of coords */
+  double	gain[2];				/* gain (e-/ADU) */
+  double	satur_level[2];				/* saturation level */
   }	xmlstruct;
 
 /*------------------------------- functions ---------------------------------*/
