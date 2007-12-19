@@ -61,7 +61,8 @@ rpm-opteron-icc:	dist
 rpm-athlon-icc:	dist
 	cp -f $(PACKAGE_NAME)-$(PACKAGE_VERSION).tar.gz $(RPM_SRCDIR)
 		TPXCC="icc32" TPXFLAGS="-O3 -g -axKWNPT -ip -unroll" \
-		TPXLIBS="-L/usr/local/lib/ -L/usr/lib/ -lfftw3 -lm" \
+		TPXLIBS="-L/usr/local/lib/ -L/usr/lib/ -lfftw3 \
+		-llapack -lcblas -latlas -lm" \
 		rpmbuild -ba --target=i686 --clean $(PACKAGE_NAME).spec
 
 	cp -f $(PACKAGE_NAME)-$(PACKAGE_VERSION).tar.gz $(RPM_SRCDIR)

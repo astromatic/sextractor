@@ -37,6 +37,7 @@ rm -rf $RPM_BUILD_ROOT
 %files
 %defattr(-,root,root)
 /usr/local/bin/sex
+/usr/local/bin/ldactoasc
 /usr/local/man/man1/sex.1
 /usr/local/man/manx/sex.x
 /usr/local/share/@PACKAGE_NAME@
