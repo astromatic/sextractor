@@ -9,7 +9,7 @@
 *
 *	Contents:	Include file for fitswcs.c
 *
-*	Last modify:	11/10/2007
+*	Last modify:	02/01/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -21,7 +21,7 @@
 
 /*----------------------------- Internal constants --------------------------*/
 
-#define		NAXIS	3		/* Max number of FITS axes */
+#define		NAXIS	2		/* Max number of FITS axes */
 
 #define		DEG	(PI/180.0)	/* 1 deg in radians */
 #define		ARCMIN	(DEG/60.0)	/* 1 arcsec in radians */
@@ -107,7 +107,9 @@ extern double		sextodegal(char *hms),
 				double *jacob),
 			wcs_scale(wcsstruct *wcs, double *pixpos);
 
-extern int		raw_to_red(wcsstruct *wcs,
+extern int		celsys_to_eq(wcsstruct *wcs, double *wcspos),
+			eq_to_celsys(wcsstruct *wcs, double *wcspos),
+			raw_to_red(wcsstruct *wcs,
 				double *pixpos, double *redpos),
 			raw_to_wcs(wcsstruct *wcs,
 				double *pixpos, double *wcspos),
@@ -122,7 +124,9 @@ extern int		raw_to_red(wcsstruct *wcs,
 extern char		*degtosexal(double alpha, char *str),
 			*degtosexde(double delta, char *str);
 
-extern void		end_wcs(wcsstruct *wcs),
+extern void		b2j(double yearobs, double alphain, double deltain,
+				double *alphaout, double *deltaout),
+			end_wcs(wcsstruct *wcs),
 			init_wcs(wcsstruct *wcs),
 			init_wcscelsys(wcsstruct *wcs),
 			invert_wcs(wcsstruct *wcs),
