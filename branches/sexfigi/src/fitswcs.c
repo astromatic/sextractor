@@ -9,7 +9,7 @@
 *
 *	Contents:       Read and write WCS header info.
 *
-*	Last modify:	02/01/2008
+*	Last modify:	04/01/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -1489,7 +1489,7 @@ INPUT	WCS structure,
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	20/02/2005
+VERSION	03/01/2008
  ***/
 double	wcs_scale(wcsstruct *wcs, double *pixpos)
 
@@ -1498,10 +1498,16 @@ double	wcs_scale(wcsstruct *wcs, double *pixpos)
    double	dpos1,dpos2;
    int		lng, lat;
 
-  lng = wcs->lng;
-  lat = wcs->lat;
   if (raw_to_wcs(wcs, pixpos, wcspos))
     return 0.0;
+
+  lng = wcs->lng;
+  lat = wcs->lat;
+  if (lng == lat)
+    {
+    lng = 0;
+    lat = 1;
+    }
 
 /* Compute pixel scale */
   pixpos2[lng] = pixpos[lng] + 1.0;
@@ -1513,18 +1519,23 @@ double	wcs_scale(wcsstruct *wcs, double *pixpos)
   if (raw_to_wcs(wcs, pixpos2, wcspos2))
     return 0.0;
   dpos1 = wcspos1[lng]-wcspos[lng];
-  if (dpos1>180.0)
-    dpos1 -= 360.0;
-  else if (dpos1<-180.0)
-    dpos1 += 360.0;
   dpos2 = wcspos2[lng]-wcspos[lng];
-  if (dpos2>180.0)
-    dpos2 -= 360.0;
-  else if (dpos2<-180.0)
-    dpos2 += 360.0;
-  return fabs((dpos1*(wcspos2[lat]-wcspos[lat])
-		-(wcspos1[lat]-wcspos[lat])*dpos2)
-		*cos(wcspos[lat]*DEG));
+  if (wcs->lng!=wcs->lat)
+    {
+    if (dpos1>180.0)
+      dpos1 -= 360.0;
+    else if (dpos1<-180.0)
+      dpos1 += 360.0;
+    if (dpos2>180.0)
+      dpos2 -= 360.0;
+    else if (dpos2<-180.0)
+      dpos2 += 360.0;
+    return fabs((dpos1*(wcspos2[lat]-wcspos[lat])
+		-(wcspos1[lat]-wcspos[lat])*dpos2)*cos(wcspos[lat]*DEG));
+    }
+  else
+    return fabs((dpos1*(wcspos2[lat]-wcspos[lat])
+		-(wcspos1[lat]-wcspos[lat])*dpos2));
   }
 
 
@@ -1625,7 +1636,7 @@ INPUT	WCS structure,
 OUTPUT	-.
 NOTES	Epoch for coordinates should be J2000 (FK5 system).
 AUTHOR	E. Bertin (IAP)
-VERSION	26/01/2005
+VERSION	04/01/2008
  ***/
 void	precess_wcs(wcsstruct *wcs, double yearin, double yearout)
 
@@ -1656,7 +1667,7 @@ void	precess_wcs(wcsstruct *wcs, double yearin, double yearout)
 	- sin(wcs->crval[lat]*DEG)*cos(dalpha)))/DEG
 	: 0.0;
 
-/* A = B*C */
+/* A = C*B */
   c = wcs->cd;
 /* The B matrix is made of 2 numbers */
 
@@ -1674,7 +1685,7 @@ void	precess_wcs(wcsstruct *wcs, double yearin, double yearout)
       {
       val = 0.0;
       for (k=0; k<naxis; k++)
-        val += b[k+j*naxis]*c[i+k*naxis];
+        val += c[k+j*naxis]*b[i+k*naxis];
       *(at++) = val;
       }
 
