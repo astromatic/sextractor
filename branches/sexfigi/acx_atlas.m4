@@ -167,7 +167,7 @@ if test x"$acx_atlas_ok" = xyes; then
   if test x$3 = xyes; then
 dnl Check whether the multithreaded version of ATLAS is there too:
     AC_CHECK_LIB(ptcblas, cblas_dgemm,, [acx_atlas_ok=no],
-	[-L$ATLAS_LIBPATH -lcblas -latlas -lm])
+	[$ATLAS_LIBPATH -lcblas -latlas -lm])
     if test x$acx_atlas_ok = xyes; then
       ATLAS_LIB="$ATLAS_LIBPATH -llapack -lptcblas -lcblas -latlas"
       AC_SUBST(ATLAS_LIB)
