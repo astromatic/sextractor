@@ -198,7 +198,7 @@ fi
 
 # Special optimization options for the INTEL C compiler
 if test $use_icc = "yes" -a $CC = "icc"; then
-  CFLAGS="$CFLAGS -O -axWPT -ip -unroll"
+  CFLAGS="$CFLAGS -axWPT -ip -unroll"
 fi
 
 # Link with gprof option
@@ -211,8 +211,9 @@ if test "$use_gprof" = "yes"; then
   use_static="no"
 fi
 
+# Static linking option
 if test "$use_static" = "yes"; then
-  LDFLAGS="$LDFLAGS -static"
+  LDFLAGS="-static -shared-libgcc $LDFLAGS"
 fi
 
 # Override automatic CFLAGS and LDFLAGS with those of user
