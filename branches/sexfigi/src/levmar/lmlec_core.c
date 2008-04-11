@@ -92,7 +92,7 @@ register int i, j, k;
 
   if(m>n){
     fprintf(stderr, RCAT("matrix of constraints cannot have more rows than columns in", LMLEC_ELIM) "()!\n");
-    exit(1);
+    return LM_ERROR;
   }
 
   tm=n; tn=m; // transpose dimensions
@@ -100,7 +100,8 @@ register int i, j, k;
 
   /* calculate required memory size */
   worksz=-1; // workspace query. Optimal work size is returned in aux
-  ORGQR((int *)&tm, (int *)&tm, (int *)&mintmn, NULL, (int *)&tm, NULL, (LM_REAL *)&aux, &worksz, &info);
+  //ORGQR((int *)&tm, (int *)&tm, (int *)&mintmn, NULL, (int *)&tm, NULL, (LM_REAL *)&aux, &worksz, &info);
+  GEQP3((int *)&tm, (int *)&tn, NULL, (int *)&tm, NULL, NULL, (LM_REAL *)&aux, (int *)&worksz, &info);
   worksz=(int)aux;
   a_sz=tm*tm; // tm*tn is enough for xgeqp3()
   jpvt_sz=tn;
@@ -167,7 +168,9 @@ register int i, j, k;
   if(rank<tn){
     fprintf(stderr, RCAT("\nConstraints matrix in ",  LMLEC_ELIM) "() is not of full row rank (i.e. %d < %d)!\n"
             "Make sure that you do not specify redundant or inconsistent constraints.\n\n", rank, tn);
-    exit(1);
+    //exit(1);
+    free(buf);
+    return LM_ERROR;
   }
 
   /* compute the permuted inverse transpose of R */
@@ -412,10 +415,15 @@ int LEVMAR_LEC_DER(
   if(!jacf){
     fprintf(stderr, RCAT("No function specified for computing the jacobian in ", LEVMAR_LEC_DER)
       RCAT("().\nIf no such function is available, use ", LEVMAR_LEC_DIF) RCAT("() rather than ", LEVMAR_LEC_DER) "()\n");
-    exit(1);
+    return LM_ERROR;
   }
 
   mm=m-k;
+
+  if(n<mm){
+    fprintf(stderr, LCAT(LEVMAR_LEC_DER, "(): cannot solve a problem with fewer measurements + constraints [%d + %d] than unknowns [%d]\n"), n, k, m);
+    return LM_ERROR;
+  }
 
   ptr=(LM_REAL *)malloc((2*m + m*mm + n*m + mm)*sizeof(LM_REAL));
   if(!ptr){
@@ -433,7 +441,11 @@ int LEVMAR_LEC_DER(
   data.jacf=jacf;
   data.adata=adata;
 
-  LMLEC_ELIM(A, b, data.c, NULL, Z, k, m); // compute c, Z
+  ret=LMLEC_ELIM(A, b, data.c, NULL, Z, k, m); // compute c, Z
+  if(ret==LM_ERROR){
+    free(ptr);
+    return LM_ERROR;
+  }
 
   /* compute pp s.t. p = c + Z*pp or (Z^T Z)*pp=Z^T*(p-c)
    * Due to orthogonality, Z^T Z = I and the last equation
@@ -532,6 +544,11 @@ int LEVMAR_LEC_DIF(
 
   mm=m-k;
 
+  if(n<mm){
+    fprintf(stderr, LCAT(LEVMAR_LEC_DIF, "(): cannot solve a problem with fewer measurements + constraints [%d + %d] than unknowns [%d]\n"), n, k, m);
+    return LM_ERROR;
+  }
+
   ptr=(LM_REAL *)malloc((2*m + m*mm + mm)*sizeof(LM_REAL));
   if(!ptr){
     fprintf(stderr, LCAT(LEVMAR_LEC_DIF, "(): memory allocation request failed\n"));
@@ -548,7 +565,11 @@ int LEVMAR_LEC_DIF(
   data.jacf=NULL;
   data.adata=adata;
 
-  LMLEC_ELIM(A, b, data.c, NULL, Z, k, m); // compute c, Z
+  ret=LMLEC_ELIM(A, b, data.c, NULL, Z, k, m); // compute c, Z
+  if(ret==LM_ERROR){
+    free(ptr);
+    return LM_ERROR;
+  }
 
   /* compute pp s.t. p = c + Z*pp or (Z^T Z)*pp=Z^T*(p-c)
    * Due to orthogonality, Z^T Z = I and the last equation
@@ -593,7 +614,7 @@ int LEVMAR_LEC_DIF(
     LM_REAL *hx, *wrk, *jac;
 
     hx=(LM_REAL *)malloc((2*n+n*m)*sizeof(LM_REAL));
-    if(!work){
+    if(!hx){
       fprintf(stderr, LCAT(LEVMAR_LEC_DIF, "(): memory allocation request failed\n"));
       exit(1);
     }

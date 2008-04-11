@@ -9,7 +9,7 @@
 *
 *	Contents:	Fit an arbitrary profile combination to a detection.
 *
-*	Last modify:	19/12/2007
+*	Last modify:	11/04/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -18,7 +18,12 @@
 #include        "config.h"
 #endif
 
-#include	<math.h>
+#ifdef HAVE_MATHIMF_H
+#include <mathimf.h>
+#else
+#define _GNU_SOURCE
+#include <math.h>
+#endif
 #include	<stdio.h>
 #include	<stdlib.h>
 #include	<string.h>
@@ -2004,19 +2009,19 @@ static double	interpolate_pix(double *posin, double *pix, int *naxisn,
 
 
 /****** make_kernel **********************************************************
-PROTO   void make_kernel(double pos, double *kernel, interpenum interptype)
-PURPOSE Conpute interpolation-kernel data
-INPUT   Position,
-        Pointer to the output kernel data,
-        Interpolation method.
-OUTPUT  -.
-NOTES   -.
-AUTHOR  E. Bertin (IAP)
-VERSION 18/04/2003
+PROTO	void make_kernel(double pos, double *kernel, interpenum interptype)
+PURPOSE	Conpute interpolation-kernel data
+INPUT	Position,
+	Pointer to the output kernel data,
+	Interpolation method.
+OUTPUT	-.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	11/04/2008
  ***/
-static void	make_kernel(double pos, double *kernel, interpenum interptype)
+void	make_kernel(double pos, double *kernel, interpenum interptype)
   {
-   double       x, val, sinx1,sinx2,sinx3,sinx4;
+   double	x, val, sinx1,sinx2,sinx3,cosx1;
 
   if (interptype == INTERP_NEARESTNEIGHBOUR)
     *kernel = 1;
@@ -2037,13 +2042,19 @@ static void	make_kernel(double pos, double *kernel, interpenum interptype)
     else
       {
       x = -PI/2.0*(pos+1.0);
-      val = (*(kernel++) = (sinx1=sin(x))/(x*x));
+#ifdef HAVE_SINCOS
+      sincos(x, &sinx1, &cosx1);
+#else
+      sinx1 = sin(x);
+      cosx1 = cos(x);
+#endif
+      val = (*(kernel++) = sinx1/(x*x));
       x += PI/2.0;
-      val += (*(kernel++) = -(sinx2=sin(x))/(x*x));
+      val += (*(kernel++) = -cosx1/(x*x));
       x += PI/2.0;
       val += (*(kernel++) = -sinx1/(x*x));
       x += PI/2.0;
-      val += (*kernel = sinx2/(x*x));
+      val += (*kernel = cosx1/(x*x));
       val = 1.0/val;
       *(kernel--) *= val;
       *(kernel--) *= val;
@@ -2065,11 +2076,19 @@ static void	make_kernel(double pos, double *kernel, interpenum interptype)
     else
       {
       x = -PI/3.0*(pos+2.0);
-      val = (*(kernel++) = (sinx1=sin(x))/(x*x));
+#ifdef HAVE_SINCOS
+      sincos(x, &sinx1, &cosx1);
+#else
+      sinx1 = sin(x);
+      cosx1 = cos(x);
+#endif
+      val = (*(kernel++) = sinx1/(x*x));
       x += PI/3.0;
-      val += (*(kernel++) = (sinx2=-sin(x))/(x*x));
+      val += (*(kernel++) = (sinx2=-0.5*sinx1-0.866025403785*cosx1)
+				/ (x*x));
       x += PI/3.0;
-      val += (*(kernel++) = (sinx3=sin(x))/(x*x));
+      val += (*(kernel++) = (sinx3=-0.5*sinx1+0.866025403785*cosx1)
+				/(x*x));
       x += PI/3.0;
       val += (*(kernel++) = sinx1/(x*x));
       x += PI/3.0;
@@ -2101,21 +2120,28 @@ static void	make_kernel(double pos, double *kernel, interpenum interptype)
     else
       {
       x = -PI/4.0*(pos+3.0);
-      val = (*(kernel++) = (sinx1=sin(x))/(x*x));
+#ifdef HAVE_SINCOS
+      sincos(x, &sinx1, &cosx1);
+#else
+      sinx1 = sin(x);
+      cosx1 = cos(x);
+#endif
+      val = (*(kernel++) = sinx1/(x*x));
       x += PI/4.0;
-      val +=(*(kernel++) = -(sinx2=sin(x))/(x*x));
+      val +=(*(kernel++) = -(sinx2=0.707106781186*(sinx1+cosx1))
+				/(x*x));
       x += PI/4.0;
-      val += (*(kernel++) = (sinx3=sin(x))/(x*x));
+      val += (*(kernel++) = cosx1/(x*x));
       x += PI/4.0;
-      val += (*(kernel++) = -(sinx4=sin(x))/(x*x));
+      val += (*(kernel++) = -(sinx3=0.707106781186*(cosx1-sinx1))/(x*x));
       x += PI/4.0;
       val += (*(kernel++) = -sinx1/(x*x));
       x += PI/4.0;
       val += (*(kernel++) = sinx2/(x*x));
       x += PI/4.0;
-      val += (*(kernel++) = -sinx3/(x*x));
+      val += (*(kernel++) = -cosx1/(x*x));
       x += PI/4.0;
-      val += (*kernel = sinx4/(x*x));
+      val += (*kernel = sinx3/(x*x));
       val = 1.0/val;
       *(kernel--) *= val;
       *(kernel--) *= val;
@@ -2129,7 +2155,7 @@ static void	make_kernel(double pos, double *kernel, interpenum interptype)
     }
   else
     error(EXIT_FAILURE, "*Internal Error*: Unknown interpolation type in ",
-                "make_kernel()");
+		"make_kernel()");
 
   return;
   }

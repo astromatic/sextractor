@@ -28,13 +28,18 @@
 #define FDIF_CENT_JAC_APPROX LM_ADD_PREFIX(fdif_cent_jac_approx)
 #define TRANS_MAT_MAT_MULT LM_ADD_PREFIX(trans_mat_mat_mult)
 #define LEVMAR_COVAR LM_ADD_PREFIX(levmar_covar)
+#define BOX_CHECK LM_ADD_PREFIX(levmar_box_check)
 
 #ifdef HAVE_LAPACK
 #define LEVMAR_PSEUDOINVERSE LM_ADD_PREFIX(levmar_pseudoinverse)
 static int LEVMAR_PSEUDOINVERSE(LM_REAL *A, LM_REAL *B, int m);
 
 /* BLAS matrix multiplication & LAPACK SVD routines */
-#define GEMM LM_CAT_(LM_BLAS_PREFIX, LM_ADD_PREFIX(gemm_))
+#ifdef LM_BLAS_PREFIX
+#define GEMM LM_CAT_(LM_BLAS_PREFIX, LM_ADD_PREFIX(LM_CAT_(gemm, LM_BLAS_SUFFIX)))
+#else
+#define GEMM LM_ADD_PREFIX(LM_CAT_(gemm, LM_BLAS_SUFFIX))
+#endif
 /* C := alpha*op( A )*op( B ) + beta*C */
 extern void GEMM(char *transa, char *transb, int *m, int *n, int *k,
           LM_REAL *alpha, LM_REAL *a, int *lda, LM_REAL *b, int *ldb, LM_REAL *beta, LM_REAL *c, int *ldc);
@@ -47,6 +52,12 @@ extern int GESVD(char *jobu, char *jobvt, int *m, int *n, LM_REAL *a, int *lda, 
 /* lapack 3.0 new SVD routine, faster than xgesvd() */
 extern int GESDD(char *jobz, int *m, int *n, LM_REAL *a, int *lda, LM_REAL *s, LM_REAL *u, int *ldu, LM_REAL *vt, int *ldvt,
                  LM_REAL *work, int *lwork, int *iwork, int *info);
+
+/* cholesky decomposition */
+#define POTF2 LM_ADD_PREFIX(potf2_)
+extern int POTF2(char *uplo, int *n, LM_REAL *a, int *lda, int *info);
+
+#define LEVMAR_CHOLESKY LM_ADD_PREFIX(levmar_chol)
 
 #else
 #define LEVMAR_LUINVERSE LM_ADD_PREFIX(levmar_LUinverse_noLapack)
@@ -576,9 +587,66 @@ LM_REAL fact;
    return rnk;
 }
 
+/* check box constraints for consistency */
+int BOX_CHECK(LM_REAL *lb, LM_REAL *ub, int m)
+{
+register int i;
+
+  if(!lb || !ub) return 1;
+
+  for(i=0; i<m; ++i)
+    if(lb[i]>ub[i]) return 0;
+
+  return 1;
+}
+
+#ifdef HAVE_LAPACK
+
+/* compute the Cholesky decompostion of C in W, s.t. C=W^t W and W is upper triangular */
+int LEVMAR_CHOLESKY(LM_REAL *C, LM_REAL *W, int m)
+{
+register int i, j;
+int info;
+
+  /* copy weights array C to W (in column-major order!) so that LAPACK won't destroy it */
+  for(i=0; i<m; i++)
+    for(j=0; j<m; j++)
+      W[i+j*m]=C[i*m+j];
+
+  /* cholesky decomposition */
+  POTF2("U", (int *)&m, W, (int *)&m, (int *)&info);
+  /* error treatment */
+  if(info!=0){
+		if(info<0){
+      fprintf(stderr, "LAPACK error: illegal value for argument %d of dpotf2 in %s\n", -info, LCAT(LEVMAR_DER, "()"));
+		  exit(1);
+		}
+		else{
+			fprintf(stderr, "LAPACK error: the leading minor of order %d is not positive definite,\n%s()\n", info,
+						RCAT("and the cholesky factorization could not be completed in ", LEVMAR_CHOLESKY));
+			return LM_ERROR;
+		}
+  }
+
+  /* the decomposition is in the upper part of W (in column-major order!).
+   * copying it to the lower part and zeroing the upper transposes
+   * W in row-major order
+   */
+  for(i=0; i<m; i++)
+    for(j=0; j<i; j++){
+      W[i+j*m]=W[j+i*m];
+      W[j+i*m]=0.0;
+    }
+
+  return 0;
+}
+#endif /* HAVE_LAPACK */
+
 /* undefine everything. THIS MUST REMAIN AT THE END OF THE FILE */
 #undef LEVMAR_PSEUDOINVERSE
 #undef LEVMAR_LUINVERSE
+#undef BOX_CHECK
+#undef LEVMAR_CHOLESKY
 #undef LEVMAR_COVAR
 #undef LEVMAR_CHKJAC
 #undef FDIF_FORW_JAC_APPROX

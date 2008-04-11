@@ -36,6 +36,8 @@
  * Check also the CUTE problems collection at ftp://ftp.numerical.rl.ac.uk/pub/cute/;
  * CUTE is searchable through http://numawww.mathematik.tu-darmstadt.de:8081/opti/select.html
  * CUTE problems can also be solved through the AMPL web interface at http://www.ampl.com/TRYAMPL/startup.html
+ *
+ * Nonlinear optimization models in AMPL can be found at http://www.princeton.edu/~rvdb/ampl/nlmodels/
  */
 
 #define ROSD 105.0
@@ -465,6 +467,120 @@ register int j=0;
   jac[j++]=1.0;
 }
 
+/* Hock - Schittkowski (modified) problem 52 (box/linearly constrained), minimum at (-0.09, 0.03, 0.25, -0.19, 0.03)
+ * constr1: p[0] + 3*p[1] = 0;
+ * constr2: p[2] +   p[3] - 2*p[4] = 0;
+ * constr3: p[1] -   p[4] = 0;
+ *
+ * To the above 3 constraints, we add the following 5:
+ * constr4: -0.09 <= p[0];
+ * constr5:   0.0 <= p[1] <= 0.3;
+ * constr6:          p[2] <= 0.25;
+ * constr7:  -0.2 <= p[3] <= 0.3;
+ * constr8:   0.0 <= p[4] <= 0.3;
+ *
+ */
+void modhs52(double *p, double *x, int m, int n, void *data)
+{
+  x[0]=4.0*p[0]-p[1];
+  x[1]=p[1]+p[2]-2.0;
+  x[2]=p[3]-1.0;
+  x[3]=p[4]-1.0;
+}
+
+void jacmodhs52(double *p, double *jac, int m, int n, void *data)
+{
+register int j=0;
+
+  jac[j++]=4.0;
+  jac[j++]=-1.0;
+  jac[j++]=0.0;
+  jac[j++]=0.0;
+  jac[j++]=0.0;
+
+  jac[j++]=0.0;
+  jac[j++]=1.0;
+  jac[j++]=1.0;
+  jac[j++]=0.0;
+  jac[j++]=0.0;
+
+  jac[j++]=0.0;
+  jac[j++]=0.0;
+  jac[j++]=0.0;
+  jac[j++]=1.0;
+  jac[j++]=0.0;
+
+  jac[j++]=0.0;
+  jac[j++]=0.0;
+  jac[j++]=0.0;
+  jac[j++]=0.0;
+  jac[j++]=1.0;
+}
+
+/* Schittkowski (modified) problem 235 (box/linearly constrained), minimum at (-1.725, 2.9, 0.725)
+ * constr1: p[0] + p[2] = -1.0;
+ *
+ * To the above constraint, we add the following 2:
+ * constr2: p[1] - 4*p[2] = 0;
+ * constr3: 0.1 <= p[1] <= 2.9;
+ * constr4: 0.7 <= p[2];
+ *
+ */
+void mods235(double *p, double *x, int m, int n, void *data)
+{
+  x[0]=0.1*(p[0]-1.0);
+  x[1]=p[1]-p[0]*p[0];
+}
+
+void jacmods235(double *p, double *jac, int m, int n, void *data)
+{
+register int j=0;
+
+  jac[j++]=0.1;
+  jac[j++]=0.0;
+  jac[j++]=0.0;
+
+  jac[j++]=-2.0*p[0];
+  jac[j++]=1.0;
+  jac[j++]=0.0;
+}
+
+/* Boggs and Tolle modified problem 7 (box/linearly constrained), minimum at (0.7, 0.49, 0.19, 1.19, -0.2)
+ * We keep the original objective function & starting point and use the following constraints:
+ *
+ * subject to cons1:
+ *  x[1]+x[2] - x[3] = 1.0;
+ * subject to cons2:
+ *   x[2] - x[4] + x[1] = 0.0;
+ * subject to cons3:
+ *   x[5] + x[1] = 0.5;
+ * subject to cons4:
+ *   x[5]>=-0.3;
+ * subject to cons5:
+ *    x[1]<=0.7;
+ *
+ */
+void modbt7(double *p, double *x, int m, int n, void *data)
+{
+register int i;
+
+  for(i=0; i<n; ++i)
+    x[i]=100.0*(p[1]-p[0]*p[0])*(p[1]-p[0]*p[0]) + (p[0]-1.0)*(p[0]-1.0);
+}
+
+void jacmodbt7(double *p, double *jac, int m, int n, void *data)
+{
+register int i, j;
+
+  for(i=j=0; i<m; ++i){
+    jac[j++]=-400.0*(p[1]-p[0]*p[0])*p[0] + 2.0*p[0] - 2.0;
+    jac[j++]=200.0*(p[1]-p[0]*p[0]);
+    jac[j++]=0.0;
+    jac[j++]=0.0;
+    jac[j++]=0.0;
+  }
+}
+
 /* Equilibrium combustion problem, constrained nonlinear equation from the book by Floudas et al.
  * Minimum at (0.0034, 31.3265, 0.0684, 0.8595, 0.0370)
  * constri: p[i]>=0.0001; (i=1..5)
@@ -555,10 +671,13 @@ char *probname[]={
     "Hock - Schittkowski problem #48",
     "Hock - Schittkowski problem #51",
     "Hock - Schittkowski problem #01",
-    "Hock - Schittkowski (modified) problem #21",
+    "Hock - Schittkowski modified problem #21",
     "hatfldb problem",
     "hatfldc problem",
-    "equilibrium combustion problem"
+    "equilibrium combustion problem",
+    "Hock - Schittkowski modified problem #52",
+    "Schittkowski modified problem #235",
+    "Boggs & Tolle modified problem #7",
 };
 
   opts[0]=LM_INIT_MU; opts[1]=1E-15; opts[2]=1E-15; opts[3]=1E-20;
@@ -579,17 +698,22 @@ char *probname[]={
       //9; // Hock - Schittkowski problem 51
 #else // no LAPACK
 #ifdef _MSC_VER
-// #pragma message("LAPACK not available, some test problems cannot be used")
+#pragma message("LAPACK not available, some test problems cannot be used")
 #else
-// #warning LAPACK not available, some test problems cannot be used
+#warning LAPACK not available, some test problems cannot be used
 #endif // _MSC_VER
 
 #endif /* HAVE_LAPACK */
       //10; // Hock - Schittkowski problem 01
-      //11; // Hock - Schittkowski (modified) problem 21
+      //11; // Hock - Schittkowski modified problem 21
       //12; // hatfldb problem
       //13; // hatfldc problem
       //14; // equilibrium combustion problem
+#ifdef HAVE_LAPACK
+      //15; // Hock - Schittkowski modified problem 52
+      // 16; // Schittkowski modified problem 235
+      //17; // Boggs & Tolle modified problem #7
+#endif /* HAVE_LAPACK */
 				
   switch(problem){
   default: fprintf(stderr, "unknown problem specified (#%d)! Note that some minimization problems require LAPACK.\n", problem);
@@ -822,6 +946,68 @@ char *probname[]={
       ret=dlevmar_bc_der(combust, jaccombust, p, x, m, n, lb, ub, 5000, opts, info, NULL, NULL, NULL); // with analytic jacobian
     }
     break;
+#ifdef HAVE_LAPACK
+  case 15:
+  /* Hock - Schittkowski modified problem 52 */
+    m=5; n=4;
+    p[0]=2.0; p[1]=2.0; p[2]=2.0;
+    p[3]=2.0; p[4]=2.0;
+    for(i=0; i<n; i++) x[i]=0.0;
+
+    {
+      double A[3*5]={1.0, 3.0, 0.0, 0.0, 0.0,  0.0, 0.0, 1.0, 1.0, -2.0,  0.0, 1.0, 0.0, 0.0, -1.0},
+             b[3]={0.0, 0.0, 0.0};
+
+      double lb[5], ub[5];
+
+      double weights[5]={2000.0, 2000.0, 2000.0, 2000.0, 2000.0}; // penalty terms weights
+
+      lb[0]=-0.09; lb[1]=0.0; lb[2]=-DBL_MAX; lb[3]=-0.2; lb[4]=0.0;
+      ub[0]=DBL_MAX; ub[1]=0.3; ub[2]=0.25; ub[3]=0.3; ub[4]=0.3;
+
+      ret=dlevmar_blec_der(modhs52, jacmodhs52, p, x, m, n, lb, ub, A, b, 3, weights, 1000, opts, info, NULL, NULL, NULL); // box & lin. constraints, analytic jacobian
+      //ret=dlevmar_blec_dif(modhs52, p, x, m, n, lb, ub, A, b, 3, weights, 1000, opts, info, NULL, NULL, NULL); // box & lin. constraints, no jacobian
+    }
+    break;
+  case 16:
+  /* Schittkowski modified problem 235 */
+    m=3; n=2;
+    p[0]=-2.0; p[1]=3.0; p[2]=1.0;
+    for(i=0; i<n; i++) x[i]=0.0;
+
+    {
+      double A[2*3]={1.0, 0.0, 1.0,  0.0, 1.0, -4.0},
+             b[2]={-1.0, 0.0};
+
+      double lb[3], ub[3];
+
+      lb[0]=-DBL_MAX; lb[1]=0.1; lb[2]=0.7;
+      ub[0]=DBL_MAX; ub[1]=2.9; ub[2]=DBL_MAX;
+
+      ret=dlevmar_blec_der(mods235, jacmods235, p, x, m, n, lb, ub, A, b, 2, NULL, 1000, opts, info, NULL, NULL, NULL); // box & lin. constraints, analytic jacobian
+      //ret=dlevmar_blec_dif(mods235, p, x, m, n, lb, ub, A, b, 2, NULL, 1000, opts, info, NULL, NULL, NULL); // box & lin. constraints, no jacobian
+    }
+    break;
+  case 17:
+  /* Boggs & Tolle modified problem 7 */
+    m=5; n=5;
+    p[0]=-2.0; p[1]=1.0; p[2]=1.0; p[3]=1.0; p[4]=1.0;
+    for(i=0; i<n; i++) x[i]=0.0;
+
+    {
+      double A[3*5]={1.0, 1.0, -1.0, 0.0, 0.0,   1.0, 1.0, 0.0, -1.0, 0.0,   1.0, 0.0, 0.0, 0.0, 1.0},
+             b[3]={1.0, 0.0, 0.5};
+
+      double lb[5], ub[5];
+
+      lb[0]=-DBL_MAX; lb[1]=-DBL_MAX; lb[2]=-DBL_MAX; lb[3]=-DBL_MAX; lb[4]=-0.3;
+      ub[0]=0.7;      ub[1]= DBL_MAX; ub[2]= DBL_MAX; ub[3]= DBL_MAX; ub[4]=DBL_MAX;
+
+      ret=dlevmar_blec_der(modbt7, jacmodbt7, p, x, m, n, lb, ub, A, b, 3, NULL, 1000, opts, info, NULL, NULL, NULL); // box & lin. constraints, analytic jacobian
+      //ret=dlevmar_blec_dif(modbt7, p, x, m, n, lb, ub, A, b, 3, NULL, 10000, opts, info, NULL, NULL, NULL); // box & lin. constraints, no jacobian
+    }
+    break;
+#endif /* HAVE_LAPACK */
   } /* switch */
   
   printf("Results for %s:\n", probname[problem]);

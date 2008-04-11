@@ -20,10 +20,16 @@
 #ifndef _MISC_H_
 #define _MISC_H_
 
-/* common prefix for BLAS subroutines */
-#define LM_BLAS_PREFIX // none
-//#define LM_BLAS_PREFIX f2c_   // f2c'd BLAS
-//#define LM_BLAS_PREFIX cblas_ // C interface to BLAS
+/* common prefix for BLAS subroutines. Leave undefined in case of no prefix. You might also need to modify LM_BLAS_PREFIX below */
+/* f2c'd BLAS */
+//#define LM_BLAS_PREFIX f2c_
+/* C BLAS */
+//#define LM_BLAS_PREFIX cblas_
+
+/* common suffix for BLAS subroutines */
+//#define LM_BLAS_SUFFIX  // define empty if a f2c_ or cblas_ prefix was defined for LM_BLAS_PREFIX above
+#define LM_BLAS_SUFFIX _ // use this in case of no BLAS prefix
+
 
 #define LCAT_(a, b)    #a b
 #define LCAT(a, b)    LCAT_(a, b) // force substitution
@@ -77,6 +83,14 @@ extern void dfdif_cent_jac_approx(void (*func)(double *p, double *hx, int m, int
 /* covariance of LS fit */
 extern int slevmar_covar(float *JtJ, float *C, float sumsq, int m, int n);
 extern int dlevmar_covar(double *JtJ, double *C, double sumsq, int m, int n);
+
+/* box constraints consistency check */
+extern int slevmar_box_check(float *lb, float *ub, int m);
+extern int dlevmar_box_check(double *lb, double *ub, int m);
+
+/* Cholesky */
+extern int slevmar_chol(float *C, float *W, int m);
+extern int dlevmar_chol(double *C, double *W, int m);
 
 #ifdef __cplusplus
 }

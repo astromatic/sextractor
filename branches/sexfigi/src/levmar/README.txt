@@ -1,6 +1,6 @@
     **************************************************************
                                 LEVMAR
-                              version 2.1.3
+                              version 2.2
                           By Manolis Lourakis
 
                      Institute of Computer Science
@@ -33,6 +33,11 @@ The mathematical theory behind levmar is described in the lecture notes entitled
 "Methods for Non-Linear Least Squares Problems", by K. Madsen, H.B. Nielsen and O. Tingleff,
 Technical University of Denmark (http://www.imm.dtu.dk/courses/02611/nllsq.pdf). 
 
+LICENSE
+levmar is released under the GNU Public License (GPL), which can be found in the included
+LICENSE file. Note that GPL forbids commercial use. If you are interested in obtaining a 
+commercial license for levmar, please email the author using the address at the end of this
+file.
 
 COMPILATION
  - On a Linux/Unix system, typing "make" will build both levmar and the demo
@@ -42,6 +47,10 @@ COMPILATION
  - Under Windows and if Visual C is installed & configured for command line
    use, type "nmake /f Makefile.vc" in a cmd window to build levmar and the
    demo program. In case of trouble, read the comments on top of Makefile.vc
+
+MATLAB INTERFACE
+Since version 2.2, the levmar distrubution includes a matlab interface.
+See the 'matlab' subdirectory for more information and examples of use.
 
 Notice that *_core.c files are not to be compiled directly; For example,
 Axb_core.c is included by Axb.c, to provide single and double precision

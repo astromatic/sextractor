@@ -110,6 +110,7 @@ register LM_REAL sum;
     if(!A){
       if(buf) free(buf);
       buf_sz=0;
+      buf=NULL;
       return 1;
     }
 #endif /* LINSOLVERS_RETAIN_MEMORY */
@@ -261,6 +262,7 @@ register LM_REAL sum;
 #ifdef LINSOLVERS_RETAIN_MEMORY
     if(!A){
       if(buf) free(buf);
+      buf=NULL;
       buf_sz=0;
       return 1;
     }
@@ -423,6 +425,7 @@ int info, nrhs=1;
 #ifdef LINSOLVERS_RETAIN_MEMORY
     if(!A){
       if(buf) free(buf);
+      buf=NULL;
       buf_sz=0;
       return 1;
     }
@@ -560,6 +563,7 @@ LM_REAL *a, *b, *work;
 #ifdef LINSOLVERS_RETAIN_MEMORY
     if(!A){
       if(buf) free(buf);
+      buf=NULL;
       buf_sz=0;
       return 1;
     }
@@ -684,6 +688,7 @@ int info, rank, worksz, *iwork, iworksz;
 #ifdef LINSOLVERS_RETAIN_MEMORY
     if(!A){
       if(buf) free(buf);
+      buf=NULL;
       buf_sz=0;
       return 1;
     }

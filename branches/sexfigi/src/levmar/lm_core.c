@@ -49,10 +49,10 @@
  * This function requires an analytic jacobian. In case the latter is unavailable,
  * use LEVMAR_DIF() bellow
  *
- * Returns the number of iterations (>=0) if successfull, -1 if failed
+ * Returns the number of iterations (>=0) if successfull, LM_ERROR if failed
  *
- * For more details, see H.B. Nielsen's (http://www.imm.dtu.dk/~hbn) IMM/DTU
- * tutorial at http://www.imm.dtu.dk/courses/02611/nllsq.pdf
+ * For more details, see K. Madsen, H.B. Nielsen and O. Tingleff's lecture notes on 
+ * non-linear least squares at http://www.imm.dtu.dk/pubdb/views/edoc_download.php/3215/pdf/imm3215.pdf
  */
 
 int LEVMAR_DER(
@@ -111,13 +111,13 @@ const int nm=n*m;
 
   if(n<m){
     fprintf(stderr, LCAT(LEVMAR_DER, "(): cannot solve a problem with fewer measurements [%d] than unknowns [%d]\n"), n, m);
-    exit(1);
+    return LM_ERROR;
   }
 
   if(!jacf){
     fprintf(stderr, RCAT("No function specified for computing the jacobian in ", LEVMAR_DER)
         RCAT("().\nIf no such function is available, use ", LEVMAR_DIF) RCAT("() rather than ", LEVMAR_DER) "()\n");
-    exit(1);
+    return LM_ERROR;
   }
 
   if(opts){
@@ -376,7 +376,7 @@ if(!(k%100)){
 
   if(freework) free(work);
 
-  return (stop!=4)?  k : -1;
+  return (stop!=4)?  k : LM_ERROR;
 }
 
 
@@ -446,7 +446,7 @@ const int nm=n*m;
 
   if(n<m){
     fprintf(stderr, LCAT(LEVMAR_DIF, "(): cannot solve a problem with fewer measurements [%d] than unknowns [%d]\n"), n, m);
-    exit(1);
+    return LM_ERROR;
   }
 
   if(opts){
@@ -595,7 +595,7 @@ const int nm=n*m;
     }
 
 #if 0
-if(1){
+if(!(k%100)){
   printf("Current estimate: ");
   for(i=0; i<m; ++i)
     printf("%.9g ", p[i]);
@@ -683,9 +683,8 @@ if(1){
         dL+=Dp[i]*(mu*Dp[i]+jacTe[i]);
 
       if(dL>0.0 && dF>0.0){ /* reduction in error, increment is accepted */
-        dF=(CNST(2.0)*dF/dL-CNST(1.0));
-        tmp=dF*dF*dF;
-        tmp=CNST(1.0)-tmp*tmp*dF;
+        tmp=(CNST(2.0)*dF/dL-CNST(1.0));
+        tmp=CNST(1.0)-tmp*tmp*tmp;
         mu=mu*( (tmp>=CNST(ONE_THIRD))? tmp : CNST(ONE_THIRD) );
         nu=2;
 
@@ -746,6 +745,7 @@ if(1){
   if(freework) free(work);
 
   if(wrk2) free(wrk2);
+
 #ifdef LINSOLVERS_RETAIN_MEMORY
 /* Free memory */
 #ifndef HAVE_LAPACK
@@ -753,7 +753,7 @@ AX_EQ_B_LU(NULL, NULL, 0, 0);
 #endif
 #endif
 
-  return (stop!=4)?  k : -1;
+  return (stop!=4)?  k : LM_ERROR;
 }
 
 /* undefine everything. THIS MUST REMAIN AT THE END OF THE FILE */

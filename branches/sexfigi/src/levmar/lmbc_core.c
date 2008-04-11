@@ -26,7 +26,7 @@
 #define FUNC_STATE LM_ADD_PREFIX(func_state)
 #define LNSRCH LM_ADD_PREFIX(lnsrch)
 #define BOXPROJECT LM_ADD_PREFIX(boxProject)
-#define BOXCHECK LM_ADD_PREFIX(boxCHECK)
+#define BOX_CHECK LM_ADD_PREFIX(levmar_box_check)
 #define LEVMAR_BC_DER LM_ADD_PREFIX(levmar_bc_der)
 #define LEVMAR_BC_DIF LM_ADD_PREFIX(levmar_bc_dif) //CHECKME
 #define FDIF_FORW_JAC_APPROX LM_ADD_PREFIX(fdif_forw_jac_approx)
@@ -241,19 +241,6 @@ register int i;
         p[i]=__MEDIAN3(lb[i], p[i], ub[i]);
 }
 
-/* check box constraints for consistency */
-static int BOXCHECK(LM_REAL *lb, LM_REAL *ub, int m)
-{
-register int i;
-
-  if(!lb || !ub) return 1;
-
-  for(i=0; i<m; ++i)
-    if(lb[i]>ub[i]) return 0;
-
-  return 1;
-}
-
 /* 
  * This function seeks the parameter vector p that best describes the measurements
  * vector x under box constraints.
@@ -266,13 +253,13 @@ register int i;
  * This function requires an analytic jacobian. In case the latter is unavailable,
  * use LEVMAR_BC_DIF() bellow
  *
- * Returns the number of iterations (>=0) if successfull, -1 if failed
+ * Returns the number of iterations (>=0) if successfull, LM_ERROR if failed
  *
  * For details, see C. Kanzow, N. Yamashita and M. Fukushima: "Levenberg-Marquardt
  * methods for constrained nonlinear equations with strong local convergence properties",
  * Journal of Computational and Applied Mathematics 172, 2004, pp. 375-397.
- * Also, see H.B. Nielsen's (http://www.imm.dtu.dk/~hbn) IMM/DTU tutorial on
- * unconrstrained Levenberg-Marquardt at http://www.imm.dtu.dk/courses/02611/nllsq.pdf
+ * Also, see K. Madsen, H.B. Nielsen and O. Tingleff's lecture notes on 
+ * unconstrained Levenberg-Marquardt at http://www.imm.dtu.dk/pubdb/views/edoc_download.php/3215/pdf/imm3215.pdf
  */
 
 int LEVMAR_BC_DER(
@@ -344,18 +331,18 @@ int numactive;
 
   if(n<m){
     fprintf(stderr, LCAT(LEVMAR_BC_DER, "(): cannot solve a problem with fewer measurements [%d] than unknowns [%d]\n"), n, m);
-    exit(1);
+    return LM_ERROR;
   }
 
   if(!jacf){
     fprintf(stderr, RCAT("No function specified for computing the jacobian in ", LEVMAR_BC_DER)
         RCAT("().\nIf no such function is available, use ", LEVMAR_BC_DIF) RCAT("() rather than ", LEVMAR_BC_DER) "()\n");
-    exit(1);
+    return LM_ERROR;
   }
 
-  if(!BOXCHECK(lb, ub, m)){
+  if(!BOX_CHECK(lb, ub, m)){
     fprintf(stderr, LCAT(LEVMAR_BC_DER, "(): at least one lower bound exceeds the upper one\n"));
-    exit(1);
+    return LM_ERROR;
   }
 
   if(opts){
@@ -406,7 +393,7 @@ int numactive;
   for(i=0; i<m; ++i)
     if(pDp[i]!=p[i])
       fprintf(stderr, RCAT("Warning: component %d of starting point not feasible in ", LEVMAR_BC_DER) "()! [%g projected to %g]\n",
-                      i, p[i], pDp[i]);
+                      i, pDp[i], p[i]);
 
   /* compute e=x - f(p) and its L2 norm */
   (*func)(p, hx, m, n, adata); nfev=1;
@@ -681,7 +668,7 @@ gradproj: /* Note that this point can also be reached via a goto when LNSRCH() f
         /* if the previous step was along the gradient descent, try to use the t employed in that step */
         /* compute ||g|| */
         for(i=0, tmp=0.0; i<m; ++i)
-          tmp=jacTe[i]*jacTe[i];
+          tmp+=jacTe[i]*jacTe[i];
         tmp=(LM_REAL)sqrt(tmp);
         tmp=CNST(100.0)/(CNST(1.0)+tmp);
         t0=(tmp<=tini)? tmp : tini; /* guard against poor scaling & large steps; see (3.50) in C.T. Kelley's book */
@@ -768,7 +755,7 @@ gradproj: /* Note that this point can also be reached via a goto when LNSRCH() f
 printf("%d LM steps, %d line search, %d projected gradient\n", nLMsteps, nLSsteps, nPGsteps);
 #endif
 
-  return (stop!=4)?  k : -1;
+  return (stop!=4)?  k : LM_ERROR;
 }
 
 /* following struct & LMBC_DIF_XXX functions won't be necessary if a true secant
@@ -867,7 +854,7 @@ int ret;
 #undef FUNC_STATE
 #undef LNSRCH
 #undef BOXPROJECT
-#undef BOXCHECK
+#undef BOX_CHECK
 #undef LEVMAR_BC_DER
 #undef LMBC_DIF_DATA
 #undef LMBC_DIF_FUNC

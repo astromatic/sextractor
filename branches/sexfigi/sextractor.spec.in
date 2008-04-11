@@ -22,7 +22,7 @@ SExtractor stands for ``Source Extractor'': a software for making catalog of sou
 %build
 if test "$TPXFLAGS"; then
 ./configure --enable-static --prefix=$RPM_BUILD_ROOT/usr/local/ --mandir=$RPM_BUILD_ROOT/usr/local/man/ --with-xsl_url=file:///usr/local/share/@PACKAGE_NAME@/@PACKAGE_NAME@.xsl
-make -j CC="$TPXCC" CFLAGS="$TPXFLAGS" LIBS="$TPXLIBS"
+make -j CC="$TPXCC" CFLAGS="$TPXFLAGS" LDFLAGS="$TPXLDFLAGS" LIBS="$TPXLIBS"
 else
 ./configure --prefix=$RPM_BUILD_ROOT/usr/local/ --mandir=$RPM_BUILD_ROOT/usr/local/man/
 make

@@ -39,7 +39,7 @@
 #define LM_PREFIX s
 
 #define LM_REAL_MAX FLT_MAX
-#define LM_REAL_MIN FLT_MIN
+#define LM_REAL_MIN -FLT_MAX
 #define LM_REAL_EPSILON FLT_EPSILON
 #define SUBCNST(x) x##F
 #define CNST(x) SUBCNST(x) // force substitution
@@ -59,7 +59,7 @@
 #define LM_PREFIX d
 
 #define LM_REAL_MAX DBL_MAX
-#define LM_REAL_MIN DBL_MIN
+#define LM_REAL_MIN -DBL_MAX
 #define LM_REAL_EPSILON DBL_EPSILON
 #define CNST(x) (x)
 
