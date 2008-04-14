@@ -104,6 +104,7 @@ typedef struct
   int		nparam;		/* Number of parameters to be fitted */
   double	*paramlist[PARAM_NPARAM];	/* flat parameter list */
   double	param[PARAM_NPARAM];	/* Vector of parameters to be fitted */
+  paramenum	paramname[PARAM_NPARAM];	/* Sorted vector of parameter names */
   double	paraminit[PARAM_NPARAM];/* Parameter initial guesses */
   double	parammin[PARAM_NPARAM];	/* Parameter lower limits */
   double	parammax[PARAM_NPARAM];	/* Parameter upper limits */

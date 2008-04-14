@@ -385,16 +385,25 @@ NOTES	-.
 AUTHOR	A. BAILLARD (IAP)
 VERSION	14/04/2008
 */
-void	initcatprofit(profitstruct *profit, int n)
+void		initcatprofit(profitstruct *profit, int n)
 {
-  int	cnt;
+  int		cnt, index;
+  double	*paramptr;	
 
-  for (cnt = 0; cnt < PARAM_NPARAM; cnt++)
-    if (profit->paramlist[cnt])
-      {
-	fprintf(ascfile, "# %3d %-15.15s\n",n, paramnames[cnt]);
-	n++;
-      }
+/*   for (cnt=0; cnt < nprof; cnt++) */
+/*     { */
+/*       prof = profit->prof[p]; */
+/*       index = paramptr - profit->param; */
+/*   for (i = key->nbytes/esize; i--; ptr += esize) */
+
+/*     } */
+
+
+  for (cnt = 0; cnt < profit->nparam; cnt++)
+    {
+      fprintf(ascfile, "# %3d %-15.15s\n",n, paramnames[profit->paramname[cnt]]);
+      n++;
+    }
 }
 
 /********************************** initcat **********************************/

@@ -939,8 +939,10 @@ void	profit_addparam(profitstruct *profit, paramenum paramindex,
     *param = profit->paramlist[paramindex];
   else
 /*-- No */
-    *param = profit->paramlist[paramindex] = &profit->param[profit->nparam++];
-
+    {
+      profit->paramname[profit->nparam] = paramindex;
+      *param = profit->paramlist[paramindex] = &profit->param[profit->nparam++];
+    }
   return;
   }
 
