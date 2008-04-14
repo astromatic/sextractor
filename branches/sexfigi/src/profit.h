@@ -9,7 +9,7 @@
 *
 *	Contents:	Include file for profit.c.
 *
-*	Last modify:	19/12/2007
+*	Last modify:	14/04/2008 by A. BAILLARD (IAP)
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -66,7 +66,7 @@ typedef enum	{PARAM_BACK, PARAM_X, PARAM_Y,
 		PARAM_OUTRING_FLUX, PARAM_OUTRING_START, PARAM_OUTRING_WIDTH,
 		PARAM_NPARAM}	paramenum;
 
-/*--------------------------- structure definitions -------------------------*/
+/*--------------------------- Structure definitions -------------------------*/
 
 typedef struct
   {

@@ -9,7 +9,7 @@
 *
 *	Contents:	parameter list for catalog data.
 *
-*	Last modify:	09/08/2007
+*	Last modify:	14/04/2008 by A. BAILLARD (IAP)
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -901,3 +901,18 @@ keystruct	objkey[] = {
   {""}
   };
 
+char		paramnames[PARAM_NPARAM+1][32] = 
+  {"PARAM_BACK", "PARAM_X", "PARAM_Y",
+   "PARAM_DEVAUC_FLUX", "PARAM_DEVAUC_MAJ", "PARAM_DEVAUC_ASPECT",
+   "PARAM_DEVAUC_POSANG",
+   "PARAM_EXPO_FLUX", "PARAM_EXPO_MAJ", "PARAM_EXPO_ASPECT",
+   "PARAM_EXPO_POSANG",
+   "PARAM_SERSIC_FLUX", "PARAM_SERSIC_MAJ", "PARAM_SERSIC_ASPECT",
+   "PARAM_SERSIC_POSANG", "PARAM_SERSIC_N",
+   "PARAM_ARMS_FLUX", "PARAM_ARMS_QUADFRAC", "PARAM_ARMS_SCALE",
+   "PARAM_ARMS_START", "PARAM_ARMS_POSANG", "PARAM_ARMS_PITCH",
+   "PARAM_ARMS_WIDTH",
+   "PARAM_BAR_FLUX", "PARAM_BAR_ASPECT", "PARAM_BAR_POSANG",
+   "PARAM_INRING_FLUX", "PARAM_INRING_WIDTH", "PARAM_INRING_ASPECT",
+   "PARAM_OUTRING_FLUX", "PARAM_OUTRING_START", "PARAM_OUTRING_WIDTH",
+   ""};

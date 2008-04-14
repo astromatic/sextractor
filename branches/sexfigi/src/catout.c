@@ -9,7 +9,7 @@
 *
 *	Contents:	functions for output of catalog data.
 *
-*	Last modify:	19/12/2007
+*	Last modify:	14/04/2008 by A.BAILLARD (IAP)
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -375,11 +375,39 @@ void	updateparamflags()
   }
 
 
+/********************************** initcatprofit **********************************/
+/*
+Part of the init of the catalog header for the profile fitting vector
+INPUT	Pointer to profile-fitting structure.
+	Current value of output column
+OUTPUT	-.
+NOTES	-.
+AUTHOR	A. BAILLARD (IAP)
+VERSION	14/04/2008
+*/
+void	initcatprofit(profitstruct *profit, int n)
+{
+  int	cnt;
+
+  for (cnt = 0; cnt < PARAM_NPARAM; cnt++)
+    if (profit->paramlist[cnt])
+      {
+	fprintf(ascfile, "# %3d %-15.15s\n",n, paramnames[cnt]);
+	n++;
+      }
+}
+
 /********************************** initcat **********************************/
 /*
 Initialize the catalog header
+Variable profit struct in parameter
+INPUT	Pointer to the profile-fitting structure.
+OUTPUT	-.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	14/04/2008
 */
-void	initcat(void)
+void	initcat(profitstruct *profit)
   {
    keystruct	*key;
    int		i, n;
@@ -400,11 +428,27 @@ void	initcat(void)
       for (i=0,n=1; i++<objtab->nkey; key=key->nextkey)
         {
         if (*key->unit)
-          fprintf(ascfile, "# %3d %-15.15s %-47.47s [%s]\n",
-		n, key->name,key->comment, key->unit);
+	  {
+	    if (!strcmp(key->name, "VECTOR_PROF") && profit != NULL)
+	      {
+		initcatprofit(profit, n);
+		n += profit->nparam;
+	      }
+	    else
+	      fprintf(ascfile, "# %3d %-15.15s %-47.47s [%s]\n",
+		      n, key->name,key->comment, key->unit);
+	  }
         else
-          fprintf(ascfile, "# %3d %-15.15s %.47s\n",
-		n, key->name,key->comment);
+	  {
+	    if (!strcmp(key->name, "VECTOR_PROF") && profit != NULL)
+	      {
+		initcatprofit(profit, n);
+		n += profit->nparam;
+	      }
+	    else
+	      fprintf(ascfile, "# %3d %-15.15s %.47s\n",
+		      n, key->name,key->comment);
+	  }
         n += key->nbytes/t_size[key->ttype];
         }
     else if (prefs.cat_type == ASCII_SKYCAT && (key = objtab->key))

@@ -9,7 +9,7 @@
 *
 *	Contents:	Fit an arbitrary profile combination to a detection.
 *
-*	Last modify:	11/04/2008
+*	Last modify:	14/04/2008 by A. BAILLARD (IAP)
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -1590,7 +1590,7 @@ void	prof_add(profstruct *prof, profitstruct *profit)
       armrdphidr = 1.0/tan(*prof->featpitch*DEG);
       posang = *prof->featposang*DEG;
       width = fabs(*prof->featwidth);
-width = 2.0;
+      width = 2.0;
       x1 = -x1cout - dx1;
       x2 = -x2cout - dx2;
       pixin = profit->pmodpix;

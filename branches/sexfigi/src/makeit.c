@@ -9,7 +9,7 @@
 *
 *	Contents:	main program.
 *
-*	Last modify:	08/10/2007
+*	Last modify:	14/04/2008 by A. BAILLARD (IAP)
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -205,7 +205,7 @@ void	makeit()
     }
 
   NFPRINTF(OUTPUT, "Initializing catalog");
-  initcat();
+  initcat(theprofit);
 
 /* Initialize XML data */
   if (prefs.xml_flag || prefs.cat_type==ASCII_VO)
