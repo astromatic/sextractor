@@ -9,7 +9,7 @@
 *
 *	Contents:	main program.
 *
-*	Last modify:	14/04/2008 by A. BAILLARD (IAP)
+*	Last modify:	08/10/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -106,8 +106,7 @@ void	makeit()
     fft_init();
 /* Create profiles at full resolution */
     NFPRINTF(OUTPUT, "Preparing profile models");
-    theprofit = profit_init(thepsf, (proftypenum *)prefs.prof_type,
-			prefs.nprof_type);
+    theprofit = profit_init(thepsf);
     changecatparamarrays("VECTOR_PROF", &theprofit->nparam, 1);
     }
 
@@ -205,7 +204,7 @@ void	makeit()
     }
 
   NFPRINTF(OUTPUT, "Initializing catalog");
-  initcat(theprofit);
+  initcat();
 
 /* Initialize XML data */
   if (prefs.xml_flag || prefs.cat_type==ASCII_VO)

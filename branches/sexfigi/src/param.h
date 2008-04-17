@@ -9,7 +9,7 @@
 *
 *	Contents:	parameter list for catalog data.
 *
-*	Last modify:	14/04/2008 by A. BAILLARD (IAP)
+*	Last modify:	17/04/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -853,66 +853,8 @@ keystruct	objkey[] = {
 	&outobj2.vector_pc, H_FLOAT, T_FLOAT, "%15.10e", "",
 	"src.morph.param", "", 1, &prefs.pc_vectorsize},
 
-  {"VECTOR_PROF", "Profile-fitting coefficients",
-	&outobj2.prof_vector, H_FLOAT, T_FLOAT, "%8.2f", "",
-	"stat.fit.param;src.morph.param", "", 1, &prefs.prof_vectorsize},
-  {"CHI2_PROF", "Reduced Chi2 of the fit",
-	&outobj2.prof_chi2, H_FLOAT, T_FLOAT, "%12.7g", "",
-	"stat.fit.chi2;src.morph", ""},
-  {"FLAGS_PROF", "Profile-fitting flags",
-	&outobj2.prof_flag, H_INT, T_BYTE, "%3d", "",
-	"meta.code;stat.fit;src.morph", ""},
-  {"NITER_PROF", "Number of iterations for profile-fitting",
-	&outobj2.prof_niter, H_INT, T_SHORT, "%3d", "",
-	"meta.number;stat.fit;src.morph", ""},
-  {"FLUX_PROF", "Flux from profile-fitting",
-	&outobj2.flux_prof, H_FLOAT, T_FLOAT, "%12.7g", "count",
-	"phot.count;stat.fit.param", "ct"},
-  {"MAG_PROF", "Magnitude from profile-fitting",
-	&outobj2.mag_prof, H_FLOAT, T_FLOAT, "%8.4f", "mag",
-	"phot.mag;stat.fit.param", "mag"},
-  {"XPROF_IMAGE", "X coordinate from profile-fitting",
-	&outobj2.x_prof, H_FLOAT, T_FLOAT, "%10.3f", "pixel",
-	"pos.cartesian.x;stat.fit.param;instr.det;meta.main", "pix"},
-  {"YPROF_IMAGE", "Y coordinate from profile-fitting",
-	&outobj2.y_prof, H_FLOAT, T_FLOAT, "%10.3f", "pixel",
-	"pos.cartesian.y;stat.fit.param;instr.det;meta.main", "pix"},
-  {"X2PROF_IMAGE", "Variance along x from profile-fitting",
-	&outobj2.prof_mx2, H_EXPO, T_DOUBLE, "%15.10e", "pixel**2",
-	"src.impactParam;stat.fit;instr.det", "pix2"},
-  {"Y2PROF_IMAGE", "Variance along y from profile-fitting",
-	&outobj2.prof_my2, H_EXPO, T_DOUBLE, "%15.10e", "pixel**2",
-	"src.impactParam;stat.fit;instr.det", "pix2"},
-  {"XYPROF_IMAGE", "Covariance between x and y from profile-fitting",
-	&outobj2.prof_mxy, H_EXPO, T_DOUBLE, "%15.10e", "pixel**2",
-	"src.impactParam;stat.fit;instr.det", "pix2"},
-  {"E1PROF_IMAGE", "Ellipticity component from profile-fitting",
-	&outobj2.prof_e1, H_FLOAT, T_FLOAT, "%10.6f", "",
-	"src.ellipticity;stat.fit;instr.det", ""},
-  {"E2PROF_IMAGE", "Ellipticity component from profile-fitting",
-	&outobj2.prof_e2, H_FLOAT, T_FLOAT, "%10.6f", "",
-	"src.ellipticity;stat.fit;instr.det", ""},
-  {"EPS1PROF_IMAGE", "Ellipticity component (quadratic) from profile-fitting",
-	&outobj2.prof_eps1, H_FLOAT, T_FLOAT, "%10.6f", "",
-	"src.ellipticity;stat.fit;instr.det", ""},
-  {"EPS2PROF_IMAGE", "Ellipticity component (quadratic) from profile-fitting",
-	&outobj2.prof_eps2, H_FLOAT, T_FLOAT, "%10.6f", "",
-	"src.ellipticity;stat.fit;instr.det", ""},
+#include "paramprofit.h"
+
   {""}
   };
 
-char		paramnames[PARAM_NPARAM+1][32] = 
-  {"PARAM_BACK", "PARAM_X", "PARAM_Y",
-   "PARAM_DEVAUC_FLUX", "PARAM_DEVAUC_MAJ", "PARAM_DEVAUC_ASPECT",
-   "PARAM_DEVAUC_POSANG",
-   "PARAM_EXPO_FLUX", "PARAM_EXPO_MAJ", "PARAM_EXPO_ASPECT",
-   "PARAM_EXPO_POSANG",
-   "PARAM_SERSIC_FLUX", "PARAM_SERSIC_MAJ", "PARAM_SERSIC_ASPECT",
-   "PARAM_SERSIC_POSANG", "PARAM_SERSIC_N",
-   "PARAM_ARMS_FLUX", "PARAM_ARMS_QUADFRAC", "PARAM_ARMS_SCALE",
-   "PARAM_ARMS_START", "PARAM_ARMS_POSANG", "PARAM_ARMS_PITCH",
-   "PARAM_ARMS_WIDTH",
-   "PARAM_BAR_FLUX", "PARAM_BAR_ASPECT", "PARAM_BAR_POSANG",
-   "PARAM_INRING_FLUX", "PARAM_INRING_WIDTH", "PARAM_INRING_ASPECT",
-   "PARAM_OUTRING_FLUX", "PARAM_OUTRING_START", "PARAM_OUTRING_WIDTH",
-   ""};

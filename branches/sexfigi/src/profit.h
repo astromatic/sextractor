@@ -9,7 +9,7 @@
 *
 *	Contents:	Include file for profit.c.
 *
-*	Last modify:	14/04/2008 by A. BAILLARD (IAP)
+*	Last modify:	17/04/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -52,21 +52,19 @@ typedef enum	{INTERP_NEARESTNEIGHBOUR, INTERP_BILINEAR, INTERP_LANCZOS2,
 		INTERP_LANCZOS3, INTERP_LANCZOS4}       interpenum;
 
 typedef enum	{PARAM_BACK, PARAM_X, PARAM_Y,
-		PARAM_DEVAUC_FLUX, PARAM_DEVAUC_MAJ, PARAM_DEVAUC_ASPECT,
-		PARAM_DEVAUC_POSANG,
-		PARAM_EXPO_FLUX, PARAM_EXPO_MAJ, PARAM_EXPO_ASPECT,
-		PARAM_EXPO_POSANG,
-		PARAM_SERSIC_FLUX, PARAM_SERSIC_MAJ, PARAM_SERSIC_ASPECT,
-		PARAM_SERSIC_POSANG, PARAM_SERSIC_N,
+		PARAM_SPHEROID_FLUX, PARAM_SPHEROID_REFF, PARAM_SPHEROID_ASPECT,
+		PARAM_SPHEROID_POSANG, PARAM_SPHEROID_SERSICN,
+		PARAM_DISK_FLUX, PARAM_DISK_SCALE, PARAM_DISK_ASPECT,
+		PARAM_DISK_POSANG,
 		PARAM_ARMS_FLUX, PARAM_ARMS_QUADFRAC, PARAM_ARMS_SCALE,
 		PARAM_ARMS_START, PARAM_ARMS_POSANG, PARAM_ARMS_PITCH,
-		PARAM_ARMS_WIDTH,
+		PARAM_ARMS_PITCHVAR, PARAM_ARMS_WIDTH,
 		PARAM_BAR_FLUX, PARAM_BAR_ASPECT, PARAM_BAR_POSANG,
 		PARAM_INRING_FLUX, PARAM_INRING_WIDTH, PARAM_INRING_ASPECT,
 		PARAM_OUTRING_FLUX, PARAM_OUTRING_START, PARAM_OUTRING_WIDTH,
 		PARAM_NPARAM}	paramenum;
 
-/*--------------------------- Structure definitions -------------------------*/
+/*--------------------------- structure definitions -------------------------*/
 
 typedef struct
   {
@@ -87,6 +85,7 @@ typedef struct
   double	*featstart;		/* Feature relative starting radius */
   double	*featposang;		/* Feature position angle */
   double	*featpitch;		/* Feature pitch */
+  double	*featpitchvar;		/* Feature pitch variation */
   double	*featwidth;		/* Feature width */
   double	*feataspect;		/* Feature aspect ratio */
   double	*extra[PROFIT_MAXEXTRA];/* Parameters along extra-dimension */
@@ -104,7 +103,6 @@ typedef struct
   int		nparam;		/* Number of parameters to be fitted */
   double	*paramlist[PARAM_NPARAM];	/* flat parameter list */
   double	param[PARAM_NPARAM];	/* Vector of parameters to be fitted */
-  paramenum	paramname[PARAM_NPARAM];	/* Sorted vector of parameter names */
   double	paraminit[PARAM_NPARAM];/* Parameter initial guesses */
   double	parammin[PARAM_NPARAM];	/* Parameter lower limits */
   double	parammax[PARAM_NPARAM];	/* Parameter upper limits */
@@ -131,8 +129,7 @@ typedef struct
 /*----------------------------- Global variables ----------------------------*/
 /*-------------------------------- functions --------------------------------*/
 
-profitstruct	*profit_init(struct psf *psf, proftypenum *profcode,
-			int nprof);
+profitstruct	*profit_init(struct psf *psf);
 
 profstruct	*prof_init(profitstruct *profit, proftypenum profcode);
 
@@ -149,7 +146,7 @@ PIXTYPE		*profit_resample(profitstruct *profit);
 int		profit_copyobjpix(profitstruct *profit, picstruct *field,
 				int ix, int iy),
 		profit_minimize(profitstruct *profit, int niter),
-		profit_resetparam(profitstruct *profit, paramenum paramtype,
+		profit_setparam(profitstruct *profit, paramenum paramtype,
 			double param, double parammin, double parammax);
 
 void		prof_add(profstruct *prof, profitstruct *profit),
@@ -169,6 +166,8 @@ void		prof_add(profstruct *prof, profitstruct *profit),
 			obj2struct *obj2),
 		profit_printout(int n_par, double* par, int m_dat, double* fvec,
 			void *data, int iflag, int iter, int nfev ),
+		profit_resetparam(profitstruct *profit, paramenum paramtype,
+			objstruct *obj, obj2struct *obj2),
 		profit_resetparams(profitstruct *profit, objstruct *obj,
 			obj2struct *obj2),
 		profit_unboundtobound(profitstruct *profit, double *param);

@@ -9,7 +9,7 @@
 *
 *	Contents:	Functions to handle the configuration file.
 *
-*	Last modify:	10/04/2007
+*	Last modify:	17/04/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -573,7 +573,7 @@ void	useprefs()
 
 /*-------------------------- Profile-fitting -------------------------------*/
 /* Profile-fitting is possible only if a PSF file is loaded */
-  prefs.prof_flag = FLAG(obj2.prof_vector);
+  prefs.prof_flag = FLAG(obj2.prof_chi2);
   if (prefs.check_flag)
     for (i=0; i<prefs.ncheck_type; i++)
       if (prefs.check_type[i] == CHECK_SUBPROFILES

@@ -9,13 +9,12 @@
 *
 *	Contents:	global declarations.
 *
-*	Last modify:	14/04/2008 by A. BAILLARD (IAP)
+*	Last modify:	11/06/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
 
 #include	"types.h"
-#include	"profit.h"
 
 /*----------------------- miscellaneous variables ---------------------------*/
 
@@ -45,7 +44,7 @@ extern void	alloccatparams(void),
 		flagcleancrowded(int, objliststruct *),
 		freeparcelout(void),
 		getnnw(void),
-		initcat(profitstruct *),
+		initcat(void),
 		reinitcat(picstruct *),
 		initglob(void),
 		makeit(void),

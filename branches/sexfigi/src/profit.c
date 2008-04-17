@@ -9,7 +9,7 @@
 *
 *	Contents:	Fit an arbitrary profile combination to a detection.
 *
-*	Last modify:	14/04/2008 by A. BAILLARD (IAP)
+*	Last modify:	17/04/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -57,31 +57,55 @@ static picstruct	*the_field, *the_wfield;
 profitstruct		*theprofit;
 
 /****** profit_init ***********************************************************
-PROTO	profitstruct profit_init(psfstruct *psf,
-			proftypenum *profcode, int nprof)
+PROTO	profitstruct profit_init(psfstruct *psf)
 PURPOSE	Allocate and initialize a new profile-fitting structure.
-INPUT	Pointer to PSF structure,
-	pointer to the list of profile component type codes,
-	number of profile types.
+INPUT	Pointer to PSF structure.
 OUTPUT	A pointer to an allocated profit structure.
 AUTHOR	E. Bertin (IAP)
-VERSION	30/03/2007
+VERSION	17/04/2008
  ***/
-profitstruct	*profit_init(psfstruct *psf, proftypenum *profcode, int nprof)
+profitstruct	*profit_init(psfstruct *psf)
   {
    profitstruct		*profit;
-   int			p;
+   int			p, nprof,
+			spheroidflag, diskflag, barflag, armsflag;
 
   QCALLOC(profit, profitstruct, 1);
   profit->psf = psf;
   profit->psfdft = NULL;
 
-  profit->nprof = nprof;
   profit->nparam = 0;
-  QMALLOC(profit->prof, profstruct *, nprof);
+  QMALLOC(profit->prof, profstruct *, PROF_NPROF);
+  spheroidflag = diskflag = barflag = armsflag = 0;
+  nprof = 0;
+  for (p=0; p<PROF_NPROF; p++)
+    if (!spheroidflag && FLAG(obj2.prof_spheroid_flux))
+      {
+      profit->prof[p] = prof_init(profit,
+	FLAG(obj2.prof_spheroid_sersicn)? PROF_SERSIC : PROF_DEVAUCOULEURS);
+      spheroidflag = 1;
+      nprof++;
+      }
+    else if (!diskflag && FLAG(obj2.prof_disk_flux))
+      {
+      profit->prof[p] = prof_init(profit, PROF_EXPONENTIAL);
+      diskflag = 1;
+      nprof++;
+      }
+    else if (diskflag && !barflag)
+      {
+      profit->prof[p] = prof_init(profit, PROF_BAR);
+      barflag = 1;
+      nprof++;
+      }
+    else if (diskflag && !armsflag)
+      {
+      profit->prof[p] = prof_init(profit, PROF_ARMS);
+      armsflag = 1;
+      nprof++;
+      }
 
-  for (p=0; p<nprof; p++)
-    profit->prof[p] = prof_init(profit, profcode[p]);
+  profit->nprof = nprof;
 
   return profit;
   }  
@@ -191,6 +215,11 @@ void	profit_fit(profitstruct *profit,
 /* Set initial guesses and boundaries */
   obj2->prof_flag = 0;
   profit->sigma = obj->sigbkg;
+
+/* test */
+
+/* test */
+
   profit_resetparams(profit, obj, obj2);
 
 //for (p=0; p<profit->nparam; p++)
@@ -200,7 +229,8 @@ void	profit_fit(profitstruct *profit,
 the_gal++;
   profit->niter = profit_minimize(profit, PROFIT_MAXITER);
   QMEMCPY(profit->paraminit, oldparaminit, double, profit->nparam);
-  if (profit_resetparam(profit, PARAM_ARMS_PITCH, 150.0, 120.0, 170.0)==RETURN_OK)
+
+  if (profit_setparam(profit, PARAM_ARMS_PITCH, 160.0, 130.0, 175.0)==RETURN_OK)
     {
 //    profit_resetparam(profit, PARAM_ARMS_FLUX, obj->peak, 0.0, 1000.0*obj->peak);
 //    profit_resetparam(profit, PARAM_ARMS_SCALE, 1.0, 0.5, 10.0);
@@ -211,7 +241,7 @@ the_gal++;
     oldchi2 = profit->chi2;
     oldniter = profit->niter;
     profit_resetparams(profit, obj, obj2);
-    profit_resetparam(profit, PARAM_ARMS_PITCH, 150.0, 120.0, 170.0);
+    profit_setparam(profit, PARAM_ARMS_PITCH, 160.0, 130.0, 175.0);
     profit->niter = profit_minimize(profit, PROFIT_MAXITER);
     if (profit->chi2 > oldchi2)
       {
@@ -268,6 +298,23 @@ the_gal++;
       prof_add(profit->prof[p], profit);
     profit_moments(profit, obj, obj2);
     }
+  if (FLAG(obj2.prof_spheroid_flux))
+    {
+    obj2->prof_spheroid_flux = *profit->paramlist[PARAM_SPHEROID_FLUX];
+    obj2->prof_spheroid_reff = *profit->paramlist[PARAM_SPHEROID_REFF];
+    obj2->prof_spheroid_aspect = *profit->paramlist[PARAM_SPHEROID_ASPECT];
+    obj2->prof_spheroid_posang = *profit->paramlist[PARAM_SPHEROID_POSANG];
+    if (FLAG(obj2.prof_spheroid_sersicn))
+    obj2->prof_spheroid_sersicn = *profit->paramlist[PARAM_SPHEROID_SERSICN];
+    }
+
+  if (FLAG(obj2.prof_disk_flux))
+    {
+    obj2->prof_disk_flux = *profit->paramlist[PARAM_DISK_FLUX];
+    obj2->prof_disk_scale = *profit->paramlist[PARAM_DISK_SCALE];
+    obj2->prof_disk_aspect = *profit->paramlist[PARAM_DISK_ASPECT];
+    obj2->prof_disk_posang = *profit->paramlist[PARAM_DISK_POSANG];
+    }
 
 /* clean up. */
   free(profit->modpix);
@@ -276,6 +323,30 @@ the_gal++;
   free(profit->objpix);
   free(profit->resi);
   free(oldparaminit);
+
+  return;
+  }
+
+
+/****** profit_findinit *******************************************************
+PROTO	void profit_findinit(profitstruct *profit)
+PURPOSE	Find a suitable set of initialisation parameters
+INPUT	Pointer to the profit structure involved in the fit.
+OUTPUT	-.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	16/04/2008
+ ***/
+void	profit_findinit(profitstruct *profit)
+  {
+   int	p;
+
+  for (p=0; p<profit->nprof; p++)
+    switch (profit->prof[p]->code)
+      {
+      default:
+      break;
+      }
 
   return;
   }
@@ -346,7 +417,7 @@ void	profit_printout(int n_par, double* par, int m_dat, double* fvec,
 
   profit = (profitstruct *)data;
 
-  if (0 && (iter!=itero || iter<0))
+  if (1 && (iter!=itero || iter<0))
     {
     if (iter<0)
       itero++;
@@ -939,213 +1010,235 @@ void	profit_addparam(profitstruct *profit, paramenum paramindex,
     *param = profit->paramlist[paramindex];
   else
 /*-- No */
-    {
-      profit->paramname[profit->nparam] = paramindex;
-      *param = profit->paramlist[paramindex] = &profit->param[profit->nparam++];
-    }
-  return;
-  }
-
-
-/****** profit_resetparams ****************************************************
-PROTO	void profit_resetparams(profitstruct *profit, objstruct *obj,
-		*obj2struct *obj)
-PURPOSE	Set the initial, lower and upper boundary values of profile parameters.
-INPUT	Pointer to the profit structure,
-	Parameter index,
-	Initial parameter guess,
-	Lower boundary to the parameter,
-	Upper boundary to the parameter.
-OUTPUT	-.
-AUTHOR	E. Bertin (IAP)
-VERSION	19/12/2007
- ***/
-void	profit_resetparams(profitstruct *profit, objstruct *obj,
-		obj2struct *obj2)
-  {
-   double	param, parammin,parammax;
-   int		p;
-
-
-  for (p=0; p<PARAM_NPARAM; p++)
-/*-- Check whether the parameter has already be registered */
-    {
-    param = parammin = parammax = 0.0;	/* Avoid gcc -Wall warnings*/
-    switch((paramenum)p)
-      {
-      case PARAM_BACK:
-        param = 0.0;
-        parammin = -6.0*obj->sigbkg;
-        parammax =  6.0*obj->sigbkg;
-        break;
-      case PARAM_X:
-        param = obj->mx - (int)(obj->mx+0.49999);
-        parammin = -obj2->hl_radius*4;
-        parammax =  obj2->hl_radius*4;
-        break;
-      case PARAM_Y:
-        param = obj->my - (int)(obj->my+0.49999);
-        parammin = -obj2->hl_radius*4;
-        parammax =  obj2->hl_radius*4;
-        break;
-      case PARAM_DEVAUC_FLUX:
-      case PARAM_SERSIC_FLUX:
-        param = obj2->flux_auto/2.0;
-        parammin = -obj2->flux_auto/1000.0;
-        parammax = 2*obj2->flux_auto;
-        break;
-      case PARAM_EXPO_FLUX:
-        param = obj2->flux_auto/2.0;
-        parammin = -obj2->flux_auto/1000.0;
-        parammax = 2*obj2->flux_auto;
-        break;
-      case PARAM_DEVAUC_MAJ:
-      case PARAM_SERSIC_MAJ:
-        param = obj2->hl_radius;
-        parammin = 0.1;
-        parammax = param * 4.0;
-        break;
-      case PARAM_EXPO_MAJ:
-        param = obj2->hl_radius/1.67835;	/* From scalelength to Re */
-        parammin = param / 4.0;
-        parammax = param * 4.0;
-        break;
-      case PARAM_DEVAUC_ASPECT:
-      case PARAM_SERSIC_ASPECT:
-        param = obj->b/obj->a;
-        parammin = profit->nprof>1? 0.5 : 0.01;
-        parammax = profit->nprof>1? 2.0 : 100.0;
-        break;
-      case PARAM_EXPO_ASPECT:
-        param = obj->b/obj->a;
-        parammin = 0.01;
-        parammax = 100.0;
-        break;
-      case PARAM_DEVAUC_POSANG:
-      case PARAM_EXPO_POSANG:
-      case PARAM_SERSIC_POSANG:
-        param = obj->theta;
-        parammin = -3600.0;
-        parammax =  3600.0;
-        break;
-      case PARAM_SERSIC_N:
-        param = 2.0;
-        parammin = 1.0;
-        parammax = 10.0;
-        break;
-      case PARAM_ARMS_FLUX:
-        param = obj2->flux_auto/2.0;
-        parammin = 0.0;
-        parammax = obj2->flux_auto*2.0;
-        break;
-      case PARAM_ARMS_QUADFRAC:
-        param = 0.5;
-        parammin = 0.0;
-        parammax = 1.0;
-        break;
-      case PARAM_ARMS_SCALE:
-        param = 1.0;
-        parammin = 0.5;
-        parammax = 10.0;
-        break;
-      case PARAM_ARMS_START:
-        param = 1.0;
-        parammin = 0.0;
-        parammax = 3.0;
-        break;
-      case PARAM_ARMS_PITCH:
-        param = 30.0;
-        parammin = 10.0;
-        parammax = 60.0;
-//        if ((profit->spirindex=profit_spiralindex(profit, obj, obj2)) > 0.0)
-//          {
-//          param = -param;
-//          parammin = -parammax;
-//          parammax = -parammin;
-//          }
-//        printf("spiral index: %g  \n", profit->spirindex);
-        break;
-      case PARAM_ARMS_POSANG:
-        param = 45.0;
-        parammin = -3600.0;
-        parammax = 3600.0;
-        break;
-      case PARAM_ARMS_WIDTH:
-        param = 2.0;
-        parammin = 1.0;
-        parammax = 4.0;
-        break;
-      case PARAM_BAR_FLUX:
-        param = obj2->flux_auto/10.0;
-        parammin = 0.0;
-        parammax = 2.0*obj2->flux_auto;
-        break;
-      case PARAM_BAR_ASPECT:
-        param = 0.3;
-        parammin = 0.2;
-        parammax = 0.5;
-        break;
-      case PARAM_BAR_POSANG:
-        param = 0.0;
-        parammin = -3600.0;
-        parammax = 3600.0;
-        break;
-      case PARAM_INRING_FLUX:
-        param = obj2->flux_auto/10.0;
-        parammin = 0.0;
-        parammax = 2.0*obj2->flux_auto;
-        break;
-      case PARAM_INRING_WIDTH:
-        param = 0.3;
-        parammin = 0.0;
-        parammax = 0.5;
-        break;
-      case PARAM_INRING_ASPECT:
-        param = 0.8;
-        parammin = 0.4;
-        parammax = 1.0;
-        break;
-      case PARAM_OUTRING_FLUX:
-        param = obj2->flux_auto/10.0;
-        parammin = 0.0;
-        parammax = 2.0*obj2->flux_auto;
-        break;
-      case PARAM_OUTRING_START:
-        param = 4.0;
-        parammin = 3.5;
-        parammax = 6.0;
-        break;
-      case PARAM_OUTRING_WIDTH:
-        param = 0.3;
-        parammin = 0.0;
-        parammax = 0.5;
-        break;
-      default:
-        error(EXIT_FAILURE, "*Internal Error*: Unknown profile parameter in ",
-		"profit_resetparams()");
-        break;
-      }
-    profit_resetparam(profit, (paramenum)p, param, parammin,parammax);
-    }
+    *param = profit->paramlist[paramindex] = &profit->param[profit->nparam++];
 
   return;
   }
 
 
 /****** profit_resetparam ****************************************************
-PROTO	void profit_resetparam(profitstruct *profit, paramenum proftype,
-		double param, double parammin, double parammax)
+PROTO	void profit_resetparam(profitstruct *profit, paramenum paramtype,
+		objstruct *obj,	*obj2struct *obj2)
 PURPOSE	Set the initial, lower and upper boundary values of a profile parameter.
 INPUT	Pointer to the profit structure,
 	Parameter index,
-	Initial parameter guess,
+	Pointer to the obj structure,
+	Pointer to the obj2 structure.
+OUTPUT	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	16/04/2008
+ ***/
+void	profit_resetparam(profitstruct *profit, paramenum paramtype,
+		objstruct *obj, obj2struct *obj2)
+  {
+   double	param, parammin,parammax;
+
+  param = parammin = parammax = 0.0;	/* Avoid gcc -Wall warnings*/
+  switch(paramtype)
+    {
+    case PARAM_BACK:
+      param = 0.0;
+      parammin = -6.0*obj->sigbkg;
+      parammax =  6.0*obj->sigbkg;
+      break;
+    case PARAM_X:
+      param = obj->mx - (int)(obj->mx+0.49999);
+      parammin = -obj2->hl_radius*4;
+      parammax =  obj2->hl_radius*4;
+      break;
+    case PARAM_Y:
+      param = obj->my - (int)(obj->my+0.49999);
+      parammin = -obj2->hl_radius*4;
+      parammax =  obj2->hl_radius*4;
+      break;
+    case PARAM_SPHEROID_FLUX:
+      param = obj2->flux_auto/2.0;
+      parammin = -obj2->flux_auto/1000.0;
+      parammax = 2*obj2->flux_auto;
+      break;
+    case PARAM_SPHEROID_REFF:
+      param = obj2->hl_radius;
+      parammin = 0.1;
+      parammax = param * 4.0;
+      break;
+    case PARAM_SPHEROID_ASPECT:
+      param = obj->b/obj->a;
+      parammin = profit->nprof>1? 0.5 : 0.01;
+      parammax = profit->nprof>1? 2.0 : 100.0;
+      break;
+    case PARAM_SPHEROID_POSANG:
+      param = obj->theta;
+      parammin = 0.0;
+      parammax =  0.0;
+      break;
+    case PARAM_SPHEROID_SERSICN:
+      param = 2.0;
+      parammin = 1.0;
+      parammax = 10.0;
+      break;
+    case PARAM_DISK_FLUX:
+      param = obj2->flux_auto/2.0;
+      parammin = -obj2->flux_auto/1000.0;
+      parammax = 2*obj2->flux_auto;
+      break;
+    case PARAM_DISK_SCALE:
+      param = obj2->hl_radius/1.67835;	/* From scalelength to Re */
+      parammin = param / 4.0;
+      parammax = param * 4.0;
+      break;
+    case PARAM_DISK_ASPECT:
+      param = obj->b/obj->a;
+      parammin = 0.01;
+      parammax = 100.0;
+      break;
+    case PARAM_DISK_POSANG:
+      param = obj->theta;
+      parammin = 0.0;
+      parammax =  0.0;
+      break;
+    case PARAM_ARMS_FLUX:
+      param = obj2->flux_auto/2.0;
+      parammin = 0.0;
+      parammax = obj2->flux_auto*2.0;
+      break;
+    case PARAM_ARMS_QUADFRAC:
+      param = 0.5;
+      parammin = 0.0;
+      parammax = 1.0;
+      break;
+    case PARAM_ARMS_SCALE:
+      param = 1.0;
+      parammin = 0.5;
+      parammax = 10.0;
+      break;
+    case PARAM_ARMS_START:
+      param = 0.5;
+      parammin = 0.0;
+      parammax = 3.0;
+      break;
+    case PARAM_ARMS_PITCH:
+      param = 20.0;
+      parammin = 5.0;
+      parammax = 50.0;
+      break;
+    case PARAM_ARMS_PITCHVAR:
+      param = 0.0;
+      parammin = -1.0;
+      parammax = 1.0;
+      break;
+//      if ((profit->spirindex=profit_spiralindex(profit, obj, obj2)) > 0.0)
+//        {
+//        param = -param;
+//        parammin = -parammax;
+//        parammax = -parammin;
+//        }
+//      printf("spiral index: %g  \n", profit->spirindex);
+//      break;
+    case PARAM_ARMS_POSANG:
+      param = 0.0;
+      parammin = 0.0;
+      parammax = 0.0;
+      break;
+    case PARAM_ARMS_WIDTH:
+      param = 3.0;
+      parammin = 1.5;
+      parammax = 11.0;
+      break;
+    case PARAM_BAR_FLUX:
+      param = obj2->flux_auto/10.0;
+      parammin = 0.0;
+      parammax = 2.0*obj2->flux_auto;
+      break;
+    case PARAM_BAR_ASPECT:
+      param = 0.3;
+      parammin = 0.2;
+      parammax = 0.5;
+      break;
+    case PARAM_BAR_POSANG:
+      param = 0.0;
+      parammin = 0.0;
+      parammax = 0.0;
+      break;
+    case PARAM_INRING_FLUX:
+      param = obj2->flux_auto/10.0;
+      parammin = 0.0;
+      parammax = 2.0*obj2->flux_auto;
+      break;
+    case PARAM_INRING_WIDTH:
+      param = 0.3;
+      parammin = 0.0;
+      parammax = 0.5;
+      break;
+    case PARAM_INRING_ASPECT:
+      param = 0.8;
+      parammin = 0.4;
+      parammax = 1.0;
+      break;
+    case PARAM_OUTRING_FLUX:
+      param = obj2->flux_auto/10.0;
+      parammin = 0.0;
+      parammax = 2.0*obj2->flux_auto;
+      break;
+    case PARAM_OUTRING_START:
+      param = 4.0;
+      parammin = 3.5;
+      parammax = 6.0;
+      break;
+    case PARAM_OUTRING_WIDTH:
+      param = 0.3;
+      parammin = 0.0;
+      parammax = 0.5;
+      break;
+    default:
+      error(EXIT_FAILURE, "*Internal Error*: Unknown profile parameter in ",
+		"profit_resetparam()");
+      break;
+   }
+
+  profit_setparam(profit, paramtype, param, parammin, parammax);
+
+  return;
+  }
+
+
+/****** profit_resetparams ****************************************************
+PROTO	void profit_resetparams(profitstruct *profit, objstruct *obj,
+		*obj2struct *obj2)
+PURPOSE	Set the initial, lower and upper boundary values of profile parameters.
+INPUT	Pointer to the profit structure,
+	Pointer to the obj structure,
+	Pointer to the obj2 structure.
+OUTPUT	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	16/04/2008
+ ***/
+void	profit_resetparams(profitstruct *profit, objstruct *obj,
+		obj2struct *obj2)
+  {
+   int		p;
+
+
+  for (p=0; p<PARAM_NPARAM; p++)
+    profit_resetparam(profit, (paramenum)p, obj, obj2);
+
+  return;
+  }
+
+
+/****** profit_setparam ****************************************************
+PROTO	void profit_setparam(profitstruct *profit, paramenum paramtype,
+		double param, double parammin, double parammax)
+PURPOSE	Set the actual, lower and upper boundary values of a profile parameter.
+INPUT	Pointer to the profit structure,
+	Parameter index,
+	Actual value,
 	Lower boundary to the parameter,
 	Upper boundary to the parameter.
 OUTPUT	RETURN_OK if the parameter is registered, RETURN_ERROR otherwise.
 AUTHOR	E. Bertin (IAP)
-VERSION	19/12/2007
+VERSION	16/04/2008
  ***/
-int	profit_resetparam(profitstruct *profit, paramenum paramtype,
+int	profit_setparam(profitstruct *profit, paramenum paramtype,
 		double param, double parammin, double parammax)
   {
    double	*paramptr;
@@ -1220,7 +1313,7 @@ INPUT	Pointer to the profile-fitting structure,
 	profile type.
 OUTPUT	A pointer to an allocated prof structure.
 AUTHOR	E. Bertin (IAP)
-VERSION	24/07/2007
+VERSION	16/04/2008
  ***/
 profstruct	*prof_init(profitstruct *profit, proftypenum profcode)
   {
@@ -1246,11 +1339,11 @@ profstruct	*prof_init(profitstruct *profit, proftypenum profcode)
       prof->typscale = 1.0;
       profit_addparam(profit, PARAM_X, &prof->x[0]);
       profit_addparam(profit, PARAM_Y, &prof->x[1]);
-      profit_addparam(profit, PARAM_SERSIC_FLUX, &prof->flux);
-      profit_addparam(profit, PARAM_SERSIC_MAJ, &prof->scale);
-      profit_addparam(profit, PARAM_SERSIC_ASPECT, &prof->aspect);
-      profit_addparam(profit, PARAM_SERSIC_POSANG, &prof->posangle);
-      profit_addparam(profit, PARAM_SERSIC_N, &prof->extra[0]);
+      profit_addparam(profit, PARAM_SPHEROID_FLUX, &prof->flux);
+      profit_addparam(profit, PARAM_SPHEROID_REFF, &prof->scale);
+      profit_addparam(profit, PARAM_SPHEROID_ASPECT, &prof->aspect);
+      profit_addparam(profit, PARAM_SPHEROID_POSANG, &prof->posangle);
+      profit_addparam(profit, PARAM_SPHEROID_SERSICN, &prof->extra[0]);
       break;
     case PROF_DEVAUCOULEURS:
       prof->naxis = 2;
@@ -1258,10 +1351,10 @@ profstruct	*prof_init(profitstruct *profit, proftypenum profcode)
       prof->typscale = 1.0;
       profit_addparam(profit, PARAM_X, &prof->x[0]);
       profit_addparam(profit, PARAM_Y, &prof->x[1]);
-      profit_addparam(profit, PARAM_DEVAUC_FLUX, &prof->flux);
-      profit_addparam(profit, PARAM_DEVAUC_MAJ, &prof->scale);
-      profit_addparam(profit, PARAM_DEVAUC_ASPECT, &prof->aspect);
-      profit_addparam(profit, PARAM_DEVAUC_POSANG, &prof->posangle);
+      profit_addparam(profit, PARAM_SPHEROID_FLUX, &prof->flux);
+      profit_addparam(profit, PARAM_SPHEROID_REFF, &prof->scale);
+      profit_addparam(profit, PARAM_SPHEROID_ASPECT, &prof->aspect);
+      profit_addparam(profit, PARAM_SPHEROID_POSANG, &prof->posangle);
       break;
     case PROF_EXPONENTIAL:
       prof->naxis = 2;
@@ -1269,10 +1362,10 @@ profstruct	*prof_init(profitstruct *profit, proftypenum profcode)
       prof->typscale = 1.0;
       profit_addparam(profit, PARAM_X, &prof->x[0]);
       profit_addparam(profit, PARAM_Y, &prof->x[1]);
-      profit_addparam(profit, PARAM_EXPO_FLUX, &prof->flux);
-      profit_addparam(profit, PARAM_EXPO_MAJ, &prof->scale);
-      profit_addparam(profit, PARAM_EXPO_ASPECT, &prof->aspect);
-      profit_addparam(profit, PARAM_EXPO_POSANG, &prof->posangle);
+      profit_addparam(profit, PARAM_DISK_FLUX, &prof->flux);
+      profit_addparam(profit, PARAM_DISK_SCALE, &prof->scale);
+      profit_addparam(profit, PARAM_DISK_ASPECT, &prof->aspect);
+      profit_addparam(profit, PARAM_DISK_POSANG, &prof->posangle);
       break;
     case PROF_ARMS:
       prof->naxis = 2;
@@ -1280,16 +1373,17 @@ profstruct	*prof_init(profitstruct *profit, proftypenum profcode)
       prof->typscale = 1.0;
       profit_addparam(profit, PARAM_X, &prof->x[0]);
       profit_addparam(profit, PARAM_Y, &prof->x[1]);
-      profit_addparam(profit, PARAM_EXPO_MAJ, &prof->scale);
-      profit_addparam(profit, PARAM_EXPO_ASPECT, &prof->aspect);
-      profit_addparam(profit, PARAM_EXPO_POSANG, &prof->posangle);
+      profit_addparam(profit, PARAM_DISK_SCALE, &prof->scale);
+      profit_addparam(profit, PARAM_DISK_ASPECT, &prof->aspect);
+      profit_addparam(profit, PARAM_DISK_POSANG, &prof->posangle);
       profit_addparam(profit, PARAM_ARMS_FLUX, &prof->flux);
       profit_addparam(profit, PARAM_ARMS_QUADFRAC, &prof->featfrac);
-      profit_addparam(profit, PARAM_ARMS_SCALE, &prof->featscale);
+//      profit_addparam(profit, PARAM_ARMS_SCALE, &prof->featscale);
       profit_addparam(profit, PARAM_ARMS_START, &prof->featstart);
       profit_addparam(profit, PARAM_ARMS_PITCH, &prof->featpitch);
+//      profit_addparam(profit, PARAM_ARMS_PITCHVAR, &prof->featpitchvar);
       profit_addparam(profit, PARAM_ARMS_POSANG, &prof->featposang);
-      profit_addparam(profit, PARAM_ARMS_WIDTH, &prof->featwidth);
+//      profit_addparam(profit, PARAM_ARMS_WIDTH, &prof->featwidth);
       break;
     case PROF_BAR:
       prof->naxis = 2;
@@ -1297,9 +1391,9 @@ profstruct	*prof_init(profitstruct *profit, proftypenum profcode)
       prof->typscale = 1.0;
       profit_addparam(profit, PARAM_X, &prof->x[0]);
       profit_addparam(profit, PARAM_Y, &prof->x[1]);
-      profit_addparam(profit, PARAM_EXPO_MAJ, &prof->scale);
-      profit_addparam(profit, PARAM_EXPO_ASPECT, &prof->aspect);
-      profit_addparam(profit, PARAM_EXPO_POSANG, &prof->posangle);
+      profit_addparam(profit, PARAM_DISK_SCALE, &prof->scale);
+      profit_addparam(profit, PARAM_DISK_ASPECT, &prof->aspect);
+      profit_addparam(profit, PARAM_DISK_POSANG, &prof->posangle);
       profit_addparam(profit, PARAM_ARMS_START, &prof->featstart);
       profit_addparam(profit, PARAM_BAR_FLUX, &prof->flux);
       profit_addparam(profit, PARAM_BAR_ASPECT, &prof->feataspect);
@@ -1311,9 +1405,9 @@ profstruct	*prof_init(profitstruct *profit, proftypenum profcode)
       prof->typscale = 1.0;
       profit_addparam(profit, PARAM_X, &prof->x[0]);
       profit_addparam(profit, PARAM_Y, &prof->x[1]);
-      profit_addparam(profit, PARAM_EXPO_MAJ, &prof->scale);
-      profit_addparam(profit, PARAM_EXPO_ASPECT, &prof->aspect);
-      profit_addparam(profit, PARAM_EXPO_POSANG, &prof->posangle);
+      profit_addparam(profit, PARAM_DISK_SCALE, &prof->scale);
+      profit_addparam(profit, PARAM_DISK_ASPECT, &prof->aspect);
+      profit_addparam(profit, PARAM_DISK_POSANG, &prof->posangle);
       profit_addparam(profit, PARAM_ARMS_START, &prof->featstart);
       profit_addparam(profit, PARAM_INRING_FLUX, &prof->flux);
       profit_addparam(profit, PARAM_INRING_WIDTH, &prof->featwidth);
@@ -1325,9 +1419,9 @@ profstruct	*prof_init(profitstruct *profit, proftypenum profcode)
       prof->typscale = 1.0;
       profit_addparam(profit, PARAM_X, &prof->x[0]);
       profit_addparam(profit, PARAM_Y, &prof->x[1]);
-      profit_addparam(profit, PARAM_EXPO_MAJ, &prof->scale);
-      profit_addparam(profit, PARAM_EXPO_ASPECT, &prof->aspect);
-      profit_addparam(profit, PARAM_EXPO_POSANG, &prof->posangle);
+      profit_addparam(profit, PARAM_DISK_SCALE, &prof->scale);
+      profit_addparam(profit, PARAM_DISK_ASPECT, &prof->aspect);
+      profit_addparam(profit, PARAM_DISK_POSANG, &prof->posangle);
       profit_addparam(profit, PARAM_OUTRING_START, &prof->featstart);
       profit_addparam(profit, PARAM_OUTRING_FLUX, &prof->flux);
       profit_addparam(profit, PARAM_OUTRING_WIDTH, &prof->featwidth);
@@ -1365,11 +1459,11 @@ profstruct	*prof_init(profitstruct *profit, proftypenum profcode)
         }
       profit_addparam(profit, PARAM_X, &prof->x[0]);
       profit_addparam(profit, PARAM_Y, &prof->x[1]);
-      profit_addparam(profit, PARAM_SERSIC_FLUX, &prof->flux);
-      profit_addparam(profit, PARAM_SERSIC_MAJ, &prof->scale);
-      profit_addparam(profit, PARAM_SERSIC_ASPECT, &prof->aspect);
-      profit_addparam(profit, PARAM_SERSIC_POSANG, &prof->posangle);
-      profit_addparam(profit, PARAM_SERSIC_N, &prof->extra[0]);
+      profit_addparam(profit, PARAM_SPHEROID_FLUX, &prof->flux);
+      profit_addparam(profit, PARAM_SPHEROID_REFF, &prof->scale);
+      profit_addparam(profit, PARAM_SPHEROID_ASPECT, &prof->aspect);
+      profit_addparam(profit, PARAM_SPHEROID_POSANG, &prof->posangle);
+      profit_addparam(profit, PARAM_SPHEROID_SERSICN, &prof->extra[0]);
       break;
     default:
       error(EXIT_FAILURE, "*Internal Error*: Unknown profile in ",
@@ -1423,7 +1517,7 @@ INPUT	Profile structure,
 	profile-fitting structure.
 OUTPUT	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	15/10/2007
+VERSION	14/04/2008
  ***/
 void	prof_add(profstruct *prof, profitstruct *profit)
   {
@@ -1434,8 +1528,9 @@ void	prof_add(profstruct *prof, profitstruct *profit)
 		amp,ctheta,stheta,cd11,cd12,cd21,cd22, dcd11,dcd21, dx1,dx2,
 		x1,x10,x2, x1cin,x2cin, x1cout,x2cout, xscale,yscale, saspect,
 		x1in,x2in, odx, ostep,
-		n,k, hinvn, x1t,x2t, ca,sa, u,
-		armamp,arm2amp, armrdphidr, posang, width, invwidth2,
+		n,k, hinvn, x1t,x2t, ca,sa, u,umin,
+		armamp,arm2amp, armrdphidr, armrdphidrvar, posang,
+		width, invwidth2,
 		r,r2,rmin,r2min, r2minxin,r2minxout, rmax, r2max, invr2xdif,
 		val, theta, thresh, ra,rb;
    int		npix, noversamp,
@@ -1587,12 +1682,14 @@ void	prof_add(profstruct *prof, profitstruct *profit)
         invr2xdif = 1.0 / invr2xdif;
       else
         invr2xdif = 1.0;
+      umin = 0.5*logf(r2minxin + 0.00001);
       arm2amp = *prof->featfrac;
       armamp = 1.0 - arm2amp;
       armrdphidr = 1.0/tan(*prof->featpitch*DEG);
+      armrdphidrvar = 0.0 /**prof->featpitchvar*/;
       posang = *prof->featposang*DEG;
       width = fabs(*prof->featwidth);
-      width = 2.0;
+width = 3.0;
       x1 = -x1cout - dx1;
       x2 = -x2cout - dx2;
       pixin = profit->pmodpix;
@@ -1605,8 +1702,8 @@ void	prof_add(profstruct *prof, profitstruct *profit)
           r2 = x1t*x1t+x2t*x2t;
           if (r2>r2minxin)
             {
-            u = logf(r2 + 0.00001);
-            theta = armrdphidr*u+posang;
+            u = 0.5*logf(r2 + 0.00001);
+            theta = (armrdphidr+armrdphidrvar*(u-umin))*u+posang;
             ca = cosf(theta);
             sa = sinf(theta);
             x1in = (x1t*ca - x2t*sa);
@@ -1616,8 +1713,8 @@ void	prof_add(profstruct *prof, profitstruct *profit)
               amp *= (r2 - r2minxin)*invr2xdif;
             ra = x1in*x1in/r2;
             rb = x2in*x2in/r2;
-            *(pixin++) = amp * (armamp*PROFIT_POWF(ra,width)
-				+ arm2amp*PROFIT_POWF(rb,width));
+            *(pixin++) = amp * (armamp*PROFIT_POWF(ra,width*(1+u-umin))
+				+ arm2amp*PROFIT_POWF(rb,width*(1+u-umin)));
             }
           else
             *(pixin++) = 0.0;

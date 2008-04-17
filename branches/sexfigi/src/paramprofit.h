@@ -1,0 +1,100 @@
+/*
+ 				paramprofit.h
+
+*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+*
+*	Part of:	SExtractor
+*
+*	Author:		E.BERTIN (IAP)
+*
+*	Contents:	Profile-fitting parameter list for catalog data.
+*
+*	Last modify:	17/04/2008
+*
+*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+*/
+
+
+
+  {"VECTOR_PROF", "Profile-fitting coefficients",
+	&outobj2.prof_vector, H_FLOAT, T_FLOAT, "%8.2f", "",
+	"stat.fit.param;src.morph.param", "", 1, &prefs.prof_vectorsize},
+  {"CHI2_PROF", "Reduced Chi2 of the fit",
+	&outobj2.prof_chi2, H_FLOAT, T_FLOAT, "%12.7g", "",
+	"stat.fit.chi2;src.morph", ""},
+  {"FLAGS_PROF", "Profile-fitting flags",
+	&outobj2.prof_flag, H_INT, T_BYTE, "%3d", "",
+	"meta.code;stat.fit;src.morph", ""},
+  {"NITER_PROF", "Number of iterations for profile-fitting",
+	&outobj2.prof_niter, H_INT, T_SHORT, "%3d", "",
+	"meta.number;stat.fit;src.morph", ""},
+  {"FLUX_PROF", "Flux from profile-fitting",
+	&outobj2.flux_prof, H_FLOAT, T_FLOAT, "%12.7g", "count",
+	"phot.count;stat.fit.param", "ct"},
+  {"MAG_PROF", "Magnitude from profile-fitting",
+	&outobj2.mag_prof, H_FLOAT, T_FLOAT, "%8.4f", "mag",
+	"phot.mag;stat.fit.param", "mag"},
+  {"XPROF_IMAGE", "X coordinate from profile-fitting",
+	&outobj2.x_prof, H_FLOAT, T_FLOAT, "%10.3f", "pixel",
+	"pos.cartesian.x;stat.fit.param;instr.det;meta.main", "pix"},
+  {"YPROF_IMAGE", "Y coordinate from profile-fitting",
+	&outobj2.y_prof, H_FLOAT, T_FLOAT, "%10.3f", "pixel",
+	"pos.cartesian.y;stat.fit.param;instr.det;meta.main", "pix"},
+  {"X2PROF_IMAGE", "Variance along x from profile-fitting",
+	&outobj2.prof_mx2, H_EXPO, T_DOUBLE, "%15.10e", "pixel**2",
+	"src.impactParam;stat.fit;instr.det", "pix2"},
+  {"Y2PROF_IMAGE", "Variance along y from profile-fitting",
+	&outobj2.prof_my2, H_EXPO, T_DOUBLE, "%15.10e", "pixel**2",
+	"src.impactParam;stat.fit;instr.det", "pix2"},
+  {"XYPROF_IMAGE", "Covariance between x and y from profile-fitting",
+	&outobj2.prof_mxy, H_EXPO, T_DOUBLE, "%15.10e", "pixel**2",
+	"src.impactParam;stat.fit;instr.det", "pix2"},
+  {"E1PROF_IMAGE", "Ellipticity component from profile-fitting",
+	&outobj2.prof_e1, H_FLOAT, T_FLOAT, "%10.6f", "",
+	"src.ellipticity;stat.fit;instr.det", ""},
+  {"E2PROF_IMAGE", "Ellipticity component from profile-fitting",
+	&outobj2.prof_e2, H_FLOAT, T_FLOAT, "%10.6f", "",
+	"src.ellipticity;stat.fit;instr.det", ""},
+  {"EPS1PROF_IMAGE", "Ellipticity component (quadratic) from profile-fitting",
+	&outobj2.prof_eps1, H_FLOAT, T_FLOAT, "%10.6f", "",
+	"src.ellipticity;stat.fit;instr.det", ""},
+  {"EPS2PROF_IMAGE", "Ellipticity component (quadratic) from profile-fitting",
+	&outobj2.prof_eps2, H_FLOAT, T_FLOAT, "%10.6f", "",
+	"src.ellipticity;stat.fit;instr.det", ""},
+
+  {"FLUX_SPHEROID", "Spheroid total flux from model-fitting",
+	&outobj2.prof_spheroid_flux, H_FLOAT, T_FLOAT, "%12.g", "count",
+	"phot.count;stat.fit.param", "ct"},
+  {"MAG_SPHEROID", "Spheroid total magnitude from model-fitting",
+	&outobj2.prof_spheroid_mag, H_FLOAT, T_FLOAT, "%8.4f", "mag",
+	"phot.mag;stat.fit.param", "mag"},
+  {"SPHEROID_REFF_IMAGE", "Spheroid effective radius from model-fitting",
+	&outobj2.prof_spheroid_reff, H_FLOAT, T_FLOAT, "%10.4f", "pixel",
+	"src.morph.scLength;stat.fit.param;instr.det", "pix"},
+  {"SPHEROID_ELONGATION_IMAGE", "Spheroid elongation from model-fitting",
+	&outobj2.prof_spheroid_aspect, H_FLOAT, T_FLOAT, "%6.4f", "",
+	"phys.size.axisRatio;src.morph;stat.fit.param;instr.det", ""},
+  {"SPHEROID_THETA_IMAGE", "Spheroid position angle (CCW/x) from model-fitting",
+	&outobj2.prof_spheroid_posang, H_FLOAT, T_FLOAT, "%+7.3f", "deg",
+	"pos.posAng;src.morph;stat.fit.param;instr.det", "deg"},
+  {"SPHEROID_SERSICN_IMAGE", "Spheroid Sersic index from model-fitting",
+	&outobj2.prof_spheroid_sersicn, H_FLOAT, T_FLOAT, "%+7.3f", "",
+	"src.morph;stat.fit.param;instr.det", ""},
+  {"FLUX_DISK", "Disk total flux from model-fitting",
+	&outobj2.prof_spheroid_flux, H_FLOAT, T_FLOAT, "%12.g", "count",
+	"phot.count;stat.fit.param", "ct"},
+  {"MAG_DISK", "Disk total magnitude from model-fitting",
+	&outobj2.prof_disk_mag, H_FLOAT, T_FLOAT, "%8.4f", "mag",
+	"phot.mag;stat.fit.param", "mag"},
+  {"DISK_SCALELENGTH_IMAGE", "Disk scalelength from model-fitting",
+	&outobj2.prof_disk_scale, H_FLOAT, T_FLOAT, "%10.4f", "pixel",
+	"src.morph.scLength;stat.fit.param;instr.det", "pix"},
+  {"DISK_ELONGATION_IMAGE", "Disk elongation from model-fitting",
+	&outobj2.prof_disk_aspect, H_FLOAT, T_FLOAT, "%6.4f", "",
+	"phys.size.axisRatio;src.morph;stat.fit.param;instr.det", ""},
+  {"DISK_INCLINATION_IMAGE", "Disk inclination from model-fitting",
+	&outobj2.prof_disk_inclination, H_FLOAT, T_FLOAT, "%+7.3f", "deg",
+	"src.morph;stat.fit.param;instr.det", "deg"},
+  {"DISK_THETA_IMAGE", "Disk position angle (CCW/x) from model-fitting",
+	&outobj2.prof_disk_posang, H_FLOAT, T_FLOAT, "%+7.3f", "deg",
+	"pos.posAng;src.morph;stat.fit.param;instr.det", "deg"},

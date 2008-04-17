@@ -9,7 +9,7 @@
 *
 *	Contents:	functions for output of catalog data.
 *
-*	Last modify:	14/04/2008 by A.BAILLARD (IAP)
+*	Last modify:	17/04/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -171,12 +171,23 @@ void	updateparamflags()
 
   FLAG(obj2.prof_mx2) |= FLAG(obj2.prof_my2) | FLAG(obj2.prof_mxy)
 			| FLAG(obj2.prof_e1) |FLAG(obj2.prof_e2)
-			| FLAG(obj2.prof_eps1) |FLAG(obj2.prof_eps2);;
+			| FLAG(obj2.prof_eps1) |FLAG(obj2.prof_eps2);
+  FLAG(obj2.prof_spheroid_flux) |= FLAG(obj2.prof_spheroid_mag)
+			| FLAG(obj2.prof_spheroid_reff)
+			| FLAG(obj2.prof_spheroid_aspect)
+			| FLAG(obj2.prof_spheroid_posang)
+			| FLAG(obj2.prof_spheroid_sersicn);
+  FLAG(obj2.prof_disk_flux) |= FLAG(obj2.prof_disk_mag)
+			| FLAG(obj2.prof_disk_scale)
+			| FLAG(obj2.prof_disk_aspect)
+			| FLAG(obj2.prof_disk_inclination)
+			| FLAG(obj2.prof_disk_posang);
   FLAG(obj2.prof_chi2) |= FLAG(obj2.prof_niter) | FLAG(obj2.prof_vector)
 			| FLAG(obj2.prof_flag)
 			| FLAG(obj2.x_prof) | FLAG(obj2.y_prof)
 			| FLAG(obj2.flux_prof) | FLAG(obj2.mag_prof)
-			| FLAG(obj2.prof_mx2);
+			| FLAG(obj2.prof_mx2) | FLAG(obj2.prof_spheroid_flux)
+			| FLAG(obj2.prof_disk_flux);
 
 /*------------------------------ Astrometry ---------------------------------*/
   FLAG(obj2.win_aw) |= FLAG(obj2.win_bw) | FLAG(obj2.win_polarw);
@@ -375,48 +386,11 @@ void	updateparamflags()
   }
 
 
-/********************************** initcatprofit **********************************/
-/*
-Part of the init of the catalog header for the profile fitting vector
-INPUT	Pointer to profile-fitting structure.
-	Current value of output column
-OUTPUT	-.
-NOTES	-.
-AUTHOR	A. BAILLARD (IAP)
-VERSION	14/04/2008
-*/
-void		initcatprofit(profitstruct *profit, int n)
-{
-  int		cnt, index;
-  double	*paramptr;	
-
-/*   for (cnt=0; cnt < nprof; cnt++) */
-/*     { */
-/*       prof = profit->prof[p]; */
-/*       index = paramptr - profit->param; */
-/*   for (i = key->nbytes/esize; i--; ptr += esize) */
-
-/*     } */
-
-
-  for (cnt = 0; cnt < profit->nparam; cnt++)
-    {
-      fprintf(ascfile, "# %3d %-15.15s\n",n, paramnames[profit->paramname[cnt]]);
-      n++;
-    }
-}
-
 /********************************** initcat **********************************/
 /*
 Initialize the catalog header
-Variable profit struct in parameter
-INPUT	Pointer to the profile-fitting structure.
-OUTPUT	-.
-NOTES	-.
-AUTHOR	E. Bertin (IAP)
-VERSION	14/04/2008
 */
-void	initcat(profitstruct *profit)
+void	initcat(void)
   {
    keystruct	*key;
    int		i, n;
@@ -437,27 +411,11 @@ void	initcat(profitstruct *profit)
       for (i=0,n=1; i++<objtab->nkey; key=key->nextkey)
         {
         if (*key->unit)
-	  {
-	    if (!strcmp(key->name, "VECTOR_PROF") && profit != NULL)
-	      {
-		initcatprofit(profit, n);
-		n += profit->nparam;
-	      }
-	    else
-	      fprintf(ascfile, "# %3d %-15.15s %-47.47s [%s]\n",
-		      n, key->name,key->comment, key->unit);
-	  }
+          fprintf(ascfile, "# %3d %-15.15s %-47.47s [%s]\n",
+		n, key->name,key->comment, key->unit);
         else
-	  {
-	    if (!strcmp(key->name, "VECTOR_PROF") && profit != NULL)
-	      {
-		initcatprofit(profit, n);
-		n += profit->nparam;
-	      }
-	    else
-	      fprintf(ascfile, "# %3d %-15.15s %.47s\n",
-		      n, key->name,key->comment);
-	  }
+          fprintf(ascfile, "# %3d %-15.15s %.47s\n",
+		n, key->name,key->comment);
         n += key->nbytes/t_size[key->ttype];
         }
     else if (prefs.cat_type == ASCII_SKYCAT && (key = objtab->key))

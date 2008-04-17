@@ -1,5 +1,5 @@
 # Program Makefile for SEx
-# Copyright (C) 2004-2007 Emmanuel Bertin.
+# Copyright (C) 2004-2008 Emmanuel Bertin.
 SUBDIRS			= fits levmar wcs
 bin_PROGRAMS		= sex ldactoasc
 check_PROGRAMS		= sex
@@ -13,10 +13,10 @@ sex_SOURCES		= analyse.c assoc.c astrom.c back.c bpro.c catout.c \
 			  assoc.h astrom.h back.h bpro.h check.h clean.h \
 			  define.h extract.h fft.h field.h filter.h fitswcs.h \
 			  flag.h globals.h growth.h image.h interpolate.h \
-			  key.h neurro.h param.h photom.h plist.h prefs.h \
-			  preflist.h profit.h psf.h retina.h sexhead1.h \
-			  sexhead.h sexheadsc.h som.h threads.h types.h \
-			  wcscelsys.h weight.h winpos.h xml.h
+			  key.h neurro.h param.h paramprofit.h, photom.h \
+			  plist.h prefs.h preflist.h profit.h psf.h retina.h \
+			  sexhead1.h sexhead.h sexheadsc.h som.h threads.h \
+			  types.h wcscelsys.h weight.h winpos.h xml.h
 ldactoasc_SOURCES 	= ldactoasc.c ldactoasc.h
 sex_LDADD		= $(top_builddir)/src/fits/libfits.a \
 			  $(top_builddir)/src/wcs/libwcs_c.a \

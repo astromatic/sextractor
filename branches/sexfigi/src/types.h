@@ -9,7 +9,7 @@
 *
 *	Contents:	global type definitions.
 *
-*	Last modify:	19/12/2007
+*	Last modify:	17/04/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -308,6 +308,18 @@ typedef struct
   double	prof_mx2, prof_my2, prof_mxy;	/* Profile model moments */
   float		prof_eps1, prof_eps2;		/* Profile model ellip.vector */
   float		prof_e1, prof_e2;		/* Profile model ellip.vector */
+  float		prof_spheroid_flux;		/* Spheroid total flux */
+  float		prof_spheroid_mag;		/* Spheroid "total" mag */
+  float		prof_spheroid_reff;		/* Spheroid effective radius */
+  float		prof_spheroid_aspect;		/* Spheroid aspect ratio */
+  float		prof_spheroid_posang;		/* Spheroid position angle */
+  float		prof_spheroid_sersicn;		/* Spheroid Sersic index */
+  float		prof_disk_flux;			/* Disk total flux */
+  float		prof_disk_mag;			/* Disk "total" mag */
+  float		prof_disk_scale;		/* Disk scale length */
+  float		prof_disk_aspect;			/* Disk aspect ratio */
+  float		prof_disk_inclination;		/* Disk inclination */
+  float		prof_disk_posang;		/* Disk position angle */
 /* ---- MEF */
   short		ext_number;			/* FITS extension number */
   }	obj2struct;
