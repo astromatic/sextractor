@@ -9,7 +9,7 @@
 *
 *	Contents:	functions for output of catalog data.
 *
-*	Last modify:	17/04/2008
+*	Last modify:	18/04/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -169,25 +169,40 @@ void	updateparamflags()
 
 /*----------------------------- Profile-fitting -----------------------------*/
 
+  FLAG(obj2.prof_offset_flux) |= FLAG(obj2.prof_offset_mag);
+  FLAG(obj2.flux_prof) |= FLAG(obj2.mag_prof);
   FLAG(obj2.prof_mx2) |= FLAG(obj2.prof_my2) | FLAG(obj2.prof_mxy)
 			| FLAG(obj2.prof_e1) |FLAG(obj2.prof_e2)
 			| FLAG(obj2.prof_eps1) |FLAG(obj2.prof_eps2);
-  FLAG(obj2.prof_spheroid_flux) |= FLAG(obj2.prof_spheroid_mag)
-			| FLAG(obj2.prof_spheroid_reff)
-			| FLAG(obj2.prof_spheroid_aspect)
-			| FLAG(obj2.prof_spheroid_posang)
-			| FLAG(obj2.prof_spheroid_sersicn);
+  FLAG(obj2.prof_chi2) |= FLAG(obj2.prof_niter) | FLAG(obj2.prof_vector)
+			| FLAG(obj2.prof_flag)
+			| FLAG(obj2.x_prof) | FLAG(obj2.y_prof)
+			| FLAG(obj2.prof_mx2);
+  FLAG(obj2.prof_arms_flux) |= FLAG(obj2.prof_arms_mag)
+			| FLAG(obj2.prof_arms_scale)
+			| FLAG(obj2.prof_arms_posang)
+			| FLAG(obj2.prof_arms_pitch)
+			| FLAG(obj2.prof_arms_start)
+			| FLAG(obj2.prof_arms_quadfrac);
+  FLAG(obj2.prof_bar_flux) |= FLAG(obj2.prof_bar_mag)
+			| FLAG(obj2.prof_bar_length)
+			| FLAG(obj2.prof_bar_aspect)
+			| FLAG(obj2.prof_bar_posang)
+			| FLAG(obj2.prof_arms_flux);
   FLAG(obj2.prof_disk_flux) |= FLAG(obj2.prof_disk_mag)
 			| FLAG(obj2.prof_disk_scale)
 			| FLAG(obj2.prof_disk_aspect)
 			| FLAG(obj2.prof_disk_inclination)
-			| FLAG(obj2.prof_disk_posang);
-  FLAG(obj2.prof_chi2) |= FLAG(obj2.prof_niter) | FLAG(obj2.prof_vector)
-			| FLAG(obj2.prof_flag)
-			| FLAG(obj2.x_prof) | FLAG(obj2.y_prof)
-			| FLAG(obj2.flux_prof) | FLAG(obj2.mag_prof)
-			| FLAG(obj2.prof_mx2) | FLAG(obj2.prof_spheroid_flux)
-			| FLAG(obj2.prof_disk_flux);
+			| FLAG(obj2.prof_disk_posang)
+			| FLAG(obj2.prof_bar_flux);
+  FLAG(obj2.prof_spheroid_flux) |= FLAG(obj2.prof_spheroid_mag)
+			| FLAG(obj2.prof_spheroid_reff)
+			| FLAG(obj2.prof_spheroid_aspect)
+			| FLAG(obj2.prof_spheroid_posang)
+			| FLAG(obj2.prof_spheroid_sersicn)
+			| FLAG(obj2.prof_offset_flux)
+			| FLAG(obj2.prof_disk_flux)
+			| FLAG(obj2.prof_chi2);
 
 /*------------------------------ Astrometry ---------------------------------*/
   FLAG(obj2.win_aw) |= FLAG(obj2.win_bw) | FLAG(obj2.win_polarw);
@@ -411,10 +426,10 @@ void	initcat(void)
       for (i=0,n=1; i++<objtab->nkey; key=key->nextkey)
         {
         if (*key->unit)
-          fprintf(ascfile, "# %3d %-15.15s %-47.47s [%s]\n",
+          fprintf(ascfile, "# %3d %-23.23s %-39.39s [%s]\n",
 		n, key->name,key->comment, key->unit);
         else
-          fprintf(ascfile, "# %3d %-15.15s %.47s\n",
+          fprintf(ascfile, "# %3d %-23.23s %.39s\n",
 		n, key->name,key->comment);
         n += key->nbytes/t_size[key->ttype];
         }

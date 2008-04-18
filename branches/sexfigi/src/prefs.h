@@ -209,8 +209,6 @@ typedef struct
   int		prof_flag;				/* Profile-fitting */
 /*----- Profile-fitting */
   int		prof_vectorsize;			/* nb of params */
-  proftypenum	prof_type[PROF_NPROF];			/* profile components*/
-  int		nprof_type;				/* nb of components */
 
 /*----- customize */
   int		fitsunsigned_flag;			/* Force unsign FITS */

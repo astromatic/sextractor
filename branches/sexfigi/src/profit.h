@@ -28,7 +28,7 @@
 
 /*----------------------------- Internal constants --------------------------*/
 
-#define	PROFIT_MAXITER	1000	/* Max. nb of iterations in profile fitting */
+#define	PROFIT_MAXITER	0	/* Max. nb of iterations in profile fitting */
 #define	PROFIT_OVERSAMP	5	/* Max. profile oversamp. factor on each axis */
 #define	PROFIT_MAXPROF	8	/* Max. nb of profile components */
 #define	PROFIT_DYNPARAM	10.0	/* Dynamic compression param. in sigma units */

@@ -9,7 +9,7 @@
 *
 *	Contents:	global type definitions.
 *
-*	Last modify:	17/04/2008
+*	Last modify:	18/04/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -308,6 +308,8 @@ typedef struct
   double	prof_mx2, prof_my2, prof_mxy;	/* Profile model moments */
   float		prof_eps1, prof_eps2;		/* Profile model ellip.vector */
   float		prof_e1, prof_e2;		/* Profile model ellip.vector */
+  float		prof_offset_flux;		/* Background offset */
+  float		prof_offset_mag;		/* Back offset in mag.arcsec-2*/
   float		prof_spheroid_flux;		/* Spheroid total flux */
   float		prof_spheroid_mag;		/* Spheroid "total" mag */
   float		prof_spheroid_reff;		/* Spheroid effective radius */
@@ -317,9 +319,21 @@ typedef struct
   float		prof_disk_flux;			/* Disk total flux */
   float		prof_disk_mag;			/* Disk "total" mag */
   float		prof_disk_scale;		/* Disk scale length */
-  float		prof_disk_aspect;			/* Disk aspect ratio */
+  float		prof_disk_aspect;		/* Disk aspect ratio */
   float		prof_disk_inclination;		/* Disk inclination */
   float		prof_disk_posang;		/* Disk position angle */
+  float		prof_arms_flux;			/* Spiral arms total flux */
+  float		prof_arms_mag;			/* Arms "total" magnitude */
+  float		prof_arms_scale;		/* Arms relative scale */
+  float		prof_arms_posang;		/* Arms position angle */
+  float		prof_arms_pitch;		/* Arms pitch angle */
+  float		prof_arms_start;		/* Arms starting radius */
+  float		prof_arms_quadfrac;		/* Arms quadrature fraction */
+  float		prof_bar_flux;			/* Galactic bar total flux */
+  float		prof_bar_mag;			/* Bar "total" magnitude */
+  float		prof_bar_length;		/* Bar length */
+  float		prof_bar_aspect;		/* Bar aspect ratio */
+  float		prof_bar_posang;		/* Bar position angle */
 /* ---- MEF */
   short		ext_number;			/* FITS extension number */
   }	obj2struct;

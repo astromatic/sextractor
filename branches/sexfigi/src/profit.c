@@ -9,7 +9,7 @@
 *
 *	Contents:	Fit an arbitrary profile combination to a detection.
 *
-*	Last modify:	17/04/2008
+*	Last modify:	18/04/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -62,7 +62,7 @@ PURPOSE	Allocate and initialize a new profile-fitting structure.
 INPUT	Pointer to PSF structure.
 OUTPUT	A pointer to an allocated profit structure.
 AUTHOR	E. Bertin (IAP)
-VERSION	17/04/2008
+VERSION	18/04/2008
  ***/
 profitstruct	*profit_init(psfstruct *psf)
   {
@@ -92,13 +92,13 @@ profitstruct	*profit_init(psfstruct *psf)
       diskflag = 1;
       nprof++;
       }
-    else if (diskflag && !barflag)
+    else if (diskflag && !barflag && FLAG(obj2.prof_bar_flux))
       {
       profit->prof[p] = prof_init(profit, PROF_BAR);
       barflag = 1;
       nprof++;
       }
-    else if (diskflag && !armsflag)
+    else if (barflag && !armsflag && FLAG(obj2.prof_arms_flux))
       {
       profit->prof[p] = prof_init(profit, PROF_ARMS);
       armsflag = 1;
@@ -147,7 +147,7 @@ OUTPUT	Pointer to an allocated fit structure (containing details about the
 	fit).
 NOTES	It is a modified version of the lm_minimize() of lmfit.
 AUTHOR	E. Bertin (IAP)
-VERSION	09/08/2007
+VERSION	18/04/2008
  ***/
 void	profit_fit(profitstruct *profit,
 		picstruct *field, picstruct *wfield,
@@ -305,7 +305,7 @@ the_gal++;
     obj2->prof_spheroid_aspect = *profit->paramlist[PARAM_SPHEROID_ASPECT];
     obj2->prof_spheroid_posang = *profit->paramlist[PARAM_SPHEROID_POSANG];
     if (FLAG(obj2.prof_spheroid_sersicn))
-    obj2->prof_spheroid_sersicn = *profit->paramlist[PARAM_SPHEROID_SERSICN];
+      obj2->prof_spheroid_sersicn = *profit->paramlist[PARAM_SPHEROID_SERSICN];
     }
 
   if (FLAG(obj2.prof_disk_flux))
@@ -314,6 +314,23 @@ the_gal++;
     obj2->prof_disk_scale = *profit->paramlist[PARAM_DISK_SCALE];
     obj2->prof_disk_aspect = *profit->paramlist[PARAM_DISK_ASPECT];
     obj2->prof_disk_posang = *profit->paramlist[PARAM_DISK_POSANG];
+    if (FLAG(obj2.prof_bar_flux))
+      {
+      obj2->prof_bar_flux = *profit->paramlist[PARAM_BAR_FLUX];
+      obj2->prof_bar_length = *profit->paramlist[PARAM_ARMS_START]
+				**profit->paramlist[PARAM_DISK_SCALE];
+      obj2->prof_bar_aspect = *profit->paramlist[PARAM_BAR_ASPECT];
+      obj2->prof_bar_posang = *profit->paramlist[PARAM_ARMS_POSANG];
+      if (FLAG(obj2.prof_arms_flux))
+        {
+        obj2->prof_arms_flux = *profit->paramlist[PARAM_ARMS_FLUX];
+        obj2->prof_arms_pitch = *profit->paramlist[PARAM_ARMS_PITCH];
+        obj2->prof_arms_start = *profit->paramlist[PARAM_ARMS_START]
+				**profit->paramlist[PARAM_DISK_SCALE];
+        obj2->prof_arms_quadfrac = *profit->paramlist[PARAM_ARMS_QUADFRAC];
+        obj2->prof_arms_posang = *profit->paramlist[PARAM_ARMS_POSANG];
+        }
+      }
     }
 
 /* clean up. */
@@ -417,7 +434,7 @@ void	profit_printout(int n_par, double* par, int m_dat, double* fvec,
 
   profit = (profitstruct *)data;
 
-  if (1 && (iter!=itero || iter<0))
+  if (0 && (iter!=itero || iter<0))
     {
     if (iter<0)
       itero++;
