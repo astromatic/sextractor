@@ -9,7 +9,7 @@
 *
 *	Contents:	Profile-fitting parameter list for catalog data.
 *
-*	Last modify:	17/04/2008
+*	Last modify:	21/04/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -83,9 +83,9 @@
   {"SPHEROID_THETA_IMAGE", "Spheroid position angle (CCW/x) from model-fitting",
 	&outobj2.prof_spheroid_posang, H_FLOAT, T_FLOAT, "%+7.3f", "deg",
 	"pos.posAng;src.morph;stat.fit.param;instr.det", "deg"},
-  {"SPHEROID_SERSICN_IMAGE", "Spheroid Sersic index from model-fitting",
-	&outobj2.prof_spheroid_sersicn, H_FLOAT, T_FLOAT, "%+7.3f", "",
-	"src.morph;stat.fit.param;instr.det", ""},
+  {"SPHEROID_SERSICN", "Spheroid Sersic index from model-fitting",
+	&outobj2.prof_spheroid_sersicn, H_FLOAT, T_FLOAT, "%6.3f", "",
+	"src.morph;stat.fit.param", ""},
   {"FLUX_DISK", "Disk total flux from model-fitting",
 	&outobj2.prof_spheroid_flux, H_FLOAT, T_FLOAT, "%12.g", "count",
 	"phot.count;stat.fit.param", "ct"},

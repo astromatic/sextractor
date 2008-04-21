@@ -9,7 +9,7 @@
 *
 *	Contents:	Include file for profit.c.
 *
-*	Last modify:	17/04/2008
+*	Last modify:	21/04/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -28,7 +28,7 @@
 
 /*----------------------------- Internal constants --------------------------*/
 
-#define	PROFIT_MAXITER	0	/* Max. nb of iterations in profile fitting */
+#define	PROFIT_MAXITER	1000	/* Max. nb of iterations in profile fitting */
 #define	PROFIT_OVERSAMP	5	/* Max. profile oversamp. factor on each axis */
 #define	PROFIT_MAXPROF	8	/* Max. nb of profile components */
 #define	PROFIT_DYNPARAM	10.0	/* Dynamic compression param. in sigma units */
@@ -133,18 +133,18 @@ profitstruct	*profit_init(struct psf *psf);
 
 profstruct	*prof_init(profitstruct *profit, proftypenum profcode);
 
-double		*profit_compresi(profitstruct *profit, picstruct *field,
-			picstruct *wfield, objstruct *obj, double *resi),
+double		*profit_compresi(profitstruct *profit,
+			objstruct *obj, obj2struct *obj2, double *resi),
 		*profit_residuals(profitstruct *profit, picstruct *field,
-			picstruct *wfield, objstruct *obj, double *param,
-			double *resi),
+			picstruct *wfield, objstruct *obj, obj2struct *obj2,
+			double *param, double *resi),
 		profit_spiralindex(profitstruct *profit, objstruct *obj,
 			obj2struct *obj2);
 
 PIXTYPE		*profit_resample(profitstruct *profit);
 
 int		profit_copyobjpix(profitstruct *profit, picstruct *field,
-				int ix, int iy),
+			picstruct *wfield, objstruct *obj, int ix, int iy),
 		profit_minimize(profitstruct *profit, int niter),
 		profit_setparam(profitstruct *profit, paramenum paramtype,
 			double param, double parammin, double parammax);

@@ -9,7 +9,7 @@
 *
 *	Contents:	Fit an arbitrary profile combination to a detection.
 *
-*	Last modify:	18/04/2008
+*	Last modify:	21/04/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -53,6 +53,7 @@ int theniter, the_x,the_y, the_gal;
 /* "Local" global variables; it seems dirty but it simplifies a lot */
 /* interfacing to the LM routines */
 static objstruct	*the_obj;
+static obj2struct	*the_obj2;
 static picstruct	*the_field, *the_wfield;
 profitstruct		*theprofit;
 
@@ -61,6 +62,7 @@ PROTO	profitstruct profit_init(psfstruct *psf)
 PURPOSE	Allocate and initialize a new profile-fitting structure.
 INPUT	Pointer to PSF structure.
 OUTPUT	A pointer to an allocated profit structure.
+NOTES	-.
 AUTHOR	E. Bertin (IAP)
 VERSION	18/04/2008
  ***/
@@ -116,6 +118,7 @@ PROTO	void prof_end(profstruct *prof)
 PURPOSE	End (deallocate) a profile-fitting structure.
 INPUT	Prof structure.
 OUTPUT	-.
+NOTES	-.
 AUTHOR	E. Bertin (IAP)
 VERSION	06/12/2006
  ***/
@@ -147,7 +150,7 @@ OUTPUT	Pointer to an allocated fit structure (containing details about the
 	fit).
 NOTES	It is a modified version of the lm_minimize() of lmfit.
 AUTHOR	E. Bertin (IAP)
-VERSION	18/04/2008
+VERSION	21/04/2008
  ***/
 void	profit_fit(profitstruct *profit,
 		picstruct *field, picstruct *wfield,
@@ -179,17 +182,24 @@ void	profit_fit(profitstruct *profit,
   ix = (int)(obj->mx + 0.49999);	/* internal convention: 1st pix = 0 */
   iy = (int)(obj->my + 0.49999);	/* internal convention: 1st pix = 0 */
 
+  if (profit->objnaxisn[1]<profit->objnaxisn[0])
+    profit->objnaxisn[1] = profit->objnaxisn[0];
+  else
+    profit->objnaxisn[0] = profit->objnaxisn[1];
+
 /* Use (dirty) global variables to interface with lmfit */
   the_field = field;
   the_wfield = wfield;
   theprofit = profit;
   the_obj = obj;
+  the_obj2 = obj2;
   the_x = ix;
   the_y = iy;
 
   QMALLOC(profit->objpix, PIXTYPE, profit->objnaxisn[0]*profit->objnaxisn[1]);
+  QMALLOC(profit->objweight, PIXTYPE,profit->objnaxisn[0]*profit->objnaxisn[1]);
   QMALLOC(profit->lmodpix, PIXTYPE, profit->objnaxisn[0]*profit->objnaxisn[1]);
-  profit->nresi = profit_copyobjpix(profit, field, ix,iy);
+  profit->nresi = profit_copyobjpix(profit, field, wfield, obj, ix,iy);
   if (profit->nresi < profit->nparam)
     {
     for (p=0; p<profit->nparam; p++)
@@ -215,10 +225,6 @@ void	profit_fit(profitstruct *profit,
 /* Set initial guesses and boundaries */
   obj2->prof_flag = 0;
   profit->sigma = obj->sigbkg;
-
-/* test */
-
-/* test */
 
   profit_resetparams(profit, obj, obj2);
 
@@ -265,13 +271,13 @@ the_gal++;
 /* CHECK-Images */
   if ((check = prefs.check[CHECK_SUBPROFILES]))
     {
-    profit_residuals(profit,field,wfield,obj,profit->param,profit->resi);
+    profit_residuals(profit,field,wfield,obj,obj2,profit->param,profit->resi);
     addcheck(check, profit->lmodpix, profit->objnaxisn[0],profit->objnaxisn[1],
 		ix,iy, -1.0);
     }
   if ((check = prefs.check[CHECK_PROFILES]))
     {
-    profit_residuals(profit,field,wfield,obj,profit->param,profit->resi);
+    profit_residuals(profit,field,wfield,obj,obj2,profit->param,profit->resi);
     addcheck(check, profit->lmodpix, profit->objnaxisn[0],profit->objnaxisn[1],
 		ix,iy, 1.0);
     }
@@ -338,6 +344,7 @@ the_gal++;
   free(profit->pmodpix);
   free(profit->lmodpix);
   free(profit->objpix);
+  free(profit->objweight);
   free(profit->resi);
   free(oldparaminit);
 
@@ -475,7 +482,7 @@ void	profit_evaluate(double *par, double *fvec, int m, int n,
 
   profit = (profitstruct *)adata;
   profit_unboundtobound(profit, par);
-  profit_residuals(profit, the_field, the_wfield, the_obj, par, fvec);
+  profit_residuals(profit, the_field, the_wfield, the_obj, the_obj2, par, fvec);
   profit_boundtounbound(profit, par);
   profit_printout(m, par, n, fvec, adata, 0, -1, 0 );
   return;
@@ -484,7 +491,8 @@ void	profit_evaluate(double *par, double *fvec, int m, int n,
 
 /****** profit_residuals ******************************************************
 PROTO	double *prof_residuals(profitstruct *profit, picstruct *field,
-		picstruct *wfield, objstruct *obj, double *param, double *resi)
+		picstruct *wfield, objstruct *obj, obj2struct *obj2,
+		double *param, double *resi)
 PURPOSE	Compute the vector of residuals between the data and the galaxy
 	profile model.
 INPUT	Profile-fitting structure,
@@ -494,11 +502,13 @@ INPUT	Profile-fitting structure,
 	pointer to the model parameters (output),
 	pointer to the computed residuals (output).
 OUTPUT	Vector of residuals.
+NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	08/12/2006
+VERSION	21/04/2008
  ***/
 double	*profit_residuals(profitstruct *profit, picstruct *field,
-		picstruct *wfield, objstruct *obj, double *param, double *resi)
+		picstruct *wfield, objstruct *obj, obj2struct *obj2,
+		double *param, double *resi)
   {
    int		p;
 
@@ -510,7 +520,7 @@ double	*profit_residuals(profitstruct *profit, picstruct *field,
     prof_add(profit->prof[p], profit);
   profit_convolve(profit);
   profit_resample(profit);
-  profit_compresi(profit, field, wfield, obj, resi);
+  profit_compresi(profit, obj, obj2, resi);
 
   return resi;
   }
@@ -518,26 +528,24 @@ double	*profit_residuals(profitstruct *profit, picstruct *field,
 
 /****** profit_compresi ******************************************************
 PROTO	double *prof_compresi(profitstruct *profit,
-			picstruct *field, picstruct *wfield, objstruct *obj,
-			double *resi)
+			objstruct *obj, obj2struct *obj2, double *resi)
 PURPOSE	Compute the vector of residuals between the data and the galaxy
 	profile model.
 INPUT	Profile-fitting structure,
-	pointer to the field,
-	pointer to the field weight,
 	pointer to the obj,
 	vector of residuals (output).
 OUTPUT	Vector of residuals.
+NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	24/07/2007
+VERSION	21/04/2008
  ***/
-double	*profit_compresi(profitstruct *profit, picstruct *field,
-		picstruct *wfield, objstruct *obj, double *resi)
+double	*profit_compresi(profitstruct *profit,
+		objstruct *obj, obj2struct *obj2, double *resi)
   {
    double	*resit,
-		invsig, error, x1c,x1,x2,r2,rmin;
+		invsig, error, x1c,x1,x2,rmin;
    PIXTYPE	*objpix, *objweight, *lmodpix,
-		val,val2;
+		val,val2,wval;
    int		npix, ix1,ix2;
   
 /* Compute vector of residuals */
@@ -546,24 +554,26 @@ double	*profit_compresi(profitstruct *profit, picstruct *field,
   objpix = profit->objpix;
   objweight = profit->objweight;
   lmodpix = profit->lmodpix;
-  invsig = 1.0/(PROFIT_DYNPARAM*profit->sigma);
+  invsig = 1.0/PROFIT_DYNPARAM;
   error = 0.0;
   x1c = (double)(profit->objnaxisn[0]/2);
-  rmin = x1c/10.0 + 1.0;
+  rmin = obj2->hl_radius / 2.0;
   x2 = -(double)(profit->objnaxisn[1]/2);
   for (ix2=profit->objnaxisn[1]; ix2--; x2+=1.0)
     {
     x1 = -x1c;
     for (ix1=profit->objnaxisn[0]; ix1--; x1+=1.0, lmodpix++)
-      if ((val=*(objpix++))>-BIG)
+      {
+      val = *(objpix++);
+      if ((wval=*(objweight++))>0.0)
         {
-        r2 = x1*x1+x2*x2;
-        val2 = (double)(val - *lmodpix)*invsig;
+        val2 = (double)(val - *lmodpix)*wval*invsig;
         val2 = val2>0.0? log(1.0+val2) : -log(1.0-val2);
         *(resit++) = val2;
 //        *(resit++) = val2*(rmin/(sqrt(r2)+rmin));
         error += val2*val2;
         }
+      }
     }
 
   profit->chi2 = PROFIT_DYNPARAM*PROFIT_DYNPARAM*error/npix;
@@ -577,6 +587,7 @@ PROTO	PIXTYPE *prof_resample(profitstruct *profit)
 PURPOSE	Resample the current full resolution model to image resolution.
 INPUT	Profile-fitting structure.
 OUTPUT	Resampled pixmap.
+NOTES	-.
 AUTHOR	E. Bertin (IAP)
 VERSION	22/06/2007
  ***/
@@ -632,6 +643,7 @@ PROTO	void profit_convolve(profitstruct *profit)
 PURPOSE	Convolve the composite profile model with PSF.
 INPUT	Pointer to the profit structure.
 OUTPUT	-.
+NOTES	-.
 AUTHOR	E. Bertin (IAP)
 VERSION	09/12/2006
  ***/
@@ -651,6 +663,7 @@ PROTO	void profit_makedft(profitstruct *profit)
 PURPOSE	Create the Fourier transform of the descrambled PSF component.
 INPUT	Pointer to the profit structure.
 OUTPUT	-.
+NOTES	-.
 AUTHOR	E. Bertin (IAP)
 VERSION	09/12/2006
  ***/
@@ -761,40 +774,61 @@ void	profit_makedft(profitstruct *profit)
 
 /****** profit_copyobjpix *****************************************************
 PROTO	int profit_copyobjpix(profitstruct *profit, picstruct *field,
-				int ix, int iy)
+			picstruct *wfield, objstruct *obj, int ix, int iy)
 PURPOSE	Copy a piece of the input field image to a profit structure.
 INPUT	Pointer to the profit structure,
 	Pointer to the field structure,
+	Pointer to the field weight structure,
+	Pointer to the object structure,
 	integer position in X (SExtractor convention),
 	integer position in Y (SExtractor convention).
 OUTPUT	The number of valid pixels copied.
+NOTES	Global preferences are used.
 AUTHOR	E. Bertin (IAP)
-VERSION	10/12/2006
+VERSION	21/04/2008
  ***/
 int	profit_copyobjpix(profitstruct *profit, picstruct *field,
-				int ix, int iy)
+			picstruct *wfield, objstruct *obj, int ix, int iy)
   {
-   PIXTYPE	*pixin, *pixout;
-   int		i,x,y, xmin,xmax,ymin,ymax, w,h,w2,dw, npix;
+   double	dx2, dy2, dr2, rad2;
+   PIXTYPE	*pixin,*pixout, *wpixin,*wpixout,
+		backnoise2, invgain, satlevel, wthresh, pix, wpix;
+   int		i,x,y, xmin,xmax,ymin,ymax, w,h,w2,dw, npix, off, gainflag;
 
 /* First put the image background to -BIG */
   pixout = profit->objpix;
+  wpixout = profit->objweight;
   w = profit->objnaxisn[0];
   h = profit->objnaxisn[1];
   for (i=w*h; i--;)
+    {
     *(pixout++) = -BIG;
+    *(wpixout++) = 0.0;
+    }
 
 /* Don't go further if out of frame!! */
   if (ix<0 || ix>=field->width || iy<field->ymin || iy>=field->ymax)
     return 0;
 
+  backnoise2 = field->backsig*field->backsig;
+  invgain = (field->gain > 0.0) ? 1.0/field->gain : 0.0;
+  satlevel = field->satur_level - obj->bkg;
+  rad2 = h/2.0;
+  if (rad2 > w/2.0)
+    rad2 = w/2.0;
+  rad2 *= rad2;
+
+
 /* Set the image boundaries */
   pixout = profit->objpix;
+  wpixout = profit->objweight;
   ymin = iy-h/2;
   ymax = ymin + h;
   if (ymin<field->ymin)
     {
-    pixout += (field->ymin-ymin)*w;
+    off = (field->ymin-ymin)*w;
+    pixout += off;
+    wpixout += off;
     ymin = field->ymin;
     }
   if (ymax>field->ymax)
@@ -811,6 +845,7 @@ int	profit_copyobjpix(profitstruct *profit, picstruct *field,
   if (xmin<0)
     {
     pixout -= xmin;
+    wpixout -= xmin;
     w2 += xmin;
     xmin = 0;
     }
@@ -818,14 +853,56 @@ int	profit_copyobjpix(profitstruct *profit, picstruct *field,
 /* Copy the right pixels to the destination */
   dw = w - w2;
   npix = 0;
-  for (y=ymin; y<ymax; y++, pixout+=dw)
+  if (wfield)
     {
-    pixin = &PIX(field, xmin, y);
-    for (x=w2; x--;)
-      if ((*(pixout++) = *(pixin++))>-BIG)
-        npix++;
-    }
+    wthresh = wfield->weight_thresh;
+    gainflag = prefs.weightgain_flag;
+/*-- Do the same for the weights */
+    npix = 0;
 
+    for (y=ymin; y<ymax; y++, pixout+=dw,wpixout+=dw)
+      {
+      dy2 = y-iy;
+      dy2 *= dy2;
+      pixin = &PIX(field, xmin, y);
+      wpixin = &PIX(wfield, xmin, y);
+      for (x=xmin; x<xmax; x++)
+        {
+        dx2 = (x-ix);
+        dr2 = dy2 + dx2*dx2;
+        pix = *(pixout++) = *(pixin++);
+        if (dr2<rad2 && pix>-BIG && pix<satlevel && (wpix=*(wpixin++))<wthresh)
+          {
+          *(wpixout++) = 1.0 / sqrt(wpix+(pix>0.0?
+		(gainflag? pix*wpix/backnoise2:pix)*invgain : 0.0));
+          npix++;
+          }
+        else
+          *(wpixout++) = 0.0;
+        }
+      }
+    }
+  else
+    for (y=ymin; y<ymax; y++, pixout+=dw,wpixout+=dw)
+      {
+      dy2 = y-iy;
+      dy2 *= dy2;
+      pixin = &PIX(field, xmin, y);
+      for (x=xmin; x<xmax; x++)
+        {
+        dx2 = (x-ix);
+        dr2 = dy2 + dx2*dx2;
+        pix = *(pixout++) = *(pixin++);
+        if (dr2<rad2 && pix>-BIG)
+          {
+          *(wpixout++) = 1.0 / sqrt(backnoise2 + (pix>0.0?pix*invgain : 0.0));
+          npix++;
+          }
+        else
+          *(wpixout++) = 0.0;
+        }
+      }
+ 
   return npix;
   }
 
@@ -840,6 +917,7 @@ INPUT	Profile-fitting structure,
 	pointer to the obj,
 	pointer to the obj2.
 OUTPUT	Vector of residuals.
+NOTES	-.
 AUTHOR	E. Bertin (IAP)
 VERSION	24/06/2007
  ***/
@@ -949,6 +1027,7 @@ INPUT	Profile-fitting structure,
 	pointer to the obj,
 	pointer to the obj2.
 OUTPUT	-.
+NOTES	-.
 AUTHOR	E. Bertin (IAP)
 VERSION	08/10/2007
  ***/
@@ -1015,6 +1094,7 @@ INPUT	Pointer to the profit structure,
 	Parameter index,
 	Pointer to the parameter pointer.
 OUTPUT	-.
+NOTES	-.
 AUTHOR	E. Bertin (IAP)
 VERSION	29/03/2007
  ***/
@@ -1042,8 +1122,9 @@ INPUT	Pointer to the profit structure,
 	Pointer to the obj structure,
 	Pointer to the obj2 structure.
 OUTPUT	-.
+NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	16/04/2008
+VERSION	18/04/2008
  ***/
 void	profit_resetparam(profitstruct *profit, paramenum paramtype,
 		objstruct *obj, obj2struct *obj2)
@@ -1079,7 +1160,7 @@ void	profit_resetparam(profitstruct *profit, paramenum paramtype,
       parammax = param * 4.0;
       break;
     case PARAM_SPHEROID_ASPECT:
-      param = obj->b/obj->a;
+      param = profit->nprof>1? 1.0 : obj->b/obj->a;
       parammin = profit->nprof>1? 0.5 : 0.01;
       parammax = profit->nprof>1? 2.0 : 100.0;
       break;
@@ -1212,6 +1293,8 @@ void	profit_resetparam(profitstruct *profit, paramenum paramtype,
       break;
    }
 
+  if (param<=parammin || param>=parammax)
+    param = (parammin+parammax)/2.0;
   profit_setparam(profit, paramtype, param, parammin, parammax);
 
   return;
@@ -1226,6 +1309,7 @@ INPUT	Pointer to the profit structure,
 	Pointer to the obj structure,
 	Pointer to the obj2 structure.
 OUTPUT	-.
+NOTES	-.
 AUTHOR	E. Bertin (IAP)
 VERSION	16/04/2008
  ***/
@@ -1280,6 +1364,7 @@ PROTO	void profit_boundtounbound(profitstruct *profit)
 PURPOSE	Convert parameters from bounded to unbounded space.
 INPUT	Pointer to the profit structure.
 OUTPUT	-.
+NOTES	-.
 AUTHOR	E. Bertin (IAP)
 VERSION	25/05/2007
  ***/
@@ -1306,6 +1391,7 @@ PROTO	void profit_unboundtobound(profitstruct *profit)
 PURPOSE	Convert parameters from unbounded to bounded space.
 INPUT	Pointer to the profit structure.
 OUTPUT	-.
+NOTES	-.
 AUTHOR	E. Bertin (IAP)
 VERSION	18/05/2007
  ***/
@@ -1329,6 +1415,7 @@ PURPOSE	Allocate and initialize a new profile structure.
 INPUT	Pointer to the profile-fitting structure,
 	profile type.
 OUTPUT	A pointer to an allocated prof structure.
+NOTES	-.
 AUTHOR	E. Bertin (IAP)
 VERSION	16/04/2008
  ***/
@@ -1511,6 +1598,7 @@ PROTO	void prof_end(profstruct *prof)
 PURPOSE	End (deallocate) a profile structure.
 INPUT	Prof structure.
 OUTPUT	-.
+NOTES	-.
 AUTHOR	E. Bertin (IAP)
 VERSION	09/04/2007
  ***/
@@ -1533,6 +1621,7 @@ PURPOSE	Add a model profile to an image.
 INPUT	Profile structure,
 	profile-fitting structure.
 OUTPUT	-.
+NOTES	-.
 AUTHOR	E. Bertin (IAP)
 VERSION	14/04/2008
  ***/
@@ -1967,6 +2056,7 @@ PURPOSE	Interpolate a multidimensional model profile at a given position.
 INPUT	Profile structure,
 	input position vector.
 OUTPUT	-.
+NOTES	-.
 AUTHOR	E. Bertin (IAP)
 VERSION	10/12/2006
  ***/
@@ -2063,6 +2153,7 @@ INPUT	Profile structure,
 	input pixmap dimension vector,
 	interpolation type.
 OUTPUT	-.
+NOTES	-.
 AUTHOR	E. Bertin (IAP)
 VERSION	07/12/2006
  ***/
