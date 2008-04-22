@@ -9,7 +9,7 @@
 *
 *	Contents:	Fit an arbitrary profile combination to a detection.
 *
-*	Last modify:	21/04/2008
+*	Last modify:	22/04/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -48,6 +48,11 @@ static void	make_kernel(double pos, double *kernel, interpenum interptype);
 
 /*------------------------------- variables ---------------------------------*/
 
+char		profname[][32]={"background offset", "Sersic spheroid",
+		"De Vaucouleurs spheroid", "exponential disk", "spiral arms",
+		"bar", "inner ring", "outer ring", "tabulated model",
+		""};
+
 int		interp_kernwidth[5]={1,2,4,6,8};
 int theniter, the_x,the_y, the_gal;
 /* "Local" global variables; it seems dirty but it simplifies a lot */
@@ -64,7 +69,7 @@ INPUT	Pointer to PSF structure.
 OUTPUT	A pointer to an allocated profit structure.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	18/04/2008
+VERSION	22/04/2008
  ***/
 profitstruct	*profit_init(psfstruct *psf)
   {
@@ -150,7 +155,7 @@ OUTPUT	Pointer to an allocated fit structure (containing details about the
 	fit).
 NOTES	It is a modified version of the lm_minimize() of lmfit.
 AUTHOR	E. Bertin (IAP)
-VERSION	21/04/2008
+VERSION	22/04/2008
  ***/
 void	profit_fit(profitstruct *profit,
 		picstruct *field, picstruct *wfield,
@@ -169,9 +174,7 @@ void	profit_fit(profitstruct *profit,
     }
 
   psf = profit->psf;
-
-/* Compute the local PSF */
-  psf_build(psf);
+  profit->pixstep = psf->pixstep;
 
 /* Create pixmaps at image resolution */
   psf_fwhm = psf->masksize[0]*psf->pixstep;
@@ -211,16 +214,21 @@ void	profit_fit(profitstruct *profit,
   QCALLOC(profit->resi, double, profit->nresi);
 
 /* Create pixmap at PSF resolution */
-  profit->modnaxisn[0] = ((int)(profit->objnaxisn[0]/psf->pixstep +0.4999)/2)*2; 
-  profit->modnaxisn[1] = ((int)(profit->objnaxisn[1]/psf->pixstep +0.4999)/2)*2; 
+  profit->modnaxisn[0] = ((int)(profit->objnaxisn[0]/profit->pixstep +0.4999)/2)*2; 
+  profit->modnaxisn[1] = ((int)(profit->objnaxisn[1]/profit->pixstep +0.4999)/2)*2; 
   if (profit->modnaxisn[1] < profit->modnaxisn[0])
     profit->modnaxisn[1] = profit->modnaxisn[0];
   else
     profit->modnaxisn[0] = profit->modnaxisn[1];
+
 /* Allocate memory for the complete model */
   QCALLOC(profit->modpix, double, profit->modnaxisn[0]*profit->modnaxisn[1]);
+  QMALLOC(profit->psfpix, double, profit->modnaxisn[0]*profit->modnaxisn[1]);
 /* Allocate memory for the partial model */
   QMALLOC(profit->pmodpix, float, profit->modnaxisn[0]*profit->modnaxisn[1]);
+
+/* Compute the local PSF */
+  profit_psf(profit);
 
 /* Set initial guesses and boundaries */
   obj2->prof_flag = 0;
@@ -341,12 +349,65 @@ the_gal++;
 
 /* clean up. */
   free(profit->modpix);
+  free(profit->psfpix);
   free(profit->pmodpix);
   free(profit->lmodpix);
   free(profit->objpix);
   free(profit->objweight);
   free(profit->resi);
   free(oldparaminit);
+
+  return;
+  }
+
+
+/****** profit_psf ************************************************************
+PROTO	void	profit_psf(profitstruct *profit)
+PURPOSE	Build the local PSF at a given resolution.
+INPUT	Profile-fitting structure.
+OUTPUT	-.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	22/04/2008
+ ***/
+void	profit_psf(profitstruct *profit)
+  {
+   double	posin[2], posout[2], dnaxisn[2],
+		*pixout,
+		xcout,ycout, xcin,ycin, invpixstep, flux;
+   int		d,i;
+
+  psf = profit->psf;
+  psf_build(psf);
+
+  xcout = (double)(profit->modnaxisn[0]/2) + 1.0;	/* FITS convention */
+  ycout = (double)(profit->modnaxisn[1]/2) + 1.0;	/* FITS convention */
+  xcin = (psf->masksize[0]/2) + 1.0;			/* FITS convention */
+  ycin = (psf->masksize[1]/2) + 1.0;			/* FITS convention */
+  invpixstep = profit->pixstep / psf->pixstep;
+
+/* Initialize multi-dimensional counters */
+  for (d=0; d<2; d++)
+    {
+    posout[d] = 1.0;					/* FITS convention */
+    dnaxisn[d] = profit->modnaxisn[d]+0.5;
+    }
+
+/* Remap each pixel */
+  pixout = profit->psfpix;
+  flux = 0.0;
+  for (i=profit->modnaxisn[0]*profit->modnaxisn[1]; i--;)
+    {
+    posin[0] = (posout[0] - xcout)*invpixstep + xcin;
+    posin[1] = (posout[1] - ycout)*invpixstep + ycin;
+    flux += ((*(pixout++) = interpolate_pix(posin, psf->maskloc,
+		psf->masksize, INTERP_LANCZOS3)));
+    for (d=0; d<2; d++)
+      if ((posout[d]+=1.0) < dnaxisn[d])
+        break;
+      else
+        posout[d] = 1.0;
+    }
 
   return;
   }
@@ -589,7 +650,7 @@ INPUT	Profile-fitting structure.
 OUTPUT	Resampled pixmap.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	22/06/2007
+VERSION	22/04/2008
  ***/
 PIXTYPE	*profit_resample(profitstruct *profit)
   {
@@ -607,7 +668,7 @@ PIXTYPE	*profit_resample(profitstruct *profit)
     ycout += *dy;
   xcin = (profit->modnaxisn[0]/2) + 1.0;		/* FITS convention */
   ycin = (profit->modnaxisn[1]/2) + 1.0;		/* FITS convention */
-  invpixstep = 1.0/profit->psf->pixstep;
+  invpixstep = 1.0/profit->pixstep;
 
 /* Initialize multi-dimensional counters */
   for (d=0; d<2; d++)
@@ -665,7 +726,7 @@ INPUT	Pointer to the profit structure.
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	09/12/2006
+VERSION	22/04/2008
  ***/
 void	profit_makedft(profitstruct *profit)
   {
@@ -678,8 +739,8 @@ void	profit_makedft(profitstruct *profit)
   if (!(psf=profit->psf))
     return;
 
-  psfwidth = psf->masksize[0];
-  psfheight = psf->masksize[1];
+  psfwidth = profit->modnaxisn[0];
+  psfheight = profit->modnaxisn[1];
   psfnpix = psfwidth*psfheight;
   width = profit->modnaxisn[0];
   height = profit->modnaxisn[1];
@@ -694,7 +755,7 @@ void	profit_makedft(profitstruct *profit)
   cpheight = hcpheight<<1;
 
 /* Frame and descramble the PSF data */
-  ppix = psf->maskloc + (psfheight/2)*psfwidth + psfwidth/2;
+  ppix = profit->psfpix + (psfheight/2)*psfwidth + psfwidth/2;
   maskt = mask;
   for (j=hcpheight; j--; ppix+=psfwidth)
     {
@@ -706,7 +767,7 @@ void	profit_makedft(profitstruct *profit)
       *(maskt++) = *(ppix++);      
     }
 
-  ppix = psf->maskloc + ((psfheight/2)-hcpheight)*psfwidth + psfwidth/2;
+  ppix = profit->psfpix + ((psfheight/2)-hcpheight)*psfwidth + psfwidth/2;
   maskt += width*(height-cpheight);
   for (j=hcpheight; j--; ppix+=psfwidth)
     {
@@ -729,7 +790,7 @@ void	profit_makedft(profitstruct *profit)
   if (rmax<1.0)
     rmax = 1.0;
   rmax2 = rmax*rmax;
-  rsig = psf->fwhm/psf->pixstep;
+  rsig = psf->fwhm/profit->pixstep;
   invrsig2 = 1/(2*rsig*rsig);
   rmin = rmax - (3*rsig);     /* 3 sigma annulus (almost no aliasing) */
   rmin2 = rmin*rmin;
@@ -1170,7 +1231,7 @@ void	profit_resetparam(profitstruct *profit, paramenum paramtype,
       parammax =  0.0;
       break;
     case PARAM_SPHEROID_SERSICN:
-      param = 2.0;
+      param = 4.0;
       parammin = 1.0;
       parammax = 10.0;
       break;
@@ -1417,7 +1478,7 @@ INPUT	Pointer to the profile-fitting structure,
 OUTPUT	A pointer to an allocated prof structure.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	16/04/2008
+VERSION	22/04/2008
  ***/
 profstruct	*prof_init(profitstruct *profit, proftypenum profcode)
   {
@@ -1575,7 +1636,6 @@ profstruct	*prof_init(profitstruct *profit, proftypenum profcode)
       break;
     }
 
-  prof->scaling = profit->psf->pixstep / prof->typscale;
   if (prof->pix)
     {
     prof->kernelnlines = 1;
@@ -1623,13 +1683,13 @@ INPUT	Profile structure,
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	14/04/2008
+VERSION	22/04/2008
  ***/
 void	prof_add(profstruct *prof, profitstruct *profit)
   {
    double	posin[PROFIT_MAXEXTRA], posout[2], dnaxisn[2],
 		*pixout,
-		flux,fluxfac;
+		flux,fluxfac, scaling;
    float	*pixin,
 		amp,ctheta,stheta,cd11,cd12,cd21,cd22, dcd11,dcd21, dx1,dx2,
 		x1,x10,x2, x1cin,x2cin, x1cout,x2cout, xscale,yscale, saspect,
@@ -1653,16 +1713,16 @@ void	prof_add(profstruct *prof, profitstruct *profit)
     return;
     }
 
+  scaling = profit->pixstep / prof->typscale;
+
 /* Compute Profile CD matrix */
   ctheta = cos(*prof->posangle*DEG);
   stheta = sin(*prof->posangle*DEG);
   saspect = sqrt(fabs(*prof->aspect));
   xscale = (*prof->scale==0.0)?
-			0.0 : fabs(saspect*prof->scaling
-				/ (*prof->scale*prof->typscale));
+			0.0 : fabs(scaling / (*prof->scale*prof->typscale));
   yscale = (*prof->scale*saspect == 0.0)?
-		0.0 : fabs(prof->scaling
-				/ (*prof->scale*prof->typscale*saspect));
+		0.0 : fabs(scaling / (*prof->scale*prof->typscale*saspect));
   cd11 = xscale*ctheta;
   cd12 = xscale*stheta;
   cd21 =-yscale*stheta;

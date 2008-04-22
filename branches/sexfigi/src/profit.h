@@ -31,7 +31,7 @@
 #define	PROFIT_MAXITER	1000	/* Max. nb of iterations in profile fitting */
 #define	PROFIT_OVERSAMP	5	/* Max. profile oversamp. factor on each axis */
 #define	PROFIT_MAXPROF	8	/* Max. nb of profile components */
-#define	PROFIT_DYNPARAM	10.0	/* Dynamic compression param. in sigma units */
+#define	PROFIT_DYNPARAM	100.0	/* Dynamic compression param. in sigma units */
 #define	PROFIT_BARXFADE	0.1	/* Fract. of bar length crossfaded with arms */
 #define	PROFIT_MAXEXTRA	2	/* Max. nb of extra free params of profiles */
 #define PROFIT_PROFRES	256	/* Pixmap size of model components */
@@ -48,6 +48,7 @@ typedef enum		{PROF_BACK, PROF_SERSIC, PROF_DEVAUCOULEURS,
 			PROF_EXPONENTIAL, PROF_ARMS, PROF_BAR, PROF_INRING,
 			PROF_OUTRING, PROF_SERSIC_TABEX, PROF_NPROF}
 				proftypenum; /* Profile code */
+
 typedef enum	{INTERP_NEARESTNEIGHBOUR, INTERP_BILINEAR, INTERP_LANCZOS2,
 		INTERP_LANCZOS3, INTERP_LANCZOS4}       interpenum;
 
@@ -73,7 +74,6 @@ typedef struct
   int		naxis;			/* Number of pixmap dimensions */
   int		naxisn[2+PROFIT_MAXEXTRA];	/* Pixmap size for each axis */
   double	typscale;		/* Typical scale in prof pixels */
-  double	scaling;		/* Scaling factor for lengths */
 /* Generic presentation parameters */
   double	*flux;			/* Integrated flux */
   double	*x[2];			/* Coordinate vector */
@@ -110,7 +110,9 @@ typedef struct
   profstruct	**prof;		/* Array of pointers to profiles */
   int		nprof;		/* Number of profiles to consider */
   struct psf	*psf;		/* PSF */
+  double	pixstep;	/* Model/PSF sampling step */
   double	*psfdft;	/* Compressed Fourier Transform of the PSF */
+  double	*psfpix;	/* Full res. pixmap of the PSF */
   double	*modpix;	/* Full res. pixmap of the complete model */
   float		*pmodpix;	/* Full res. pixmap of the partial model */
   int		modnaxisn[2];	/* Dimensions along each axis */

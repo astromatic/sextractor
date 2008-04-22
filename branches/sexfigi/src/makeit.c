@@ -9,7 +9,7 @@
 *
 *	Contents:	main program.
 *
-*	Last modify:	08/10/2007
+*	Last modify:	22/04/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -45,6 +45,7 @@
 static int		selectext(char *filename);
 time_t			thetimet, thetimet2;
 extern profitstruct	*theprofit;
+extern char		profname[][32];
 
 /******************************** makeit *************************************/
 /*
@@ -108,6 +109,14 @@ void	makeit()
     NFPRINTF(OUTPUT, "Preparing profile models");
     theprofit = profit_init(thepsf);
     changecatparamarrays("VECTOR_PROF", &theprofit->nparam, 1);
+    QPRINTF(OUTPUT, "Fitting model: ");
+    for (i=0; i<theprofit->nprof; i++)
+      {
+      if (i)
+        QPRINTF(OUTPUT, "+");
+      QPRINTF(OUTPUT, "%s", profname[theprofit->prof[i]->code]);
+      }
+    QPRINTF(OUTPUT, "\n");
     }
 
   if (prefs.filter_flag)
