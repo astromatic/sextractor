@@ -9,7 +9,7 @@
 *
 *	Contents:	functions for output of catalog data.
 *
-*	Last modify:	18/04/2008
+*	Last modify:	23/04/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -171,6 +171,19 @@ void	updateparamflags()
 
   FLAG(obj2.prof_offset_flux) |= FLAG(obj2.prof_offset_mag);
   FLAG(obj2.flux_prof) |= FLAG(obj2.mag_prof);
+  FLAG(obj2.prof_spheroid_reff) |= FLAG(obj2.prof_spheroid_reffw);
+  FLAG(obj2.prof_spheroid_aspect) |= FLAG(obj2.prof_spheroid_aspectw);
+  FLAG(obj2.prof_spheroid_posang) |= FLAG(obj2.prof_spheroid_posangw);
+  FLAG(obj2.prof_disk_scale) |= FLAG(obj2.prof_disk_scalew);
+  FLAG(obj2.prof_disk_aspect) |= FLAG(obj2.prof_disk_aspectw);
+  FLAG(obj2.prof_disk_inclination) |= FLAG(obj2.prof_disk_inclinationw);
+  FLAG(obj2.prof_disk_posang) |= FLAG(obj2.prof_disk_posangw);
+  FLAG(obj2.prof_arms_scale) |= FLAG(obj2.prof_arms_scalew);
+  FLAG(obj2.prof_arms_posang) |= FLAG(obj2.prof_arms_posangw);
+  FLAG(obj2.prof_arms_start) |= FLAG(obj2.prof_arms_startw);
+  FLAG(obj2.prof_bar_length) |= FLAG(obj2.prof_bar_lengthw);
+  FLAG(obj2.prof_bar_aspect) |= FLAG(obj2.prof_bar_aspectw);
+  FLAG(obj2.prof_bar_posang) |= FLAG(obj2.prof_bar_posangw);
   FLAG(obj2.prof_mx2) |= FLAG(obj2.prof_my2) | FLAG(obj2.prof_mxy)
 			| FLAG(obj2.prof_e1) |FLAG(obj2.prof_e2)
 			| FLAG(obj2.prof_eps1) |FLAG(obj2.prof_eps2);
