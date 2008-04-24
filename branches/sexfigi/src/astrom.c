@@ -9,7 +9,7 @@
 *
 *	Contents:	Astrometrical computations.
 *
-*	Last modify:	19/12/2007
+*	Last modify:	24/04/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -49,7 +49,12 @@ void	initastrom(picstruct *field)
     if (FLAG(obj2.theta2000) || FLAG(obj2.theta1950)
 	|| FLAG(obj2.poserr_theta2000) || FLAG(obj2.poserr_theta1950)
 	|| FLAG(obj2.win_theta2000) || FLAG(obj2.win_theta1950)
-	|| FLAG(obj2.winposerr_theta2000) || FLAG(obj2.winposerr_theta1950))
+	|| FLAG(obj2.winposerr_theta2000) || FLAG(obj2.winposerr_theta1950)
+	|| FLAG(obj2.prof_spheroid_posang2000)
+	|| FLAG(obj2.prof_spheroid_posang1950)
+	|| FLAG(obj2.prof_disk_posang2000) || FLAG(obj2.prof_disk_posang1950)
+	|| FLAG(obj2.prof_arms_posang2000) || FLAG(obj2.prof_arms_posang1950)
+	|| FLAG(obj2.prof_bar_posang2000) || FLAG(obj2.prof_bar_posang1950))
       {
       if (fabs(wcs->equinox-2000.0)>0.003)
         precess(wcs->equinox, 0.0, 90.0, 2000.0, &wcs->ap2000, &wcs->dp2000);
@@ -604,4 +609,101 @@ void	astrom_winerrparam(picstruct *field, objstruct *obj)
 
   return;
   }
+
+
+/****************************** astrom_profparam *****************************/
+/*
+Compute profile-fitting shape parameters in WORLD and SKY coordinates.
+*/
+void	astrom_profparam(picstruct *field, objstruct *obj)
+  {
+   wcsstruct	*wcs;
+   double	dx2,dy2,dxy, xm2,ym2,xym, temp,pm2, lm0,lm1,lm2,lm3;
+   int		lng,lat, naxis;
+
+  wcs = field->wcs;
+  naxis = wcs->naxis;
+  lng = wcs->lng;
+  lat = wcs->lat;
+  if (lng == lat)
+    {
+    lng = 0;
+    lat = 1;
+    }
+  lm0 = obj2->jacob[lng+naxis*lng];
+  lm1 = obj2->jacob[lat+naxis*lng];
+  lm2 = obj2->jacob[lng+naxis*lat];
+  lm3 = obj2->jacob[lat+naxis*lat];
+
+
+/* All WORLD params based on 2nd order moments have to pass through here */
+//  dx2 = obj->mx2;
+//  dy2 = obj->my2;
+//  dxy = obj->mxy;
+//  obj2->mx2w = xm2 = lm0*lm0*dx2 + lm1*lm1*dy2 + lm0*lm1*dxy;
+//  obj2->my2w = ym2 = lm2*lm2*dx2 + lm3*lm3*dy2 + lm2*lm3*dxy;
+//  obj2->mxyw = xym = lm0*lm2*dx2 + lm1*lm3*dy2 + (lm0*lm3+lm1*lm2)*dxy;
+//  temp=xm2-ym2;
+  if (FLAG(obj2.prof_spheroid_posangw))
+    {
+    
+    obj2->thetaw = (temp == 0.0)? (45.0) : (0.5*atan2(2.0 * xym,temp)/DEG);
+
+/*-- Compute position angles in J2000 or B1950 reference frame */
+    if (wcs->lng != wcs->lat)
+      {
+       double	da,dd;
+
+      if (FLAG(obj2.thetas))
+        obj2->thetas = lng<lat? ((obj2->thetaw>0.0?90:-90.0) - obj2->thetaw)
+				: obj2->thetaw;
+      if (FLAG(obj2.theta2000))
+        {
+        da = wcs->ap2000 - obj2->alpha2000;
+        dd = (sin(wcs->dp2000*DEG)
+		-sin(obj2->delta2000*DEG)*sin(obj2->deltas*DEG))
+		/(cos(obj2->delta2000*DEG)*cos(obj2->deltas*DEG));
+        dd = dd<1.0? (dd>-1.0?acos(dd)/DEG:180.0) : 0.0;
+        obj2->theta2000 = obj2->thetas
+		+ (((da>0.0 && da<180.0) || da<-180.0)?-dd:dd);
+        }
+
+      if (FLAG(obj2.theta1950))
+        {
+        da = wcs->ap1950 - obj2->alpha1950;
+        dd = (sin(wcs->dp1950*DEG)
+		-sin(obj2->delta1950*DEG)*sin(obj2->deltas*DEG))
+		/(cos(obj2->delta1950*DEG)*cos(obj2->deltas*DEG));
+        dd = dd<1.0? (dd>-1.0?acos(dd)/DEG:180.0) : 0.0;
+        obj2->theta1950 = obj2->thetas
+		+ (((da>0.0 && da<180.0) || da<-180.0)?-dd:dd);
+        }
+      }
+    }
+
+  if (FLAG(obj2.aw))
+    {
+    temp = sqrt(0.25*temp*temp+xym*xym);
+    pm2 = 0.5*(xm2+ym2);
+    obj2->aw = (float)sqrt(pm2+temp);
+    obj2->bw = (float)sqrt(pm2-temp);
+    obj2->polarw = temp / pm2;
+    }
+
+  if (FLAG(obj2.cxxw))
+    {
+/*-- Handle large, fully correlated profiles (can cause a singularity...) */
+    if ((temp=xm2*ym2-xym*xym)<1e-6)
+      {
+      temp = 1e-6;
+      xym *= 0.99999;
+      }
+    obj2->cxxw = (float)(ym2/temp);
+    obj2->cyyw = (float)(xm2/temp);
+    obj2->cxyw = (float)(-2*xym/temp);
+    }
+
+  return;
+  }
+
 

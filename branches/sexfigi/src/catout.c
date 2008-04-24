@@ -9,7 +9,7 @@
 *
 *	Contents:	functions for output of catalog data.
 *
-*	Last modify:	23/04/2008
+*	Last modify:	24/04/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -171,6 +171,18 @@ void	updateparamflags()
 
   FLAG(obj2.prof_offset_flux) |= FLAG(obj2.prof_offset_mag);
   FLAG(obj2.flux_prof) |= FLAG(obj2.mag_prof);
+  FLAG(obj2.prof_spheroid_posangw) |= FLAG(obj2.prof_spheroid_posangs)
+			| FLAG(obj2.prof_spheroid_posang2000)
+			| FLAG(obj2.prof_spheroid_posang1950);
+  FLAG(obj2.prof_disk_posangw) |= FLAG(obj2.prof_disk_posangs)
+			| FLAG(obj2.prof_disk_posang2000)
+			| FLAG(obj2.prof_disk_posang1950);
+  FLAG(obj2.prof_arms_posangw) |= FLAG(obj2.prof_arms_posangs)
+			| FLAG(obj2.prof_arms_posang2000)
+			| FLAG(obj2.prof_arms_posang1950);
+  FLAG(obj2.prof_bar_posangw) |= FLAG(obj2.prof_bar_posangs)
+			| FLAG(obj2.prof_bar_posang2000)
+			| FLAG(obj2.prof_bar_posang1950);
   FLAG(obj2.prof_spheroid_reff) |= FLAG(obj2.prof_spheroid_reffw);
   FLAG(obj2.prof_spheroid_aspect) |= FLAG(obj2.prof_spheroid_aspectw);
   FLAG(obj2.prof_spheroid_posang) |= FLAG(obj2.prof_spheroid_posangw);

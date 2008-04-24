@@ -9,7 +9,7 @@
 *
 *	Contents:	global type definitions.
 *
-*	Last modify:	23/04/2008
+*	Last modify:	24/04/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -318,6 +318,9 @@ typedef struct
   float		prof_spheroid_aspectw;		/* WORLD spheroid aspect ratio*/
   float		prof_spheroid_posang;		/* Spheroid position angle */
   float		prof_spheroid_posangw;		/* WORLD spheroid pos. angle */
+  float		prof_spheroid_posangs;		/* Sky spheroid pos. angle */
+  float		prof_spheroid_posang2000;	/* J2000 spheroid pos. angle */
+  float		prof_spheroid_posang1950;	/* B1950 spheroid pos. angle */
   float		prof_spheroid_sersicn;		/* Spheroid Sersic index */
   float		prof_disk_flux;			/* Disk total flux */
   float		prof_disk_mag;			/* Disk "total" mag */
@@ -329,12 +332,18 @@ typedef struct
   float		prof_disk_inclinationw;		/* WORLD disk inclination */
   float		prof_disk_posang;		/* Disk position angle */
   float		prof_disk_posangw;		/* WORLD disk position angle */
+  float		prof_disk_posangs;		/* Sky disk position angle */
+  float		prof_disk_posang2000;		/* J2000 disk position angle */
+  float		prof_disk_posang1950;		/* B1950 disk position angle */
   float		prof_arms_flux;			/* Spiral arms total flux */
   float		prof_arms_mag;			/* Arms "total" magnitude */
   float		prof_arms_scale;		/* Arms scalelength */
   float		prof_arms_scalew;		/* WORLD arms scalelength */
   float		prof_arms_posang;		/* Arms position angle */
   float		prof_arms_posangw;		/* WORLD arms position angle */
+  float		prof_arms_posangs;		/* Sky arms position angle */
+  float		prof_arms_posang2000;		/* J2000 arms position angle */
+  float		prof_arms_posang1950;		/* B1950 arms position angle */
   float		prof_arms_pitch;		/* Arms pitch angle */
   float		prof_arms_start;		/* Arms starting radius */
   float		prof_arms_startw;		/* WORLD arms starting radius */
@@ -347,6 +356,9 @@ typedef struct
   float		prof_bar_aspectw;		/* WORLD bar aspect ratio */
   float		prof_bar_posang;		/* Bar position angle */
   float		prof_bar_posangw;		/* WORLD bar position angle */
+  float		prof_bar_posangs;		/* Sky bar position angle */
+  float		prof_bar_posang2000;		/* J2000 bar position angle */
+  float		prof_bar_posang1950;		/* B1950 bar position angle */
 /* ---- MEF */
   short		ext_number;			/* FITS extension number */
   }	obj2struct;
