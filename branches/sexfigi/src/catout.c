@@ -9,7 +9,7 @@
 *
 *	Contents:	functions for output of catalog data.
 *
-*	Last modify:	24/04/2008
+*	Last modify:	25/04/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -171,6 +171,24 @@ void	updateparamflags()
 
   FLAG(obj2.prof_offset_flux) |= FLAG(obj2.prof_offset_mag);
   FLAG(obj2.flux_prof) |= FLAG(obj2.mag_prof);
+  FLAG(obj2.dtheta1950) |= FLAG(obj2.prof_spheroid_posang1950)
+			| FLAG(obj2.prof_disk_posang1950)
+			| FLAG(obj2.prof_arms_posang1950)
+			| FLAG(obj2.prof_bar_posang1950)
+			| FLAG(obj2.poserrtheta1950_psf)
+			| FLAG(obj2.win_theta1950)
+			| FLAG(obj2.winposerr_theta1950)
+			| FLAG(obj2.poserr_theta1950)
+			| FLAG(obj2.theta1950);
+  FLAG(obj2.dtheta2000) |= FLAG(obj2.prof_spheroid_posang2000)
+			| FLAG(obj2.prof_disk_posang2000)
+			| FLAG(obj2.prof_arms_posang2000)
+			| FLAG(obj2.prof_bar_posang2000)
+			| FLAG(obj2.poserrtheta2000_psf)
+			| FLAG(obj2.win_theta2000)
+			| FLAG(obj2.winposerr_theta2000)
+			| FLAG(obj2.poserr_theta2000)
+			| FLAG(obj2.theta2000);
   FLAG(obj2.prof_spheroid_posangw) |= FLAG(obj2.prof_spheroid_posangs)
 			| FLAG(obj2.prof_spheroid_posang2000)
 			| FLAG(obj2.prof_spheroid_posang1950);
@@ -301,12 +319,12 @@ void	updateparamflags()
 
   FLAG(obj2.peakalpha1950) |= FLAG(obj2.peakdelta1950);
   FLAG(obj2.alpha1950) |= FLAG(obj2.delta1950) |  FLAG(obj2.theta1950)
-			| FLAG(obj2.poserr_theta1950);
+			| FLAG(obj2.poserr_theta1950) | FLAG(obj2.dtheta1950);
+;
   FLAG(obj2.peakalpha2000) |= FLAG(obj2.peakdelta2000)
 			| FLAG(obj2.peakalpha1950);
   FLAG(obj2.alpha2000) |= FLAG(obj2.delta2000) | FLAG(obj2.alpha1950)
-			| FLAG(obj2.theta2000)
-			| FLAG(obj2.poserr_theta2000);
+			| FLAG(obj2.dtheta2000);
   FLAG(obj2.peakalphas) |= FLAG(obj2.peakdeltas) | FLAG(obj2.peakalpha2000);
   FLAG(obj2.alphas) |= FLAG(obj2.deltas) | FLAG(obj2.alpha2000);
   FLAG(obj2.thetas) |= FLAG(obj2.theta1950) | FLAG(obj2.theta2000);

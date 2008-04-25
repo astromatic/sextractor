@@ -9,7 +9,7 @@
 *
 *	Contents:	global type definitions.
 *
-*	Last modify:	24/04/2008
+*	Last modify:	25/04/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -176,8 +176,10 @@ typedef struct
   double	peakalpha1950, peakdelta1950;	/* B1950 for brightest pix */
   double	alpha2000, delta2000;		/* J2000 alpha, delta */
   float		theta2000;			/* J2000 position angle E/N */
+  double	dtheta2000;			/* North J2000 - native angle*/
   double	alpha1950, delta1950;		/* B1950 alpha, delta */
   float		theta1950;			/* B1950 position angle E/N */
+  double	dtheta1950;			/* North B1950 - native angle*/
   float		aw, bw;				/* WORLD ellipse size */
   float		thetaw;				/* WORLD position angle */
   float		cxxw,cyyw,cxyw;			/* WORLD ellipse parameters */

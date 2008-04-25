@@ -9,7 +9,7 @@
 *
 *	Contents:	Astrometrical computations.
 *
-*	Last modify:	24/04/2008
+*	Last modify:	25/04/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -88,7 +88,7 @@ void	computeastrom(picstruct *field, objstruct *obj)
   {
    wcsstruct	*wcs;
    double	rawpos[NAXIS], wcspos[NAXIS],
-		pixscale2;
+		pixscale2, da,dd;
    int		lng,lat;
 
   wcs = field->wcs;
@@ -118,9 +118,29 @@ void	computeastrom(picstruct *field, objstruct *obj)
           obj2->alpha2000 = lng<lat? obj2->mxw : obj2->myw;
           obj2->delta2000 = lng<lat? obj2->myw : obj2->mxw;
           }
+        if (FLAG(obj2.dtheta2000))
+          {
+          da = wcs->ap2000 - obj2->alpha2000;
+          dd = (sin(wcs->dp2000*DEG)
+		-sin(obj2->delta2000*DEG)*sin(obj2->deltas*DEG))
+		/(cos(obj2->delta2000*DEG)*cos(obj2->deltas*DEG));
+          dd = dd<1.0? (dd>-1.0?acos(dd)/DEG:180.0) : 0.0;
+          obj2->dtheta2000 = (((da>0.0 && da<180.0) || da<-180.0)?-dd:dd);
+          }
         if (FLAG(obj2.alpha1950))
+          {
           j2b(wcs->equinox, obj2->alpha2000, obj2->delta2000,
 		&obj2->alpha1950, &obj2->delta1950);
+          if (FLAG(obj2.dtheta1950))
+            {
+            da = wcs->ap1950 - obj2->alpha1950;
+            dd = (sin(wcs->dp1950*DEG)
+		-sin(obj2->delta1950*DEG)*sin(obj2->deltas*DEG))
+		/(cos(obj2->delta1950*DEG)*cos(obj2->deltas*DEG));
+            dd = dd<1.0? (dd>-1.0?acos(dd)/DEG:180.0) : 0.0;
+            obj2->dtheta1950 = (((da>0.0 && da<180.0) || da<-180.0)?-dd:dd);
+           }
+          }
         }
       }
     }
@@ -273,32 +293,13 @@ void	astrom_shapeparam(picstruct *field, objstruct *obj)
 /*-- Compute position angles in J2000 or B1950 reference frame */
     if (wcs->lng != wcs->lat)
       {
-       double	da,dd;
-
       if (FLAG(obj2.thetas))
         obj2->thetas = lng<lat? ((obj2->thetaw>0.0?90:-90.0) - obj2->thetaw)
 				: obj2->thetaw;
       if (FLAG(obj2.theta2000))
-        {
-        da = wcs->ap2000 - obj2->alpha2000;
-        dd = (sin(wcs->dp2000*DEG)
-		-sin(obj2->delta2000*DEG)*sin(obj2->deltas*DEG))
-		/(cos(obj2->delta2000*DEG)*cos(obj2->deltas*DEG));
-        dd = dd<1.0? (dd>-1.0?acos(dd)/DEG:180.0) : 0.0;
-        obj2->theta2000 = obj2->thetas
-		+ (((da>0.0 && da<180.0) || da<-180.0)?-dd:dd);
-        }
-
+        obj2->theta2000 = obj2->thetas + obj2->dtheta2000;
       if (FLAG(obj2.theta1950))
-        {
-        da = wcs->ap1950 - obj2->alpha1950;
-        dd = (sin(wcs->dp1950*DEG)
-		-sin(obj2->delta1950*DEG)*sin(obj2->deltas*DEG))
-		/(cos(obj2->delta1950*DEG)*cos(obj2->deltas*DEG));
-        dd = dd<1.0? (dd>-1.0?acos(dd)/DEG:180.0) : 0.0;
-        obj2->theta1950 = obj2->thetas
-		+ (((da>0.0 && da<180.0) || da<-180.0)?-dd:dd);
-        }
+        obj2->theta1950 = obj2->thetas + obj2->dtheta1950;
       }
     }
 
@@ -367,33 +368,14 @@ void	astrom_winshapeparam(picstruct *field, objstruct *obj)
 /*-- Compute position angles in J2000 or B1950 reference frame */
     if (wcs->lng != wcs->lat)
       {
-       double	da,dd;
-
       if (FLAG(obj2.win_thetas))
         obj2->win_thetas = lng<lat?
 			((obj2->win_thetaw>0.0?90:-90.0) - obj2->win_thetaw)
 			: obj2->win_thetaw;
       if (FLAG(obj2.win_theta2000))
-        {
-        da = wcs->ap2000 - obj2->winpos_alpha2000;
-        dd = (sin(wcs->dp2000*DEG)
-		-sin(obj2->winpos_delta2000*DEG)*sin(obj2->winpos_deltas*DEG))
-		/(cos(obj2->winpos_delta2000*DEG)*cos(obj2->winpos_deltas*DEG));
-        dd = dd<1.0? (dd>-1.0?acos(dd)/DEG:180.0) : 0.0;
-        obj2->win_theta2000 = obj2->win_thetas
-		+ (((da>0.0 && da<180.0) || da<-180.0)?-dd:dd);
-        }
-
+        obj2->win_theta2000 = obj2->win_thetas + obj2->dtheta2000;
       if (FLAG(obj2.win_theta1950))
-        {
-        da = wcs->ap1950 - obj2->winpos_alpha1950;
-        dd = (sin(wcs->dp1950*DEG)
-		-sin(obj2->winpos_delta1950*DEG)*sin(obj2->winpos_deltas*DEG))
-		/(cos(obj2->winpos_delta1950*DEG)*cos(obj2->winpos_deltas*DEG));
-        dd = dd<1.0? (dd>-1.0?acos(dd)/DEG:180.0) : 0.0;
-        obj2->win_theta1950 = obj2->win_thetas
-		+ (((da>0.0 && da<180.0) || da<-180.0)?-dd:dd);
-        }
+        obj2->win_theta1950 = obj2->win_thetas + obj2->dtheta1950;
       }
     }
 
@@ -462,33 +444,14 @@ void	astrom_errparam(picstruct *field, objstruct *obj)
 /*-- Compute position angles in J2000 or B1950 reference frame */
     if (wcs->lng != wcs->lat)
       {
-       double	da,dd;
-
       if (FLAG(obj2.poserr_thetas))
         obj2->poserr_thetas = lng<lat?
 		((obj2->poserr_thetaw>0.0?90:-90.0) - obj2->poserr_thetaw)
 		: obj2->poserr_thetaw;
       if (FLAG(obj2.poserr_theta2000))
-        {
-        da = wcs->ap2000 - obj2->alpha2000;
-        dd = (sin(wcs->dp2000*DEG)
-		-sin(obj2->delta2000*DEG)*sin(obj2->deltas*DEG))
-		/(cos(obj2->delta2000*DEG)*cos(obj2->deltas*DEG));
-        dd = dd<1.0? (dd>-1.0?acos(dd)/DEG:180.0) : 0.0;
-        obj2->poserr_theta2000 = obj2->poserr_thetas
-		+ (((da>0.0 && da<180.0) || da<-180.0)?-dd:dd);
-        }
-
+        obj2->poserr_theta2000 = obj2->poserr_thetas + obj2->dtheta2000;
       if (FLAG(obj2.poserr_theta1950))
-        {
-        da = wcs->ap1950 - obj2->alpha1950;
-        dd = (sin(wcs->dp1950*DEG)
-		-sin(obj2->delta1950*DEG)*sin(obj2->deltas*DEG))
-		/(cos(obj2->delta1950*DEG)*cos(obj2->deltas*DEG));
-        dd = dd<1.0? (dd>-1.0?acos(dd)/DEG:180.0) : 0.0;
-        obj2->poserr_theta1950 = obj2->poserr_thetas
-		+ (((da>0.0 && da<180.0) || da<-180.0)?-dd:dd);
-        }
+        obj2->poserr_theta1950 = obj2->poserr_thetas + obj2->dtheta1950;
       }
     }
 
@@ -556,33 +519,14 @@ void	astrom_winerrparam(picstruct *field, objstruct *obj)
 /*-- Compute position angles in J2000 or B1950 reference frame */
     if (wcs->lng != wcs->lat)
       {
-       double	da,dd;
-
       if (FLAG(obj2.winposerr_thetas))
         obj2->winposerr_thetas = lng<lat?
 		((obj2->winposerr_thetaw>0.0?90:-90.0) - obj2->winposerr_thetaw)
 		: obj2->winposerr_thetaw;
       if (FLAG(obj2.winposerr_theta2000))
-        {
-        da = wcs->ap2000 - obj2->winpos_alpha2000;
-        dd = (sin(wcs->dp2000*DEG)
-		-sin(obj2->winpos_delta2000*DEG)*sin(obj2->winpos_deltas*DEG))
-		/(cos(obj2->winpos_delta2000*DEG)*cos(obj2->winpos_deltas*DEG));
-        dd = dd<1.0? (dd>-1.0?acos(dd)/DEG:180.0) : 0.0;
-        obj2->winposerr_theta2000 = obj2->winposerr_thetas
-		+ (((da>0.0 && da<180.0) || da<-180.0)?-dd:dd);
-        }
-
+        obj2->winposerr_theta2000 = obj2->winposerr_thetas + obj2->dtheta2000;
       if (FLAG(obj2.winposerr_theta1950))
-        {
-        da = wcs->ap1950 - obj2->winpos_alpha1950;
-        dd = (sin(wcs->dp1950*DEG)
-		-sin(obj2->winpos_delta1950*DEG)*sin(obj2->winpos_deltas*DEG))
-		/(cos(obj2->winpos_delta1950*DEG)*cos(obj2->winpos_deltas*DEG));
-        dd = dd<1.0? (dd>-1.0?acos(dd)/DEG:180.0) : 0.0;
-        obj2->winposerr_theta1950 = obj2->winposerr_thetas
-		+ (((da>0.0 && da<180.0) || da<-180.0)?-dd:dd);
-        }
+        obj2->winposerr_theta1950 = obj2->winposerr_thetas + obj2->dtheta1950;
       }
     }
 
@@ -618,7 +562,7 @@ Compute profile-fitting shape parameters in WORLD and SKY coordinates.
 void	astrom_profparam(picstruct *field, objstruct *obj)
   {
    wcsstruct	*wcs;
-   double	dx2,dy2,dxy, xm2,ym2,xym, temp,pm2, lm0,lm1,lm2,lm3;
+   double	dx2,dy2,dxy, xm2,ym2,xym, temp,pm2, lm0,lm1,lm2,lm3, ct,st;
    int		lng,lat, naxis;
 
   wcs = field->wcs;
@@ -646,38 +590,20 @@ void	astrom_profparam(picstruct *field, objstruct *obj)
 //  temp=xm2-ym2;
   if (FLAG(obj2.prof_spheroid_posangw))
     {
-    
+    ct = cos(obj2->prof_spheroid_posang*DEG);
+    st = sin(obj2->prof_spheroid_posang*DEG);
     obj2->thetaw = (temp == 0.0)? (45.0) : (0.5*atan2(2.0 * xym,temp)/DEG);
 
 /*-- Compute position angles in J2000 or B1950 reference frame */
     if (wcs->lng != wcs->lat)
       {
-       double	da,dd;
-
       if (FLAG(obj2.thetas))
         obj2->thetas = lng<lat? ((obj2->thetaw>0.0?90:-90.0) - obj2->thetaw)
 				: obj2->thetaw;
       if (FLAG(obj2.theta2000))
-        {
-        da = wcs->ap2000 - obj2->alpha2000;
-        dd = (sin(wcs->dp2000*DEG)
-		-sin(obj2->delta2000*DEG)*sin(obj2->deltas*DEG))
-		/(cos(obj2->delta2000*DEG)*cos(obj2->deltas*DEG));
-        dd = dd<1.0? (dd>-1.0?acos(dd)/DEG:180.0) : 0.0;
-        obj2->theta2000 = obj2->thetas
-		+ (((da>0.0 && da<180.0) || da<-180.0)?-dd:dd);
-        }
-
+        obj2->theta2000 = obj2->thetas + obj2->dtheta2000;
       if (FLAG(obj2.theta1950))
-        {
-        da = wcs->ap1950 - obj2->alpha1950;
-        dd = (sin(wcs->dp1950*DEG)
-		-sin(obj2->delta1950*DEG)*sin(obj2->deltas*DEG))
-		/(cos(obj2->delta1950*DEG)*cos(obj2->deltas*DEG));
-        dd = dd<1.0? (dd>-1.0?acos(dd)/DEG:180.0) : 0.0;
-        obj2->theta1950 = obj2->thetas
-		+ (((da>0.0 && da<180.0) || da<-180.0)?-dd:dd);
-        }
+        obj2->theta1950 = obj2->thetas + obj2->dtheta1950;
       }
     }
 
