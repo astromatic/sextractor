@@ -30,7 +30,7 @@
 /*------------------------------- structures --------------------------------*/
 /*------------------------------- functions ---------------------------------*/
 extern void		astrom_errparam(picstruct *, objstruct *),
-			astrom_profparam(picstruct *, objstruct *),
+			astrom_profshapeparam(picstruct *, objstruct *),
 			astrom_shapeparam(picstruct *, objstruct *),
 			astrom_winerrparam(picstruct *, objstruct *),
 			astrom_winshapeparam(picstruct *, objstruct *),

@@ -50,11 +50,11 @@ void	initastrom(picstruct *field)
 	|| FLAG(obj2.poserr_theta2000) || FLAG(obj2.poserr_theta1950)
 	|| FLAG(obj2.win_theta2000) || FLAG(obj2.win_theta1950)
 	|| FLAG(obj2.winposerr_theta2000) || FLAG(obj2.winposerr_theta1950)
-	|| FLAG(obj2.prof_spheroid_posang2000)
-	|| FLAG(obj2.prof_spheroid_posang1950)
-	|| FLAG(obj2.prof_disk_posang2000) || FLAG(obj2.prof_disk_posang1950)
-	|| FLAG(obj2.prof_arms_posang2000) || FLAG(obj2.prof_arms_posang1950)
-	|| FLAG(obj2.prof_bar_posang2000) || FLAG(obj2.prof_bar_posang1950))
+	|| FLAG(obj2.prof_spheroid_theta2000)
+	|| FLAG(obj2.prof_spheroid_theta1950)
+	|| FLAG(obj2.prof_disk_theta2000) || FLAG(obj2.prof_disk_theta1950)
+//	|| FLAG(obj2.prof_arms_theta2000) || FLAG(obj2.prof_arms_theta1950)
+	|| FLAG(obj2.prof_bar_theta2000) || FLAG(obj2.prof_bar_theta1950))
       {
       if (fabs(wcs->equinox-2000.0)>0.003)
         precess(wcs->equinox, 0.0, 90.0, 2000.0, &wcs->ap2000, &wcs->dp2000);
@@ -217,6 +217,7 @@ void	computeastrom(picstruct *field, objstruct *obj)
 	|| FLAG(obj2.win_mx2w)
 	|| FLAG(obj2.poserr_mx2w)
 	|| FLAG(obj2.winposerr_mx2w)
+	|| FLAG(obj2.prof_flagw)
 	|| ((!prefs.pixel_scale) && (FLAG(obj2.npixw)
 		|| FLAG(obj2.fdnpixw)
 		|| FLAG(obj2.fwhmw))))
@@ -231,6 +232,8 @@ void	computeastrom(picstruct *field, objstruct *obj)
     astrom_shapeparam(field, obj);
   if (FLAG(obj2.win_mx2w))
     astrom_winshapeparam(field, obj);
+  if (FLAG(obj2.prof_flagw))
+    astrom_profshapeparam(field, obj);
 
 /* Express position error parameters in WORLD frame */
   if (FLAG(obj2.poserr_mx2w))
@@ -555,11 +558,11 @@ void	astrom_winerrparam(picstruct *field, objstruct *obj)
   }
 
 
-/****************************** astrom_profparam *****************************/
+/*************************** astrom_profshapeparam ***************************/
 /*
 Compute profile-fitting shape parameters in WORLD and SKY coordinates.
 */
-void	astrom_profparam(picstruct *field, objstruct *obj)
+void	astrom_profshapeparam(picstruct *field, objstruct *obj)
   {
    wcsstruct	*wcs;
    double	dx2,dy2,dxy, xm2,ym2,xym, temp,pm2, lm0,lm1,lm2,lm3, ct,st;
@@ -579,54 +582,170 @@ void	astrom_profparam(picstruct *field, objstruct *obj)
   lm2 = obj2->jacob[lng+naxis*lat];
   lm3 = obj2->jacob[lat+naxis*lat];
 
-
-/* All WORLD params based on 2nd order moments have to pass through here */
-//  dx2 = obj->mx2;
-//  dy2 = obj->my2;
-//  dxy = obj->mxy;
-//  obj2->mx2w = xm2 = lm0*lm0*dx2 + lm1*lm1*dy2 + lm0*lm1*dxy;
-//  obj2->my2w = ym2 = lm2*lm2*dx2 + lm3*lm3*dy2 + lm2*lm3*dxy;
-//  obj2->mxyw = xym = lm0*lm2*dx2 + lm1*lm3*dy2 + (lm0*lm3+lm1*lm2)*dxy;
-//  temp=xm2-ym2;
-  if (FLAG(obj2.prof_spheroid_posangw))
+/* Spheroid World coordinates */
+  if (FLAG(obj2.prof_spheroid_reffw))
     {
-    ct = cos(obj2->prof_spheroid_posang*DEG);
-    st = sin(obj2->prof_spheroid_posang*DEG);
-    obj2->thetaw = (temp == 0.0)? (45.0) : (0.5*atan2(2.0 * xym,temp)/DEG);
-
-/*-- Compute position angles in J2000 or B1950 reference frame */
-    if (wcs->lng != wcs->lat)
+    ct = cos(obj2->prof_spheroid_theta*DEG);
+    st = sin(obj2->prof_spheroid_theta*DEG);
+    dx2 = obj2->prof_spheroid_reff*obj2->prof_spheroid_reff * (ct*ct
+	+ st*st * obj2->prof_spheroid_aspect*obj2->prof_spheroid_aspect);
+    dy2 = obj2->prof_spheroid_reff*obj2->prof_spheroid_reff * (st*st
+	+ ct*ct * obj2->prof_spheroid_aspect*obj2->prof_spheroid_aspect);
+    dxy = ct*st * obj2->prof_spheroid_reff*obj2->prof_spheroid_reff
+	*(1.0 - obj2->prof_spheroid_aspect*obj2->prof_spheroid_aspect);
+    xm2 = lm0*lm0*dx2 + lm1*lm1*dy2 + lm0*lm1*dxy;
+    ym2 = lm2*lm2*dx2 + lm3*lm3*dy2 + lm2*lm3*dxy;
+    xym = lm0*lm2*dx2 + lm1*lm3*dy2 + (lm0*lm3+lm1*lm2)*dxy;
+    temp=xm2-ym2;
+    if (FLAG(obj2.prof_spheroid_thetaw))
       {
-      if (FLAG(obj2.thetas))
-        obj2->thetas = lng<lat? ((obj2->thetaw>0.0?90:-90.0) - obj2->thetaw)
-				: obj2->thetaw;
-      if (FLAG(obj2.theta2000))
-        obj2->theta2000 = obj2->thetas + obj2->dtheta2000;
-      if (FLAG(obj2.theta1950))
-        obj2->theta1950 = obj2->thetas + obj2->dtheta1950;
+      obj2->prof_spheroid_thetaw = (temp == 0.0)?
+		(45.0) : (0.5*atan2(2.0 * xym,temp)/DEG);
+
+      if (wcs->lng != wcs->lat)
+        {
+        if (FLAG(obj2.prof_spheroid_thetas))
+          obj2->prof_spheroid_thetas = lng<lat?
+			((obj2->prof_spheroid_thetaw>0.0?90:-90.0)
+				- obj2->prof_spheroid_thetaw)
+			: obj2->prof_spheroid_thetaw;
+        if (FLAG(obj2.prof_spheroid_theta2000))
+          obj2->prof_spheroid_theta2000 = obj2->prof_spheroid_thetas
+					+ obj2->dtheta2000;
+        if (FLAG(obj2.prof_spheroid_theta1950))
+          obj2->prof_spheroid_theta1950 = obj2->prof_spheroid_thetas
+					+ obj2->dtheta1950;
+        }
+      }
+    if (FLAG(obj2.prof_spheroid_reffw))
+      {
+      temp = sqrt(0.25*temp*temp+xym*xym);
+      pm2 = 0.5*(xm2+ym2);
+      obj2->prof_spheroid_reffw = sqrt(pm2+temp);
+      obj2->prof_spheroid_aspectw = obj2->prof_spheroid_reffw>0.0?
+				  sqrt(pm2-temp) / obj2->prof_spheroid_reffw
+				: obj2->prof_spheroid_aspect;
       }
     }
 
-  if (FLAG(obj2.aw))
+/* Disk World coordinates */
+  if (FLAG(obj2.prof_disk_scalew))
     {
-    temp = sqrt(0.25*temp*temp+xym*xym);
-    pm2 = 0.5*(xm2+ym2);
-    obj2->aw = (float)sqrt(pm2+temp);
-    obj2->bw = (float)sqrt(pm2-temp);
-    obj2->polarw = temp / pm2;
+    ct = cos(obj2->prof_disk_theta*DEG);
+    st = sin(obj2->prof_disk_theta*DEG);
+    dx2 = obj2->prof_disk_scale*obj2->prof_disk_scale * (ct*ct
+	+ st*st * obj2->prof_disk_aspect*obj2->prof_disk_aspect);
+    dy2 = obj2->prof_disk_scale*obj2->prof_disk_scale * (st*st
+	+ ct*ct * obj2->prof_disk_aspect*obj2->prof_disk_aspect);
+    dxy = ct*st * obj2->prof_disk_scale*obj2->prof_disk_scale
+	*(1.0 - obj2->prof_disk_aspect*obj2->prof_disk_aspect);
+    xm2 = lm0*lm0*dx2 + lm1*lm1*dy2 + lm0*lm1*dxy;
+    ym2 = lm2*lm2*dx2 + lm3*lm3*dy2 + lm2*lm3*dxy;
+    xym = lm0*lm2*dx2 + lm1*lm3*dy2 + (lm0*lm3+lm1*lm2)*dxy;
+    temp=xm2-ym2;
+    if (FLAG(obj2.prof_disk_thetaw))
+      {
+      obj2->prof_disk_thetaw = (temp == 0.0)?
+		(45.0) : (0.5*atan2(2.0 * xym,temp)/DEG);
+
+/*---- Compute position angles in J2000 or B1950 reference frame */
+      if (wcs->lng != wcs->lat)
+        {
+        if (FLAG(obj2.prof_disk_thetas))
+          obj2->prof_disk_thetas = lng<lat?
+			((obj2->prof_disk_thetaw>0.0?90:-90.0)
+				- obj2->prof_disk_thetaw)
+			: obj2->prof_disk_thetaw;
+        if (FLAG(obj2.prof_disk_theta2000))
+          obj2->prof_disk_theta2000 = obj2->prof_disk_thetas
+					+ obj2->dtheta2000;
+        if (FLAG(obj2.prof_disk_theta1950))
+          obj2->prof_disk_theta1950 = obj2->prof_disk_thetas
+					+ obj2->dtheta1950;
+        }
+      }
+    if (FLAG(obj2.prof_disk_scalew))
+      {
+      temp = sqrt(0.25*temp*temp+xym*xym);
+      pm2 = 0.5*(xm2+ym2);
+      obj2->prof_disk_scalew = sqrt(pm2+temp);
+      obj2->prof_disk_aspectw = obj2->prof_disk_scalew>0.0?
+				  sqrt(pm2-temp) / obj2->prof_disk_scalew
+				: obj2->prof_disk_aspect;
+      }
     }
 
-  if (FLAG(obj2.cxxw))
+/* Bar World coordinates */
+  if (FLAG(obj2.prof_bar_lengthw))
     {
-/*-- Handle large, fully correlated profiles (can cause a singularity...) */
-    if ((temp=xm2*ym2-xym*xym)<1e-6)
+    ct = cos(obj2->prof_bar_theta*DEG);
+    st = sin(obj2->prof_bar_theta*DEG);
+    dx2 = obj2->prof_bar_length*obj2->prof_bar_length * (ct*ct
+	+ st*st * obj2->prof_bar_aspect*obj2->prof_bar_aspect);
+    dy2 = obj2->prof_bar_length*obj2->prof_bar_length * (st*st
+	+ ct*ct * obj2->prof_bar_aspect*obj2->prof_bar_aspect);
+    dxy = ct*st * obj2->prof_bar_length*obj2->prof_bar_length
+	*(1.0 - obj2->prof_bar_aspect*obj2->prof_bar_aspect);
+    xm2 = lm0*lm0*dx2 + lm1*lm1*dy2 + lm0*lm1*dxy;
+    ym2 = lm2*lm2*dx2 + lm3*lm3*dy2 + lm2*lm3*dxy;
+    xym = lm0*lm2*dx2 + lm1*lm3*dy2 + (lm0*lm3+lm1*lm2)*dxy;
+    temp=xm2-ym2;
+    if (FLAG(obj2.prof_bar_thetaw))
       {
-      temp = 1e-6;
-      xym *= 0.99999;
+      obj2->prof_bar_thetaw = (temp == 0.0)?
+		(45.0) : (0.5*atan2(2.0 * xym,temp)/DEG);
+
+/*---- Compute position angles in J2000 or B1950 reference frame */
+      if (wcs->lng != wcs->lat)
+        {
+        if (FLAG(obj2.prof_bar_thetas))
+          obj2->prof_bar_thetas = lng<lat?
+			((obj2->prof_bar_thetaw>0.0?90:-90.0)
+				- obj2->prof_bar_thetaw)
+			: obj2->prof_bar_thetaw;
+        if (FLAG(obj2.prof_bar_theta2000))
+          obj2->prof_bar_theta2000 = obj2->prof_bar_thetas
+					+ obj2->dtheta2000;
+        if (FLAG(obj2.prof_bar_theta1950))
+          obj2->prof_bar_theta1950 = obj2->prof_bar_thetas
+					+ obj2->dtheta1950;
+        }
       }
-    obj2->cxxw = (float)(ym2/temp);
-    obj2->cyyw = (float)(xm2/temp);
-    obj2->cxyw = (float)(-2*xym/temp);
+    if (FLAG(obj2.prof_bar_lengthw))
+      {
+      temp = sqrt(0.25*temp*temp+xym*xym);
+      pm2 = 0.5*(xm2+ym2);
+      obj2->prof_bar_lengthw = sqrt(pm2+temp);
+      obj2->prof_bar_aspectw = obj2->prof_bar_lengthw>0.0?
+				  sqrt(pm2-temp) / obj2->prof_bar_lengthw
+				: obj2->prof_bar_aspect;
+      }
+    }
+
+/* Arms World coordinates */
+  if (FLAG(obj2.prof_arms_scalew))
+    {
+    ct = cos(obj2->prof_bar_theta*DEG);
+    st = sin(obj2->prof_bar_theta*DEG);
+    dx2 = obj2->prof_bar_length*obj2->prof_bar_length * (ct*ct
+	+ st*st * obj2->prof_bar_aspect*obj2->prof_bar_aspect);
+    dy2 = obj2->prof_bar_length*obj2->prof_bar_length * (st*st
+	+ ct*ct * obj2->prof_bar_aspect*obj2->prof_bar_aspect);
+    dxy = ct*st * obj2->prof_bar_length*obj2->prof_bar_length
+	*(1.0 - obj2->prof_bar_aspect*obj2->prof_bar_aspect);
+    xm2 = lm0*lm0*dx2 + lm1*lm1*dy2 + lm0*lm1*dxy;
+    ym2 = lm2*lm2*dx2 + lm3*lm3*dy2 + lm2*lm3*dxy;
+    xym = lm0*lm2*dx2 + lm1*lm3*dy2 + (lm0*lm3+lm1*lm2)*dxy;
+    temp=xm2-ym2;
+    if (FLAG(obj2.prof_bar_lengthw))
+      {
+      temp = sqrt(0.25*temp*temp+xym*xym);
+      pm2 = 0.5*(xm2+ym2);
+      obj2->prof_bar_lengthw = sqrt(pm2+temp);
+      obj2->prof_bar_aspectw = obj2->prof_bar_lengthw>0.0?
+				  sqrt(pm2-temp) / obj2->prof_bar_lengthw
+				: obj2->prof_bar_aspect;
+      }
     }
 
   return;

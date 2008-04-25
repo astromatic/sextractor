@@ -317,7 +317,7 @@ the_gal++;
     obj2->prof_spheroid_flux = *profit->paramlist[PARAM_SPHEROID_FLUX];
     obj2->prof_spheroid_reff = *profit->paramlist[PARAM_SPHEROID_REFF];
     obj2->prof_spheroid_aspect = *profit->paramlist[PARAM_SPHEROID_ASPECT];
-    obj2->prof_spheroid_posang = *profit->paramlist[PARAM_SPHEROID_POSANG];
+    obj2->prof_spheroid_theta = *profit->paramlist[PARAM_SPHEROID_POSANG];
     if (FLAG(obj2.prof_spheroid_sersicn))
       obj2->prof_spheroid_sersicn = *profit->paramlist[PARAM_SPHEROID_SERSICN];
     }
@@ -327,7 +327,7 @@ the_gal++;
     obj2->prof_disk_flux = *profit->paramlist[PARAM_DISK_FLUX];
     obj2->prof_disk_scale = *profit->paramlist[PARAM_DISK_SCALE];
     obj2->prof_disk_aspect = *profit->paramlist[PARAM_DISK_ASPECT];
-    obj2->prof_disk_posang = *profit->paramlist[PARAM_DISK_POSANG];
+    obj2->prof_disk_theta = *profit->paramlist[PARAM_DISK_POSANG];
     if (FLAG(obj2.prof_bar_flux))
       {
       obj2->prof_bar_flux = *profit->paramlist[PARAM_BAR_FLUX];

@@ -300,14 +300,16 @@ typedef struct
 /* ---- Profile-fitting */
   float		*prof_vector;			/* Profile parameters */
   float		prof_chi2;			/* Reduced chi2 */
-  BYTE		prof_flag;			/* Profile-fitting flags */
-  short		prof_niter;			/* # of prof-fitting iter. */
-  float		flux_prof;			/* Flux from profile-fitting */
-  float		fluxerr_prof;			/* RMS error on profile flux */
-  float		mag_prof;			/* Mag from profile-fitting */
-  float		magerr_prof;			/* RMS mag from prof-fitting */
-  float		x_prof, y_prof;			/* Coords from profile-fitting*/
+  BYTE		prof_flag;			/* Model-fitting flags */
+  BYTE		prof_flagw;			/* Model-fitting WORLD flag */
+  short		prof_niter;			/* # of model-fitting iter. */
+  float		flux_prof;			/* Flux from model-fitting */
+  float		fluxerr_prof;			/* RMS error on model flux */
+  float		mag_prof;			/* Mag from model-fitting */
+  float		magerr_prof;			/* RMS mag from model-fitting */
+  float		x_prof, y_prof;			/* Coords from model-fitting*/
   double	prof_mx2, prof_my2, prof_mxy;	/* Profile model moments */
+  double	prof_mx2w, prof_my2w, prof_mxyw;/* WORLD profile model moments*/
   float		prof_eps1, prof_eps2;		/* Profile model ellip.vector */
   float		prof_e1, prof_e2;		/* Profile model ellip.vector */
   float		prof_offset_flux;		/* Background offset */
@@ -318,11 +320,11 @@ typedef struct
   float		prof_spheroid_reffw;		/* WORLD spheroid eff. radius */
   float		prof_spheroid_aspect;		/* Spheroid aspect ratio */
   float		prof_spheroid_aspectw;		/* WORLD spheroid aspect ratio*/
-  float		prof_spheroid_posang;		/* Spheroid position angle */
-  float		prof_spheroid_posangw;		/* WORLD spheroid pos. angle */
-  float		prof_spheroid_posangs;		/* Sky spheroid pos. angle */
-  float		prof_spheroid_posang2000;	/* J2000 spheroid pos. angle */
-  float		prof_spheroid_posang1950;	/* B1950 spheroid pos. angle */
+  float		prof_spheroid_theta;		/* Spheroid position angle */
+  float		prof_spheroid_thetaw;		/* WORLD spheroid pos. angle */
+  float		prof_spheroid_thetas;		/* Sky spheroid pos. angle */
+  float		prof_spheroid_theta2000;	/* J2000 spheroid pos. angle */
+  float		prof_spheroid_theta1950;	/* B1950 spheroid pos. angle */
   float		prof_spheroid_sersicn;		/* Spheroid Sersic index */
   float		prof_disk_flux;			/* Disk total flux */
   float		prof_disk_mag;			/* Disk "total" mag */
@@ -332,20 +334,20 @@ typedef struct
   float		prof_disk_aspectw;		/* WORLD disk aspect ratio */
   float		prof_disk_inclination;		/* Disk inclination */
   float		prof_disk_inclinationw;		/* WORLD disk inclination */
-  float		prof_disk_posang;		/* Disk position angle */
-  float		prof_disk_posangw;		/* WORLD disk position angle */
-  float		prof_disk_posangs;		/* Sky disk position angle */
-  float		prof_disk_posang2000;		/* J2000 disk position angle */
-  float		prof_disk_posang1950;		/* B1950 disk position angle */
+  float		prof_disk_theta;		/* Disk position angle */
+  float		prof_disk_thetaw;		/* WORLD disk position angle */
+  float		prof_disk_thetas;		/* Sky disk position angle */
+  float		prof_disk_theta2000;		/* J2000 disk position angle */
+  float		prof_disk_theta1950;		/* B1950 disk position angle */
   float		prof_arms_flux;			/* Spiral arms total flux */
   float		prof_arms_mag;			/* Arms "total" magnitude */
   float		prof_arms_scale;		/* Arms scalelength */
   float		prof_arms_scalew;		/* WORLD arms scalelength */
-  float		prof_arms_posang;		/* Arms position angle */
-  float		prof_arms_posangw;		/* WORLD arms position angle */
-  float		prof_arms_posangs;		/* Sky arms position angle */
-  float		prof_arms_posang2000;		/* J2000 arms position angle */
-  float		prof_arms_posang1950;		/* B1950 arms position angle */
+  float		prof_arms_posang;		/* Arms true position angle */
+//  float		prof_arms_thetaw;		/* WORLD arms position angle */
+//  float		prof_arms_thetas;		/* Sky arms position angle */
+//  float		prof_arms_theta2000;		/* J2000 arms position angle */
+//  float		prof_arms_theta1950;		/* B1950 arms position angle */
   float		prof_arms_pitch;		/* Arms pitch angle */
   float		prof_arms_start;		/* Arms starting radius */
   float		prof_arms_startw;		/* WORLD arms starting radius */
@@ -356,11 +358,12 @@ typedef struct
   float		prof_bar_lengthw;		/* WORLD bar length */
   float		prof_bar_aspect;		/* Bar aspect ratio */
   float		prof_bar_aspectw;		/* WORLD bar aspect ratio */
-  float		prof_bar_posang;		/* Bar position angle */
-  float		prof_bar_posangw;		/* WORLD bar position angle */
-  float		prof_bar_posangs;		/* Sky bar position angle */
-  float		prof_bar_posang2000;		/* J2000 bar position angle */
-  float		prof_bar_posang1950;		/* B1950 bar position angle */
+  float		prof_bar_posang;		/* Bar true prosition angle */
+  float		prof_bar_theta;			/* Bar projected angle */
+  float		prof_bar_thetaw;		/* WORLD bar projected angle */
+  float		prof_bar_thetas;		/* Sky bar projected angle */
+  float		prof_bar_theta2000;		/* J2000 bar projected angle */
+  float		prof_bar_theta1950;		/* B1950 bar projected angle */
 /* ---- MEF */
   short		ext_number;			/* FITS extension number */
   }	obj2struct;
