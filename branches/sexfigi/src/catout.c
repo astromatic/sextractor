@@ -9,7 +9,7 @@
 *
 *	Contents:	functions for output of catalog data.
 *
-*	Last modify:	25/04/2008
+*	Last modify:	26/04/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -233,11 +233,13 @@ void	updateparamflags()
 			| FLAG(obj2.prof_arms_pitch)
 			| FLAG(obj2.prof_arms_start)
 			| FLAG(obj2.prof_arms_quadfrac);
+  FLAG(obj2.prof_bar_theta) |= FLAG(obj2.prof_bar_lengthw);
   FLAG(obj2.prof_bar_flux) |= FLAG(obj2.prof_bar_mag)
 			| FLAG(obj2.prof_bar_lengthw)
 			| FLAG(obj2.prof_bar_length)
 			| FLAG(obj2.prof_bar_aspect)
 			| FLAG(obj2.prof_bar_posang)
+			| FLAG(obj2.prof_bar_theta)
 			| FLAG(obj2.prof_arms_flux);
   FLAG(obj2.prof_disk_flux) |= FLAG(obj2.prof_disk_mag)
 			| FLAG(obj2.prof_disk_scalew)
@@ -251,10 +253,7 @@ void	updateparamflags()
 			| FLAG(obj2.prof_spheroid_reff)
 			| FLAG(obj2.prof_spheroid_aspect)
 			| FLAG(obj2.prof_spheroid_theta)
-			| FLAG(obj2.prof_spheroid_sersicn)
-			| FLAG(obj2.prof_offset_flux)
-			| FLAG(obj2.prof_disk_flux)
-			| FLAG(obj2.prof_chi2);
+			| FLAG(obj2.prof_spheroid_sersicn);
 
 /*------------------------------ Astrometry ---------------------------------*/
   FLAG(obj2.win_aw) |= FLAG(obj2.win_bw) | FLAG(obj2.win_polarw);

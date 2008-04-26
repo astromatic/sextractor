@@ -9,7 +9,7 @@
 *
 *	Contents:	Include file for profit.c.
 *
-*	Last modify:	21/04/2008
+*	Last modify:	26/04/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -106,6 +106,7 @@ typedef struct
   double	paraminit[PARAM_NPARAM];/* Parameter initial guesses */
   double	parammin[PARAM_NPARAM];	/* Parameter lower limits */
   double	parammax[PARAM_NPARAM];	/* Parameter upper limits */
+  double	*covar;		/* Covariance matrix */
   int		niter;		/* Number of iterations */
   profstruct	**prof;		/* Array of pointers to profiles */
   int		nprof;		/* Number of profiles to consider */

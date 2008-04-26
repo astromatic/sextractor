@@ -9,7 +9,7 @@
 *
 *	Contents:       Read and write WCS header info.
 *
-*	Last modify:	04/01/2008
+*	Last modify:	26/04/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -1988,5 +1988,24 @@ double  sextodegde(char *dms)
   return val;
   }
 
+
+/******************************** fmod_0_p360 *******************************/
+/*
+Fold input angle in the [0,+360[ domain.
+*/
+double  fmod_0_p360(double angle)
+  {
+  return angle>0.0? fmod(angle,360.0) : fmod(angle,360.0)+360.0;
+  }
+
+
+/******************************** fmod_m90_p90 *******************************/
+/*
+Fold input angle in the [-90,+90[ domain.
+*/
+double  fmod_m90_p90(double angle)
+  {
+  return angle>0.0? fmod(angle+90.0,180.0)-90.0 : fmod(angle-90.0,180.0)+90.0;
+  }
 
 

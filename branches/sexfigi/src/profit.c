@@ -9,7 +9,7 @@
 *
 *	Contents:	Fit an arbitrary profile combination to a detection.
 *
-*	Last modify:	22/04/2008
+*	Last modify:	26/04/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -34,12 +34,11 @@
 #include	"fits/fitscat.h"
 #include	"levmar/lm.h"
 #include	"fft.h"
+#include	"fitswcs.h"
 #include	"check.h"
 #include	"psf.h"
 #include	"profit.h"
 
-
-static double	gammln(double);
 static double	prof_interpolate(profstruct *prof, double *posin);
 static double	interpolate_pix(double *posin, double *pix, int *naxisn,
 		interpenum interptype);
@@ -69,7 +68,7 @@ INPUT	Pointer to PSF structure.
 OUTPUT	A pointer to an allocated profit structure.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	22/04/2008
+VERSION	26/04/2008
  ***/
 profitstruct	*profit_init(psfstruct *psf)
   {
@@ -112,6 +111,7 @@ profitstruct	*profit_init(psfstruct *psf)
       nprof++;
       }
 
+  QMALLOC(profit->covar, double, profit->nparam*profit->nparam);
   profit->nprof = nprof;
 
   return profit;
@@ -125,7 +125,7 @@ INPUT	Prof structure.
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	06/12/2006
+VERSION	26/04/2008
  ***/
 void	profit_end(profitstruct *profit)
   {
@@ -134,6 +134,7 @@ void	profit_end(profitstruct *profit)
   for (p=0; p<profit->nprof; p++)
     prof_end(profit->prof[p]);
   free(profit->prof);
+  free(profit->covar);
   free(profit->psfdft);
   free(profit);
 
@@ -241,9 +242,11 @@ void	profit_fit(profitstruct *profit,
 //printf("\n");
 
 the_gal++;
-  profit->niter = profit_minimize(profit, PROFIT_MAXITER);
-  QMEMCPY(profit->paraminit, oldparaminit, double, profit->nparam);
 
+/* Actual minimisation */
+  profit->niter = profit_minimize(profit, PROFIT_MAXITER);
+
+  QMEMCPY(profit->paraminit, oldparaminit, double, profit->nparam);
   if (profit_setparam(profit, PARAM_ARMS_PITCH, 160.0, 130.0, 175.0)==RETURN_OK)
     {
 //    profit_resetparam(profit, PARAM_ARMS_FLUX, obj->peak, 0.0, 1000.0*obj->peak);
@@ -317,7 +320,8 @@ the_gal++;
     obj2->prof_spheroid_flux = *profit->paramlist[PARAM_SPHEROID_FLUX];
     obj2->prof_spheroid_reff = *profit->paramlist[PARAM_SPHEROID_REFF];
     obj2->prof_spheroid_aspect = *profit->paramlist[PARAM_SPHEROID_ASPECT];
-    obj2->prof_spheroid_theta = *profit->paramlist[PARAM_SPHEROID_POSANG];
+    obj2->prof_spheroid_theta =
+			fmod_m90_p90(*profit->paramlist[PARAM_SPHEROID_POSANG]);
     if (FLAG(obj2.prof_spheroid_sersicn))
       obj2->prof_spheroid_sersicn = *profit->paramlist[PARAM_SPHEROID_SERSICN];
     }
@@ -327,14 +331,20 @@ the_gal++;
     obj2->prof_disk_flux = *profit->paramlist[PARAM_DISK_FLUX];
     obj2->prof_disk_scale = *profit->paramlist[PARAM_DISK_SCALE];
     obj2->prof_disk_aspect = *profit->paramlist[PARAM_DISK_ASPECT];
-    obj2->prof_disk_theta = *profit->paramlist[PARAM_DISK_POSANG];
+    obj2->prof_disk_theta = fmod_m90_p90(*profit->paramlist[PARAM_DISK_POSANG]);
     if (FLAG(obj2.prof_bar_flux))
       {
       obj2->prof_bar_flux = *profit->paramlist[PARAM_BAR_FLUX];
       obj2->prof_bar_length = *profit->paramlist[PARAM_ARMS_START]
 				**profit->paramlist[PARAM_DISK_SCALE];
       obj2->prof_bar_aspect = *profit->paramlist[PARAM_BAR_ASPECT];
-      obj2->prof_bar_posang = *profit->paramlist[PARAM_ARMS_POSANG];
+      obj2->prof_bar_posang = 
+			fmod_m90_p90(*profit->paramlist[PARAM_ARMS_POSANG]);
+      if (FLAG(obj2.prof_bar_theta))
+        obj2->prof_bar_theta = fmod_m90_p90(atan2(obj2->prof_bar_aspect
+			*sin(obj2->prof_bar_posang*DEG),
+		obj2->prof_bar_aspect*cos(obj2->prof_bar_posang*DEG))/DEG
+		+ obj2->prof_disk_theta);
       if (FLAG(obj2.prof_arms_flux))
         {
         obj2->prof_arms_flux = *profit->paramlist[PARAM_ARMS_FLUX];
@@ -342,7 +352,8 @@ the_gal++;
         obj2->prof_arms_start = *profit->paramlist[PARAM_ARMS_START]
 				**profit->paramlist[PARAM_DISK_SCALE];
         obj2->prof_arms_quadfrac = *profit->paramlist[PARAM_ARMS_QUADFRAC];
-        obj2->prof_arms_posang = *profit->paramlist[PARAM_ARMS_POSANG];
+        obj2->prof_arms_posang =
+			fmod_m90_p90(*profit->paramlist[PARAM_ARMS_POSANG]);
         }
       }
     }
@@ -466,7 +477,7 @@ int	profit_minimize(profitstruct *profit, int niter)
   lm_opts[4] = 1.0e-6;
 
   niter = dlevmar_dif(profit_evaluate, profit->paraminit, profit->resi,
-	n, m, niter,  lm_opts, NULL, NULL, NULL, profit);
+	n, m, niter,  lm_opts, NULL, NULL, profit->covar, profit);
 
   profit_unboundtobound(profit, profit->paraminit);
 
@@ -980,7 +991,7 @@ INPUT	Profile-fitting structure,
 OUTPUT	Vector of residuals.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	24/06/2007
+VERSION	26/04/2008
  ***/
 double profit_spiralindex(profitstruct *profit, objstruct *obj,
 			obj2struct *obj2)
@@ -1043,6 +1054,7 @@ double profit_spiralindex(profitstruct *profit, objstruct *obj,
     val = *fpix > -1e29? *fpix*invsig : 0.0;
     *(gdxt++) = (val>0.0? log(1.0+val) : -log(1.0-val));
     }
+  gdy = NULL;			/* to avoid gcc -Wall warnings */
   QMEMCPY(gdx, gdy, double, npix);
   fdx = fft_rtf(dx, profit->objnaxisn);
   fft_conv(gdx, fdx, profit->objnaxisn);
@@ -1354,7 +1366,7 @@ void	profit_resetparam(profitstruct *profit, paramenum paramtype,
       break;
    }
 
-  if (param<=parammin || param>=parammax)
+  if (parammin!=parammax && (param<=parammin || param>=parammax))
     param = (parammin+parammax)/2.0;
   profit_setparam(profit, paramtype, param, parammin, parammax);
 
@@ -1683,7 +1695,7 @@ INPUT	Profile structure,
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	22/04/2008
+VERSION	26/04/2008
  ***/
 void	prof_add(profstruct *prof, profitstruct *profit)
   {
@@ -1725,7 +1737,7 @@ void	prof_add(profstruct *prof, profitstruct *profit)
 		0.0 : fabs(scaling / (*prof->scale*prof->typscale*saspect));
   cd11 = xscale*ctheta;
   cd12 = xscale*stheta;
-  cd21 =-yscale*stheta;
+  cd21 = -yscale*stheta;
   cd22 = yscale*ctheta;
 
   dx1 = 0.0;	/* Shifting operations have been moved to profit_resample() */
@@ -2080,33 +2092,6 @@ width = 3.0;
     *(pixout++) += fluxfac * *(pixin++);
 
   return;
-  }
-
-
-/****i* gammln ***************************************************************
-PROTO	double gammln(double xx)
-PURPOSE	Returns the log of the Gamma function (from Num. Recipes in C, p.168).
-INPUT	A double.
-OUTPUT	Log of the Gamma function.
-NOTES	-.
-AUTHOR	E. Bertin (IAP
-VERSION	29/10/97
-*/
-static double	gammln(double xx)
-
-  {
-   double               x,tmp,ser;
-   static double        cof[6]={76.18009173,-86.50532033,24.01409822,
-                        -1.231739516,0.120858003e-2,-0.536382e-5};
-   int                  j;
-
-  tmp=(x=xx-1.0)+5.5;
-  tmp -= (x+0.5)*log(tmp);
-  ser=1.0;
-  for (j=0;j<6;j++)
-    ser += cof[j]/(x+=1.0);
-
-  return log(2.50662827465*ser)-tmp;
   }
 
 

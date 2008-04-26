@@ -291,18 +291,20 @@ void	astrom_shapeparam(picstruct *field, objstruct *obj)
   temp=xm2-ym2;
   if (FLAG(obj2.thetaw))
     {
-    obj2->thetaw = (temp == 0.0)? (45.0) : (0.5*atan2(2.0 * xym,temp)/DEG);
+    obj2->thetaw = fmod_m90_p90((temp == 0.0)?
+				(45.0) : (0.5*atan2(2.0 * xym,temp)/DEG));
 
 /*-- Compute position angles in J2000 or B1950 reference frame */
     if (wcs->lng != wcs->lat)
       {
       if (FLAG(obj2.thetas))
-        obj2->thetas = lng<lat? ((obj2->thetaw>0.0?90:-90.0) - obj2->thetaw)
-				: obj2->thetaw;
+        obj2->thetas = fmod_m90_p90(lng<lat?
+				((obj2->thetaw>0.0?90:-90.0) - obj2->thetaw)
+				: obj2->thetaw);
       if (FLAG(obj2.theta2000))
-        obj2->theta2000 = obj2->thetas + obj2->dtheta2000;
+        obj2->theta2000 = fmod_m90_p90(obj2->thetas + obj2->dtheta2000);
       if (FLAG(obj2.theta1950))
-        obj2->theta1950 = obj2->thetas + obj2->dtheta1950;
+        obj2->theta1950 = fmod_m90_p90(obj2->thetas + obj2->dtheta1950);
       }
     }
 
@@ -366,19 +368,20 @@ void	astrom_winshapeparam(picstruct *field, objstruct *obj)
   temp=xm2-ym2;
   if (FLAG(obj2.win_thetaw))
     {
-    obj2->win_thetaw = (temp == 0.0)? (45.0) : (0.5*atan2(2.0*xym,temp)/DEG);
+    obj2->win_thetaw = fmod_m90_p90((temp == 0.0)?
+			(45.0) : (0.5*atan2(2.0*xym,temp)/DEG));
 
 /*-- Compute position angles in J2000 or B1950 reference frame */
     if (wcs->lng != wcs->lat)
       {
       if (FLAG(obj2.win_thetas))
-        obj2->win_thetas = lng<lat?
+        obj2->win_thetas = fmod_m90_p90(lng<lat?
 			((obj2->win_thetaw>0.0?90:-90.0) - obj2->win_thetaw)
-			: obj2->win_thetaw;
+			: obj2->win_thetaw);
       if (FLAG(obj2.win_theta2000))
-        obj2->win_theta2000 = obj2->win_thetas + obj2->dtheta2000;
+        obj2->win_theta2000 = fmod_m90_p90(obj2->win_thetas + obj2->dtheta2000);
       if (FLAG(obj2.win_theta1950))
-        obj2->win_theta1950 = obj2->win_thetas + obj2->dtheta1950;
+        obj2->win_theta1950 = fmod_m90_p90(obj2->win_thetas + obj2->dtheta1950);
       }
     }
 
@@ -442,19 +445,22 @@ void	astrom_errparam(picstruct *field, objstruct *obj)
   temp=xm2-ym2;
   if (FLAG(obj2.poserr_thetaw))
     {
-    obj2->poserr_thetaw = (temp==0.0)? (45.0):(0.5*atan2(2.0*xym,temp)/DEG);
+    obj2->poserr_thetaw = fmod_m90_p90((temp==0.0)?
+				(45.0):(0.5*atan2(2.0*xym,temp)/DEG));
 
 /*-- Compute position angles in J2000 or B1950 reference frame */
     if (wcs->lng != wcs->lat)
       {
       if (FLAG(obj2.poserr_thetas))
-        obj2->poserr_thetas = lng<lat?
+        obj2->poserr_thetas = fmod_m90_p90(lng<lat?
 		((obj2->poserr_thetaw>0.0?90:-90.0) - obj2->poserr_thetaw)
-		: obj2->poserr_thetaw;
+		: obj2->poserr_thetaw);
       if (FLAG(obj2.poserr_theta2000))
-        obj2->poserr_theta2000 = obj2->poserr_thetas + obj2->dtheta2000;
+        obj2->poserr_theta2000 = fmod_m90_p90(obj2->poserr_thetas
+				+ obj2->dtheta2000);
       if (FLAG(obj2.poserr_theta1950))
-        obj2->poserr_theta1950 = obj2->poserr_thetas + obj2->dtheta1950;
+        obj2->poserr_theta1950 = fmod_m90_p90(obj2->poserr_thetas
+				+ obj2->dtheta1950);
       }
     }
 
@@ -517,19 +523,22 @@ void	astrom_winerrparam(picstruct *field, objstruct *obj)
   temp=xm2-ym2;
   if (FLAG(obj2.winposerr_thetaw))
     {
-    obj2->winposerr_thetaw = (temp==0.0)? (45.0):(0.5*atan2(2.0*xym,temp)/DEG);
+    obj2->winposerr_thetaw = (fmod_m90_p90(temp==0.0)?
+				(45.0):(0.5*atan2(2.0*xym,temp)/DEG));
 
 /*-- Compute position angles in J2000 or B1950 reference frame */
     if (wcs->lng != wcs->lat)
       {
       if (FLAG(obj2.winposerr_thetas))
-        obj2->winposerr_thetas = lng<lat?
+        obj2->winposerr_thetas = fmod_m90_p90(lng<lat?
 		((obj2->winposerr_thetaw>0.0?90:-90.0) - obj2->winposerr_thetaw)
-		: obj2->winposerr_thetaw;
+		: obj2->winposerr_thetaw);
       if (FLAG(obj2.winposerr_theta2000))
-        obj2->winposerr_theta2000 = obj2->winposerr_thetas + obj2->dtheta2000;
+        obj2->winposerr_theta2000 = fmod_m90_p90(obj2->winposerr_thetas
+				+ obj2->dtheta2000);
       if (FLAG(obj2.winposerr_theta1950))
-        obj2->winposerr_theta1950 = obj2->winposerr_thetas + obj2->dtheta1950;
+        obj2->winposerr_theta1950 = fmod_m90_p90(obj2->winposerr_thetas
+				+ obj2->dtheta1950);
       }
     }
 
@@ -599,22 +608,22 @@ void	astrom_profshapeparam(picstruct *field, objstruct *obj)
     temp=xm2-ym2;
     if (FLAG(obj2.prof_spheroid_thetaw))
       {
-      obj2->prof_spheroid_thetaw = (temp == 0.0)?
-		(45.0) : (0.5*atan2(2.0 * xym,temp)/DEG);
+      obj2->prof_spheroid_thetaw = fmod_m90_p90((temp == 0.0)?
+		(45.0) : (0.5*atan2(2.0 * xym,temp)/DEG));
 
       if (wcs->lng != wcs->lat)
         {
         if (FLAG(obj2.prof_spheroid_thetas))
-          obj2->prof_spheroid_thetas = lng<lat?
+          obj2->prof_spheroid_thetas = fmod_m90_p90(lng<lat?
 			((obj2->prof_spheroid_thetaw>0.0?90:-90.0)
 				- obj2->prof_spheroid_thetaw)
-			: obj2->prof_spheroid_thetaw;
+			: obj2->prof_spheroid_thetaw);
         if (FLAG(obj2.prof_spheroid_theta2000))
-          obj2->prof_spheroid_theta2000 = obj2->prof_spheroid_thetas
-					+ obj2->dtheta2000;
+          obj2->prof_spheroid_theta2000=fmod_m90_p90(obj2->prof_spheroid_thetas
+					+ obj2->dtheta2000);
         if (FLAG(obj2.prof_spheroid_theta1950))
-          obj2->prof_spheroid_theta1950 = obj2->prof_spheroid_thetas
-					+ obj2->dtheta1950;
+          obj2->prof_spheroid_theta1950=fmod_m90_p90(obj2->prof_spheroid_thetas
+					+ obj2->dtheta1950);
         }
       }
     if (FLAG(obj2.prof_spheroid_reffw))
@@ -645,23 +654,23 @@ void	astrom_profshapeparam(picstruct *field, objstruct *obj)
     temp=xm2-ym2;
     if (FLAG(obj2.prof_disk_thetaw))
       {
-      obj2->prof_disk_thetaw = (temp == 0.0)?
-		(45.0) : (0.5*atan2(2.0 * xym,temp)/DEG);
+      obj2->prof_disk_thetaw = fmod_m90_p90((temp == 0.0)?
+		(45.0) : (0.5*atan2(2.0 * xym,temp)/DEG));
 
 /*---- Compute position angles in J2000 or B1950 reference frame */
       if (wcs->lng != wcs->lat)
         {
         if (FLAG(obj2.prof_disk_thetas))
-          obj2->prof_disk_thetas = lng<lat?
+          obj2->prof_disk_thetas = fmod_m90_p90(lng<lat?
 			((obj2->prof_disk_thetaw>0.0?90:-90.0)
 				- obj2->prof_disk_thetaw)
-			: obj2->prof_disk_thetaw;
+			: obj2->prof_disk_thetaw);
         if (FLAG(obj2.prof_disk_theta2000))
-          obj2->prof_disk_theta2000 = obj2->prof_disk_thetas
-					+ obj2->dtheta2000;
+          obj2->prof_disk_theta2000 = fmod_m90_p90(obj2->prof_disk_thetas
+					+ obj2->dtheta2000);
         if (FLAG(obj2.prof_disk_theta1950))
-          obj2->prof_disk_theta1950 = obj2->prof_disk_thetas
-					+ obj2->dtheta1950;
+          obj2->prof_disk_theta1950 = fmod_m90_p90(obj2->prof_disk_thetas
+					+ obj2->dtheta1950);
         }
       }
     if (FLAG(obj2.prof_disk_scalew))
@@ -692,23 +701,23 @@ void	astrom_profshapeparam(picstruct *field, objstruct *obj)
     temp=xm2-ym2;
     if (FLAG(obj2.prof_bar_thetaw))
       {
-      obj2->prof_bar_thetaw = (temp == 0.0)?
-		(45.0) : (0.5*atan2(2.0 * xym,temp)/DEG);
+      obj2->prof_bar_thetaw = fmod_m90_p90((temp == 0.0)?
+		(45.0) : (0.5*atan2(2.0 * xym,temp)/DEG));
 
 /*---- Compute position angles in J2000 or B1950 reference frame */
       if (wcs->lng != wcs->lat)
         {
         if (FLAG(obj2.prof_bar_thetas))
-          obj2->prof_bar_thetas = lng<lat?
+          obj2->prof_bar_thetas = fmod_m90_p90(lng<lat?
 			((obj2->prof_bar_thetaw>0.0?90:-90.0)
 				- obj2->prof_bar_thetaw)
-			: obj2->prof_bar_thetaw;
+			: obj2->prof_bar_thetaw);
         if (FLAG(obj2.prof_bar_theta2000))
-          obj2->prof_bar_theta2000 = obj2->prof_bar_thetas
-					+ obj2->dtheta2000;
+          obj2->prof_bar_theta2000 = fmod_m90_p90(obj2->prof_bar_thetas
+					+ obj2->dtheta2000);
         if (FLAG(obj2.prof_bar_theta1950))
-          obj2->prof_bar_theta1950 = obj2->prof_bar_thetas
-					+ obj2->dtheta1950;
+          obj2->prof_bar_theta1950 = fmod_m90_p90(obj2->prof_bar_thetas
+					+ obj2->dtheta1950);
         }
       }
     if (FLAG(obj2.prof_bar_lengthw))
@@ -750,5 +759,4 @@ void	astrom_profshapeparam(picstruct *field, objstruct *obj)
 
   return;
   }
-
 

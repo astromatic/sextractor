@@ -9,7 +9,7 @@
 *
 *	Contents:	Include file for fitswcs.c
 *
-*	Last modify:	02/01/2008
+*	Last modify:	26/04/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -99,7 +99,9 @@ extern wcsstruct	*create_wcs(char **ctype, double *crval, double *crpix,
 			*copy_wcs(wcsstruct *wcsin),
 			*read_wcs(tabstruct *tab);
 
-extern double		sextodegal(char *hms),
+extern double		fmod_0_p360(double angle),
+			fmod_m90_p90(double angle),
+			sextodegal(char *hms),
 			sextodegde(char *dms),
 			wcs_dist(wcsstruct *wcs,
 				double *wcspos1, double *wcspos2),
