@@ -74,7 +74,7 @@ profitstruct	*profit_init(psfstruct *psf)
   {
    profitstruct		*profit;
    int			p, nprof,
-			spheroidflag, diskflag, barflag, armsflag;
+			backflag, spheroidflag, diskflag, barflag, armsflag;
 
   QCALLOC(profit, profitstruct, 1);
   profit->psf = psf;
@@ -82,10 +82,16 @@ profitstruct	*profit_init(psfstruct *psf)
 
   profit->nparam = 0;
   QMALLOC(profit->prof, profstruct *, PROF_NPROF);
-  spheroidflag = diskflag = barflag = armsflag = 0;
+  backflag = spheroidflag = diskflag = barflag = armsflag = 0;
   nprof = 0;
   for (p=0; p<PROF_NPROF; p++)
-    if (!spheroidflag && FLAG(obj2.prof_spheroid_flux))
+    if (!backflag && FLAG(obj2.prof_offset_flux))
+      {
+      profit->prof[p] = prof_init(profit, PROF_BACK);
+      backflag = 1;
+      nprof++;
+      }
+    else if (!spheroidflag && FLAG(obj2.prof_spheroid_flux))
       {
       profit->prof[p] = prof_init(profit,
 	FLAG(obj2.prof_spheroid_sersicn)? PROF_SERSIC : PROF_DEVAUCOULEURS);

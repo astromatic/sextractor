@@ -9,7 +9,7 @@
 *
 *	Contents:	Profile-fitting parameter list for catalog data.
 *
-*	Last modify:	25/04/2008
+*	Last modify:	26/04/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -65,9 +65,6 @@
   {"FLUX_BACKOFFSET", "Background offset from fitting",
 	&outobj2.prof_offset_flux, H_FLOAT, T_FLOAT, "%12.g", "count",
 	"instr.skyLevel;arith.diff;stat.fit.param", "ct"},
-  {"MU_BACKOFFSET", "Background offset from fitting",
-	&outobj2.prof_offset_mag, H_FLOAT, T_FLOAT, "%8.4f", "mag",
-	"instr.skyLevel;arith.diff;stat.fit.param", "mag"},
   {"FLUX_SPHEROID", "Spheroid total flux from fitting",
 	&outobj2.prof_spheroid_flux, H_FLOAT, T_FLOAT, "%12.7g", "count",
 	"phot.count;stat.fit.param", "ct"},

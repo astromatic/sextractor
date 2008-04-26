@@ -313,7 +313,6 @@ typedef struct
   float		prof_eps1, prof_eps2;		/* Profile model ellip.vector */
   float		prof_e1, prof_e2;		/* Profile model ellip.vector */
   float		prof_offset_flux;		/* Background offset */
-  float		prof_offset_mag;		/* Back offset in mag.arcsec-2*/
   float		prof_spheroid_flux;		/* Spheroid total flux */
   float		prof_spheroid_mag;		/* Spheroid "total" mag */
   float		prof_spheroid_reff;		/* Spheroid effective radius */

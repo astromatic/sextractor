@@ -169,7 +169,6 @@ void	updateparamflags()
 
 /*----------------------------- Model-fitting -----------------------------*/
 
-  FLAG(obj2.prof_offset_flux) |= FLAG(obj2.prof_offset_mag);
   FLAG(obj2.flux_prof) |= FLAG(obj2.mag_prof);
 
   FLAG(obj2.dtheta1950) |= FLAG(obj2.prof_spheroid_theta1950)
