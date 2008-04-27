@@ -9,7 +9,7 @@
 *
 *	Contents:	Command-line parsing.
 *
-*	Last modify:	10/04/2007
+*	Last modify:	27/04/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -29,10 +29,12 @@
 
 #define		SYNTAX \
 EXECUTABLE " <image> [<image2>][-c <configuration_file>][-<keyword> <value>]\n" \
-"> to dump a default configuration file: " EXECUTABLE " -d \n" \
-"> to dump a default extended configuration file: " EXECUTABLE " -dd \n"
+"> to dump a default configuration file:          " EXECUTABLE " -d \n" \
+"> to dump a default extended configuration file: " EXECUTABLE " -dd \n" \
+"> to dump a full list of measurement parameters: " EXECUTABLE " -dp \n"
 
 extern const char       notokstr[];
+extern keystruct	objkey[];
 
 /********************************** main ************************************/
 int	main(int argc, char *argv[])
@@ -80,7 +82,12 @@ int	main(int argc, char *argv[])
               strcpy(prefs.prefs_name, argv[++a]);
             break;
           case 'd':
-            dumpprefs(opt2=='d' ? 1 : 0);
+            if (opt2=='d')
+              dumpprefs(1);
+            else if (opt2=='p')
+              dumpparams();
+            else
+              dumpprefs(0);
             exit(EXIT_SUCCESS);
             break;
           case 'v':

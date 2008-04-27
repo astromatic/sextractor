@@ -9,7 +9,7 @@
 *
 *	Contents:	parameter list for catalog data.
 *
-*	Last modify:	17/04/2008
+*	Last modify:	27/04/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -400,7 +400,7 @@ keystruct	objkey[] = {
 	"src.impactParam;pos.errorEllipse", "deg-2"},
 
   {"ERRA_IMAGE", "RMS position error along major axis",
-	&outobj2.poserr_a, H_FLOAT, T_FLOAT, "%8.4f", "pixel"
+	&outobj2.poserr_a, H_FLOAT, T_FLOAT, "%8.4f", "pixel",
 	"stat.stdev;stat.max;pos.errorEllipse;instr.det;meta.main", "pix"},
   {"ERRB_IMAGE", "RMS position error along minor axis",
 	&outobj2.poserr_b, H_FLOAT, T_FLOAT, "%8.4f", "pixel",

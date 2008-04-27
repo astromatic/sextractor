@@ -9,7 +9,7 @@
 *
 *	Contents:	Fit an arbitrary profile combination to a detection.
 *
-*	Last modify:	26/04/2008
+*	Last modify:	27/04/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -162,7 +162,7 @@ OUTPUT	Pointer to an allocated fit structure (containing details about the
 	fit).
 NOTES	It is a modified version of the lm_minimize() of lmfit.
 AUTHOR	E. Bertin (IAP)
-VERSION	22/04/2008
+VERSION	27/04/2008
  ***/
 void	profit_fit(profitstruct *profit,
 		picstruct *field, picstruct *wfield,
@@ -218,7 +218,7 @@ void	profit_fit(profitstruct *profit,
     return;
     }
 
-  QCALLOC(profit->resi, double, profit->nresi);
+  QMALLOC(profit->resi, double, profit->nresi);
 
 /* Create pixmap at PSF resolution */
   profit->modnaxisn[0] = ((int)(profit->objnaxisn[0]/profit->pixstep +0.4999)/2)*2; 
@@ -255,12 +255,6 @@ the_gal++;
   QMEMCPY(profit->paraminit, oldparaminit, double, profit->nparam);
   if (profit_setparam(profit, PARAM_ARMS_PITCH, 160.0, 130.0, 175.0)==RETURN_OK)
     {
-//    profit_resetparam(profit, PARAM_ARMS_FLUX, obj->peak, 0.0, 1000.0*obj->peak);
-//    profit_resetparam(profit, PARAM_ARMS_SCALE, 1.0, 0.5, 10.0);
-//    profit_resetparam(profit, PARAM_ARMS_START, 0.5, 0.0,
-//			5.0*obj2->hl_radius/1.67835);
-//    profit_resetparam(profit, PARAM_ARMS_POSANG, 0.0, -3600.0, 3600.0);
-//    profit_resetparam(profit, PARAM_ARMS_WIDTH, 0.7, 0.0, 1.0);
     oldchi2 = profit->chi2;
     oldniter = profit->niter;
     profit_resetparams(profit, obj, obj2);
@@ -462,7 +456,7 @@ INPUT	Pointer to the profit structure involved in the fit,
 OUTPUT	Number of iterations used.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	19/12/2007
+VERSION	27/04/2008
  ***/
 int	profit_minimize(profitstruct *profit, int niter)
   {
@@ -473,6 +467,7 @@ int	profit_minimize(profitstruct *profit, int niter)
   n = profit->nparam;
   m = profit->nresi;
 
+  memset(profit->resi, 0, profit->nresi*sizeof(double));
   profit_boundtounbound(profit, profit->paraminit);
 
 /* Perform fit */

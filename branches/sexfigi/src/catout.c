@@ -9,7 +9,7 @@
 *
 *	Contents:	functions for output of catalog data.
 *
-*	Last modify:	26/04/2008
+*	Last modify:	27/04/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -451,6 +451,26 @@ void	updateparamflags()
   }
 
 
+/********************************** dumpparams *******************************/
+/*
+Initialize the catalog header
+*/
+void	dumpparams(void)
+  {
+   int		i;
+
+  for (i=0; *objkey[i].name ; i++)
+    if (*objkey[i].unit)
+      printf("#%-22.22s %-58.58s [%s]\n",
+		objkey[i].name, objkey[i].comment, objkey[i].unit);
+    else
+      printf("#%-22.22s %-58.58s\n",
+		objkey[i].name, objkey[i].comment);
+
+  return;
+  }
+
+
 /********************************** initcat **********************************/
 /*
 Initialize the catalog header
@@ -476,10 +496,10 @@ void	initcat(void)
       for (i=0,n=1; i++<objtab->nkey; key=key->nextkey)
         {
         if (*key->unit)
-          fprintf(ascfile, "# %3d %-23.23s %-39.39s [%s]\n",
+          fprintf(ascfile, "# %3d %-22.22s %-58.58s [%s]\n",
 		n, key->name,key->comment, key->unit);
         else
-          fprintf(ascfile, "# %3d %-23.23s %.39s\n",
+          fprintf(ascfile, "# %3d %-22.22s %58.58s\n",
 		n, key->name,key->comment);
         n += key->nbytes/t_size[key->ttype];
         }

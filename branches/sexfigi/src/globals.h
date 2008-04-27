@@ -9,7 +9,7 @@
 *
 *	Contents:	global declarations.
 *
-*	Last modify:	11/06/2007
+*	Last modify:	27/04/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -36,6 +36,7 @@ extern void	alloccatparams(void),
 		changecatparamarrays(char *keyword, int *axisn, int naxis),
                 closecheck(void),
 		copydata(picstruct *, int, int),
+		dumpparam(void),
 		endfield(picstruct *),
 		endobject(picstruct *, picstruct *, picstruct *, picstruct *,
 			int, objliststruct *),
