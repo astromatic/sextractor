@@ -419,16 +419,28 @@ int info, rank, worksz, *iwork, iworksz;
  * 1 if successfull
  *
  */
+/* Added by EB */
+#ifdef HAVE_CONFIG_H
+#include        "config.h"
+#endif
+#include        ATLAS_LAPACK_H
+#define ATLAS_POTRF	LM_CAT_(clapack_, LM_ADD_PREFIX(potrf))
+#define ATLAS_POTRI	LM_CAT_(clapack_, LM_ADD_PREFIX(potri))
+#define GETRF LM_ADD_PREFIX(getrf_)
+#define GETRS LM_ADD_PREFIX(getri_)
+extern int GETRF(int *m, int *n, LM_REAL *a, int *lda, int *ipiv, int *info);
+extern int GETRI(int *m, int *n, LM_REAL *a, int *lda, int *ipiv, int *info);
+/* End added by EB */
+
 static int LEVMAR_LUINVERSE(LM_REAL *A, LM_REAL *B, int m)
 {
-void *buf=NULL;
-int buf_sz=0;
+  int	info;
 
-register int i, j, k, l;
-int *idx, maxi=-1, idx_sz, a_sz, x_sz, work_sz, tot_sz;
-LM_REAL *a, *x, *work, max, sum, tmp;
+  memcpy(B, A, m*m*sizeof(LM_REAL));
+  info = ATLAS_POTRF(CblasRowMajor, CblasUpper, m, B, m);
+  info = ATLAS_POTRI(CblasRowMajor, CblasUpper, m, B, m);
 
-  /* calculate required memory size */
+/* calculate required memory size *
   idx_sz=m;
   a_sz=m*m;
   x_sz=m;
@@ -447,10 +459,10 @@ LM_REAL *a, *x, *work, max, sum, tmp;
   x=a + a_sz;
   work=x + x_sz;
 
-  /* avoid destroying A by copying it to a */
+  * avoid destroying A by copying it to a *
   for(i=0; i<a_sz; ++i) a[i]=A[i];
 
-  /* compute the LU decomposition of a row permutation of matrix a; the permutation itself is saved in idx[] */
+  * compute the LU decomposition of a row permutation of matrix a; the permutation itself is saved in idx[] *
 	for(i=0; i<m; ++i){
 		max=0.0;
 		for(j=0; j<m; ++j)
@@ -501,9 +513,9 @@ LM_REAL *a, *x, *work, max, sum, tmp;
 		}
 	}
 
-  /* The decomposition has now replaced a. Solve the m linear systems using
+  * The decomposition has now replaced a. Solve the m linear systems using
    * forward and back substitution
-   */
+   *
   for(l=0; l<m; ++l){
     for(i=0; i<m; ++i) x[i]=0.0;
     x[l]=CNST(1.0);
@@ -532,7 +544,7 @@ LM_REAL *a, *x, *work, max, sum, tmp;
       B[i*m+l]=x[i];
   }
 
-  free(buf);
+  free(buf);*/
 
   return 1;
 }

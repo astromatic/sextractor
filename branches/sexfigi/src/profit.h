@@ -9,7 +9,7 @@
 *
 *	Contents:	Include file for profit.c.
 *
-*	Last modify:	26/04/2008
+*	Last modify:	29/04/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -161,6 +161,7 @@ void		prof_add(profstruct *prof, profitstruct *profit),
 			picstruct *field, picstruct *wfield,
 			objstruct *obj, obj2struct *obj2),
 		profit_convolve(profitstruct *profit),
+		profit_covarunboundtobound(profitstruct *profit),
 		profit_end(profitstruct *profit),
 		profit_evaluate(double *par, double *fvec, int m, int n,
 			void *adata),

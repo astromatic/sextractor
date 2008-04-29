@@ -9,7 +9,7 @@
 *
 *	Contents:	Fit an arbitrary profile combination to a detection.
 *
-*	Last modify:	27/04/2008
+*	Last modify:	29/04/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -162,7 +162,7 @@ OUTPUT	Pointer to an allocated fit structure (containing details about the
 	fit).
 NOTES	It is a modified version of the lm_minimize() of lmfit.
 AUTHOR	E. Bertin (IAP)
-VERSION	27/04/2008
+VERSION	29/04/2008
  ***/
 void	profit_fit(profitstruct *profit,
 		picstruct *field, picstruct *wfield,
@@ -270,6 +270,9 @@ the_gal++;
       obj2->prof_flag |= PROFIT_FLIPPED;
     }  
 
+/* Convert covariance matrix to bound space */
+  profit_covarunboundtobound(profit);
+
 /* Equate param and paraminit vectors to avoid confusion later on */
   for (p=0; p<profit->nparam; p++)
     profit->param[p] = profit->paraminit[p];
@@ -367,7 +370,12 @@ the_gal++;
   free(profit->objweight);
   free(profit->resi);
   free(oldparaminit);
-
+//for (iy=0; iy<profit->nparam;iy++)
+//{
+//for (ix=0; ix<profit->nparam;ix++)
+//printf("%g ", profit->covar[iy*profit->nparam+ix]);
+//printf("\n");
+//}
   return;
   }
 
@@ -468,6 +476,7 @@ int	profit_minimize(profitstruct *profit, int niter)
   m = profit->nresi;
 
   memset(profit->resi, 0, profit->nresi*sizeof(double));
+  memset(profit->covar, 0, profit->nparam*profit->nparam*sizeof(double));
   profit_boundtounbound(profit, profit->paraminit);
 
 /* Perform fit */
@@ -1434,7 +1443,7 @@ int	profit_setparam(profitstruct *profit, paramenum paramtype,
 
   
 /****** profit_boundtounbound *************************************************
-PROTO	void profit_boundtounbound(profitstruct *profit)
+PROTO	void profit_boundtounbound(profitstruct *profit, double *param)
 PURPOSE	Convert parameters from bounded to unbounded space.
 INPUT	Pointer to the profit structure.
 OUTPUT	-.
@@ -1461,7 +1470,7 @@ void	profit_boundtounbound(profitstruct *profit, double *param)
 
 
 /****** profit_unboundtobound *************************************************
-PROTO	void profit_unboundtobound(profitstruct *profit)
+PROTO	void profit_unboundtobound(profitstruct *profit, double *param)
 PURPOSE	Convert parameters from unbounded to bounded space.
 INPUT	Pointer to the profit structure.
 OUTPUT	-.
@@ -1478,6 +1487,48 @@ void	profit_unboundtobound(profitstruct *profit, double *param)
       param[p] = (profit->parammax[p] - profit->parammin[p])
 		/ (1.0 + exp(-(param[p]>200.0? 200.0 : param[p])))
 		+ profit->parammin[p];
+
+  return;
+  }
+
+
+/****** profit_covarunboundtobound ********************************************
+PROTO	void profit_covarunboundtobound(profitstruct *profit)
+PURPOSE	Convert covariance matrix from unbounded to bounded space.
+INPUT	Pointer to the profit structure.
+OUTPUT	-.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	29/04/2008
+ ***/
+void	profit_covarunboundtobound(profitstruct *profit)
+  {
+   double	*covar, *dydx,*x,*xmin,*xmax,
+		dxmin, dxmax;
+   int		p,p1,p2, nparam;
+
+  nparam = profit->nparam;
+  QMALLOC(dydx, double, nparam);
+  x = profit->paraminit;
+  xmin = profit->parammin;
+  xmax = profit->parammax;
+  for (p=0; p<profit->nparam; p++)
+    if (xmin[p]!=xmax[p])
+      {
+      dxmin = x[p] - xmin[p];
+      dxmax= xmax[p] - x[p];
+      dydx[p] = (fabs(dxmin) > 1.0/BIG ? 1.0/dxmin : BIG)
+		+ (fabs(dxmax) > 1.0/BIG ? 1.0/dxmax : BIG);
+      }
+    else
+      dydx[p] = 1.0;
+
+  covar = profit->covar;
+  for (p2=0; p2<nparam; p2++)
+    for (p1=0; p1<nparam; p1++)
+      *(covar++) *= dydx[p1]*dydx[p2];
+
+  free(dydx);
 
   return;
   }
