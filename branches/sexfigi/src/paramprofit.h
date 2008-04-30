@@ -9,7 +9,7 @@
 *
 *	Contents:	Profile-fitting parameter list for catalog data.
 *
-*	Last modify:	26/04/2008
+*	Last modify:	30/04/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -17,8 +17,12 @@
 
 
   {"VECTOR_PROF", "Profile-fitting coefficients",
-	&outobj2.prof_vector, H_FLOAT, T_FLOAT, "%8.2f", "",
+	&outobj2.prof_vector, H_FLOAT, T_FLOAT, "%12.4g", "",
 	"stat.fit.param;src.morph.param", "", 1, &prefs.prof_vectorsize},
+  {"VECTOR_PROFERR", "Profile-fitting coefficient uncertainties",
+	&outobj2.prof_errvector, H_FLOAT, T_FLOAT, "%12.4g", "",
+	"stat.stdev;stat.fit;src.morph.param", "", 1,
+	&prefs.prof_errvectorsize},
   {"CHI2_PROF", "Reduced Chi2 of the fit",
 	&outobj2.prof_chi2, H_FLOAT, T_FLOAT, "%12.7g", "",
 	"stat.fit.chi2;src.morph", ""},

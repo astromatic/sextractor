@@ -424,8 +424,8 @@ int info, rank, worksz, *iwork, iworksz;
 #include        "config.h"
 #endif
 #include        ATLAS_LAPACK_H
-#define ATLAS_POTRF	LM_CAT_(clapack_, LM_ADD_PREFIX(potrf))
-#define ATLAS_POTRI	LM_CAT_(clapack_, LM_ADD_PREFIX(potri))
+#define ATLAS_GETRF	LM_CAT_(clapack_, LM_ADD_PREFIX(getrf))
+#define ATLAS_GETRI	LM_CAT_(clapack_, LM_ADD_PREFIX(getri))
 #define GETRF LM_ADD_PREFIX(getrf_)
 #define GETRS LM_ADD_PREFIX(getri_)
 extern int GETRF(int *m, int *n, LM_REAL *a, int *lda, int *ipiv, int *info);
@@ -434,11 +434,14 @@ extern int GETRI(int *m, int *n, LM_REAL *a, int *lda, int *ipiv, int *info);
 
 static int LEVMAR_LUINVERSE(LM_REAL *A, LM_REAL *B, int m)
 {
-  int	info;
+  int	*ipiv,
+	info;
 
+  ipiv = malloc(m*sizeof(int));
   memcpy(B, A, m*m*sizeof(LM_REAL));
-  info = ATLAS_POTRF(CblasRowMajor, CblasUpper, m, B, m);
-  info = ATLAS_POTRI(CblasRowMajor, CblasUpper, m, B, m);
+  info = ATLAS_GETRF(CblasRowMajor, m, m, B, m, ipiv);
+  info = ATLAS_GETRI(CblasRowMajor, m, B, m, ipiv);
+  free(ipiv);
 
 /* calculate required memory size *
   idx_sz=m;

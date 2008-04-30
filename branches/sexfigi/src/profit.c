@@ -9,7 +9,7 @@
 *
 *	Contents:	Fit an arbitrary profile combination to a detection.
 *
-*	Last modify:	29/04/2008
+*	Last modify:	30/04/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -162,7 +162,7 @@ OUTPUT	Pointer to an allocated fit structure (containing details about the
 	fit).
 NOTES	It is a modified version of the lm_minimize() of lmfit.
 AUTHOR	E. Bertin (IAP)
-VERSION	29/04/2008
+VERSION	30/04/2008
  ***/
 void	profit_fit(profitstruct *profit,
 		picstruct *field, picstruct *wfield,
@@ -302,6 +302,11 @@ the_gal++;
     for (p=0; p<profit->nparam; p++)
       obj2->prof_vector[p]= profit->param[p];
     }
+  if (FLAG(obj2.prof_errvector))
+    {
+    for (p=0; p<profit->nparam; p++)
+      obj2->prof_errvector[p]= sqrt(profit->covar[p*(profit->nparam+1)]);
+    }
 
   obj2->prof_niter = profit->niter;
   if ((param=profit->paramlist[PARAM_X]))
@@ -370,12 +375,9 @@ the_gal++;
   free(profit->objweight);
   free(profit->resi);
   free(oldparaminit);
-//for (iy=0; iy<profit->nparam;iy++)
-//{
 //for (ix=0; ix<profit->nparam;ix++)
-//printf("%g ", profit->covar[iy*profit->nparam+ix]);
+//printf("%10.5f ", sqrt(profit->covar[ix*profit->nparam+ix]));
 //printf("\n");
-//}
   return;
   }
 
@@ -1499,16 +1501,16 @@ INPUT	Pointer to the profit structure.
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	29/04/2008
+VERSION	30/04/2008
  ***/
 void	profit_covarunboundtobound(profitstruct *profit)
   {
-   double	*covar, *dydx,*x,*xmin,*xmax,
+   double	*covar, *dxdy,*x,*xmin,*xmax,
 		dxmin, dxmax;
    int		p,p1,p2, nparam;
 
   nparam = profit->nparam;
-  QMALLOC(dydx, double, nparam);
+  QMALLOC(dxdy, double, nparam);
   x = profit->paraminit;
   xmin = profit->parammin;
   xmax = profit->parammax;
@@ -1517,18 +1519,18 @@ void	profit_covarunboundtobound(profitstruct *profit)
       {
       dxmin = x[p] - xmin[p];
       dxmax= xmax[p] - x[p];
-      dydx[p] = (fabs(dxmin) > 1.0/BIG ? 1.0/dxmin : BIG)
-		+ (fabs(dxmax) > 1.0/BIG ? 1.0/dxmax : BIG);
+      dxdy[p] = (fabs(dxmin) < 1.0/BIG && fabs(dxmax) < 1.0/BIG) ?
+		0.0 : dxmin*dxmax/(dxmin+dxmax);
       }
     else
-      dydx[p] = 1.0;
+      dxdy[p] = 1.0;
 
   covar = profit->covar;
   for (p2=0; p2<nparam; p2++)
     for (p1=0; p1<nparam; p1++)
-      *(covar++) *= dydx[p1]*dydx[p2];
+      *(covar++) *= dxdy[p1]*dxdy[p2];
 
-  free(dydx);
+  free(dxdy);
 
   return;
   }

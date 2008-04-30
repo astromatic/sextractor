@@ -109,6 +109,7 @@ void	makeit()
     NFPRINTF(OUTPUT, "Preparing profile models");
     theprofit = profit_init(thepsf);
     changecatparamarrays("VECTOR_PROF", &theprofit->nparam, 1);
+    changecatparamarrays("VECTOR_PROFERR", &theprofit->nparam, 1);
     QPRINTF(OUTPUT, "Fitting model: ");
     for (i=0; i<theprofit->nprof; i++)
       {

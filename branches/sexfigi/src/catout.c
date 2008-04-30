@@ -9,7 +9,7 @@
 *
 *	Contents:	functions for output of catalog data.
 *
-*	Last modify:	27/04/2008
+*	Last modify:	30/04/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -221,8 +221,8 @@ void	updateparamflags()
   FLAG(obj2.prof_mx2) |= FLAG(obj2.prof_my2) | FLAG(obj2.prof_mxy)
 			| FLAG(obj2.prof_e1) |FLAG(obj2.prof_e2)
 			| FLAG(obj2.prof_eps1) |FLAG(obj2.prof_eps2);
-  FLAG(obj2.prof_chi2) |= FLAG(obj2.prof_niter) | FLAG(obj2.prof_vector)
-			| FLAG(obj2.prof_flag)
+  FLAG(obj2.prof_chi2) |= FLAG(obj2.prof_niter) | FLAG(obj2.prof_flag)
+			| FLAG(obj2.prof_vector) | FLAG(obj2.prof_errvector)
 			| FLAG(obj2.x_prof) | FLAG(obj2.y_prof)
 			| FLAG(obj2.prof_mx2);
   FLAG(obj2.prof_arms_flux) |= FLAG(obj2.prof_arms_mag)
@@ -499,7 +499,7 @@ void	initcat(void)
           fprintf(ascfile, "# %3d %-22.22s %-58.58s [%s]\n",
 		n, key->name,key->comment, key->unit);
         else
-          fprintf(ascfile, "# %3d %-22.22s %58.58s\n",
+          fprintf(ascfile, "# %3d %-22.22s %-58.58s\n",
 		n, key->name,key->comment);
         n += key->nbytes/t_size[key->ttype];
         }
