@@ -8475,7 +8475,7 @@ fi
 echo "$as_me:$LINENO: result: $ac_cv_lib_fftw3f_fftwf_execute" >&5
 echo "${ECHO_T}$ac_cv_lib_fftw3f_fftwf_execute" >&6
 if test $ac_cv_lib_fftw3f_fftwf_execute = yes; then
-  acx_fftwf_ok=yes
+  acx_fftw_ok=yes
 else
   acx_fftw_ok=no
 fi
@@ -8644,7 +8644,7 @@ else
   acx_fftw_ok=no
 fi
 
-        if test x$acx_fftwft_ok = xyes; then
+        if test x$acx_fftw_ok = xyes; then
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_FFTWFT 1
