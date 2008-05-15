@@ -2,7 +2,7 @@
 // 
 //  Demonstration driver program for the Levenberg - Marquardt minimization
 //  algorithm
-//  Copyright (C) 2004-05  Manolis Lourakis (lourakis@ics.forth.gr)
+//  Copyright (C) 2004-05  Manolis Lourakis (lourakis at ics forth gr)
 //  Institute of Computer Science, Foundation for Research & Technology - Hellas
 //  Heraklion, Crete, Greece.
 //
@@ -20,7 +20,7 @@
 
 /******************************************************************************** 
  * Levenberg-Marquardt minimization demo driver. Only the double precision versions
- * are tested here. See the Meyer case for an example of verifying the jacobian 
+ * are tested here. See the Meyer case for an example of verifying the Jacobian 
  ********************************************************************************/
 
 #include <stdio.h>
@@ -30,8 +30,12 @@
 
 #include "lm.h"
 
+#ifndef LM_DBL_PREC
+#error Demo program assumes that levmar has been compiled with double precision, see LM_DBL_PREC!
+#endif
 
-/* Sample functions to be minimized with LM and their jacobians.
+
+/* Sample functions to be minimized with LM and their Jacobians.
  * More test functions at http://www.csit.fsu.edu/~burkardt/f_src/test_nls/test_nls.html
  * Check also the CUTE problems collection at ftp://ftp.numerical.rl.ac.uk/pub/cute/;
  * CUTE is searchable through http://numawww.mathematik.tu-darmstadt.de:8081/opti/select.html
@@ -367,7 +371,7 @@ register int j=0;
  * constr1: 2 <= p[0] <=50;
  * constr2: -50 <= p[1] <=50;
  *
- * Original HS21 has the additional contraint 10*p[0] - p[1] >= 10; which is inactive
+ * Original HS21 has the additional constraint 10*p[0] - p[1] >= 10; which is inactive
  * at the solution, so it is dropped here.
  */
 void hs21(double *p, double *x, int m, int n, void *data)
@@ -681,7 +685,7 @@ char *probname[]={
 };
 
   opts[0]=LM_INIT_MU; opts[1]=1E-15; opts[2]=1E-15; opts[3]=1E-20;
-  opts[4]=LM_DIFF_DELTA; // relevant only if the finite difference jacobian version is used 
+  opts[4]=LM_DIFF_DELTA; // relevant only if the finite difference Jacobian version is used 
 
   /* uncomment the appropriate line below to select a minimization problem */
   problem=
@@ -711,7 +715,7 @@ char *probname[]={
       //14; // equilibrium combustion problem
 #ifdef HAVE_LAPACK
       //15; // Hock - Schittkowski modified problem 52
-      // 16; // Schittkowski modified problem 235
+      //16; // Schittkowski modified problem 235
       //17; // Boggs & Tolle modified problem #7
 #endif /* HAVE_LAPACK */
 				
@@ -724,8 +728,8 @@ char *probname[]={
     m=2; n=2;
     p[0]=-1.2; p[1]=1.0;
     for(i=0; i<n; i++) x[i]=0.0;
-    ret=dlevmar_der(ros, jacros, p, x, m, n, 1000, opts, info, NULL, NULL, NULL); // with analytic jacobian
-    //ret=dlevmar_dif(ros, p, x, m, n, 1000, opts, info, NULL, NULL, NULL);  // no jacobian
+    ret=dlevmar_der(ros, jacros, p, x, m, n, 1000, opts, info, NULL, NULL, NULL); // with analytic Jacobian
+    //ret=dlevmar_dif(ros, p, x, m, n, 1000, opts, info, NULL, NULL, NULL);  // no Jacobian
   break;
 
   case 1:
@@ -733,8 +737,8 @@ char *probname[]={
     m=2; n=3;
     p[0]=-1.2; p[1]=1.0;
     for(i=0; i<n; i++) x[i]=0.0;
-    ret=dlevmar_der(modros, jacmodros, p, x, m, n, 1000, opts, info, NULL, NULL, NULL); // with analytic jacobian
-    //ret=dlevmar_dif(modros, p, x, m, n, 1000, opts, info, NULL, NULL, NULL);  // no jacobian
+    ret=dlevmar_der(modros, jacmodros, p, x, m, n, 1000, opts, info, NULL, NULL, NULL); // with analytic Jacobian
+    //ret=dlevmar_dif(modros, p, x, m, n, 1000, opts, info, NULL, NULL, NULL);  // no Jacobian
   break;
 
   case 2:
@@ -742,16 +746,16 @@ char *probname[]={
     m=2; n=2;
     p[0]=3.0; p[1]=1.0;
     for(i=0; i<n; i++) x[i]=0.0;
-    ret=dlevmar_der(powell, jacpowell, p, x, m, n, 1000, opts, info, NULL, NULL, NULL); // with analytic jacobian
-    //ret=dlevmar_dif(powell, p, x, m, n, 1000, opts, info, NULL, NULL, NULL);		// no jacobian
+    ret=dlevmar_der(powell, jacpowell, p, x, m, n, 1000, opts, info, NULL, NULL, NULL); // with analytic Jacobian
+    //ret=dlevmar_dif(powell, p, x, m, n, 1000, opts, info, NULL, NULL, NULL);		// no Jacobian
   break;
 
   case 3:
-  /* Woods's function */
+  /* Wood's function */
     m=4; n=6;
     p[0]=-3.0; p[1]=-1.0; p[2]=-3.0; p[3]=-1.0;
     for(i=0; i<n; i++) x[i]=0.0;
-    ret=dlevmar_dif(wood, p, x, m, n, 1000, opts, info, NULL, NULL, NULL);  // no jacobian
+    ret=dlevmar_dif(wood, p, x, m, n, 1000, opts, info, NULL, NULL, NULL);  // no Jacobian
   break;
 
   case 4:
@@ -762,7 +766,7 @@ char *probname[]={
     x[4]=16.370;	x[5]=13.720; x[6]=11.540; x[7]=9.744;
     x[8]=8.261;	x[9]=7.030; x[10]=6.005; x[11]=5.147;
     x[12]=4.427;	x[13]=3.820; x[14]=3.307; x[15]=2.872;
-    //ret=dlevmar_der(meyer, jacmeyer, p, x, m, n, 1000, opts, info, NULL, NULL, NULL); // with analytic jacobian
+    //ret=dlevmar_der(meyer, jacmeyer, p, x, m, n, 1000, opts, info, NULL, NULL, NULL); // with analytic Jacobian
 
    { double *work, *covar;
     work=malloc((LM_DIF_WORKSZ(m, n)+m*m)*sizeof(double));
@@ -772,7 +776,7 @@ char *probname[]={
     }
     covar=work+LM_DIF_WORKSZ(m, n);
 
-    ret=dlevmar_dif(meyer, p, x, m, n, 1000, opts, info, work, covar, NULL); // no jacobian, caller allocates work memory, covariance estimated
+    ret=dlevmar_dif(meyer, p, x, m, n, 1000, opts, info, work, covar, NULL); // no Jacobian, caller allocates work memory, covariance estimated
 
     printf("Covariance of the fit:\n");
     for(i=0; i<m; ++i){
@@ -785,7 +789,7 @@ char *probname[]={
     free(work);
    }
 
-/* uncomment the following block to verify jacobian */
+/* uncomment the following block to verify Jacobian */
 /*
    {
     double err[16];
@@ -801,8 +805,8 @@ char *probname[]={
     m=3; n=3;
     p[0]=-1.0; p[1]=0.0; p[2]=0.0;
     for(i=0; i<n; i++) x[i]=0.0;
-    ret=dlevmar_der(helval, jachelval, p, x, m, n, 1000, opts, info, NULL, NULL, NULL); // with analytic jacobian
-    //ret=dlevmar_dif(helval, p, x, m, n, 1000, opts, info, NULL, NULL, NULL);  // no jacobian
+    ret=dlevmar_der(helval, jachelval, p, x, m, n, 1000, opts, info, NULL, NULL, NULL); // with analytic Jacobian
+    //ret=dlevmar_dif(helval, p, x, m, n, 1000, opts, info, NULL, NULL, NULL);  // no Jacobian
   break;
 
 #ifdef HAVE_LAPACK
@@ -817,8 +821,8 @@ char *probname[]={
       double A[3*5]={1.0, 3.0, 0.0, 0.0, 0.0,  0.0, 0.0, 1.0, 1.0, -2.0,  0.0, 1.0, 0.0, 0.0, -1.0},
              b[3]={0.0, 0.0, 0.0};
 
-    ret=dlevmar_lec_der(bt3, jacbt3, p, x, m, n, A, b, 3, 1000, opts, info, NULL, NULL, NULL); // lin. constraints, analytic jacobian
-    //ret=dlevmar_lec_dif(bt3, p, x, m, n, A, b, 3, 1000, opts, info, NULL, NULL, NULL); // lin. constraints, no jacobian
+    ret=dlevmar_lec_der(bt3, jacbt3, p, x, m, n, A, b, 3, 1000, opts, info, NULL, NULL, NULL); // lin. constraints, analytic Jacobian
+    //ret=dlevmar_lec_dif(bt3, p, x, m, n, A, b, 3, 1000, opts, info, NULL, NULL, NULL); // lin. constraints, no Jacobian
     }
   break;
   case 7:
@@ -831,8 +835,8 @@ char *probname[]={
       double A[1*3]={1.0, 2.0, 3.0},
              b[1]={1.0};
 
-    ret=dlevmar_lec_der(hs28, jachs28, p, x, m, n, A, b, 1, 1000, opts, info, NULL, NULL, NULL); // lin. constraints, analytic jacobian
-    //ret=dlevmar_lec_dif(hs28, p, x, m, n, A, b, 1, 1000, opts, info, NULL, NULL, NULL); // lin. constraints, no jacobian
+    ret=dlevmar_lec_der(hs28, jachs28, p, x, m, n, A, b, 1, 1000, opts, info, NULL, NULL, NULL); // lin. constraints, analytic Jacobian
+    //ret=dlevmar_lec_dif(hs28, p, x, m, n, A, b, 1, 1000, opts, info, NULL, NULL, NULL); // lin. constraints, no Jacobian
     }
   break;
   case 8:
@@ -846,8 +850,8 @@ char *probname[]={
       double A[2*5]={1.0, 1.0, 1.0, 1.0, 1.0,  0.0, 0.0, 1.0, -2.0, -2.0},
              b[2]={5.0, -3.0};
 
-    ret=dlevmar_lec_der(hs48, jachs48, p, x, m, n, A, b, 2, 1000, opts, info, NULL, NULL, NULL); // lin. constraints, analytic jacobian
-    //ret=dlevmar_lec_dif(hs48, p, x, m, n, A, b, 2, 1000, opts, info, NULL, NULL, NULL); // lin. constraints, no jacobian
+    ret=dlevmar_lec_der(hs48, jachs48, p, x, m, n, A, b, 2, 1000, opts, info, NULL, NULL, NULL); // lin. constraints, analytic Jacobian
+    //ret=dlevmar_lec_dif(hs48, p, x, m, n, A, b, 2, 1000, opts, info, NULL, NULL, NULL); // lin. constraints, no Jacobian
     }
   break;
   case 9:
@@ -861,8 +865,8 @@ char *probname[]={
       double A[3*5]={1.0, 3.0, 0.0, 0.0, 0.0,  0.0, 0.0, 1.0, 1.0, -2.0,  0.0, 1.0, 0.0, 0.0, -1.0},
              b[3]={4.0, 0.0, 0.0};
 
-    ret=dlevmar_lec_der(hs51, jachs51, p, x, m, n, A, b, 3, 1000, opts, info, NULL, NULL, NULL); // lin. constraints, analytic jacobian
-    //ret=dlevmar_lec_dif(hs51, p, x, m, n, A, b, 3, 1000, opts, info, NULL, NULL, NULL); // lin. constraints, no jacobian
+    ret=dlevmar_lec_der(hs51, jachs51, p, x, m, n, A, b, 3, 1000, opts, info, NULL, NULL, NULL); // lin. constraints, analytic Jacobian
+    //ret=dlevmar_lec_dif(hs51, p, x, m, n, A, b, 3, 1000, opts, info, NULL, NULL, NULL); // lin. constraints, no Jacobian
     }
   break;
 #endif /* HAVE_LAPACK */
@@ -872,14 +876,14 @@ char *probname[]={
     m=2; n=2;
     p[0]=-2.0; p[1]=1.0;
     for(i=0; i<n; i++) x[i]=0.0;
-    //ret=dlevmar_der(hs01, jachs01, p, x, m, n, 1000, opts, info, NULL, NULL, NULL); // with analytic jacobian
+    //ret=dlevmar_der(hs01, jachs01, p, x, m, n, 1000, opts, info, NULL, NULL, NULL); // with analytic Jacobian
     {
       double lb[2], ub[2];
 
       lb[0]=-DBL_MAX; lb[1]=-1.5;
       ub[0]=ub[1]=DBL_MAX;
 
-      ret=dlevmar_bc_der(hs01, jachs01, p, x, m, n, lb, ub, 1000, opts, info, NULL, NULL, NULL); // with analytic jacobian
+      ret=dlevmar_bc_der(hs01, jachs01, p, x, m, n, lb, ub, 1000, opts, info, NULL, NULL, NULL); // with analytic Jacobian
     }
     break;
   case 11:
@@ -887,14 +891,14 @@ char *probname[]={
     m=2; n=2;
     p[0]=-1.0; p[1]=-1.0;
     for(i=0; i<n; i++) x[i]=0.0;
-    //ret=dlevmar_der(hs21, jachs21, p, x, m, n, 1000, opts, info, NULL, NULL, NULL); // with analytic jacobian
+    //ret=dlevmar_der(hs21, jachs21, p, x, m, n, 1000, opts, info, NULL, NULL, NULL); // with analytic Jacobian
     {
       double lb[2], ub[2];
 
       lb[0]=2.0; lb[1]=-50.0;
       ub[0]=50.0; ub[1]=50.0;
 
-      ret=dlevmar_bc_der(hs21, jachs21, p, x, m, n, lb, ub, 1000, opts, info, NULL, NULL, NULL); // with analytic jacobian
+      ret=dlevmar_bc_der(hs21, jachs21, p, x, m, n, lb, ub, 1000, opts, info, NULL, NULL, NULL); // with analytic Jacobian
     }
     break;
   case 12:
@@ -902,7 +906,7 @@ char *probname[]={
     m=4; n=4;
     p[0]=p[1]=p[2]=p[3]=0.1;
     for(i=0; i<n; i++) x[i]=0.0;
-    //ret=dlevmar_der(hatfldb, jachatfldb, p, x, m, n, 1000, opts, info, NULL, NULL, NULL); // with analytic jacobian
+    //ret=dlevmar_der(hatfldb, jachatfldb, p, x, m, n, 1000, opts, info, NULL, NULL, NULL); // with analytic Jacobian
     {
       double lb[4], ub[4];
 
@@ -911,7 +915,7 @@ char *probname[]={
       ub[0]=ub[2]=ub[3]=DBL_MAX;
       ub[1]=0.8;
 
-      ret=dlevmar_bc_der(hatfldb, jachatfldb, p, x, m, n, lb, ub, 1000, opts, info, NULL, NULL, NULL); // with analytic jacobian
+      ret=dlevmar_bc_der(hatfldb, jachatfldb, p, x, m, n, lb, ub, 1000, opts, info, NULL, NULL, NULL); // with analytic Jacobian
     }
     break;
   case 13:
@@ -919,7 +923,7 @@ char *probname[]={
     m=4; n=4;
     p[0]=p[1]=p[2]=p[3]=0.9;
     for(i=0; i<n; i++) x[i]=0.0;
-    //ret=dlevmar_der(hatfldc, jachatfldc, p, x, m, n, 1000, opts, info, NULL, NULL, NULL); // with analytic jacobian
+    //ret=dlevmar_der(hatfldc, jachatfldc, p, x, m, n, 1000, opts, info, NULL, NULL, NULL); // with analytic Jacobian
     {
       double lb[4], ub[4];
 
@@ -927,7 +931,7 @@ char *probname[]={
 
       ub[0]=ub[1]=ub[2]=ub[3]=10.0;
 
-      ret=dlevmar_bc_der(hatfldc, jachatfldc, p, x, m, n, lb, ub, 1000, opts, info, NULL, NULL, NULL); // with analytic jacobian
+      ret=dlevmar_bc_der(hatfldc, jachatfldc, p, x, m, n, lb, ub, 1000, opts, info, NULL, NULL, NULL); // with analytic Jacobian
     }
     break;
   case 14:
@@ -935,7 +939,7 @@ char *probname[]={
     m=5; n=5;
     p[0]=p[1]=p[2]=p[3]=p[4]=0.0001;
     for(i=0; i<n; i++) x[i]=0.0;
-    //ret=dlevmar_der(combust, jaccombust, p, x, m, n, 1000, opts, info, NULL, NULL, NULL); // with analytic jacobian
+    //ret=dlevmar_der(combust, jaccombust, p, x, m, n, 1000, opts, info, NULL, NULL, NULL); // with analytic Jacobian
     {
       double lb[5], ub[5];
 
@@ -943,7 +947,7 @@ char *probname[]={
 
       ub[0]=ub[1]=ub[2]=ub[3]=ub[4]=100.0;
 
-      ret=dlevmar_bc_der(combust, jaccombust, p, x, m, n, lb, ub, 5000, opts, info, NULL, NULL, NULL); // with analytic jacobian
+      ret=dlevmar_bc_der(combust, jaccombust, p, x, m, n, lb, ub, 5000, opts, info, NULL, NULL, NULL); // with analytic Jacobian
     }
     break;
 #ifdef HAVE_LAPACK
@@ -965,8 +969,8 @@ char *probname[]={
       lb[0]=-0.09; lb[1]=0.0; lb[2]=-DBL_MAX; lb[3]=-0.2; lb[4]=0.0;
       ub[0]=DBL_MAX; ub[1]=0.3; ub[2]=0.25; ub[3]=0.3; ub[4]=0.3;
 
-      ret=dlevmar_blec_der(modhs52, jacmodhs52, p, x, m, n, lb, ub, A, b, 3, weights, 1000, opts, info, NULL, NULL, NULL); // box & lin. constraints, analytic jacobian
-      //ret=dlevmar_blec_dif(modhs52, p, x, m, n, lb, ub, A, b, 3, weights, 1000, opts, info, NULL, NULL, NULL); // box & lin. constraints, no jacobian
+      ret=dlevmar_blec_der(modhs52, jacmodhs52, p, x, m, n, lb, ub, A, b, 3, weights, 1000, opts, info, NULL, NULL, NULL); // box & lin. constraints, analytic Jacobian
+      //ret=dlevmar_blec_dif(modhs52, p, x, m, n, lb, ub, A, b, 3, weights, 1000, opts, info, NULL, NULL, NULL); // box & lin. constraints, no Jacobian
     }
     break;
   case 16:
@@ -984,8 +988,8 @@ char *probname[]={
       lb[0]=-DBL_MAX; lb[1]=0.1; lb[2]=0.7;
       ub[0]=DBL_MAX; ub[1]=2.9; ub[2]=DBL_MAX;
 
-      ret=dlevmar_blec_der(mods235, jacmods235, p, x, m, n, lb, ub, A, b, 2, NULL, 1000, opts, info, NULL, NULL, NULL); // box & lin. constraints, analytic jacobian
-      //ret=dlevmar_blec_dif(mods235, p, x, m, n, lb, ub, A, b, 2, NULL, 1000, opts, info, NULL, NULL, NULL); // box & lin. constraints, no jacobian
+      ret=dlevmar_blec_der(mods235, jacmods235, p, x, m, n, lb, ub, A, b, 2, NULL, 1000, opts, info, NULL, NULL, NULL); // box & lin. constraints, analytic Jacobian
+      //ret=dlevmar_blec_dif(mods235, p, x, m, n, lb, ub, A, b, 2, NULL, 1000, opts, info, NULL, NULL, NULL); // box & lin. constraints, no Jacobian
     }
     break;
   case 17:
@@ -1003,8 +1007,8 @@ char *probname[]={
       lb[0]=-DBL_MAX; lb[1]=-DBL_MAX; lb[2]=-DBL_MAX; lb[3]=-DBL_MAX; lb[4]=-0.3;
       ub[0]=0.7;      ub[1]= DBL_MAX; ub[2]= DBL_MAX; ub[3]= DBL_MAX; ub[4]=DBL_MAX;
 
-      ret=dlevmar_blec_der(modbt7, jacmodbt7, p, x, m, n, lb, ub, A, b, 3, NULL, 1000, opts, info, NULL, NULL, NULL); // box & lin. constraints, analytic jacobian
-      //ret=dlevmar_blec_dif(modbt7, p, x, m, n, lb, ub, A, b, 3, NULL, 10000, opts, info, NULL, NULL, NULL); // box & lin. constraints, no jacobian
+      ret=dlevmar_blec_der(modbt7, jacmodbt7, p, x, m, n, lb, ub, A, b, 3, NULL, 1000, opts, info, NULL, NULL, NULL); // box & lin. constraints, analytic Jacobian
+      //ret=dlevmar_blec_dif(modbt7, p, x, m, n, lb, ub, A, b, 3, NULL, 10000, opts, info, NULL, NULL, NULL); // box & lin. constraints, no Jacobian
     }
     break;
 #endif /* HAVE_LAPACK */

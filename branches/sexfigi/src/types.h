@@ -9,7 +9,7 @@
 *
 *	Contents:	global type definitions.
 *
-*	Last modify:	30/04/2008
+*	Last modify:	10/05/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -314,33 +314,67 @@ typedef struct
   float		prof_eps1, prof_eps2;		/* Profile model ellip.vector */
   float		prof_e1, prof_e2;		/* Profile model ellip.vector */
   float		prof_offset_flux;		/* Background offset */
+  float		prof_offset_fluxerr;		/* RMS error */
   float		prof_spheroid_flux;		/* Spheroid total flux */
+  float		prof_spheroid_fluxerr;		/* RMS error */
   float		prof_spheroid_mag;		/* Spheroid "total" mag */
+  float		prof_spheroid_magerr;		/* RMS error */
   float		prof_spheroid_reff;		/* Spheroid effective radius */
+  float		prof_spheroid_refferr;		/* RMS error */
   float		prof_spheroid_reffw;		/* WORLD spheroid eff. radius */
+  float		prof_spheroid_refferrw;		/* RMS error */
   float		prof_spheroid_aspect;		/* Spheroid aspect ratio */
+  float		prof_spheroid_aspecterr;	/* RMS error */
   float		prof_spheroid_aspectw;		/* WORLD spheroid aspect ratio*/
+  float		prof_spheroid_aspecterrw;	/* RMS error */
   float		prof_spheroid_theta;		/* Spheroid position angle */
+  float		prof_spheroid_thetaerr;		/* RMS error */
   float		prof_spheroid_thetaw;		/* WORLD spheroid pos. angle */
+  float		prof_spheroid_thetaerrw;	/* RMS error */
   float		prof_spheroid_thetas;		/* Sky spheroid pos. angle */
   float		prof_spheroid_theta2000;	/* J2000 spheroid pos. angle */
   float		prof_spheroid_theta1950;	/* B1950 spheroid pos. angle */
   float		prof_spheroid_sersicn;		/* Spheroid Sersic index */
+  float		prof_spheroid_sersicnerr;	/* RMS error */
   float		prof_disk_flux;			/* Disk total flux */
+  float		prof_disk_fluxerr;		/* RMS error */
   float		prof_disk_mag;			/* Disk "total" mag */
+  float		prof_disk_magerr;		/* RMS error */
   float		prof_disk_scale;		/* Disk scale length */
+  float		prof_disk_scaleerr;		/* RMS error */
   float		prof_disk_scalew;		/* WORLD disk scale length */
+  float		prof_disk_scaleerrw;		/* RMS error */
   float		prof_disk_aspect;		/* Disk aspect ratio */
+  float		prof_disk_aspecterr;		/* RMS error */
   float		prof_disk_aspectw;		/* WORLD disk aspect ratio */
+  float		prof_disk_aspecterrw;		/* RMS error */
   float		prof_disk_inclination;		/* Disk inclination */
   float		prof_disk_inclinationw;		/* WORLD disk inclination */
   float		prof_disk_theta;		/* Disk position angle */
+  float		prof_disk_thetaerr;		/* RMS error */
   float		prof_disk_thetaw;		/* WORLD disk position angle */
+  float		prof_disk_thetaerrw;		/* RMS error */
   float		prof_disk_thetas;		/* Sky disk position angle */
   float		prof_disk_theta2000;		/* J2000 disk position angle */
   float		prof_disk_theta1950;		/* B1950 disk position angle */
+  float		prof_bar_flux;			/* Galactic bar total flux */
+  float		prof_bar_fluxerr;		/* RMS error */
+  float		prof_bar_mag;			/* Bar "total" magnitude */
+  float		prof_bar_magerr;		/* RMS error */
+  float		prof_bar_length;		/* Bar length */
+  float		prof_bar_lengthw;		/* WORLD bar length */
+  float		prof_bar_aspect;		/* Bar aspect ratio */
+  float		prof_bar_aspectw;		/* WORLD bar aspect ratio */
+  float		prof_bar_posang;		/* Bar true prosition angle */
+  float		prof_bar_theta;			/* Bar projected angle */
+  float		prof_bar_thetaw;		/* WORLD bar projected angle */
+  float		prof_bar_thetas;		/* Sky bar projected angle */
+  float		prof_bar_theta2000;		/* J2000 bar projected angle */
+  float		prof_bar_theta1950;		/* B1950 bar projected angle */
   float		prof_arms_flux;			/* Spiral arms total flux */
+  float		prof_arms_fluxerr;		/* RMS error */
   float		prof_arms_mag;			/* Arms "total" magnitude */
+  float		prof_arms_magerr;		/* RMS error */
   float		prof_arms_scale;		/* Arms scalelength */
   float		prof_arms_scalew;		/* WORLD arms scalelength */
   float		prof_arms_posang;		/* Arms true position angle */
@@ -352,18 +386,6 @@ typedef struct
   float		prof_arms_start;		/* Arms starting radius */
   float		prof_arms_startw;		/* WORLD arms starting radius */
   float		prof_arms_quadfrac;		/* Arms quadrature fraction */
-  float		prof_bar_flux;			/* Galactic bar total flux */
-  float		prof_bar_mag;			/* Bar "total" magnitude */
-  float		prof_bar_length;		/* Bar length */
-  float		prof_bar_lengthw;		/* WORLD bar length */
-  float		prof_bar_aspect;		/* Bar aspect ratio */
-  float		prof_bar_aspectw;		/* WORLD bar aspect ratio */
-  float		prof_bar_posang;		/* Bar true prosition angle */
-  float		prof_bar_theta;			/* Bar projected angle */
-  float		prof_bar_thetaw;		/* WORLD bar projected angle */
-  float		prof_bar_thetas;		/* Sky bar projected angle */
-  float		prof_bar_theta2000;		/* J2000 bar projected angle */
-  float		prof_bar_theta1950;		/* B1950 bar projected angle */
 /* ---- MEF */
   short		ext_number;			/* FITS extension number */
   }	obj2struct;

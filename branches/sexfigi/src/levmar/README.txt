@@ -1,6 +1,6 @@
     **************************************************************
                                 LEVMAR
-                              version 2.2
+                              version 2.3
                           By Manolis Lourakis
 
                      Institute of Computer Science
@@ -21,7 +21,8 @@ equations:
    NAG, ...) installed, you can use the included LAPACK-based solvers (default).
 
 2) If you don't have LAPACK or decide not to use it, undefine HAVE_LAPACK in lm.h
-   and a LAPACK-free, LU-based linear systems solver will by used.
+   and a LAPACK-free, LU-based linear systems solver will by used. Also, the line
+   setting the variable LAPACKLIBS in the Makefile should be commented out.
 
 It is strongly recommended that you *do* employ LAPACK; if you don't have it already,
 I suggest getting clapack from http://www.netlib.org/clapack. However, LAPACK's
@@ -35,11 +36,15 @@ Technical University of Denmark (http://www.imm.dtu.dk/courses/02611/nllsq.pdf).
 
 LICENSE
 levmar is released under the GNU Public License (GPL), which can be found in the included
-LICENSE file. Note that GPL forbids commercial use. If you are interested in obtaining a 
-commercial license for levmar, please email the author using the address at the end of this
-file.
+LICENSE file. Note that under the terms of GPL, commercial use is allowed only if a software
+employing levmar is also published in source under the GPL. However, if you are interested
+in using levmar in a proprietary commercial apprlication, a commercial license for levmar
+can be obtained by contacting the author using the email address at the end of this file.
 
 COMPILATION
+ - You might first consider setting a few configuration options at the top of
+   lm.h. See the accompanying comments for more details.
+
  - On a Linux/Unix system, typing "make" will build both levmar and the demo
    program using gcc. Alternatively, if Intel's C++ compiler is installed, it
    can be used by typing "make -f Makefile.icc".
@@ -47,6 +52,11 @@ COMPILATION
  - Under Windows and if Visual C is installed & configured for command line
    use, type "nmake /f Makefile.vc" in a cmd window to build levmar and the
    demo program. In case of trouble, read the comments on top of Makefile.vc
+
+ - levmar can also be built under various platforms using the CMake cross-platform
+   build system. The included CMakeLists.txt file can be used to generate makefiles
+   for Unix systems or project files for Windows systems. See http://www.cmake.org
+   for details.
 
 MATLAB INTERFACE
 Since version 2.2, the levmar distrubution includes a matlab interface.
@@ -57,4 +67,4 @@ Axb_core.c is included by Axb.c, to provide single and double precision
 routine versions.
 
 
-Send your comments/bug reports to lourakis@ics.forth.gr
+Send your comments/bug reports to lourakis at ics forth gr

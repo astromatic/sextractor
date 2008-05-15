@@ -1,7 +1,7 @@
 /////////////////////////////////////////////////////////////////////////////////
 // 
 //  Levenberg - Marquardt non-linear minimization algorithm
-//  Copyright (C) 2004-06  Manolis Lourakis (lourakis@ics.forth.gr)
+//  Copyright (C) 2004-06  Manolis Lourakis (lourakis at ics forth gr)
 //  Institute of Computer Science, Foundation for Research & Technology - Hellas
 //  Heraklion, Crete, Greece.
 //
@@ -52,15 +52,16 @@
 #error This file should not be compiled directly!
 #endif
 
+
 #define __MAX__(x, y)   (((x)>=(y))? (x) : (y))
-#define __BC_WEIGHT__   CNST(1E+04)
+#define __BC_WEIGHT__   LM_CNST(1E+04)
 
 #define __BC_INTERVAL__ 0
 #define __BC_LOW__      1
 #define __BC_HIGH__     2
 
 /* precision-specific definitions */
-#define BOX_CHECK LM_ADD_PREFIX(levmar_box_check)
+#define LEVMAR_BOX_CHECK LM_ADD_PREFIX(levmar_box_check)
 #define LMBLEC_DATA LM_ADD_PREFIX(lmblec_data)
 #define LMBLEC_FUNC LM_ADD_PREFIX(lmblec_func)
 #define LMBLEC_JACF LM_ADD_PREFIX(lmblec_jacf)
@@ -68,9 +69,8 @@
 #define LEVMAR_LEC_DIF LM_ADD_PREFIX(levmar_lec_dif)
 #define LEVMAR_BLEC_DER LM_ADD_PREFIX(levmar_blec_der)
 #define LEVMAR_BLEC_DIF LM_ADD_PREFIX(levmar_blec_dif)
-#define TRANS_MAT_MAT_MULT LM_ADD_PREFIX(trans_mat_mat_mult)
 #define LEVMAR_COVAR LM_ADD_PREFIX(levmar_covar)
-#define FDIF_FORW_JAC_APPROX LM_ADD_PREFIX(fdif_forw_jac_approx)
+#define LEVMAR_FDIF_FORW_JAC_APPROX LM_ADD_PREFIX(levmar_fdif_forw_jac_approx)
 
 struct LMBLEC_DATA{
   LM_REAL *x, *lb, *ub, *w;
@@ -98,22 +98,22 @@ register LM_REAL *lb, *ub, *w, tmp;
   for(i=nn, j=0; i<n; ++i, ++j){
     switch(typ[j]){
       case __BC_INTERVAL__:
-        tmp=(CNST(2.0)*p[j]-(lb[j]+ub[j]))/(ub[j]-lb[j]);
-        hx[i]=w[j]*__MAX__(tmp*tmp-CNST(1.0), CNST(0.0));
+        tmp=(LM_CNST(2.0)*p[j]-(lb[j]+ub[j]))/(ub[j]-lb[j]);
+        hx[i]=w[j]*__MAX__(tmp*tmp-LM_CNST(1.0), LM_CNST(0.0));
       break;
 
       case __BC_LOW__:
-        hx[i]=w[j]*__MAX__(lb[j]-p[j], CNST(0.0));
+        hx[i]=w[j]*__MAX__(lb[j]-p[j], LM_CNST(0.0));
       break;
 
       case __BC_HIGH__:
-        hx[i]=w[j]*__MAX__(p[j]-ub[j], CNST(0.0));
+        hx[i]=w[j]*__MAX__(p[j]-ub[j], LM_CNST(0.0));
       break;
     }
   }
 }
 
-/* augmented jacobian */
+/* augmented Jacobian */
 static void LMBLEC_JACF(LM_REAL *p, LM_REAL *jac, int m, int n, void *adata)
 {
 struct LMBLEC_DATA *data=(struct LMBLEC_DATA *)adata;
@@ -140,7 +140,7 @@ register LM_REAL *lb, *ub, *w, tmp;
 
         /* out of interval */
         tmp=ub[j]-lb[j];
-        tmp=CNST(4.0)*(CNST(2.0)*p[j]-(lb[j]+ub[j]))/(tmp*tmp);
+        tmp=LM_CNST(4.0)*(LM_CNST(2.0)*p[j]-(lb[j]+ub[j]))/(tmp*tmp);
         jac[i*m+j]=w[j]*tmp;
       break;
 
@@ -174,7 +174,7 @@ register LM_REAL *lb, *ub, *w, tmp;
  * If no lower bound constraint applies for p[i], use -DBL_MAX/-FLT_MAX for lb[i];
  * If no upper bound constraint applies for p[i], use DBL_MAX/FLT_MAX for ub[i].
  *
- * This function requires an analytic jacobian. In case the latter is unavailable,
+ * This function requires an analytic Jacobian. In case the latter is unavailable,
  * use LEVMAR_BLEC_DIF() bellow
  *
  * Returns the number of iterations (>=0) if successfull, LM_ERROR if failed
@@ -185,16 +185,16 @@ register LM_REAL *lb, *ub, *w, tmp;
  */
 int LEVMAR_BLEC_DER(
   void (*func)(LM_REAL *p, LM_REAL *hx, int m, int n, void *adata), /* functional relation describing measurements. A p \in R^m yields a \hat{x} \in  R^n */
-  void (*jacf)(LM_REAL *p, LM_REAL *j, int m, int n, void *adata),  /* function to evaluate the jacobian \part x / \part p */ 
+  void (*jacf)(LM_REAL *p, LM_REAL *j, int m, int n, void *adata),  /* function to evaluate the Jacobian \part x / \part p */ 
   LM_REAL *p,         /* I/O: initial parameter estimates. On output has the estimated solution */
-  LM_REAL *x,         /* I: measurement vector */
+  LM_REAL *x,         /* I: measurement vector. NULL implies a zero vector */
   int m,              /* I: parameter vector dimension (i.e. #unknowns) */
   int n,              /* I: measurement vector dimension */
   LM_REAL *lb,        /* I: vector of lower bounds. If NULL, no lower bounds apply */
   LM_REAL *ub,        /* I: vector of upper bounds. If NULL, no upper bounds apply */
   LM_REAL *A,         /* I: constraints matrix, kxm */
   LM_REAL *b,         /* I: right hand constraints vector, kx1 */
-  int k,              /* I: number of contraints (i.e. A's #rows) */
+  int k,              /* I: number of constraints (i.e. A's #rows) */
   LM_REAL *wghts,     /* mx1 weights for penalty terms, defaults used if NULL */
   int itmax,          /* I: maximum number of iterations */
   LM_REAL opts[4],    /* I: minim. options [\mu, \epsilon1, \epsilon2, \epsilon3]. Respectively the scale factor for initial \mu,
@@ -211,10 +211,11 @@ int LEVMAR_BLEC_DER(
                       *                                 4 - singular matrix. Restart from current p with increased mu 
                       *                                 5 - no further error reduction is possible. Restart with increased mu
                       *                                 6 - stopped by small ||e||_2
+                      *                                 7 - stopped by invalid (i.e. NaN or Inf) "func" values. This is a user error
                       * info[7]= # function evaluations
-                      * info[8]= # jacobian evaluations
+                      * info[8]= # Jacobian evaluations
                       */
-  LM_REAL *work,     /* working memory, allocate if NULL. If non NULL, should be large enough for LM_BLEC_DER_WORKSZ() reals */
+  LM_REAL *work,     /* working memory at least LM_BLEC_DER_WORKSZ() reals large, allocated if NULL */
   LM_REAL *covar,    /* O: Covariance matrix corresponding to LS solution; mxm. Set to NULL if not needed. */
   void *adata)       /* pointer to possibly additional data, passed uninterpreted to func & jacf.
                       * Set to NULL if not needed
@@ -226,29 +227,38 @@ int LEVMAR_BLEC_DER(
   register int i;
 
   if(!jacf){
-    fprintf(stderr, RCAT("No function specified for computing the jacobian in ", LEVMAR_BLEC_DER)
+    fprintf(stderr, RCAT("No function specified for computing the Jacobian in ", LEVMAR_BLEC_DER)
       RCAT("().\nIf no such function is available, use ", LEVMAR_BLEC_DIF) RCAT("() rather than ", LEVMAR_BLEC_DER) "()\n");
     return LM_ERROR;
   }
 
-  if(!BOX_CHECK(lb, ub, m)){
+  if(!LEVMAR_BOX_CHECK(lb, ub, m)){
     fprintf(stderr, LCAT(LEVMAR_BLEC_DER, "(): at least one lower bound exceeds the upper one\n"));
     return LM_ERROR;
   }
 
-  /* x needs to be extended by m */
-  data.x=(LM_REAL *)malloc((n+2*m)*sizeof(LM_REAL));
-  data.bctype=(int *)malloc(m*sizeof(int));
-  if(!data.x || !data.bctype){
-    fprintf(stderr, LCAT(LEVMAR_BLEC_DER, "(): memory allocation request failed\n"));
+  /* measurement vector needs to be extended by m */
+  if(x){ /* nonzero x */
+    data.x=(LM_REAL *)malloc((n+m)*sizeof(LM_REAL));
+    if(!data.x){
+      fprintf(stderr, LCAT(LEVMAR_BLEC_DER, "(): memory allocation request #1 failed\n"));
+      exit(1);
+    }
+
+    for(i=0; i<n; ++i)
+      data.x[i]=x[i];
+    for(i=n; i<n+m; ++i)
+      data.x[i]=0.0;
+  }
+  else
+    data.x=NULL;
+
+  data.w=(LM_REAL *)malloc(m*sizeof(LM_REAL) + m*sizeof(int));
+  if(!data.w){
+    fprintf(stderr, LCAT(LEVMAR_BLEC_DER, "(): memory allocation request #2 failed\n"));
     exit(1);
   }
-  data.w=data.x+n+m;
-
-  for(i=0; i<n; ++i)
-    data.x[i]=x[i];
-  for(i=n; i<n+m; ++i)
-    data.x[i]=0.0;
+  data.bctype=(int *)(data.w+m);
 
   for(i=0; i<m; ++i){
     data.w[i]=(!wghts)? __BC_WEIGHT__ : wghts[i];
@@ -266,32 +276,32 @@ int LEVMAR_BLEC_DER(
   if(!info) info=locinfo; /* make sure that LEVMAR_LEC_DER() is called with non-null info */
   ret=LEVMAR_LEC_DER(LMBLEC_FUNC, LMBLEC_JACF, p, data.x, m, n+m, A, b, k, itmax, opts, info, work, covar, (void *)&data);
 
-  free(data.x);
-  free(data.bctype);
+  if(data.x) free(data.x);
+  free(data.w);
 
   return ret;
 }
 
-/* Similar to the LEVMAR_BLEC_DER() function above, except that the jacobian is approximated
+/* Similar to the LEVMAR_BLEC_DER() function above, except that the Jacobian is approximated
  * with the aid of finite differences (forward or central, see the comment for the opts argument)
  */
 int LEVMAR_BLEC_DIF(
   void (*func)(LM_REAL *p, LM_REAL *hx, int m, int n, void *adata), /* functional relation describing measurements. A p \in R^m yields a \hat{x} \in  R^n */
   LM_REAL *p,         /* I/O: initial parameter estimates. On output has the estimated solution */
-  LM_REAL *x,         /* I: measurement vector */
+  LM_REAL *x,         /* I: measurement vector. NULL implies a zero vector */
   int m,              /* I: parameter vector dimension (i.e. #unknowns) */
   int n,              /* I: measurement vector dimension */
   LM_REAL *lb,        /* I: vector of lower bounds. If NULL, no lower bounds apply */
   LM_REAL *ub,        /* I: vector of upper bounds. If NULL, no upper bounds apply */
   LM_REAL *A,         /* I: constraints matrix, kxm */
   LM_REAL *b,         /* I: right hand constraints vector, kx1 */
-  int k,              /* I: number of contraints (i.e. A's #rows) */
+  int k,              /* I: number of constraints (i.e. A's #rows) */
   LM_REAL *wghts,     /* mx1 weights for penalty terms, defaults used if NULL */
   int itmax,          /* I: maximum number of iterations */
   LM_REAL opts[5],    /* I: opts[0-3] = minim. options [\mu, \epsilon1, \epsilon2, \epsilon3, \delta]. Respectively the
                        * scale factor for initial \mu, stopping thresholds for ||J^T e||_inf, ||Dp||_2 and ||e||_2 and
-                       * the step used in difference approximation to the jacobian. Set to NULL for defaults to be used.
-                       * If \delta<0, the jacobian is approximated with central differences which are more accurate
+                       * the step used in difference approximation to the Jacobian. Set to NULL for defaults to be used.
+                       * If \delta<0, the Jacobian is approximated with central differences which are more accurate
                        * (but slower!) compared to the forward differences employed by default. 
                        */
   LM_REAL info[LM_INFO_SZ],
@@ -305,10 +315,11 @@ int LEVMAR_BLEC_DIF(
                       *                                 4 - singular matrix. Restart from current p with increased mu 
                       *                                 5 - no further error reduction is possible. Restart with increased mu
                       *                                 6 - stopped by small ||e||_2
+                      *                                 7 - stopped by invalid (i.e. NaN or Inf) "func" values. This is a user error
                       * info[7]= # function evaluations
-                      * info[8]= # jacobian evaluations
+                      * info[8]= # Jacobian evaluations
                       */
-  LM_REAL *work,     /* working memory, allocate if NULL. If non NULL, should be large enough for LM_BLEC_DIF_WORKSZ() reals */
+  LM_REAL *work,     /* working memory at least LM_BLEC_DIF_WORKSZ() reals large, allocated if NULL */
   LM_REAL *covar,    /* O: Covariance matrix corresponding to LS solution; mxm. Set to NULL if not needed. */
   void *adata)       /* pointer to possibly additional data, passed uninterpreted to func.
                       * Set to NULL if not needed
@@ -319,24 +330,33 @@ int LEVMAR_BLEC_DIF(
   register int i;
   LM_REAL locinfo[LM_INFO_SZ];
 
-  if(!BOX_CHECK(lb, ub, m)){
+  if(!LEVMAR_BOX_CHECK(lb, ub, m)){
     fprintf(stderr, LCAT(LEVMAR_BLEC_DER, "(): at least one lower bound exceeds the upper one\n"));
     return LM_ERROR;
   }
 
-  /* x needs to be extended by m */
-  data.x=(LM_REAL *)malloc((n+2*m)*sizeof(LM_REAL));
-  data.bctype=(int *)malloc(m*sizeof(int));
-  if(!data.x || !data.bctype){
-    fprintf(stderr, LCAT(LEVMAR_BLEC_DER, "(): memory allocation request failed\n"));
+  /* measurement vector needs to be extended by m */
+  if(x){ /* nonzero x */
+    data.x=(LM_REAL *)malloc((n+m)*sizeof(LM_REAL));
+    if(!data.x){
+      fprintf(stderr, LCAT(LEVMAR_BLEC_DER, "(): memory allocation request #1 failed\n"));
+      exit(1);
+    }
+
+    for(i=0; i<n; ++i)
+      data.x[i]=x[i];
+    for(i=n; i<n+m; ++i)
+      data.x[i]=0.0;
+  }
+  else
+    data.x=NULL;
+
+  data.w=(LM_REAL *)malloc(m*sizeof(LM_REAL) + m*sizeof(int));
+  if(!data.w){
+    fprintf(stderr, LCAT(LEVMAR_BLEC_DER, "(): memory allocation request #2 failed\n"));
     exit(1);
   }
-  data.w=data.x+n+m;
-
-  for(i=0; i<n; ++i)
-    data.x[i]=x[i];
-  for(i=n; i<n+m; ++i)
-    data.x[i]=0.0;
+  data.bctype=(int *)(data.w+m);
 
   for(i=0; i<m; ++i){
     data.w[i]=(!wghts)? __BC_WEIGHT__ : wghts[i];
@@ -354,25 +374,20 @@ int LEVMAR_BLEC_DIF(
   if(!info) info=locinfo; /* make sure that LEVMAR_LEC_DIF() is called with non-null info */
   ret=LEVMAR_LEC_DIF(LMBLEC_FUNC, p, data.x, m, n+m, A, b, k, itmax, opts, info, work, covar, (void *)&data);
 
-  free(data.x);
-  free(data.bctype);
+  if(data.x) free(data.x);
+  free(data.w);
 
   return ret;
 }
 
 /* undefine all. THIS MUST REMAIN AT THE END OF THE FILE */
-#undef BOX_CHECK
+#undef LEVMAR_BOX_CHECK
 #undef LMBLEC_DATA
 #undef LMBLEC_FUNC
 #undef LMBLEC_JACF
-#undef FDIF_FORW_JAC_APPROX
+#undef LEVMAR_FDIF_FORW_JAC_APPROX
 #undef LEVMAR_COVAR
-#undef TRANS_MAT_MAT_MULT
 #undef LEVMAR_LEC_DER
 #undef LEVMAR_LEC_DIF
 #undef LEVMAR_BLEC_DER
 #undef LEVMAR_BLEC_DIF
-
-#undef GEQP3
-#undef ORGQR
-#undef TRTRI

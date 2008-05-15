@@ -2,7 +2,7 @@
 // 
 //  Solution of linear systems involved in the Levenberg - Marquardt
 //  minimization algorithm
-//  Copyright (C) 2004  Manolis Lourakis (lourakis@ics.forth.gr)
+//  Copyright (C) 2004  Manolis Lourakis (lourakis at ics forth gr)
 //  Institute of Computer Science, Foundation for Research & Technology - Hellas
 //  Heraklion, Crete, Greece.
 //
@@ -106,13 +106,16 @@ register int i, j;
 int info, worksz, nrhs=1;
 register LM_REAL sum;
 
+    if(!A)
 #ifdef LINSOLVERS_RETAIN_MEMORY
-    if(!A){
+    {
       if(buf) free(buf);
       buf_sz=0;
       buf=NULL;
       return 1;
     }
+#else
+      return 1; /* NOP */
 #endif /* LINSOLVERS_RETAIN_MEMORY */
    
     /* calculate required memory size */
@@ -258,14 +261,17 @@ int a_sz, atb_sz, tau_sz, r_sz, tot_sz;
 register int i, j;
 int info, worksz, nrhs=1;
 register LM_REAL sum;
-   
+
+    if(!A)
 #ifdef LINSOLVERS_RETAIN_MEMORY
-    if(!A){
+    {
       if(buf) free(buf);
       buf=NULL;
       buf_sz=0;
       return 1;
     }
+#else
+      return 1; /* NOP */
 #endif /* LINSOLVERS_RETAIN_MEMORY */
    
     if(m<n){
@@ -421,14 +427,17 @@ LM_REAL *a, *b;
 int a_sz, b_sz, tot_sz;
 register int i, j;
 int info, nrhs=1;
-   
+
+    if(!A)
 #ifdef LINSOLVERS_RETAIN_MEMORY
-    if(!A){
+    {
       if(buf) free(buf);
       buf=NULL;
       buf_sz=0;
       return 1;
     }
+#else
+      return 1; /* NOP */
 #endif /* LINSOLVERS_RETAIN_MEMORY */
    
     /* calculate required memory size */
@@ -559,14 +568,17 @@ int a_sz, ipiv_sz, b_sz, work_sz, tot_sz;
 register int i, j;
 int info, *ipiv, nrhs=1;
 LM_REAL *a, *b, *work;
-   
+
+    if(!A)
 #ifdef LINSOLVERS_RETAIN_MEMORY
-    if(!A){
+    {
       if(buf) free(buf);
       buf=NULL;
       buf_sz=0;
       return 1;
     }
+#else
+      return 1; /* NOP */
 #endif /* LINSOLVERS_RETAIN_MEMORY */
    
     /* calculate required memory size */
@@ -676,7 +688,7 @@ int AX_EQ_B_SVD(LM_REAL *A, LM_REAL *B, LM_REAL *x, int m)
 {
 __STATIC__ LM_REAL *buf=NULL;
 __STATIC__ int buf_sz=0;
-static LM_REAL eps=CNST(-1.0);
+static LM_REAL eps=LM_CNST(-1.0);
 
 register int i, j;
 LM_REAL *a, *u, *s, *vt, *work;
@@ -684,14 +696,17 @@ int a_sz, u_sz, s_sz, vt_sz, tot_sz;
 LM_REAL thresh, one_over_denom;
 register LM_REAL sum;
 int info, rank, worksz, *iwork, iworksz;
-   
+
+    if(!A)
 #ifdef LINSOLVERS_RETAIN_MEMORY
-    if(!A){
+    {
       if(buf) free(buf);
       buf=NULL;
       buf_sz=0;
       return 1;
     }
+#else
+      return 1; /* NOP */
 #endif /* LINSOLVERS_RETAIN_MEMORY */
    
   /* calculate required memory size */
@@ -758,15 +773,15 @@ int info, rank, worksz, *iwork, iworksz;
     LM_REAL aux;
 
     /* compute machine epsilon */
-    for(eps=CNST(1.0); aux=eps+CNST(1.0), aux-CNST(1.0)>0.0; eps*=CNST(0.5))
+    for(eps=LM_CNST(1.0); aux=eps+LM_CNST(1.0), aux-LM_CNST(1.0)>0.0; eps*=LM_CNST(0.5))
                                           ;
-    eps*=CNST(2.0);
+    eps*=LM_CNST(2.0);
   }
 
   /* compute the pseudoinverse in a */
 	for(i=0; i<a_sz; i++) a[i]=0.0; /* initialize to zero */
   for(rank=0, thresh=eps*s[0]; rank<m && s[rank]>thresh; rank++){
-    one_over_denom=CNST(1.0)/s[rank];
+    one_over_denom=LM_CNST(1.0)/s[rank];
 
     for(j=0; j<m; j++)
       for(i=0; i<m; i++)
@@ -848,14 +863,16 @@ int a_sz, ipiv_sz, b_sz, work_sz, tot_sz;
 register int i, j;
 int info, *ipiv;
 LM_REAL *a, *b, *work;
-   
+    if(!A)
 #ifdef LINSOLVERS_RETAIN_MEMORY
-    if(!A){
+    {
       if(buf) free(buf);
       buf=NULL;
       buf_sz=0;
       return 1;
     }
+#else
+      return 1; /* NOP */
 #endif /* LINSOLVERS_RETAIN_MEMORY */
    
     /* calculate required memory size */

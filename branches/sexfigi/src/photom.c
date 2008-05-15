@@ -9,7 +9,7 @@
 *
 *	Contents:	Compute magnitudes and other photometrical parameters.
 *
-*	Last modify:	26/04/2008
+*	Last modify:	02/05/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -880,11 +880,21 @@ void  computemags(picstruct *field, objstruct *obj)
 			 -2.5*log10(obj2->prof_spheroid_flux)
 			+ prefs.mag_zeropoint
 			:99.0;
+  if (FLAG(obj2.prof_spheroid_magerr))
+    obj2->prof_spheroid_magerr = obj2->prof_spheroid_flux>0.0?
+			 1.086*obj2->prof_spheroid_fluxerr
+				/ obj2->prof_spheroid_flux
+			:99.0;
 
   if (FLAG(obj2.prof_disk_mag))
     obj2->prof_disk_mag = obj2->prof_disk_flux>0.0?
 			 -2.5*log10(obj2->prof_disk_flux)
 			+ prefs.mag_zeropoint
+			:99.0;
+  if (FLAG(obj2.prof_disk_magerr))
+    obj2->prof_disk_magerr = obj2->prof_disk_flux>0.0?
+			 1.086*obj2->prof_disk_fluxerr
+				/ obj2->prof_disk_flux
 			:99.0;
 
   if (FLAG(obj2.prof_bar_mag))
@@ -892,11 +902,21 @@ void  computemags(picstruct *field, objstruct *obj)
 			 -2.5*log10(obj2->prof_bar_flux)
 			+ prefs.mag_zeropoint
 			:99.0;
+  if (FLAG(obj2.prof_bar_magerr))
+    obj2->prof_bar_magerr = obj2->prof_bar_flux>0.0?
+			 1.086*obj2->prof_bar_fluxerr
+				/obj2->prof_bar_flux
+			:99.0;
 
   if (FLAG(obj2.prof_arms_mag))
     obj2->prof_arms_mag = obj2->prof_arms_flux>0.0?
 			 -2.5*log10(obj2->prof_arms_flux)
 			+ prefs.mag_zeropoint
+			:99.0;
+  if (FLAG(obj2.prof_arms_magerr))
+    obj2->prof_arms_magerr = obj2->prof_arms_flux>0.0?
+			 1.086*obj2->prof_arms_fluxerr
+				/obj2->prof_arms_flux
 			:99.0;
 
 /* Mag. WINdowed */

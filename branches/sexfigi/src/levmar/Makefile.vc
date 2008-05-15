@@ -13,7 +13,7 @@
 
 MAKE=nmake /nologo
 CC=cl /nologo
-CONFIGFLAGS=/DHAVE_LAPACK #/ULINSOLVERS_RETAIN_MEMORY # USE /UHAVE_LAPACK IF YOU DO NOT HAVE LAPACK
+CONFIGFLAGS=#/ULINSOLVERS_RETAIN_MEMORY
 # YOU MIGHT WANT TO UNCOMMENT THE FOLLOWING LINE
 #SPOPTFLAGS=/GL /G7 /arch:SSE2 # special optimization: resp. whole program opt., Athlon/Pentium4 opt., SSE2 extensions
 # /MD COMPILES WITH MULTIPLE THREADS SUPPORT. TO DISABLE IT, SUBSTITUTE WITH /ML
@@ -40,11 +40,11 @@ levmar.lib: $(LIBOBJS)
 lmdemo.exe: $(DEMOBJS) levmar.lib
 	$(CC) $(DEMOBJS) $(LDFLAGS) /out:lmdemo.exe $(LIBS)
 
-lm.obj: lm.c lm_core.c lm.h misc.h
+lm.obj: lm.c lm_core.c lm.h misc.h compiler.h
 Axb.obj: Axb.c Axb_core.c lm.h misc.h
 misc.obj: misc.c misc_core.c lm.h misc.h
 lmlec.obj: lmlec.c lmlec_core.c lm.h misc.h
-lmbc.obj: lmbc.c lmbc_core.c lm.h misc.h
+lmbc.obj: lmbc.c lmbc_core.c lm.h misc.h  compiler.h
 lmblec.obj: lmblec.c lmblec_core.c lm.h misc.h
 
 lmdemo.obj: lm.h
@@ -53,5 +53,6 @@ clean:
 	-del $(LIBOBJS) $(DEMOBJS)
 
 cleanall: clean
+	-del lmdemo.exe
 	-del levmar.lib
 

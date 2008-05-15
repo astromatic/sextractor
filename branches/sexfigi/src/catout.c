@@ -9,7 +9,7 @@
 *
 *	Contents:	functions for output of catalog data.
 *
-*	Last modify:	30/04/2008
+*	Last modify:	02/05/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -169,8 +169,13 @@ void	updateparamflags()
 
 /*----------------------------- Model-fitting -----------------------------*/
 
+  FLAG(obj2.mag_prof) |= FLAG(obj2.magerr_prof);  
   FLAG(obj2.flux_prof) |= FLAG(obj2.mag_prof);
-
+  FLAG(obj2.prof_spheroid_mag) |= FLAG(obj2.prof_spheroid_magerr);
+  FLAG(obj2.prof_spheroid_reff) |= FLAG(obj2.prof_spheroid_refferr);
+  FLAG(obj2.prof_spheroid_aspect) |= FLAG(obj2.prof_spheroid_aspecterr);
+  FLAG(obj2.prof_spheroid_theta) |= FLAG(obj2.prof_spheroid_thetaerr);
+  FLAG(obj2.prof_spheroid_sersicn) |= FLAG(obj2.prof_spheroid_sersicnerr);
   FLAG(obj2.dtheta1950) |= FLAG(obj2.prof_spheroid_theta1950)
 			| FLAG(obj2.prof_disk_theta1950)
 //			| FLAG(obj2.prof_arms_theta1950)

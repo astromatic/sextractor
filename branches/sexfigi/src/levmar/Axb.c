@@ -2,7 +2,7 @@
 // 
 //  Solution of linear systems involved in the Levenberg - Marquardt
 //  minimization algorithm
-//  Copyright (C) 2004  Manolis Lourakis (lourakis@ics.forth.gr)
+//  Copyright (C) 2004  Manolis Lourakis (lourakis at ics forth gr)
 //  Institute of Computer Science, Foundation for Research & Technology - Hellas
 //  Heraklion, Crete, Greece.
 //
@@ -31,10 +31,16 @@
 #include "lm.h"
 #include "misc.h"
 
+#if !defined(LM_DBL_PREC) && !defined(LM_SNGL_PREC)
+#error At least one of LM_DBL_PREC, LM_SNGL_PREC should be defined!
+#endif
+
+
+#ifdef LM_DBL_PREC
 /* double precision definitions */
 #define LM_REAL double
 #define LM_PREFIX d
-#define CNST(x) (x)
+#define LM_CNST(x) (x)
 #ifndef HAVE_LAPACK
 #include <float.h>
 #define LM_REAL_EPSILON DBL_EPSILON
@@ -44,14 +50,16 @@
 
 #undef LM_REAL
 #undef LM_PREFIX
-#undef CNST
+#undef LM_CNST
 #undef LM_REAL_EPSILON
+#endif /* LM_DBL_PREC */
 
+#ifdef LM_SNGL_PREC
 /* single precision (float) definitions */
 #define LM_REAL float
 #define LM_PREFIX s
-#define SUBCNST(x) x##F
-#define CNST(x) SUBCNST(x) // force substitution
+#define __SUBCNST(x) x##F
+#define LM_CNST(x) __SUBCNST(x) // force substitution
 #ifndef HAVE_LAPACK
 #define LM_REAL_EPSILON FLT_EPSILON
 #endif
@@ -60,6 +68,7 @@
 
 #undef LM_REAL
 #undef LM_PREFIX
-#undef SUBCNST
-#undef CNST
+#undef __SUBCNST
+#undef LM_CNST
 #undef LM_REAL_EPSILON
+#endif /* LM_SNGL_PREC */

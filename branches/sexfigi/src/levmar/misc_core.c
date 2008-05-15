@@ -1,7 +1,7 @@
 /////////////////////////////////////////////////////////////////////////////////
 // 
 //  Levenberg - Marquardt non-linear minimization algorithm
-//  Copyright (C) 2004-05  Manolis Lourakis (lourakis@ics.forth.gr)
+//  Copyright (C) 2004-05  Manolis Lourakis (lourakis at ics forth gr)
 //  Institute of Computer Science, Foundation for Research & Technology - Hellas
 //  Heraklion, Crete, Greece.
 //
@@ -24,11 +24,14 @@
 
 /* precision-specific definitions */
 #define LEVMAR_CHKJAC LM_ADD_PREFIX(levmar_chkjac)
-#define FDIF_FORW_JAC_APPROX LM_ADD_PREFIX(fdif_forw_jac_approx)
-#define FDIF_CENT_JAC_APPROX LM_ADD_PREFIX(fdif_cent_jac_approx)
-#define TRANS_MAT_MAT_MULT LM_ADD_PREFIX(trans_mat_mat_mult)
+#define LEVMAR_FDIF_FORW_JAC_APPROX LM_ADD_PREFIX(levmar_fdif_forw_jac_approx)
+#define LEVMAR_FDIF_CENT_JAC_APPROX LM_ADD_PREFIX(levmar_fdif_cent_jac_approx)
+#define LEVMAR_TRANS_MAT_MAT_MULT LM_ADD_PREFIX(levmar_trans_mat_mat_mult)
 #define LEVMAR_COVAR LM_ADD_PREFIX(levmar_covar)
-#define BOX_CHECK LM_ADD_PREFIX(levmar_box_check)
+#define LEVMAR_STDDEV LM_ADD_PREFIX(levmar_stddev)
+#define LEVMAR_CORCOEF LM_ADD_PREFIX(levmar_corcoef)
+#define LEVMAR_BOX_CHECK LM_ADD_PREFIX(levmar_box_check)
+#define LEVMAR_L2NRMXMY LM_ADD_PREFIX(levmar_L2nrmxmy)
 
 #ifdef HAVE_LAPACK
 #define LEVMAR_PSEUDOINVERSE LM_ADD_PREFIX(levmar_pseudoinverse)
@@ -73,11 +76,11 @@ static int LEVMAR_LUINVERSE(LM_REAL *A, LM_REAL *B, int m);
  * More details on blocking can be found at 
  * http://www-2.cs.cmu.edu/afs/cs/academic/class/15213-f02/www/R07/section_a/Recitation07-SectionA.pdf
  */
-void TRANS_MAT_MAT_MULT(LM_REAL *a, LM_REAL *b, int n, int m)
+void LEVMAR_TRANS_MAT_MAT_MULT(LM_REAL *a, LM_REAL *b, int n, int m)
 {
 #ifdef HAVE_LAPACK /* use BLAS matrix multiply */
 
-LM_REAL alpha=CNST(1.0), beta=CNST(0.0);
+LM_REAL alpha=LM_CNST(1.0), beta=LM_CNST(0.0);
   /* Fool BLAS to compute a^T*a avoiding transposing a: a is equivalent to a^T in column major,
    * therefore BLAS computes a*a^T with a and a*a^T in column major, which is equivalent to
    * computing a^T*a in row major!
@@ -127,15 +130,15 @@ const int bsize=__BLOCKSZ__;
 #endif /* HAVE_LAPACK */
 }
 
-/* forward finite difference approximation to the jacobian of func */
-void FDIF_FORW_JAC_APPROX(
+/* forward finite difference approximation to the Jacobian of func */
+void LEVMAR_FDIF_FORW_JAC_APPROX(
     void (*func)(LM_REAL *p, LM_REAL *hx, int m, int n, void *adata),
 													   /* function to differentiate */
     LM_REAL *p,              /* I: current parameter estimate, mx1 */
     LM_REAL *hx,             /* I: func evaluated at p, i.e. hx=func(p), nx1 */
     LM_REAL *hxx,            /* W/O: work array for evaluating func(p+delta), nx1 */
-    LM_REAL delta,           /* increment for computing the jacobian */
-    LM_REAL *jac,            /* O: array for storing approximated jacobian, nxm */
+    LM_REAL delta,           /* increment for computing the Jacobian */
+    LM_REAL *jac,            /* O: array for storing approximated Jacobian, nxm */
     int m,
     int n,
     void *adata)
@@ -146,7 +149,7 @@ register LM_REAL d;
 
   for(j=0; j<m; ++j){
     /* determine d=max(1E-04*|p[j]|, delta), see HZ */
-    d=CNST(1E-04)*p[j]; // force evaluation
+    d=LM_CNST(1E-04)*p[j]; // force evaluation
     d=FABS(d);
     if(d<delta)
       d=delta;
@@ -158,22 +161,22 @@ register LM_REAL d;
 
     p[j]=tmp; /* restore */
 
-    d=CNST(1.0)/d; /* invert so that divisions can be carried out faster as multiplications */
+    d=LM_CNST(1.0)/d; /* invert so that divisions can be carried out faster as multiplications */
     for(i=0; i<n; ++i){
       jac[i*m+j]=(hxx[i]-hx[i])*d;
     }
   }
 }
 
-/* central finite difference approximation to the jacobian of func */
-void FDIF_CENT_JAC_APPROX(
+/* central finite difference approximation to the Jacobian of func */
+void LEVMAR_FDIF_CENT_JAC_APPROX(
     void (*func)(LM_REAL *p, LM_REAL *hx, int m, int n, void *adata),
 													   /* function to differentiate */
     LM_REAL *p,              /* I: current parameter estimate, mx1 */
     LM_REAL *hxm,            /* W/O: work array for evaluating func(p-delta), nx1 */
     LM_REAL *hxp,            /* W/O: work array for evaluating func(p+delta), nx1 */
-    LM_REAL delta,           /* increment for computing the jacobian */
-    LM_REAL *jac,            /* O: array for storing approximated jacobian, nxm */
+    LM_REAL delta,           /* increment for computing the Jacobian */
+    LM_REAL *jac,            /* O: array for storing approximated Jacobian, nxm */
     int m,
     int n,
     void *adata)
@@ -184,7 +187,7 @@ register LM_REAL d;
 
   for(j=0; j<m; ++j){
     /* determine d=max(1E-04*|p[j]|, delta), see HZ */
-    d=CNST(1E-04)*p[j]; // force evaluation
+    d=LM_CNST(1E-04)*p[j]; // force evaluation
     d=FABS(d);
     if(d<delta)
       d=delta;
@@ -197,7 +200,7 @@ register LM_REAL d;
     (*func)(p, hxp, m, n, adata);
     p[j]=tmp; /* restore */
 
-    d=CNST(0.5)/d; /* invert so that divisions can be carried out faster as multiplications */
+    d=LM_CNST(0.5)/d; /* invert so that divisions can be carried out faster as multiplications */
     for(i=0; i<n; ++i){
       jac[i*m+j]=(hxp[i]-hxm[i])*d;
     }
@@ -205,7 +208,7 @@ register LM_REAL d;
 }
 
 /* 
- * Check the jacobian of a n-valued nonlinear function in m variables
+ * Check the Jacobian of a n-valued nonlinear function in m variables
  * evaluated at a point p, for consistency with the function itself.
  *
  * Based on fortran77 subroutine CHKDER by
@@ -214,9 +217,9 @@ register LM_REAL d;
  *
  *
  * func points to a function from R^m --> R^n: Given a p in R^m it yields hx in R^n
- * jacf points to a function implementing the jacobian of func, whose correctness
+ * jacf points to a function implementing the Jacobian of func, whose correctness
  *     is to be tested. Given a p in R^m, jacf computes into the nxm matrix j the
- *     jacobian of func at p. Note that row i of j corresponds to the gradient of
+ *     Jacobian of func at p. Note that row i of j corresponds to the gradient of
  *     the i-th component of func, evaluated at p.
  * p is an input array of length m containing the point of evaluation.
  * m is the number of variables
@@ -246,9 +249,9 @@ void LEVMAR_CHKJAC(
     void (*jacf)(LM_REAL *p, LM_REAL *j, int m, int n, void *adata),
     LM_REAL *p, int m, int n, void *adata, LM_REAL *err)
 {
-LM_REAL factor=CNST(100.0);
-LM_REAL one=CNST(1.0);
-LM_REAL zero=CNST(0.0);
+LM_REAL factor=LM_CNST(100.0);
+LM_REAL one=LM_CNST(1.0);
+LM_REAL zero=LM_CNST(0.0);
 LM_REAL *fvec, *fjac, *pp, *fvecp, *buf;
 
 register int i, j;
@@ -272,7 +275,7 @@ int fvec_sz=n, fjac_sz=n*m, pp_sz=m, fvecp_sz=n;
   /* compute fvec=func(p) */
   (*func)(p, fvec, m, n, adata);
 
-  /* compute the jacobian at p */
+  /* compute the Jacobian at p */
   (*jacf)(p, fjac, m, n, adata);
 
   /* compute pp */
@@ -329,7 +332,7 @@ static int LEVMAR_PSEUDOINVERSE(LM_REAL *A, LM_REAL *B, int m)
 {
 LM_REAL *buf=NULL;
 int buf_sz=0;
-static LM_REAL eps=CNST(-1.0);
+static LM_REAL eps=LM_CNST(-1.0);
 
 register int i, j;
 LM_REAL *a, *u, *s, *vt, *work;
@@ -386,15 +389,15 @@ int info, rank, worksz, *iwork, iworksz;
     LM_REAL aux;
 
     /* compute machine epsilon */
-    for(eps=CNST(1.0); aux=eps+CNST(1.0), aux-CNST(1.0)>0.0; eps*=CNST(0.5))
+    for(eps=LM_CNST(1.0); aux=eps+LM_CNST(1.0), aux-LM_CNST(1.0)>0.0; eps*=LM_CNST(0.5))
                                           ;
-    eps*=CNST(2.0);
+    eps*=LM_CNST(2.0);
   }
 
   /* compute the pseudoinverse in B */
 	for(i=0; i<a_sz; i++) B[i]=0.0; /* initialize to zero */
   for(rank=0, thresh=eps*s[0]; rank<m && s[rank]>thresh; rank++){
-    one_over_denom=CNST(1.0)/s[rank];
+    one_over_denom=LM_CNST(1.0)/s[rank];
 
     for(j=0; j<m; j++)
       for(i=0; i<m; i++)
@@ -406,6 +409,9 @@ int info, rank, worksz, *iwork, iworksz;
 	return rank;
 }
 #else // no LAPACK
+
+#define SVDINV LM_ADD_PREFIX(svdinv)
+static int SVDINV(LM_REAL *a, LM_REAL *b, int m);
 
 /*
  * This function computes the inverse of A in B. A and B can coincide
@@ -419,31 +425,16 @@ int info, rank, worksz, *iwork, iworksz;
  * 1 if successfull
  *
  */
-/* Added by EB */
-#ifdef HAVE_CONFIG_H
-#include        "config.h"
-#endif
-#include        ATLAS_LAPACK_H
-#define ATLAS_GETRF	LM_CAT_(clapack_, LM_ADD_PREFIX(getrf))
-#define ATLAS_GETRI	LM_CAT_(clapack_, LM_ADD_PREFIX(getri))
-#define GETRF LM_ADD_PREFIX(getrf_)
-#define GETRS LM_ADD_PREFIX(getri_)
-extern int GETRF(int *m, int *n, LM_REAL *a, int *lda, int *ipiv, int *info);
-extern int GETRI(int *m, int *n, LM_REAL *a, int *lda, int *ipiv, int *info);
-/* End added by EB */
-
 static int LEVMAR_LUINVERSE(LM_REAL *A, LM_REAL *B, int m)
 {
-  int	*ipiv,
-	info;
+void *buf=NULL;
+int buf_sz=0;
 
-  ipiv = malloc(m*sizeof(int));
-  memcpy(B, A, m*m*sizeof(LM_REAL));
-  info = ATLAS_GETRF(CblasRowMajor, m, m, B, m, ipiv);
-  info = ATLAS_GETRI(CblasRowMajor, m, B, m, ipiv);
-  free(ipiv);
+register int i, j, k, l;
+int *idx, maxi=-1, idx_sz, a_sz, x_sz, work_sz, tot_sz;
+LM_REAL *a, *x, *work, max, sum, tmp;
 
-/* calculate required memory size *
+  /* calculate required memory size */
   idx_sz=m;
   a_sz=m*m;
   x_sz=m;
@@ -462,10 +453,10 @@ static int LEVMAR_LUINVERSE(LM_REAL *A, LM_REAL *B, int m)
   x=a + a_sz;
   work=x + x_sz;
 
-  * avoid destroying A by copying it to a *
+  /* avoid destroying A by copying it to a */
   for(i=0; i<a_sz; ++i) a[i]=A[i];
 
-  * compute the LU decomposition of a row permutation of matrix a; the permutation itself is saved in idx[] *
+  /* compute the LU decomposition of a row permutation of matrix a; the permutation itself is saved in idx[] */
 	for(i=0; i<m; ++i){
 		max=0.0;
 		for(j=0; j<m; ++j)
@@ -477,7 +468,7 @@ static int LEVMAR_LUINVERSE(LM_REAL *A, LM_REAL *B, int m)
 
         return 0;
       }
-		  work[i]=CNST(1.0)/max;
+		  work[i]=LM_CNST(1.0)/max;
 	}
 
 	for(j=0; j<m; ++j){
@@ -510,18 +501,18 @@ static int LEVMAR_LUINVERSE(LM_REAL *A, LM_REAL *B, int m)
 		if(a[j*m+j]==0.0)
       a[j*m+j]=LM_REAL_EPSILON;
 		if(j!=m-1){
-			tmp=CNST(1.0)/(a[j*m+j]);
+			tmp=LM_CNST(1.0)/(a[j*m+j]);
 			for(i=j+1; i<m; ++i)
         a[i*m+j]*=tmp;
 		}
 	}
 
-  * The decomposition has now replaced a. Solve the m linear systems using
+  /* The decomposition has now replaced a. Solve the m linear systems using
    * forward and back substitution
-   *
+   */
   for(l=0; l<m; ++l){
     for(i=0; i<m; ++i) x[i]=0.0;
-    x[l]=CNST(1.0);
+    x[l]=LM_CNST(1.0);
 
 	  for(i=k=0; i<m; ++i){
 		  j=idx[i];
@@ -547,7 +538,7 @@ static int LEVMAR_LUINVERSE(LM_REAL *A, LM_REAL *B, int m)
       B[i*m+l]=x[i];
   }
 
-  free(buf);*/
+  free(buf);
 
   return 1;
 }
@@ -556,7 +547,7 @@ static int LEVMAR_LUINVERSE(LM_REAL *A, LM_REAL *B, int m)
 /*
  * This function computes in C the covariance matrix corresponding to a least
  * squares fit. JtJ is the approximate Hessian at the solution (i.e. J^T*J, where
- * J is the jacobian at the solution), sumsq is the sum of squared residuals
+ * J is the Jacobian at the solution), sumsq is the sum of squared residuals
  * (i.e. goodnes of fit) at the solution, m is the number of parameters (variables)
  * and n the number of observations. JtJ can coincide with C.
  * 
@@ -582,28 +573,58 @@ LM_REAL fact;
    rnk=LEVMAR_PSEUDOINVERSE(JtJ, C, m);
    if(!rnk) return 0;
 #else
-/*
 #ifdef _MSC_VER
 #pragma message("LAPACK not available, LU will be used for matrix inversion when computing the covariance; this might be unstable at times")
+/*
 #else
 #warning LAPACK not available, LU will be used for matrix inversion when computing the covariance; this might be unstable at times
-#endif // _MSC_VER
 */
-   rnk=LEVMAR_LUINVERSE(JtJ, C, m);
+#endif // _MSC_VER
+
+//   rnk=LEVMAR_LUINVERSE(JtJ, C, m);
+   rnk = SVDINV(JtJ, C, m);
    if(!rnk) return 0;
 
-   rnk=m; /* assume full rank */
+//   rnk=m; /* assume full rank */
 #endif /* HAVE_LAPACK */
 
-   fact=sumsq/(LM_REAL)(n-rnk);
+//   fact=sumsq/(LM_REAL)(n-rnk);
+//   for(i=0; i<m*m; ++i)
+//     C[i]*=fact;
+
+    fact=(LM_REAL)n/(LM_REAL)(n-rnk);
    for(i=0; i<m*m; ++i)
      C[i]*=fact;
+
+   for(i=0; i<m; ++i)
+     if (C[i*(m+1)]<0.0)
+       C[i*(m+1)] = 0.0;
 
    return rnk;
 }
 
+/*  standard deviation of the best-fit parameter i.
+ *  covar is the mxm covariance matrix of the best-fit parameters (see also LEVMAR_COVAR()).
+ *
+ *  The standard deviation is computed as \sigma_{i} = \sqrt{C_{ii}} 
+ */
+LM_REAL LEVMAR_STDDEV(LM_REAL *covar, int m, int i)
+{
+   return (LM_REAL)sqrt(covar[i*m+i]);
+}
+
+/* Pearson's correlation coefficient of the best-fit parameters i and j.
+ * covar is the mxm covariance matrix of the best-fit parameters (see also LEVMAR_COVAR()).
+ *
+ * The coefficient is computed as \rho_{ij} = C_{ij} / sqrt(C_{ii} C_{jj})
+ */
+LM_REAL LEVMAR_CORCOEF(LM_REAL *covar, int m, int i, int j)
+{
+   return (LM_REAL)(covar[i*m+j]/sqrt(covar[i*m+i]*covar[j*m+j]));
+}
+
 /* check box constraints for consistency */
-int BOX_CHECK(LM_REAL *lb, LM_REAL *ub, int m)
+int LEVMAR_BOX_CHECK(LM_REAL *lb, LM_REAL *ub, int m)
 {
 register int i;
 
@@ -657,13 +678,433 @@ int info;
 }
 #endif /* HAVE_LAPACK */
 
+
+/* Compute e=x-y for two n-vectors x and y and return the squared L2 norm of e.
+ * e can coincide with either x or y; x can be NULL, in which case it is assumed
+ * to be equal to the zero vector.
+ * Uses loop unrolling and blocking to reduce bookkeeping overhead & pipeline
+ * stalls and increase instruction-level parallelism; see http://www.abarnett.demon.co.uk/tutorial.html
+ */
+
+LM_REAL LEVMAR_L2NRMXMY(LM_REAL *e, LM_REAL *x, LM_REAL *y, int n)
+{
+const int blocksize=8, bpwr=3; /* 8=2^3 */
+register int i;
+int j1, j2, j3, j4, j5, j6, j7;
+int blockn;
+register LM_REAL sum0=0.0, sum1=0.0, sum2=0.0, sum3=0.0;
+
+  /* n may not be divisible by blocksize, 
+   * go as near as we can first, then tidy up.
+   */ 
+  blockn = (n>>bpwr)<<bpwr; /* (n / blocksize) * blocksize; */
+
+  if(x){
+    /* unroll the loop in blocks of `blocksize' */
+    for(i=0; i<blockn; i+=blocksize){
+              e[i ]=x[i ]-y[i ]; sum0+=e[i ]*e[i ];
+      j1=i+1; e[j1]=x[j1]-y[j1]; sum1+=e[j1]*e[j1];
+      j2=i+2; e[j2]=x[j2]-y[j2]; sum2+=e[j2]*e[j2];
+      j3=i+3; e[j3]=x[j3]-y[j3]; sum3+=e[j3]*e[j3];
+      j4=i+4; e[j4]=x[j4]-y[j4]; sum0+=e[j4]*e[j4];
+      j5=i+5; e[j5]=x[j5]-y[j5]; sum1+=e[j5]*e[j5];
+      j6=i+6; e[j6]=x[j6]-y[j6]; sum2+=e[j6]*e[j6];
+      j7=i+7; e[j7]=x[j7]-y[j7]; sum3+=e[j7]*e[j7];
+    }
+
+   /*
+    * There may be some left to do.
+    * This could be done as a simple for() loop, 
+    * but a switch is faster (and more interesting) 
+    */ 
+
+    if(i<n){ 
+      /* Jump into the case at the place that will allow
+       * us to finish off the appropriate number of items. 
+       */ 
+
+      switch(n - i){ 
+        case 7 : e[i]=x[i]-y[i]; sum0+=e[i]*e[i]; ++i;
+        case 6 : e[i]=x[i]-y[i]; sum0+=e[i]*e[i]; ++i;
+        case 5 : e[i]=x[i]-y[i]; sum0+=e[i]*e[i]; ++i;
+        case 4 : e[i]=x[i]-y[i]; sum0+=e[i]*e[i]; ++i;
+        case 3 : e[i]=x[i]-y[i]; sum0+=e[i]*e[i]; ++i;
+        case 2 : e[i]=x[i]-y[i]; sum0+=e[i]*e[i]; ++i;
+        case 1 : e[i]=x[i]-y[i]; sum0+=e[i]*e[i]; ++i;
+      }
+    }
+  }
+  else{ /* x==0 */
+    /* unroll the loop in blocks of `blocksize' */
+    for(i=0; i<blockn; i+=blocksize){
+              e[i ]=-y[i ]; sum0+=e[i ]*e[i ];
+      j1=i+1; e[j1]=-y[j1]; sum1+=e[j1]*e[j1];
+      j2=i+2; e[j2]=-y[j2]; sum2+=e[j2]*e[j2];
+      j3=i+3; e[j3]=-y[j3]; sum3+=e[j3]*e[j3];
+      j4=i+4; e[j4]=-y[j4]; sum0+=e[j4]*e[j4];
+      j5=i+5; e[j5]=-y[j5]; sum1+=e[j5]*e[j5];
+      j6=i+6; e[j6]=-y[j6]; sum2+=e[j6]*e[j6];
+      j7=i+7; e[j7]=-y[j7]; sum3+=e[j7]*e[j7];
+    }
+
+   /*
+    * There may be some left to do.
+    * This could be done as a simple for() loop, 
+    * but a switch is faster (and more interesting) 
+    */ 
+
+    if(i<n){ 
+      /* Jump into the case at the place that will allow
+       * us to finish off the appropriate number of items. 
+       */ 
+
+      switch(n - i){ 
+        case 7 : e[i]=-y[i]; sum0+=e[i]*e[i]; ++i;
+        case 6 : e[i]=-y[i]; sum0+=e[i]*e[i]; ++i;
+        case 5 : e[i]=-y[i]; sum0+=e[i]*e[i]; ++i;
+        case 4 : e[i]=-y[i]; sum0+=e[i]*e[i]; ++i;
+        case 3 : e[i]=-y[i]; sum0+=e[i]*e[i]; ++i;
+        case 2 : e[i]=-y[i]; sum0+=e[i]*e[i]; ++i;
+        case 1 : e[i]=-y[i]; sum0+=e[i]*e[i]; ++i;
+      }
+    }
+  }
+
+  return sum0+sum1+sum2+sum3;
+}
+
+/****** svdinv *************************************************************
+PROTO	int svdinv(double *a, double *b, int m)
+PURPOSE	Matrix inversion based on Singular Value Decomposition (SVD).
+INPUT	Pointer to the matrix to invert,
+	Pointer to the inverted matrix,
+	Matrix size.
+OUTPUT	Matrix rank.
+NOTES	Loosely adapted from Numerical Recipes in C, 2nd Ed. (p. 671). The a
+	and v matrices are transposed with respect to the N.R. convention.
+AUTHOR	E. Bertin (IAP)
+VERSION	11/05/2008
+ ***/
+
+static int SVDINV(LM_REAL *a, LM_REAL *b, int m)
+  {
+#define MAX(a,b) (maxarg1=(a),maxarg2=(b),(maxarg1) > (maxarg2) ?\
+        (maxarg1) : (maxarg2))
+#define PYTHAG(a,b)     ((at=fabs(a)) > (bt=fabs(b)) ? \
+                                  (ct=bt/at,at*sqrt(1.0+ct*ct)) \
+                                : (bt ? (ct=at/bt,bt*sqrt(1.0+ct*ct)): 0.0))
+#define SIGN(a,b) ((b) >= 0.0 ? fabs(a) : -fabs(a))
+#define TOL             1.0e-11
+
+   int                  flag,i,its,j,jj,k,l,mmi,nm, nml, rank;
+   LM_REAL              *vmat,*wmat,
+			*w,*ap,*ap0,*ap1,*ap10,*rv1p,*vp,*vp0,*vp1,*vp10,
+                        *rv1,*tmp,
+			c,f,h,s,x,y,z,
+                        anorm, g, scale,
+                        at,bt,ct,maxarg1,maxarg2,
+                        thresh, wmax;
+
+  anorm = g = scale = 0.0;
+  
+  rv1=(LM_REAL *)malloc(m*sizeof(LM_REAL));
+  tmp=(LM_REAL *)malloc(m*sizeof(LM_REAL));
+  vmat=(LM_REAL *)malloc(m*m*sizeof(LM_REAL));
+  wmat=(LM_REAL *)malloc(m*sizeof(LM_REAL));
+
+  l = nm = nml = 0;	/* To avoid gcc -Wall warnings */
+  for (i=0;i<m;i++)
+    {
+    l = i+1;
+    nml = m-l;
+    rv1[i] = scale*g;
+    g = s = scale = 0.0;
+    mmi = m - i;
+    ap = ap0 = a+i*(m+1);
+    for (k=mmi;k--;)
+      scale += fabs(*(ap++));
+    if (scale)
+      {
+      for (ap=ap0,k=mmi; k--; ap++)
+        {
+        *ap /= scale;
+        s += *ap**ap;
+        }
+      f = *ap0;
+      g = -SIGN(sqrt(s),f);
+      h = f*g-s;
+      *ap0 = f-g;
+      ap10 = a+l*m+i;
+      for (j=nml;j--; ap10+=m)
+        {
+        s = 0.0;
+        for (ap=ap0,ap1=ap10,k=mmi; k--;)
+          s += *(ap1++)**(ap++);
+        f = s/h;
+        for (ap=ap0,ap1=ap10,k=mmi; k--;)
+          *(ap1++) += f**(ap++);
+        }
+      for (ap=ap0,k=mmi; k--;)
+        *(ap++) *= scale;
+      }
+    wmat[i] = scale*g;
+    g = s = scale = 0.0;
+    if (i+1 != m)
+      {
+      ap = ap0 = a+i+m*l;
+      for (k=nml;k--; ap+=m)
+        scale += fabs(*ap);
+      if (scale)
+        {
+        for (ap=ap0,k=nml;k--; ap+=m)
+          {
+          *ap /= scale;
+          s += *ap**ap;
+          }
+        f=*ap0;
+        g = -SIGN(sqrt(s),f);
+        h=f*g-s;
+        *ap0=f-g;
+        rv1p = rv1+l;
+        for (ap=ap0,k=nml;k--; ap+=m)
+          *(rv1p++) = *ap/h;
+        ap10 = a+l+m*l;
+        for (j=m-l; j--; ap10++)
+          {
+          for (s=0.0,ap=ap0,ap1=ap10,k=nml; k--; ap+=m,ap1+=m)
+            s += *ap1**ap;
+          rv1p = rv1+l;
+          for (ap1=ap10,k=nml;k--; ap1+=m)
+            *ap1 += s**(rv1p++);
+          }
+        for (ap=ap0,k=nml;k--; ap+=m)
+          *ap *= scale;
+        }
+      }
+    anorm=MAX(anorm,(fabs(wmat[i])+fabs(rv1[i])));
+    }
+
+  for (i=m-1;i>=0;i--)
+    {
+    if (i < m-1)
+      {
+      if (g)
+        {
+        ap0 = a+l*m+i;
+        vp0 = vmat+i*m+l;
+        vp10 = vmat+l*m+l;
+        g *= *ap0;
+        for (ap=ap0,vp=vp0,j=nml; j--; ap+=m)
+          *(vp++) = *ap/g;
+        for (j=nml; j--; vp10+=m)
+          {
+          for (s=0.0,ap=ap0,vp1=vp10,k=nml; k--; ap+=m)
+            s += *ap**(vp1++);
+          for (vp=vp0,vp1=vp10,k=nml; k--;)
+            *(vp1++) += s**(vp++);
+          }
+        }
+      vp = vmat+l*m+i;
+      vp1 = vmat+i*m+l;
+      for (j=nml; j--; vp+=m)
+        *vp = *(vp1++) = 0.0;
+      }
+    vmat[i*m+i]=1.0;
+    g=rv1[i];
+    l=i;
+    nml = m-l;
+    }
+
+  for (i=m; --i>=0;)
+    {
+    l=i+1;
+    nml = m-l;
+    mmi=m-i;
+    g=wmat[i];
+    ap0 = a+i*m+i;
+    ap10 = ap0 + m;
+    for (ap=ap10,j=nml;j--;ap+=m)
+      *ap=0.0;
+    if (g)
+      {
+      g=1.0/g;
+      for (j=nml;j--; ap10+=m)
+        {
+        for (s=0.0,ap=ap0,ap1=ap10,k=mmi; --k;)
+              s += *(++ap)**(++ap1);
+        f = (s/(*ap0))*g;
+        for (ap=ap0,ap1=ap10,k=mmi;k--;)
+          *(ap1++) += f**(ap++);
+        }
+      for (ap=ap0,j=mmi;j--;)
+        *(ap++) *= g;
+      }
+    else
+      for (ap=ap0,j=mmi;j--;)
+        *(ap++)=0.0;
+    ++(*ap0);
+    }
+
+  for (k=m; --k>=0;)
+      {
+      for (its=0;its<100;its++)
+        {
+        flag=1;
+        for (l=k;l>=0;l--)
+          {
+          nm=l-1;
+          if (fabs(rv1[l]) < anorm*TOL)
+            {
+            flag=0;
+            break;
+            }
+          if (fabs(wmat[nm]) < anorm*TOL)
+            break;
+          }
+        if (flag)
+          {
+          c=0.0;
+          s=1.0;
+          ap0 = a+nm*m;
+          ap10 = a+l*m;
+          for (i=l; i<=k; i++,ap10+=m)
+            {
+            f=s*rv1[i];
+            if (fabs(f) < anorm*TOL)
+              break;
+            g=wmat[i];
+            h=PYTHAG(f,g);
+            wmat[i]=h;
+            h=1.0/h;
+            c=g*h;
+            s=(-f*h);
+            for (ap=ap0,ap1=ap10,j=m; j--;)
+              {
+              z = *ap1;
+              y = *ap;
+              *(ap++) = y*c+z*s;
+              *(ap1++) = z*c-y*s;
+              }
+            }
+          }
+        z=wmat[k];
+        if (l == k)
+          {
+          if (z < 0.0)
+            {
+            wmat[k] = -z;
+            vp = vmat+k*m;
+            for (j=m; j--; vp++)
+              *vp = (-*vp);
+            }
+          break;
+          }
+        x=wmat[l];
+        nm=k-1;
+        y=wmat[nm];
+        g=rv1[nm];
+        h=rv1[k];
+        f=((y-z)*(y+z)+(g-h)*(g+h))/(2.0*h*y);
+        g=PYTHAG(f,1.0);
+        f=((x-z)*(x+z)+h*((y/(f+SIGN(g,f)))-h))/x;
+        c=s=1.0;
+        ap10 = a+l*m;
+        vp10 = vmat+l*m;
+        for (j=l;j<=nm;j++,ap10+=m,vp10+=m)
+          {
+          i=j+1;
+          g=rv1[i];
+          y=wmat[i];
+          h=s*g;
+          g=c*g;
+          z=PYTHAG(f,h);
+          rv1[j]=z;
+          c=f/z;
+          s=h/z;
+          f=x*c+g*s;
+          g=g*c-x*s;
+          h=y*s;
+          y=y*c;
+          for (vp=(vp1=vp10)+m,jj=m; jj--;)
+            {
+            z = *vp;
+            x = *vp1;
+            *(vp1++) = x*c+z*s;
+            *(vp++) = z*c-x*s;
+            }
+          z=PYTHAG(f,h);
+          wmat[j]=z;
+          if (z)
+            {
+            z=1.0/z;
+            c=f*z;
+            s=h*z;
+            }
+          f=c*g+s*y;
+          x=c*y-s*g;
+          for (ap=(ap1=ap10)+m,jj=m; jj--;)
+            {
+            z = *ap;
+            y = *ap1;
+            *(ap1++) = y*c+z*s;
+            *(ap++) = z*c-y*s;
+            }
+          }
+        rv1[l]=0.0;
+        rv1[k]=f;
+        wmat[k]=x;
+        }
+      }
+
+  wmax=0.0;
+  w = wmat;
+  for (j=m;j--; w++)
+    if (*w > wmax)
+      wmax=*w;
+  thresh=TOL*wmax;
+  rank = 0;
+  w = wmat;
+  for (j=m;j--; w++)
+    if (*w < thresh)
+      *w = 0.0;
+    else
+      {
+      rank++;
+      *w = 1.0 / *w;
+      }
+
+  for (j=0; j<m; j++)
+    for (i=0; i<m; i++)
+      {
+      s = 0.0;
+      for (k=0; k<m; k++)
+        s += vmat[j+k*m]*a[i+k*m]*wmat[k];
+      b[j+i*m] = s;
+      }
+
+/* Free temporary arrays */
+  free(tmp);
+  free(rv1);
+  free(vmat);
+  free(wmat);
+
+  return rank;
+  }
+
+#undef SIGN
+#undef MAX
+#undef PYTHAG
+#undef TOL
 /* undefine everything. THIS MUST REMAIN AT THE END OF THE FILE */
 #undef LEVMAR_PSEUDOINVERSE
 #undef LEVMAR_LUINVERSE
-#undef BOX_CHECK
+#undef LEVMAR_BOX_CHECK
 #undef LEVMAR_CHOLESKY
 #undef LEVMAR_COVAR
+#undef LEVMAR_STDDEV
+#undef LEVMAR_CORCOEF
 #undef LEVMAR_CHKJAC
-#undef FDIF_FORW_JAC_APPROX
-#undef FDIF_CENT_JAC_APPROX
-#undef TRANS_MAT_MAT_MULT
+#undef LEVMAR_FDIF_FORW_JAC_APPROX
+#undef LEVMAR_FDIF_CENT_JAC_APPROX
+#undef LEVMAR_TRANS_MAT_MAT_MULT
+#undef LEVMAR_L2NRMXMY

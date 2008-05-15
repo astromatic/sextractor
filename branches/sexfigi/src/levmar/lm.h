@@ -2,7 +2,7 @@
 ////////////////////////////////////////////////////////////////////////////////////
 // 
 //  Prototypes and definitions for the Levenberg - Marquardt minimization algorithm
-//  Copyright (C) 2004  Manolis Lourakis (lourakis@ics.forth.gr)
+//  Copyright (C) 2004  Manolis Lourakis (lourakis at ics forth gr)
 //  Institute of Computer Science, Foundation for Research & Technology - Hellas
 //  Heraklion, Crete, Greece.
 //
@@ -22,6 +22,11 @@
 #ifndef _LM_H_
 #define _LM_H_
 
+
+/************************************* Start of configuration options *************************************/
+
+/* specify whether to use LAPACK or not. The first option is strongly recommended */
+#define HAVE_LAPACK /* use LAPACK */
 #undef HAVE_LAPACK  /* uncomment this to force not using LAPACK */
 
 /* to avoid the overhead of repeated mallocs(), routines in Axb.c can be instructed to
@@ -33,7 +38,13 @@
 #define LINSOLVERS_RETAIN_MEMORY /* comment this if you don't want routines in Axb.c retain working memory between calls */
 #endif
 
-/* no changes necessary beyond this point */
+/* determine the precision variants to be build. Default settings build
+ * both the single and double precision routines
+ */
+#define LM_DBL_PREC  /* comment this if you don't want the double precision routines to be compiled */
+#define LM_SNGL_PREC /* comment this if you don't want the single precision routines to be compiled */
+
+/****************** End of configuration options, no changes necessary beyond this point ******************/
 
 
 #ifdef __cplusplus
@@ -43,18 +54,29 @@ extern "C" {
 
 #define FABS(x) (((x)>=0.0)? (x) : -(x))
 
-/* work arrays size for all LM functions with & without jacobian, except for ?levmar_blec_der/?levmar_blec_dif.
+/* work arrays size for ?levmar_der and ?levmar_dif functions.
  * should be multiplied by sizeof(double) or sizeof(float) to be converted to bytes
  */
 #define LM_DER_WORKSZ(npar, nmeas) (2*(nmeas) + 4*(npar) + (nmeas)*(npar) + (npar)*(npar))
-#define LM_DIF_WORKSZ(npar, nmeas) (3*(nmeas) + 4*(npar) + (nmeas)*(npar) + (npar)*(npar))
+#define LM_DIF_WORKSZ(npar, nmeas) (4*(nmeas) + 4*(npar) + (nmeas)*(npar) + (npar)*(npar))
+
+/* work arrays size for ?levmar_bc_der and ?levmar_bc_dif functions.
+ * should be multiplied by sizeof(double) or sizeof(float) to be converted to bytes
+ */
+#define LM_BC_DER_WORKSZ(npar, nmeas) (2*(nmeas) + 4*(npar) + (nmeas)*(npar) + (npar)*(npar))
+#define LM_BC_DIF_WORKSZ(npar, nmeas) LM_BC_DER_WORKSZ((npar), (nmeas)) /* LEVMAR_BC_DIF currently implemented using LEVMAR_BC_DER()! */
+
+/* work arrays size for ?levmar_lec_der and ?levmar_lec_dif functions.
+ * should be multiplied by sizeof(double) or sizeof(float) to be converted to bytes
+ */
+#define LM_LEC_DER_WORKSZ(npar, nmeas, nconstr) LM_DER_WORKSZ((npar)-(nconstr), (nmeas))
+#define LM_LEC_DIF_WORKSZ(npar, nmeas, nconstr) LM_DIF_WORKSZ((npar)-(nconstr), (nmeas))
 
 /* work arrays size for ?levmar_blec_der and ?levmar_blec_dif functions.
  * should be multiplied by sizeof(double) or sizeof(float) to be converted to bytes
- * nmeas'=nmeas+npar
  */
-#define LM_BLEC_DER_WORKSZ(npar, nmeas) (2*(nmeas) + 6*(npar) + (nmeas)*(npar) + 2*(npar)*(npar))
-#define LM_BLEC_DIF_WORKSZ(npar, nmeas) (3*(nmeas) + 7*(npar) + (nmeas)*(npar) + 2*(npar)*(npar))
+#define LM_BLEC_DER_WORKSZ(npar, nmeas, nconstr) LM_LEC_DER_WORKSZ((npar), (nmeas)+(npar), (nconstr))
+#define LM_BLEC_DIF_WORKSZ(npar, nmeas, nconstr) LM_LEC_DIF_WORKSZ((npar), (nmeas)+(npar), (nconstr))
 
 #define LM_OPTS_SZ    	 5 /* max(4, 5) */
 #define LM_INFO_SZ    	 9
@@ -62,9 +84,10 @@ extern "C" {
 #define LM_INIT_MU    	 1E-03
 #define LM_STOP_THRESH	 1E-17
 #define LM_DIFF_DELTA    1E-06
-#define LM_VERSION       "2.2 (Dec. 2007)"
+#define LM_VERSION       "2.3 (May 2008)"
 
-/* double precision LM, with & without jacobian */
+#ifdef LM_DBL_PREC
+/* double precision LM, with & without Jacobian */
 /* unconstrained minimization */
 extern int dlevmar_der(
       void (*func)(double *p, double *hx, int m, int n, void *adata),
@@ -115,8 +138,11 @@ extern int dlevmar_blec_dif(
       int itmax, double *opts, double *info, double *work, double *covar, void *adata);
 #endif /* HAVE_LAPACK */
 
+#endif /* LM_DBL_PREC */
 
-/* single precision LM, with & without jacobian */
+
+#ifdef LM_SNGL_PREC
+/* single precision LM, with & without Jacobian */
 /* unconstrained minimization */
 extern int slevmar_der(
       void (*func)(float *p, float *hx, int m, int n, void *adata),
@@ -165,37 +191,66 @@ extern int slevmar_blec_dif(
       void (*func)(float *p, float *hx, int m, int n, void *adata),
       float *p, float *x, int m, int n, float *lb, float *ub, float *A, float *b, int k, float *wghts,
       int itmax, float *opts, float *info, float *work, float *covar, void *adata);
-#endif /* HAVE LAPACK */
+#endif /* HAVE_LAPACK */
+
+#endif /* LM_SNGL_PREC */
 
 /* linear system solvers */
 #ifdef HAVE_LAPACK
+
+#ifdef LM_DBL_PREC
 extern int dAx_eq_b_QR(double *A, double *B, double *x, int m);
 extern int dAx_eq_b_QRLS(double *A, double *B, double *x, int m, int n);
 extern int dAx_eq_b_Chol(double *A, double *B, double *x, int m);
 extern int dAx_eq_b_LU(double *A, double *B, double *x, int m);
 extern int dAx_eq_b_SVD(double *A, double *B, double *x, int m);
+#endif /* LM_DBL_PREC */
 
+#ifdef LM_SNGL_PREC
 extern int sAx_eq_b_QR(float *A, float *B, float *x, int m);
 extern int sAx_eq_b_QRLS(float *A, float *B, float *x, int m, int n);
 extern int sAx_eq_b_Chol(float *A, float *B, float *x, int m);
 extern int sAx_eq_b_LU(float *A, float *B, float *x, int m);
 extern int sAx_eq_b_SVD(float *A, float *B, float *x, int m);
-#else /* no LAPACK */
-extern int dAx_eq_b_LU_noLapack(double *A, double *B, double *x, int n);
+#endif /* LM_SNGL_PREC */
 
+#else /* no LAPACK */
+
+#ifdef LM_DBL_PREC
+extern int dAx_eq_b_LU_noLapack(double *A, double *B, double *x, int n);
+#endif /* LM_DBL_PREC */
+
+#ifdef LM_SNGL_PREC
 extern int sAx_eq_b_LU_noLapack(float *A, float *B, float *x, int n);
+#endif /* LM_SNGL_PREC */
+
 #endif /* HAVE_LAPACK */
 
-/* jacobian verification, double & single precision */
+/* Jacobian verification, double & single precision */
+#ifdef LM_DBL_PREC
 extern void dlevmar_chkjac(
     void (*func)(double *p, double *hx, int m, int n, void *adata),
     void (*jacf)(double *p, double *j, int m, int n, void *adata),
     double *p, int m, int n, void *adata, double *err);
+#endif /* LM_DBL_PREC */
 
+#ifdef LM_SNGL_PREC
 extern void slevmar_chkjac(
     void (*func)(float *p, float *hx, int m, int n, void *adata),
     void (*jacf)(float *p, float *j, int m, int n, void *adata),
     float *p, int m, int n, void *adata, float *err);
+#endif /* LM_SNGL_PREC */
+
+/* standard deviation & Pearson's correlation coefficient for best-fit parameters */
+#ifdef LM_DBL_PREC
+extern double dlevmar_stddev( double *covar, int m, int i);
+extern double dlevmar_corcoef(double *covar, int m, int i, int j);
+#endif /* LM_DBL_PREC */
+
+#ifdef LM_SNGL_PREC
+extern float slevmar_stddev( float *covar, int m, int i);
+extern float slevmar_corcoef(float *covar, int m, int i, int j);
+#endif /* LM_SNGL_PREC */
 
 #ifdef __cplusplus
 }

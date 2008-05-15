@@ -88,7 +88,8 @@ AC_CHECK_LIB(m, sin)
 
 # Checks for header files.
 AC_HEADER_STDC
-AC_CHECK_HEADERS([fcntl.h limits.h malloc.h stdlib.h string.h sys/mman.h sys/types.h unistd.h])
+AC_CHECK_HEADERS([fcntl.h limits.h malloc.h stdlib.h string.h sys/mman.h \
+		sys/types.h unistd.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
@@ -104,7 +105,8 @@ AC_FUNC_MMAP
 AC_TYPE_SIGNAL
 AC_FUNC_STAT
 AC_FUNC_STRFTIME
-AC_CHECK_FUNCS([atexit getenv memcpy memmove memset mkdir munmap strstr sincos])
+AC_CHECK_FUNCS([atexit getenv memcpy memmove memset mkdir munmap strstr \
+		sincos logf])
 
 # Check support for large files
 AC_SYS_LARGEFILE

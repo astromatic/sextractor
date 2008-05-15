@@ -1,7 +1,7 @@
 /////////////////////////////////////////////////////////////////////////////////
 // 
 //  Levenberg - Marquardt non-linear minimization algorithm
-//  Copyright (C) 2004-05  Manolis Lourakis (lourakis@ics.forth.gr)
+//  Copyright (C) 2004-05  Manolis Lourakis (lourakis at ics forth gr)
 //  Institute of Computer Science, Foundation for Research & Technology - Hellas
 //  Heraklion, Crete, Greece.
 //
@@ -26,12 +26,13 @@
 #define FUNC_STATE LM_ADD_PREFIX(func_state)
 #define LNSRCH LM_ADD_PREFIX(lnsrch)
 #define BOXPROJECT LM_ADD_PREFIX(boxProject)
-#define BOX_CHECK LM_ADD_PREFIX(levmar_box_check)
+#define LEVMAR_BOX_CHECK LM_ADD_PREFIX(levmar_box_check)
 #define LEVMAR_BC_DER LM_ADD_PREFIX(levmar_bc_der)
 #define LEVMAR_BC_DIF LM_ADD_PREFIX(levmar_bc_dif) //CHECKME
-#define FDIF_FORW_JAC_APPROX LM_ADD_PREFIX(fdif_forw_jac_approx)
-#define FDIF_CENT_JAC_APPROX LM_ADD_PREFIX(fdif_cent_jac_approx)
-#define TRANS_MAT_MAT_MULT LM_ADD_PREFIX(trans_mat_mat_mult)
+#define LEVMAR_FDIF_FORW_JAC_APPROX LM_ADD_PREFIX(levmar_fdif_forw_jac_approx)
+#define LEVMAR_FDIF_CENT_JAC_APPROX LM_ADD_PREFIX(levmar_fdif_cent_jac_approx)
+#define LEVMAR_TRANS_MAT_MAT_MULT LM_ADD_PREFIX(levmar_trans_mat_mat_mult)
+#define LEVMAR_L2NRMXMY LM_ADD_PREFIX(levmar_L2nrmxmy)
 #define LEVMAR_COVAR LM_ADD_PREFIX(levmar_covar)
 #define LMBC_DIF_DATA LM_ADD_PREFIX(lmbc_dif_data)
 #define LMBC_DIF_FUNC LM_ADD_PREFIX(lmbc_dif_func)
@@ -52,7 +53,9 @@
         ( ((c) >= (a))? (a) : ( ((c) <= (b))? (b) : (c) ) ) : \
         ( ((c) >= (b))? (b) : ( ((c) <= (a))? (a) : (c) ) ) )
 
-#define _POW_ CNST(2.1)
+#define _POW_ LM_CNST(2.1)
+
+#define __LSITMAX   150 // max #iterations for line search
 
 struct FUNC_STATE{
   int n, *nfev;
@@ -97,7 +100,7 @@ LNSRCH(int m, LM_REAL *x, LM_REAL f, LM_REAL *g, LM_REAL *p, LM_REAL alpha, LM_R
  *	rln		 relative length of newton step
 */
 
-    register int i;
+    register int i, j;
     int firstback = 1;
     LM_REAL disc;
     LM_REAL a3, b;
@@ -106,7 +109,7 @@ LNSRCH(int m, LM_REAL *x, LM_REAL f, LM_REAL *g, LM_REAL *p, LM_REAL alpha, LM_R
     LM_REAL tmp1, tmp2;
     LM_REAL fpls, pfpls = 0., plmbda = 0.; /* -Wall */
 
-    f*=CNST(0.5);
+    f*=LM_CNST(0.5);
     *mxtake = 0;
     *iretcd = 2;
     tmp1 = 0.;
@@ -129,36 +132,41 @@ LNSRCH(int m, LM_REAL *x, LM_REAL f, LM_REAL *g, LM_REAL *p, LM_REAL alpha, LM_R
     rln = 0.;
     if(!sx) /* no scaling */
       for (i = 0; i < m; ++i) {
-	      tmp1 = (FABS(x[i])>=CNST(1.))? FABS(x[i]) : CNST(1.);
+	      tmp1 = (FABS(x[i])>=LM_CNST(1.))? FABS(x[i]) : LM_CNST(1.);
 	      tmp2 = FABS(p[i])/tmp1;
 	      if(rln < tmp2) rln = tmp2;
       }
     else
       for (i = 0; i < m; ++i) {
-	      tmp1 = (FABS(x[i])>=CNST(1.)/sx[i])? FABS(x[i]) : CNST(1.)/sx[i];
+	      tmp1 = (FABS(x[i])>=LM_CNST(1.)/sx[i])? FABS(x[i]) : LM_CNST(1.)/sx[i];
 	      tmp2 = FABS(p[i])/tmp1;
 	      if(rln < tmp2) rln = tmp2;
       }
     rmnlmb = steptl / rln;
-    lambda = CNST(1.0);
+    lambda = LM_CNST(1.0);
 
     /*	check if new iterate satisfactory.  generate new lambda if necessary. */
 
-    while(*iretcd > 1) {
+    for(j=__LSITMAX; j>=0; --j) {
 	    for (i = 0; i < m; ++i)
 	      xpls[i] = x[i] + lambda * p[i];
 
       /* evaluate function at new point */
-      (*func)(xpls, state.hx, m, state.n, state.adata);
+      (*func)(xpls, state.hx, m, state.n, state.adata); ++(*(state.nfev));
+      /* ### state.hx=state.x-state.hx, tmp1=||state.hx|| */
+#if 1
+       tmp1=LEVMAR_L2NRMXMY(state.hx, state.x, state.hx, state.n);
+#else
       for(i=0, tmp1=0.0; i<state.n; ++i){
         state.hx[i]=tmp2=state.x[i]-state.hx[i];
         tmp1+=tmp2*tmp2;
       }
-      fpls=CNST(0.5)*tmp1; *ffpls=tmp1; ++(*(state.nfev));
+#endif
+      fpls=LM_CNST(0.5)*tmp1; *ffpls=tmp1;
 
 	    if (fpls <= f + slp * alpha * lambda) { /* solution found */
 	      *iretcd = 0;
-	      if (lambda == CNST(1.) && sln > stepmx * CNST(.99)) *mxtake = 1;
+	      if (lambda == LM_CNST(1.) && sln > stepmx * LM_CNST(.99)) *mxtake = 1;
 	      return;
 	    }
 
@@ -175,43 +183,46 @@ LNSRCH(int m, LM_REAL *x, LM_REAL f, LM_REAL *g, LM_REAL *p, LM_REAL alpha, LM_R
 	    else { /*	calculate new lambda */
 
 	      /* modifications to cover non-finite values */
-	      if (fpls >= LM_REAL_MAX) {
-		      lambda *= CNST(0.1);
+	      if (!LM_FINITE(fpls)) {
+		      lambda *= LM_CNST(0.1);
 		      firstback = 1;
 	      }
 	      else {
 		      if (firstback) { /*	first backtrack: quadratic fit */
-		        tlmbda = -lambda * slp / ((fpls - f - slp) * CNST(2.));
+		        tlmbda = -lambda * slp / ((fpls - f - slp) * LM_CNST(2.));
 		        firstback = 0;
 		      }
 		      else { /*	all subsequent backtracks: cubic fit */
 		        t1 = fpls - f - lambda * slp;
 		        t2 = pfpls - f - plmbda * slp;
-		        t3 = CNST(1.) / (lambda - plmbda);
-		        a3 = CNST(3.) * t3 * (t1 / (lambda * lambda)
+		        t3 = LM_CNST(1.) / (lambda - plmbda);
+		        a3 = LM_CNST(3.) * t3 * (t1 / (lambda * lambda)
 				      - t2 / (plmbda * plmbda));
 		        b = t3 * (t2 * lambda / (plmbda * plmbda)
 			          - t1 * plmbda / (lambda * lambda));
 		        disc = b * b - a3 * slp;
 		        if (disc > b * b)
-			    /* only one positive critical point, must be minimum */
+			      /* only one positive critical point, must be minimum */
 			        tlmbda = (-b + ((a3 < 0)? -(LM_REAL)sqrt(disc): (LM_REAL)sqrt(disc))) /a3;
 		        else
-			    /* both critical points positive, first is minimum */
+			      /* both critical points positive, first is minimum */
 			        tlmbda = (-b + ((a3 < 0)? (LM_REAL)sqrt(disc): -(LM_REAL)sqrt(disc))) /a3;
 
-		        if (tlmbda > lambda * CNST(.5))
-			        tlmbda = lambda * CNST(.5);
-		    }
-		    plmbda = lambda;
-		    pfpls = fpls;
-		    if (tlmbda < lambda * CNST(.1))
-		      lambda *= CNST(.1);
-		    else
-		      lambda = tlmbda;
-      }
-	  }
-  }
+		        if (tlmbda > lambda * LM_CNST(.5))
+			        tlmbda = lambda * LM_CNST(.5);
+		      }
+		      plmbda = lambda;
+		      pfpls = fpls;
+		      if (tlmbda < lambda * LM_CNST(.1))
+		        lambda *= LM_CNST(.1);
+		      else
+		        lambda = tlmbda;
+        }
+	    }
+    }
+    /* this point is reached when the iterations limit is exceeded */
+	  *iretcd = 1; /* failed */
+	  return;
 } /* LNSRCH */
 
 /* Projections to feasible set \Omega: P_{\Omega}(y) := arg min { ||x - y|| : x \in \Omega},  y \in R^m */
@@ -250,7 +261,7 @@ register int i;
  * If no lower bound constraint applies for p[i], use -DBL_MAX/-FLT_MAX for lb[i];
  * If no upper bound constraint applies for p[i], use DBL_MAX/FLT_MAX for ub[i].
  *
- * This function requires an analytic jacobian. In case the latter is unavailable,
+ * This function requires an analytic Jacobian. In case the latter is unavailable,
  * use LEVMAR_BC_DIF() bellow
  *
  * Returns the number of iterations (>=0) if successfull, LM_ERROR if failed
@@ -264,9 +275,9 @@ register int i;
 
 int LEVMAR_BC_DER(
   void (*func)(LM_REAL *p, LM_REAL *hx, int m, int n, void *adata), /* functional relation describing measurements. A p \in R^m yields a \hat{x} \in  R^n */
-  void (*jacf)(LM_REAL *p, LM_REAL *j, int m, int n, void *adata),  /* function to evaluate the jacobian \part x / \part p */ 
+  void (*jacf)(LM_REAL *p, LM_REAL *j, int m, int n, void *adata),  /* function to evaluate the Jacobian \part x / \part p */ 
   LM_REAL *p,         /* I/O: initial parameter estimates. On output has the estimated solution */
-  LM_REAL *x,         /* I: measurement vector */
+  LM_REAL *x,         /* I: measurement vector. NULL implies a zero vector */
   int m,              /* I: parameter vector dimension (i.e. #unknowns) */
   int n,              /* I: measurement vector dimension */
   LM_REAL *lb,        /* I: vector of lower bounds. If NULL, no lower bounds apply */
@@ -287,10 +298,11 @@ int LEVMAR_BC_DER(
                       *                                 4 - singular matrix. Restart from current p with increased mu 
                       *                                 5 - no further error reduction is possible. Restart with increased mu
                       *                                 6 - stopped by small ||e||_2
+                      *                                 7 - stopped by invalid (i.e. NaN or Inf) "func" values. This is a user error
                       * info[7]= # function evaluations
-                      * info[8]= # jacobian evaluations
+                      * info[8]= # Jacobian evaluations
                       */
-  LM_REAL *work,     /* working memory, allocate if NULL */
+  LM_REAL *work,     /* working memory at least LM_BC_DER_WORKSZ() reals large, allocated if NULL */
   LM_REAL *covar,    /* O: Covariance matrix corresponding to LS solution; mxm. Set to NULL if not needed. */
   void *adata)       /* pointer to possibly additional data, passed uninterpreted to func & jacf.
                       * Set to NULL if not needed
@@ -314,18 +326,19 @@ LM_REAL p_eL2, jacTe_inf, pDp_eL2; /* ||e(p)||_2, ||J^T e||_inf, ||e(p+Dp)||_2 *
 LM_REAL p_L2, Dp_L2=LM_REAL_MAX, dF, dL;
 LM_REAL tau, eps1, eps2, eps2_sq, eps3;
 LM_REAL init_p_eL2;
-int nu=2, nu2, stop, nfev, njev=0;
+int nu=2, nu2, stop=0, nfev, njev=0;
 const int nm=n*m;
 
 /* variables for constrained LM */
 struct FUNC_STATE fstate;
-LM_REAL alpha=CNST(1e-4), beta=CNST(0.9), gamma=CNST(0.99995), gamma_sq=gamma*gamma, rho=CNST(1e-8);
+LM_REAL alpha=LM_CNST(1e-4), beta=LM_CNST(0.9), gamma=LM_CNST(0.99995), gamma_sq=gamma*gamma, rho=LM_CNST(1e-8);
 LM_REAL t, t0;
-LM_REAL steptl=CNST(1e3)*(LM_REAL)sqrt(LM_REAL_EPSILON), jacTeDp;
-LM_REAL tmin=CNST(1e-12), tming=CNST(1e-18); /* minimum step length for LS and PG steps */
-const LM_REAL tini=CNST(1.0); /* initial step length for LS and PG steps */
+LM_REAL steptl=LM_CNST(1e3)*(LM_REAL)sqrt(LM_REAL_EPSILON), jacTeDp;
+LM_REAL tmin=LM_CNST(1e-12), tming=LM_CNST(1e-18); /* minimum step length for LS and PG steps */
+const LM_REAL tini=LM_CNST(1.0); /* initial step length for LS and PG steps */
 int nLMsteps=0, nLSsteps=0, nPGsteps=0, gprevtaken=0;
 int numactive;
+int (*linsolver)(LM_REAL *A, LM_REAL *B, LM_REAL *x, int m)=NULL;
 
   mu=jacTe_inf=t=0.0;  tmin=tmin; /* -Wall */
 
@@ -335,12 +348,12 @@ int numactive;
   }
 
   if(!jacf){
-    fprintf(stderr, RCAT("No function specified for computing the jacobian in ", LEVMAR_BC_DER)
+    fprintf(stderr, RCAT("No function specified for computing the Jacobian in ", LEVMAR_BC_DER)
         RCAT("().\nIf no such function is available, use ", LEVMAR_BC_DIF) RCAT("() rather than ", LEVMAR_BC_DER) "()\n");
     return LM_ERROR;
   }
 
-  if(!BOX_CHECK(lb, ub, m)){
+  if(!LEVMAR_BOX_CHECK(lb, ub, m)){
     fprintf(stderr, LCAT(LEVMAR_BC_DER, "(): at least one lower bound exceeds the upper one\n"));
     return LM_ERROR;
   }
@@ -353,15 +366,15 @@ int numactive;
 	  eps3=opts[3];
   }
   else{ // use default values
-	  tau=CNST(LM_INIT_MU);
-	  eps1=CNST(LM_STOP_THRESH);
-	  eps2=CNST(LM_STOP_THRESH);
-	  eps2_sq=CNST(LM_STOP_THRESH)*CNST(LM_STOP_THRESH);
-	  eps3=CNST(LM_STOP_THRESH);
+	  tau=LM_CNST(LM_INIT_MU);
+	  eps1=LM_CNST(LM_STOP_THRESH);
+	  eps2=LM_CNST(LM_STOP_THRESH);
+	  eps2_sq=LM_CNST(LM_STOP_THRESH)*LM_CNST(LM_STOP_THRESH);
+	  eps3=LM_CNST(LM_STOP_THRESH);
   }
 
   if(!work){
-    worksz=LM_DER_WORKSZ(m, n); //2*n+4*m + n*m + m*m;
+    worksz=LM_BC_DER_WORKSZ(m, n); //2*n+4*m + n*m + m*m;
     work=(LM_REAL *)malloc(worksz*sizeof(LM_REAL)); /* allocate a big chunk in one step */
     if(!work){
       fprintf(stderr, LCAT(LEVMAR_BC_DER, "(): memory allocation request failed\n"));
@@ -397,14 +410,19 @@ int numactive;
 
   /* compute e=x - f(p) and its L2 norm */
   (*func)(p, hx, m, n, adata); nfev=1;
+  /* ### e=x-hx, p_eL2=||e|| */
+#if 1
+  p_eL2=LEVMAR_L2NRMXMY(e, x, hx, n);
+#else
   for(i=0, p_eL2=0.0; i<n; ++i){
     e[i]=tmp=x[i]-hx[i];
     p_eL2+=tmp*tmp;
   }
+#endif
   init_p_eL2=p_eL2;
+  if(!LM_FINITE(p_eL2)) stop=7;
 
-  for(k=stop=0; k<itmax && !stop; ++k){
- //printf("%d  %.15g\n", k, 0.5*p_eL2);
+  for(k=0; k<itmax && !stop; ++k){
     /* Note that p and e have been updated at a previous iteration */
 
     if(p_eL2<=eps3){ /* error is small */
@@ -412,7 +430,7 @@ int numactive;
       break;
     }
 
-    /* Compute the jacobian J at p,  J^T J,  J^T e,  ||J^T e||_inf and ||p||^2.
+    /* Compute the Jacobian J at p,  J^T J,  J^T e,  ||J^T e||_inf and ||p||^2.
      * Since J^T J is symmetric, its computation can be speeded up by computing
      * only its upper triangular part and copying it to the lower part
      */
@@ -457,7 +475,7 @@ int numactive;
     else{ // this is a large problem
       /* Cache efficient computation of J^T J based on blocking
        */
-      TRANS_MAT_MAT_MULT(jac, jacTjac, n, m);
+      LEVMAR_TRANS_MAT_MAT_MULT(jac, jacTjac, n, m);
 
       /* cache efficient computation of J^T e */
       for(i=0; i<m; ++i)
@@ -510,7 +528,7 @@ if(!(k%100)){
         mu=tau*tmp;
       }
       else 
-        mu=CNST(0.5)*tau*p_eL2; /* use Kanzow's starting mu */
+        mu=LM_CNST(0.5)*tau*p_eL2; /* use Kanzow's starting mu */
     }
 
     /* determine increment using a combination of adaptive damping, line search and projected gradient search */
@@ -526,15 +544,15 @@ if(!(k%100)){
        * SVD is the slowest but most accurate; LU offers a tradeoff between accuracy and speed
        */
 
-      issolved=AX_EQ_B_LU(jacTjac, jacTe, Dp, m);
-      //issolved=AX_EQ_B_CHOL(jacTjac, jacTe, Dp, m);
-      //issolved=AX_EQ_B_QR(jacTjac, jacTe, Dp, m);
-      //issolved=AX_EQ_B_QRLS(jacTjac, jacTe, Dp, m, m);
-      //issolved=AX_EQ_B_SVD(jacTjac, jacTe, Dp, m);
+      issolved=AX_EQ_B_LU(jacTjac, jacTe, Dp, m); linsolver=AX_EQ_B_LU;
+      //issolved=AX_EQ_B_CHOL(jacTjac, jacTe, Dp, m); linsolver=AX_EQ_B_CHOL;
+      //issolved=AX_EQ_B_QR(jacTjac, jacTe, Dp, m); linsolver=AX_EQ_B_QR;
+      //issolved=AX_EQ_B_QRLS(jacTjac, jacTe, Dp, m, m); linsolver=AX_EQ_B_QRLS;
+      //issolved=AX_EQ_B_SVD(jacTjac, jacTe, Dp, m); linsolver=AX_EQ_B_SVD;
 
 #else
       /* use the LU included with levmar */
-      issolved=AX_EQ_B_LU(jacTjac, jacTe, Dp, m);
+      issolved=AX_EQ_B_LU(jacTjac, jacTe, Dp, m); linsolver=AX_EQ_B_LU;
 #endif /* HAVE_LAPACK */
 
       if(issolved){
@@ -554,15 +572,24 @@ if(!(k%100)){
           break;
         }
 
-       if(Dp_L2>=(p_L2+eps2)/(CNST(EPSILON)*CNST(EPSILON))){ /* almost singular */
-         stop=4;
-         break;
-       }
+        if(Dp_L2>=(p_L2+eps2)/(LM_CNST(EPSILON)*LM_CNST(EPSILON))){ /* almost singular */
+          stop=4;
+          break;
+        }
 
         (*func)(pDp, hx, m, n, adata); ++nfev; /* evaluate function at p + Dp */
+        /* ### hx=x-hx, pDp_eL2=||hx|| */
+#if 1
+        pDp_eL2=LEVMAR_L2NRMXMY(hx, x, hx, n);
+#else
         for(i=0, pDp_eL2=0.0; i<n; ++i){ /* compute ||e(pDp)||_2 */
           hx[i]=tmp=x[i]-hx[i];
           pDp_eL2+=tmp*tmp;
+        }
+#endif
+        if(!LM_FINITE(pDp_eL2)){
+          stop=7;
+          break;
         }
 
         if(pDp_eL2<=gamma_sq*p_eL2){
@@ -572,9 +599,9 @@ if(!(k%100)){
 #if 1
           if(dL>0.0){
             dF=p_eL2-pDp_eL2;
-            tmp=(CNST(2.0)*dF/dL-CNST(1.0));
-            tmp=CNST(1.0)-tmp*tmp*tmp;
-            mu=mu*( (tmp>=CNST(ONE_THIRD))? tmp : CNST(ONE_THIRD) );
+            tmp=(LM_CNST(2.0)*dF/dL-LM_CNST(1.0));
+            tmp=LM_CNST(1.0)-tmp*tmp*tmp;
+            mu=mu*( (tmp>=LM_CNST(ONE_THIRD))? tmp : LM_CNST(ONE_THIRD) );
           }
           else
             mu=(mu>=pDp_eL2)? pDp_eL2 : mu; /* pDp_eL2 is the new pDp_eL2 */
@@ -624,12 +651,12 @@ if(!(k%100)){
         jacTeDp+=jacTe[i]*Dp[i];
       }
 
-      if(jacTeDp<=-rho*pow(Dp_L2, _POW_/CNST(2.0))){
+      if(jacTeDp<=-rho*pow(Dp_L2, _POW_/LM_CNST(2.0))){
         /* Dp is a descent direction; do a line search along it */
         int mxtake, iretcd;
         LM_REAL stepmx;
 
-        tmp=(LM_REAL)sqrt(p_L2); stepmx=CNST(1e3)*( (tmp>=CNST(1.0))? tmp : CNST(1.0) );
+        tmp=(LM_REAL)sqrt(p_L2); stepmx=LM_CNST(1e3)*( (tmp>=LM_CNST(1.0))? tmp : LM_CNST(1.0) );
 
 #if 1
         /* use Schnabel's backtracking line search; it requires fewer "func" evaluations */
@@ -637,7 +664,7 @@ if(!(k%100)){
                &mxtake, &iretcd, stepmx, steptl, NULL); /* NOTE: LNSRCH() updates hx */
         if(iretcd!=0) goto gradproj; /* rather inelegant but effective way to handle LNSRCH() failures... */
 #else
-        /* use the simpler (but slower!) line search described by Kanzow */
+        /* use the simpler (but slower!) line search described by Kanzow et al */
         for(t=tini; t>tmin; t*=beta){
           for(i=0; i<m; ++i){
             pDp[i]=p[i] + t*Dp[i];
@@ -649,8 +676,10 @@ if(!(k%100)){
             hx[i]=tmp=x[i]-hx[i];
             pDp_eL2+=tmp*tmp;
           }
-          //if(CNST(0.5)*pDp_eL2<=CNST(0.5)*p_eL2 + t*alpha*jacTeDp) break;
-          if(pDp_eL2<=p_eL2 + CNST(2.0)*t*alpha*jacTeDp) break;
+          if(!LM_FINITE(pDp_eL2)) goto gradproj; /* treat as line search failure */
+
+          //if(LM_CNST(0.5)*pDp_eL2<=LM_CNST(0.5)*p_eL2 + t*alpha*jacTeDp) break;
+          if(pDp_eL2<=p_eL2 + LM_CNST(2.0)*t*alpha*jacTeDp) break;
         }
 #endif
         ++nLSsteps;
@@ -670,7 +699,7 @@ gradproj: /* Note that this point can also be reached via a goto when LNSRCH() f
         for(i=0, tmp=0.0; i<m; ++i)
           tmp+=jacTe[i]*jacTe[i];
         tmp=(LM_REAL)sqrt(tmp);
-        tmp=CNST(100.0)/(CNST(1.0)+tmp);
+        tmp=LM_CNST(100.0)/(LM_CNST(1.0)+tmp);
         t0=(tmp<=tini)? tmp : tini; /* guard against poor scaling & large steps; see (3.50) in C.T. Kelley's book */
 
         for(t=(gprevtaken)? t : t0; t>tming; t*=beta){
@@ -681,20 +710,31 @@ gradproj: /* Note that this point can also be reached via a goto when LNSRCH() f
             Dp[i]=pDp[i]-p[i];
 
           (*func)(pDp, hx, m, n, adata); ++nfev; /* evaluate function at p - t*g */
-          for(i=0, pDp_eL2=0.0; i<n; ++i){ /* compute ||e(pDp)||_2 */
+          /* compute ||e(pDp)||_2 */
+          /* ### hx=x-hx, pDp_eL2=||hx|| */
+#if 1
+          pDp_eL2=LEVMAR_L2NRMXMY(hx, x, hx, n);
+#else
+          for(i=0, pDp_eL2=0.0; i<n; ++i){
             hx[i]=tmp=x[i]-hx[i];
             pDp_eL2+=tmp*tmp;
           }
+#endif
+          if(!LM_FINITE(pDp_eL2)){
+            stop=7;
+            goto breaknested;
+          }
+
           for(i=0, tmp=0.0; i<m; ++i) /* compute ||g^T * Dp|| */
             tmp+=jacTe[i]*Dp[i];
 
-          if(gprevtaken && pDp_eL2<=p_eL2 + CNST(2.0)*CNST(0.99999)*tmp){ /* starting t too small */
+          if(gprevtaken && pDp_eL2<=p_eL2 + LM_CNST(2.0)*LM_CNST(0.99999)*tmp){ /* starting t too small */
             t=t0;
             gprevtaken=0;
             continue;
           }
-          //if(CNST(0.5)*pDp_eL2<=CNST(0.5)*p_eL2 + alpha*tmp) break;
-          if(pDp_eL2<=p_eL2 + CNST(2.0)*alpha*tmp) break;
+          //if(LM_CNST(0.5)*pDp_eL2<=LM_CNST(0.5)*p_eL2 + alpha*tmp) break;
+          if(pDp_eL2<=p_eL2 + LM_CNST(2.0)*alpha*tmp) break;
         }
 
         ++nPGsteps;
@@ -725,6 +765,8 @@ gradproj: /* Note that this point can also be reached via a goto when LNSRCH() f
     } /* inner loop */
   }
 
+breaknested: /* NOTE: this point is also reached via an explicit goto! */
+
   if(k>=itmax) stop=3;
 
   for(i=0; i<m; ++i) /* restore diagonal J^T J entries */
@@ -751,11 +793,15 @@ gradproj: /* Note that this point can also be reached via a goto when LNSRCH() f
                                                                
   if(freework) free(work);
 
+#ifdef LINSOLVERS_RETAIN_MEMORY
+    if(linsolver) (*linsolver)(NULL, NULL, NULL, 0);
+#endif
+
 #if 0
 printf("%d LM steps, %d line search, %d projected gradient\n", nLMsteps, nLSsteps, nPGsteps);
 #endif
 
-  return (stop!=4)?  k : LM_ERROR;
+  return (stop!=4 && stop!=7)?  k : LM_ERROR;
 }
 
 /* following struct & LMBC_DIF_XXX functions won't be necessary if a true secant
@@ -782,11 +828,11 @@ struct LMBC_DIF_DATA *dta=(struct LMBC_DIF_DATA *)data;
 
   /* evaluate user-supplied function at p */
   (*(dta->func))(p, dta->hx, m, n, dta->adata);
-  FDIF_FORW_JAC_APPROX(dta->func, p, dta->hx, dta->hxx, dta->delta, jac, m, n, dta->adata);
+  LEVMAR_FDIF_FORW_JAC_APPROX(dta->func, p, dta->hx, dta->hxx, dta->delta, jac, m, n, dta->adata);
 }
 
 
-/* No jacobian version of the LEVMAR_BC_DER() function above: the jacobian is approximated with 
+/* No Jacobian version of the LEVMAR_BC_DER() function above: the Jacobian is approximated with 
  * the aid of finite differences (forward or central, see the comment for the opts argument)
  * Ideally, this function should be implemented with a secant approach. Currently, it just calls
  * LEVMAR_BC_DER()
@@ -794,7 +840,7 @@ struct LMBC_DIF_DATA *dta=(struct LMBC_DIF_DATA *)data;
 int LEVMAR_BC_DIF(
   void (*func)(LM_REAL *p, LM_REAL *hx, int m, int n, void *adata), /* functional relation describing measurements. A p \in R^m yields a \hat{x} \in  R^n */
   LM_REAL *p,         /* I/O: initial parameter estimates. On output has the estimated solution */
-  LM_REAL *x,         /* I: measurement vector */
+  LM_REAL *x,         /* I: measurement vector. NULL implies a zero vector */
   int m,              /* I: parameter vector dimension (i.e. #unknowns) */
   int n,              /* I: measurement vector dimension */
   LM_REAL *lb,        /* I: vector of lower bounds. If NULL, no lower bounds apply */
@@ -802,8 +848,8 @@ int LEVMAR_BC_DIF(
   int itmax,          /* I: maximum number of iterations */
   LM_REAL opts[5],    /* I: opts[0-4] = minim. options [\mu, \epsilon1, \epsilon2, \epsilon3, \delta]. Respectively the
                        * scale factor for initial \mu, stopping thresholds for ||J^T e||_inf, ||Dp||_2 and ||e||_2 and
-                       * the step used in difference approximation to the jacobian. Set to NULL for defaults to be used.
-                       * If \delta<0, the jacobian is approximated with central differences which are more accurate
+                       * the step used in difference approximation to the Jacobian. Set to NULL for defaults to be used.
+                       * If \delta<0, the Jacobian is approximated with central differences which are more accurate
                        * (but slower!) compared to the forward differences employed by default. 
                        */
   LM_REAL info[LM_INFO_SZ],
@@ -817,10 +863,11 @@ int LEVMAR_BC_DIF(
                       *                                 4 - singular matrix. Restart from current p with increased mu 
                       *                                 5 - no further error reduction is possible. Restart with increased mu
                       *                                 6 - stopped by small ||e||_2
+                      *                                 7 - stopped by invalid (i.e. NaN or Inf) "func" values. This is a user error
                       * info[7]= # function evaluations
-                      * info[8]= # jacobian evaluations
+                      * info[8]= # Jacobian evaluations
                       */
-  LM_REAL *work,     /* working memory, allocate if NULL */
+  LM_REAL *work,     /* working memory at least LM_BC_DIF_WORKSZ() reals large, allocated if NULL */
   LM_REAL *covar,    /* O: Covariance matrix corresponding to LS solution; mxm. Set to NULL if not needed. */
   void *adata)       /* pointer to possibly additional data, passed uninterpreted to func.
                       * Set to NULL if not needed
@@ -844,7 +891,7 @@ int ret;
     ret=LEVMAR_BC_DER(LMBC_DIF_FUNC, LMBC_DIF_JACF, p, x, m, n, lb, ub, itmax, opts, info, work, covar, (void *)&data);
 
     if(info) /* correct the number of function calls */
-      info[7]+=info[8]*(m+1); /* each jacobian evaluation costs m+1 function calls */
+      info[7]+=info[8]*(m+1); /* each Jacobian evaluation costs m+1 function calls */
 
     free(data.hx);
 
@@ -854,16 +901,17 @@ int ret;
 #undef FUNC_STATE
 #undef LNSRCH
 #undef BOXPROJECT
-#undef BOX_CHECK
+#undef LEVMAR_BOX_CHECK
 #undef LEVMAR_BC_DER
 #undef LMBC_DIF_DATA
 #undef LMBC_DIF_FUNC
 #undef LMBC_DIF_JACF
 #undef LEVMAR_BC_DIF
-#undef FDIF_FORW_JAC_APPROX
-#undef FDIF_CENT_JAC_APPROX
+#undef LEVMAR_FDIF_FORW_JAC_APPROX
+#undef LEVMAR_FDIF_CENT_JAC_APPROX
 #undef LEVMAR_COVAR
-#undef TRANS_MAT_MAT_MULT
+#undef LEVMAR_TRANS_MAT_MAT_MULT
+#undef LEVMAR_L2NRMXMY
 #undef AX_EQ_B_LU
 #undef AX_EQ_B_CHOL
 #undef AX_EQ_B_QR

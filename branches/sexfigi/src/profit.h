@@ -9,7 +9,7 @@
 *
 *	Contents:	Include file for profit.c.
 *
-*	Last modify:	29/04/2008
+*	Last modify:	02/05/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -102,11 +102,13 @@ typedef struct
   {
   int		nparam;		/* Number of parameters to be fitted */
   double	*paramlist[PARAM_NPARAM];	/* flat parameter list */
+  int		paramindex[PARAM_NPARAM];/* Vector of parameter indices */
   double	param[PARAM_NPARAM];	/* Vector of parameters to be fitted */
   double	paraminit[PARAM_NPARAM];/* Parameter initial guesses */
   double	parammin[PARAM_NPARAM];	/* Parameter lower limits */
   double	parammax[PARAM_NPARAM];	/* Parameter upper limits */
   double	*covar;		/* Covariance matrix */
+  double	paramerr[PARAM_NPARAM];	/* Std deviations of parameters */
   int		niter;		/* Number of iterations */
   profstruct	**prof;		/* Array of pointers to profiles */
   int		nprof;		/* Number of profiles to consider */

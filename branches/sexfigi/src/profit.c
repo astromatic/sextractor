@@ -9,7 +9,7 @@
 *
 *	Contents:	Fit an arbitrary profile combination to a detection.
 *
-*	Last modify:	30/04/2008
+*	Last modify:	14/05/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -24,6 +24,13 @@
 #define _GNU_SOURCE
 #include <math.h>
 #endif
+
+#ifdef HAVE_LOGF
+#define	LOGF	logf
+#else
+#define	LOGF	log
+#endif
+
 #include	<stdio.h>
 #include	<stdlib.h>
 #include	<string.h>
@@ -162,7 +169,7 @@ OUTPUT	Pointer to an allocated fit structure (containing details about the
 	fit).
 NOTES	It is a modified version of the lm_minimize() of lmfit.
 AUTHOR	E. Bertin (IAP)
-VERSION	30/04/2008
+VERSION	11/05/2008
  ***/
 void	profit_fit(profitstruct *profit,
 		picstruct *field, picstruct *wfield,
@@ -172,9 +179,10 @@ void	profit_fit(profitstruct *profit,
     checkstruct		*check;
     double		*param, *oldparaminit,
 			psf_fwhm, oldchi2;
-    int			ix,iy, p, oldniter;
+    int			ix,iy, p, oldniter, nparam;
 
 
+  nparam = profit->nparam;
   if (profit->psfdft)
     {
     QFREE(profit->psfdft);
@@ -210,9 +218,9 @@ void	profit_fit(profitstruct *profit,
   QMALLOC(profit->objweight, PIXTYPE,profit->objnaxisn[0]*profit->objnaxisn[1]);
   QMALLOC(profit->lmodpix, PIXTYPE, profit->objnaxisn[0]*profit->objnaxisn[1]);
   profit->nresi = profit_copyobjpix(profit, field, wfield, obj, ix,iy);
-  if (profit->nresi < profit->nparam)
+  if (profit->nresi < nparam)
     {
-    for (p=0; p<profit->nparam; p++)
+    for (p=0; p<nparam; p++)
       obj2->prof_vector[p] = 0.0;
     obj2->prof_niter = 0;
     return;
@@ -243,7 +251,7 @@ void	profit_fit(profitstruct *profit,
 
   profit_resetparams(profit, obj, obj2);
 
-//for (p=0; p<profit->nparam; p++)
+//for (p=0; p<nparam; p++)
 //printf("%g ", profit->paraminit[p]);
 //printf("\n");
 
@@ -252,7 +260,7 @@ the_gal++;
 /* Actual minimisation */
   profit->niter = profit_minimize(profit, PROFIT_MAXITER);
 
-  QMEMCPY(profit->paraminit, oldparaminit, double, profit->nparam);
+  QMEMCPY(profit->paraminit, oldparaminit, double, nparam);
   if (profit_setparam(profit, PARAM_ARMS_PITCH, 160.0, 130.0, 175.0)==RETURN_OK)
     {
     oldchi2 = profit->chi2;
@@ -262,7 +270,7 @@ the_gal++;
     profit->niter = profit_minimize(profit, PROFIT_MAXITER);
     if (profit->chi2 > oldchi2)
       {
-      memcpy(profit->paraminit, oldparaminit, profit->nparam*sizeof(double));
+      memcpy(profit->paraminit, oldparaminit, nparam*sizeof(double));
       profit->chi2 = oldchi2;
       profit->niter = oldniter;
       }
@@ -272,6 +280,8 @@ the_gal++;
 
 /* Convert covariance matrix to bound space */
   profit_covarunboundtobound(profit);
+  for (p=0; p<nparam; p++)
+    profit->paramerr[p]= sqrt(profit->covar[p*(nparam+1)]);
 
 /* Equate param and paraminit vectors to avoid confusion later on */
   for (p=0; p<profit->nparam; p++)
@@ -299,13 +309,13 @@ the_gal++;
 /* Fill measurement parameters */
   if (FLAG(obj2.prof_vector))
     {
-    for (p=0; p<profit->nparam; p++)
+    for (p=0; p<nparam; p++)
       obj2->prof_vector[p]= profit->param[p];
     }
   if (FLAG(obj2.prof_errvector))
     {
-    for (p=0; p<profit->nparam; p++)
-      obj2->prof_errvector[p]= sqrt(profit->covar[p*(profit->nparam+1)]);
+    for (p=0; p<nparam; p++)
+      obj2->prof_errvector[p]= profit->paramerr[p];
     }
 
   obj2->prof_niter = profit->niter;
@@ -326,20 +336,40 @@ the_gal++;
   if (FLAG(obj2.prof_spheroid_flux))
     {
     obj2->prof_spheroid_flux = *profit->paramlist[PARAM_SPHEROID_FLUX];
+    obj2->prof_spheroid_fluxerr =
+		profit->paramerr[profit->paramindex[PARAM_SPHEROID_FLUX]];
     obj2->prof_spheroid_reff = *profit->paramlist[PARAM_SPHEROID_REFF];
+    obj2->prof_spheroid_refferr = 
+		profit->paramerr[profit->paramindex[PARAM_SPHEROID_REFF]];
     obj2->prof_spheroid_aspect = *profit->paramlist[PARAM_SPHEROID_ASPECT];
+    obj2->prof_spheroid_aspecterr = 
+		profit->paramerr[profit->paramindex[PARAM_SPHEROID_ASPECT]];
     obj2->prof_spheroid_theta =
 			fmod_m90_p90(*profit->paramlist[PARAM_SPHEROID_POSANG]);
+    obj2->prof_spheroid_thetaerr = 
+		profit->paramerr[profit->paramindex[PARAM_SPHEROID_POSANG]];
     if (FLAG(obj2.prof_spheroid_sersicn))
+      {
       obj2->prof_spheroid_sersicn = *profit->paramlist[PARAM_SPHEROID_SERSICN];
+      obj2->prof_spheroid_sersicnerr = 
+		profit->paramerr[profit->paramindex[PARAM_SPHEROID_SERSICN]];
+      }
     }
 
   if (FLAG(obj2.prof_disk_flux))
     {
     obj2->prof_disk_flux = *profit->paramlist[PARAM_DISK_FLUX];
+    obj2->prof_disk_fluxerr =
+		profit->paramerr[profit->paramindex[PARAM_DISK_FLUX]];
     obj2->prof_disk_scale = *profit->paramlist[PARAM_DISK_SCALE];
+    obj2->prof_disk_scaleerr =
+		profit->paramerr[profit->paramindex[PARAM_DISK_SCALE]];
     obj2->prof_disk_aspect = *profit->paramlist[PARAM_DISK_ASPECT];
+    obj2->prof_disk_aspecterr =
+		profit->paramerr[profit->paramindex[PARAM_DISK_ASPECT]];
     obj2->prof_disk_theta = fmod_m90_p90(*profit->paramlist[PARAM_DISK_POSANG]);
+    obj2->prof_disk_thetaerr =
+		profit->paramerr[profit->paramindex[PARAM_DISK_POSANG]];
     if (FLAG(obj2.prof_bar_flux))
       {
       obj2->prof_bar_flux = *profit->paramlist[PARAM_BAR_FLUX];
@@ -621,15 +651,15 @@ INPUT	Profile-fitting structure,
 OUTPUT	Vector of residuals.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	21/04/2008
+VERSION	14/05/2008
  ***/
 double	*profit_compresi(profitstruct *profit,
 		objstruct *obj, obj2struct *obj2, double *resi)
   {
    double	*resit,
-		invsig, error, x1c,x1,x2,rmin;
+		error, x1c,x1,x2,rmin;
    PIXTYPE	*objpix, *objweight, *lmodpix,
-		val,val2,wval;
+		val,val2,wval, invsig;
    int		npix, ix1,ix2;
   
 /* Compute vector of residuals */
@@ -652,8 +682,8 @@ double	*profit_compresi(profitstruct *profit,
       if ((wval=*(objweight++))>0.0)
         {
         val2 = (double)(val - *lmodpix)*wval*invsig;
-        val2 = val2>0.0? log(1.0+val2) : -log(1.0-val2);
-        *(resit++) = val2;
+        val2 = val2>0.0? LOGF(1.0+val2) : -LOGF(1.0-val2);
+        *(resit++) = val2*PROFIT_DYNPARAM;
 //        *(resit++) = val2*(rmin/(sqrt(r2)+rmin));
         error += val2*val2;
         }
@@ -1192,7 +1222,10 @@ void	profit_addparam(profitstruct *profit, paramenum paramindex,
     *param = profit->paramlist[paramindex];
   else
 /*-- No */
-    *param = profit->paramlist[paramindex] = &profit->param[profit->nparam++];
+    {
+    *param = profit->paramlist[paramindex] = &profit->param[profit->nparam];
+    profit->paramindex[paramindex] = profit->nparam++;
+    }
 
   return;
   }
@@ -1209,7 +1242,7 @@ INPUT	Pointer to the profit structure,
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	18/04/2008
+VERSION	02/05/2008
  ***/
 void	profit_resetparam(profitstruct *profit, paramenum paramtype,
 		objstruct *obj, obj2struct *obj2)
@@ -1245,9 +1278,9 @@ void	profit_resetparam(profitstruct *profit, paramenum paramtype,
       parammax = param * 4.0;
       break;
     case PARAM_SPHEROID_ASPECT:
-      param = profit->nprof>1? 1.0 : obj->b/obj->a;
-      parammin = profit->nprof>1? 0.5 : 0.01;
-      parammax = profit->nprof>1? 2.0 : 100.0;
+      param = FLAG(obj2.prof_disk_flux)? 1.0 : obj->b/obj->a;
+      parammin = FLAG(obj2.prof_disk_flux)? 0.5 : 0.01;
+      parammax = 1.0;
       break;
     case PARAM_SPHEROID_POSANG:
       param = obj->theta;
@@ -1272,7 +1305,7 @@ void	profit_resetparam(profitstruct *profit, paramenum paramtype,
     case PARAM_DISK_ASPECT:
       param = obj->b/obj->a;
       parammin = 0.01;
-      parammax = 100.0;
+      parammax = 1.0;
       break;
     case PARAM_DISK_POSANG:
       param = obj->theta;
