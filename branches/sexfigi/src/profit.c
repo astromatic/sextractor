@@ -9,7 +9,7 @@
 *
 *	Contents:	Fit an arbitrary profile combination to a detection.
 *
-*	Last modify:	14/05/2008
+*	Last modify:	16/05/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -169,7 +169,7 @@ OUTPUT	Pointer to an allocated fit structure (containing details about the
 	fit).
 NOTES	It is a modified version of the lm_minimize() of lmfit.
 AUTHOR	E. Bertin (IAP)
-VERSION	11/05/2008
+VERSION	16/05/2008
  ***/
 void	profit_fit(profitstruct *profit,
 		picstruct *field, picstruct *wfield,
@@ -178,7 +178,7 @@ void	profit_fit(profitstruct *profit,
     psfstruct		*psf;
     checkstruct		*check;
     double		*param, *oldparaminit,
-			psf_fwhm, oldchi2;
+			psf_fwhm, oldchi2, a , cp,sp;
     int			ix,iy, p, oldniter, nparam;
 
 
@@ -373,25 +373,51 @@ the_gal++;
     if (FLAG(obj2.prof_bar_flux))
       {
       obj2->prof_bar_flux = *profit->paramlist[PARAM_BAR_FLUX];
+      obj2->prof_bar_fluxerr =
+		profit->paramerr[profit->paramindex[PARAM_BAR_FLUX]];
       obj2->prof_bar_length = *profit->paramlist[PARAM_ARMS_START]
 				**profit->paramlist[PARAM_DISK_SCALE];
+      obj2->prof_bar_lengtherr = *profit->paramlist[PARAM_ARMS_START]
+		  * profit->paramerr[profit->paramindex[PARAM_DISK_SCALE]]
+		+ *profit->paramlist[PARAM_DISK_SCALE]
+		  * profit->paramerr[profit->paramindex[PARAM_ARMS_START]];
       obj2->prof_bar_aspect = *profit->paramlist[PARAM_BAR_ASPECT];
+      obj2->prof_bar_aspecterr =
+		profit->paramerr[profit->paramindex[PARAM_BAR_ASPECT]];
       obj2->prof_bar_posang = 
 			fmod_m90_p90(*profit->paramlist[PARAM_ARMS_POSANG]);
+      obj2->prof_bar_posangerr =
+		profit->paramerr[profit->paramindex[PARAM_ARMS_POSANG]];
       if (FLAG(obj2.prof_bar_theta))
-        obj2->prof_bar_theta = fmod_m90_p90(atan2(obj2->prof_bar_aspect
-			*sin(obj2->prof_bar_posang*DEG),
-		obj2->prof_bar_aspect*cos(obj2->prof_bar_posang*DEG))/DEG
-		+ obj2->prof_disk_theta);
+        {
+        cp = cos(obj2->prof_bar_posang*DEG);
+        sp = sin(obj2->prof_bar_posang*DEG);
+        a = obj2->prof_disk_aspect;
+        obj2->prof_bar_theta = fmod_m90_p90(atan2(a*sp,cp)/DEG
+				+ obj2->prof_disk_theta);
+        obj2->prof_bar_thetaerr = obj2->prof_bar_posangerr*a/(cp*cp+a*a*sp*sp);
+        }
       if (FLAG(obj2.prof_arms_flux))
         {
         obj2->prof_arms_flux = *profit->paramlist[PARAM_ARMS_FLUX];
+        obj2->prof_arms_fluxerr =
+		profit->paramerr[profit->paramindex[PARAM_ARMS_FLUX]];
         obj2->prof_arms_pitch = *profit->paramlist[PARAM_ARMS_PITCH];
+        obj2->prof_arms_pitcherr =
+		profit->paramerr[profit->paramindex[PARAM_ARMS_PITCH]];
         obj2->prof_arms_start = *profit->paramlist[PARAM_ARMS_START]
 				**profit->paramlist[PARAM_DISK_SCALE];
+        obj2->prof_arms_starterr = *profit->paramlist[PARAM_ARMS_START]
+		  * profit->paramerr[profit->paramindex[PARAM_DISK_SCALE]]
+		+ *profit->paramlist[PARAM_DISK_SCALE]
+		  * profit->paramerr[profit->paramindex[PARAM_ARMS_START]];
         obj2->prof_arms_quadfrac = *profit->paramlist[PARAM_ARMS_QUADFRAC];
+        obj2->prof_arms_quadfracerr =
+		profit->paramerr[profit->paramindex[PARAM_ARMS_QUADFRAC]];
         obj2->prof_arms_posang =
 			fmod_m90_p90(*profit->paramlist[PARAM_ARMS_POSANG]);
+        obj2->prof_arms_posangerr =
+		profit->paramerr[profit->paramindex[PARAM_ARMS_POSANG]];
         }
       }
     }

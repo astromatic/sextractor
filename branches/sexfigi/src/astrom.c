@@ -9,7 +9,7 @@
 *
 *	Contents:	Astrometrical computations.
 *
-*	Last modify:	25/04/2008
+*	Last modify:	16/05/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -592,6 +592,7 @@ void	astrom_profshapeparam(picstruct *field, objstruct *obj)
   lm3 = obj2->jacob[lat+naxis*lat];
 
 /* Spheroid World coordinates */
+  obj2->prof_spheroid_thetaerrw=obj2->prof_spheroid_thetaerr; /* quick & dirty*/
   if (FLAG(obj2.prof_spheroid_reffw))
     {
     ct = cos(obj2->prof_spheroid_theta*DEG);
@@ -626,18 +627,24 @@ void	astrom_profshapeparam(picstruct *field, objstruct *obj)
 					+ obj2->dtheta1950);
         }
       }
-    if (FLAG(obj2.prof_spheroid_reffw))
-      {
-      temp = sqrt(0.25*temp*temp+xym*xym);
-      pm2 = 0.5*(xm2+ym2);
-      obj2->prof_spheroid_reffw = sqrt(pm2+temp);
-      obj2->prof_spheroid_aspectw = obj2->prof_spheroid_reffw>0.0?
+    temp = sqrt(0.25*temp*temp+xym*xym);
+    pm2 = 0.5*(xm2+ym2);
+    obj2->prof_spheroid_reffw = sqrt(pm2+temp);
+    obj2->prof_spheroid_refferrw = obj2->prof_spheroid_reff > 0.0?
+	obj2->prof_spheroid_refferr/obj2->prof_spheroid_reff
+				*obj2->prof_spheroid_reffw
+	: 0.0;
+    obj2->prof_spheroid_aspectw = obj2->prof_spheroid_reffw>0.0?
 				  sqrt(pm2-temp) / obj2->prof_spheroid_reffw
 				: obj2->prof_spheroid_aspect;
-      }
+    obj2->prof_spheroid_aspecterrw = obj2->prof_spheroid_aspect > 0.0?
+	obj2->prof_spheroid_aspecterr/obj2->prof_spheroid_aspect
+				*obj2->prof_spheroid_aspectw
+	: 0.0;
     }
 
 /* Disk World coordinates */
+  obj2->prof_disk_thetaerrw = obj2->prof_disk_thetaerr; /* quick & dirty*/
   if (FLAG(obj2.prof_disk_scalew))
     {
     ct = cos(obj2->prof_disk_theta*DEG);
@@ -673,18 +680,22 @@ void	astrom_profshapeparam(picstruct *field, objstruct *obj)
 					+ obj2->dtheta1950);
         }
       }
-    if (FLAG(obj2.prof_disk_scalew))
-      {
-      temp = sqrt(0.25*temp*temp+xym*xym);
-      pm2 = 0.5*(xm2+ym2);
-      obj2->prof_disk_scalew = sqrt(pm2+temp);
-      obj2->prof_disk_aspectw = obj2->prof_disk_scalew>0.0?
+    temp = sqrt(0.25*temp*temp+xym*xym);
+    pm2 = 0.5*(xm2+ym2);
+    obj2->prof_disk_scalew = sqrt(pm2+temp);
+    obj2->prof_disk_scaleerrw = obj2->prof_disk_scale > 0.0?
+	obj2->prof_disk_scaleerr/obj2->prof_disk_scale*obj2->prof_disk_scalew
+	: 0.0;
+    obj2->prof_disk_aspectw = obj2->prof_disk_scalew>0.0?
 				  sqrt(pm2-temp) / obj2->prof_disk_scalew
 				: obj2->prof_disk_aspect;
-      }
+    obj2->prof_disk_aspecterrw = obj2->prof_disk_aspect > 0.0?
+	obj2->prof_disk_aspecterr/obj2->prof_disk_aspect*obj2->prof_disk_aspectw
+	: 0.0;
     }
 
 /* Bar World coordinates */
+  obj2->prof_bar_thetaerrw = obj2->prof_bar_thetaerr;
   if (FLAG(obj2.prof_bar_lengthw))
     {
     ct = cos(obj2->prof_bar_theta*DEG);

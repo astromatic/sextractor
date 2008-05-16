@@ -9,7 +9,7 @@
 *
 *	Contents:	global type definitions.
 *
-*	Last modify:	10/05/2008
+*	Last modify:	16/05/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -309,6 +309,25 @@ typedef struct
   float		mag_prof;			/* Mag from model-fitting */
   float		magerr_prof;			/* RMS mag from model-fitting */
   float		x_prof, y_prof;			/* Coords from model-fitting*/
+  double	xw_prof, yw_prof;		/* WORLD coords */
+  double	alphas_prof, deltas_prof;	/* native alpha, delta */
+  double	alpha2000_prof, delta2000_prof;	/* J2000 alpha, delta */
+  double	alpha1950_prof, delta1950_prof;	/* B1950 alpha, delta */
+  double	poserrmx2_prof, poserrmy2_prof,
+		poserrmxy_prof;			/* Error ellips moments */
+  float		poserra_prof, poserrb_prof,
+		poserrtheta_prof;		/* Error ellips parameters */
+  float		poserrcxx_prof, poserrcyy_prof,
+		poserrcxy_prof;			/* pos. error ellipse */
+  double	poserrmx2w_prof, poserrmy2w_prof,
+		poserrmxyw_prof;		/* WORLD error moments */
+  float		poserraw_prof, poserrbw_prof,
+		poserrthetaw_prof;		/* WORLD error parameters */
+  float		poserrthetas_prof;		/* native error pos. angle */
+  float		poserrtheta2000_prof;		/* J2000 error pos. angle */
+  float		poserrtheta1950_prof;		/* B1950 error pos. angle */
+  float		poserrcxxw_prof, poserrcyyw_prof,
+		poserrcxyw_prof;		/* WORLD error ellipse */
   double	prof_mx2, prof_my2, prof_mxy;	/* Profile model moments */
   double	prof_mx2w, prof_my2w, prof_mxyw;/* WORLD profile model moments*/
   float		prof_eps1, prof_eps2;		/* Profile model ellip.vector */
@@ -362,12 +381,19 @@ typedef struct
   float		prof_bar_mag;			/* Bar "total" magnitude */
   float		prof_bar_magerr;		/* RMS error */
   float		prof_bar_length;		/* Bar length */
+  float		prof_bar_lengtherr;		/* RMS error */
   float		prof_bar_lengthw;		/* WORLD bar length */
+  float		prof_bar_lengtherrw;		/* RMS error */
   float		prof_bar_aspect;		/* Bar aspect ratio */
+  float		prof_bar_aspecterr;		/* RMS error */
   float		prof_bar_aspectw;		/* WORLD bar aspect ratio */
+  float		prof_bar_aspecterrw;		/* RMS error */
   float		prof_bar_posang;		/* Bar true prosition angle */
+  float		prof_bar_posangerr;		/* RMS error */
   float		prof_bar_theta;			/* Bar projected angle */
+  float		prof_bar_thetaerr;		/* RMS error */
   float		prof_bar_thetaw;		/* WORLD bar projected angle */
+  float		prof_bar_thetaerrw;		/* RMS error */
   float		prof_bar_thetas;		/* Sky bar projected angle */
   float		prof_bar_theta2000;		/* J2000 bar projected angle */
   float		prof_bar_theta1950;		/* B1950 bar projected angle */
@@ -376,16 +402,23 @@ typedef struct
   float		prof_arms_mag;			/* Arms "total" magnitude */
   float		prof_arms_magerr;		/* RMS error */
   float		prof_arms_scale;		/* Arms scalelength */
+  float		prof_arms_scaleerr;		/* RMS error */
   float		prof_arms_scalew;		/* WORLD arms scalelength */
+  float		prof_arms_scaleerrw;		/* RMS error */
   float		prof_arms_posang;		/* Arms true position angle */
+  float		prof_arms_posangerr;		/* RMS error */
 //  float		prof_arms_thetaw;		/* WORLD arms position angle */
 //  float		prof_arms_thetas;		/* Sky arms position angle */
 //  float		prof_arms_theta2000;		/* J2000 arms position angle */
 //  float		prof_arms_theta1950;		/* B1950 arms position angle */
   float		prof_arms_pitch;		/* Arms pitch angle */
+  float		prof_arms_pitcherr;		/* RMS error */
   float		prof_arms_start;		/* Arms starting radius */
+  float		prof_arms_starterr;		/* RMS error */
   float		prof_arms_startw;		/* WORLD arms starting radius */
+  float		prof_arms_starterrw;		/* RMS error */
   float		prof_arms_quadfrac;		/* Arms quadrature fraction */
+  float		prof_arms_quadfracerr;		/* RMS error */
 /* ---- MEF */
   short		ext_number;			/* FITS extension number */
   }	obj2struct;
