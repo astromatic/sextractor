@@ -169,6 +169,36 @@ void	updateparamflags()
 
 /*----------------------------- Model-fitting -----------------------------*/
 
+  FLAG(obj2.poserraw_prof) |= FLAG(obj2.poserrbw_prof);
+  FLAG(obj2.poserrcxxw_prof) |= FLAG(obj2.poserrcyyw_prof)
+			| FLAG(obj2.poserrcxyw_prof);
+  FLAG(obj2.poserrthetas_prof) |= FLAG(obj2.poserrtheta1950_prof)
+				| FLAG(obj2.poserrtheta2000_prof);
+  FLAG(obj2.poserrthetaw_prof) |= FLAG(obj2.poserrthetas_prof);
+
+  FLAG(obj2.poserrmx2w_prof) |= FLAG(obj2.poserrmy2w_prof)
+			| FLAG(obj2.poserrmxyw_prof)
+			| FLAG(obj2.poserrthetaw_prof)|FLAG(obj2.poserraw_prof)
+			| FLAG(obj2.poserrcxxw_prof);
+
+  FLAG(obj2.poserra_prof) |= FLAG(obj2.poserrb_prof)
+			| FLAG(obj2.poserrtheta_prof)
+			| FLAG(obj2.poserraw_prof);
+  FLAG(obj2.poserrcxx_prof) |= FLAG(obj2.poserrcyy_prof)
+			| FLAG(obj2.poserrcxy_prof);
+  FLAG(obj2.alpha1950_prof) |= FLAG(obj2.delta1950_prof)
+			| FLAG(obj2.poserrtheta1950_prof);
+  FLAG(obj2.alpha2000_prof) |= FLAG(obj2.delta2000_prof)
+			| FLAG(obj2.alpha1950_prof)
+			| FLAG(obj2.poserrtheta2000_prof);
+  FLAG(obj2.alphas_prof) |= FLAG(obj2.deltas_prof)
+			| FLAG(obj2.alpha2000_prof);
+  FLAG(obj2.xw_prof) |= FLAG(obj2.yw_prof)
+			| FLAG(obj2.alphas_prof);
+
+  FLAG(obj2.x_prof) |= FLAG(obj2.y_prof)
+			| FLAG(obj2.xw_prof)
+			| FLAG(obj2.poserra_prof);
   FLAG(obj2.mag_prof) |= FLAG(obj2.magerr_prof);
   FLAG(obj2.flux_prof) |= FLAG(obj2.mag_prof) | FLAG(obj2.fluxerr_prof);
   FLAG(obj2.prof_spheroid_mag) |= FLAG(obj2.prof_spheroid_magerr);
@@ -193,7 +223,8 @@ void	updateparamflags()
 			| FLAG(obj2.win_theta1950)
 			| FLAG(obj2.winposerr_theta1950)
 			| FLAG(obj2.poserr_theta1950)
-			| FLAG(obj2.theta1950);
+			| FLAG(obj2.theta1950)
+			| FLAG(obj2.poserrtheta1950_prof);
   FLAG(obj2.dtheta2000) |= FLAG(obj2.prof_spheroid_theta2000)
 			| FLAG(obj2.prof_disk_theta2000)
 //			| FLAG(obj2.prof_arms_theta2000)
@@ -202,7 +233,8 @@ void	updateparamflags()
 			| FLAG(obj2.win_theta2000)
 			| FLAG(obj2.winposerr_theta2000)
 			| FLAG(obj2.poserr_theta2000)
-			| FLAG(obj2.theta2000);
+			| FLAG(obj2.theta2000)
+			| FLAG(obj2.poserrtheta2000_prof);
 
 
   FLAG(obj2.prof_spheroid_thetas) |= FLAG(obj2.prof_spheroid_theta2000)

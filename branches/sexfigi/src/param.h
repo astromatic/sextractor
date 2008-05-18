@@ -9,7 +9,7 @@
 *
 *	Contents:	parameter list for catalog data.
 *
-*	Last modify:	27/04/2008
+*	Last modify:	18/05/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -460,7 +460,8 @@ keystruct	objkey[] = {
 	"pos.eq.ra", "deg"},
   {"DELTAWIN_B1950", "Windowed declination (B1950)",
 	&outobj2.winpos_delta1950, H_FLOAT, T_DOUBLE, "%+11.7f", "deg",
-	"pos.eq.deg", "deg"},
+	"pos.eq.dec", "deg"},
+
   {"X2WIN_IMAGE", "Windowed variance along x",
 	&outobj2.win_mx2, H_EXPO, T_DOUBLE, "%15.10e", "pixel**2",
  	"src.impactParam;instr.det", "pix2"},

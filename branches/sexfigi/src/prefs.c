@@ -9,7 +9,7 @@
 *
 *	Contents:	Functions to handle the configuration file.
 *
-*	Last modify:	25/04/2008
+*	Last modify:	18/05/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -458,6 +458,7 @@ void	useprefs()
   prefs.world_flag = FLAG(obj2.mxw) || FLAG(obj2.mamaposx)
 		|| FLAG(obj2.peakxw) || FLAG(obj2.winpos_xw)
 		|| FLAG(obj2.mx2w) || FLAG(obj2.win_mx2w)
+		|| FLAG(obj2.xw_prof) || FLAG(obj2.poserrmx2w_prof)
 		|| FLAG(obj2.poserr_mx2w) || FLAG(obj2.winposerr_mx2w)
 		|| FLAG(obj2.npixw) || FLAG(obj2.fdnpixw)
 		|| FLAG(obj2.fwhmw) || FLAG(obj2.prof_flagw);

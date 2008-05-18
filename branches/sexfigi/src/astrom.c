@@ -9,7 +9,7 @@
 *
 *	Contents:	Astrometrical computations.
 *
-*	Last modify:	16/05/2008
+*	Last modify:	18/05/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -203,6 +203,35 @@ void	computeastrom(picstruct *field, objstruct *obj)
       }
     }
 
+/* Idem for Model-fitted positions */
+  if (FLAG(obj2.xw_prof))
+    {
+    rawpos[0] = obj2->x_prof;
+    rawpos[1] = obj2->y_prof;
+    raw_to_wcs(wcs, rawpos, wcspos);
+    obj2->xw_prof = wcspos[0];
+    obj2->yw_prof = wcspos[1];
+    if (lng != lat)
+      {
+      obj2->alphas_prof = lng<lat? obj2->xw_prof : obj2->yw_prof;
+      obj2->deltas_prof = lng<lat? obj2->yw_prof : obj2->xw_prof;
+      if (FLAG(obj2.alpha2000_prof))
+        {
+        if (fabs(wcs->equinox-2000.0)>0.003)
+          precess(wcs->equinox, wcspos[0], wcspos[1],
+		2000.0, &obj2->alpha2000_prof, &obj2->delta2000_prof);
+        else
+          {
+          obj2->alpha2000_prof = lng<lat? obj2->xw_prof : obj2->yw_prof;
+          obj2->delta2000_prof = lng<lat? obj2->yw_prof : obj2->xw_prof;
+          }
+        if (FLAG(obj2.alpha1950_prof))
+          j2b(wcs->equinox, obj2->alpha2000_prof, obj2->delta2000_prof,
+		&obj2->alpha1950_prof, &obj2->delta1950_prof);
+        }
+      }
+    }
+
 /* Custom coordinate system for the MAMA machine */
   if (FLAG(obj2.mamaposx))
     {
@@ -217,6 +246,7 @@ void	computeastrom(picstruct *field, objstruct *obj)
 	|| FLAG(obj2.win_mx2w)
 	|| FLAG(obj2.poserr_mx2w)
 	|| FLAG(obj2.winposerr_mx2w)
+	|| FLAG(obj2.poserrmx2w_prof)
 	|| FLAG(obj2.prof_flagw)
 	|| ((!prefs.pixel_scale) && (FLAG(obj2.npixw)
 		|| FLAG(obj2.fdnpixw)
@@ -240,6 +270,8 @@ void	computeastrom(picstruct *field, objstruct *obj)
     astrom_errparam(field, obj);
   if (FLAG(obj2.winposerr_mx2w))
     astrom_winerrparam(field, obj);
+  if (FLAG(obj2.poserrmx2w_prof))
+    astrom_proferrparam(field, obj);
 
   if (FLAG(obj2.npixw))
     obj2->npixw = obj->npix * (prefs.pixel_scale?
@@ -561,6 +593,84 @@ void	astrom_winerrparam(picstruct *field, objstruct *obj)
     obj2->winposerr_cxxw = (float)(ym2/temp);
     obj2->winposerr_cyyw = (float)(xm2/temp);
     obj2->winposerr_cxyw = (float)(-2*xym/temp);
+    }
+
+  return;
+  }
+
+
+/***************************** astrom_proferrparam ***************************/
+/*
+Compute error ellipse parameters in WORLD and SKY coordinates.
+*/
+void	astrom_proferrparam(picstruct *field, objstruct *obj)
+  {
+   wcsstruct	*wcs;
+   double	dx2,dy2,dxy, xm2,ym2,xym, temp,pm2, lm0,lm1,lm2,lm3;
+   int		lng,lat, naxis;
+
+  wcs = field->wcs;
+  naxis = wcs->naxis;
+  lng = wcs->lng;
+  lat = wcs->lat;
+  if (lng == lat)
+    {
+    lng = 0;
+    lat = 1;
+    }
+  lm0 = obj2->jacob[lng+naxis*lng];
+  lm1 = obj2->jacob[lat+naxis*lng];
+  lm2 = obj2->jacob[lng+naxis*lat];
+  lm3 = obj2->jacob[lat+naxis*lat];
+
+/* All WORLD params based on 2nd order moments have to pass through here */
+  dx2 = obj2->poserrmx2_prof;
+  dy2 = obj2->poserrmy2_prof;
+  dxy = obj2->poserrmxy_prof;
+  obj2->poserrmx2w_prof = xm2 = lm0*lm0*dx2+lm1*lm1*dy2+lm0*lm1*dxy;
+  obj2->poserrmy2w_prof = ym2 = lm2*lm2*dx2+lm3*lm3*dy2+lm2*lm3*dxy;
+  obj2->poserrmxyw_prof = xym = lm0*lm2*dx2+lm1*lm3*dy2+(lm0*lm3+lm1*lm2)*dxy;
+  temp=xm2-ym2;
+  if (FLAG(obj2.poserrthetaw_prof))
+    {
+    obj2->poserrthetaw_prof = (fmod_m90_p90(temp==0.0)?
+				(45.0):(0.5*atan2(2.0*xym,temp)/DEG));
+
+/*-- Compute position angles in J2000 or B1950 reference frame */
+    if (wcs->lng != wcs->lat)
+      {
+      if (FLAG(obj2.poserrthetas_prof))
+        obj2->poserrthetas_prof = fmod_m90_p90(lng<lat?
+		((obj2->poserrthetaw_prof>0.0?90:-90.0)-obj2->poserrthetaw_prof)
+		: obj2->poserrthetaw_prof);
+      if (FLAG(obj2.poserrtheta2000_prof))
+        obj2->poserrtheta2000_prof = fmod_m90_p90(obj2->poserrthetas_prof
+				+ obj2->dtheta2000);
+      if (FLAG(obj2.poserrtheta1950_prof))
+        obj2->poserrtheta1950_prof = fmod_m90_p90(obj2->poserrthetas_prof
+				+ obj2->dtheta1950);
+      }
+    }
+
+  if (FLAG(obj2.poserraw_prof))
+    {
+    temp = sqrt(0.25*temp*temp+xym*xym);
+    pm2 = 0.5*(xm2+ym2);
+    obj2->poserraw_prof = (float)sqrt(pm2+temp);
+    obj2->poserrbw_prof = (float)sqrt(pm2-temp);
+    }
+
+  if (FLAG(obj2.poserrcxxw_prof))
+    {
+/*-- Handle large, fully correlated profiles (can cause a singularity...) */
+    if ((temp=xm2*ym2-xym*xym)<1e-6)
+      {
+      temp = 1e-6;
+      xym *= 0.99999;
+      }
+    obj2->poserrcxxw_prof = (float)(ym2/temp);
+    obj2->poserrcyyw_prof = (float)(xm2/temp);
+    obj2->poserrcxyw_prof = (float)(-2*xym/temp);
     }
 
   return;
