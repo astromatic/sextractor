@@ -9,7 +9,7 @@
 *
 *	Contents:	Fit an arbitrary profile combination to a detection.
 *
-*	Last modify:	16/05/2008
+*	Last modify:	19/05/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -369,6 +369,8 @@ the_gal++;
       prof_add(profit->prof[p], profit);
     profit_moments(profit, obj, obj2);
     }
+
+/* Bulge */
   if (FLAG(obj2.prof_spheroid_flux))
     {
     obj2->prof_spheroid_flux = *profit->paramlist[PARAM_SPHEROID_FLUX];
@@ -392,6 +394,7 @@ the_gal++;
       }
     }
 
+/* Disk */
   if (FLAG(obj2.prof_disk_flux))
     {
     obj2->prof_disk_flux = *profit->paramlist[PARAM_DISK_FLUX];
@@ -406,6 +409,18 @@ the_gal++;
     obj2->prof_disk_theta = fmod_m90_p90(*profit->paramlist[PARAM_DISK_POSANG]);
     obj2->prof_disk_thetaerr =
 		profit->paramerr[profit->paramindex[PARAM_DISK_POSANG]];
+    if (FLAG(obj2.prof_disk_inclination))
+      {
+      obj2->prof_disk_inclination = acos(obj2->prof_disk_aspect) / DEG;
+      if (FLAG(obj2.prof_disk_inclinationerr))
+        {
+        a = sqrt(1.0-obj2->prof_disk_aspect*obj2->prof_disk_aspect);
+        obj2->prof_disk_inclinationerr = obj2->prof_disk_aspecterr
+					/(a>0.1? a : 0.1)/DEG;
+        }
+      }
+
+/* Bar */
     if (FLAG(obj2.prof_bar_flux))
       {
       obj2->prof_bar_flux = *profit->paramlist[PARAM_BAR_FLUX];
@@ -433,12 +448,15 @@ the_gal++;
 				+ obj2->prof_disk_theta);
         obj2->prof_bar_thetaerr = obj2->prof_bar_posangerr*a/(cp*cp+a*a*sp*sp);
         }
+
+/* Arms */
       if (FLAG(obj2.prof_arms_flux))
         {
         obj2->prof_arms_flux = *profit->paramlist[PARAM_ARMS_FLUX];
         obj2->prof_arms_fluxerr =
 		profit->paramerr[profit->paramindex[PARAM_ARMS_FLUX]];
-        obj2->prof_arms_pitch = *profit->paramlist[PARAM_ARMS_PITCH];
+        obj2->prof_arms_pitch =
+		fmod_m90_p90(*profit->paramlist[PARAM_ARMS_PITCH]);
         obj2->prof_arms_pitcherr =
 		profit->paramerr[profit->paramindex[PARAM_ARMS_PITCH]];
         obj2->prof_arms_start = *profit->paramlist[PARAM_ARMS_START]

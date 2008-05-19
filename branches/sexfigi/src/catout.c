@@ -9,7 +9,7 @@
 *
 *	Contents:	functions for output of catalog data.
 *
-*	Last modify:	02/05/2008
+*	Last modify:	19/05/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -209,6 +209,7 @@ void	updateparamflags()
   FLAG(obj2.prof_disk_mag) |= FLAG(obj2.prof_disk_magerr);
   FLAG(obj2.prof_disk_scale) |= FLAG(obj2.prof_disk_scaleerr);
   FLAG(obj2.prof_disk_aspect) |= FLAG(obj2.prof_disk_aspecterr);
+  FLAG(obj2.prof_disk_inclination) |= FLAG(obj2.prof_disk_inclinationerr);
   FLAG(obj2.prof_disk_theta) |= FLAG(obj2.prof_disk_thetaerr);
   FLAG(obj2.prof_bar_mag) |= FLAG(obj2.prof_bar_magerr);
   FLAG(obj2.prof_bar_length) |= FLAG(obj2.prof_bar_lengtherr);
@@ -251,18 +252,9 @@ void	updateparamflags()
 			| FLAG(obj2.prof_arms_theta2000)
 			| FLAG(obj2.prof_arms_theta1950);
 */
-  FLAG(obj2.prof_spheroid_reffw) |= FLAG(obj2.prof_spheroid_aspectw)
-			| FLAG(obj2.prof_spheroid_thetaw)
-			| FLAG(obj2.prof_spheroid_refferrw)
-			| FLAG(obj2.prof_spheroid_aspecterrw)
-			| FLAG(obj2.prof_spheroid_thetaerrw);
-
-  FLAG(obj2.prof_disk_scalew) |= FLAG(obj2.prof_disk_aspectw)
-			| FLAG(obj2.prof_disk_inclinationw)
-			| FLAG(obj2.prof_disk_thetaw)
-			| FLAG(obj2.prof_disk_scaleerrw)
-			| FLAG(obj2.prof_disk_aspecterrw)
-			| FLAG(obj2.prof_disk_thetaerrw);
+  FLAG(obj2.prof_arms_scalew) |= FLAG(obj2.prof_arms_startw)
+			| FLAG(obj2.prof_arms_scaleerrw)
+			| FLAG(obj2.prof_arms_starterrw);
 
   FLAG(obj2.prof_bar_lengthw) |= FLAG(obj2.prof_bar_aspectw)
 			| FLAG(obj2.prof_bar_thetaw)
@@ -270,9 +262,18 @@ void	updateparamflags()
 			| FLAG(obj2.prof_bar_aspecterrw)
 			| FLAG(obj2.prof_bar_thetaerrw);
 
-  FLAG(obj2.prof_arms_scalew) |= FLAG(obj2.prof_arms_startw)
-			| FLAG(obj2.prof_arms_scaleerrw)
-			| FLAG(obj2.prof_arms_starterrw);
+  FLAG(obj2.prof_disk_scalew) |= FLAG(obj2.prof_disk_aspectw)
+			| FLAG(obj2.prof_disk_thetaw)
+			| FLAG(obj2.prof_disk_scaleerrw)
+			| FLAG(obj2.prof_disk_aspecterrw)
+			| FLAG(obj2.prof_disk_thetaerrw)
+			| FLAG(obj2.prof_arms_scalew);
+
+  FLAG(obj2.prof_spheroid_reffw) |= FLAG(obj2.prof_spheroid_aspectw)
+			| FLAG(obj2.prof_spheroid_thetaw)
+			| FLAG(obj2.prof_spheroid_refferrw)
+			| FLAG(obj2.prof_spheroid_aspecterrw)
+			| FLAG(obj2.prof_spheroid_thetaerrw);
 
   FLAG(obj2.prof_flagw) |= FLAG(obj2.prof_spheroid_reffw)
 			| FLAG(obj2.prof_disk_scalew)

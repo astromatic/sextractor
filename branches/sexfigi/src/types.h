@@ -9,7 +9,7 @@
 *
 *	Contents:	global type definitions.
 *
-*	Last modify:	16/05/2008
+*	Last modify:	17/05/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -368,7 +368,7 @@ typedef struct
   float		prof_disk_aspectw;		/* WORLD disk aspect ratio */
   float		prof_disk_aspecterrw;		/* RMS error */
   float		prof_disk_inclination;		/* Disk inclination */
-  float		prof_disk_inclinationw;		/* WORLD disk inclination */
+  float		prof_disk_inclinationerr;	/* RMS error */
   float		prof_disk_theta;		/* Disk position angle */
   float		prof_disk_thetaerr;		/* RMS error */
   float		prof_disk_thetaw;		/* WORLD disk position angle */

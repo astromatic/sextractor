@@ -9,7 +9,7 @@
 *
 *	Contents:	Astrometrical computations.
 *
-*	Last modify:	18/05/2008
+*	Last modify:	19/05/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -802,6 +802,22 @@ void	astrom_profshapeparam(picstruct *field, objstruct *obj)
     obj2->prof_disk_aspecterrw = obj2->prof_disk_aspect > 0.0?
 	obj2->prof_disk_aspecterr/obj2->prof_disk_aspect*obj2->prof_disk_aspectw
 	: 0.0;
+/*-- Arms World coordinates */
+    if (FLAG(obj2.prof_arms_scalew))
+      {
+      obj2->prof_arms_scalew = (obj2->prof_disk_scale > 0.0) ?
+	  obj2->prof_arms_scale*obj2->prof_disk_scalew/obj2->prof_disk_scale
+	: 0.0;
+      obj2->prof_arms_scaleerrw = (obj2->prof_arms_scale > 0.0) ?
+	obj2->prof_arms_scaleerr/obj2->prof_arms_scale*obj2->prof_arms_scalew
+	: 0.0;
+      obj2->prof_arms_startw = (obj2->prof_disk_scale > 0.0) ?
+	  obj2->prof_arms_start*obj2->prof_disk_scalew/obj2->prof_disk_scale
+	: 0.0;
+      obj2->prof_arms_starterrw = (obj2->prof_arms_start > 0.0) ?
+	obj2->prof_arms_starterr/obj2->prof_arms_start*obj2->prof_arms_startw
+	: 0.0;
+      }
     }
 
 /* Bar World coordinates */
@@ -841,41 +857,18 @@ void	astrom_profshapeparam(picstruct *field, objstruct *obj)
 					+ obj2->dtheta1950);
         }
       }
-    if (FLAG(obj2.prof_bar_lengthw))
-      {
-      temp = sqrt(0.25*temp*temp+xym*xym);
-      pm2 = 0.5*(xm2+ym2);
-      obj2->prof_bar_lengthw = sqrt(pm2+temp);
-      obj2->prof_bar_aspectw = obj2->prof_bar_lengthw>0.0?
+    temp = sqrt(0.25*temp*temp+xym*xym);
+    pm2 = 0.5*(xm2+ym2);
+    obj2->prof_bar_lengthw = sqrt(pm2+temp);
+    obj2->prof_bar_lengtherrw = obj2->prof_bar_length > 0.0?
+	obj2->prof_bar_lengtherr/obj2->prof_bar_length*obj2->prof_bar_lengthw
+	: 0.0;
+    obj2->prof_bar_aspectw = obj2->prof_bar_lengthw>0.0?
 				  sqrt(pm2-temp) / obj2->prof_bar_lengthw
 				: obj2->prof_bar_aspect;
-      }
-    }
-
-/* Arms World coordinates */
-  if (FLAG(obj2.prof_arms_scalew))
-    {
-    ct = cos(obj2->prof_bar_theta*DEG);
-    st = sin(obj2->prof_bar_theta*DEG);
-    dx2 = obj2->prof_bar_length*obj2->prof_bar_length * (ct*ct
-	+ st*st * obj2->prof_bar_aspect*obj2->prof_bar_aspect);
-    dy2 = obj2->prof_bar_length*obj2->prof_bar_length * (st*st
-	+ ct*ct * obj2->prof_bar_aspect*obj2->prof_bar_aspect);
-    dxy = ct*st * obj2->prof_bar_length*obj2->prof_bar_length
-	*(1.0 - obj2->prof_bar_aspect*obj2->prof_bar_aspect);
-    xm2 = lm0*lm0*dx2 + lm1*lm1*dy2 + lm0*lm1*dxy;
-    ym2 = lm2*lm2*dx2 + lm3*lm3*dy2 + lm2*lm3*dxy;
-    xym = lm0*lm2*dx2 + lm1*lm3*dy2 + (lm0*lm3+lm1*lm2)*dxy;
-    temp=xm2-ym2;
-    if (FLAG(obj2.prof_bar_lengthw))
-      {
-      temp = sqrt(0.25*temp*temp+xym*xym);
-      pm2 = 0.5*(xm2+ym2);
-      obj2->prof_bar_lengthw = sqrt(pm2+temp);
-      obj2->prof_bar_aspectw = obj2->prof_bar_lengthw>0.0?
-				  sqrt(pm2-temp) / obj2->prof_bar_lengthw
-				: obj2->prof_bar_aspect;
-      }
+    obj2->prof_bar_aspecterrw = obj2->prof_bar_aspect > 0.0?
+	obj2->prof_bar_aspecterr/obj2->prof_bar_aspect*obj2->prof_bar_aspectw
+	: 0.0;
     }
 
   return;
