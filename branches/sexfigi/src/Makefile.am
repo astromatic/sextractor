@@ -13,7 +13,7 @@ sex_SOURCES		= analyse.c assoc.c astrom.c back.c bpro.c catout.c \
 			  assoc.h astrom.h back.h bpro.h check.h clean.h \
 			  define.h extract.h fft.h field.h filter.h fitswcs.h \
 			  flag.h globals.h growth.h image.h interpolate.h \
-			  key.h neurro.h param.h paramprofit.h, photom.h \
+			  key.h neurro.h param.h paramprofit.h photom.h \
 			  plist.h prefs.h preflist.h profit.h psf.h retina.h \
 			  sexhead1.h sexhead.h sexheadsc.h som.h threads.h \
 			  types.h wcscelsys.h weight.h winpos.h xml.h
