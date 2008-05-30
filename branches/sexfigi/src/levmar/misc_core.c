@@ -783,7 +783,7 @@ OUTPUT	Matrix rank.
 NOTES	Loosely adapted from Numerical Recipes in C, 2nd Ed. (p. 671). The a
 	and v matrices are transposed with respect to the N.R. convention.
 AUTHOR	E. Bertin (IAP)
-VERSION	11/05/2008
+VERSION	30/05/2008
  ***/
 
 static int SVDINV(LM_REAL *a, LM_REAL *b, int m)
@@ -953,12 +953,12 @@ static int SVDINV(LM_REAL *a, LM_REAL *b, int m)
         for (l=k;l>=0;l--)
           {
           nm=l-1;
-          if (fabs(rv1[l]) < anorm*TOL)
+          if (fabs(rv1[l]) <= anorm*TOL)
             {
             flag=0;
             break;
             }
-          if (fabs(wmat[nm]) < anorm*TOL)
+          if (fabs(wmat[nm]) <= anorm*TOL)
             break;
           }
         if (flag)
@@ -970,7 +970,7 @@ static int SVDINV(LM_REAL *a, LM_REAL *b, int m)
           for (i=l; i<=k; i++,ap10+=m)
             {
             f=s*rv1[i];
-            if (fabs(f) < anorm*TOL)
+            if (fabs(f) <= anorm*TOL)
               break;
             g=wmat[i];
             h=PYTHAG(f,g);
@@ -1065,7 +1065,7 @@ static int SVDINV(LM_REAL *a, LM_REAL *b, int m)
   rank = 0;
   w = wmat;
   for (j=m;j--; w++)
-    if (*w < thresh)
+    if (*w <= thresh)
       *w = 0.0;
     else
       {
