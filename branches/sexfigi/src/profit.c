@@ -9,7 +9,7 @@
 *
 *	Contents:	Fit an arbitrary profile combination to a detection.
 *
-*	Last modify:	19/05/2008
+*	Last modify:	21/05/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -169,7 +169,7 @@ OUTPUT	Pointer to an allocated fit structure (containing details about the
 	fit).
 NOTES	It is a modified version of the lm_minimize() of lmfit.
 AUTHOR	E. Bertin (IAP)
-VERSION	18/05/2008
+VERSION	21/05/2008
  ***/
 void	profit_fit(profitstruct *profit,
 		picstruct *field, picstruct *wfield,
@@ -177,7 +177,7 @@ void	profit_fit(profitstruct *profit,
   {
     psfstruct		*psf;
     checkstruct		*check;
-    double		*param, *oldparaminit,
+    double		*oldparaminit,
 			psf_fwhm, oldchi2, a , cp,sp, emx2,emy2,emxy;
     int			ix,iy, i,j,p, oldniter, nparam;
 
@@ -330,36 +330,37 @@ the_gal++;
     obj2->poserrmx2_prof = emx2 = profit->covar[i*(nparam+1)];
     obj2->poserrmy2_prof = emy2 = profit->covar[j*(nparam+1)];
     obj2->poserrmxy_prof = emxy = profit->covar[i+j*nparam];
+
+/*-- Error ellipse parameters */
+    if (FLAG(obj2.poserra_prof))
+      {
+       double	pmx2,pmy2,temp,theta;
+
+      if (fabs(temp=emx2-emy2) > 0.0)
+        theta = atan2(2.0 * emxy,temp) / 2.0;
+      else
+        theta = PI/4.0;
+
+      temp = sqrt(0.25*temp*temp+ emxy*emxy);
+      pmy2 = pmx2 = 0.5*(emx2+emy2);
+      pmx2+=temp;
+      pmy2-=temp;
+
+      obj2->poserra_prof = (float)sqrt(pmx2);
+      obj2->poserrb_prof = (float)sqrt(pmy2);
+      obj2->poserrtheta_prof = theta*180.0/PI;
+      }
+
+    if (FLAG(obj2.poserrcxx_prof))
+      {
+       double	temp;
+
+      obj2->poserrcxx_prof = (float)(emy2/(temp=emx2*emy2-emxy*emxy));
+      obj2->poserrcyy_prof = (float)(emx2/temp);
+      obj2->poserrcxy_prof = (float)(-2*emxy/temp);
+      }
     }
 
-/* Error ellipse parameters */
-  if (FLAG(obj2.poserra_prof))
-    {
-      double	pmx2,pmy2,temp,theta;
-
-    if (fabs(temp=emx2-emy2) > 0.0)
-      theta = atan2(2.0 * emxy,temp) / 2.0;
-    else
-       theta = PI/4.0;
-
-    temp = sqrt(0.25*temp*temp+ emxy*emxy);
-    pmy2 = pmx2 = 0.5*(emx2+emy2);
-    pmx2+=temp;
-    pmy2-=temp;
-
-    obj2->poserra_prof = (float)sqrt(pmx2);
-    obj2->poserrb_prof = (float)sqrt(pmy2);
-    obj2->poserrtheta_prof = theta*180.0/PI;
-    }
-
-  if (FLAG(obj2.poserrcxx_prof))
-    {
-     double	temp;
-
-    obj2->poserrcxx_prof = (float)(emy2/(temp=emx2*emy2-emxy*emxy));
-    obj2->poserrcyy_prof = (float)(emx2/temp);
-    obj2->poserrcxy_prof = (float)(-2*emxy/temp);
-    }
 
   if (FLAG(obj2.prof_mx2))
     {
@@ -576,11 +577,11 @@ INPUT	Pointer to the profit structure involved in the fit,
 OUTPUT	Number of iterations used.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	27/04/2008
+VERSION	23/05/2008
  ***/
 int	profit_minimize(profitstruct *profit, int niter)
   {
-   double		lm_opts[5];
+   double		lm_opts[5], info[LM_INFO_SZ];
    int			m,n;
 
 /* Allocate work space */
@@ -592,14 +593,14 @@ int	profit_minimize(profitstruct *profit, int niter)
   profit_boundtounbound(profit, profit->paraminit);
 
 /* Perform fit */
-  lm_opts[0] = 1.0e-6;
-  lm_opts[1] = 1.0e-12;
-  lm_opts[2] = 1.0e-12;
-  lm_opts[3] = 1.0e-12;
+  lm_opts[0] = 1.0e-3;
+  lm_opts[1] = 1.0e-17;
+  lm_opts[2] = 1.0e-17;
+  lm_opts[3] = 1.0e-17;
   lm_opts[4] = 1.0e-6;
 
   niter = dlevmar_dif(profit_evaluate, profit->paraminit, profit->resi,
-	n, m, niter,  lm_opts, NULL, NULL, profit->covar, profit);
+	n, m, niter, lm_opts, info, NULL, profit->covar, profit);
 
   profit_unboundtobound(profit, profit->paraminit);
 
@@ -2058,8 +2059,8 @@ width = 3.0;
               amp *= (r2 - r2minxin)*invr2xdif;
             ra = x1in*x1in/r2;
             rb = x2in*x2in/r2;
-            *(pixin++) = amp * (armamp*PROFIT_POWF(ra,width*(1+u-umin))
-				+ arm2amp*PROFIT_POWF(rb,width*(1+u-umin)));
+            *(pixin++) = amp * (armamp*PROFIT_POWF(ra,width)
+				+ arm2amp*PROFIT_POWF(rb,width));
             }
           else
             *(pixin++) = 0.0;

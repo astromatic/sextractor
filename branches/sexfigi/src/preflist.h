@@ -9,7 +9,7 @@
 *
 *	Contents:	Keywords for the configuration file.
 *
-*	Last modify:	18/04/2008
+*	Last modify:	30/05/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -69,9 +69,9 @@
    "BACKGROUND", "BACKGROUND_RMS", "MINIBACKGROUND",
    "MINIBACK_RMS", "-BACKGROUND",
    "FILTERED", "OBJECTS", "APERTURES", "SEGMENTATION", "ASSOC",
-   "-OBJECTS", "-PSF_PROTOS", "PSF_PROTOS",
+   "-OBJECTS", "-PSFS", "PSFS",
    "-PC_CONVPROTOS", "PC_CONVPROTOS", "PC_PROTOS", 
-   "MAP_SOM", "-PROF_PROTOS", "PROF_PROTOS", ""},
+   "MAP_SOM", "-MODELS", "MODELS", ""},
    0, 17, &prefs.ncheck_type},
   {"CLEAN", P_BOOL, &prefs.clean_flag},
   {"CLEAN_PARAM", P_FLOAT, &prefs.clean_param, 0,0, 0.1,10.0},

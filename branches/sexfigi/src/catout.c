@@ -9,7 +9,7 @@
 *
 *	Contents:	functions for output of catalog data.
 *
-*	Last modify:	19/05/2008
+*	Last modify:	30/05/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -198,7 +198,8 @@ void	updateparamflags()
 
   FLAG(obj2.x_prof) |= FLAG(obj2.y_prof)
 			| FLAG(obj2.xw_prof)
-			| FLAG(obj2.poserra_prof);
+			| FLAG(obj2.poserra_prof)
+			| FLAG(obj2.poserrcxx_prof);
   FLAG(obj2.mag_prof) |= FLAG(obj2.magerr_prof);
   FLAG(obj2.flux_prof) |= FLAG(obj2.mag_prof) | FLAG(obj2.fluxerr_prof);
   FLAG(obj2.prof_spheroid_mag) |= FLAG(obj2.prof_spheroid_magerr);
@@ -283,10 +284,6 @@ void	updateparamflags()
   FLAG(obj2.prof_mx2) |= FLAG(obj2.prof_my2) | FLAG(obj2.prof_mxy)
 			| FLAG(obj2.prof_e1) |FLAG(obj2.prof_e2)
 			| FLAG(obj2.prof_eps1) |FLAG(obj2.prof_eps2);
-  FLAG(obj2.prof_chi2) |= FLAG(obj2.prof_niter) | FLAG(obj2.prof_flag)
-			| FLAG(obj2.prof_vector) | FLAG(obj2.prof_errvector)
-			| FLAG(obj2.x_prof) | FLAG(obj2.y_prof)
-			| FLAG(obj2.prof_mx2);
   FLAG(obj2.prof_arms_flux) |= FLAG(obj2.prof_arms_fluxerr)
 			| FLAG(obj2.prof_arms_mag)
 			| FLAG(obj2.prof_arms_scalew)
@@ -319,6 +316,19 @@ void	updateparamflags()
 			| FLAG(obj2.prof_spheroid_aspect)
 			| FLAG(obj2.prof_spheroid_theta)
 			| FLAG(obj2.prof_spheroid_sersicn);
+  FLAG(obj2.prof_flag) |= FLAG(obj2.prof_chi2) |=FLAG(obj2.prof_niter)
+			| FLAG(obj2.prof_vector) | FLAG(obj2.prof_errvector)
+			| FLAG(obj2.x_prof) | FLAG(obj2.y_prof)
+			| FLAG(obj2.prof_mx2);
+
+/* If only global parameters are requested, fit a Sersic model */
+  if (FLAG(obj2.prof_flag) && !(FLAG(obj2.prof_spheroid_flux)
+			| FLAG(obj2.prof_disk_flux)))
+    {
+    FLAG(obj2.prof_spheroid_flux) |= FLAG(obj2.prof_flag);
+    FLAG(obj2.prof_spheroid_sersicn) |= FLAG(obj2.prof_flag);
+    }
+
 
 /*------------------------------ Astrometry ---------------------------------*/
   FLAG(obj2.win_aw) |= FLAG(obj2.win_bw) | FLAG(obj2.win_polarw);

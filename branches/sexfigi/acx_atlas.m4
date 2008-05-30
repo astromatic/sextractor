@@ -115,18 +115,42 @@ if test x$acx_atlas_ok = xyes; then
       if test x$acx_atlas_ok = xyes; then
         ATLAS_LIBPATH="-L$atlas_def/lib"
       else
-        atlas_def=/usr/atlas
+        atlas_def=/usr/lib64/atlas
         unset ac_cv_lib_lapack_clapack_dpotrf
         unset ac_cv_lib_cblas_cblas_dgemm
         acx_atlas_ok=yes
         AC_CHECK_LIB(lapack, [clapack_dpotrf],, [acx_atlas_ok=no],
-		[-L$atlas_def/lib -lcblas -latlas -lm])
+		[-L$atlas_def -lcblas -latlas -lm])
         AC_CHECK_LIB(cblas, cblas_dgemm,, [acx_atlas_ok=no],
-		[-L$atlas_def/lib -latlas -lm])
+		[-L$atlas_def -latlas -lm])
         if test x$acx_atlas_ok = xyes; then
-          ATLAS_LIBPATH="-L$atlas_def/lib"
+          ATLAS_LIBPATH="-L$atlas_def"
         else
-          ATLAS_ERROR="CBLAS/LAPack library files not found at usual locations!"
+          atlas_def=/usr/lib/atlas
+          unset ac_cv_lib_lapack_clapack_dpotrf
+          unset ac_cv_lib_cblas_cblas_dgemm
+          acx_atlas_ok=yes
+          AC_CHECK_LIB(lapack, [clapack_dpotrf],, [acx_atlas_ok=no],
+		[-L$atlas_def -lcblas -latlas -lm])
+          AC_CHECK_LIB(cblas, cblas_dgemm,, [acx_atlas_ok=no],
+		[-L$atlas_def -latlas -lm])
+          if test x$acx_atlas_ok = xyes; then
+            ATLAS_LIBPATH="-L$atlas_def"
+          else
+            atlas_def=/usr/atlas
+            unset ac_cv_lib_lapack_clapack_dpotrf
+            unset ac_cv_lib_cblas_cblas_dgemm
+            acx_atlas_ok=yes
+            AC_CHECK_LIB(lapack, [clapack_dpotrf],, [acx_atlas_ok=no],
+		[-L$atlas_def/lib -lcblas -latlas -lm])
+            AC_CHECK_LIB(cblas, cblas_dgemm,, [acx_atlas_ok=no],
+		[-L$atlas_def/lib -latlas -lm])
+            if test x$acx_atlas_ok = xyes; then
+              ATLAS_LIBPATH="-L$atlas_def/lib"
+            else
+              ATLAS_ERROR="CBLAS/LAPack library files not found at usual locations!"
+            fi
+          fi
         fi
       fi
     fi
