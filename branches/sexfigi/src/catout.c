@@ -9,7 +9,7 @@
 *
 *	Contents:	functions for output of catalog data.
 *
-*	Last modify:	30/05/2008
+*	Last modify:	02/06/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -316,17 +316,19 @@ void	updateparamflags()
 			| FLAG(obj2.prof_spheroid_aspect)
 			| FLAG(obj2.prof_spheroid_theta)
 			| FLAG(obj2.prof_spheroid_sersicn);
-  FLAG(obj2.prof_flag) |= FLAG(obj2.prof_chi2) |=FLAG(obj2.prof_niter)
+  prefs.prof_flag |= FLAG(obj2.prof_chi2) | FLAG(obj2.prof_niter)
 			| FLAG(obj2.prof_vector) | FLAG(obj2.prof_errvector)
 			| FLAG(obj2.x_prof) | FLAG(obj2.y_prof)
-			| FLAG(obj2.prof_mx2);
+			| FLAG(obj2.prof_mx2)
+			| FLAG(obj2.prof_disk_flux)
+			| FLAG(obj2.prof_spheroid_flux);
 
 /* If only global parameters are requested, fit a Sersic model */
-  if (FLAG(obj2.prof_flag) && !(FLAG(obj2.prof_spheroid_flux)
+  if (prefs.prof_flag && !(FLAG(obj2.prof_spheroid_flux)
 			| FLAG(obj2.prof_disk_flux)))
     {
-    FLAG(obj2.prof_spheroid_flux) |= FLAG(obj2.prof_flag);
-    FLAG(obj2.prof_spheroid_sersicn) |= FLAG(obj2.prof_flag);
+    FLAG(obj2.prof_spheroid_flux) |= prefs.prof_flag;
+    FLAG(obj2.prof_spheroid_sersicn) |= prefs.prof_flag;
     }
 
 
@@ -439,7 +441,7 @@ void	updateparamflags()
 
   FLAG(obj2.flux_best) |= FLAG(obj2.mag_best) | FLAG(obj2.fluxerr_best);
 
-  FLAG(obj2.hl_radius) |= FLAG(obj2.winpos_x) | FLAG(obj2.prof_chi2);
+  FLAG(obj2.hl_radius) |= FLAG(obj2.winpos_x) | prefs.prof_flag;
 
   FLAG(obj2.flux_auto)  |= FLAG(obj2.mag_auto) | FLAG(obj2.magerr_auto)
 			| FLAG(obj2.fluxerr_auto)

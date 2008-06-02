@@ -181,7 +181,6 @@ void	profit_fit(profitstruct *profit,
 			psf_fwhm, oldchi2, a , cp,sp, emx2,emy2,emxy;
     int			ix,iy, i,j,p, oldniter, nparam;
 
-
   nparam = profit->nparam;
   if (profit->psfdft)
     {
