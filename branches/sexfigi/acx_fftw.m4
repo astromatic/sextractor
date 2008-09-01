@@ -9,7 +9,7 @@ dnl ACTION-IF-FOUND is a list of shell commands to run if FFTW
 dnl is found (HAVE_FFTWx are defined first), and ACTION-IF-NOT-FOUND
 dnl is a list of commands to run it if it is not found.
 dnl
-dnl @version $Id: acx_fftw.m4,v 1.0 2008/05/15 21:30:17 bertin Exp $
+dnl @version $Id: acx_fftw.m4,v 1.0 2008/08/28 21:30:17 bertin Exp $
 dnl @author Emmanuel Bertin <bertin@iap.fr>
 
 AC_DEFUN([ACX_FFTW], [
@@ -89,7 +89,7 @@ if test x$acx_fftw_ok = xyes; then
     if test x$acx_fftw_ok = xyes && test x$3 = xyes; then
       if test x$4 = xyes; then
         AC_CHECK_LIB(fftw3f_threads, fftwf_init_threads,
-		[acx_fftw_ok=yes], [acx_fftw_ok=no], [-lfftw3f -lm])
+		[acx_fftw_ok=yes], [acx_fftw_ok=no], [-lfftw3f -lm -lpthread])
         if test x$acx_fftw_ok = xyes; then
           AC_DEFINE(HAVE_FFTWFT,1,
     [Define if you have the FFTW single precision multithreaded libraries and header files.])
@@ -99,7 +99,7 @@ if test x$acx_fftw_ok = xyes; then
         fi
       else
         AC_CHECK_LIB(fftw3_threads, fftw_init_threads,
-		[acx_fftw_ok=yes], [acx_fftw_ok=no], [-lfftw3 -lm])
+		[acx_fftw_ok=yes], [acx_fftw_ok=no], [-lfftw3 -lm -lpthread])
         if test x$acx_fftw_ok = xyes; then
           AC_DEFINE(HAVE_FFTWT,1,
     [Define if you have the FFTW double precision multithreaded libraries and header files.])
@@ -115,7 +115,7 @@ dnl Specific libdir specified
 dnl -------------------------
     if test x$4 = xyes; then
       AC_CHECK_LIB(fftw3f, fftwf_execute, [acx_fftw_ok=yes],
-		[acx_fftw_ok=no], [-lm])
+		[acx_fftw_ok=no], [-L$1 -lm])
       if test x$acx_fftw_ok = xyes; then
         AC_DEFINE(HAVE_FFTWF,1,
     [Define if you have the FFTW single precision libraries and header files.])
@@ -125,7 +125,7 @@ dnl -------------------------
       fi
     else
       AC_CHECK_LIB(fftw3, fftw_execute, [acx_fftw_ok=yes],
-		[acx_fftw_ok=no], [-lm])
+		[acx_fftw_ok=no], [-L$1 -lm])
       if test x$acx_fftw_ok = xyes; then
         AC_DEFINE(HAVE_FFTW,1,
     [Define if you have the FFTW double precision libraries and header files.])
@@ -136,8 +136,8 @@ dnl -------------------------
     fi
     if test x$acx_fftw_ok = xyes && test x$3 = xyes; then
       if test x$4 = xyes; then
-        AC_CHECK_LIB(fftw3f_threads, fftwf_init_threads,
-		[acx_fftw_ok=yes], [acx_fftw_ok=no], [-lfftw3f -lm])
+        AC_CHECK_LIB(fftw3f_threads, fftwf_init_threads, [acx_fftw_ok=yes],
+		[acx_fftw_ok=no], [-L$1 -lfftw3f -lm -lpthread])
         if test x$acx_fftw_ok = xyes; then
           AC_DEFINE(HAVE_FFTWFT,1,
     [Define if you have the FFTW single precision multithreaded libraries and header files.])
@@ -146,8 +146,8 @@ dnl -------------------------
           FFTW_ERROR="FFTW single precision library in $1 was compiled without multithreading support!"
         fi
       else
-        AC_CHECK_LIB(fftw3_threads, fftw_init_threads,
-		[acx_fftw_ok=yes], [acx_fftw_ok=no], [-lfftw3 -lm])
+        AC_CHECK_LIB(fftw3_threads, fftw_init_threads, [acx_fftw_ok=yes],
+		[acx_fftw_ok=no], [-L$1 -lfftw3 -lm -lpthread])
         if test x$acx_fftw_ok = xyes; then
           AC_DEFINE(HAVE_FFTWT,1,
     [Define if you have the FFTW double precision multithreaded libraries and header files.])

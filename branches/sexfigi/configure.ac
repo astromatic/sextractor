@@ -1,12 +1,12 @@
 # configure.in for SExtractor
-# (C) E.Bertin 2002-2007
+# (C) E.Bertin 2002-2008
 # Process this file with autoconf to produce a configure script.
 # First, disable the annoying config.cache
 define([AC_CACHE_LOAD],)
 define([AC_CACHE_SAVE],)
 
 # This is your standard Bertin source code...
-AC_INIT(sextractor, 2.7.2, [bertin@iap.fr])
+AC_INIT(sextractor, 2.8.0, [bertin@iap.fr])
 AC_CONFIG_SRCDIR(src/makeit.c)
 AC_CONFIG_AUX_DIR(autoconf)
 AM_CONFIG_HEADER(config.h)
@@ -50,38 +50,22 @@ AC_ARG_ENABLE(icc,
         use_icc="no"
 	AC_MSG_RESULT([no]))
 
-# Provide special option for gprof profiling
-AC_MSG_CHECKING([for gprof profiler mode])
-AC_ARG_ENABLE(gprof,
-	[AC_HELP_STRING([--enable-gprof],
-	[Enable special mode for compilation with the gprof profiler \
-(off by default)])],
-        use_gprof="yes"
-	AC_MSG_RESULT([yes]),
-        use_gprof="no"
-	AC_MSG_RESULT([no]))
-
-# Enable static linking
-AC_MSG_CHECKING([static linking])
-AC_ARG_ENABLE(static,
-	[AC_HELP_STRING([--enable-static],
-	[Enable static linking \
-(off by default)])],
-        use_static="yes"
-	AC_MSG_RESULT([yes]),
-        use_static="no"
-	AC_MSG_RESULT([no]))
-
 # Checks for programs.
 # GCC is chosen last because it is likely to yield less optimized code
+AC_LANG(C)
 AC_PROG_CC([$cclist])
 # C Compiler: Check that it is ANSI C
 AM_PROG_CC_STDC
+AC_DISABLE_STATIC
+#AC_DISABLE_SHARED
+AC_PROG_LIBTOOL
+AC_PROG_INSTALL
+
 # C Compiler: Check that it is POSIX-compliant
 AC_ISC_POSIX
 ACX_PROG_CC_OPTIM
-AC_PROG_RANLIB
 AC_PROG_INSTALL
+
 
 # Checks for libraries.
 AC_CHECK_LIB(m, sin)
@@ -154,18 +138,42 @@ AC_ARG_WITH(xsl_url,
 AC_DEFINE_UNQUOTED([XSL_URL], "$xsl_url",[Default URL of the XSLT filter])
 
 # Set flags for multithreading
+n_pthreads=16
 AC_ARG_ENABLE(threads,
         [AC_HELP_STRING([--enable-threads@<:@=<max_number_of_threads>@:>@],
-                [Enable multhreading (off by default)])],
-    if test "$enableval" = "yes"; then
-      n_pthreads=16
+		[Enable multhreading (on with up to 16 threads by default)])],
+    if test "$enableval" = "no"; then
+      use_pthreads="no"
     else
-      n_pthreads=$enableval
-    fi
-    use_pthreads=yes,
-    n_pthreads=1
-    use_pthreads=no
+      use_pthreads="yes"
+      if test "$enableval" != "yes"; then
+        n_pthreads=$enableval
+      fi
+    fi,
+    use_pthreads=yes
     )
+
+# Provide special option for gprof profiling
+AC_MSG_CHECKING([for gprof profiler mode])
+AC_ARG_ENABLE(gprof,
+	[AC_HELP_STRING([--enable-gprof],
+	[Enable special mode for compilation with the gprof profiler \
+(off by default)])],
+        use_gprof="yes"
+	AC_MSG_RESULT([yes]),
+        use_gprof="no"
+	AC_MSG_RESULT([no]))
+
+# Enable static linking
+AC_MSG_CHECKING([static linking])
+AC_ARG_ENABLE(static,
+	[AC_HELP_STRING([--enable-static],
+	[Enable static linking \
+(off by default)])],
+        use_static="yes"
+	AC_MSG_RESULT([yes]),
+        use_static="no"
+	AC_MSG_RESULT([no]))
 
 ################# Actions to complete in case of multhreading ################
 AC_DEFINE_UNQUOTED(THREADS_NMAX, $n_pthreads,[Maximum number of POSIX threads])
@@ -182,7 +190,8 @@ fi
 AM_CONDITIONAL(USE_THREADS, test $use_pthreads = "yes")
 
 ################ handle the FFTW library (Fourier transforms) ################
-ACX_FFTW($fftw_libdir,$fftw_incdir,$use_pthreads,no,[use_fftw=yes],[use_fftw=no])
+ACX_FFTW($fftw_libdir,$fftw_incdir,$use_pthreads,no,
+	[use_fftw=yes],[use_fftw=no])
 if test "$use_fftw" = "yes"; then
   LIBS="$FFTW_LIBS $LIBS"
 else
@@ -200,7 +209,7 @@ fi
 
 # Special optimization options for the INTEL C compiler
 if test $use_icc = "yes" -a $CC = "icc"; then
-  CFLAGS="$CFLAGS -axWPT -ip -unroll"
+  CFLAGS="$CFLAGS -axWPTS -ip -unroll"
 fi
 
 # Link with gprof option
@@ -242,6 +251,5 @@ src/wcs/Makefile
 man/Makefile
 tests/Makefile
 sextractor.spec
-sextractor-mp.spec
 man/sex.1])
 AC_OUTPUT

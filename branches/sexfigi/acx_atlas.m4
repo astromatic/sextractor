@@ -194,6 +194,7 @@ dnl Check whether the multithreaded version of ATLAS is there too:
 	[$ATLAS_LIBPATH -lcblas -latlas -lm])
     if test x$acx_atlas_ok = xyes; then
       ATLAS_LIB="$ATLAS_LIBPATH -llapack -lptcblas -lcblas -latlas"
+      LIBS="$OLIBS"
       AC_SUBST(ATLAS_LIB)
       AC_DEFINE(HAVE_ATLAS_MP,1,
 	[Define if you have the parallel ATLAS libraries.])
@@ -205,6 +206,7 @@ dnl Check whether the multithreaded version of ATLAS is there too:
     fi
   else
     ATLAS_LIB="$ATLAS_LIBPATH -llapack -lcblas -latlas"
+    LIBS="$OLIBS"
     AC_SUBST(ATLAS_LIB)
     $4
   fi
