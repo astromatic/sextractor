@@ -54,18 +54,14 @@ AC_ARG_ENABLE(icc,
 # GCC is chosen last because it is likely to yield less optimized code
 AC_LANG(C)
 AC_PROG_CC([$cclist])
-# C Compiler: Check that it is ANSI C
+# C Compiler: Check that it is ANSI C and POSIX-compliant
 AM_PROG_CC_STDC
+AC_ISC_POSIX
+ACX_PROG_CC_OPTIM
 AC_DISABLE_STATIC
 #AC_DISABLE_SHARED
 AC_PROG_LIBTOOL
 AC_PROG_INSTALL
-
-# C Compiler: Check that it is POSIX-compliant
-AC_ISC_POSIX
-ACX_PROG_CC_OPTIM
-AC_PROG_INSTALL
-
 
 # Checks for libraries.
 AC_CHECK_LIB(m, sin)
@@ -141,7 +137,7 @@ AC_DEFINE_UNQUOTED([XSL_URL], "$xsl_url",[Default URL of the XSLT filter])
 n_pthreads=16
 AC_ARG_ENABLE(threads,
         [AC_HELP_STRING([--enable-threads@<:@=<max_number_of_threads>@:>@],
-		[Enable multhreading (on with up to 16 threads by default)])],
+	[Enable multhreading (on with up to $n_pthreads threads by default)])],
     if test "$enableval" = "no"; then
       use_pthreads="no"
     else
@@ -207,9 +203,10 @@ else
   AC_MSG_ERROR([$ATLAS_ERROR Exiting.])
 fi
 
-# Special optimization options for the INTEL C compiler
+############################### INTEL C compiler ##############################
 if test $use_icc = "yes" -a $CC = "icc"; then
   CFLAGS="$CFLAGS -axWPTS -ip -unroll"
+  LDFLAGS="$LDFLAGS -static-intel"
 fi
 
 # Link with gprof option
@@ -228,12 +225,12 @@ if test "$use_static" = "yes"; then
 fi
 
 # Override automatic CFLAGS and LDFLAGS with those of user
-if test -n "$mycflags"; then
-CFLAGS="$mycflags"
-fi
-if test -n "$myldflags"; then
-LDFLAGS="$myldflags"
-fi
+#if test -n "$mycflags"; then
+#CFLAGS="$mycflags"
+#fi
+#if test -n "$myldflags"; then
+#LDFLAGS="$myldflags"
+#fi
 
 # Display compiler and linker flags
 AC_MSG_RESULT([***************************************************************])
