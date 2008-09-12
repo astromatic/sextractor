@@ -9,7 +9,7 @@
 *
 *	Contents:	Fit an arbitrary profile combination to a detection.
 *
-*	Last modify:	21/05/2008
+*	Last modify:	12/09/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -43,6 +43,7 @@
 #include	"fft.h"
 #include	"fitswcs.h"
 #include	"check.h"
+#include	"pattern.h"
 #include	"psf.h"
 #include	"profit.h"
 
@@ -169,12 +170,13 @@ OUTPUT	Pointer to an allocated fit structure (containing details about the
 	fit).
 NOTES	It is a modified version of the lm_minimize() of lmfit.
 AUTHOR	E. Bertin (IAP)
-VERSION	21/05/2008
+VERSION	12/09/2008
  ***/
 void	profit_fit(profitstruct *profit,
 		picstruct *field, picstruct *wfield,
 		objstruct *obj, obj2struct *obj2)
   {
+patternstruct *pattern;
     psfstruct		*psf;
     checkstruct		*check;
     double		*oldparaminit,
@@ -419,7 +421,11 @@ the_gal++;
 					/(a>0.1? a : 0.1)/DEG;
         }
       }
-
+/*
+pattern=pattern_init(PATTERN_OCTOPOLE, 16);
+pattern_fit(pattern, profit);
+pattern_end(pattern);
+*/
 /* Bar */
     if (FLAG(obj2.prof_bar_flux))
       {
@@ -1899,7 +1905,7 @@ void	prof_add(profstruct *prof, profitstruct *profit)
   stheta = sin(*prof->posangle*DEG);
   saspect = sqrt(fabs(*prof->aspect));
   xscale = (*prof->scale==0.0)?
-			0.0 : fabs(scaling / (*prof->scale*prof->typscale));
+		0.0 : fabs(scaling / (*prof->scale*prof->typscale));
   yscale = (*prof->scale*saspect == 0.0)?
 		0.0 : fabs(scaling / (*prof->scale*prof->typscale*saspect));
   cd11 = xscale*ctheta;
@@ -2172,7 +2178,7 @@ width = 3.0;
     default:
 /*---- Tabulated profile: remap each pixel */
 /*---- Initialize multi-dimensional counters */
-      for (d=0; d<2; d++)
+     for (d=0; d<2; d++)
         {
         posout[d] = 1.0;	/* FITS convention */
         dnaxisn[d] = profit->modnaxisn[d] + 0.99999;

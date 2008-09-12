@@ -26,7 +26,7 @@
 #include	"define.h"
 #include	"globals.h"
 #include	"prefs.h"
-
+#include "pattern.h"
 #define		SYNTAX \
 EXECUTABLE " <image> [<image2>][-c <configuration_file>][-<keyword> <value>]\n" \
 "> to dump a default configuration file:          " EXECUTABLE " -d \n" \
@@ -43,6 +43,7 @@ int	main(int argc, char *argv[])
    int		a, narg, nim, opt, opt2;
    char		**argkey, **argval, *str;
 
+//pattern_end(pattern_init(PATTERN_OCTOPOLE, 256));
   if (argc<2)
     {
     fprintf(OUTPUT, "\n         %s  version %s (%s)\n", BANNER,MYVERSION,DATE);

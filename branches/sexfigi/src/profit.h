@@ -9,7 +9,7 @@
 *
 *	Contents:	Include file for profit.c.
 *
-*	Last modify:	02/05/2008
+*	Last modify:	12/09/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -72,7 +72,7 @@ typedef struct
   proftypenum	code;			/* Model code */
   double	*pix;			/* Full pixmap of the model */
   int		naxis;			/* Number of pixmap dimensions */
-  int		naxisn[2+PROFIT_MAXEXTRA];	/* Pixmap size for each axis */
+  int		naxisn[3];		/* Pixmap size for each axis */
   double	typscale;		/* Typical scale in prof pixels */
 /* Generic presentation parameters */
   double	*flux;			/* Integrated flux */
@@ -118,7 +118,7 @@ typedef struct
   double	*psfpix;	/* Full res. pixmap of the PSF */
   double	*modpix;	/* Full res. pixmap of the complete model */
   float		*pmodpix;	/* Full res. pixmap of the partial model */
-  int		modnaxisn[2];	/* Dimensions along each axis */
+  int		modnaxisn[3];	/* Dimensions along each axis */
   PIXTYPE	*lmodpix;	/* Low resolution pixmap of the model */
   PIXTYPE	*objpix;	/* Copy of object pixmap */
   PIXTYPE	*objweight;	/* Copy of object weight-map */
@@ -129,6 +129,8 @@ typedef struct
   double	sigma;		/* Standard deviation of the pixel values */
   double	flux;		/* Total flux in final convolved model */
   double	spirindex;	/* Spiral index (>0 for CCW) */
+  PIXTYPE	*patpix;	/* Pattern pixmaps */
+  PIXTYPE	*lpatpix;	/* Low resolution pattern pixmaps */
   }	profitstruct;
 
 /*----------------------------- Global variables ----------------------------*/
