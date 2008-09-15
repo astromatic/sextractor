@@ -421,11 +421,11 @@ the_gal++;
 					/(a>0.1? a : 0.1)/DEG;
         }
       }
-/*
-pattern=pattern_init(PATTERN_OCTOPOLE, 16);
+
+pattern=pattern_init(profit, PATTERN_QUADRUPOLE, 16);
 pattern_fit(pattern, profit);
 pattern_end(pattern);
-*/
+
 /* Bar */
     if (FLAG(obj2.prof_bar_flux))
       {
@@ -704,7 +704,7 @@ INPUT	Profile-fitting structure,
 OUTPUT	Vector of residuals.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	21/04/2008
+VERSION	15/09/2008
  ***/
 double	*profit_residuals(profitstruct *profit, picstruct *field,
 		picstruct *wfield, objstruct *obj, obj2struct *obj2,
@@ -718,8 +718,8 @@ double	*profit_residuals(profitstruct *profit, picstruct *field,
     profit->param[p] = param[p];
   for (p=0; p<profit->nprof; p++)
     prof_add(profit->prof[p], profit);
-  profit_convolve(profit);
-  profit_resample(profit);
+  profit_convolve(profit, profit->modpix);
+  profit_resample(profit, profit->modpix, profit->lmodpix);
   profit_compresi(profit, obj, obj2, resi);
 
   return resi;
@@ -783,20 +783,20 @@ double	*profit_compresi(profitstruct *profit,
 
 
 /****** profit_resample ******************************************************
-PROTO	PIXTYPE *prof_resample(profitstruct *profit)
+PROTO	void	prof_resample(profitstruct *profit, double *inpix,
+		PIXTYPE *outpix)
 PURPOSE	Resample the current full resolution model to image resolution.
 INPUT	Profile-fitting structure.
-OUTPUT	Resampled pixmap.
+OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	22/04/2008
+VERSION	15/09/2008
  ***/
-PIXTYPE	*profit_resample(profitstruct *profit)
+void	profit_resample(profitstruct *profit, double *inpix, PIXTYPE *outpix)
   {
    double	posin[2], posout[2], dnaxisn[2],
 		*dx,*dy,
 		xcout,ycout, xcin,ycin, invpixstep, flux;
-   PIXTYPE	*pixout;
    int		d,i;
 
   xcout = (double)(profit->objnaxisn[0]/2) + 1.0;	/* FITS convention */
@@ -817,13 +817,12 @@ PIXTYPE	*profit_resample(profitstruct *profit)
     }
 
 /* Remap each pixel */
-  pixout = profit->lmodpix;
   flux = 0.0;
   for (i=profit->objnaxisn[0]*profit->objnaxisn[1]; i--;)
     {
     posin[0] = (posout[0] - xcout)*invpixstep + xcin;
     posin[1] = (posout[1] - ycout)*invpixstep + ycin;
-    flux += ((*(pixout++) = (PIXTYPE)(interpolate_pix(posin, profit->modpix,
+    flux += ((*(outpix++) = (PIXTYPE)(interpolate_pix(posin, inpix,
 		profit->modnaxisn, INTERP_LANCZOS3))));
     for (d=0; d<2; d++)
       if ((posout[d]+=1.0) < dnaxisn[d])
@@ -834,25 +833,26 @@ PIXTYPE	*profit_resample(profitstruct *profit)
 
   profit->flux = flux;
 
-  return profit->lmodpix;
+  return;
   }
 
 
 /****** profit_convolve *******************************************************
-PROTO	void profit_convolve(profitstruct *profit)
-PURPOSE	Convolve the composite profile model with PSF.
-INPUT	Pointer to the profit structure.
+PROTO	void profit_convolve(profitstruct *profit, double *modpix)
+PURPOSE	Convolve a model image with the local PSF.
+INPUT	Pointer to the profit structure,
+	Pointer to the image raster.
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	09/12/2006
+VERSION	15/09/2008
  ***/
-void	profit_convolve(profitstruct *profit)
+void	profit_convolve(profitstruct *profit, double *modpix)
   {
   if (!profit->psfdft)
     profit_makedft(profit);
 
-  fft_conv(profit->modpix, profit->psfdft, profit->modnaxisn);
+  fft_conv(modpix, profit->psfdft, profit->modnaxisn);
 
   return;
   }

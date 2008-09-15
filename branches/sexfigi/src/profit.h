@@ -9,7 +9,7 @@
 *
 *	Contents:	Include file for profit.c.
 *
-*	Last modify:	12/09/2008
+*	Last modify:	15/09/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -129,8 +129,6 @@ typedef struct
   double	sigma;		/* Standard deviation of the pixel values */
   double	flux;		/* Total flux in final convolved model */
   double	spirindex;	/* Spiral index (>0 for CCW) */
-  PIXTYPE	*patpix;	/* Pattern pixmaps */
-  PIXTYPE	*lpatpix;	/* Low resolution pattern pixmaps */
   }	profitstruct;
 
 /*----------------------------- Global variables ----------------------------*/
@@ -148,8 +146,6 @@ double		*profit_compresi(profitstruct *profit,
 		profit_spiralindex(profitstruct *profit, objstruct *obj,
 			obj2struct *obj2);
 
-PIXTYPE		*profit_resample(profitstruct *profit);
-
 int		profit_copyobjpix(profitstruct *profit, picstruct *field,
 			picstruct *wfield, objstruct *obj, int ix, int iy),
 		profit_minimize(profitstruct *profit, int niter),
@@ -164,7 +160,7 @@ void		prof_add(profstruct *prof, profitstruct *profit),
 		profit_fit(profitstruct *profit,
 			picstruct *field, picstruct *wfield,
 			objstruct *obj, obj2struct *obj2),
-		profit_convolve(profitstruct *profit),
+		profit_convolve(profitstruct *profit, double *modpix),
 		profit_covarunboundtobound(profitstruct *profit),
 		profit_end(profitstruct *profit),
 		profit_evaluate(double *par, double *fvec, int m, int n,
@@ -175,6 +171,8 @@ void		prof_add(profstruct *prof, profitstruct *profit),
 		profit_printout(int n_par, double* par, int m_dat, double* fvec,
 			void *data, int iflag, int iter, int nfev ),
 		profit_psf(profitstruct *profit),
+		profit_resample(profitstruct *profit, double *inpix,
+			PIXTYPE *outpix),
 		profit_resetparam(profitstruct *profit, paramenum paramtype,
 			objstruct *obj, obj2struct *obj2),
 		profit_resetparams(profitstruct *profit, objstruct *obj,

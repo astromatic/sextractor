@@ -9,7 +9,7 @@
 *
 *	Contents:	Include file for pattern.c.
 *
-*	Last modify:	12/09/2008
+*	Last modify:	15/09/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -46,21 +46,22 @@ typedef enum		{PATTERN_QUADRUPOLE, PATTERN_OCTOPOLE,
 typedef struct
   {
   pattypenum	type;			/* Pattern code */
-  PIXTYPE	*pix;			/* Full pixmap of the model */
-  int		size[3];		/* Pixmap size for each axis */
   double	x[2];			/* Coordinate vector */
   double	scale;			/* Scaling vector */
   double	aspect;			/* Aspect ratio */
   double	posangle;		/* Position angle (CCW/NAXIS1)*/
+  double	*modpix;		/* Pattern pixmaps */
+  PIXTYPE	*lmodpix;		/* Low resolution pattern pixmaps */
+  int		size[3];		/* Pixmap size for each axis */
   }	patternstruct;
 
 
 /*----------------------------- Global variables ----------------------------*/
 /*-------------------------------- functions --------------------------------*/
 
-patternstruct	*pattern_init(pattypenum ptype, int nvec);
+patternstruct	*pattern_init(profitstruct *profit, pattypenum ptype, int nvec);
 
-void		pattern_add(patternstruct *pattern, profitstruct *profit),
+void		pattern_create(patternstruct *pattern),
 		pattern_end(patternstruct *pattern),
 		pattern_fit(patternstruct *pattern, profitstruct *profit);
 
