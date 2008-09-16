@@ -170,7 +170,7 @@ OUTPUT	Pointer to an allocated fit structure (containing details about the
 	fit).
 NOTES	It is a modified version of the lm_minimize() of lmfit.
 AUTHOR	E. Bertin (IAP)
-VERSION	12/09/2008
+VERSION	16/09/2008
  ***/
 void	profit_fit(profitstruct *profit,
 		picstruct *field, picstruct *wfield,
@@ -181,7 +181,7 @@ patternstruct *pattern;
     checkstruct		*check;
     double		*oldparaminit,
 			psf_fwhm, oldchi2, a , cp,sp, emx2,emy2,emxy;
-    int			ix,iy, i,j,p, oldniter, nparam;
+    int			ix,iy, i,j,p, oldniter, nparam, npat;
 
   nparam = profit->nparam;
   if (profit->psfdft)
@@ -422,9 +422,16 @@ the_gal++;
         }
       }
 
-pattern=pattern_init(profit, PATTERN_QUADRUPOLE, 16);
-pattern_fit(pattern, profit);
-pattern_end(pattern);
+/* Disk pattern */
+    if (FLAG(obj2.prof_disk_patternvector))
+      {
+      npat = prefs.prof_disk_patternvectorsize;
+      pattern=pattern_init(profit, PATTERN_QUADRUPOLE, npat/2);
+      pattern_fit(pattern, profit);
+      for (p=0; p<npat; p++)
+        obj2->prof_disk_patternvector[p] = (float)pattern->coeff[p];
+      pattern_end(pattern);
+      }
 
 /* Bar */
     if (FLAG(obj2.prof_bar_flux))

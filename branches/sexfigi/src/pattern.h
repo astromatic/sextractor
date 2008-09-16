@@ -9,7 +9,7 @@
 *
 *	Contents:	Include file for pattern.c.
 *
-*	Last modify:	15/09/2008
+*	Last modify:	16/09/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -50,6 +50,7 @@ typedef struct
   double	scale;			/* Scaling vector */
   double	aspect;			/* Aspect ratio */
   double	posangle;		/* Position angle (CCW/NAXIS1)*/
+  double	*coeff;			/* Fitted pattern coefficients */
   double	*modpix;		/* Pattern pixmaps */
   PIXTYPE	*lmodpix;		/* Low resolution pattern pixmaps */
   int		size[3];		/* Pixmap size for each axis */

@@ -9,7 +9,7 @@
 *
 *	Contents:	Model-fitting parameter list for catalog data.
 *
-*	Last modify:	19/05/2008
+*	Last modify:	16/09/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -301,6 +301,11 @@
   {"DISK_THETA_B1950", "Disk position angle (east of north, B1950)",
 	&outobj2.prof_disk_theta1950, H_FLOAT, T_FLOAT, "%+7.3f", "deg",
 	"pos.posAng;src.morph;stat.fit.param", "deg"},
+  {"DISK_PATTERN_VECTOR", "Disk pattern fitted coefficients",
+	&outobj2.prof_disk_patternvector, H_FLOAT, T_FLOAT, "%12.4g", "",
+	"stat.fit.param;src.morph.param", "", 1,
+	&prefs.prof_disk_patternvectorsize},
+
   {"FLUX_BAR", "Bar total flux from fitting",
 	&outobj2.prof_bar_flux, H_FLOAT, T_FLOAT, "%12.g", "count",
 	"phot.count;stat.fit.param", "ct"},

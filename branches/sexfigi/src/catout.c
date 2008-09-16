@@ -9,7 +9,7 @@
 *
 *	Contents:	functions for output of catalog data.
 *
-*	Last modify:	02/06/2008
+*	Last modify:	16/09/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -169,6 +169,7 @@ void	updateparamflags()
 
 /*----------------------------- Model-fitting -----------------------------*/
 
+  FLAG(obj2.prof_disk_scale) |= FLAG(obj2.prof_disk_patternvector);
   FLAG(obj2.poserraw_prof) |= FLAG(obj2.poserrbw_prof);
   FLAG(obj2.poserrcxxw_prof) |= FLAG(obj2.poserrcyyw_prof)
 			| FLAG(obj2.poserrcxyw_prof);

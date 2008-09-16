@@ -9,7 +9,7 @@
 *
 *	Contents:	Generate and handle image patterns for image fitting.
 *
-*	Last modify:	09/09/2008
+*	Last modify:	16/09/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -28,6 +28,7 @@
 #include	<stdio.h>
 #include	<stdlib.h>
 #include	<string.h>
+#include	ATLAS_LAPACK_H
 
 #include	"define.h"
 #include	"globals.h"
@@ -49,7 +50,7 @@ INPUT	Pointer to a profit structure,
 OUTPUT	Pointer to the new pattern structure.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	15/09/2008
+VERSION	16/09/2008
  ***/
 patternstruct	*pattern_init(profitstruct *profit, pattypenum ptype, int nvec)
   {
@@ -67,6 +68,7 @@ patternstruct	*pattern_init(profitstruct *profit, pattypenum ptype, int nvec)
   pattern->scale = *profit->paramlist[PARAM_DISK_SCALE]/profit->pixstep;
   QMALLOC(pattern->modpix, double, npix);
   QMALLOC(pattern->lmodpix, PIXTYPE, npix);
+  QMALLOC(pattern->coeff, double, pattern->size[2]);
 
   return pattern;
   }  
@@ -79,13 +81,13 @@ INPUT	Pattern structure.
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	15/09/2008
+VERSION	16/09/2008
  ***/
 void	pattern_end(patternstruct *pattern)
   {
   free(pattern->modpix);
   free(pattern->lmodpix);
-
+  free(pattern->coeff);
   free(pattern);
 
   return;
@@ -104,37 +106,73 @@ VERSION	15/09/2008
 void	pattern_fit(patternstruct *pattern, profitstruct *profit)
   {
 catstruct *cat;
-   double	*inpix;
-   PIXTYPE	*outpix;
-   int		p, ninpix, noutpix;
+   double	*inpix, *alpha,*beta,
+		dval, dprod;
+   PIXTYPE	*outpix,*outpix1,*outpix2, *flagpix;
+   int		n,p,p2, nvec, ninpix, noutpix;
 
+  nvec = pattern->size[2];
   pattern_create(pattern);
+  QMALLOC(alpha, double, nvec*nvec);
+  beta = pattern->coeff;
   inpix = pattern->modpix;
   ninpix = pattern->size[0]*pattern->size[1];
   outpix = pattern->lmodpix;
   noutpix = profit->objnaxisn[0]*profit->objnaxisn[1];
-  for (p=pattern->size[2]; p--; inpix+=ninpix, outpix+=noutpix)
+  for (p=0; p<nvec; p++)
     {
     profit_convolve(profit, inpix);
     profit_resample(profit, inpix, outpix);
+    outpix1 = pattern->lmodpix;
+    for (p2=0; p2<=p; p2++)
+      {
+      flagpix = profit->objpix;
+      outpix2 = outpix;
+      dval = 0.0;
+      for (n=noutpix; n--;)
+        {
+        dprod = *(outpix1++)**(outpix2++);
+        if (*(flagpix++)>-BIG)
+          dval += dprod;
+        }
+      alpha[p*nvec+p2] = alpha[p2*nvec+p] = dval;
+      }
+    flagpix = outpix1 = profit->objpix;
+    outpix2 = outpix;
+    dval = 0.0;
+    for (n=noutpix; n--;)
+      {
+      dprod = *(outpix1++)**(outpix2++);
+      if (*(flagpix++)>-BIG)
+        dval += dprod;
+      }
+    beta[p] = dval;
+    inpix += ninpix;
+    outpix += noutpix;
     }
-/*
-bswapflag =1;
+
 cat=new_cat(1);
 init_cat(cat);
 cat->tab->naxis=3;
 QMALLOC(cat->tab->naxisn, int, 3);
 cat->tab->naxisn[0]=profit->objnaxisn[0];
 cat->tab->naxisn[1]=profit->objnaxisn[1];
-cat->tab->naxisn[2]=pattern->size[2];
+cat->tab->naxisn[2]=1;
 cat->tab->bitpix=BP_FLOAT;
 cat->tab->bytepix=4;
-cat->tab->bodybuf=pattern->lmodpix;
+cat->tab->bodybuf=profit->objpix;
 cat->tab->tabsize=cat->tab->naxisn[0]*cat->tab->naxisn[1]*cat->tab->naxisn[2]*sizeof(PIXTYPE);
 save_cat(cat, "toto2.fits");
 cat->tab->bodybuf=NULL;
 free_cat(&cat, 1);
-*/
+
+
+/* Solve the system */
+  clapack_dpotrf(CblasRowMajor,CblasUpper,nvec,alpha,nvec);
+  clapack_dpotrs(CblasRowMajor,CblasUpper,nvec,1,alpha,nvec,beta,nvec);
+
+  free(alpha);
+
   return;
   }
 

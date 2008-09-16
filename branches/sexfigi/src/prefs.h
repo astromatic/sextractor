@@ -9,7 +9,7 @@
 *
 *	Contents:	Keywords for the configuration file.
 *
-*	Last modify:	30/04/2008
+*	Last modify:	16/09/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -210,7 +210,7 @@ typedef struct
 /*----- Profile-fitting */
   int		prof_vectorsize;			/* nb of params */
   int		prof_errvectorsize;			/* nb of params */
-
+  int		prof_disk_patternvectorsize;		/* nb of params */
 /*----- customize */
   int		fitsunsigned_flag;			/* Force unsign FITS */
   int		next;			     /* Number of extensions in file */
