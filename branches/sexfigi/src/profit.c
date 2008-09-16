@@ -425,6 +425,7 @@ the_gal++;
 /* Disk pattern */
     if (FLAG(obj2.prof_disk_patternvector))
       {
+      profit_residuals(profit,field,wfield,obj,obj2,profit->param,profit->resi);
       npat = prefs.prof_disk_patternvectorsize;
       pattern=pattern_init(profit, PATTERN_QUADRUPOLE, npat/2);
       pattern_fit(pattern, profit);

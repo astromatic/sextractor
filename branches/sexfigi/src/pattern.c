@@ -39,7 +39,6 @@
 
 /*------------------------------- variables ---------------------------------*/
 
-
 /****** pattern_init ***********************************************************
 PROTO	patternstruct pattern_init(profitstruct *profit, pattern_type ptype,
 				int nvec)
@@ -106,9 +105,12 @@ VERSION	15/09/2008
 void	pattern_fit(patternstruct *pattern, profitstruct *profit)
   {
 catstruct *cat;
-   double	*inpix, *alpha,*beta,
+char	name[MAXCHAR];
+static int number;
+   double	*inpix, *doutpix1, *alpha,*beta,
 		dval, dprod;
-   PIXTYPE	*outpix,*outpix1,*outpix2, *flagpix;
+   PIXTYPE	*outpix,*outpix1,*outpix2;
+   PIXTYPE	*weightpix;
    int		n,p,p2, nvec, ninpix, noutpix;
 
   nvec = pattern->size[2];
@@ -126,34 +128,93 @@ catstruct *cat;
     outpix1 = pattern->lmodpix;
     for (p2=0; p2<=p; p2++)
       {
-      flagpix = profit->objpix;
+      weightpix = profit->objweight;
       outpix2 = outpix;
       dval = 0.0;
       for (n=noutpix; n--;)
         {
         dprod = *(outpix1++)**(outpix2++);
-        if (*(flagpix++)>-BIG)
+        if (*(weightpix++)>0.0)
           dval += dprod;
         }
       alpha[p*nvec+p2] = alpha[p2*nvec+p] = dval;
       }
-    flagpix = outpix1 = profit->objpix;
+    weightpix = profit->objweight;
+    doutpix1 = profit->resi;
     outpix2 = outpix;
     dval = 0.0;
     for (n=noutpix; n--;)
       {
-      dprod = *(outpix1++)**(outpix2++);
-      if (*(flagpix++)>-BIG)
+      dprod = *doutpix1**(outpix2++);
+      if (*(weightpix++)>0.0)
+        {
         dval += dprod;
+        doutpix1++;
+        }
       }
     beta[p] = dval;
     inpix += ninpix;
     outpix += noutpix;
     }
 
+/* Solve the system */
+  clapack_dpotrf(CblasRowMajor,CblasUpper,nvec,alpha,nvec);
+  clapack_dpotrs(CblasRowMajor,CblasUpper,nvec,1,alpha,nvec,beta,nvec);
+
+  free(alpha);
+
+QCALLOC(outpix, PIXTYPE, noutpix);
+
+outpix2 = pattern->lmodpix;
+for (p=0; p<nvec; p++)
+{
+dval = pattern->coeff[p];
+outpix1 = outpix;
+for (n=noutpix; n--;)
+*(outpix1++) += dval**(outpix2++);
+}
 cat=new_cat(1);
 init_cat(cat);
-cat->tab->naxis=3;
+cat->tab->naxis=2;
+QMALLOC(cat->tab->naxisn, int, 3);
+cat->tab->naxisn[0]=profit->objnaxisn[0];
+cat->tab->naxisn[1]=profit->objnaxisn[1];
+cat->tab->naxisn[2]=1;
+cat->tab->bitpix=BP_FLOAT;
+cat->tab->bytepix=4;
+cat->tab->bodybuf=outpix;
+cat->tab->tabsize=cat->tab->naxisn[0]*cat->tab->naxisn[1]*cat->tab->naxisn[2]*sizeof(PIXTYPE);
+sprintf(name, "toto_%02d_c.fits", ++number);
+save_cat(cat, name);
+cat->tab->bodybuf=NULL;
+free_cat(&cat, 1);
+
+weightpix = profit->objweight;
+doutpix1 = profit->resi;
+outpix1 = outpix;
+for (n=noutpix; n--;)
+if ((*weightpix++)>0.0)
+*(outpix1++) = *(doutpix1++);
+else
+*(outpix1++)=0.0;
+cat=new_cat(1);
+init_cat(cat);
+cat->tab->naxis=2;
+QMALLOC(cat->tab->naxisn, int, 3);
+cat->tab->naxisn[0]=profit->objnaxisn[0];
+cat->tab->naxisn[1]=profit->objnaxisn[1];
+cat->tab->naxisn[2]=1;
+cat->tab->bitpix=BP_FLOAT;
+cat->tab->bytepix=4;
+cat->tab->bodybuf=outpix;
+cat->tab->tabsize=cat->tab->naxisn[0]*cat->tab->naxisn[1]*cat->tab->naxisn[2]*sizeof(PIXTYPE);
+sprintf(name, "toto_%02d_b.fits", number);
+save_cat(cat, name);
+cat->tab->bodybuf=NULL;
+free_cat(&cat, 1);
+cat=new_cat(1);
+init_cat(cat);
+cat->tab->naxis=2;
 QMALLOC(cat->tab->naxisn, int, 3);
 cat->tab->naxisn[0]=profit->objnaxisn[0];
 cat->tab->naxisn[1]=profit->objnaxisn[1];
@@ -162,16 +223,46 @@ cat->tab->bitpix=BP_FLOAT;
 cat->tab->bytepix=4;
 cat->tab->bodybuf=profit->objpix;
 cat->tab->tabsize=cat->tab->naxisn[0]*cat->tab->naxisn[1]*cat->tab->naxisn[2]*sizeof(PIXTYPE);
-save_cat(cat, "toto2.fits");
+sprintf(name, "toto_%02d_a.fits", number);
+save_cat(cat, name);
 cat->tab->bodybuf=NULL;
 free_cat(&cat, 1);
 
+free(outpix);
+QCALLOC(outpix, PIXTYPE, noutpix*nvec/2);
+outpix2 = pattern->lmodpix;
+for (p=0; p<nvec/2; p++)
+{
+dval = pattern->coeff[2*p];
+outpix1 = outpix+noutpix*p;
+for (n=noutpix; n--; )
+*(outpix1++) += dval**(outpix2++);
+dval = pattern->coeff[2*p+1];
+outpix1 = outpix+noutpix*p;
+for (n=noutpix; n--;)
+*(outpix1++) += dval**(outpix2++);
+}
+//outpix1 = outpix;
+//for (n=noutpix*nvec/2; n--; outpix1++)
+//*outpix1 *= *outpix1;
 
-/* Solve the system */
-  clapack_dpotrf(CblasRowMajor,CblasUpper,nvec,alpha,nvec);
-  clapack_dpotrs(CblasRowMajor,CblasUpper,nvec,1,alpha,nvec,beta,nvec);
+cat=new_cat(1);
+init_cat(cat);
+cat->tab->naxis=3;
+QMALLOC(cat->tab->naxisn, int, 3);
+cat->tab->naxisn[0]=profit->objnaxisn[0];
+cat->tab->naxisn[1]=profit->objnaxisn[1];
+cat->tab->naxisn[2]=nvec/2;
+cat->tab->bitpix=BP_FLOAT;
+cat->tab->bytepix=4;
+cat->tab->bodybuf=outpix;
+cat->tab->tabsize=cat->tab->naxisn[0]*cat->tab->naxisn[1]*cat->tab->naxisn[2]*sizeof(PIXTYPE);
+sprintf(name, "tata_%02d.fits", number);
+save_cat(cat, name);
+cat->tab->bodybuf=NULL;
+free_cat(&cat, 1);
 
-  free(alpha);
+free(outpix);
 
   return;
   }
@@ -235,7 +326,7 @@ void	pattern_create(patternstruct *pattern)
             r2 = x1t*x1t+x2t*x2t;
             if (r2<r2max)
               {
-              lr = 10.0*(0.5*log(r2 > r2min ? r2 : r2min)-lr0);
+              lr = 20.0*(0.5*log(r2 > r2min ? r2 : r2min)-lr0);
               mod = exp(-0.5*lr*lr);
               ang = angcoeff*atan2(x2t,x1t);
 #ifdef HAVE_SINCOS
