@@ -9,7 +9,7 @@
 *
 *	Contents:	handling of "check-images".
 *
-*	Last modify:	11/10/2007
+*	Last modify:	17/09/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -243,6 +243,7 @@ void	reinitcheck(picstruct *field, checkstruct *check)
     case CHECK_PCOPROTOS:
     case CHECK_SUBPROFILES:
     case CHECK_PROFILES:
+    case CHECK_PATTERNS:
       ival = -32;
       fitswrite(check->fitshead, "BITPIX  ", &ival, H_INT, T_LONG);
       check->width = field->width;
@@ -429,6 +430,7 @@ void	reendcheck(picstruct *field, checkstruct *check)
     case CHECK_SUBPROFILES:
     case CHECK_PROFILES:
     case CHECK_ASSOC:
+    case CHECK_PATTERNS:
       if (bswapflag)
         swapbytes(check->pix, sizeof(PIXTYPE), (int)check->npix);
       QFWRITE(check->pix,check->npix*sizeof(PIXTYPE),

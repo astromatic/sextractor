@@ -9,7 +9,7 @@
 *
 *	Contents:	Include file for profit.c.
 *
-*	Last modify:	15/09/2008
+*	Last modify:	17/09/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -123,6 +123,7 @@ typedef struct
   PIXTYPE	*objpix;	/* Copy of object pixmap */
   PIXTYPE	*objweight;	/* Copy of object weight-map */
   int		objnaxisn[2];	/* Dimensions along each axis */
+  int		ix, iy;		/* Integer coordinates of object pixmap */
   double	*resi;		/* Vector of residuals */
   int		nresi;		/* Number of residual elements */
   double	chi2;		/* Std error per residual element */
@@ -147,7 +148,7 @@ double		*profit_compresi(profitstruct *profit,
 			obj2struct *obj2);
 
 int		profit_copyobjpix(profitstruct *profit, picstruct *field,
-			picstruct *wfield, objstruct *obj, int ix, int iy),
+			picstruct *wfield, objstruct *obj),
 		profit_minimize(profitstruct *profit, int niter),
 		profit_setparam(profitstruct *profit, paramenum paramtype,
 			double param, double parammin, double parammax);

@@ -9,7 +9,7 @@
 *
 *	Contents:	Generate and handle image patterns for image fitting.
 *
-*	Last modify:	16/09/2008
+*	Last modify:	17/09/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -34,6 +34,7 @@
 #include	"globals.h"
 #include	"prefs.h"
 #include	"fits/fitscat.h"
+#include	"check.h"
 #include	"pattern.h"
 #include	"profit.h"
 
@@ -60,7 +61,7 @@ patternstruct	*pattern_init(profitstruct *profit, pattypenum ptype, int nvec)
   pattern->type = ptype;
   pattern->size[0] = profit->modnaxisn[0];
   pattern->size[1] = profit->modnaxisn[1];
-  pattern->size[2] = nvec*2;
+  pattern->size[2] = nvec;
   npix = pattern->size[0]*pattern->size[1] * pattern->size[2];
   pattern->aspect = *profit->paramlist[PARAM_DISK_ASPECT];
   pattern->posangle = fmod_m90_p90(*profit->paramlist[PARAM_DISK_POSANG]);
@@ -100,18 +101,19 @@ INPUT	Pointer to pattern structure.
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	15/09/2008
+VERSION	17/09/2008
  ***/
 void	pattern_fit(patternstruct *pattern, profitstruct *profit)
   {
 catstruct *cat;
 char	name[MAXCHAR];
 static int number;
+   checkstruct	*check;
    double	*inpix, *doutpix1, *alpha,*beta,
 		dval, dprod;
    PIXTYPE	*outpix,*outpix1,*outpix2;
    PIXTYPE	*weightpix;
-   int		n,p,p2, nvec, ninpix, noutpix;
+   int		n,p,p2, nvec, ninpix, noutpix,nout;
 
   nvec = pattern->size[2];
   pattern_create(pattern);
@@ -152,6 +154,7 @@ static int number;
         doutpix1++;
         }
       }
+    alpha[p*(nvec+1)] += 1.0;
     beta[p] = dval;
     inpix += ninpix;
     outpix += noutpix;
@@ -163,87 +166,46 @@ static int number;
 
   free(alpha);
 
-QCALLOC(outpix, PIXTYPE, noutpix);
+  if ((check = prefs.check[CHECK_PATTERNS]))
+    {
+    QCALLOC(outpix, PIXTYPE, noutpix);
+    outpix2 = pattern->lmodpix;
+    for (p=0; p<nvec; p++)
+      {
+      dval = pattern->coeff[p];
+      outpix1 = outpix;
+      for (n=noutpix; n--;)
+        *(outpix1++) += dval**(outpix2++);
+      }
+    addcheck(check, outpix, profit->objnaxisn[0],profit->objnaxisn[1],
+		profit->ix, profit->iy, 1.0);
+    free(outpix);
+    }
 
+
+nout = (pattern->type==PATTERN_POLARFOURIER?
+			(nvec/(PATTERN_FMAX*2+1))*(PATTERN_FMAX+1) : nvec/2);
+nout=nvec;
+QCALLOC(outpix, PIXTYPE, noutpix*nout);
+outpix1 = outpix;
 outpix2 = pattern->lmodpix;
 for (p=0; p<nvec; p++)
 {
 dval = pattern->coeff[p];
-outpix1 = outpix;
-for (n=noutpix; n--;)
-*(outpix1++) += dval**(outpix2++);
-}
-cat=new_cat(1);
-init_cat(cat);
-cat->tab->naxis=2;
-QMALLOC(cat->tab->naxisn, int, 3);
-cat->tab->naxisn[0]=profit->objnaxisn[0];
-cat->tab->naxisn[1]=profit->objnaxisn[1];
-cat->tab->naxisn[2]=1;
-cat->tab->bitpix=BP_FLOAT;
-cat->tab->bytepix=4;
-cat->tab->bodybuf=outpix;
-cat->tab->tabsize=cat->tab->naxisn[0]*cat->tab->naxisn[1]*cat->tab->naxisn[2]*sizeof(PIXTYPE);
-sprintf(name, "toto_%02d_c.fits", ++number);
-save_cat(cat, name);
-cat->tab->bodybuf=NULL;
-free_cat(&cat, 1);
-
-weightpix = profit->objweight;
-doutpix1 = profit->resi;
-outpix1 = outpix;
-for (n=noutpix; n--;)
-if ((*weightpix++)>0.0)
-*(outpix1++) = *(doutpix1++);
-else
-*(outpix1++)=0.0;
-cat=new_cat(1);
-init_cat(cat);
-cat->tab->naxis=2;
-QMALLOC(cat->tab->naxisn, int, 3);
-cat->tab->naxisn[0]=profit->objnaxisn[0];
-cat->tab->naxisn[1]=profit->objnaxisn[1];
-cat->tab->naxisn[2]=1;
-cat->tab->bitpix=BP_FLOAT;
-cat->tab->bytepix=4;
-cat->tab->bodybuf=outpix;
-cat->tab->tabsize=cat->tab->naxisn[0]*cat->tab->naxisn[1]*cat->tab->naxisn[2]*sizeof(PIXTYPE);
-sprintf(name, "toto_%02d_b.fits", number);
-save_cat(cat, name);
-cat->tab->bodybuf=NULL;
-free_cat(&cat, 1);
-cat=new_cat(1);
-init_cat(cat);
-cat->tab->naxis=2;
-QMALLOC(cat->tab->naxisn, int, 3);
-cat->tab->naxisn[0]=profit->objnaxisn[0];
-cat->tab->naxisn[1]=profit->objnaxisn[1];
-cat->tab->naxisn[2]=1;
-cat->tab->bitpix=BP_FLOAT;
-cat->tab->bytepix=4;
-cat->tab->bodybuf=profit->objpix;
-cat->tab->tabsize=cat->tab->naxisn[0]*cat->tab->naxisn[1]*cat->tab->naxisn[2]*sizeof(PIXTYPE);
-sprintf(name, "toto_%02d_a.fits", number);
-save_cat(cat, name);
-cat->tab->bodybuf=NULL;
-free_cat(&cat, 1);
-
-free(outpix);
-QCALLOC(outpix, PIXTYPE, noutpix*nvec/2);
-outpix2 = pattern->lmodpix;
-for (p=0; p<nvec/2; p++)
-{
-dval = pattern->coeff[2*p];
-outpix1 = outpix+noutpix*p;
 for (n=noutpix; n--; )
 *(outpix1++) += dval**(outpix2++);
-dval = pattern->coeff[2*p+1];
-outpix1 = outpix+noutpix*p;
-for (n=noutpix; n--;)
-*(outpix1++) += dval**(outpix2++);
+/*
+if (pattern->type==PATTERN_POLARFOURIER)
+  {
+  if (p>0 && p%2)
+    outpix1 -= noutpix;
+  }
+else if (!p%2)
+  outpix1 -= noutpix;
+*/
 }
 //outpix1 = outpix;
-//for (n=noutpix*nvec/2; n--; outpix1++)
+//for (n=noutpix*out; n--; outpix1++)
 //*outpix1 *= *outpix1;
 
 cat=new_cat(1);
@@ -252,7 +214,7 @@ cat->tab->naxis=3;
 QMALLOC(cat->tab->naxisn, int, 3);
 cat->tab->naxisn[0]=profit->objnaxisn[0];
 cat->tab->naxisn[1]=profit->objnaxisn[1];
-cat->tab->naxisn[2]=nvec/2;
+cat->tab->naxisn[2]=nout;
 cat->tab->bitpix=BP_FLOAT;
 cat->tab->bytepix=4;
 cat->tab->bodybuf=outpix;
@@ -275,16 +237,18 @@ INPUT	Pointer to pattern structure.
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	15/09/2008
+VERSION	17/09/2008
  ***/
 void	pattern_create(patternstruct *pattern)
   {
    double		x1,x2, x1t,x2t, r2,r2min,r2max, lr, lr0, 
-			mod,ang, cosang,sinang, angcoeff,
+			mod,ang,ang0, cosang,sinang, angcoeff,
 			ctheta,stheta, saspect,xscale,yscale,
-			cd11,cd12,cd21,cd22, x1cout,x2cout;
-   double		*cpix,*spix;
-   int			p, ix1,ix2, nvec, npix;
+			cd11,cd12,cd21,cd22, x1cout,x2cout, cmod,smod,
+			cnorm,snorm,norm, dval;
+   double		*scbuf[PATTERN_FMAX],*scpix[PATTERN_FMAX],
+			*scpixt,*cpix,*spix, *pix, *r2buf,*r2pix,*modpix;
+   int			f,i,p, ix1,ix2, nrad, nvec, npix;
 
 /* Compute Profile CD matrix */
   ctheta = cos(pattern->posangle*DEG);
@@ -317,6 +281,7 @@ void	pattern_create(patternstruct *pattern)
         x1 = -x1cout;
         x2 = -x2cout;
         lr0 = log(3.0*(p+1)/nvec);
+        cnorm = snorm = 0.0;
         for (ix2=pattern->size[1]; ix2--; x2+=1.0)
           {
           x1t = cd12*x2 + cd11*x1;
@@ -335,8 +300,10 @@ void	pattern_create(patternstruct *pattern)
               sinang = sin(ang);
               cosang = cos(ang);
 #endif
-              *(cpix++) = mod*cosang;
-              *(spix++) = mod*sinang;
+              *(cpix++) = cmod = mod*cosang;
+              *(spix++) = smod = mod*sinang;
+              cnorm += cmod*cmod;
+              snorm += smod*smod;
               }
             else
               *(cpix++) = *(spix++) = 0.0;
@@ -344,7 +311,113 @@ void	pattern_create(patternstruct *pattern)
             x2t += cd21;
             }
           }
+        cpix -= npix;
+        cnorm = cnorm > 0.0? 1.0/cnorm : 0.0;
+        for (i=npix; i--;)
+          *(cpix++) *= cnorm;
+        spix -= npix;
+        snorm = snorm > 0.0? 1.0/snorm : 0.0;
+        for (i=npix; i--;)
+          *(spix++) *= snorm;
         }
+      break;
+    case PATTERN_POLARFOURIER:
+      nvec = pattern->size[2];
+      nrad = nvec/(PATTERN_FMAX*2+1);
+      npix = pattern->size[0]*pattern->size[1];
+      r2min = fabs(cd11*cd22-cd12*cd21)/10.0;
+      r2max = BIG;
+/*---- Pre-compute radii and quadrupoles to speed up computations later */
+      QMALLOC(r2buf, double, npix);
+      r2pix = r2buf;
+      for (f=0; f<PATTERN_FMAX; f++)
+        {
+        QMALLOC(scbuf[f], double, 2*npix);
+        scpix[f] = scbuf[f];
+        }
+      x1 = -x1cout;
+      x2 = -x2cout;
+      for (ix2=pattern->size[1]; ix2--; x2+=1.0)
+        {
+        x1t = cd12*x2 + cd11*x1;
+        x2t = cd22*x2 + cd21*x1;
+        for (ix1=pattern->size[0]; ix1--;)
+          {
+          *(r2pix++) = x1t*x1t+x2t*x2t;
+          ang = ang0 = atan2(x2t,x1t);
+          for (f=0; f<PATTERN_FMAX; f++)
+            {
+#ifdef HAVE_SINCOS
+            sincos(ang, scpix[f], scpix[f]+npix);
+            scpix[f]++;
+#else
+            *(scpix[f]) = sin(ang);
+            *(scpix[f]+++npix) = cos(ang);
+#endif
+            ang+=ang0;
+            }
+          x1t += cd11;
+          x2t += cd21;
+          }
+        }
+      pix = pattern->modpix;
+      for (p=0; p<nrad; p++)
+        {
+        for (f=0; f<=PATTERN_FMAX; f++)
+          {
+          norm = 0.0;
+          lr0 = log(3.0*(p+1)/nrad);
+          r2pix = r2buf;
+          if (!f)
+            {
+            for (i=npix; i--;)
+              {
+              r2 = *(r2pix++);
+              if (r2<r2max)
+                {
+                lr = 20.0*(0.5*log(r2 > r2min ? r2 : r2min)-lr0);
+                *(pix++) = dval = exp(-0.5*lr*lr);
+                norm += dval*dval;
+                }
+              else
+                *(pix++) = 0.0;
+              }
+            pix -= npix;
+            norm = norm > 0.0? 1.0/norm : 0.0;
+            for (i=npix; i--;)
+              *(pix++) *= norm;
+            modpix = pix;
+            }
+          else
+            {
+            modpix -= npix;
+            scpixt = scbuf[f-1];
+            for (i=npix; i--;)
+              {
+              *(pix++) = dval = *(modpix++)**(scpixt++);
+              norm += dval*dval;
+              }
+            pix -= npix;
+            norm = norm > 0.0? 1.0/norm : 0.0;
+            for (i=npix; i--;)
+              *(pix++) *= norm;
+            modpix -= npix;
+            norm = 0.0;
+            for (i=npix; i--;)
+              {
+              *(pix++) = dval = *(modpix++)**(scpixt++);
+              norm += dval*dval;
+              }
+            pix -= npix;
+            norm = norm > 0.0? 1.0/norm : 0.0;
+            for (i=npix; i--;)
+              *(pix++) *= norm;
+            }
+          }
+        }
+      free(r2buf);
+      for (f=0; f<PATTERN_FMAX; f++)
+        free(scbuf[f]);
       break;
     default:
       error(EXIT_FAILURE, "*Internal Error*: Unknown Pattern type","");

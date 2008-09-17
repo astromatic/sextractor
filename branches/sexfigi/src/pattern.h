@@ -9,7 +9,7 @@
 *
 *	Contents:	Include file for pattern.c.
 *
-*	Last modify:	16/09/2008
+*	Last modify:	17/09/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -25,7 +25,7 @@
 /*-------------------------------- macros -----------------------------------*/
 /*----------------------------- Internal constants --------------------------*/
 
-#define	PATTERN_SIZE	255     /* Pattern image size */
+#define	PATTERN_FMAX	4	/* Maximum pattern angular frequency */
 #define	PATTERN_RADIUS	1.0	/* Pattern radius over half the PATTERN_SIZE */
 #define	PATTERN_SCALE	(0.2*PATTERN_RADIUS)	/* Pattern scale */
 
@@ -38,6 +38,7 @@ One must have:	PATTERN_SIZE > 1
 /*--------------------------------- typedefs --------------------------------*/
 
 typedef enum		{PATTERN_QUADRUPOLE, PATTERN_OCTOPOLE,
+			PATTERN_POLARFOURIER,
 			PATTERN_NPATTERNS}
 				pattypenum; /* Pattern code */
 

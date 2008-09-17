@@ -9,7 +9,7 @@
 *
 *	Contents:	global definitions.
 *
-*	Last modify:	01/09/2008
+*	Last modify:	17/09/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -42,7 +42,6 @@
 #define	MARGIN_SCALE		2.0		/* Margin / object height */ 
 #define	MAXCHAR			512		/* max. number of characters */
 #define	MAXCHARL		16384		/* max.nb of chars in strlist*/
-#define	MAXCHECK		32		/* max. # of CHECKimages */
 #define	MAXDEBAREA		3		/* max. area for deblending */
 #define	MAXFLAG			4		/* max. # of FLAG-images */
 #define	MAXIMAGE		2		/* max. # of input images */

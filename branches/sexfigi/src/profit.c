@@ -9,7 +9,7 @@
 *
 *	Contents:	Fit an arbitrary profile combination to a detection.
 *
-*	Last modify:	12/09/2008
+*	Last modify:	17/09/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -61,7 +61,7 @@ char		profname[][32]={"background offset", "Sersic spheroid",
 		""};
 
 int		interp_kernwidth[5]={1,2,4,6,8};
-int theniter, the_x,the_y, the_gal;
+int theniter, the_gal;
 /* "Local" global variables; it seems dirty but it simplifies a lot */
 /* interfacing to the LM routines */
 static objstruct	*the_obj;
@@ -170,18 +170,18 @@ OUTPUT	Pointer to an allocated fit structure (containing details about the
 	fit).
 NOTES	It is a modified version of the lm_minimize() of lmfit.
 AUTHOR	E. Bertin (IAP)
-VERSION	16/09/2008
+VERSION	17/09/2008
  ***/
 void	profit_fit(profitstruct *profit,
 		picstruct *field, picstruct *wfield,
 		objstruct *obj, obj2struct *obj2)
   {
-patternstruct *pattern;
+    patternstruct *pattern;
     psfstruct		*psf;
     checkstruct		*check;
     double		*oldparaminit,
 			psf_fwhm, oldchi2, a , cp,sp, emx2,emy2,emxy;
-    int			ix,iy, i,j,p, oldniter, nparam, npat;
+    int			i,j,p, oldniter, nparam, npat;
 
   nparam = profit->nparam;
   if (profit->psfdft)
@@ -198,8 +198,8 @@ patternstruct *pattern;
 		*1.2)/2)*2 + 1;
   profit->objnaxisn[1] = (((int)((obj->ymax-obj->ymin+1) + psf_fwhm + 0.499)
 		*1.2)/2)*2 + 1;
-  ix = (int)(obj->mx + 0.49999);	/* internal convention: 1st pix = 0 */
-  iy = (int)(obj->my + 0.49999);	/* internal convention: 1st pix = 0 */
+  profit->ix = (int)(obj->mx + 0.49999);/* internal convention: 1st pix = 0 */
+  profit->iy = (int)(obj->my + 0.49999);/* internal convention: 1st pix = 0 */
 
   if (profit->objnaxisn[1]<profit->objnaxisn[0])
     profit->objnaxisn[1] = profit->objnaxisn[0];
@@ -212,13 +212,11 @@ patternstruct *pattern;
   theprofit = profit;
   the_obj = obj;
   the_obj2 = obj2;
-  the_x = ix;
-  the_y = iy;
 
   QMALLOC(profit->objpix, PIXTYPE, profit->objnaxisn[0]*profit->objnaxisn[1]);
   QMALLOC(profit->objweight, PIXTYPE,profit->objnaxisn[0]*profit->objnaxisn[1]);
   QMALLOC(profit->lmodpix, PIXTYPE, profit->objnaxisn[0]*profit->objnaxisn[1]);
-  profit->nresi = profit_copyobjpix(profit, field, wfield, obj, ix,iy);
+  profit->nresi = profit_copyobjpix(profit, field, wfield, obj);
   if (profit->nresi < nparam)
     {
     for (p=0; p<nparam; p++)
@@ -298,13 +296,13 @@ the_gal++;
     {
     profit_residuals(profit,field,wfield,obj,obj2,profit->param,profit->resi);
     addcheck(check, profit->lmodpix, profit->objnaxisn[0],profit->objnaxisn[1],
-		ix,iy, -1.0);
+		profit->ix,profit->iy, -1.0);
     }
   if ((check = prefs.check[CHECK_PROFILES]))
     {
     profit_residuals(profit,field,wfield,obj,obj2,profit->param,profit->resi);
     addcheck(check, profit->lmodpix, profit->objnaxisn[0],profit->objnaxisn[1],
-		ix,iy, 1.0);
+		profit->ix,profit->iy, 1.0);
     }
 
 /* Fill measurement parameters */
@@ -326,8 +324,9 @@ the_gal++;
     {
     i = profit->paramindex[PARAM_X];
     j = profit->paramindex[PARAM_Y];
-    obj2->x_prof = ix + 1.0 + *profit->paramlist[PARAM_X];/* FITS convention */
-    obj2->y_prof = iy + 1.0 + *profit->paramlist[PARAM_Y];/* FITS convention */
+/*-- Model coordinates follow the FITS convention (first pixel at 1,1) */
+    obj2->x_prof = profit->ix + *profit->paramlist[PARAM_X] + 1.0;
+    obj2->y_prof = profit->iy + *profit->paramlist[PARAM_Y] + 1.0;
     obj2->poserrmx2_prof = emx2 = profit->covar[i*(nparam+1)];
     obj2->poserrmy2_prof = emy2 = profit->covar[j*(nparam+1)];
     obj2->poserrmxy_prof = emxy = profit->covar[i+j*nparam];
@@ -427,7 +426,7 @@ the_gal++;
       {
       profit_residuals(profit,field,wfield,obj,obj2,profit->param,profit->resi);
       npat = prefs.prof_disk_patternvectorsize;
-      pattern=pattern_init(profit, PATTERN_QUADRUPOLE, npat/2);
+      pattern=pattern_init(profit, PATTERN_POLARFOURIER, npat);
       pattern_fit(pattern, profit);
       for (p=0; p<npat; p++)
         obj2->prof_disk_patternvector[p] = (float)pattern->coeff[p];
@@ -637,7 +636,7 @@ INPUT	Number of fitted parameters,
 OUTPUT	-.
 NOTES	Input arguments are there only for compatibility purposes (unused)
 AUTHOR	E. Bertin (IAP)
-VERSION	07/12/2006
+VERSION	17/09/2008
  ***/
 void	profit_printout(int n_par, double* par, int m_dat, double* fvec,
 		void *data, int iflag, int iter, int nfev )
@@ -659,7 +658,7 @@ void	profit_printout(int n_par, double* par, int m_dat, double* fvec,
     check=initcheck(filename, CHECK_PROFILES, 0);
     reinitcheck(the_field, check);
     addcheck(check, profit->lmodpix, profit->objnaxisn[0],profit->objnaxisn[1],
-		the_x,the_y, 1.0);
+		profit->ix,profit->iy, 1.0);
 
     reendcheck(the_field, check);
     endcheck(check);
@@ -982,26 +981,25 @@ void	profit_makedft(profitstruct *profit)
 
 /****** profit_copyobjpix *****************************************************
 PROTO	int profit_copyobjpix(profitstruct *profit, picstruct *field,
-			picstruct *wfield, objstruct *obj, int ix, int iy)
+			picstruct *wfield, objstruct *obj)
 PURPOSE	Copy a piece of the input field image to a profit structure.
 INPUT	Pointer to the profit structure,
 	Pointer to the field structure,
 	Pointer to the field weight structure,
-	Pointer to the object structure,
-	integer position in X (SExtractor convention),
-	integer position in Y (SExtractor convention).
+	Pointer to the object structure.
 OUTPUT	The number of valid pixels copied.
 NOTES	Global preferences are used.
 AUTHOR	E. Bertin (IAP)
-VERSION	21/04/2008
+VERSION	17/09/2008
  ***/
 int	profit_copyobjpix(profitstruct *profit, picstruct *field,
-			picstruct *wfield, objstruct *obj, int ix, int iy)
+			picstruct *wfield, objstruct *obj)
   {
    double	dx2, dy2, dr2, rad2;
    PIXTYPE	*pixin,*pixout, *wpixin,*wpixout,
 		backnoise2, invgain, satlevel, wthresh, pix, wpix;
-   int		i,x,y, xmin,xmax,ymin,ymax, w,h,w2,dw, npix, off, gainflag;
+   int		i,x,y, xmin,xmax,ymin,ymax, w,h,w2,dw, npix, off, gainflag,
+		ix,iy;
 
 /* First put the image background to -BIG */
   pixout = profit->objpix;
@@ -1015,6 +1013,8 @@ int	profit_copyobjpix(profitstruct *profit, picstruct *field,
     }
 
 /* Don't go further if out of frame!! */
+  ix = profit->ix;
+  iy = profit->iy;
   if (ix<0 || ix>=field->width || iy<field->ymin || iy>=field->ymax)
     return 0;
 
