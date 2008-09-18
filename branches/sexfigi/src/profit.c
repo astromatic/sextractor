@@ -9,7 +9,7 @@
 *
 *	Contents:	Fit an arbitrary profile combination to a detection.
 *
-*	Last modify:	17/09/2008
+*	Last modify:	18/09/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -64,8 +64,6 @@ int		interp_kernwidth[5]={1,2,4,6,8};
 int theniter, the_gal;
 /* "Local" global variables; it seems dirty but it simplifies a lot */
 /* interfacing to the LM routines */
-static objstruct	*the_obj;
-static obj2struct	*the_obj2;
 static picstruct	*the_field, *the_wfield;
 profitstruct		*theprofit;
 
@@ -170,7 +168,7 @@ OUTPUT	Pointer to an allocated fit structure (containing details about the
 	fit).
 NOTES	It is a modified version of the lm_minimize() of lmfit.
 AUTHOR	E. Bertin (IAP)
-VERSION	17/09/2008
+VERSION	18/09/2008
  ***/
 void	profit_fit(profitstruct *profit,
 		picstruct *field, picstruct *wfield,
@@ -181,7 +179,7 @@ void	profit_fit(profitstruct *profit,
     checkstruct		*check;
     double		*oldparaminit,
 			psf_fwhm, oldchi2, a , cp,sp, emx2,emy2,emxy;
-    int			i,j,p, oldniter, nparam, npat;
+    int			i,j,p, oldniter, nparam, ncomp,nfreq;
 
   nparam = profit->nparam;
   if (profit->psfdft)
@@ -210,13 +208,13 @@ void	profit_fit(profitstruct *profit,
   the_field = field;
   the_wfield = wfield;
   theprofit = profit;
-  the_obj = obj;
-  the_obj2 = obj2;
+  profit->obj = obj;
+  profit->obj2 = obj2;
 
   QMALLOC(profit->objpix, PIXTYPE, profit->objnaxisn[0]*profit->objnaxisn[1]);
   QMALLOC(profit->objweight, PIXTYPE,profit->objnaxisn[0]*profit->objnaxisn[1]);
   QMALLOC(profit->lmodpix, PIXTYPE, profit->objnaxisn[0]*profit->objnaxisn[1]);
-  profit->nresi = profit_copyobjpix(profit, field, wfield, obj);
+  profit->nresi = profit_copyobjpix(profit, field, wfield);
   if (profit->nresi < nparam)
     {
     for (p=0; p<nparam; p++)
@@ -248,7 +246,7 @@ void	profit_fit(profitstruct *profit,
   obj2->prof_flag = 0;
   profit->sigma = obj->sigbkg;
 
-  profit_resetparams(profit, obj, obj2);
+  profit_resetparams(profit);
 
 //for (p=0; p<nparam; p++)
 //printf("%g ", profit->paraminit[p]);
@@ -264,7 +262,7 @@ the_gal++;
     {
     oldchi2 = profit->chi2;
     oldniter = profit->niter;
-    profit_resetparams(profit, obj, obj2);
+    profit_resetparams(profit);
     profit_setparam(profit, PARAM_ARMS_PITCH, 160.0, 130.0, 175.0);
     profit->niter = profit_minimize(profit, PROFIT_MAXITER);
     if (profit->chi2 > oldchi2)
@@ -294,13 +292,13 @@ the_gal++;
 /* CHECK-Images */
   if ((check = prefs.check[CHECK_SUBPROFILES]))
     {
-    profit_residuals(profit,field,wfield,obj,obj2,profit->param,profit->resi);
+    profit_residuals(profit,field,wfield,profit->param,profit->resi);
     addcheck(check, profit->lmodpix, profit->objnaxisn[0],profit->objnaxisn[1],
 		profit->ix,profit->iy, -1.0);
     }
   if ((check = prefs.check[CHECK_PROFILES]))
     {
-    profit_residuals(profit,field,wfield,obj,obj2,profit->param,profit->resi);
+    profit_residuals(profit,field,wfield,profit->param,profit->resi);
     addcheck(check, profit->lmodpix, profit->objnaxisn[0],profit->objnaxisn[1],
 		profit->ix,profit->iy, 1.0);
     }
@@ -368,7 +366,7 @@ the_gal++;
 	profit->modnaxisn[0]*profit->modnaxisn[1]*sizeof(double));
     for (p=0; p<profit->nprof; p++)
       prof_add(profit->prof[p], profit);
-    profit_moments(profit, obj, obj2);
+    profit_moments(profit);
     }
 
 /* Bulge */
@@ -424,12 +422,13 @@ the_gal++;
 /* Disk pattern */
     if (FLAG(obj2.prof_disk_patternvector))
       {
-      profit_residuals(profit,field,wfield,obj,obj2,profit->param,profit->resi);
-      npat = prefs.prof_disk_patternvectorsize;
-      pattern=pattern_init(profit, PATTERN_POLARFOURIER, npat);
+      profit_residuals(profit,field,wfield,profit->param,profit->resi);
+      ncomp = prefs.prof_disk_patternncomp;
+      pattern = pattern_init(profit, PATTERN_POLARFOURIER, ncomp);
       pattern_fit(pattern, profit);
-      for (p=0; p<npat; p++)
-        obj2->prof_disk_patternvector[p] = (float)pattern->coeff[p];
+      nfreq = pattern->ncomp*pattern->nfreq;
+      for (p=0; p<nfreq; p++)
+        obj2->prof_disk_patternvector[p] = (float)pattern->acoeff[p];
       pattern_end(pattern);
       }
 
@@ -680,7 +679,7 @@ INPUT	Pointer to the vector of parameters,
 OUTPUT	-.
 NOTES	Input arguments are there only for compatibility purposes (unused)
 AUTHOR	E. Bertin (IAP)
-VERSION	28/03/2007
+VERSION	18/09/2008
  ***/
 void	profit_evaluate(double *par, double *fvec, int m, int n,
 			void *adata)
@@ -689,7 +688,7 @@ void	profit_evaluate(double *par, double *fvec, int m, int n,
 
   profit = (profitstruct *)adata;
   profit_unboundtobound(profit, par);
-  profit_residuals(profit, the_field, the_wfield, the_obj, the_obj2, par, fvec);
+  profit_residuals(profit, the_field, the_wfield, par, fvec);
   profit_boundtounbound(profit, par);
   profit_printout(m, par, n, fvec, adata, 0, -1, 0 );
   return;
@@ -698,8 +697,7 @@ void	profit_evaluate(double *par, double *fvec, int m, int n,
 
 /****** profit_residuals ******************************************************
 PROTO	double *prof_residuals(profitstruct *profit, picstruct *field,
-		picstruct *wfield, objstruct *obj, obj2struct *obj2,
-		double *param, double *resi)
+		picstruct *wfield, double *param, double *resi)
 PURPOSE	Compute the vector of residuals between the data and the galaxy
 	profile model.
 INPUT	Profile-fitting structure,
@@ -714,8 +712,7 @@ AUTHOR	E. Bertin (IAP)
 VERSION	15/09/2008
  ***/
 double	*profit_residuals(profitstruct *profit, picstruct *field,
-		picstruct *wfield, objstruct *obj, obj2struct *obj2,
-		double *param, double *resi)
+		picstruct *wfield, double *param, double *resi)
   {
    int		p;
 
@@ -727,15 +724,14 @@ double	*profit_residuals(profitstruct *profit, picstruct *field,
     prof_add(profit->prof[p], profit);
   profit_convolve(profit, profit->modpix);
   profit_resample(profit, profit->modpix, profit->lmodpix);
-  profit_compresi(profit, obj, obj2, resi);
+  profit_compresi(profit, resi);
 
   return resi;
   }
 
 
 /****** profit_compresi ******************************************************
-PROTO	double *prof_compresi(profitstruct *profit,
-			objstruct *obj, obj2struct *obj2, double *resi)
+PROTO	double *prof_compresi(profitstruct *profit, double *resi)
 PURPOSE	Compute the vector of residuals between the data and the galaxy
 	profile model.
 INPUT	Profile-fitting structure,
@@ -744,10 +740,9 @@ INPUT	Profile-fitting structure,
 OUTPUT	Vector of residuals.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	14/05/2008
+VERSION	18/09/2008
  ***/
-double	*profit_compresi(profitstruct *profit,
-		objstruct *obj, obj2struct *obj2, double *resi)
+double	*profit_compresi(profitstruct *profit, double *resi)
   {
    double	*resit,
 		error, x1c,x1,x2,rmin;
@@ -764,7 +759,7 @@ double	*profit_compresi(profitstruct *profit,
   invsig = 1.0/PROFIT_DYNPARAM;
   error = 0.0;
   x1c = (double)(profit->objnaxisn[0]/2);
-  rmin = obj2->hl_radius / 2.0;
+  rmin = profit->obj2->hl_radius / 2.0;
   x2 = -(double)(profit->objnaxisn[1]/2);
   for (ix2=profit->objnaxisn[1]; ix2--; x2+=1.0)
     {
@@ -981,19 +976,18 @@ void	profit_makedft(profitstruct *profit)
 
 /****** profit_copyobjpix *****************************************************
 PROTO	int profit_copyobjpix(profitstruct *profit, picstruct *field,
-			picstruct *wfield, objstruct *obj)
+			picstruct *wfield)
 PURPOSE	Copy a piece of the input field image to a profit structure.
 INPUT	Pointer to the profit structure,
 	Pointer to the field structure,
-	Pointer to the field weight structure,
-	Pointer to the object structure.
+	Pointer to the field weight structure.
 OUTPUT	The number of valid pixels copied.
 NOTES	Global preferences are used.
 AUTHOR	E. Bertin (IAP)
-VERSION	17/09/2008
+VERSION	18/09/2008
  ***/
 int	profit_copyobjpix(profitstruct *profit, picstruct *field,
-			picstruct *wfield, objstruct *obj)
+			picstruct *wfield)
   {
    double	dx2, dy2, dr2, rad2;
    PIXTYPE	*pixin,*pixout, *wpixin,*wpixout,
@@ -1020,7 +1014,7 @@ int	profit_copyobjpix(profitstruct *profit, picstruct *field,
 
   backnoise2 = field->backsig*field->backsig;
   invgain = (field->gain > 0.0) ? 1.0/field->gain : 0.0;
-  satlevel = field->satur_level - obj->bkg;
+  satlevel = field->satur_level - profit->obj->bkg;
   rad2 = h/2.0;
   if (rad2 > w/2.0)
     rad2 = w/2.0;
@@ -1116,22 +1110,20 @@ int	profit_copyobjpix(profitstruct *profit, picstruct *field,
 
 
 /****** profit_spiralindex ****************************************************
-PROTO	double profit_spiralindex(profitstruct *profit, objstruct *obj,
-			obj2struct *obj2)
+PROTO	double profit_spiralindex(profitstruct *profit)
 PURPOSE	Compute the spiral index of a galaxy image (positive for arms
 	extending counter-clockwise and negative for arms extending CW, 0 for
 	no spiral pattern).
-INPUT	Profile-fitting structure,
-	pointer to the obj,
-	pointer to the obj2.
+INPUT	Profile-fitting structure.
 OUTPUT	Vector of residuals.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	26/04/2008
+VERSION	18/09/2008
  ***/
-double profit_spiralindex(profitstruct *profit, objstruct *obj,
-			obj2struct *obj2)
+double profit_spiralindex(profitstruct *profit)
   {
+   objstruct	*obj;
+   obj2struct	*obj2;
    double	*dx,*dy, *fdx,*fdy, *gdx,*gdy, *gdxt,*gdyt, *pix,
 		fwhm, invtwosigma2, hw,hh, ohw,ohh, x,y,xstart, tx,ty,txstart,
 		gx,gy, r2, spirindex, invsig, val, sep;
@@ -1140,6 +1132,8 @@ double profit_spiralindex(profitstruct *profit, objstruct *obj,
 
   npix = profit->objnaxisn[0]*profit->objnaxisn[1];
 
+  obj = profit->obj;
+  obj2 = profit->obj2;
 /* Compute simple derivative vectors at a fraction of the object scale */
   fwhm = obj2->hl_radius * 2.0 / 4.0;
   if (fwhm < 2.0)
@@ -1198,8 +1192,8 @@ double profit_spiralindex(profitstruct *profit, objstruct *obj,
   fft_conv(gdy, fdy, profit->objnaxisn);
 
 /* Compute estimator */
-  invtwosigma2 = -1.18*1.18/(2.0*obj2->hl_radius*obj2->hl_radius);
-  xstart = -hw - obj->mx + (int)(obj->mx+0.49999);;
+  invtwosigma2 = -1.18*1.18 / (2.0*obj2->hl_radius*obj2->hl_radius);
+  xstart = -hw - obj->mx + (int)(obj->mx+0.49999);
   y = -hh -  obj->my + (int)(obj->my+0.49999);;
   spirindex = 0.0;
   gdxt = gdx;
@@ -1229,25 +1223,25 @@ double profit_spiralindex(profitstruct *profit, objstruct *obj,
 
 
 /****** profit_moments ****************************************************
-PROTO	void profit_moments(profitstruct *profit, objstruct *obj,
-			obj2struct *obj2)
+PROTO	void profit_moments(profitstruct *profit)
 PURPOSE	Compute the 2nd order moments from the unconvolved object model.
-INPUT	Profile-fitting structure,
-	pointer to the obj,
-	pointer to the obj2.
+INPUT	Profile-fitting structure.
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	08/10/2007
+VERSION	18/09/2008
  ***/
-void	 profit_moments(profitstruct *profit, objstruct *obj,
-			obj2struct *obj2)
+void	 profit_moments(profitstruct *profit)
   {
+   objstruct	*obj;
+   obj2struct	*obj2;
    double	*pix,
 		hw,hh, x,y, xstart, val,
 		mx,my, sum, mx2,my2,mxy, den;
    int		ix,iy;
 
+  obj = profit->obj;
+  obj2 = profit->obj2;
   hw = (double)(profit->modnaxisn[0]/2);
   hh = (double)(profit->modnaxisn[1]/2);
   xstart = -hw;
@@ -1326,23 +1320,23 @@ void	profit_addparam(profitstruct *profit, paramenum paramindex,
 
 
 /****** profit_resetparam ****************************************************
-PROTO	void profit_resetparam(profitstruct *profit, paramenum paramtype,
-		objstruct *obj,	*obj2struct *obj2)
+PROTO	void profit_resetparam(profitstruct *profit, paramenum paramtype)
 PURPOSE	Set the initial, lower and upper boundary values of a profile parameter.
 INPUT	Pointer to the profit structure,
-	Parameter index,
-	Pointer to the obj structure,
-	Pointer to the obj2 structure.
+	Parameter index.
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	02/05/2008
+VERSION	18/09/2008
  ***/
-void	profit_resetparam(profitstruct *profit, paramenum paramtype,
-		objstruct *obj, obj2struct *obj2)
+void	profit_resetparam(profitstruct *profit, paramenum paramtype)
   {
+   objstruct	*obj;
+   obj2struct	*obj2;
    double	param, parammin,parammax;
 
+  obj = profit->obj;
+  obj2 = profit->obj2;
   param = parammin = parammax = 0.0;	/* Avoid gcc -Wall warnings*/
   switch(paramtype)
     {
@@ -1514,25 +1508,21 @@ void	profit_resetparam(profitstruct *profit, paramenum paramtype,
 
 
 /****** profit_resetparams ****************************************************
-PROTO	void profit_resetparams(profitstruct *profit, objstruct *obj,
-		*obj2struct *obj2)
+PROTO	void profit_resetparams(profitstruct *profit)
 PURPOSE	Set the initial, lower and upper boundary values of profile parameters.
-INPUT	Pointer to the profit structure,
-	Pointer to the obj structure,
-	Pointer to the obj2 structure.
+INPUT	Pointer to the profit structure.
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	16/04/2008
+VERSION	18/09/2008
  ***/
-void	profit_resetparams(profitstruct *profit, objstruct *obj,
-		obj2struct *obj2)
+void	profit_resetparams(profitstruct *profit)
   {
    int		p;
 
 
   for (p=0; p<PARAM_NPARAM; p++)
-    profit_resetparam(profit, (paramenum)p, obj, obj2);
+    profit_resetparam(profit, (paramenum)p);
 
   return;
   }

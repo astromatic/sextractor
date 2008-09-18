@@ -9,7 +9,7 @@
 *
 *	Contents:	main program.
 *
-*	Last modify:	22/04/2008
+*	Last modify:	18/09/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -36,6 +36,7 @@
 #include	"filter.h"
 #include	"growth.h"
 #include	"interpolate.h"
+#include	"pattern.h"
 #include	"psf.h"
 #include	"profit.h"
 #include	"som.h"
@@ -58,11 +59,12 @@ void	makeit()
    picstruct		*dfield, *field,*pffield[MAXFLAG], *wfield,*dwfield;
    catstruct		*imacat;
    tabstruct		*imatab;
+   patternstruct	*pattern;
    static time_t        thetime1, thetime2;
    struct tm		*tm;
    int			nflag[MAXFLAG],
 			i, nok, ntab, next, ntabmax, forcextflag,
-			nima0,nima1, nweight0,nweight1;
+			nima0,nima1, nweight0,nweight1, npat;
 
 /* Install error logging */
   error_installfunc(write_error);
@@ -110,6 +112,13 @@ void	makeit()
     theprofit = profit_init(thepsf);
     changecatparamarrays("VECTOR_PROF", &theprofit->nparam, 1);
     changecatparamarrays("VECTOR_PROFERR", &theprofit->nparam, 1);
+    pattern = pattern_init(theprofit, PATTERN_POLARFOURIER,
+		prefs.prof_disk_patternvectorsize);
+    npat = pattern->ncomp*pattern->nfreq;
+    pattern_end(pattern);
+/*-- Do a copy of the original pattern size */
+    prefs.prof_disk_patternncomp = prefs.prof_disk_patternvectorsize;
+    changecatparamarrays("DISK_PATTERN_VECTOR", &npat, 1);
     QPRINTF(OUTPUT, "Fitting model: ");
     for (i=0; i<theprofit->nprof; i++)
       {

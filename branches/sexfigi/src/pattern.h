@@ -9,7 +9,7 @@
 *
 *	Contents:	Include file for pattern.c.
 *
-*	Last modify:	17/09/2008
+*	Last modify:	18/09/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -47,11 +47,16 @@ typedef enum		{PATTERN_QUADRUPOLE, PATTERN_OCTOPOLE,
 typedef struct
   {
   pattypenum	type;			/* Pattern code */
+  int		ncomp;			/* Number of independent components */
+  int		nmodes;			/* Number of modes per component */
+  int		nfreq;			/* Number of waves per component */
   double	x[2];			/* Coordinate vector */
   double	scale;			/* Scaling vector */
   double	aspect;			/* Aspect ratio */
   double	posangle;		/* Position angle (CCW/NAXIS1)*/
   double	*coeff;			/* Fitted pattern coefficients */
+  double	*mcoeff;		/* Modulus from pattern coefficients */
+  double	*acoeff;		/* Argument from pattern coefficients */
   double	*modpix;		/* Pattern pixmaps */
   PIXTYPE	*lmodpix;		/* Low resolution pattern pixmaps */
   int		size[3];		/* Pixmap size for each axis */
@@ -63,7 +68,8 @@ typedef struct
 
 patternstruct	*pattern_init(profitstruct *profit, pattypenum ptype, int nvec);
 
-void		pattern_create(patternstruct *pattern),
+void		pattern_compmodarg(patternstruct *pattern),
+		pattern_create(patternstruct *pattern, profitstruct *profit),
 		pattern_end(patternstruct *pattern),
 		pattern_fit(patternstruct *pattern, profitstruct *profit);
 

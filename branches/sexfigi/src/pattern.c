@@ -9,7 +9,7 @@
 *
 *	Contents:	Generate and handle image patterns for image fitting.
 *
-*	Last modify:	17/09/2008
+*	Last modify:	18/09/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -34,6 +34,7 @@
 #include	"globals.h"
 #include	"prefs.h"
 #include	"fits/fitscat.h"
+#include	"fitswcs.h"
 #include	"check.h"
 #include	"pattern.h"
 #include	"profit.h"
@@ -42,26 +43,42 @@
 
 /****** pattern_init ***********************************************************
 PROTO	patternstruct pattern_init(profitstruct *profit, pattern_type ptype,
-				int nvec)
+				int ncomp)
 PURPOSE	Allocate and initialize a new pattern structure.
 INPUT	Pointer to a profit structure,
 	Pattern type,
-	Number of vectors.
+	Number of independent components.
 OUTPUT	Pointer to the new pattern structure.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	16/09/2008
+VERSION	18/09/2008
  ***/
-patternstruct	*pattern_init(profitstruct *profit, pattypenum ptype, int nvec)
+patternstruct	*pattern_init(profitstruct *profit, pattypenum ptype, int ncomp)
   {
    patternstruct	*pattern;
-   int	npix;
+   int			npix;
 
   QCALLOC(pattern, patternstruct, 1);
   pattern->type = ptype;
+  pattern->ncomp = ncomp;
   pattern->size[0] = profit->modnaxisn[0];
   pattern->size[1] = profit->modnaxisn[1];
-  pattern->size[2] = nvec;
+  switch(pattern->type)
+    {
+    case PATTERN_QUADRUPOLE:
+    case PATTERN_OCTOPOLE:
+      pattern->nmodes = 2;
+      pattern->nfreq = 1;
+      break;
+    case PATTERN_POLARFOURIER:
+      pattern->nfreq = PATTERN_FMAX+1;
+      pattern->nmodes = 2*PATTERN_FMAX+1;
+      break;
+    default:
+      error(EXIT_FAILURE, "*Internal Error*: Unknown Pattern type","");
+    }
+
+  pattern->size[2] = ncomp*pattern->nmodes;
   npix = pattern->size[0]*pattern->size[1] * pattern->size[2];
   pattern->aspect = *profit->paramlist[PARAM_DISK_ASPECT];
   pattern->posangle = fmod_m90_p90(*profit->paramlist[PARAM_DISK_POSANG]);
@@ -69,6 +86,8 @@ patternstruct	*pattern_init(profitstruct *profit, pattypenum ptype, int nvec)
   QMALLOC(pattern->modpix, double, npix);
   QMALLOC(pattern->lmodpix, PIXTYPE, npix);
   QMALLOC(pattern->coeff, double, pattern->size[2]);
+  QMALLOC(pattern->mcoeff, double, ncomp*pattern->nfreq);
+  QMALLOC(pattern->acoeff, double, ncomp*pattern->nfreq);
 
   return pattern;
   }  
@@ -81,13 +100,15 @@ INPUT	Pattern structure.
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	16/09/2008
+VERSION	18/09/2008
  ***/
 void	pattern_end(patternstruct *pattern)
   {
   free(pattern->modpix);
   free(pattern->lmodpix);
   free(pattern->coeff);
+  free(pattern->mcoeff);
+  free(pattern->acoeff);
   free(pattern);
 
   return;
@@ -101,7 +122,7 @@ INPUT	Pointer to pattern structure.
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	17/09/2008
+VERSION	18/09/2008
  ***/
 void	pattern_fit(patternstruct *pattern, profitstruct *profit)
   {
@@ -116,7 +137,7 @@ static int number;
    int		n,p,p2, nvec, ninpix, noutpix,nout;
 
   nvec = pattern->size[2];
-  pattern_create(pattern);
+  pattern_create(pattern, profit);
   QMALLOC(alpha, double, nvec*nvec);
   beta = pattern->coeff;
   inpix = pattern->modpix;
@@ -164,6 +185,8 @@ static int number;
   clapack_dpotrf(CblasRowMajor,CblasUpper,nvec,alpha,nvec);
   clapack_dpotrs(CblasRowMajor,CblasUpper,nvec,1,alpha,nvec,beta,nvec);
 
+  pattern_compmodarg(pattern);
+
   free(alpha);
 
   if ((check = prefs.check[CHECK_PATTERNS]))
@@ -183,8 +206,7 @@ static int number;
     }
 
 
-nout = (pattern->type==PATTERN_POLARFOURIER?
-			(nvec/(PATTERN_FMAX*2+1))*(PATTERN_FMAX+1) : nvec/2);
+nout = pattern->ncomp*pattern->nfreq;
 nout=nvec;
 QCALLOC(outpix, PIXTYPE, noutpix*nout);
 outpix1 = outpix;
@@ -230,25 +252,74 @@ free(outpix);
   }
 
 
-/****** pattern_create ******************************************************
-PROTO	void pattern_create(patternstruct *pattern)
-PURPOSE create a pattern basis.
+/****** pattern_compmodarg ****************************************************
+PROTO	void pattern_comparg(patternstruct *pattern)
+PURPOSE	Compute modulus and argument for each pair of Fourier components.
 INPUT	Pointer to pattern structure.
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	17/09/2008
+VERSION	18/09/2008
  ***/
-void	pattern_create(patternstruct *pattern)
+void	pattern_compmodarg(patternstruct *pattern)
+  {
+   double	*coeff,*mcoeff,*acoeff,
+		arg,argo,ima,rea;
+   int		f,r;
+
+  for (r=0; r<pattern->ncomp; r++)
+    {
+    for (f=0; f<=pattern->nfreq; f++)
+      {
+      if (!f)
+        {
+        *(mcoeff++) = *(coeff++);
+        *(acoeff++) = 0.0;
+        }
+      else
+        {
+        ima = *(coeff++);
+        rea = *(coeff++);
+        *(mcoeff++) = sqrt(rea*rea + ima*ima);
+        arg = atan2(ima, rea)/DEG;
+        if (r>0)
+          {
+/*-------- disambiguate increasing or decreasing phase angles */
+          argo = *(acoeff-PATTERN_FMAX-1);
+          if (arg-argo > 180.0)
+            arg -= 360.0;
+          else if (arg-argo < -180.0)
+            arg += 360.0;
+          }
+        *(acoeff++) = arg;
+        }
+      }
+    }
+
+  return;
+  }
+
+
+/****** pattern_create ******************************************************
+PROTO	void pattern_create(patternstruct *pattern, profitstruct *profit)
+PURPOSE create a pattern basis.
+INPUT	Pointer to pattern structure,
+	pointer to the profit structure.
+OUTPUT	-.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	18/09/2008
+ ***/
+void	pattern_create(patternstruct *pattern, profitstruct *profit)
   {
    double		x1,x2, x1t,x2t, r2,r2min,r2max, lr, lr0, 
 			mod,ang,ang0, cosang,sinang, angcoeff,
 			ctheta,stheta, saspect,xscale,yscale,
 			cd11,cd12,cd21,cd22, x1cout,x2cout, cmod,smod,
-			cnorm,snorm,norm, dval;
+			cnorm,snorm,norm, dval, det, rad, dnrad;
    double		*scbuf[PATTERN_FMAX],*scpix[PATTERN_FMAX],
 			*scpixt,*cpix,*spix, *pix, *r2buf,*r2pix,*modpix;
-   int			f,i,p, ix1,ix2, nrad, nvec, npix;
+   int			f,i,p, ix1,ix2, nrad, npix;
 
 /* Compute Profile CD matrix */
   ctheta = cos(pattern->posangle*DEG);
@@ -264,23 +335,38 @@ void	pattern_create(patternstruct *pattern)
  
   x1cout = (double)(pattern->size[0]/2);
   x2cout = (double)(pattern->size[1]/2);
+/* Determinant of the change of coordinate system */
+  det = xscale*yscale;
+  r2min = det/10.0;
+/* Stay within an ellipse contained in the pattern raster, both in x and y */
+  r2max = det*det * x1cout*x1cout / (cd12*cd12+cd22*cd22);
+  if (r2max > (dval = det*det * x2cout*x2cout / (cd21*cd21+cd11*cd11)))
+    r2max = dval;
+/* Set the limit of the pattern extent */
+  rad = 4.0*profit->obj->a*xscale;
+/* The pattern limit does not exceed 90% of the mapped ellipse "radius" */
+  if (rad*rad > 0.9*0.9*r2max)
+    rad = 0.9*sqrt(r2max);
 
+  nrad = pattern->ncomp;
+  if (!nrad)
+      error(EXIT_FAILURE,
+		"*Error*: insufficient number of vector elements",
+		" for generating the pattern basis"); 
+  dnrad = (double)nrad;
+  npix = pattern->size[0]*pattern->size[1];
   switch(pattern->type)
     {
     case PATTERN_QUADRUPOLE:
     case PATTERN_OCTOPOLE:
-      nvec = pattern->size[2]/2;
-      npix = pattern->size[0]*pattern->size[1];
-      r2min = fabs(cd11*cd22-cd12*cd21)/10.0;
-      r2max = BIG;
       cpix = pattern->modpix;
       spix = pattern->modpix+npix;
       angcoeff = (pattern->type==PATTERN_OCTOPOLE)? 4.0 : 2.0;
-      for (p=0; p<nvec; p++, cpix+=npix, spix+=npix)
+      for (p=0; p<nrad; p++, cpix+=npix, spix+=npix)
         {
         x1 = -x1cout;
         x2 = -x2cout;
-        lr0 = log(3.0*(p+1)/nvec);
+        lr0 = log(rad*(p+1)/dnrad);
         cnorm = snorm = 0.0;
         for (ix2=pattern->size[1]; ix2--; x2+=1.0)
           {
@@ -291,7 +377,7 @@ void	pattern_create(patternstruct *pattern)
             r2 = x1t*x1t+x2t*x2t;
             if (r2<r2max)
               {
-              lr = 20.0*(0.5*log(r2 > r2min ? r2 : r2min)-lr0);
+              lr = dnrad*(0.5*log(r2 > r2min ? r2 : r2min)-lr0);
               mod = exp(-0.5*lr*lr);
               ang = angcoeff*atan2(x2t,x1t);
 #ifdef HAVE_SINCOS
@@ -322,11 +408,6 @@ void	pattern_create(patternstruct *pattern)
         }
       break;
     case PATTERN_POLARFOURIER:
-      nvec = pattern->size[2];
-      nrad = nvec/(PATTERN_FMAX*2+1);
-      npix = pattern->size[0]*pattern->size[1];
-      r2min = fabs(cd11*cd22-cd12*cd21)/10.0;
-      r2max = BIG;
 /*---- Pre-compute radii and quadrupoles to speed up computations later */
       QMALLOC(r2buf, double, npix);
       r2pix = r2buf;
@@ -366,7 +447,7 @@ void	pattern_create(patternstruct *pattern)
         for (f=0; f<=PATTERN_FMAX; f++)
           {
           norm = 0.0;
-          lr0 = log(3.0*(p+1)/nrad);
+          lr0 = log(rad*(p+1)/dnrad);
           r2pix = r2buf;
           if (!f)
             {
@@ -375,7 +456,7 @@ void	pattern_create(patternstruct *pattern)
               r2 = *(r2pix++);
               if (r2<r2max)
                 {
-                lr = 20.0*(0.5*log(r2 > r2min ? r2 : r2min)-lr0);
+                lr = 10.0*(0.5*log(r2 > r2min ? r2 : r2min)-lr0);
                 *(pix++) = dval = exp(-0.5*lr*lr);
                 norm += dval*dval;
                 }

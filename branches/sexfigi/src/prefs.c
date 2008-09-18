@@ -9,7 +9,7 @@
 *
 *	Contents:	Functions to handle the configuration file.
 *
-*	Last modify:	02/06/2008
+*	Last modify:	18/09/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -570,7 +570,6 @@ void	useprefs()
 		|| prefs.check_type[i] == CHECK_PCOPROTOS)
           prefs.pc_flag = 1;
     }
-
 
 /*-------------------------- Profile-fitting -------------------------------*/
 /* Profile-fitting is possible only if a PSF file is loaded */

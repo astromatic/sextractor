@@ -9,7 +9,7 @@
 *
 *	Contents:	Include file for profit.c.
 *
-*	Last modify:	17/09/2008
+*	Last modify:	18/09/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -100,6 +100,8 @@ typedef struct
 
 typedef struct
   {
+  objstruct	*obj;		/* Current object */
+  obj2struct	*obj2;		/* Current object */
   int		nparam;		/* Number of parameters to be fitted */
   double	*paramlist[PARAM_NPARAM];	/* flat parameter list */
   int		paramindex[PARAM_NPARAM];/* Vector of parameter indices */
@@ -139,16 +141,13 @@ profitstruct	*profit_init(struct psf *psf);
 
 profstruct	*prof_init(profitstruct *profit, proftypenum profcode);
 
-double		*profit_compresi(profitstruct *profit,
-			objstruct *obj, obj2struct *obj2, double *resi),
+double		*profit_compresi(profitstruct *profit, double *resi),
 		*profit_residuals(profitstruct *profit, picstruct *field,
-			picstruct *wfield, objstruct *obj, obj2struct *obj2,
-			double *param, double *resi),
-		profit_spiralindex(profitstruct *profit, objstruct *obj,
-			obj2struct *obj2);
+			picstruct *wfield, double *param, double *resi),
+		profit_spiralindex(profitstruct *profit);
 
 int		profit_copyobjpix(profitstruct *profit, picstruct *field,
-			picstruct *wfield, objstruct *obj),
+			picstruct *wfield),
 		profit_minimize(profitstruct *profit, int niter),
 		profit_setparam(profitstruct *profit, paramenum paramtype,
 			double param, double parammin, double parammax);
@@ -167,17 +166,14 @@ void		prof_add(profstruct *prof, profitstruct *profit),
 		profit_evaluate(double *par, double *fvec, int m, int n,
 			void *adata),
 		profit_makedft(profitstruct *profit),
-		profit_moments(profitstruct *profit, objstruct *obj,
-			obj2struct *obj2),
+		profit_moments(profitstruct *profit),
 		profit_printout(int n_par, double* par, int m_dat, double* fvec,
 			void *data, int iflag, int iter, int nfev ),
 		profit_psf(profitstruct *profit),
 		profit_resample(profitstruct *profit, double *inpix,
 			PIXTYPE *outpix),
-		profit_resetparam(profitstruct *profit, paramenum paramtype,
-			objstruct *obj, obj2struct *obj2),
-		profit_resetparams(profitstruct *profit, objstruct *obj,
-			obj2struct *obj2),
+		profit_resetparam(profitstruct *profit, paramenum paramtype),
+		profit_resetparams(profitstruct *profit),
 		profit_unboundtobound(profitstruct *profit, double *param);
 
 #endif
