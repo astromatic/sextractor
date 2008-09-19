@@ -9,7 +9,7 @@
 *
 *	Contents:	Fit an arbitrary profile combination to a detection.
 *
-*	Last modify:	18/09/2008
+*	Last modify:	19/09/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -168,7 +168,7 @@ OUTPUT	Pointer to an allocated fit structure (containing details about the
 	fit).
 NOTES	It is a modified version of the lm_minimize() of lmfit.
 AUTHOR	E. Bertin (IAP)
-VERSION	18/09/2008
+VERSION	19/09/2008
  ***/
 void	profit_fit(profitstruct *profit,
 		picstruct *field, picstruct *wfield,
@@ -179,7 +179,7 @@ void	profit_fit(profitstruct *profit,
     checkstruct		*check;
     double		*oldparaminit,
 			psf_fwhm, oldchi2, a , cp,sp, emx2,emy2,emxy;
-    int			i,j,p, oldniter, nparam, ncomp,nfreq;
+    int			i,j,p, oldniter, nparam, ncomp;
 
   nparam = profit->nparam;
   if (profit->psfdft)
@@ -420,15 +420,30 @@ the_gal++;
       }
 
 /* Disk pattern */
-    if (FLAG(obj2.prof_disk_patternvector))
+    if (prefs.pattern_flag)
       {
       profit_residuals(profit,field,wfield,profit->param,profit->resi);
-      ncomp = prefs.prof_disk_patternncomp;
-      pattern = pattern_init(profit, PATTERN_POLARFOURIER, ncomp);
+      pattern = pattern_init(profit, PATTERN_POLARFOURIER,
+		prefs.prof_disk_patternncomp);
       pattern_fit(pattern, profit);
-      nfreq = pattern->ncomp*pattern->nfreq;
-      for (p=0; p<nfreq; p++)
-        obj2->prof_disk_patternvector[p] = (float)pattern->acoeff[p];
+      if (FLAG(obj2.prof_disk_patternvector))
+        {
+        ncomp = pattern->size[2];
+        for (p=0; p<ncomp; p++)
+          obj2->prof_disk_patternvector[p] = (float)pattern->coeff[p];
+        }
+      if (FLAG(obj2.prof_disk_patternmodvector))
+        {
+        ncomp = pattern->ncomp*pattern->nfreq;
+        for (p=0; p<ncomp; p++)
+          obj2->prof_disk_patternmodvector[p] = (float)pattern->mcoeff[p];
+        }
+      if (FLAG(obj2.prof_disk_patternargvector))
+        {
+        ncomp = pattern->ncomp*pattern->nfreq;
+        for (p=0; p<ncomp; p++)
+          obj2->prof_disk_patternargvector[p] = (float)pattern->acoeff[p];
+        }
       pattern_end(pattern);
       }
 

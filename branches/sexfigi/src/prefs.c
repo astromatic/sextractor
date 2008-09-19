@@ -9,7 +9,7 @@
 *
 *	Contents:	Functions to handle the configuration file.
 *
-*	Last modify:	18/09/2008
+*	Last modify:	19/09/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -572,12 +572,18 @@ void	useprefs()
     }
 
 /*-------------------------- Profile-fitting -------------------------------*/
-/* Profile-fitting is possible only if a PSF file is loaded */
   if (prefs.check_flag)
     for (i=0; i<prefs.ncheck_type; i++)
       if (prefs.check_type[i] == CHECK_SUBPROFILES
 	|| prefs.check_type[i] == CHECK_PROFILES)
         prefs.prof_flag = 1;
+
+/*-------------------------- Pattern-fitting -------------------------------*/
+/* Profile-fitting is possible only if a PSF file is loaded */
+  if (prefs.check_flag)
+    for (i=0; i<prefs.ncheck_type; i++)
+      if (prefs.check_type[i] == CHECK_PATTERNS)
+        prefs.pattern_flag = 1;
 
 /*----------------------------- WEIGHT-images ------------------------------*/
   if (prefs.nweight_type<2)

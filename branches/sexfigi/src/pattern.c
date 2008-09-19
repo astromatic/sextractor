@@ -9,7 +9,7 @@
 *
 *	Contents:	Generate and handle image patterns for image fitting.
 *
-*	Last modify:	18/09/2008
+*	Last modify:	19/09/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -205,7 +205,7 @@ static int number;
     free(outpix);
     }
 
-
+/*
 nout = pattern->ncomp*pattern->nfreq;
 nout=nvec;
 QCALLOC(outpix, PIXTYPE, noutpix*nout);
@@ -216,6 +216,7 @@ for (p=0; p<nvec; p++)
 dval = pattern->coeff[p];
 for (n=noutpix; n--; )
 *(outpix1++) += dval**(outpix2++);
+*/
 /*
 if (pattern->type==PATTERN_POLARFOURIER)
   {
@@ -224,12 +225,12 @@ if (pattern->type==PATTERN_POLARFOURIER)
   }
 else if (!p%2)
   outpix1 -= noutpix;
-*/
 }
+*/
 //outpix1 = outpix;
 //for (n=noutpix*out; n--; outpix1++)
 //*outpix1 *= *outpix1;
-
+/*
 cat=new_cat(1);
 init_cat(cat);
 cat->tab->naxis=3;
@@ -247,7 +248,7 @@ cat->tab->bodybuf=NULL;
 free_cat(&cat, 1);
 
 free(outpix);
-
+*/
   return;
   }
 
@@ -259,39 +260,47 @@ INPUT	Pointer to pattern structure.
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	18/09/2008
+VERSION	19/09/2008
  ***/
 void	pattern_compmodarg(patternstruct *pattern)
   {
    double	*coeff,*mcoeff,*acoeff,
-		arg,argo,ima,rea;
-   int		f,r;
+		arg,argo,darg, ima,rea;
+   int		f,r, nfreq;
 
+  coeff = pattern->coeff;
+  mcoeff = pattern->mcoeff;
+  acoeff = pattern->acoeff;
+  nfreq = pattern->nfreq;
   for (r=0; r<pattern->ncomp; r++)
     {
-    for (f=0; f<=pattern->nfreq; f++)
+    for (f=0; f<pattern->nfreq; f++)
       {
-      if (!f)
+      if (pattern->type == PATTERN_POLARFOURIER && !f)
         {
-        *(mcoeff++) = *(coeff++);
-        *(acoeff++) = 0.0;
+        *(mcoeff++) = fabs(*coeff);
+        *(acoeff++) = *(coeff++)<0.0? 180.0 : 0.0;
         }
       else
         {
-        ima = *(coeff++);
         rea = *(coeff++);
+        ima = *(coeff++);
         *(mcoeff++) = sqrt(rea*rea + ima*ima);
         arg = atan2(ima, rea)/DEG;
         if (r>0)
           {
+          darg = arg - argo;
 /*-------- disambiguate increasing or decreasing phase angles */
-          argo = *(acoeff-PATTERN_FMAX-1);
-          if (arg-argo > 180.0)
-            arg -= 360.0;
-          else if (arg-argo < -180.0)
-            arg += 360.0;
+          if (darg > 180.0)
+            darg -= 360.0;
+          else if (darg < -180.0)
+            darg += 360.0;
+          *acoeff = *(acoeff-nfreq) + darg;
+          acoeff++;
           }
-        *(acoeff++) = arg;
+        else
+          *(acoeff++) = arg;
+        argo = arg;
         }
       }
     }
@@ -308,7 +317,7 @@ INPUT	Pointer to pattern structure,
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	18/09/2008
+VERSION	19/09/2008
  ***/
 void	pattern_create(patternstruct *pattern, profitstruct *profit)
   {
@@ -429,11 +438,11 @@ void	pattern_create(patternstruct *pattern, profitstruct *profit)
           for (f=0; f<PATTERN_FMAX; f++)
             {
 #ifdef HAVE_SINCOS
-            sincos(ang, scpix[f], scpix[f]+npix);
+            sincos(ang, scpix[f]+npix, scpix[f]);
             scpix[f]++;
 #else
-            *(scpix[f]) = sin(ang);
-            *(scpix[f]+++npix) = cos(ang);
+            *(scpix[f]) = cos(ang);
+            *(scpix[f]+++npix) = sin(ang);
 #endif
             ang+=ang0;
             }
@@ -441,6 +450,7 @@ void	pattern_create(patternstruct *pattern, profitstruct *profit)
           x2t += cd21;
           }
         }
+      modpix = NULL;		/* To avoid gcc -Wall warnings */
       pix = pattern->modpix;
       for (p=0; p<nrad; p++)
         {

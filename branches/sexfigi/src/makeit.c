@@ -9,7 +9,7 @@
 *
 *	Contents:	main program.
 *
-*	Last modify:	18/09/2008
+*	Last modify:	19/09/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -112,13 +112,24 @@ void	makeit()
     theprofit = profit_init(thepsf);
     changecatparamarrays("VECTOR_PROF", &theprofit->nparam, 1);
     changecatparamarrays("VECTOR_PROFERR", &theprofit->nparam, 1);
-    pattern = pattern_init(theprofit, PATTERN_POLARFOURIER,
-		prefs.prof_disk_patternvectorsize);
-    npat = pattern->ncomp*pattern->nfreq;
-    pattern_end(pattern);
-/*-- Do a copy of the original pattern size */
-    prefs.prof_disk_patternncomp = prefs.prof_disk_patternvectorsize;
-    changecatparamarrays("DISK_PATTERN_VECTOR", &npat, 1);
+    if (prefs.pattern_flag)
+      {
+      npat = prefs.prof_disk_patternvectorsize;
+      if (npat<prefs.prof_disk_patternmodvectorsize)
+        npat = prefs.prof_disk_patternmodvectorsize;
+      if (npat<prefs.prof_disk_patternargvectorsize)
+        npat = prefs.prof_disk_patternargvectorsize;
+/*---- Do a copy of the original number of pattern components */
+      prefs.prof_disk_patternncomp = npat;
+      pattern = pattern_init(theprofit, PATTERN_POLARFOURIER, npat);
+      npat = pattern->size[2];
+      changecatparamarrays("DISK_PATTERN_VECTOR", &npat, 1);
+      npat = pattern->ncomp*pattern->nfreq;
+      changecatparamarrays("DISK_PATTERNMOD_VECTOR", &npat, 1);
+      npat = pattern->ncomp*pattern->nfreq;
+      changecatparamarrays("DISK_PATTERNARG_VECTOR", &npat, 1);
+      pattern_end(pattern);
+      }
     QPRINTF(OUTPUT, "Fitting model: ");
     for (i=0; i<theprofit->nprof; i++)
       {

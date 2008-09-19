@@ -9,7 +9,7 @@
 *
 *	Contents:	global type definitions.
 *
-*	Last modify:	16/09/2008
+*	Last modify:	19/09/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -379,6 +379,8 @@ typedef struct
   float		prof_disk_theta2000;		/* J2000 disk position angle */
   float		prof_disk_theta1950;		/* B1950 disk position angle */
   float		*prof_disk_patternvector;	/* Disk pattern coefficients */
+  float		*prof_disk_patternmodvector;	/* Disk pattern moduli */
+  float		*prof_disk_patternargvector;	/* Disk pattern arguments */
   float		prof_bar_flux;			/* Galactic bar total flux */
   float		prof_bar_fluxerr;		/* RMS error */
   float		prof_bar_mag;			/* Bar "total" magnitude */

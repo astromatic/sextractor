@@ -9,7 +9,7 @@
 *
 *	Contents:	Keywords for the configuration file.
 *
-*	Last modify:	18/09/2008
+*	Last modify:	19/09/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -207,11 +207,16 @@ typedef struct
   int		pc_flag;				/* PC-fit needed */
   int		pc_vectorsize;				/* nb of params */
   int		prof_flag;				/* Profile-fitting */
+  int		pattern_flag;				/* Pattern-fitting */
 /*----- Profile-fitting */
   int		prof_vectorsize;			/* nb of params */
   int		prof_errvectorsize;			/* nb of params */
   int		prof_disk_patternvectorsize;		/* nb of params */
   int		prof_disk_patternncomp;			/* nb of params */
+  int		prof_disk_patternmodvectorsize;		/* nb of params */
+  int		prof_disk_patternmodncomp;		/* nb of params */
+  int		prof_disk_patternargvectorsize;		/* nb of params */
+  int		prof_disk_patternargncomp;		/* nb of params */
 /*----- customize */
   int		fitsunsigned_flag;			/* Force unsign FITS */
   int		next;			     /* Number of extensions in file */

@@ -22,12 +22,12 @@ SExtractor stands for ``Source Extractor'': a software for making catalog of sou
 %setup -q
 
 %build
-%configure
-if test "$TPXFLAGS"; then
-make %{?_smp_mflags} CC="$TPXCC" CFLAGS="$TPXFLAGS" LDFLAGS="$TPXLDFLAGS" LIBS="$TPXLIBS"
+if test "$USE_ICC"; then
+%configure --enable-icc
 else
-make %{?_smp_mflags}
+%configure
 fi
+make %{?_smp_mflags}
 
 %install
 rm -rf $RPM_BUILD_ROOT
