@@ -9,7 +9,7 @@
 *
 *	Contents:	Generate and handle image patterns for image fitting.
 *
-*	Last modify:	19/09/2008
+*	Last modify:	22/09/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -122,7 +122,7 @@ INPUT	Pointer to pattern structure.
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	18/09/2008
+VERSION	22/09/2008
  ***/
 void	pattern_fit(patternstruct *pattern, profitstruct *profit)
   {
@@ -204,10 +204,8 @@ static int number;
 		profit->ix, profit->iy, 1.0);
     free(outpix);
     }
-
 /*
 nout = pattern->ncomp*pattern->nfreq;
-nout=nvec;
 QCALLOC(outpix, PIXTYPE, noutpix*nout);
 outpix1 = outpix;
 outpix2 = pattern->lmodpix;
@@ -216,21 +214,14 @@ for (p=0; p<nvec; p++)
 dval = pattern->coeff[p];
 for (n=noutpix; n--; )
 *(outpix1++) += dval**(outpix2++);
-*/
-/*
 if (pattern->type==PATTERN_POLARFOURIER)
   {
-  if (p>0 && p%2)
+  if ((p%pattern->nmodes)%2)
     outpix1 -= noutpix;
   }
-else if (!p%2)
+else if (!(p%2))
   outpix1 -= noutpix;
 }
-*/
-//outpix1 = outpix;
-//for (n=noutpix*out; n--; outpix1++)
-//*outpix1 *= *outpix1;
-/*
 cat=new_cat(1);
 init_cat(cat);
 cat->tab->naxis=3;
@@ -242,11 +233,10 @@ cat->tab->bitpix=BP_FLOAT;
 cat->tab->bytepix=4;
 cat->tab->bodybuf=outpix;
 cat->tab->tabsize=cat->tab->naxisn[0]*cat->tab->naxisn[1]*cat->tab->naxisn[2]*sizeof(PIXTYPE);
-sprintf(name, "tata_%02d.fits", number);
+sprintf(name, "tata_%02d.fits", number++);
 save_cat(cat, name);
 cat->tab->bodybuf=NULL;
 free_cat(&cat, 1);
-
 free(outpix);
 */
   return;
@@ -317,7 +307,7 @@ INPUT	Pointer to pattern structure,
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	19/09/2008
+VERSION	22/09/2008
  ***/
 void	pattern_create(patternstruct *pattern, profitstruct *profit)
   {
@@ -386,7 +376,7 @@ void	pattern_create(patternstruct *pattern, profitstruct *profit)
             r2 = x1t*x1t+x2t*x2t;
             if (r2<r2max)
               {
-              lr = dnrad*(0.5*log(r2 > r2min ? r2 : r2min)-lr0);
+              lr = sqrt(dnrad*(p+1))*(0.5*log(r2 > r2min ? r2 : r2min)-lr0);
               mod = exp(-0.5*lr*lr);
               ang = angcoeff*atan2(x2t,x1t);
 #ifdef HAVE_SINCOS
@@ -466,7 +456,7 @@ void	pattern_create(patternstruct *pattern, profitstruct *profit)
               r2 = *(r2pix++);
               if (r2<r2max)
                 {
-                lr = 10.0*(0.5*log(r2 > r2min ? r2 : r2min)-lr0);
+                lr = sqrt(dnrad*(p+1))*(0.5*log(r2 > r2min ? r2 : r2min)-lr0);
                 *(pix++) = dval = exp(-0.5*lr*lr);
                 norm += dval*dval;
                 }
