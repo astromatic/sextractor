@@ -9,7 +9,7 @@
 *
 *	Contents:	Fit an arbitrary profile combination to a detection.
 *
-*	Last modify:	19/09/2008
+*	Last modify:	23/09/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -168,7 +168,7 @@ OUTPUT	Pointer to an allocated fit structure (containing details about the
 	fit).
 NOTES	It is a modified version of the lm_minimize() of lmfit.
 AUTHOR	E. Bertin (IAP)
-VERSION	19/09/2008
+VERSION	23/09/2008
  ***/
 void	profit_fit(profitstruct *profit,
 		picstruct *field, picstruct *wfield,
@@ -226,8 +226,10 @@ void	profit_fit(profitstruct *profit,
   QMALLOC(profit->resi, double, profit->nresi);
 
 /* Create pixmap at PSF resolution */
-  profit->modnaxisn[0] = ((int)(profit->objnaxisn[0]/profit->pixstep +0.4999)/2)*2; 
-  profit->modnaxisn[1] = ((int)(profit->objnaxisn[1]/profit->pixstep +0.4999)/2)*2; 
+  profit->modnaxisn[0] =
+	((int)(profit->objnaxisn[0]/profit->pixstep +0.4999)/2+1)*2; 
+  profit->modnaxisn[1] =
+	((int)(profit->objnaxisn[1]/profit->pixstep +0.4999)/2+1)*2; 
   if (profit->modnaxisn[1] < profit->modnaxisn[0])
     profit->modnaxisn[1] = profit->modnaxisn[0];
   else

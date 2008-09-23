@@ -9,7 +9,7 @@
 *
 *	Contents:	Generate and handle image patterns for image fitting.
 *
-*	Last modify:	22/09/2008
+*	Last modify:	23/09/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -204,7 +204,7 @@ static int number;
 		profit->ix, profit->iy, 1.0);
     free(outpix);
     }
-/*
+
 nout = pattern->ncomp*pattern->nfreq;
 QCALLOC(outpix, PIXTYPE, noutpix*nout);
 outpix1 = outpix;
@@ -233,12 +233,12 @@ cat->tab->bitpix=BP_FLOAT;
 cat->tab->bytepix=4;
 cat->tab->bodybuf=outpix;
 cat->tab->tabsize=cat->tab->naxisn[0]*cat->tab->naxisn[1]*cat->tab->naxisn[2]*sizeof(PIXTYPE);
-sprintf(name, "tata_%02d.fits", number++);
+sprintf(name, "tata_%02d.fits", ++number);
 save_cat(cat, name);
 cat->tab->bodybuf=NULL;
 free_cat(&cat, 1);
 free(outpix);
-*/
+
   return;
   }
 
@@ -307,7 +307,7 @@ INPUT	Pointer to pattern structure,
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	22/09/2008
+VERSION	23/09/2008
  ***/
 void	pattern_create(patternstruct *pattern, profitstruct *profit)
   {
@@ -315,7 +315,7 @@ void	pattern_create(patternstruct *pattern, profitstruct *profit)
 			mod,ang,ang0, cosang,sinang, angcoeff,
 			ctheta,stheta, saspect,xscale,yscale,
 			cd11,cd12,cd21,cd22, x1cout,x2cout, cmod,smod,
-			cnorm,snorm,norm, dval, det, rad, dnrad;
+			cnorm,snorm,norm, dval, det, rad, dnrad, rscale2;
    double		*scbuf[PATTERN_FMAX],*scpix[PATTERN_FMAX],
 			*scpixt,*cpix,*spix, *pix, *r2buf,*r2pix,*modpix;
    int			f,i,p, ix1,ix2, nrad, npix;
@@ -338,16 +338,15 @@ void	pattern_create(patternstruct *pattern, profitstruct *profit)
   det = xscale*yscale;
   r2min = det/10.0;
 /* Stay within an ellipse contained in the pattern raster, both in x and y */
-  r2max = det*det * x1cout*x1cout / (cd12*cd12+cd22*cd22);
-  if (r2max > (dval = det*det * x2cout*x2cout / (cd21*cd21+cd11*cd11)))
+  r2max = x1cout*x1cout * det*det / (cd12*cd12+cd22*cd22);
+  if (r2max > (dval = x2cout*x2cout * det*det / (cd21*cd21+cd11*cd11)))
     r2max = dval;
 /* Set the limit of the pattern extent */
-  rad = 4.0*profit->obj->a*xscale;
+//  rad = 4.0*profit->obj->a*xscale;
 /* The pattern limit does not exceed 90% of the mapped ellipse "radius" */
-  if (rad*rad > 0.9*0.9*r2max)
-    rad = 0.9*sqrt(r2max);
-
+//  if (rad*rad > 0.9*0.9*r2max)
   nrad = pattern->ncomp;
+  rad = 0.8*sqrt(r2max);	/* Keep a margin using a fudge factor */
   if (!nrad)
       error(EXIT_FAILURE,
 		"*Error*: insufficient number of vector elements",
@@ -363,6 +362,7 @@ void	pattern_create(patternstruct *pattern, profitstruct *profit)
       angcoeff = (pattern->type==PATTERN_OCTOPOLE)? 4.0 : 2.0;
       for (p=0; p<nrad; p++, cpix+=npix, spix+=npix)
         {
+        rscale2 = (p+1)*dnrad;
         x1 = -x1cout;
         x2 = -x2cout;
         lr0 = log(rad*(p+1)/dnrad);
@@ -376,8 +376,8 @@ void	pattern_create(patternstruct *pattern, profitstruct *profit)
             r2 = x1t*x1t+x2t*x2t;
             if (r2<r2max)
               {
-              lr = sqrt(dnrad*(p+1))*(0.5*log(r2 > r2min ? r2 : r2min)-lr0);
-              mod = exp(-0.5*lr*lr);
+              lr = 0.5*log(r2 > r2min ? r2 : r2min)-lr0;
+              mod = exp(-0.5*rscale2*lr*lr);
               ang = angcoeff*atan2(x2t,x1t);
 #ifdef HAVE_SINCOS
               sincos(ang, &sinang, &cosang);
@@ -446,6 +446,7 @@ void	pattern_create(patternstruct *pattern, profitstruct *profit)
         {
         for (f=0; f<=PATTERN_FMAX; f++)
           {
+          rscale2 = (p+1)*dnrad;
           norm = 0.0;
           lr0 = log(rad*(p+1)/dnrad);
           r2pix = r2buf;
@@ -456,15 +457,15 @@ void	pattern_create(patternstruct *pattern, profitstruct *profit)
               r2 = *(r2pix++);
               if (r2<r2max)
                 {
-                lr = sqrt(dnrad*(p+1))*(0.5*log(r2 > r2min ? r2 : r2min)-lr0);
-                *(pix++) = dval = exp(-0.5*lr*lr);
+                lr = 0.5*log(r2 > r2min ? r2 : r2min)-lr0;
+                *(pix++) = dval = exp(-0.5*rscale2*lr*lr);
                 norm += dval*dval;
                 }
               else
                 *(pix++) = 0.0;
               }
             pix -= npix;
-            norm = norm > 0.0? 1.0/norm : 0.0;
+            norm = norm > 1.0/BIG? 1.0/norm : 0.0;
             for (i=npix; i--;)
               *(pix++) *= norm;
             modpix = pix;
