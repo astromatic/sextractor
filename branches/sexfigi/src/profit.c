@@ -9,7 +9,7 @@
 *
 *	Contents:	Fit an arbitrary profile combination to a detection.
 *
-*	Last modify:	23/09/2008
+*	Last modify:	25/09/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -1344,7 +1344,7 @@ INPUT	Pointer to the profit structure,
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	18/09/2008
+VERSION	25/09/2008
  ***/
 void	profit_resetparam(profitstruct *profit, paramenum paramtype)
   {
@@ -1402,8 +1402,8 @@ void	profit_resetparam(profitstruct *profit, paramenum paramtype)
       parammin = -obj2->flux_auto/1000.0;
       parammax = 2*obj2->flux_auto;
       break;
-    case PARAM_DISK_SCALE:
-      param = obj2->hl_radius/1.67835;	/* From scalelength to Re */
+    case PARAM_DISK_SCALE:	/* From scalelength to Re */
+      param = obj2->hl_radius/1.67835*sqrt(obj->a/obj->b);
       parammin = param / 4.0;
       parammax = param * 4.0;
       break;
@@ -1883,7 +1883,7 @@ INPUT	Profile structure,
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	26/04/2008
+VERSION	25/09/2008
  ***/
 void	prof_add(profstruct *prof, profitstruct *profit)
   {
@@ -1918,7 +1918,7 @@ void	prof_add(profstruct *prof, profitstruct *profit)
 /* Compute Profile CD matrix */
   ctheta = cos(*prof->posangle*DEG);
   stheta = sin(*prof->posangle*DEG);
-  saspect = sqrt(fabs(*prof->aspect));
+  saspect = fabs(*prof->aspect);
   xscale = (*prof->scale==0.0)?
 		0.0 : fabs(scaling / (*prof->scale*prof->typscale));
   yscale = (*prof->scale*saspect == 0.0)?

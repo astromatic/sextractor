@@ -9,7 +9,7 @@
 *
 *	Contents:	Generate and handle image patterns for image fitting.
 *
-*	Last modify:	23/09/2008
+*	Last modify:	25/09/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -307,7 +307,7 @@ INPUT	Pointer to pattern structure,
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	23/09/2008
+VERSION	25/09/2008
  ***/
 void	pattern_create(patternstruct *pattern, profitstruct *profit)
   {
@@ -323,7 +323,7 @@ void	pattern_create(patternstruct *pattern, profitstruct *profit)
 /* Compute Profile CD matrix */
   ctheta = cos(pattern->posangle*DEG);
   stheta = sin(pattern->posangle*DEG);
-  saspect = sqrt(fabs(pattern->aspect));
+  saspect = fabs(pattern->aspect);
   xscale = (pattern->scale==0.0)? 0.0 : 1.0/fabs(pattern->scale);
   yscale = (pattern->scale*saspect == 0.0)?
 			0.0 : 1.0/fabs(pattern->scale*saspect);
