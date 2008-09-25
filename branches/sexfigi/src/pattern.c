@@ -207,7 +207,7 @@ static int number;
 		profit->ix, profit->iy, 1.0);
     free(outpix);
     }
-/*
+
 nout = pattern->ncomp*pattern->nfreq;
 QCALLOC(outpix, PIXTYPE, noutpix*nout);
 outpix1 = outpix;
@@ -241,7 +241,7 @@ save_cat(cat, name);
 cat->tab->bodybuf=NULL;
 free_cat(&cat, 1);
 free(outpix);
-*/
+
   return;
   }
 
