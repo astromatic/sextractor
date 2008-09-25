@@ -121,7 +121,7 @@ void	makeit()
         npat = prefs.prof_disk_patternargvectorsize;
 /*---- Do a copy of the original number of pattern components */
       prefs.prof_disk_patternncomp = npat;
-      pattern = pattern_init(theprofit, PATTERN_QUADRUPOLE, npat);
+      pattern = pattern_init(theprofit, PATTERN_POLARFOURIER, npat);
       if (FLAG(obj2.prof_disk_patternvector))
         {
         npat = pattern->size[2];

@@ -442,11 +442,11 @@ void	pattern_create(patternstruct *pattern, profitstruct *profit)
             }
           }
         cpix -= npix;
-        cnorm = cnorm > 0.0? 1.0/cnorm : 0.0;
+        cnorm = cnorm > 0.0? 1.0/sqrt(cnorm) : 0.0;
         for (i=npix; i--;)
           *(cpix++) *= cnorm;
         spix -= npix;
-        snorm = snorm > 0.0? 1.0/snorm : 0.0;
+        snorm = snorm > 0.0? 1.0/sqrt(snorm) : 0.0;
         for (i=npix; i--;)
           *(spix++) *= snorm;
         }
@@ -510,7 +510,7 @@ void	pattern_create(patternstruct *pattern, profitstruct *profit)
                 *(pix++) = 0.0;
               }
             pix -= npix;
-            norm = norm > 1.0/BIG? 1.0/norm : 0.0;
+            norm = norm > 1.0/BIG? 1.0/sqrt(norm) : 0.0;
             for (i=npix; i--;)
               *(pix++) *= norm;
             modpix = pix;
@@ -525,7 +525,7 @@ void	pattern_create(patternstruct *pattern, profitstruct *profit)
               norm += dval*dval;
               }
             pix -= npix;
-            norm = norm > 0.0? 1.0/norm : 0.0;
+            norm = norm > 0.0? 1.0/sqrt(norm) : 0.0;
             for (i=npix; i--;)
               *(pix++) *= norm;
             modpix -= npix;
@@ -536,7 +536,7 @@ void	pattern_create(patternstruct *pattern, profitstruct *profit)
               norm += dval*dval;
               }
             pix -= npix;
-            norm = norm > 0.0? 1.0/norm : 0.0;
+            norm = norm > 0.0? 1.0/sqrt(norm) : 0.0;
             for (i=npix; i--;)
               *(pix++) *= norm;
             }
