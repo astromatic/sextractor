@@ -9,7 +9,7 @@
 *
 *	Contents:	Model-fitting parameter list for catalog data.
 *
-*	Last modify:	19/09/2008
+*	Last modify:	25/09/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -311,9 +311,11 @@
 	&prefs.prof_disk_patternmodvectorsize},
   {"DISK_PATTERNARG_VECTOR", "Disk pattern fitted arguments",
 	&outobj2.prof_disk_patternargvector, H_FLOAT, T_FLOAT, "%12.4g", "deg",
-	"stat.fit.param;src.morph.param", "", 1,
+	"stat.fit.param;src.morph.param", "deg", 1,
 	&prefs.prof_disk_patternargvectorsize},
-
+  {"DISK_PATTERN_SPIRAL", "Disk pattern spiral index",
+	&outobj2.prof_disk_patternspiral, H_FLOAT, T_FLOAT, "%12.4g", "",
+	"stat.fit.param;src.morph.param", ""},
   {"FLUX_BAR", "Bar total flux from fitting",
 	&outobj2.prof_bar_flux, H_FLOAT, T_FLOAT, "%12.g", "count",
 	"phot.count;stat.fit.param", "ct"},

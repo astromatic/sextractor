@@ -9,7 +9,7 @@
 *
 *	Contents:	global type definitions.
 *
-*	Last modify:	19/09/2008
+*	Last modify:	25/09/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -381,6 +381,7 @@ typedef struct
   float		*prof_disk_patternvector;	/* Disk pattern coefficients */
   float		*prof_disk_patternmodvector;	/* Disk pattern moduli */
   float		*prof_disk_patternargvector;	/* Disk pattern arguments */
+  float		prof_disk_patternspiral;	/* Disk pattern spiral index */
   float		prof_bar_flux;			/* Galactic bar total flux */
   float		prof_bar_fluxerr;		/* RMS error */
   float		prof_bar_mag;			/* Bar "total" magnitude */

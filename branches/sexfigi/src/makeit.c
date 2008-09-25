@@ -122,12 +122,21 @@ void	makeit()
 /*---- Do a copy of the original number of pattern components */
       prefs.prof_disk_patternncomp = npat;
       pattern = pattern_init(theprofit, PATTERN_POLARFOURIER, npat);
-      npat = pattern->size[2];
-      changecatparamarrays("DISK_PATTERN_VECTOR", &npat, 1);
-      npat = pattern->ncomp*pattern->nfreq;
-      changecatparamarrays("DISK_PATTERNMOD_VECTOR", &npat, 1);
-      npat = pattern->ncomp*pattern->nfreq;
-      changecatparamarrays("DISK_PATTERNARG_VECTOR", &npat, 1);
+      if (FLAG(obj2.prof_disk_patternvector))
+        {
+        npat = pattern->size[2];
+        changecatparamarrays("DISK_PATTERN_VECTOR", &npat, 1);
+        }
+      if (FLAG(obj2.prof_disk_patternmodvector))
+        {
+        npat = pattern->ncomp*pattern->nfreq;
+        changecatparamarrays("DISK_PATTERNMOD_VECTOR", &npat, 1);
+        }
+      if (FLAG(obj2.prof_disk_patternargvector))
+        {
+        npat = pattern->ncomp*pattern->nfreq;
+        changecatparamarrays("DISK_PATTERNARG_VECTOR", &npat, 1);
+        }
       pattern_end(pattern);
       }
     QPRINTF(OUTPUT, "Fitting model: ");

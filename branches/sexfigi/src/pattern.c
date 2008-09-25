@@ -51,13 +51,15 @@ INPUT	Pointer to a profit structure,
 OUTPUT	Pointer to the new pattern structure.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	18/09/2008
+VERSION	25/09/2008
  ***/
 patternstruct	*pattern_init(profitstruct *profit, pattypenum ptype, int ncomp)
   {
    patternstruct	*pattern;
-   int			npix;
+   int			ninpix, noutpix;
 
+  if (!ncomp)
+    ncomp = PATTERN_NCOMP;
   QCALLOC(pattern, patternstruct, 1);
   pattern->type = ptype;
   pattern->ncomp = ncomp;
@@ -79,12 +81,13 @@ patternstruct	*pattern_init(profitstruct *profit, pattypenum ptype, int ncomp)
     }
 
   pattern->size[2] = ncomp*pattern->nmodes;
-  npix = pattern->size[0]*pattern->size[1] * pattern->size[2];
+  ninpix = pattern->size[0]*pattern->size[1] * pattern->size[2];
+  noutpix = profit->objnaxisn[0]*profit->objnaxisn[1] * pattern->size[2];
   pattern->aspect = *profit->paramlist[PARAM_DISK_ASPECT];
   pattern->posangle = fmod_m90_p90(*profit->paramlist[PARAM_DISK_POSANG]);
   pattern->scale = *profit->paramlist[PARAM_DISK_SCALE]/profit->pixstep;
-  QMALLOC(pattern->modpix, double, npix);
-  QMALLOC(pattern->lmodpix, PIXTYPE, npix);
+  QMALLOC(pattern->modpix, double, ninpix);
+  QMALLOC(pattern->lmodpix, PIXTYPE, noutpix);
   QMALLOC(pattern->coeff, double, pattern->size[2]);
   QMALLOC(pattern->mcoeff, double, ncomp*pattern->nfreq);
   QMALLOC(pattern->acoeff, double, ncomp*pattern->nfreq);
@@ -299,6 +302,48 @@ void	pattern_compmodarg(patternstruct *pattern)
   }
 
 
+/****** pattern_spiral ******************************************************
+PROTO	float pattern_spiral(patternstruct *pattern)
+PURPOSE	Compute a pattern spiral index.
+INPUT	Pointer to pattern structure.
+OUTPUT	Spiral index.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	25/09/2008
+ ***/
+float	pattern_spiral(patternstruct *pattern)
+  {
+   double	w,x,y, s,sx,sy,sxx,sxy;
+   int		i,r, freq, rstart;
+
+  if (pattern->ncomp<2)
+    return 0.0;
+
+  rstart = (int)(pattern->ncomp/pattern->rmax+0.4999) - 1;
+  if (rstart<0)
+    rstart = 0;
+  else if (rstart>pattern->ncomp-2)
+    rstart = pattern->ncomp-2;
+
+  freq = (pattern->type == PATTERN_POLARFOURIER) ? 2 : 0;
+  s = sx = sy = sxx = sxy = 0.0;
+  for (r=rstart; r<pattern->ncomp; r++)
+    {
+    i = r*pattern->nfreq + freq;
+    w = pattern->mcoeff[i];
+    x = (double)(r - rstart);
+    y = pattern->acoeff[i];
+    s += w;
+    sx += w*x;
+    sy += w*y;
+    sxx += w*x*x;
+    sxy += w*x*y;
+    }
+
+  return (s*sxy - sx*sy)/(s*sxx - sx*sx);
+  }
+
+
 /****** pattern_create ******************************************************
 PROTO	void pattern_create(patternstruct *pattern, profitstruct *profit)
 PURPOSE create a pattern basis.
@@ -346,7 +391,7 @@ void	pattern_create(patternstruct *pattern, profitstruct *profit)
 /* The pattern limit does not exceed 90% of the mapped ellipse "radius" */
 //  if (rad*rad > 0.9*0.9*r2max)
   nrad = pattern->ncomp;
-  rad = 0.8*sqrt(r2max);	/* Keep a margin using a fudge factor */
+  pattern->rmax = rad = 0.8*sqrt(r2max);/* Keep a margin using a fudge factor */
   if (!nrad)
       error(EXIT_FAILURE,
 		"*Error*: insufficient number of vector elements",

@@ -9,7 +9,7 @@
 *
 *	Contents:	functions for output of catalog data.
 *
-*	Last modify:	19/09/2008
+*	Last modify:	25/09/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -171,7 +171,8 @@ void	updateparamflags()
 
   prefs.pattern_flag |= FLAG(obj2.prof_disk_patternvector)
 			| FLAG(obj2.prof_disk_patternmodvector)
-			| FLAG(obj2.prof_disk_patternargvector);
+			| FLAG(obj2.prof_disk_patternargvector)
+			| FLAG(obj2.prof_disk_patternspiral);
   FLAG(obj2.prof_disk_scale) |= prefs.pattern_flag;
 
   FLAG(obj2.poserraw_prof) |= FLAG(obj2.poserrbw_prof);

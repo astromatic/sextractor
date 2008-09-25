@@ -168,7 +168,7 @@ OUTPUT	Pointer to an allocated fit structure (containing details about the
 	fit).
 NOTES	It is a modified version of the lm_minimize() of lmfit.
 AUTHOR	E. Bertin (IAP)
-VERSION	23/09/2008
+VERSION	25/09/2008
  ***/
 void	profit_fit(profitstruct *profit,
 		picstruct *field, picstruct *wfield,
@@ -428,6 +428,8 @@ the_gal++;
       pattern = pattern_init(profit, PATTERN_POLARFOURIER,
 		prefs.prof_disk_patternncomp);
       pattern_fit(pattern, profit);
+      if (FLAG(obj2.prof_disk_patternspiral))
+        obj2->prof_disk_patternspiral = pattern_spiral(pattern);
       if (FLAG(obj2.prof_disk_patternvector))
         {
         ncomp = pattern->size[2];

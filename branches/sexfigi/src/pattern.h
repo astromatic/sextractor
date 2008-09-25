@@ -9,7 +9,7 @@
 *
 *	Contents:	Include file for pattern.c.
 *
-*	Last modify:	18/09/2008
+*	Last modify:	25/09/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -26,6 +26,7 @@
 /*----------------------------- Internal constants --------------------------*/
 
 #define	PATTERN_FMAX	4	/* Maximum pattern angular frequency */
+#define	PATTERN_NCOMP	16	/* Default number of components (radii) */
 #define	PATTERN_RADIUS	1.0	/* Pattern radius over half the PATTERN_SIZE */
 #define	PATTERN_SCALE	(0.2*PATTERN_RADIUS)	/* Pattern scale */
 
@@ -54,6 +55,7 @@ typedef struct
   double	scale;			/* Scaling vector */
   double	aspect;			/* Aspect ratio */
   double	posangle;		/* Position angle (CCW/NAXIS1)*/
+  double	rmax;			/* Largest radius in units of scale */
   double	*coeff;			/* Fitted pattern coefficients */
   double	*mcoeff;		/* Modulus from pattern coefficients */
   double	*acoeff;		/* Argument from pattern coefficients */
@@ -68,6 +70,7 @@ typedef struct
 
 patternstruct	*pattern_init(profitstruct *profit, pattypenum ptype, int nvec);
 
+float		pattern_spiral(patternstruct *pattern);
 void		pattern_compmodarg(patternstruct *pattern),
 		pattern_create(patternstruct *pattern, profitstruct *profit),
 		pattern_end(patternstruct *pattern),
