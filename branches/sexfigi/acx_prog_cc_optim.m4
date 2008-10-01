@@ -8,7 +8,7 @@ dnl IRIX C compiler, NEC SX-5 (Super-UX 10) C compiler, and Cray J90
 dnl (Unicos 10.0.0.8) C compiler.
 dnl
 dnl This macro is a modification of Ville Laurikari's VL_PROG_CC_WARNINGS
-dnl @version 1.0 (2002-04-15)
+dnl @version 1.1 (2008-09-23)
 dnl @authors Emmanuel Bertin <bertin@iap.fr> Ville Laurikari <vl@iki.fi>
 dnl
 AC_DEFUN([ACX_PROG_CC_OPTIM], [
@@ -19,10 +19,6 @@ AC_DEFUN([ACX_PROG_CC_OPTIM], [
 int main(int argc, char **argv) { return 0; }
 EOF
 
-      dnl GCC
-      if test "$GCC" = "yes"; then
-        prog_cc_optim_flags="-O -funroll-loops -fomit-frame-pointer -Wall -g"
-
       dnl Most compilers print some kind of a version string with some command
       dnl line options (often "-V").  The version string should be checked
       dnl before doing a test compilation run with compiler-specific flags.
@@ -32,6 +28,19 @@ EOF
       dnl erratic things when invoked with flags meant for a different
       dnl compiler.
 
+      dnl INTEL C 64bits compiler
+      if $CC -V 2>&1 | grep -i "Intel(R) 64" > /dev/null 2>&1 &&
+           $CC -c -O conftest.c > /dev/null 2>&1 &&
+           test -f conftest.o; then
+        prog_cc_optim_flags="-O3 -axWPTS -ip -no-prec-div -unroll"
+      dnl INTEL C 32bits compiler
+      elif $CC -V 2>&1 | grep -i "Intel(R)" > /dev/null 2>&1 &&
+           $CC -c -O conftest.c > /dev/null 2>&1 &&
+           test -f conftest.o; then
+        prog_cc_optim_flags="-O -axKWNPTS -ip -no-prec-div"
+      dnl GCC
+      elif test "$GCC" = "yes"; then
+        prog_cc_optim_flags="-O3 -g -funroll-loops -fomit-frame-pointer -Wall"
       dnl Solaris C compiler
       elif $CC -V 2>&1 | grep -i "WorkShop" > /dev/null 2>&1 &&
            $CC -c -O conftest.c > /dev/null 2>&1 &&
@@ -80,8 +89,10 @@ EOF
     fi
     if test -n "$prog_cc_optim_flags"; then
       CFLAGS="$CFLAGS $prog_cc_optim_flags"
+      LDFLAGS="$LDFLAGS -static-intel"
     else
       prog_cc_optim_flags="unknown"
     fi
   ])
 ])dnl
+

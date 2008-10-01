@@ -6,7 +6,7 @@ define([AC_CACHE_LOAD],)
 define([AC_CACHE_SAVE],)
 
 # This is your standard Bertin source code...
-AC_INIT(sextractor, 2.8.0, [bertin@iap.fr])
+AC_INIT(sextractor, 2.8.1, [bertin@iap.fr])
 AC_CONFIG_SRCDIR(src/makeit.c)
 AC_CONFIG_AUX_DIR(autoconf)
 AM_CONFIG_HEADER(config.h)
@@ -203,18 +203,12 @@ else
   AC_MSG_ERROR([$ATLAS_ERROR Exiting.])
 fi
 
-############################### INTEL C compiler ##############################
-if test $use_icc = "yes" -a $CC = "icc"; then
-  CFLAGS="$CFLAGS -axWPTS -ip -unroll"
-  LDFLAGS="$LDFLAGS -static-intel"
-fi
-
 # Link with gprof option
 if test "$use_gprof" = "yes"; then
   if test "$use_icc" = "yes"; then
     CFLAGS="$CFLAGS -pq"
   else
-    CFLAGS="-O3 -pg"
+    CFLAGS="$CFLAGS -pg"
   fi
   use_static="no"
 fi

@@ -425,7 +425,7 @@ the_gal++;
     if (prefs.pattern_flag)
       {
       profit_residuals(profit,field,wfield,profit->param,profit->resi);
-      pattern = pattern_init(profit, PATTERN_POLARFOURIER,
+      pattern = pattern_init(profit, PATTERN_QUADRUPOLE,
 		prefs.prof_disk_patternncomp);
       pattern_fit(pattern, profit);
       if (FLAG(obj2.prof_disk_patternspiral))

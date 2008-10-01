@@ -129,9 +129,11 @@ VERSION	22/09/2008
  ***/
 void	pattern_fit(patternstruct *pattern, profitstruct *profit)
   {
+/*
 catstruct *cat;
 char	name[MAXCHAR];
 static int number;
+*/
    checkstruct	*check;
    double	*inpix, *doutpix1, *alpha,*beta,
 		dval, dprod;
