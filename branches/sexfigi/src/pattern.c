@@ -9,7 +9,7 @@
 *
 *	Contents:	Generate and handle image patterns for image fitting.
 *
-*	Last modify:	25/09/2008
+*	Last modify:	01/10/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -125,7 +125,7 @@ INPUT	Pointer to pattern structure.
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	22/09/2008
+VERSION	01/10/2008
  ***/
 void	pattern_fit(patternstruct *pattern, profitstruct *profit)
   {
@@ -133,13 +133,14 @@ void	pattern_fit(patternstruct *pattern, profitstruct *profit)
 catstruct *cat;
 char	name[MAXCHAR];
 static int number;
+int	nout;
 */
    checkstruct	*check;
    double	*inpix, *doutpix1, *alpha,*beta,
 		dval, dprod;
    PIXTYPE	*outpix,*outpix1,*outpix2;
    PIXTYPE	*weightpix;
-   int		n,p,p2, nvec, ninpix, noutpix,nout;
+   int		n,p,p2, nvec, ninpix, noutpix;
 
   nvec = pattern->size[2];
   pattern_create(pattern, profit);
@@ -255,7 +256,7 @@ INPUT	Pointer to pattern structure.
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	19/09/2008
+VERSION	01/10/2008
  ***/
 void	pattern_compmodarg(patternstruct *pattern)
   {
@@ -267,6 +268,7 @@ void	pattern_compmodarg(patternstruct *pattern)
   mcoeff = pattern->mcoeff;
   acoeff = pattern->acoeff;
   nfreq = pattern->nfreq;
+  argo = 0.0;			/* To avoid gcc -Wall warnings */
   for (r=0; r<pattern->ncomp; r++)
     {
     for (f=0; f<pattern->nfreq; f++)

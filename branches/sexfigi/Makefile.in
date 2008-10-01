@@ -697,6 +697,7 @@ uninstall-am: uninstall-dist_pkgdataDATA
 
 dist-hook:
 	rm -rf `find $(distdir) -name .svn`
+
 rpm:	dist
 	cp -f $(PACKAGE_NAME)-$(PACKAGE_VERSION).tar.gz $(RPM_SRCDIR)
 	rpmbuild -ba --clean --nodeps $(PACKAGE_NAME).spec
