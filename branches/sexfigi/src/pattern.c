@@ -262,9 +262,9 @@ VERSION	03/10/2008
  ***/
 void	pattern_compmodarg(patternstruct *pattern, profitstruct *profit)
   {
-   double	*coeff,*mcoeff,*acoeff, *normt, *rt,
+   double	*coeff,*mcoeff,*acoeff, *normt,
 		arg,argo,darg, ima,rea, norm, fluxfac;
-   int		f,p,r, nfreq;
+   int		f,p, nfreq;
 
   fluxfac = 1.0;
 /* Find exponential profile */
@@ -279,11 +279,10 @@ void	pattern_compmodarg(patternstruct *pattern, profitstruct *profit)
   acoeff = pattern->acoeff;
   nfreq = pattern->nfreq;
   normt = pattern->norm;
-  rt = pattern->r;
   argo = 0.0;			/* To avoid gcc -Wall warnings */
-  for (r=0; r<pattern->ncomp; r++)
+  for (p=0; p<pattern->ncomp; p++)
     {
-    norm = exp(*(rt++))*fluxfac;
+    norm = exp(pattern->r[p])*fluxfac;
     for (f=0; f<pattern->nfreq; f++)
       {
       if (pattern->type == PATTERN_POLARFOURIER && !f)
@@ -297,7 +296,7 @@ void	pattern_compmodarg(patternstruct *pattern, profitstruct *profit)
         ima = *(coeff++) * *(normt++);
         *(mcoeff++) = sqrt(rea*rea + ima*ima);
         arg = atan2(ima, rea)/DEG;
-        if (r>0)
+        if (p>0)
           {
           darg = arg - argo;
 /*-------- disambiguate increasing or decreasing phase angles */
@@ -419,7 +418,6 @@ void	pattern_create(patternstruct *pattern, profitstruct *profit)
   dnrad = (double)nrad;
   npix = pattern->size[0]*pattern->size[1];
   normt = pattern->norm;
-  rt = pattern->r;
   switch(pattern->type)
     {
     case PATTERN_QUADRUPOLE:
@@ -432,7 +430,7 @@ void	pattern_create(patternstruct *pattern, profitstruct *profit)
         rscale2 = (p+1)*dnrad;
         x1 = -x1cout;
         x2 = -x2cout;       
-        lr0 = log(*(rt++) = rad*(p+1)/dnrad);
+        lr0 = log(pattern->r[p] = rad*(p+1)/dnrad);
         cnorm = snorm = 0.0;
         for (ix2=pattern->size[1]; ix2--; x2+=1.0)
           {
@@ -511,11 +509,11 @@ void	pattern_create(patternstruct *pattern, profitstruct *profit)
       pix = pattern->modpix;
       for (p=0; p<nrad; p++)
         {
+        rscale2 = (p+1)*dnrad;
+        lr0 = log(pattern->r[p] = rad*(p+1)/dnrad);
         for (f=0; f<=PATTERN_FMAX; f++)
           {
-          rscale2 = (p+1)*dnrad;
           norm = 0.0;
-          lr0 = log(rad*(p+1)/dnrad);
           r2pix = r2buf;
           if (!f)
             {
@@ -533,8 +531,8 @@ void	pattern_create(patternstruct *pattern, profitstruct *profit)
               }
             pix -= npix;
             *(normt++) = norm = (norm > 1.0/BIG? 1.0/sqrt(norm) : 1.0);
-           norm0 = norm;
-           for (i=npix; i--;)
+            norm0 = norm;
+            for (i=npix; i--;)
               *(pix++) *= norm;
             modpix = pix;
             }
