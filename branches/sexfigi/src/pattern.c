@@ -9,7 +9,7 @@
 *
 *	Contents:	Generate and handle image patterns for image fitting.
 *
-*	Last modify:	01/10/2008
+*	Last modify:	03/10/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -51,7 +51,7 @@ INPUT	Pointer to a profit structure,
 OUTPUT	Pointer to the new pattern structure.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	25/09/2008
+VERSION	02/10/2008
  ***/
 patternstruct	*pattern_init(profitstruct *profit, pattypenum ptype, int ncomp)
   {
@@ -83,9 +83,8 @@ patternstruct	*pattern_init(profitstruct *profit, pattypenum ptype, int ncomp)
   pattern->size[2] = ncomp*pattern->nmodes;
   ninpix = pattern->size[0]*pattern->size[1] * pattern->size[2];
   noutpix = profit->objnaxisn[0]*profit->objnaxisn[1] * pattern->size[2];
-  pattern->aspect = *profit->paramlist[PARAM_DISK_ASPECT];
-  pattern->posangle = fmod_m90_p90(*profit->paramlist[PARAM_DISK_POSANG]);
-  pattern->scale = *profit->paramlist[PARAM_DISK_SCALE]/profit->pixstep;
+  QMALLOC(pattern->norm, double, pattern->size[2]);
+  QMALLOC(pattern->r, double, pattern->ncomp);
   QMALLOC(pattern->modpix, double, ninpix);
   QMALLOC(pattern->lmodpix, PIXTYPE, noutpix);
   QMALLOC(pattern->coeff, double, pattern->size[2]);
@@ -103,10 +102,12 @@ INPUT	Pattern structure.
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	18/09/2008
+VERSION	02/10/2008
  ***/
 void	pattern_end(patternstruct *pattern)
   {
+  free(pattern->norm);
+  free(pattern->r);
   free(pattern->modpix);
   free(pattern->lmodpix);
   free(pattern->coeff);
@@ -191,7 +192,7 @@ int	nout;
   clapack_dpotrf(CblasRowMajor,CblasUpper,nvec,alpha,nvec);
   clapack_dpotrs(CblasRowMajor,CblasUpper,nvec,1,alpha,nvec,beta,nvec);
 
-  pattern_compmodarg(pattern);
+  pattern_compmodarg(pattern, profit);
 
   free(alpha);
 
@@ -250,38 +251,50 @@ free(outpix);
 
 
 /****** pattern_compmodarg ****************************************************
-PROTO	void pattern_comparg(patternstruct *pattern)
+PROTO	void pattern_comparg(patternstruct *pattern, profitstruct *profit)
 PURPOSE	Compute modulus and argument for each pair of Fourier components.
-INPUT	Pointer to pattern structure.
+INPUT	Pointer to pattern structure,
+	pointer to profit structure.
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	01/10/2008
+VERSION	03/10/2008
  ***/
-void	pattern_compmodarg(patternstruct *pattern)
+void	pattern_compmodarg(patternstruct *pattern, profitstruct *profit)
   {
-   double	*coeff,*mcoeff,*acoeff,
-		arg,argo,darg, ima,rea;
-   int		f,r, nfreq;
+   double	*coeff,*mcoeff,*acoeff, *normt, *rt,
+		arg,argo,darg, ima,rea, norm, fluxfac;
+   int		f,p,r, nfreq;
 
+  fluxfac = 1.0;
+/* Find exponential profile */
+  for (p=0; p<profit->nprof; p++)
+    if (p==PROF_EXPONENTIAL)
+      {
+      fluxfac = profit->prof[p]->fluxfac;
+      break;
+      }
   coeff = pattern->coeff;
   mcoeff = pattern->mcoeff;
   acoeff = pattern->acoeff;
   nfreq = pattern->nfreq;
+  normt = pattern->norm;
+  rt = pattern->r;
   argo = 0.0;			/* To avoid gcc -Wall warnings */
   for (r=0; r<pattern->ncomp; r++)
     {
+    norm = exp(*(rt++))*fluxfac;
     for (f=0; f<pattern->nfreq; f++)
       {
       if (pattern->type == PATTERN_POLARFOURIER && !f)
         {
-        *(mcoeff++) = fabs(*coeff);
+        *(mcoeff++) = fabs(*coeff) * *(normt++) * norm;
         *(acoeff++) = *(coeff++)<0.0? 180.0 : 0.0;
         }
       else
         {
-        rea = *(coeff++);
-        ima = *(coeff++);
+        rea = *(coeff++) * *(normt++);
+        ima = *(coeff++) * *(normt++);
         *(mcoeff++) = sqrt(rea*rea + ima*ima);
         arg = atan2(ima, rea)/DEG;
         if (r>0)
@@ -356,26 +369,29 @@ INPUT	Pointer to pattern structure,
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	25/09/2008
+VERSION	03/10/2008
  ***/
 void	pattern_create(patternstruct *pattern, profitstruct *profit)
   {
-   double		x1,x2, x1t,x2t, r2,r2min,r2max, lr, lr0, 
-			mod,ang,ang0, cosang,sinang, angcoeff,
-			ctheta,stheta, saspect,xscale,yscale,
-			cd11,cd12,cd21,cd22, x1cout,x2cout, cmod,smod,
-			cnorm,snorm,norm, dval, det, rad, dnrad, rscale2;
    double		*scbuf[PATTERN_FMAX],*scpix[PATTERN_FMAX],
-			*scpixt,*cpix,*spix, *pix, *r2buf,*r2pix,*modpix;
+			*scpixt,*cpix,*spix, *pix, *r2buf,*r2pix,*modpix,
+			*normt, *rt,
+			x1,x2, x1t,x2t, r2,r2min,r2max, lr, lr0, 
+			mod,ang,ang0, cosang,sinang, angcoeff, posangle,
+			ctheta,stheta, saspect,xscale,yscale, scale, aspect,
+			cd11,cd12,cd21,cd22, x1cout,x2cout, cmod,smod,
+			cnorm,snorm,norm,norm0, dval, det, rad, dnrad, rscale2;
    int			f,i,p, ix1,ix2, nrad, npix;
 
 /* Compute Profile CD matrix */
-  ctheta = cos(pattern->posangle*DEG);
-  stheta = sin(pattern->posangle*DEG);
-  saspect = fabs(pattern->aspect);
-  xscale = (pattern->scale==0.0)? 0.0 : 1.0/fabs(pattern->scale);
-  yscale = (pattern->scale*saspect == 0.0)?
-			0.0 : 1.0/fabs(pattern->scale*saspect);
+  aspect = fabs(*profit->paramlist[PARAM_DISK_ASPECT]);
+  posangle = fmod_m90_p90(*profit->paramlist[PARAM_DISK_POSANG])*DEG;
+  scale = fabs(*profit->paramlist[PARAM_DISK_SCALE]/profit->pixstep);
+  ctheta = cos(posangle);
+  stheta = sin(posangle);
+  saspect = fabs(aspect);
+  xscale = (scale==0.0)? 0.0 : 1.0/scale;
+  yscale = (scale*saspect == 0.0)? 0.0 : 1.0/(scale*saspect);
   cd11 = xscale*ctheta;
   cd12 = xscale*stheta;
   cd21 = -yscale*stheta;
@@ -402,6 +418,8 @@ void	pattern_create(patternstruct *pattern, profitstruct *profit)
 		" for generating the pattern basis"); 
   dnrad = (double)nrad;
   npix = pattern->size[0]*pattern->size[1];
+  normt = pattern->norm;
+  rt = pattern->r;
   switch(pattern->type)
     {
     case PATTERN_QUADRUPOLE:
@@ -413,8 +431,8 @@ void	pattern_create(patternstruct *pattern, profitstruct *profit)
         {
         rscale2 = (p+1)*dnrad;
         x1 = -x1cout;
-        x2 = -x2cout;
-        lr0 = log(rad*(p+1)/dnrad);
+        x2 = -x2cout;       
+        lr0 = log(*(rt++) = rad*(p+1)/dnrad);
         cnorm = snorm = 0.0;
         for (ix2=pattern->size[1]; ix2--; x2+=1.0)
           {
@@ -446,11 +464,11 @@ void	pattern_create(patternstruct *pattern, profitstruct *profit)
             }
           }
         cpix -= npix;
-        cnorm = cnorm > 0.0? 1.0/sqrt(cnorm) : 0.0;
+        *(normt++) = cnorm = (cnorm > 0.0? 1.0/sqrt(cnorm) : 1.0);
         for (i=npix; i--;)
           *(cpix++) *= cnorm;
         spix -= npix;
-        snorm = snorm > 0.0? 1.0/sqrt(snorm) : 0.0;
+        *(normt++) = snorm = (snorm > 0.0? 1.0/sqrt(snorm) : 1.0);
         for (i=npix; i--;)
           *(spix++) *= snorm;
         }
@@ -514,8 +532,9 @@ void	pattern_create(patternstruct *pattern, profitstruct *profit)
                 *(pix++) = 0.0;
               }
             pix -= npix;
-            norm = norm > 1.0/BIG? 1.0/sqrt(norm) : 0.0;
-            for (i=npix; i--;)
+            *(normt++) = norm = (norm > 1.0/BIG? 1.0/sqrt(norm) : 1.0);
+           norm0 = norm;
+           for (i=npix; i--;)
               *(pix++) *= norm;
             modpix = pix;
             }
@@ -529,7 +548,7 @@ void	pattern_create(patternstruct *pattern, profitstruct *profit)
               norm += dval*dval;
               }
             pix -= npix;
-            norm = norm > 0.0? 1.0/sqrt(norm) : 0.0;
+            *(normt++) = (norm = norm > 0.0? 1.0/sqrt(norm) : 1.0) * norm0;
             for (i=npix; i--;)
               *(pix++) *= norm;
             modpix -= npix;
@@ -540,7 +559,7 @@ void	pattern_create(patternstruct *pattern, profitstruct *profit)
               norm += dval*dval;
               }
             pix -= npix;
-            norm = norm > 0.0? 1.0/sqrt(norm) : 0.0;
+            *(normt++) = (norm = norm > 0.0? 1.0/sqrt(norm) : 1.0) * norm0;
             for (i=npix; i--;)
               *(pix++) *= norm;
             }

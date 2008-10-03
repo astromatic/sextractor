@@ -9,7 +9,7 @@
 *
 *	Contents:	Fit an arbitrary profile combination to a detection.
 *
-*	Last modify:	25/09/2008
+*	Last modify:	03/10/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -425,7 +425,7 @@ the_gal++;
     if (prefs.pattern_flag)
       {
       profit_residuals(profit,field,wfield,profit->param,profit->resi);
-      pattern = pattern_init(profit, PATTERN_QUADRUPOLE,
+      pattern = pattern_init(profit, PATTERN_POLARFOURIER,
 		prefs.prof_disk_patternncomp);
       pattern_fit(pattern, profit);
       if (FLAG(obj2.prof_disk_patternspiral))
@@ -1885,7 +1885,7 @@ INPUT	Profile structure,
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	25/09/2008
+VERSION	03/10/2008
  ***/
 void	prof_add(profstruct *prof, profitstruct *profit)
   {
@@ -2276,6 +2276,7 @@ width = 3.0;
 
 /* Correct final flux */
   fluxfac = fabs(flux)>0.0? *prof->flux / flux : 1.0;
+  prof->fluxfac = fluxfac;
   pixin = profit->pmodpix;
   pixout = profit->modpix;
   for (n=npix; n--;)

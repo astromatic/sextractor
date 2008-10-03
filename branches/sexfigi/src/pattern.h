@@ -9,7 +9,7 @@
 *
 *	Contents:	Include file for pattern.c.
 *
-*	Last modify:	25/09/2008
+*	Last modify:	03/10/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -52,10 +52,9 @@ typedef struct
   int		nmodes;			/* Number of modes per component */
   int		nfreq;			/* Number of waves per component */
   double	x[2];			/* Coordinate vector */
-  double	scale;			/* Scaling vector */
-  double	aspect;			/* Aspect ratio */
-  double	posangle;		/* Position angle (CCW/NAXIS1)*/
   double	rmax;			/* Largest radius in units of scale */
+  double	*r;			/* Reduced radius */
+  double	*norm;			/* Pattern vector norm */
   double	*coeff;			/* Fitted pattern coefficients */
   double	*mcoeff;		/* Modulus from pattern coefficients */
   double	*acoeff;		/* Argument from pattern coefficients */
@@ -71,7 +70,7 @@ typedef struct
 patternstruct	*pattern_init(profitstruct *profit, pattypenum ptype, int nvec);
 
 float		pattern_spiral(patternstruct *pattern);
-void		pattern_compmodarg(patternstruct *pattern),
+void		pattern_compmodarg(patternstruct *pattern,profitstruct *profit),
 		pattern_create(patternstruct *pattern, profitstruct *profit),
 		pattern_end(patternstruct *pattern),
 		pattern_fit(patternstruct *pattern, profitstruct *profit);

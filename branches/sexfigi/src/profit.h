@@ -9,7 +9,7 @@
 *
 *	Contents:	Include file for profit.c.
 *
-*	Last modify:	18/09/2008
+*	Last modify:	03/10/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -74,6 +74,7 @@ typedef struct
   int		naxis;			/* Number of pixmap dimensions */
   int		naxisn[3];		/* Pixmap size for each axis */
   double	typscale;		/* Typical scale in prof pixels */
+  double	fluxfac;		/* Flux normalisation factor */
 /* Generic presentation parameters */
   double	*flux;			/* Integrated flux */
   double	*x[2];			/* Coordinate vector */
