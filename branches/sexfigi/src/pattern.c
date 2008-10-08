@@ -316,30 +316,37 @@ INPUT	Pointer to pattern structure.
 OUTPUT	Spiral index.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	25/09/2008
+VERSION	08/10/2008
  ***/
 float	pattern_spiral(patternstruct *pattern)
   {
    double	w,x,y, s,sx,sy,sxx,sxy;
-   int		i,r, freq, rstart;
+   int		f,i,p, pstart;
 
   if (pattern->ncomp<2)
     return 0.0;
 
-  rstart = (int)(pattern->ncomp/pattern->rmax+0.4999) - 1;
-  if (rstart<0)
-    rstart = 0;
-  else if (rstart>pattern->ncomp-2)
-    rstart = pattern->ncomp-2;
+  pstart = (int)(pattern->ncomp/pattern->rmax+0.4999) - 1;
+  if (pstart<0)
+    pstart = 0;
+  else if (pstart>pattern->ncomp-2)
+    pstart = pattern->ncomp-2;
 
-  freq = (pattern->type == PATTERN_POLARFOURIER) ? 2 : 0;
   s = sx = sy = sxx = sxy = 0.0;
-  for (r=rstart; r<pattern->ncomp; r++)
+  for (p=pstart; p<pattern->ncomp; p++)
     {
-    i = r*pattern->nfreq + freq;
-    w = pattern->mcoeff[i];
-    x = (double)(r - rstart);
-    y = pattern->acoeff[i];
+    w = y = 0.0;
+    for (f=0; f<pattern->nfreq; f++)
+      {
+      if (pattern->type == PATTERN_POLARFOURIER && !f)
+        continue;
+      i = p*pattern->nfreq + f;
+      w += pattern->mcoeff[i];
+      y += pattern->mcoeff[i]*pattern->acoeff[i];
+      }
+    x = (double)(p - pstart);
+    if (w>0.0)
+      y /= w;
     s += w;
     sx += w*x;
     sy += w*y;
