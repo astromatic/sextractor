@@ -9,7 +9,7 @@
 *
 *	Contents:	Generate and handle image patterns for image fitting.
 *
-*	Last modify:	08/10/2008
+*	Last modify:	13/10/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -258,7 +258,7 @@ INPUT	Pointer to pattern structure,
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	08/10/2008
+VERSION	13/10/2008
  ***/
 void	pattern_compmodarg(patternstruct *pattern, profitstruct *profit)
   {
@@ -274,7 +274,7 @@ void	pattern_compmodarg(patternstruct *pattern, profitstruct *profit)
   argo = 0.0;			/* To avoid gcc -Wall warnings */
   for (p=0; p<pattern->ncomp; p++)
     {
-    for (f=0; f<pattern->nfreq; f++)
+    for (f=0; f<nfreq; f++)
       {
       if (pattern->type == PATTERN_POLARFOURIER && !f)
         {
@@ -289,13 +289,14 @@ void	pattern_compmodarg(patternstruct *pattern, profitstruct *profit)
         arg = atan2(ima, rea)/DEG;
         if (p>0)
           {
-          darg = arg - argo;
+          argo = *(acoeff-nfreq);
+          darg = arg - fmod(argo+180.0, 360.0) + 180.0;;
 /*-------- disambiguate increasing or decreasing phase angles */
           if (darg > 180.0)
             darg -= 360.0;
           else if (darg < -180.0)
             darg += 360.0;
-          *acoeff = *(acoeff-nfreq) + darg;
+          *acoeff = argo + darg;
           acoeff++;
           }
         else
@@ -316,7 +317,7 @@ INPUT	Pointer to pattern structure.
 OUTPUT	Spiral index.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	08/10/2008
+VERSION	13/10/2008
  ***/
 float	pattern_spiral(patternstruct *pattern)
   {
@@ -342,7 +343,7 @@ float	pattern_spiral(patternstruct *pattern)
         continue;
       i = p*pattern->nfreq + f;
       w += pattern->mcoeff[i];
-      y += pattern->mcoeff[i]*pattern->acoeff[i];
+      y += pattern->mcoeff[i]*pattern->acoeff[i]/f;
       }
     x = (double)(p - pstart);
     if (w>0.0)
