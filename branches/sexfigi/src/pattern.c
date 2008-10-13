@@ -213,18 +213,18 @@ int	nout;
     }
 /*
 nout = pattern->ncomp*pattern->nfreq;
-QCALLOC(outpix, PIXTYPE, noutpix*nout);
+QCALLOC(outpix, PIXTYPE, ninpix*nout);
 outpix1 = outpix;
-outpix2 = pattern->lmodpix;
+doutpix1 = pattern->modpix;
 for (p=0; p<nvec; p++)
 {
 dval = pattern->coeff[p];
-for (n=noutpix; n--; )
-*(outpix1++) += dval**(outpix2++);
+for (n=ninpix; n--; )
+*(outpix1++) += dval**(doutpix1++);
 if (pattern->type==PATTERN_POLARFOURIER)
   {
   if ((p%pattern->nmodes)%2)
-    outpix1 -= noutpix;
+    outpix1 -= ninpix;
   }
 else if (!(p%2))
   outpix1 -= noutpix;
@@ -233,12 +233,12 @@ cat=new_cat(1);
 init_cat(cat);
 cat->tab->naxis=3;
 QMALLOC(cat->tab->naxisn, int, 3);
-cat->tab->naxisn[0]=profit->objnaxisn[0];
-cat->tab->naxisn[1]=profit->objnaxisn[1];
+cat->tab->naxisn[0]=profit->modnaxisn[0];
+cat->tab->naxisn[1]=profit->modnaxisn[1];
 cat->tab->naxisn[2]=nout;
 cat->tab->bitpix=BP_FLOAT;
 cat->tab->bytepix=4;
-cat->tab->bodybuf=outpix;
+cat->tab->bodybuf=(char *)outpix;
 cat->tab->tabsize=cat->tab->naxisn[0]*cat->tab->naxisn[1]*cat->tab->naxisn[2]*sizeof(PIXTYPE);
 sprintf(name, "tata_%02d.fits", ++number);
 save_cat(cat, name);
@@ -367,25 +367,26 @@ INPUT	Pointer to pattern structure,
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	08/10/2008
+VERSION	13/10/2008
  ***/
 void	pattern_create(patternstruct *pattern, profitstruct *profit)
   {
    double		*scbuf[PATTERN_FMAX],*scpix[PATTERN_FMAX],
 			*scpixt,*cpix,*spix, *pix, *r2buf,*r2pix,*modpix,
 			*normt, *rt,*pmodpix,
-			x1,x2, x1t,x2t, r2,r2min,r2max, lr, lr0, 
-			mod,ang,ang0, cosang,sinang, angcoeff, posangle,
+			x1,x2, x1t,x2t, r,r2,r2min,r2max, lr, lr0, 
+			mod,ang,ang0, cosang,sinang, angcoeff, posangle,flux,
 			ctheta,stheta, saspect,xscale,yscale, scale, aspect,
 			cd11,cd12,cd21,cd22, x1cout,x2cout, cmod,smod,
 			cnorm,snorm,norm,norm0, dval, det, rad, dnrad, rscale2,
-			cpnorm,spnorm,pnorm;
+			cpnorm,spnorm,pnorm, rl,rl2,rh,rh2,r0,r02, sbd;
    int			f,i,p, ix1,ix2, nrad, npix;
 
 /* Compute Profile CD matrix */
   aspect = fabs(*profit->paramlist[PARAM_DISK_ASPECT]);
   posangle = fmod_m90_p90(*profit->paramlist[PARAM_DISK_POSANG])*DEG;
   scale = fabs(*profit->paramlist[PARAM_DISK_SCALE]/profit->pixstep);
+  flux = fabs(*profit->paramlist[PARAM_DISK_FLUX]);
   ctheta = cos(posangle);
   stheta = sin(posangle);
   saspect = fabs(aspect);
@@ -400,6 +401,7 @@ void	pattern_create(patternstruct *pattern, profitstruct *profit)
   x2cout = (double)(pattern->size[1]/2);
 /* Determinant of the change of coordinate system */
   det = xscale*yscale;
+  sbd = flux*det/(2.0*PI);
   r2min = det/10.0;
 /* Stay within an ellipse contained in the pattern raster, both in x and y */
   r2max = x1cout*x1cout * det*det / (cd12*cd12+cd22*cd22);
@@ -427,11 +429,15 @@ void	pattern_create(patternstruct *pattern, profitstruct *profit)
       angcoeff = (pattern->type==PATTERN_OCTOPOLE)? 4.0 : 2.0;
       for (p=0; p<nrad; p++, cpix+=npix, spix+=npix)
         {
-        rscale2 = (p+1)*dnrad;
         x1 = -x1cout;
         x2 = -x2cout;       
-        lr0 = log(pattern->r[p] = rad*(p+1)/dnrad);
         cnorm = snorm = cpnorm = spnorm = 0.0;
+        rl = p*rad/dnrad;
+        rl2 = rl*rl;
+        pattern->r[p] = r0 = (p+1)*rad/dnrad;
+        r02 = r0*r0;
+        rh = (p+2)*rad/dnrad;
+        rh2 = rh*rh;
         pmodpix = profit->modpix;
         for (ix2=pattern->size[1]; ix2--; x2+=1.0)
           {
@@ -440,10 +446,11 @@ void	pattern_create(patternstruct *pattern, profitstruct *profit)
           for (ix1=pattern->size[0]; ix1--; pmodpix++)
             {
             r2 = x1t*x1t+x2t*x2t;
-            if (r2<r2max)
+            if (r2>rl2 && r2<rh2)
               {
-              lr = 0.5*log(r2 > r2min ? r2 : r2min)-lr0;
-              mod = exp(-0.5*rscale2*lr*lr);
+              r = sqrt(r2);
+              dval = (r<r0) ? (r-rl)/(r0-rl) : (rh-r)/(rh-r0);
+              mod = (dval<0.5)? 2.0*dval*dval : 1.0-2.0*(1.0-dval)*(1.0-dval);
               ang = angcoeff*atan2(x2t,x1t);
 #ifdef HAVE_SINCOS
               sincos(ang, &sinang, &cosang);
@@ -514,8 +521,12 @@ void	pattern_create(patternstruct *pattern, profitstruct *profit)
       pix = pattern->modpix;
       for (p=0; p<nrad; p++)
         {
-        rscale2 = (p+1)*dnrad;
-        lr0 = log(pattern->r[p] = rad*(p+1)/dnrad);
+        rl = p*rad/dnrad;
+        rl2 = rl*rl;
+        pattern->r[p] = r0 = (p+1)*rad/dnrad;
+        r02 = r0*r0;
+        rh = (p+2)*rad/dnrad;
+        rh2 = rh*rh;
         for (f=0; f<=PATTERN_FMAX; f++)
           {
           norm = pnorm = 0.0;
@@ -526,17 +537,19 @@ void	pattern_create(patternstruct *pattern, profitstruct *profit)
             for (i=npix; i--; pmodpix++)
               {
               r2 = *(r2pix++);
-              if (r2<r2max)
+              if (r2>rl2 && r2<rh2)
                 {
-                lr = 0.5*log(r2 > r2min ? r2 : r2min)-lr0;
-                *(pix++) = dval = exp(-0.5*rscale2*lr*lr);
+                r = sqrt(r2);
+                dval = (r<r0) ? (r-rl)/(r0-rl) : (rh-r)/(rh-r0);
+                *(pix++) = dval = (dval<0.5)?
+			2.0*dval*dval : 1.0-2.0*(1.0-dval)*(1.0-dval);
                 norm += dval*dval;
-                pnorm += dval*dval**pmodpix**pmodpix;
                 }
               else
                 *(pix++) = 0.0;
               }
             pix -= npix;
+            pnorm = norm*sbd*sbd;
             norm0 = norm = (norm > 1.0/BIG? 1.0/sqrt(norm) : 1.0);
             *(normt++) = pnorm > 1.0/BIG? 1.0/sqrt(pnorm) : 0.0;
             for (i=npix; i--;)
@@ -554,6 +567,7 @@ void	pattern_create(patternstruct *pattern, profitstruct *profit)
               pnorm += dval*dval**pmodpix**pmodpix;
               }
             pix -= npix;
+            pnorm = norm*sbd*sbd;
             norm = (norm > 0.0? 1.0/sqrt(norm) : 1.0);
             *(normt++) = pnorm > 1.0/BIG? norm0/sqrt(pnorm) : 0.0;
             for (i=npix; i--;)
@@ -568,6 +582,7 @@ void	pattern_create(patternstruct *pattern, profitstruct *profit)
               pnorm += dval*dval**pmodpix**pmodpix;
               }
             pix -= npix;
+            pnorm = norm*sbd*sbd;
             norm = (norm > 0.0? 1.0/sqrt(norm) : 1.0);
             *(normt++) = pnorm > 1.0/BIG? norm0/sqrt(pnorm) : 0.0;
             for (i=npix; i--;)
