@@ -9,7 +9,7 @@
 *
 *	Contents:	Generate and handle image patterns for image fitting.
 *
-*	Last modify:	13/10/2008
+*	Last modify:	14/10/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -317,7 +317,7 @@ INPUT	Pointer to pattern structure.
 OUTPUT	Spiral index.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	13/10/2008
+VERSION	14/10/2008
  ***/
 float	pattern_spiral(patternstruct *pattern)
   {
@@ -339,7 +339,7 @@ float	pattern_spiral(patternstruct *pattern)
     w = y = 0.0;
     for (f=0; f<pattern->nfreq; f++)
       {
-      if (pattern->type == PATTERN_POLARFOURIER && !f)
+      if (pattern->type == PATTERN_POLARFOURIER && (!f || f==1 || f==3))
         continue;
       i = p*pattern->nfreq + f;
       w += pattern->mcoeff[i];

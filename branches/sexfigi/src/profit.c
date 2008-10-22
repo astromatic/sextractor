@@ -9,7 +9,7 @@
 *
 *	Contents:	Fit an arbitrary profile combination to a detection.
 *
-*	Last modify:	03/10/2008
+*	Last modify:	22/10/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -530,13 +530,13 @@ INPUT	Profile-fitting structure.
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	22/04/2008
+VERSION	22/10/2008
  ***/
 void	profit_psf(profitstruct *profit)
   {
    double	posin[2], posout[2], dnaxisn[2],
 		*pixout,
-		xcout,ycout, xcin,ycin, invpixstep, flux;
+		xcout,ycout, xcin,ycin, invpixstep, flux, norm;
    int		d,i;
 
   psf = profit->psf;
@@ -569,6 +569,16 @@ void	profit_psf(profitstruct *profit)
         break;
       else
         posout[d] = 1.0;
+    }
+
+/* Normalize PSF flux (just in case...) */
+  flux *= psf->pixstep*psf->pixstep;
+  if (fabs(flux) > 0.0)
+    {
+    norm = 1.0/flux;
+    pixout = profit->psfpix;
+    for (i=profit->modnaxisn[0]*profit->modnaxisn[1]; i--;)
+      *(pixout++) *= norm;
     }
 
   return;
