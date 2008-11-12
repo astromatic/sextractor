@@ -130,12 +130,6 @@ VERSION	01/10/2008
  ***/
 void	pattern_fit(patternstruct *pattern, profitstruct *profit)
   {
-/*
-catstruct *cat;
-char	name[MAXCHAR];
-static int number;
-int	nout;
-*/
    checkstruct	*check;
    double	*inpix, *doutpix1, *alpha,*beta,
 		dval, dprod;
@@ -212,6 +206,12 @@ int	nout;
     free(outpix);
     }
 /*
+{
+catstruct *cat;
+char	name[MAXCHAR];
+static int number;
+int	nout;
+
 nout = pattern->ncomp*pattern->nfreq;
 QCALLOC(outpix, PIXTYPE, ninpix*nout);
 outpix1 = outpix;
@@ -245,6 +245,7 @@ save_cat(cat, name);
 cat->tab->bodybuf=NULL;
 free_cat(&cat, 1);
 free(outpix);
+}
 */
   return;
   }

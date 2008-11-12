@@ -1,25 +1,40 @@
 Stephane Arnouts <Stephane.Arnouts@oamp.fr>
 	Suggestions and extensive testing
+Pierre Astier <pierre.astier@in2p3.fr>
+	Suggestions and bug fixes
 Eric Aubourg <Eric.Aubourg@cea.fr>
 	Hints about how to optimize a C code
+Anthony Baillard <baillard@iap.fr>
+	Testing of model-fitting
 Mark Calabretta <mcalabre@atnf.csiro.au>
 	SExtractor makes use of his nice WCS library
 Pascal Fouque <pfouque@eso.org>
 	Suggestions and testing
+Delphine Hardin <hardin@in2p3.fr>
+	Suggestions and bug fixes
 Benne Holwerda <holwerda@stsci.edu>
 	For making his cookbook available
 Jean-Paul Kneib <kneib@omp.fr>, Ian Smail <Ian.Smail@durham.ac.uk>
 	Suggestions and spreading the software back in the early days! 
 Ville Laurikari	<vl@iki.fi>
 	For his VL_PROG_CC_WARNINGS (modified to ACX_PROG_CC_OPTIM)
+Valerie de Lapparent <lapparen@iap.fr>
+	Suggestions and testing of model-fitting
 Chiara Marmo <marmo@iap.fr>
 	For providing the VOTable to HTML XSLT filter and testing.
+Joe Mohr <jmohr@illinois.edu>
+	Suggestions and testing
 Gerard Tissier <tissier@iap.fr>
 	Preliminary implementation of the VOTable output
 Joachim Wuttke <J.Wuttke@fz-juelich.de>
 	For his implementation of the Levenberg-Marquardt algorithm
 
-ESO
-	Financial support
+Institut d'Astrophysique de Paris
+University of Leiden
+European Southern Observatory
+University of Illinois
+	Financial and technical support
+
 Too many people to list
 	Help in discovering bugs or bringing suggestions
+

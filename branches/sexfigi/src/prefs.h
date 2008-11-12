@@ -9,7 +9,7 @@
 *
 *	Contents:	Keywords for the configuration file.
 *
-*	Last modify:	19/09/2008
+*	Last modify:	12/11/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -231,6 +231,7 @@ extern int	cistrcmp(char *cs, char *ct, int mode);
 
 extern void	dumpprefs(int state),
 		endprefs(void),
+		preprefs(void),
 		readprefs(char *filename,char **argkey,char **argval,int narg),
 		useprefs(void);
 #endif

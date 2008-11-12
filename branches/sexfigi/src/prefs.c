@@ -378,16 +378,14 @@ int     cistrcmp(char *cs, char *ct, int mode)
   }
 
 
-/********************************* useprefs **********************************/
+/********************************* preprefs **********************************/
 /*
-Update various structures according to the prefs.
+Set number of threads and endianity.
 */
-void	useprefs()
+void	preprefs()
 
   {
    unsigned short	ashort=1;
-   int			i, margin, naper;
-   char			*str;
 #ifdef USE_THREADS
    int			nproc;
 #endif
@@ -439,6 +437,18 @@ void	useprefs()
 	"this build of " BANNER " is single-threaded");
     }
 #endif
+  }
+
+
+/********************************* useprefs **********************************/
+/*
+Update various structures according to the prefs.
+*/
+void	useprefs()
+
+  {
+   int			i, margin, naper;
+   char			*str;
 
 /*-------------------------------- Images ----------------------------------*/
   prefs.dimage_flag = (prefs.nimage_name>1);

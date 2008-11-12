@@ -9,7 +9,7 @@
 *
 *	Contents:	Command-line parsing.
 *
-*	Last modify:	27/04/2008
+*	Last modify:	12/11/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -43,7 +43,6 @@ int	main(int argc, char *argv[])
    int		a, narg, nim, opt, opt2;
    char		**argkey, **argval, *str;
 
-//pattern_end(pattern_init(PATTERN_OCTOPOLE, 256));
   if (argc<2)
     {
     fprintf(OUTPUT, "\n         %s  version %s (%s)\n", BANNER,MYVERSION,DATE);
@@ -122,6 +121,7 @@ int	main(int argc, char *argv[])
     }
 
   readprefs(prefs.prefs_name, argkey, argval, narg);
+  preprefs();
 
   free(argkey);
   free(argval);
