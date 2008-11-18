@@ -9,7 +9,7 @@
 *
 *	Contents:	analyse(), endobject()...: measurements on detections.
 *
-*	Last modify:	19/12/2007
+*	Last modify:	18/11/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -691,6 +691,25 @@ void	endobject(picstruct *field, picstruct *dfield, picstruct *wfield,
 	obj->flag&OBJ_DOVERFLOW?'D':'_',
 	obj->flag&OBJ_OVERFLOW?'O':'_');
       writecat(n, objlist);
+      }
+    }
+  else
+    {
+/*-- Treatment of discarded detections */
+/*-- update segmentation map */
+    if ((check=prefs.check[CHECK_SEGMENTATION]))
+      {
+       ULONG	*pix;
+       ULONG	oldsnumber = obj->number;
+       int	dx,dx0,dy,dpix;
+
+      pix = (ULONG *)check->pix + check->width*obj->ymin + obj->xmin;
+      dx0 = obj->xmax-obj->xmin+1;
+      dpix = check->width-dx0;
+      for (dy=obj->ymax-obj->ymin+1; dy--; pix += dpix)
+        for (dx=dx0; dx--; pix++)
+          if (*pix==oldsnumber)
+            *pix = 0;
       }
     }
 

@@ -9,7 +9,7 @@
 *
 *	Contents:	global definitions.
 *
-*	Last modify:	17/09/2008
+*	Last modify:	14/11/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -49,7 +49,7 @@
 #define	MAXNASSOC		32		/* max. number of assoc. */
 #define	MAXPICSIZE		1048576		/* max. image size */
 #define	NISO			8		/* number of isophotes */
-#define	OUTPUT			stdout		/* where all msgs are sent */
+#define	OUTPUT			stderr		/* where all msgs are sent */
 #define PSF_NPSFMAX		9		/* Max number of fitted PSFs */
 
 #define	DEG			(PI/180.0)	/* 1 deg in radians */
