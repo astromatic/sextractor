@@ -9,7 +9,7 @@
 *
 *	Contents:	Generate and handle image patterns for image fitting.
 *
-*	Last modify:	14/10/2008
+*	Last modify:	19/11/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -368,7 +368,7 @@ INPUT	Pointer to pattern structure,
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	13/10/2008
+VERSION	19/11/2008
  ***/
 void	pattern_create(patternstruct *pattern, profitstruct *profit)
   {
@@ -380,14 +380,38 @@ void	pattern_create(patternstruct *pattern, profitstruct *profit)
 			ctheta,stheta, saspect,xscale,yscale, scale, aspect,
 			cd11,cd12,cd21,cd22, x1cout,x2cout, cmod,smod,
 			cnorm,snorm,norm,norm0, dval, det, rad, dnrad, rscale2,
-			cpnorm,spnorm,pnorm, rl,rl2,rh,rh2,r0,r02, sbd;
+			cpnorm,spnorm,pnorm, rl,rl2,rh,rh2,r0,r02, sbd,
+			bt, wb, omwb, bflux, margin2, dposangle;
    int			f,i,p, ix1,ix2, nrad, npix;
 
 /* Compute Profile CD matrix */
   aspect = fabs(*profit->paramlist[PARAM_DISK_ASPECT]);
   posangle = fmod_m90_p90(*profit->paramlist[PARAM_DISK_POSANG])*DEG;
   scale = fabs(*profit->paramlist[PARAM_DISK_SCALE]/profit->pixstep);
-  flux = fabs(*profit->paramlist[PARAM_DISK_FLUX]);
+  flux = fabs(*profit->paramlist[PARAM_DISK_FLUX])*1.67835;
+  bflux = fabs(*profit->paramlist[PARAM_SPHEROID_FLUX]);
+  bt = bflux / (bflux+flux);
+  if (bt > PATTERN_BTMAX)
+    {
+    wb = (bt - PATTERN_BTMAX) / (1.0 - PATTERN_BTMAX);
+    if (wb > 1.0)
+      wb = 1.0;
+    omwb = 1.0 - wb;
+    flux = wb*bflux + omwb*flux;
+    scale = omwb*scale
+	+ wb*fabs(*profit->paramlist[PARAM_SPHEROID_REFF]/profit->pixstep)*1.5;
+    aspect = omwb*aspect
+	+ wb*fabs(*profit->paramlist[PARAM_SPHEROID_ASPECT]);
+    posangle /= DEG;
+    dposangle = fmod_m90_p90(*profit->paramlist[PARAM_SPHEROID_POSANG])
+		- posangle;
+    if (dposangle > 90.0)
+      dposangle -= 180.0;
+    else if (dposangle < -90.0)
+      dposangle += 180.0;
+    posangle = fmod_m90_p90(posangle + wb*dposangle)*DEG;
+    }
+
   ctheta = cos(posangle);
   stheta = sin(posangle);
   saspect = fabs(aspect);
@@ -400,20 +424,26 @@ void	pattern_create(patternstruct *pattern, profitstruct *profit)
  
   x1cout = (double)(pattern->size[0]/2);
   x2cout = (double)(pattern->size[1]/2);
+
 /* Determinant of the change of coordinate system */
   det = xscale*yscale;
-  sbd = flux*det/(2.0*PI);
+  sbd = fabs(flux)*det/(2.0*PI);
   r2min = det/10.0;
 /* Stay within an ellipse contained in the pattern raster, both in x and y */
-  r2max = x1cout*x1cout * det*det / (cd12*cd12+cd22*cd22);
-  if (r2max > (dval = x2cout*x2cout * det*det / (cd21*cd21+cd11*cd11)))
+  r2max = PATTERN_SCALE*PATTERN_SCALE;
+  margin2 = (1.0-PATTERN_MARGIN)*(1.0-PATTERN_MARGIN);
+  if (r2max > (dval = margin2
+		* x1cout*x1cout * det*det / (cd12*cd12+cd22*cd22)))
+    r2max = dval;
+  if (r2max > (dval = margin2
+		* x2cout*x2cout * det*det / (cd21*cd21+cd11*cd11)))
     r2max = dval;
 /* Set the limit of the pattern extent */
 //  rad = 4.0*profit->obj->a*xscale;
 /* The pattern limit does not exceed 90% of the mapped ellipse "radius" */
 //  if (rad*rad > 0.9*0.9*r2max)
   nrad = pattern->ncomp;
-  pattern->rmax = rad = 0.8*sqrt(r2max);/* Keep a margin using a fudge factor */
+  pattern->rmax = rad = sqrt(r2max);/* Keep a margin using a fudge factor */
   if (!nrad)
       error(EXIT_FAILURE,
 		"*Error*: insufficient number of vector elements",

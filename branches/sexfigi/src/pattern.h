@@ -9,7 +9,7 @@
 *
 *	Contents:	Include file for pattern.c.
 *
-*	Last modify:	03/10/2008
+*	Last modify:	19/11/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -27,13 +27,14 @@
 
 #define	PATTERN_FMAX	4	/* Maximum pattern angular frequency */
 #define	PATTERN_NCOMP	16	/* Default number of components (radii) */
-#define	PATTERN_RADIUS	1.0	/* Pattern radius over half the PATTERN_SIZE */
-#define	PATTERN_SCALE	(0.2*PATTERN_RADIUS)	/* Pattern scale */
+#define	PATTERN_SCALE	5.0	/* Pattern scale in units of r_eff */
+#define	PATTERN_MARGIN	0.2	/* Pattern margin in fractions of radius */
+#define	PATTERN_BTMAX	0.6	/* Maximum B/T for pure disk scaling */
 
 /* NOTES:
 One must have:	PATTERN_SIZE > 1
-		PATTERN_RADIUS > 0.0
 		PATTERN_SCALE > 0.0
+		PATTERN_BTMAX < 1.0
 */
 
 /*--------------------------------- typedefs --------------------------------*/
