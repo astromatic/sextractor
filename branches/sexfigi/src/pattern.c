@@ -39,6 +39,8 @@
 #include	"pattern.h"
 #include	"profit.h"
 
+static double	psf_laguerre(double x, int p, int q);
+
 /*------------------------------- variables ---------------------------------*/
 
 /****** pattern_init ***********************************************************
@@ -51,7 +53,7 @@ INPUT	Pointer to a profit structure,
 OUTPUT	Pointer to the new pattern structure.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	02/10/2008
+VERSION	19/11/2008
  ***/
 patternstruct	*pattern_init(profitstruct *profit, pattypenum ptype, int ncomp)
   {
@@ -71,25 +73,37 @@ patternstruct	*pattern_init(profitstruct *profit, pattypenum ptype, int ncomp)
     case PATTERN_OCTOPOLE:
       pattern->nmodes = 2;
       pattern->nfreq = 1;
+      pattern->size[2] = ncomp*pattern->nmodes;
       break;
     case PATTERN_POLARFOURIER:
       pattern->nfreq = PATTERN_FMAX+1;
       pattern->nmodes = 2*PATTERN_FMAX+1;
+      pattern->size[2] = ncomp*pattern->nmodes;
+      break;
+    case PATTERN_POLARSHAPELETS:
+      pattern->nfreq = 0;
+      pattern->nmodes = 0;
+      pattern->size[2] = (ncomp+1)*(ncomp+2)/2;
       break;
     default:
       error(EXIT_FAILURE, "*Internal Error*: Unknown Pattern type","");
     }
 
-  pattern->size[2] = ncomp*pattern->nmodes;
   ninpix = pattern->size[0]*pattern->size[1] * pattern->size[2];
   noutpix = profit->objnaxisn[0]*profit->objnaxisn[1] * pattern->size[2];
+  QMALLOC(pattern->coeff, double, pattern->size[2]);
   QMALLOC(pattern->norm, double, pattern->size[2]);
-  QMALLOC(pattern->r, double, pattern->ncomp);
   QMALLOC(pattern->modpix, double, ninpix);
   QMALLOC(pattern->lmodpix, PIXTYPE, noutpix);
-  QMALLOC(pattern->coeff, double, pattern->size[2]);
-  QMALLOC(pattern->mcoeff, double, ncomp*pattern->nfreq);
-  QMALLOC(pattern->acoeff, double, ncomp*pattern->nfreq);
+  if (pattern->ncomp)
+    {
+    QMALLOC(pattern->r, double, pattern->ncomp);
+    }
+  if (pattern->nfreq)
+    {
+    QMALLOC(pattern->mcoeff, double, ncomp*pattern->nfreq);
+    QMALLOC(pattern->acoeff, double, ncomp*pattern->nfreq);
+    }
 
   return pattern;
   }  
@@ -205,14 +219,15 @@ void	pattern_fit(patternstruct *pattern, profitstruct *profit)
 		profit->ix, profit->iy, 1.0);
     free(outpix);
     }
-/*
+
 {
 catstruct *cat;
 char	name[MAXCHAR];
 static int number;
 int	nout;
 
-nout = pattern->ncomp*pattern->nfreq;
+//nout = pattern->ncomp*pattern->nfreq;
+nout = nvec;
 QCALLOC(outpix, PIXTYPE, ninpix*nout);
 outpix1 = outpix;
 doutpix1 = pattern->modpix;
@@ -225,6 +240,9 @@ if (pattern->type==PATTERN_POLARFOURIER)
   {
   if ((p%pattern->nmodes)%2)
     outpix1 -= ninpix;
+  }
+else if (pattern->type==PATTERN_POLARSHAPELETS)
+  {
   }
 else if (!(p%2))
   outpix1 -= noutpix;
@@ -246,7 +264,7 @@ cat->tab->bodybuf=NULL;
 free_cat(&cat, 1);
 free(outpix);
 }
-*/
+
   return;
   }
 
@@ -266,6 +284,9 @@ void	pattern_compmodarg(patternstruct *pattern, profitstruct *profit)
    double	*coeff,*mcoeff,*acoeff, *normt,
 		arg,argo,darg, ima,rea, norm, fluxfac;
    int		f,p, nfreq;
+
+  if (pattern->type == PATTERN_POLARFOURIER)
+    return;
 
   coeff = pattern->coeff;
   mcoeff = pattern->mcoeff;
@@ -384,6 +405,10 @@ void	pattern_create(patternstruct *pattern, profitstruct *profit)
 			bt, wb, omwb, bflux, margin2, dposangle;
    int			f,i,p, ix1,ix2, nrad, npix;
 
+   double		*fr2,*fr2t,*fexpr2,*fexpr2t,*ftheta,*fthetat,
+			dm,fac, beta, invbeta2;
+   int			k, m,n, nmax, kmax,hnmm;
+
 /* Compute Profile CD matrix */
   aspect = fabs(*profit->paramlist[PARAM_DISK_ASPECT]);
   posangle = fmod_m90_p90(*profit->paramlist[PARAM_DISK_POSANG])*DEG;
@@ -443,7 +468,7 @@ void	pattern_create(patternstruct *pattern, profitstruct *profit)
 /* The pattern limit does not exceed 90% of the mapped ellipse "radius" */
 //  if (rad*rad > 0.9*0.9*r2max)
   nrad = pattern->ncomp;
-  pattern->rmax = rad = sqrt(r2max);/* Keep a margin using a fudge factor */
+  pattern->rmax = rad = sqrt(r2max);
   if (!nrad)
       error(EXIT_FAILURE,
 		"*Error*: insufficient number of vector elements",
@@ -625,11 +650,141 @@ void	pattern_create(patternstruct *pattern, profitstruct *profit)
       for (f=0; f<PATTERN_FMAX; f++)
         free(scbuf[f]);
       break;
+
+    case PATTERN_POLARSHAPELETS:
+      nmax = pattern->ncomp;
+      kmax = (nmax+1)*(nmax+2)/2;
+      beta = 0.714;
+
+      invbeta2 = 1.0/(beta*beta);
+
+/*---- Precompute some slow functions */
+      QMALLOC(fr2, double, npix);
+      QMALLOC(fexpr2, double, npix);
+      QMALLOC(ftheta, double, npix);
+      fr2t = fr2;
+      fexpr2t = fexpr2;
+      fthetat = ftheta;
+      x1 = -x1cout;
+      x2 = -x2cout;       
+      for (ix2=pattern->size[1]; ix2--; x2+=1.0)
+        {
+        x1t = cd12*x2 + cd11*x1;
+        x2t = cd22*x2 + cd21*x1;
+        for (ix1=pattern->size[0]; ix1--;)
+          {      
+          *(fr2t++) = r2 = (x1t*x1t+x2t*x2t)*invbeta2;
+          *(fexpr2t++) = exp(-r2/2.0);
+          *(fthetat++) = atan2(x2t,x1t);
+          x1t += cd11;
+          x2t += cd21;
+          }
+        }
+
+      pix = pattern->modpix;
+      for (n=0; n<=nmax; n++)
+        {
+        for (m=n%2; m<=n; m+=2)
+          {
+          dm = (double)m;
+/*-------- Compute ((n+m)/2)!/((n-m)/2)! */
+          hnmm = (n-m)/2;
+          fac = 1.0;
+//          for (p=(n+m)/2; p>=hnmm; p--)
+//            if (p)
+//              fac *= (double)p;
+//          fac = sqrt(1.0/(PI*fac))/beta;
+          if ((hnmm%2))
+            fac = -fac;
+          fr2t = fr2;
+          fexpr2t = fexpr2;
+          fthetat = ftheta;
+          norm = 0.0;
+          for (i=npix; i--;fr2t++)
+            {
+            *(pix++) = dval = fac*pow(*fr2t, dm/2.0)
+			*psf_laguerre(*fr2t, hnmm, m)
+			**(fexpr2t++)*cos(dm**(fthetat++));
+            norm += dval*dval;
+            }
+          pix -= npix;
+          pnorm = norm*sbd*sbd;
+          norm = (norm > 0.0? 1.0/sqrt(norm) : 1.0);
+          *(normt++) = pnorm > 1.0/BIG? norm0/sqrt(pnorm) : 0.0;
+          for (i=npix; i--;)
+            *(pix++) *= norm;
+          if (m!=0)
+            {
+            fr2t = fr2;
+            fexpr2t = fexpr2;
+            fthetat = ftheta;
+            norm = 0.0;
+            for (i=npix; i--; pmodpix++)
+              {
+              *(pix++) = dval = fac*pow(*fr2t, dm/2.0)
+			*psf_laguerre(*fr2t, hnmm, m)
+			**(fexpr2t++)*sin(dm**(fthetat++));
+              norm += dval*dval;
+              }
+            pix -= npix;
+            pnorm = norm*sbd*sbd;
+            norm = (norm > 0.0? 1.0/sqrt(norm) : 1.0);
+            *(normt++) = pnorm > 1.0/BIG? norm0/sqrt(pnorm) : 0.0;
+            for (i=npix; i--;)
+              *(pix++) *= norm;
+            }
+          }
+        }
+
+      free(fr2);
+      free(fexpr2);
+      free(ftheta);
+      break;
     default:
       error(EXIT_FAILURE, "*Internal Error*: Unknown Pattern type","");
     }
 
   return;
   }
+
+
+/****** psf_laguerre **********************************************************
+PROTO	double	psf_laguerre(double x, int p, int q)
+PURPOSE	Return Laguerre polynomial value.
+INPUT	x,
+	p,
+	q.
+OUTPUT  Value of the Laguerre polynomial.
+NOTES   -.
+AUTHOR  E. Bertin (IAP)
+VERSION 12/11/2007
+ ***/
+static double	psf_laguerre(double x, int p, int q)
+  {
+   double	dn,dq, lpm1,lpm2, l;
+   int		n;
+
+  dq = q - 1.0;
+  if (p==0)
+    return 1.0;
+  else if (p==1)
+    return (2.0 - x + dq);
+  else
+    {
+    l = 0.0;
+    lpm2 = 1.0;
+    lpm1 = 2.0 - x + dq;
+    dn = 2.0;
+    for (n=p-1; n--; dn+=1.0)
+      {
+      l = (2.0+(dq-x)/dn)*lpm1 - (1.0+dq/dn)*lpm2;
+      lpm2 = lpm1;
+      lpm1 = l;
+      }
+    }
+
+  return l;
+  }
+
 
 

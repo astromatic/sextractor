@@ -30,6 +30,7 @@
 #define	PATTERN_SCALE	5.0	/* Pattern scale in units of r_eff */
 #define	PATTERN_MARGIN	0.2	/* Pattern margin in fractions of radius */
 #define	PATTERN_BTMAX	0.6	/* Maximum B/T for pure disk scaling */
+#define GAUSS_LAG_OSAMP	3	/* Gauss-Laguerre oversampling factor */
 
 /* NOTES:
 One must have:	PATTERN_SIZE > 1
@@ -40,7 +41,7 @@ One must have:	PATTERN_SIZE > 1
 /*--------------------------------- typedefs --------------------------------*/
 
 typedef enum		{PATTERN_QUADRUPOLE, PATTERN_OCTOPOLE,
-			PATTERN_POLARFOURIER,
+			PATTERN_POLARFOURIER, PATTERN_POLARSHAPELETS,
 			PATTERN_NPATTERNS}
 				pattypenum; /* Pattern code */
 
