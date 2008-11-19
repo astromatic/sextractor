@@ -176,7 +176,7 @@ void	pattern_fit(patternstruct *pattern, profitstruct *profit)
         doutpix1++;
         }
       }
-    alpha[p*(nvec+1)] += 1.0;
+    alpha[p*(nvec+1)] += 0.2;
     beta[p] = dval;
     inpix += ninpix;
     outpix += noutpix;
