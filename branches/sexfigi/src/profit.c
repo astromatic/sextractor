@@ -9,7 +9,7 @@
 *
 *	Contents:	Fit an arbitrary profile combination to a detection.
 *
-*	Last modify:	22/10/2008
+*	Last modify:	20/11/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -168,7 +168,7 @@ OUTPUT	Pointer to an allocated fit structure (containing details about the
 	fit).
 NOTES	It is a modified version of the lm_minimize() of lmfit.
 AUTHOR	E. Bertin (IAP)
-VERSION	25/09/2008
+VERSION	20/11/2008
  ***/
 void	profit_fit(profitstruct *profit,
 		picstruct *field, picstruct *wfield,
@@ -425,7 +425,7 @@ the_gal++;
     if (prefs.pattern_flag)
       {
       profit_residuals(profit,field,wfield,profit->param,profit->resi);
-      pattern = pattern_init(profit, PATTERN_POLARFOURIER,
+      pattern = pattern_init(profit, prefs.pattern_type,
 		prefs.prof_disk_patternncomp);
       pattern_fit(pattern, profit);
       if (FLAG(obj2.prof_disk_patternspiral))

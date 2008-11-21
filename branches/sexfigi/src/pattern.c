@@ -9,7 +9,7 @@
 *
 *	Contents:	Generate and handle image patterns for image fitting.
 *
-*	Last modify:	19/11/2008
+*	Last modify:	20/11/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -277,15 +277,15 @@ INPUT	Pointer to pattern structure,
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	13/10/2008
+VERSION	20/11/2008
  ***/
 void	pattern_compmodarg(patternstruct *pattern, profitstruct *profit)
   {
    double	*coeff,*mcoeff,*acoeff, *normt,
-		arg,argo,darg, ima,rea, norm, fluxfac;
+		arg,argo,darg, ima,rea;
    int		f,p, nfreq;
 
-  if (pattern->type == PATTERN_POLARFOURIER)
+  if (pattern->type == PATTERN_POLARSHAPELETS)
     return;
 
   coeff = pattern->coeff;
@@ -389,25 +389,25 @@ INPUT	Pointer to pattern structure,
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	19/11/2008
+VERSION	20/11/2008
  ***/
 void	pattern_create(patternstruct *pattern, profitstruct *profit)
   {
    double		*scbuf[PATTERN_FMAX],*scpix[PATTERN_FMAX],
 			*scpixt,*cpix,*spix, *pix, *r2buf,*r2pix,*modpix,
-			*normt, *rt,*pmodpix,
-			x1,x2, x1t,x2t, r,r2,r2min,r2max, lr, lr0, 
+			*normt, *pmodpix,
+			x1,x2, x1t,x2t, r,r2,r2min,r2max,
 			mod,ang,ang0, cosang,sinang, angcoeff, posangle,flux,
 			ctheta,stheta, saspect,xscale,yscale, scale, aspect,
 			cd11,cd12,cd21,cd22, x1cout,x2cout, cmod,smod,
-			cnorm,snorm,norm,norm0, dval, det, rad, dnrad, rscale2,
+			cnorm,snorm,norm,norm0, dval, det, rad, dnrad,
 			cpnorm,spnorm,pnorm, rl,rl2,rh,rh2,r0,r02, sbd,
 			bt, wb, omwb, bflux, margin2, dposangle;
    int			f,i,p, ix1,ix2, nrad, npix;
 
    double		*fr2,*fr2t,*fexpr2,*fexpr2t,*ftheta,*fthetat,
 			dm,fac, beta, invbeta2;
-   int			k, m,n, nmax, kmax,hnmm;
+   int			m,n, nmax, kmax,hnmm;
 
 /* Compute Profile CD matrix */
   aspect = fabs(*profit->paramlist[PARAM_DISK_ASPECT]);
@@ -654,7 +654,7 @@ void	pattern_create(patternstruct *pattern, profitstruct *profit)
     case PATTERN_POLARSHAPELETS:
       nmax = pattern->ncomp;
       kmax = (nmax+1)*(nmax+2)/2;
-      beta = 0.714;
+      beta = 0.667;
 
       invbeta2 = 1.0/(beta*beta);
 
@@ -719,7 +719,7 @@ void	pattern_create(patternstruct *pattern, profitstruct *profit)
             fexpr2t = fexpr2;
             fthetat = ftheta;
             norm = 0.0;
-            for (i=npix; i--; pmodpix++)
+            for (i=npix; i--; fr2t++)
               {
               *(pix++) = dval = fac*pow(*fr2t, dm/2.0)
 			*psf_laguerre(*fr2t, hnmm, m)

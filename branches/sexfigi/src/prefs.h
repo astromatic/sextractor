@@ -9,7 +9,7 @@
 *
 *	Contents:	Keywords for the configuration file.
 *
-*	Last modify:	12/11/2008
+*	Last modify:	20/11/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -17,6 +17,10 @@
 
 #ifndef _PROFIT_H_
 #include        "profit.h"
+#endif
+
+#ifndef _PATTERN_H_
+#include        "pattern.h"
 #endif
 
 #ifndef _PREFS_H_
@@ -217,6 +221,8 @@ typedef struct
   int		prof_disk_patternmodncomp;		/* nb of params */
   int		prof_disk_patternargvectorsize;		/* nb of params */
   int		prof_disk_patternargncomp;		/* nb of params */
+/*----- Pattern-fitting */
+  pattypenum	pattern_type;				/* Disk pattern type */
 /*----- customize */
   int		fitsunsigned_flag;			/* Force unsign FITS */
   int		next;			     /* Number of extensions in file */

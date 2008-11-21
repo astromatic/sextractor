@@ -9,7 +9,7 @@
 *
 *	Contents:	main program.
 *
-*	Last modify:	19/09/2008
+*	Last modify:	20/11/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -121,7 +121,7 @@ void	makeit()
         npat = prefs.prof_disk_patternargvectorsize;
 /*---- Do a copy of the original number of pattern components */
       prefs.prof_disk_patternncomp = npat;
-      pattern = pattern_init(theprofit, PATTERN_POLARFOURIER, npat);
+      pattern = pattern_init(theprofit, prefs.pattern_type, npat);
       if (FLAG(obj2.prof_disk_patternvector))
         {
         npat = pattern->size[2];
