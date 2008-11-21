@@ -219,14 +219,13 @@ void	pattern_fit(patternstruct *pattern, profitstruct *profit)
 		profit->ix, profit->iy, 1.0);
     free(outpix);
     }
-
+/*
 {
 catstruct *cat;
 char	name[MAXCHAR];
 static int number;
 int	nout;
 
-//nout = pattern->ncomp*pattern->nfreq;
 nout = nvec;
 QCALLOC(outpix, PIXTYPE, ninpix*nout);
 outpix1 = outpix;
@@ -264,7 +263,7 @@ cat->tab->bodybuf=NULL;
 free_cat(&cat, 1);
 free(outpix);
 }
-
+*/
   return;
   }
 
