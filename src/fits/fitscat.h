@@ -9,7 +9,7 @@
 *
 *	Contents:	Simplified versin of the LDACTools: main include file
 *
-*	Last modify:	10/07/2006
+*	Last modify:	10/10/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -22,7 +22,7 @@
 #endif
 
 #define	MAXCHARS	256	/* max. number of characters */
-#define WARNING_NMAX	100	/* max. number of recorded warnings */
+#define WARNING_NMAX	1000	/* max. number of recorded warnings */
 
 /*---------------------------- return messages ------------------------------*/
 
@@ -75,6 +75,7 @@ typedef enum		{SHOW_ASCII, SHOW_SKYCAT}
 				output_type;    /* Type of output */
 
 typedef	float		PIXTYPE;		/* Pixel type */
+typedef	unsigned int	FLAGTYPE;		/* Flag type */
 
 #ifdef	HAVE_UNSIGNED_LONG_LONG
 typedef	unsigned long long	KINGSIZE_T;	/* for large sizes */
@@ -212,6 +213,7 @@ extern void	add_cleanupfilename(char *filename),
 			int nkeys, unsigned char *mask),
 		read_basic(tabstruct *tab),
 		read_body(tabstruct *tab, PIXTYPE *ptr, size_t size),
+		read_ibody(tabstruct *tab, FLAGTYPE *ptr, size_t size),
 		readbasic_head(tabstruct *tab),
 		remove_cleanupfilename(char *filename),
 		save_cat(catstruct *cat, char *filename),
@@ -282,6 +284,7 @@ extern int	about_cat(catstruct *cat, FILE *stream),
 				long pos),
 		remove_key(tabstruct *tab, char *keyname),
 		remove_keys(tabstruct *tab),
+                removekeywordfrom_head(tabstruct *tab, char *keyword),
 		remove_tab(catstruct *cat, char *tabname, int seg),
 		remove_tabs(catstruct *cat),
 		save_head(catstruct *cat, tabstruct *tab),

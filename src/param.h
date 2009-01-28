@@ -9,7 +9,7 @@
 *
 *	Contents:	parameter list for catalog data.
 *
-*	Last modify:	28/09/2006
+*	Last modify:	18/05/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -101,19 +101,6 @@ keystruct	objkey[] = {
 	"phot.mag", "mag"},
   {"MAGERR_BEST", "RMS error for MAG_BEST",
 	&outobj2.magerr_best, H_FLOAT, T_FLOAT, "%8.4f", "mag",
-	"stat.stdev;phot.mag", "mag"},
-
-  {"FLUX_PROFILE", "Flux weighted by the FILTERed profile",
-	&outobj2.flux_prof, H_FLOAT, T_FLOAT, "%12.7g", "count"
-	"phot.flux", "ct"},
-  {"FLUXERR_PROFILE", "RMS error for PROFILE flux",
-	&outobj2.fluxerr_prof, H_FLOAT, T_FLOAT, "%12.7g", "count",
-	"stat.stdev;phot.flux", "ct"},
-  {"MAG_PROFILE", "Magnitude weighted by the FILTERed profile",
-	&outobj2.mag_prof, H_FLOAT, T_FLOAT, "%8.4f", "mag",
-	"phot.mag", "mag"},
-  {"MAGERR_PROFILE", "RMS error for MAG_PROFILE",
-	&outobj2.magerr_prof, H_FLOAT, T_FLOAT, "%8.4f", "mag",
 	"stat.stdev;phot.mag", "mag"},
 
   {"FLUX_WIN", "Gaussian-weighted flux",
@@ -413,7 +400,7 @@ keystruct	objkey[] = {
 	"src.impactParam;pos.errorEllipse", "deg-2"},
 
   {"ERRA_IMAGE", "RMS position error along major axis",
-	&outobj2.poserr_a, H_FLOAT, T_FLOAT, "%8.4f", "pixel"
+	&outobj2.poserr_a, H_FLOAT, T_FLOAT, "%8.4f", "pixel",
 	"stat.stdev;stat.max;pos.errorEllipse;instr.det;meta.main", "pix"},
   {"ERRB_IMAGE", "RMS position error along minor axis",
 	&outobj2.poserr_b, H_FLOAT, T_FLOAT, "%8.4f", "pixel",
@@ -473,7 +460,8 @@ keystruct	objkey[] = {
 	"pos.eq.ra", "deg"},
   {"DELTAWIN_B1950", "Windowed declination (B1950)",
 	&outobj2.winpos_delta1950, H_FLOAT, T_DOUBLE, "%+11.7f", "deg",
-	"pos.eq.deg", "deg"},
+	"pos.eq.dec", "deg"},
+
   {"X2WIN_IMAGE", "Windowed variance along x",
 	&outobj2.win_mx2, H_EXPO, T_DOUBLE, "%15.10e", "pixel**2",
  	"src.impactParam;instr.det", "pix2"},
@@ -865,9 +853,9 @@ keystruct	objkey[] = {
   {"PC", "Principal components",
 	&outobj2.vector_pc, H_FLOAT, T_FLOAT, "%15.10e", "",
 	"src.morph.param", "", 1, &prefs.pc_vectorsize},
-/*
-	{"RETINOUT", T_FLOAT, &outobj.retinout, "%13g "},
-*/
+
+#include "paramprofit.h"
+
   {""}
   };
 

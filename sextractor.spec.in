@@ -8,10 +8,12 @@ Version: %{version}
 Release: %{release}
 Source0: ftp://ftp.iap.fr/pub/from_users/bertin/sextractor/%{name}-%{version}.tar.gz
 URL: http://terapix.iap.fr/soft/%{name}
-License: LGPL
+License: GPLv3+
 Group: Sciences/Astronomy
 BuildRoot: %{_tmppath}/%{name}-buildroot
-Prefix: %{_prefix}
+BuildRequires: pkgconfig
+BuildRequires: fftw-devel >= 3.1
+BuildRequires: atlas-devel >= 3.6.0
 
 %description
 SExtractor stands for ``Source Extractor'': a software for making catalog of sources from astronomical images.
@@ -20,26 +22,28 @@ SExtractor stands for ``Source Extractor'': a software for making catalog of sou
 %setup -q
 
 %build
-if test "$GCCFLAGS"; then
-./configure --enable-static --prefix=$RPM_BUILD_ROOT/usr/local/ --mandir=$RPM_BUILD_ROOT/usr/local/man/
-make CFLAGS="$GCCFLAGS"
+if test "$USE_ICC"; then
+%configure --enable-icc
 else
-./configure --prefix=$RPM_BUILD_ROOT/usr/local/ --mandir=$RPM_BUILD_ROOT/usr/local/man/
-make
+%configure
 fi
+make %{?_smp_mflags}
 
 %install
-make install
+rm -rf $RPM_BUILD_ROOT
+make install DESTDIR=$RPM_BUILD_ROOT
 
 %clean
 rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(-,root,root)
-/usr/local/bin/sex
-/usr/local/man/man1/sex.1
-/usr/local/man/manx/sex.x
 %doc AUTHORS BUGS ChangeLog COPYING HISTORY INSTALL README THANKS doc/README.DOC doc/sextractor.pdf
+%{_bindir}/sex
+%{_bindir}/ldactoasc
+%{_mandir}/man1/sex.1*
+%{_mandir}/manx/sex.x*
+%{_datadir}/@PACKAGE_NAME@
 
 %changelog
 * @DATE2@ @PACKAGER@ <@PACKAGE_BUGREPORT@>

@@ -9,7 +9,7 @@
 *
 *	Contents:	Make growth curves.
 *
-*	Last modify:	15/02/2005
+*	Last modify:	19/12/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -103,7 +103,7 @@ void	makeavergrowth(picstruct *field, picstruct *wfield, objstruct *obj)
   pflag = (prefs.detect_type==PHOTO)? 1:0;
   corrflag = (prefs.mask_type==MASK_CORRECT);
   var = backnoise2 = field->backsig*field->backsig;
-  gain = prefs.gain;
+  gain = field->gain;
 
 /* Integration radius */
   rlim = GROWTH_NSIG*obj->a;

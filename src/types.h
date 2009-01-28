@@ -9,7 +9,7 @@
 *
 *	Contents:	global type definitions.
 *
-*	Last modify:	12/01/2006
+*	Last modify:	25/09/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -18,6 +18,9 @@
 
 #ifndef _FITSCAT_H_
 #include "fits/fitscat.h"
+#endif
+#ifndef _FITSWCS_H_
+#include "fitswcs.h"
 #endif
 
 /*-------------------------------- flags ------------------------------------*/
@@ -45,7 +48,6 @@
 /*--------------------------------- typedefs --------------------------------*/
 typedef	unsigned char	BYTE;			/* a byte */
 typedef	unsigned short	USHORT;			/* 0 to 65535 integers */
-typedef unsigned int	FLAGTYPE;		/* flag type */
 typedef	char		pliststruct;		/* Dummy type for plist */
 
 typedef	int		LONG;
@@ -60,7 +62,9 @@ typedef  enum {CHECK_NONE, CHECK_IDENTICAL, CHECK_BACKGROUND,
 	CHECK_SEGMENTATION, CHECK_ASSOC, CHECK_SUBOBJECTS,
 	CHECK_SUBPSFPROTOS, CHECK_PSFPROTOS,
 	CHECK_SUBPCPROTOS, CHECK_PCPROTOS, CHECK_PCOPROTOS,
-		CHECK_MAPSOM}	checkenum;
+	CHECK_MAPSOM, CHECK_SUBPROFILES, CHECK_PROFILES, CHECK_PATTERNS,
+	MAXCHECK}
+		checkenum;
 	/* CHECK_IMAGE type */
 
 typedef  enum {WEIGHT_NONE, WEIGHT_FROMBACK, WEIGHT_FROMRMSMAP,
@@ -81,8 +85,6 @@ typedef struct
   float		dflux;				/* integrated det. flux */
   float		flux;				/* integrated mes. flux */
   float		fluxerr;			/* integrated variance */
-  float		flux_prof;			/* PROFILE flux*/
-  float		fluxerr_prof;			/* PROFILE flux variance */
   PIXTYPE	fdpeak;				/* peak intensity (ADU) */
   PIXTYPE	dpeak;				/* peak intensity (ADU) */
   PIXTYPE	peak;				/* peak intensity (ADU) */
@@ -144,16 +146,13 @@ typedef struct
   float		*fluxerr_aper;			/* APER flux error vector  */
   float		*mag_aper;			/* APER magnitude vector */
   float		*magerr_aper;			/* APER mag error vector */
-  float		flux_prof;			/* PROFILE flux*/
-  float		fluxerr_prof;			/* PROFILE flux error */
-  float		mag_prof;			/* PROFILE magnitude */
-  float		magerr_prof;			/* PROFILE magnitude error */
   float		flux_win;			/* WINdowed flux*/
   float		fluxerr_win;			/* WINdowed flux error */
   float		mag_win;			/* WINdowed magnitude */
   float		magerr_win;			/* WINdowed magnitude error */
 /* ---- astrometric data */
   double	posx,posy;			/* "FITS" pos. in pixels */
+  double	jacob[NAXIS*NAXIS];		/* Local deproject. Jacobian */
   double	mamaposx,mamaposy;		/* "MAMA" pos. in pixels */
   float		sposx,sposy;			/* single precision pos. */
   float		poserr_a, poserr_b,
@@ -179,8 +178,10 @@ typedef struct
   double	peakalpha1950, peakdelta1950;	/* B1950 for brightest pix */
   double	alpha2000, delta2000;		/* J2000 alpha, delta */
   float		theta2000;			/* J2000 position angle E/N */
+  double	dtheta2000;			/* North J2000 - native angle*/
   double	alpha1950, delta1950;		/* B1950 alpha, delta */
   float		theta1950;			/* B1950 position angle E/N */
+  double	dtheta1950;			/* North B1950 - native angle*/
   float		aw, bw;				/* WORLD ellipse size */
   float		thetaw;				/* WORLD position angle */
   float		cxxw,cyyw,cxyw;			/* WORLD ellipse parameters */
@@ -298,6 +299,132 @@ typedef struct
   float		fluxerr_galfit;			/* RMS error on galfit flux */
   float		mag_galfit;			/* Galaxy tot. mag from fit */
   float		magerr_galfit;			/* RMS error on galfit mag */
+/* ---- Profile-fitting */
+  float		*prof_vector;			/* Profile parameters */
+  float		*prof_errvector;		/* Profile parameter errors */
+  float		prof_chi2;			/* Reduced chi2 */
+  BYTE		prof_flag;			/* Model-fitting flags */
+  BYTE		prof_flagw;			/* Model-fitting WORLD flag */
+  short		prof_niter;			/* # of model-fitting iter. */
+  float		flux_prof;			/* Flux from model-fitting */
+  float		fluxerr_prof;			/* RMS error on model flux */
+  float		mag_prof;			/* Mag from model-fitting */
+  float		magerr_prof;			/* RMS mag from model-fitting */
+  float		x_prof, y_prof;			/* Coords from model-fitting*/
+  double	xw_prof, yw_prof;		/* WORLD coords */
+  double	alphas_prof, deltas_prof;	/* native alpha, delta */
+  double	alpha2000_prof, delta2000_prof;	/* J2000 alpha, delta */
+  double	alpha1950_prof, delta1950_prof;	/* B1950 alpha, delta */
+  double	poserrmx2_prof, poserrmy2_prof,
+		poserrmxy_prof;			/* Error ellips moments */
+  float		poserra_prof, poserrb_prof,
+		poserrtheta_prof;		/* Error ellips parameters */
+  float		poserrcxx_prof, poserrcyy_prof,
+		poserrcxy_prof;			/* pos. error ellipse */
+  double	poserrmx2w_prof, poserrmy2w_prof,
+		poserrmxyw_prof;		/* WORLD error moments */
+  float		poserraw_prof, poserrbw_prof,
+		poserrthetaw_prof;		/* WORLD error parameters */
+  float		poserrthetas_prof;		/* native error pos. angle */
+  float		poserrtheta2000_prof;		/* J2000 error pos. angle */
+  float		poserrtheta1950_prof;		/* B1950 error pos. angle */
+  float		poserrcxxw_prof, poserrcyyw_prof,
+		poserrcxyw_prof;		/* WORLD error ellipse */
+  double	prof_mx2, prof_my2, prof_mxy;	/* Profile model moments */
+  double	prof_mx2w, prof_my2w, prof_mxyw;/* WORLD profile model moments*/
+  float		prof_eps1, prof_eps2;		/* Profile model ellip.vector */
+  float		prof_e1, prof_e2;		/* Profile model ellip.vector */
+  float		prof_offset_flux;		/* Background offset */
+  float		prof_offset_fluxerr;		/* RMS error */
+  float		prof_spheroid_flux;		/* Spheroid total flux */
+  float		prof_spheroid_fluxerr;		/* RMS error */
+  float		prof_spheroid_mag;		/* Spheroid "total" mag */
+  float		prof_spheroid_magerr;		/* RMS error */
+  float		prof_spheroid_reff;		/* Spheroid effective radius */
+  float		prof_spheroid_refferr;		/* RMS error */
+  float		prof_spheroid_reffw;		/* WORLD spheroid eff. radius */
+  float		prof_spheroid_refferrw;		/* RMS error */
+  float		prof_spheroid_aspect;		/* Spheroid aspect ratio */
+  float		prof_spheroid_aspecterr;	/* RMS error */
+  float		prof_spheroid_aspectw;		/* WORLD spheroid aspect ratio*/
+  float		prof_spheroid_aspecterrw;	/* RMS error */
+  float		prof_spheroid_theta;		/* Spheroid position angle */
+  float		prof_spheroid_thetaerr;		/* RMS error */
+  float		prof_spheroid_thetaw;		/* WORLD spheroid pos. angle */
+  float		prof_spheroid_thetaerrw;	/* RMS error */
+  float		prof_spheroid_thetas;		/* Sky spheroid pos. angle */
+  float		prof_spheroid_theta2000;	/* J2000 spheroid pos. angle */
+  float		prof_spheroid_theta1950;	/* B1950 spheroid pos. angle */
+  float		prof_spheroid_sersicn;		/* Spheroid Sersic index */
+  float		prof_spheroid_sersicnerr;	/* RMS error */
+  float		prof_disk_flux;			/* Disk total flux */
+  float		prof_disk_fluxerr;		/* RMS error */
+  float		prof_disk_mag;			/* Disk "total" mag */
+  float		prof_disk_magerr;		/* RMS error */
+  float		prof_disk_scale;		/* Disk scale length */
+  float		prof_disk_scaleerr;		/* RMS error */
+  float		prof_disk_scalew;		/* WORLD disk scale length */
+  float		prof_disk_scaleerrw;		/* RMS error */
+  float		prof_disk_aspect;		/* Disk aspect ratio */
+  float		prof_disk_aspecterr;		/* RMS error */
+  float		prof_disk_aspectw;		/* WORLD disk aspect ratio */
+  float		prof_disk_aspecterrw;		/* RMS error */
+  float		prof_disk_inclination;		/* Disk inclination */
+  float		prof_disk_inclinationerr;	/* RMS error */
+  float		prof_disk_theta;		/* Disk position angle */
+  float		prof_disk_thetaerr;		/* RMS error */
+  float		prof_disk_thetaw;		/* WORLD disk position angle */
+  float		prof_disk_thetaerrw;		/* RMS error */
+  float		prof_disk_thetas;		/* Sky disk position angle */
+  float		prof_disk_theta2000;		/* J2000 disk position angle */
+  float		prof_disk_theta1950;		/* B1950 disk position angle */
+  float		*prof_disk_patternvector;	/* Disk pattern coefficients */
+  float		*prof_disk_patternmodvector;	/* Disk pattern moduli */
+  float		*prof_disk_patternargvector;	/* Disk pattern arguments */
+  float		prof_disk_patternspiral;	/* Disk pattern spiral index */
+  float		prof_bar_flux;			/* Galactic bar total flux */
+  float		prof_bar_fluxerr;		/* RMS error */
+  float		prof_bar_mag;			/* Bar "total" magnitude */
+  float		prof_bar_magerr;		/* RMS error */
+  float		prof_bar_length;		/* Bar length */
+  float		prof_bar_lengtherr;		/* RMS error */
+  float		prof_bar_lengthw;		/* WORLD bar length */
+  float		prof_bar_lengtherrw;		/* RMS error */
+  float		prof_bar_aspect;		/* Bar aspect ratio */
+  float		prof_bar_aspecterr;		/* RMS error */
+  float		prof_bar_aspectw;		/* WORLD bar aspect ratio */
+  float		prof_bar_aspecterrw;		/* RMS error */
+  float		prof_bar_posang;		/* Bar true prosition angle */
+  float		prof_bar_posangerr;		/* RMS error */
+  float		prof_bar_theta;			/* Bar projected angle */
+  float		prof_bar_thetaerr;		/* RMS error */
+  float		prof_bar_thetaw;		/* WORLD bar projected angle */
+  float		prof_bar_thetaerrw;		/* RMS error */
+  float		prof_bar_thetas;		/* Sky bar projected angle */
+  float		prof_bar_theta2000;		/* J2000 bar projected angle */
+  float		prof_bar_theta1950;		/* B1950 bar projected angle */
+  float		prof_arms_flux;			/* Spiral arms total flux */
+  float		prof_arms_fluxerr;		/* RMS error */
+  float		prof_arms_mag;			/* Arms "total" magnitude */
+  float		prof_arms_magerr;		/* RMS error */
+  float		prof_arms_scale;		/* Arms scalelength */
+  float		prof_arms_scaleerr;		/* RMS error */
+  float		prof_arms_scalew;		/* WORLD arms scalelength */
+  float		prof_arms_scaleerrw;		/* RMS error */
+  float		prof_arms_posang;		/* Arms true position angle */
+  float		prof_arms_posangerr;		/* RMS error */
+//  float		prof_arms_thetaw;		/* WORLD arms position angle */
+//  float		prof_arms_thetas;		/* Sky arms position angle */
+//  float		prof_arms_theta2000;		/* J2000 arms position angle */
+//  float		prof_arms_theta1950;		/* B1950 arms position angle */
+  float		prof_arms_pitch;		/* Arms pitch angle */
+  float		prof_arms_pitcherr;		/* RMS error */
+  float		prof_arms_start;		/* Arms starting radius */
+  float		prof_arms_starterr;		/* RMS error */
+  float		prof_arms_startw;		/* WORLD arms starting radius */
+  float		prof_arms_starterrw;		/* RMS error */
+  float		prof_arms_quadfrac;		/* Arms quadrature fraction */
+  float		prof_arms_quadfracerr;		/* RMS error */
 /* ---- MEF */
   short		ext_number;			/* FITS extension number */
   }	obj2struct;
@@ -321,9 +448,9 @@ typedef struct pic
   char		*rfilename;		/* pointer to the reduced image name */
   char		ident[MAXCHAR];		/* field identifier (read from FITS)*/
   char		rident[MAXCHAR];	/* field identifier (relative) */
+  catstruct	*cat;			/* FITS structure */
+  tabstruct	*tab;			/* FITS extension structure */
   FILE		*file;			/* pointer the image file structure */
-  char		*fitshead;		/* pointer to the FITS header */
-  int		fitsheadsize;		/* FITS header size */
 /* ---- main image parameters */
   int		bitpix, bytepix;	/* nb of bits and bytes per pixel */
   int		bitsgn;			/* non-zero if signed integer data */
@@ -345,17 +472,12 @@ typedef struct pic
   int		stripy;			/* y position in buffer */
   int		stripylim;		/* y limit in buffer */
   int		stripysclim;		/* y scroll limit in buffer */
-/* ---- image (de-)compression */
-  enum {ICOMPRESS_NONE, ICOMPRESS_BASEBYTE, ICOMPRESS_PREVPIX}
-		compress_type;		/* image compression type */
-  char		*compress_buf;		/* de-compression buffer */
-  char		*compress_bufptr;	/* present pixel in buffer */
-  int		compress_curval;	/* current pixel or checksum value */
-  int		compress_checkval;	/* foreseen pixel or checksum value */
-  int		compress_npix;		/* remaining pixels in buffer */
 /* ---- basic astrometric parameters */
    double	pixscale;		/* pixel size in arcsec.pix-1 */
    double	epoch;			/* epoch of coordinates */
+/* ---- basic photometric parameters */
+   double	gain;			/* conversion factor in e-/ADU */
+   double	satur_level;		/* saturation level in ADUs */
 /* ---- background parameters */
   float		*back;			/* ptr to the background map in mem */
   float		*dback;			/* ptr to the background deriv. map */
@@ -374,7 +496,7 @@ typedef struct pic
   PIXTYPE	thresh;			/* analysis threshold */
   backenum	back_type;		/* Background type */
 /* ---- astrometric parameters */
-  struct structastrom	*astrom;	/* astrometric data */
+  struct wcs	*wcs;			/* astrometric data */
   struct structassoc	*assoc;		/* ptr to the assoc-list */
   int		flags;			/* flags defining the field type */
 /* ---- image interpolation */

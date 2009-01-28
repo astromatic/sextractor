@@ -9,10 +9,19 @@
 *
 *	Contents:	Keywords for the configuration file.
 *
-*	Last modify:	13/07/2006
+*	Last modify:	20/11/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
+
+
+#ifndef _PROFIT_H_
+#include        "profit.h"
+#endif
+
+#ifndef _PATTERN_H_
+#include        "pattern.h"
+#endif
 
 #ifndef _PREFS_H_
 #define _PREFS_H_
@@ -51,6 +60,7 @@ typedef struct
   int		nfilter_thresh;				/* nb of params */
   int		deblend_nthresh;			/* threshold number */
   double	deblend_mincont;			/* minimum contrast */
+  char		satur_key[8];				/* saturation keyword */
   double	satur_level;				/* saturation level */
   enum	{CCD, PHOTO}			detect_type;	/* detection type */
 /*----- Flagging */
@@ -91,6 +101,7 @@ typedef struct
   double	mag_zeropoint;				/* magnitude offsets */
   double	mag_gamma;				/* for emulsions */
   double	gain;					/* only for CCD */
+  char		gain_key[8];				/* gain keyword */
 /*----- S/G separation */
   double	pixel_scale;				/* in arcsec */
   double	seeing_fwhm;				/* in arcsec */
@@ -199,6 +210,19 @@ typedef struct
   int		psf_magerrsize;				/* nb of params */
   int		pc_flag;				/* PC-fit needed */
   int		pc_vectorsize;				/* nb of params */
+  int		prof_flag;				/* Profile-fitting */
+  int		pattern_flag;				/* Pattern-fitting */
+/*----- Profile-fitting */
+  int		prof_vectorsize;			/* nb of params */
+  int		prof_errvectorsize;			/* nb of params */
+  int		prof_disk_patternvectorsize;		/* nb of params */
+  int		prof_disk_patternncomp;			/* nb of params */
+  int		prof_disk_patternmodvectorsize;		/* nb of params */
+  int		prof_disk_patternmodncomp;		/* nb of params */
+  int		prof_disk_patternargvectorsize;		/* nb of params */
+  int		prof_disk_patternargncomp;		/* nb of params */
+/*----- Pattern-fitting */
+  pattypenum	pattern_type;				/* Disk pattern type */
 /*----- customize */
   int		fitsunsigned_flag;			/* Force unsign FITS */
   int		next;			     /* Number of extensions in file */
@@ -212,6 +236,8 @@ typedef struct
 extern int	cistrcmp(char *cs, char *ct, int mode);
 
 extern void	dumpprefs(int state),
+		endprefs(void),
+		preprefs(void),
 		readprefs(char *filename,char **argkey,char **argval,int narg),
 		useprefs(void);
 #endif

@@ -9,7 +9,7 @@
 *
 *	Contents:	Keywords for the configuration file.
 *
-*	Last modify:	14/07/2006
+*	Last modify:	20/11/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -69,8 +69,9 @@
    "BACKGROUND", "BACKGROUND_RMS", "MINIBACKGROUND",
    "MINIBACK_RMS", "-BACKGROUND",
    "FILTERED", "OBJECTS", "APERTURES", "SEGMENTATION", "ASSOC",
-   "-OBJECTS", "-PSF_PROTOS", "PSF_PROTOS",
-   "-PC_CONVPROTOS", "PC_CONVPROTOS", "PC_PROTOS", ""},
+   "-OBJECTS", "-PSFS", "PSFS",
+   "-PC_CONVPROTOS", "PC_CONVPROTOS", "PC_PROTOS", 
+   "MAP_SOM", "-MODELS", "MODELS", "PATTERNS", ""},
    0, 17, &prefs.ncheck_type},
   {"CLEAN", P_BOOL, &prefs.clean_flag},
   {"CLEAN_PARAM", P_FLOAT, &prefs.clean_param, 0,0, 0.1,10.0},
@@ -91,6 +92,7 @@
   {"FLAG_TYPE",  P_KEYLIST, prefs.flag_type, 0,0, 0.0,0.0,
    {"OR","AND","MIN", "MAX", "MOST",""}, 0, MAXFLAG, &idummy},
   {"GAIN", P_FLOAT, &prefs.gain, 0,0, 0.0, 1e+30},
+  {"GAIN_KEY", P_STRING, prefs.gain_key},
   {"INTERP_MAXXLAG", P_INTLIST, prefs.interp_xtimeout, 1,1000000, 0.0,0.0,
    {""}, 1, 2, &prefs.ninterp_xtimeout},
   {"INTERP_MAXYLAG", P_INTLIST, prefs.interp_ytimeout, 1,1000000, 0.0,0.0,
@@ -106,6 +108,9 @@
   {"MEMORY_PIXSTACK", P_INT, &prefs.mem_pixstack, 1000, 10000000},
   {"NTHREADS", P_INT, &prefs.nthreads, 0, THREADS_PREFMAX},
   {"PARAMETERS_NAME", P_STRING, prefs.param_name},
+  {"PATTERN_TYPE", P_KEY, &prefs.pattern_type, 0,0, 0.0,0.0,
+   {"RINGS-QUADPOLE", "RINGS-OCTOPOLE", "RINGS-HARMONIC", "GAUSS-LAGUERRE",
+   ""}},
   {"PHOT_APERTURES", P_FLOATLIST, prefs.apert, 0,0, 0.0,2*MAXPICSIZE,
    {""}, 1, MAXNAPER, &prefs.naper},
   {"PHOT_AUTOPARAMS", P_FLOATLIST, prefs.autoparam, 0,0, 0.0,10.0,
@@ -122,6 +127,7 @@
   {"PSF_NMAX", P_INT, &prefs.psf_npsfmax, 1, PSF_NPSFMAX},
   {"PSFDISPLAY_TYPE", P_KEY, &prefs.psfdisplay_type, 0,0, 0.0,0.0,
    {"SPLIT","VECTOR",""}},
+  {"SATUR_KEY", P_STRING, prefs.satur_key},
   {"SATUR_LEVEL", P_FLOAT, &prefs.satur_level, 0,0, -1e+30, 1e+30},
   {"SEEING_FWHM", P_FLOAT, &prefs.seeing_fwhm, 0,0, 1e-10, 1e+10},
   {"SOM_NAME", P_STRING, prefs.som_name},
@@ -209,10 +215,12 @@ char *default_prefs[] =
 "*PHOT_FLUXFRAC    0.5            # flux fraction[s] used for FLUX_RADIUS",
 " ",
 "SATUR_LEVEL      50000.0        # level (in ADUs) at which arises saturation",
+"SATUR_KEY        SATURATE       # keyword for saturation level (in ADUs)",
 " ",
 "MAG_ZEROPOINT    0.0            # magnitude zero-point",
 "MAG_GAMMA        4.0            # gamma of emulsion (for photographic scans)",
 "GAIN             0.0            # detector gain in e-/ADU",
+"GAIN_KEY         GAIN           # keyword for detector gain in e-/ADU",
 "PIXEL_SCALE      1.0            # size of pixel in arcsec (0=use FITS WCS info)",
 " ",
 "#------------------------- Star/Galaxy Separation ----------------------------",
@@ -252,7 +260,7 @@ char *default_prefs[] =
 "*ASSOC_DATA       2,3,4          # columns of the data to replicate (0=all)",
 "*ASSOC_PARAMS     2,3,4          # columns of xpos,ypos[,mag]",
 "*ASSOC_RADIUS     2.0            # cross-matching radius (pixels)",
-"*ASSOC_TYPE       MAG_SUM        # ASSOCiation method: FIRST, NEAREST, MEAN,",
+"*ASSOC_TYPE       NEAREST        # ASSOCiation method: FIRST, NEAREST, MEAN,",
 "*                                # MAG_MEAN, SUM, MAG_SUM, MIN or MAX",
 "*ASSOCSELEC_TYPE  MATCHED        # ASSOC selection type: ALL, MATCHED or -MATCHED",
 "*",
@@ -264,7 +272,7 @@ char *default_prefs[] =
 "*XSL_URL          " XSL_URL,
 "*                                # Filename for XSL style-sheet",
 #ifdef USE_THREADS
-"*NTHREADS         0              # Number of simultaneous threads for",
+"NTHREADS          0              # Number of simultaneous threads for",
 "*                                # the SMP version of " BANNER,
 "*                                # 0 = automatic",
 #else
@@ -281,6 +289,8 @@ char *default_prefs[] =
 "*PSF_NAME         default.psf    # File containing the PSF model",
 "*PSF_NMAX         9              # Max.number of PSFs fitted simultaneously",
 "*PSFDISPLAY_TYPE  SPLIT          # Catalog type for PSF-fitting: SPLIT or VECTOR",
+"*PATTERN_TYPE     RINGS-HARMONIC # can RINGS-QUADPOLE, RINGS-OCTOPOLE,",
+"*                                # RINGS-HARMONICS or GAUSS-LAGUERRE",
 "*SOM_NAME         default.som    # File containing Self-Organizing Map weights",
 ""
  };

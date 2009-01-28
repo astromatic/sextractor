@@ -10,7 +10,7 @@
 *	Contents:	functions for extraction of connected pixels from
 *			a pixmap.
 *
-*	Last modify:	29/11/2005
+*	Last modify:	11/01/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -47,7 +47,7 @@ INPUT   Measurement field pointer,
 OUTPUT  -.
 NOTES   -.
 AUTHOR  E. Bertin (IAP)
-VERSION 29/11/2005
+VERSION 11/01/2008
  ***/
 void	scanimage(picstruct *field, picstruct *dfield, picstruct **pffield,
 		int nffield, picstruct *wfield, picstruct *dwfield)
@@ -128,11 +128,11 @@ void	scanimage(picstruct *field, picstruct *dfield, picstruct **pffield,
 /*Allocate memory for buffers */
   stacksize = w+1;
   QMALLOC(info, infostruct, stacksize);
-  QMALLOC(store, infostruct, stacksize);
+  QCALLOC(store, infostruct, stacksize);
   QMALLOC(marker, char, stacksize);
   QMALLOC(dumscan, PIXTYPE, stacksize);
   QMALLOC(psstack, status, stacksize);
-  QMALLOC(start, int, stacksize);
+  QCALLOC(start, int, stacksize);
   QMALLOC(end, int, stacksize);
   blankpad = bpt = NULL;
   lutzalloc(w,h);

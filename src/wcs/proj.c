@@ -191,7 +191,8 @@
 *
 *   Author: Mark Calabretta, Australia Telescope National Facility
 *   IRAF's TNX added by E.Bertin 2000/08/23
-*   $Id: proj.c,v 1.1.1.1 2004/01/04 21:33:26 bertin Exp $
+*   Behaviour of Cartesian-like projections modified by E.Bertin 2005/08/29
+*   $Id: proj.c,v 1.1.1.1 2008/01/10 18:00:00 bertin Exp $
 *===========================================================================*/
 
 #ifdef HAVE_CONFIG_H
@@ -1359,6 +1360,10 @@ double *phi, *theta;
    }
 
    *phi   = x*prj->w[1];
+   if (*phi>180.0)
+     *phi -= 360.0;
+   else if (*phi<-180.0)
+     *phi += 360.0;
    eta    = y*prj->w[3];
    *theta = wcs_atan2d(eta,1.0) + wcs_asind(eta*prj->p[1]/sqrt(eta*eta+1.0));
 
@@ -1427,6 +1432,10 @@ double *phi, *theta;
    }
 
    *phi   = prj->w[1]*x;
+   if (*phi>180.0)
+     *phi -= 360.0;
+   else if (*phi<-180.0)
+     *phi += 360.0;
    *theta = prj->w[1]*y;
 
    return 0;
@@ -1497,6 +1506,10 @@ double *phi, *theta;
    }
 
    *phi   = x*prj->w[1];
+   if (*phi>180.0)
+     *phi -= 360.0;
+   else if (*phi<-180.0)
+     *phi += 360.0;
    *theta = 2.0*wcs_atand(exp(y/prj->r0)) - 90.0;
 
    return 0;
@@ -1590,6 +1603,10 @@ double *phi, *theta;
    }
 
    *phi   = x*prj->w[1];
+   if (*phi>180.0)
+     *phi -= 360.0;
+   else if (*phi<-180.0)
+     *phi += 360.0;
    *theta = wcs_asind(s);
 
    return 0;
@@ -3676,8 +3693,8 @@ int raw_to_pv(struct prjprm *prj, double x, double y, double *xo, double *yo)
    }
 
    k=prj->n;
-   a = prj->p;			/* Longitude */
-   b = prj->p+100;		/* Latitude */
+   a = prj->p+100;		/* Latitude comes first for compatibility */
+   b = prj->p;			/* Longitude */
    xp = *(a++);
    xp += *(a++)*x;
    yp = *(b++);
@@ -3763,7 +3780,7 @@ int raw_to_pv(struct prjprm *prj, double x, double y, double *xo, double *yo)
    yp += *(b++)*y3*x3;
    if (!--k) goto poly_end;
    xp += *(a++)*x2*y4;
-   yp += *(b++)*y4*x2;
+   yp += *(b++)*y2*x4;
    if (!--k) goto poly_end;
    xp += *(a++)*x*y5;
    yp += *(b++)*y*x5;

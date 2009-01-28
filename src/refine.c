@@ -9,7 +9,7 @@
 *
 *	Contents:	functions to refine extraction of objects.
 *
-*	Last modify:	27/11/2003
+*	Last modify:	10/01/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -315,7 +315,9 @@ int	gatherup(objliststruct *objlistin, objliststruct *objlistout)
       if (p[nobj-1] > 1.0e-31)
         {
         drand = p[nobj-1]*rand()/RAND_MAX;
-        for (i=1; p[i]<drand; i++);
+        for (i=1; i<nobj && p[i]<drand; i++);
+        if (i==nobj)
+          i=iclst;
 	}
       else
         i = iclst;

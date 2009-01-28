@@ -10,7 +10,7 @@
 *
 *	Contents:	Fit the PSF to a detection.
 *
-*	Last modify:	12/01/2006
+*	Last modify:	19/12/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -31,7 +31,7 @@
 #include	"check.h"
 #include	"filter.h"
 #include	"image.h"
-#include	"poly.h"
+#include	"wcs/poly.h"
 #include	"psf.h"
 
 /*------------------------------- variables ---------------------------------*/
@@ -84,10 +84,13 @@ void	psf_end(psfstruct *psf, psfitstruct *psfit)
   free(psf->masksize);
   free(psf);
 
-  free(psfit->x);
-  free(psfit->y);
-  free(psfit->flux);
-  free(psfit);
+  if (psfit)
+    {
+    free(psfit->x);
+    free(psfit->y);
+    free(psfit->flux);
+    free(psfit);
+    }
 
   return;
   }
@@ -288,7 +291,7 @@ void	psf_readcontext(psfstruct *psf, picstruct *field)
       {
       psf->context[i] = &contextval[i];
       psf->contexttyp[i] = T_DOUBLE;
-      if (fitsread(field->fitshead, psf->contextname[i]+1, &contextval[i],
+      if (fitsread(field->tab->headbuf, psf->contextname[i]+1, &contextval[i],
 		H_FLOAT,T_DOUBLE) == RETURN_ERROR)
         {
         sprintf(gstr, "*Error*: %s parameter not found in the header of ",
@@ -336,9 +339,9 @@ void	psf_fit(psfstruct *psf, picstruct *field, picstruct *wfield,
   niter = 0;
   npsfmax = prefs.psf_npsfmax;
   pixstep = 1.0/psf->pixstep;
-  gain = prefs.gain;
+  gain = field->gain;
   backnoise2 = field->backsig*field->backsig;
-  satlevel = prefs.satur_level - obj->bkg;
+  satlevel = field->satur_level - obj->bkg;
   wthresh = wfield?wfield->weight_thresh:BIG;
   gainflag = prefs.weightgain_flag;
   psf_fwhm = psf->fwhm*psf->pixstep;
@@ -760,10 +763,10 @@ void    double_psf_fit(psfstruct *ppsf, picstruct *pfield, picstruct *pwfield,
   pdx = pdy =dx = dy = 0.0;
   ppixstep = 1.0/ppsf->pixstep;
   pixstep = 1.0/psf->pixstep;
-  gain = prefs.gain;
+  gain = field->gain;
   npsfmax=prefs.psf_npsfmax;
   pbacknoise2 = pfield->backsig*pfield->backsig;
-  satlevel = prefs.satur_level - obj->bkg;
+  satlevel = field->satur_level - obj->bkg;
   gainflag = prefs.weightgain_flag;
   psf_fwhm = psf->fwhm*psf->pixstep;
   ppsf_fwhm = ppsf->fwhm*ppsf->pixstep;

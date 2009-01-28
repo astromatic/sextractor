@@ -9,7 +9,7 @@
 *
 *	Contents:	Functions related to the management of keys.
 *
-*	Last modify:	15/08/2003
+*	Last modify:	04/06/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -575,7 +575,7 @@ NOTES	This is approximately the same code as for read_keys.
 	A NULL keynames pointer means read ALL keys belonging to the table.
 	A NULL mask pointer means NO selection for reading.
 AUTHOR	E. Bertin (IAP & Leiden observatory)
-VERSION	15/08/2003
+VERSION	04/06/2007
  ***/
 void	show_keys(tabstruct *tab, char **keynames, keystruct **keys, int nkeys,
 		BYTE *mask, FILE *stream,
@@ -691,10 +691,10 @@ void	show_keys(tabstruct *tab, char **keynames, keystruct **keys, int nkeys,
               if (banflag)
                 {
                 if (*key->unit)
-                  fprintf(stream, "# %3d %-19.19s %-47.47s [%s]\n",
+                  fprintf(stream, "# %3d %-15.15s %-47.47s [%s]\n",
                       n, key->name,key->comment, key->unit);
                 else
-                  fprintf(stream, "# %3d %-19.19s %.47s\n",
+                  fprintf(stream, "# %3d %-15.15s %.47s\n",
                       n, key->name,key->comment);
                 n += key->nbytes/t_size[key->ttype];
               }
@@ -730,10 +730,10 @@ void	show_keys(tabstruct *tab, char **keynames, keystruct **keys, int nkeys,
               if (banflag)
                 {
                 if (*key->unit)
-                  fprintf(stream, "# %3d %-19.19s %-47.47s [%s]\n",
+                  fprintf(stream, "# %3d %-15.15s %-47.47s [%s]\n",
                       n, key->name,key->comment, key->unit);
                 else
-                  fprintf(stream, "# %3d %-19.19s %.47s\n",
+                  fprintf(stream, "# %3d %-15.15s %.47s\n",
                       n, key->name,key->comment);
                 n += key->nbytes/t_size[key->ttype];
                 }
@@ -754,10 +754,10 @@ void	show_keys(tabstruct *tab, char **keynames, keystruct **keys, int nkeys,
         switch (o_type) {
         case SHOW_ASCII:
               if (*key->unit)
-                fprintf(stream, "#     %-19.19s %-47.47s [%s]\n",
+                fprintf(stream, "#     %-15.15s %-47.47s [%s]\n",
 	            	key->name,key->comment, key->unit);
               else
-                fprintf(stream, "#     %-19.19s %.47s\n",
+                fprintf(stream, "#     %-15.15s %.47s\n",
             		key->name,key->comment);
               break;
         case SHOW_SKYCAT:

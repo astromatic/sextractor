@@ -9,7 +9,7 @@
 *
 *	Contents:	main program.
 *
-*	Last modify:	14/07/2006
+*	Last modify:	20/11/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -31,16 +31,22 @@
 #include	"assoc.h"
 #include	"back.h"
 #include	"check.h"
+#include	"fft.h"
 #include	"field.h"
 #include	"filter.h"
 #include	"growth.h"
 #include	"interpolate.h"
+#include	"pattern.h"
 #include	"psf.h"
+#include	"profit.h"
 #include	"som.h"
 #include	"weight.h"
 #include	"xml.h"
 
-time_t	thetimet, thetimet2;
+static int		selectext(char *filename);
+time_t			thetimet, thetimet2;
+extern profitstruct	*theprofit;
+extern char		profname[][32];
 
 /******************************** makeit *************************************/
 /*
@@ -53,9 +59,12 @@ void	makeit()
    picstruct		*dfield, *field,*pffield[MAXFLAG], *wfield,*dwfield;
    catstruct		*imacat;
    tabstruct		*imatab;
+   patternstruct	*pattern;
    static time_t        thetime1, thetime2;
    struct tm		*tm;
-   int			i, nok, ntab, next;
+   int			nflag[MAXFLAG],
+			i, nok, ntab, next, ntabmax, forcextflag,
+			nima0,nima1, nweight0,nweight1, npat;
 
 /* Install error logging */
   error_installfunc(write_error);
@@ -84,7 +93,7 @@ void	makeit()
   readcatparams(prefs.param_name);
   useprefs();			/* update things accor. to prefs parameters */
 
-  if (prefs.psf_flag)
+  if (prefs.psf_flag || prefs.prof_flag)
     {
     NFPRINTF(OUTPUT, "Reading PSF information");
     thepsf = psf_load(prefs.psf_name[0]); 
@@ -93,6 +102,51 @@ void	makeit()
  /*-- Need to check things up because of PSF context parameters */
     updateparamflags();
     useprefs();
+    }
+
+  if (prefs.prof_flag)
+    {
+    fft_init();
+/* Create profiles at full resolution */
+    NFPRINTF(OUTPUT, "Preparing profile models");
+    theprofit = profit_init(thepsf);
+    changecatparamarrays("VECTOR_PROF", &theprofit->nparam, 1);
+    changecatparamarrays("VECTOR_PROFERR", &theprofit->nparam, 1);
+    if (prefs.pattern_flag)
+      {
+      npat = prefs.prof_disk_patternvectorsize;
+      if (npat<prefs.prof_disk_patternmodvectorsize)
+        npat = prefs.prof_disk_patternmodvectorsize;
+      if (npat<prefs.prof_disk_patternargvectorsize)
+        npat = prefs.prof_disk_patternargvectorsize;
+/*---- Do a copy of the original number of pattern components */
+      prefs.prof_disk_patternncomp = npat;
+      pattern = pattern_init(theprofit, prefs.pattern_type, npat);
+      if (FLAG(obj2.prof_disk_patternvector))
+        {
+        npat = pattern->size[2];
+        changecatparamarrays("DISK_PATTERN_VECTOR", &npat, 1);
+        }
+      if (FLAG(obj2.prof_disk_patternmodvector))
+        {
+        npat = pattern->ncomp*pattern->nfreq;
+        changecatparamarrays("DISK_PATTERNMOD_VECTOR", &npat, 1);
+        }
+      if (FLAG(obj2.prof_disk_patternargvector))
+        {
+        npat = pattern->ncomp*pattern->nfreq;
+        changecatparamarrays("DISK_PATTERNARG_VECTOR", &npat, 1);
+        }
+      pattern_end(pattern);
+      }
+    QPRINTF(OUTPUT, "Fitting model: ");
+    for (i=0; i<theprofit->nprof; i++)
+      {
+      if (i)
+        QPRINTF(OUTPUT, "+");
+      QPRINTF(OUTPUT, "%s", profname[theprofit->prof[i]->code]);
+      }
+    QPRINTF(OUTPUT, "\n");
     }
 
   if (prefs.filter_flag)
@@ -128,21 +182,47 @@ void	makeit()
   if (prefs.growth_flag)
     initgrowth();
 
-/* Compute the number of valid input extensions */
+/* Allocate memory for multidimensional catalog parameter arrays */
+  alloccatparams();
+  useprefs();
+
+/* Check if a specific extension should be loaded */
+  if ((nima0=selectext(prefs.image_name[0])) != RETURN_ERROR)
+    {
+    forcextflag = 1;
+    ntabmax = next = 1;
+    }
+  else
+    forcextflag = 0;
+
   if (!(imacat = read_cat(prefs.image_name[0])))
     error(EXIT_FAILURE, "*Error*: cannot open ", prefs.image_name[0]);
   close_cat(imacat);
   imatab = imacat->tab;
-  next = 0;
-  for (ntab = 0 ; ntab<imacat->ntab; ntab++, imatab = imatab->nexttab)
+
+  if (!forcextflag)
     {
-/*--  Check for the next valid image extension */
-    if ((imatab->naxis < 2)
+    ntabmax = imacat->ntab;
+/*-- Compute the number of valid input extensions */
+    next = 0;
+    for (ntab = 0 ; ntab<imacat->ntab; ntab++, imatab = imatab->nexttab)
+      {
+/*---- Check for the next valid image extension */
+      if ((imatab->naxis < 2)
 	|| !strncmp(imatab->xtension, "BINTABLE", 8)
 	|| !strncmp(imatab->xtension, "ASCTABLE", 8))
-      continue;
-    next++;
+        continue;
+      next++;
+      }
     }
+
+/* Do the same for other data (but do not force single extension mode) */
+  nima1 = selectext(prefs.image_name[1]);
+  nweight0 = selectext(prefs.wimage_name[0]);
+  nweight1 = selectext(prefs.wimage_name[1]);
+  for (i=0; i<prefs.nfimage_name; i++)
+    nflag[i] = selectext(prefs.fimage_name[i]);
+
   thecat.next = next;
 
 /*-- Init the CHECK-images */
@@ -152,15 +232,14 @@ void	makeit()
 
     NFPRINTF(OUTPUT, "Initializing check-image(s)");
     for (i=0; i<prefs.ncheck_type; i++)
-    if ((c=prefs.check_type[i]) != CHECK_NONE)
-      {
-      if (prefs.check[c])
-         error(EXIT_FAILURE,"*Error*: 2 CHECK_IMAGEs cannot have the same ",
+      if ((c=prefs.check_type[i]) != CHECK_NONE)
+        {
+        if (prefs.check[c])
+           error(EXIT_FAILURE,"*Error*: 2 CHECK_IMAGEs cannot have the same ",
 			" CHECK_IMAGE_TYPE");
-      prefs.check[c] = initcheck(prefs.check_name[i], prefs.check_type[i],
+        prefs.check[c] = initcheck(prefs.check_name[i], prefs.check_type[i],
 			next);
-      free(prefs.check_name[i]);
-      }
+        }
     }
 
   NFPRINTF(OUTPUT, "Initializing catalog");
@@ -172,12 +251,12 @@ void	makeit()
 
 /* Go through all images */
   nok = -1;
-  for (ntab = 0 ; ntab<imacat->ntab; ntab++, imatab = imatab->nexttab)
+  for (ntab = 0 ; ntab<ntabmax; ntab++, imatab = imatab->nexttab)
     {
 /*--  Check for the next valid image extension */
-    if ((imatab->naxis < 2)
+    if (!forcextflag && ((imatab->naxis < 2)
 	|| !strncmp(imatab->xtension, "BINTABLE", 8)
-	|| !strncmp(imatab->xtension, "ASCTABLE", 8))
+	|| !strncmp(imatab->xtension, "ASCTABLE", 8)))
       continue;
     nok++;
 
@@ -190,8 +269,10 @@ void	makeit()
     if (prefs.dimage_flag)
       {
 /*---- Init the Detection and Measurement-images */
-      dfield = newfield(prefs.image_name[0], DETECT_FIELD, nok);
-      field = newfield(prefs.image_name[1], MEASURE_FIELD, nok);
+      dfield = newfield(prefs.image_name[0], DETECT_FIELD,
+	nima0<0? nok:nima0);
+      field = newfield(prefs.image_name[1], MEASURE_FIELD,
+	nima1<0? nok:nima1);
       if ((field->width!=dfield->width) || (field->height!=dfield->height))
         error(EXIT_FAILURE, "*Error*: Frames have different sizes","");
 /*---- Prepare interpolation */
@@ -202,7 +283,9 @@ void	makeit()
       }
     else
       {
-      field = newfield(prefs.image_name[0], DETECT_FIELD | MEASURE_FIELD, nok);
+      field = newfield(prefs.image_name[0], DETECT_FIELD | MEASURE_FIELD,
+		nima0<0? nok:nima0);
+
 /*-- Prepare interpolation */
       if ((prefs.dweight_flag || prefs.weight_flag)
 	&& prefs.interp_type[0] == INTERP_ALL)
@@ -222,7 +305,7 @@ void	makeit()
           {
 /*-------- First: the "measurement" weights */
           wfield = newweight(prefs.wimage_name[1],field,prefs.weight_type[1],
-		nok);
+		nweight1<0? nok:nweight1);
           wtype = prefs.weight_type[1];
           interpthresh = prefs.weight_thresh[1];
 /*-------- Convert the interpolation threshold to variance units */
@@ -239,13 +322,13 @@ void	makeit()
           if (prefs.weight_type[0] == WEIGHT_FROMINTERP)
             {
             dwfield=newweight(prefs.wimage_name[0],wfield,prefs.weight_type[0],
-		nok);
+		nweight0<0? nok:nweight0);
             weight_to_var(wfield, &interpthresh, 1);
             }
           else
             {
             dwfield = newweight(prefs.wimage_name[0], dfield?dfield:field,
-		prefs.weight_type[0], nok);
+		prefs.weight_type[0], nweight0<0? nok:nweight0);
             weight_to_var(dwfield, &interpthresh, 1);
             }
           dwfield->weight_thresh = interpthresh;
@@ -258,7 +341,7 @@ void	makeit()
         {
 /*------ Single-weight-map mode */
         wfield = newweight(prefs.wimage_name[0], dfield?dfield:field,
-			prefs.weight_type[0], nok);
+			prefs.weight_type[0], nweight0<0? nok:nweight0);
         wtype = prefs.weight_type[0];
         interpthresh = prefs.weight_thresh[0];
 /*------ Convert the interpolation threshold to variance units */
@@ -273,7 +356,8 @@ void	makeit()
 /*-- Init the FLAG-images */
     for (i=0; i<prefs.nimaflag; i++)
       {
-      pffield[i] = newfield(prefs.fimage_name[i], FLAG_FIELD, nok);
+      pffield[i] = newfield(prefs.fimage_name[i], FLAG_FIELD,
+		nflag[i]<0? nok:nflag[i]);
       if ((pffield[i]->width!=field->width)
 	|| (pffield[i]->height!=field->height))
         error(EXIT_FAILURE,
@@ -424,7 +508,13 @@ void	makeit()
   if (prefs.growth_flag)
     endgrowth();
 
-  if (prefs.psf_flag)
+  if (prefs.prof_flag)
+    {
+    profit_end(theprofit);
+    fft_end();
+    }
+
+  if (prefs.psf_flag || prefs.prof_flag)
     psf_end(thepsf,thepsfit); /*?*/
 
   if (prefs.dpsf_flag)
@@ -471,6 +561,34 @@ void	initglob()
 
 
   return;
+  }
+
+
+/****** selectext ************************************************************
+PROTO	int selectext(char *filename)
+PURPOSE	Return the user-selected extension number [%d] from the file name.
+INPUT	Filename character string.
+OUTPUT	Extension number, or RETURN_ERROR if nos extension specified.
+NOTES	The bracket and its extension number are removed from the filename if
+	found.
+AUTHOR  E. Bertin (IAP)
+VERSION 08/10/2007
+ ***/
+static int	selectext(char *filename)
+  {
+   char	*bracl,*bracr;
+   int	next;
+
+  if (filename && (bracl=strrchr(filename, '[')))
+    {
+    *bracl = '\0';
+    if ((bracr=strrchr(bracl+1, ']')))
+      *bracr = '\0';
+    next = strtol(bracl+1, NULL, 0);
+    return next;
+    }
+
+  return RETURN_ERROR;
   }
 
 

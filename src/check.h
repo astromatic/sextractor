@@ -9,7 +9,7 @@
 *
 *	Contents:	handling of "check-images".
 *
-*	Last modify:	15/12/2002
+*	Last modify:	18/09/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -23,7 +23,7 @@ typedef struct structcheck
   char		*fitshead;		/* ptr to check-image FITS header */
   int		fitsheadsize;		/* size of check-image FITS header */
   void		*pix;			/* ptr to check-image pixmap */
-  int		width, height;		/* size of check-image */
+  int		width, height, depth;	/* size of check-image */
   size_t	npix;			/* number of pixels in check-image */
   int		y;			/* current line in check-image */
   PIXTYPE	overlay;		/* intensity of the overlayed plots */

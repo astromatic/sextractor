@@ -9,7 +9,7 @@
 *
 *	Contents:	functions dealing with background computation.
 *
-*	Last modify:	16/08/2006
+*	Last modify:	27/10/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -129,10 +129,10 @@ void	makeback(picstruct *field, picstruct *wfield)
 /*---- The image is small enough so that we can make exhaustive stats */
       if (j == ny-1 && field->npix%bufsize)
         bufsize = field->npix%bufsize;
-      readdata(field, buf, bufsize);
+      read_body(field->tab, buf, bufsize);
       if (wfield)
         {
-        readdata(wfield, wbuf, bufsize);
+        read_body(wfield->tab, wbuf, bufsize);
         weight_to_var(wfield, wbuf, bufsize);
         }
 /*---- Build the histograms */
@@ -185,7 +185,7 @@ void	makeback(picstruct *field, picstruct *wfield)
       buft = buf;
       for (i=nlines; i--; buft += w)
         {
-        readdata(field, buft, w);
+        read_body(field->tab, buft, w);
         if (i)
           QFSEEK(field->file, jumpsize*(OFF_T)field->bytepix, SEEK_CUR,
 		field->filename);
@@ -199,7 +199,7 @@ void	makeback(picstruct *field, picstruct *wfield)
         wbuft = wbuf;
         for (i=nlines; i--; wbuft += w)
           {
-          readdata(wfield, wbuft, w);
+          read_body(wfield->tab, wbuft, w);
           weight_to_var(wfield, wbuft, w);
           if (i)
             QFSEEK(wfield->file, jumpsize*(OFF_T)wfield->bytepix, SEEK_CUR,
@@ -230,10 +230,10 @@ void	makeback(picstruct *field, picstruct *wfield)
         {
         if (bufsize2>size)
           bufsize2 = size;
-        readdata(field, buf, bufsize2);
+        read_body(field->tab, buf, bufsize2);
         if (wfield)
           {
-          readdata(wfield, wbuf, bufsize2);
+          read_body(wfield->tab, wbuf, bufsize2);
           weight_to_var(wfield, wbuf, bufsize2);
           }
         backhisto(backmesh, wbackmesh, buf, wbuf, bufsize2, nx, w, bw,
@@ -676,21 +676,18 @@ void	filterback(picstruct *field)
   {
    float	*back,*sigma, *back2,*sigma2, *bmask,*smask, *sigmat,
 		d2,d2min, fthresh, med, val,sval;
-   int		i,j,px,py, np, nx,ny, npxm,npxp, npym,npyp, dpx,dpy, x,y, nmin;
+   int		i,j,px,py, np, nx,ny, npx,npx2, npy,npy2, dpx,dpy, x,y, nmin;
 
   fthresh = prefs.backfthresh;
   nx = field->nbackx;
   ny = field->nbacky;
   np = field->nback;
-  npxm = field->nbackfx/2;
-  npxp = field->nbackfx - npxm;
-  npym = field->nbackfy/2;
-  npyp = field->nbackfy - npym;
-  npym *= nx;
-  npyp *= nx;
+  npx = field->nbackfx/2;
+  npy = field->nbackfy/2;
+  npy *= nx;
 
-  QMALLOC(bmask, float, field->nbackfx*field->nbackfy);
-  QMALLOC(smask, float, field->nbackfx*field->nbackfy);
+  QMALLOC(bmask, float, (2*npx+1)*(2*npy+1));
+  QMALLOC(smask, float, (2*npx+1)*(2*npy+1));
   QMALLOC(back2, float, np);
   QMALLOC(sigma2, float, np);
 
@@ -732,20 +729,30 @@ void	filterback(picstruct *field)
 
 /* Do the actual filtering */
   for (py=0; py<np; py+=nx)
+    {
+    npy2 = np - py - nx;
+    if (npy2>npy)
+      npy2 = npy;
+    if (npy2>py)
+      npy2 = py;
     for (px=0; px<nx; px++)
       {
+      npx2 = nx - px - 1;
+      if (npx2>npx)
+        npx2 = npx;
+      if (npx2>px)
+        npx2 = px;
       i=0;
-      for (dpy = -npym; dpy< npyp; dpy+=nx)
-        for (dpx = -npxm; dpx < npxp; dpx++)
+      for (dpy = -npy2; dpy<=npy2; dpy+=nx)
+        {
+        y = py+dpy;
+        for (dpx = -npx2; dpx <= npx2; dpx++)
           {
-          y = py+dpy;
           x = px+dpx;
-          if (y>=0 && y<np && x>=0 && x<nx)
-            {
-            bmask[i] = back[x+y];
-            smask[i++] = sigma[x+y];
-            }
+          bmask[i] = back[x+y];
+          smask[i++] = sigma[x+y];
           }
+        }
       if (fabs((med=hmedian(bmask, i))-back[px+py])>=fthresh)
         {
         back2[px+py] = med;
@@ -757,6 +764,7 @@ void	filterback(picstruct *field)
         sigma2[px+py] = sigma[px+py];
         }
       }
+    }
 
   free(bmask);
   free(smask);

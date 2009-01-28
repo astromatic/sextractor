@@ -1,3 +1,7 @@
+Dec 07: 2.7
+	- FITS I/O and astrometry layers updated (same as SWarp and SCAMP)
+	- Support for model-fitting
+
 Jul 06: 2.5
         - Support for VOTable catalogs and metadata in output.
 

@@ -9,7 +9,7 @@
 *
 *	Contents:	global declarations.
 *
-*	Last modify:	14/07/2006
+*	Last modify:	11/05/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -27,13 +27,16 @@ float			ctg[37], stg[37];
 char			gstr[MAXCHAR];
 
 /*------------------------------- functions ---------------------------------*/
-extern void	allocparcelout(void),
+extern void	alloccatparams(void),
+		allocparcelout(void),
 		analyse(picstruct *, picstruct *, int, objliststruct *),
 		blankit(char *, int),
                 endcat(char *error),
                 reendcat(void),
+		changecatparamarrays(char *keyword, int *axisn, int naxis),
                 closecheck(void),
 		copydata(picstruct *, int, int),
+		dumpparams(void),
 		endfield(picstruct *),
 		endobject(picstruct *, picstruct *, picstruct *, picstruct *,
 			int, objliststruct *),

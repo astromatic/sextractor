@@ -9,7 +9,7 @@
 *
 *	Contents:	miscellaneous functions.
 *
-*	Last modify:	14/07/2006
+*	Last modify:	18/07/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -113,8 +113,9 @@ Swap bytes for doubles, longs and shorts (for DEC machines or PC for inst.).
 */
 void    swapbytes(void *ptr, int nb, int n)
   {
-   char *cp;
-   int  j;
+   char	*cp,
+	c;
+   int	j;
 
   cp = (char *)ptr;
 
@@ -122,8 +123,12 @@ void    swapbytes(void *ptr, int nb, int n)
     {
     for (j=n; j--; cp+=4)
       {
-      cp[0] ^= (cp[3]^=(cp[0]^=cp[3]));
-      cp[1] ^= (cp[2]^=(cp[1]^=cp[2]));
+      c = cp[3];
+      cp[3] = cp[0];
+      cp[0] = c;
+      c = cp[2];
+      cp[2] = cp[1];
+      cp[1] = c;
       }
     return;
     }
@@ -131,7 +136,11 @@ void    swapbytes(void *ptr, int nb, int n)
   if (nb&2)
     {
     for (j=n; j--; cp+=2)
-      cp[0] ^= (cp[1]^=(cp[0]^=cp[1]));
+      {
+      c = cp[1];
+      cp[1] = cp[0];
+      cp[0] = c;
+      }
     return;
     }
 
@@ -142,10 +151,18 @@ void    swapbytes(void *ptr, int nb, int n)
     {
     for (j=n; j--; cp+=8)
       {
-      cp[0] ^= (cp[7]^=(cp[0]^=cp[7]));
-      cp[1] ^= (cp[6]^=(cp[1]^=cp[6]));
-      cp[2] ^= (cp[5]^=(cp[2]^=cp[5]));
-      cp[3] ^= (cp[4]^=(cp[3]^=cp[4]));
+      c = cp[7];
+      cp[7] = cp[0];
+      cp[0] = c;
+      c = cp[6];
+      cp[6] = cp[1];
+      cp[1] = c;
+      c = cp[5];
+      cp[5] = cp[2];
+      cp[2] = c;
+      c = cp[4];
+      cp[4] = cp[3];
+      cp[3] = c;
       }
     return;
     }
