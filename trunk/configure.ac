@@ -1,12 +1,12 @@
 # configure.in for SExtractor
-# (C) E.Bertin 2002-2007
+# (C) E.Bertin 2002-2006
 # Process this file with autoconf to produce a configure script.
 # First, disable the annoying config.cache
 define([AC_CACHE_LOAD],)
 define([AC_CACHE_SAVE],)
 
 # This is your standard Bertin source code...
-AC_INIT(sextractor, 2.5.4, [bertin@iap.fr])
+AC_INIT(sextractor, 2.5.0, [bertin@iap.fr])
 AC_CONFIG_SRCDIR(src/makeit.c)
 AC_CONFIG_AUX_DIR(autoconf)
 AM_CONFIG_HEADER(config.h)
@@ -21,7 +21,6 @@ AC_SUBST(DATE3, "$date3")
 
 # Include macros
 sinclude(acx_prog_cc_optim.m4)
-sinclude(acx_urbi_resolve_dir.m4)
 
 # Display pakage and version number
 AC_MSG_RESULT([*********** Configuring:  $PACKAGE $VERSION ($date) **********])
@@ -96,7 +95,7 @@ AC_TYPE_UID_T
 
 # Checks for library functions.
 AC_FUNC_ERROR_AT_LINE
-#AC_FUNC_MALLOC
+AC_FUNC_MALLOC
 AC_FUNC_MMAP
 AC_TYPE_SIGNAL
 AC_FUNC_STAT
@@ -107,26 +106,13 @@ AC_CHECK_FUNCS([atexit getenv memcpy memmove memset mkdir munmap strstr])
 AC_SYS_LARGEFILE
 AC_FUNC_FSEEKO
 
-# Set the data directory to a true absolute path
-datadir2=$(URBI_RESOLVE_DIR([$datadir]))
-
-# Provide a special option for the default XSLT URL
-AC_ARG_WITH(xsl_url,
-        [AC_HELP_STRING([--with-xsl_url=<default URL for XSLT filter>],
-        [Provide an alternative default URL of the XSLT filter])],
-    [xsl_url=$withval],
-    [xsl_url="file://$datadir2/$PACKAGE_NAME/sextractor.xsl"]
-    )
-
-AC_DEFINE_UNQUOTED([XSL_URL], "$xsl_url",[Default URL of the XSLT filter])
-
 ########################### No multithreading yet! ###########################
 #AC_DEFINE(USE_THREADS, 1, [Triggers multhreading])
 AC_DEFINE_UNQUOTED(THREADS_NMAX, 1,[Maximum number of POSIX threads])
 
 # Special optimization options for the INTEL C compiler
 if test $use_icc = "yes" -a $CC = "icc"; then
-  CFLAGS="-O -axWP -ip -unroll"
+  CFLAGS="$CFLAGS -O3 -axiMKW -ipo -ipo_obj -unroll"
 fi
 
 # Link with gprof option
