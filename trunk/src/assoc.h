@@ -9,13 +9,13 @@
 *
 *	Contents:	Include file for assoc.c.
 *
-*	Last modify:	25/06/97
+*	Last modify:	14/10/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
 
 
-#define		ASSOC_BUFINC	65536	/* Assoc buffer increment (bytes) */
+#define		ASSOC_BUFINC	131072	/* Assoc buffer increment (bytes) */
 
 /*--------------------------------- typedefs --------------------------------*/
 

@@ -9,7 +9,7 @@
 *
 *	Contents:	Compute windowed barycenter
 *
-*	Last modify:	22/09/2005
+*	Last modify:	19/12/2007
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -38,7 +38,7 @@ INPUT	Picture structure pointer,
 OUTPUT  -.
 NOTES   obj->posx and obj->posy are taken as initial centroid guesses.
 AUTHOR  E. Bertin (IAP)
-VERSION 22/09/2005
+VERSION 19/12/2007
  ***/
 void	compute_winpos(picstruct *field, picstruct *wfield, objstruct *obj)
 
@@ -70,7 +70,7 @@ void	compute_winpos(picstruct *field, picstruct *wfield, objstruct *obj)
   errflag = FLAG(obj2.winposerr_mx2);
   momentflag = FLAG(obj2.win_mx2) | FLAG(obj2.winposerr_mx2);
   var = backnoise2 = field->backsig*field->backsig;
-  gain = prefs.gain;
+  gain = field->gain;
   sig = obj2->hl_radius*2.0/2.35; /* From half-FWHM to sigma */
   twosig2 = 2.0*sig*sig;
 

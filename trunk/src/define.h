@@ -9,7 +9,7 @@
 *
 *	Contents:	global definitions.
 *
-*	Last modify:	12/07/2006
+*	Last modify:	14/11/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -24,12 +24,14 @@
 /*------------------------ what, who, when and where ------------------------*/
 
 #define		BANNER		"SExtractor"
-#define         EXECUTABLE      "sex"
+//#ifdef USE_THREADS
+//#define		MYVERSION	VERSION "-MP"
+//#else
 #define		MYVERSION	VERSION
-#define		COPYRIGHT	"Emmanuel BERTIN (bertin@iap.fr)"
+//#endif
+#define		EXECUTABLE	"sex"
+#define		COPYRIGHT	"Emmanuel BERTIN <bertin@iap.fr>"
 #define		WEBSITE		"http://terapix.iap.fr/soft/sextractor"
-#define	       	MAILINGLIST	"sextractor@iap.fr"
-#define	       	MAILINGLISTREQ	"sextractor-request@iap.fr"
 #define		INSTITUTE	"TERAPIX team at IAP  http://terapix.iap.fr"
 
 /*--------------------------- Internal constants ----------------------------*/
@@ -40,7 +42,6 @@
 #define	MARGIN_SCALE		2.0		/* Margin / object height */ 
 #define	MAXCHAR			512		/* max. number of characters */
 #define	MAXCHARL		16384		/* max.nb of chars in strlist*/
-#define	MAXCHECK		32		/* max. # of CHECKimages */
 #define	MAXDEBAREA		3		/* max. area for deblending */
 #define	MAXFLAG			4		/* max. # of FLAG-images */
 #define	MAXIMAGE		2		/* max. # of input images */
@@ -48,9 +49,10 @@
 #define	MAXNASSOC		32		/* max. number of assoc. */
 #define	MAXPICSIZE		1048576		/* max. image size */
 #define	NISO			8		/* number of isophotes */
-#define	OUTPUT			stdout		/* where all msgs are sent */
+#define	OUTPUT			stderr		/* where all msgs are sent */
 #define PSF_NPSFMAX		9		/* Max number of fitted PSFs */
 
+#define	DEG			(PI/180.0)	/* 1 deg in radians */
 #ifndef PI
 #define	PI			3.1415926535898	/* never met before? */
 #endif

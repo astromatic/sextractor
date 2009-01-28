@@ -9,7 +9,7 @@
 *
 *	Contents:	functions for output of catalog data.
 *
-*	Last modify:	13/07/2006
+*	Last modify:	25/09/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -103,6 +103,19 @@ void	readcatparams(char *filename)
   memset(&outobj2, 0, sizeof(outobj2));
   updateparamflags();
 
+  return;
+  }
+
+
+/******************************* alloccatparams ******************************/
+/*
+Allocate memory for parameter arrays
+*/
+void	alloccatparams(void)
+  {
+   keystruct	*key;
+   int		i;
+
 /* Go back to multi-dimensional arrays for memory allocation */
   if (thecat.nparam)
     for (i=objtab->nkey, key=objtab->key; i--; key = key->nextkey) 
@@ -120,6 +133,30 @@ void	readcatparams(char *filename)
   return;
   }
 
+/*************************** changecatparamarrays ****************************/
+/*
+Change parameter array dimensions
+*/
+void	changecatparamarrays(char *keyword, int *axisn, int naxis)
+  {
+   keystruct	*key;
+   int		d,i, size;
+
+  if (thecat.nparam)
+    for (i=objtab->nkey, key=objtab->key; i--; key = key->nextkey) 
+      if (key->naxis && !strcmp(keyword, key->name))
+        {
+        size = t_size[key->ttype];
+        if (key->naxis != naxis)
+          key->naxis = naxis;
+        for (d=0; d<naxis; d++)
+          size *= (key->naxisn[d]=axisn[d]);
+        key->nbytes = size;
+        break;
+        }
+
+  return;
+  }
 
 /***************************** updateparamflags ******************************/
 /*
@@ -129,6 +166,178 @@ void	updateparamflags()
 
   {
    int	i;
+
+/*----------------------------- Model-fitting -----------------------------*/
+
+  prefs.pattern_flag |= FLAG(obj2.prof_disk_patternvector)
+			| FLAG(obj2.prof_disk_patternmodvector)
+			| FLAG(obj2.prof_disk_patternargvector)
+			| FLAG(obj2.prof_disk_patternspiral);
+  FLAG(obj2.prof_disk_scale) |= prefs.pattern_flag;
+
+  FLAG(obj2.poserraw_prof) |= FLAG(obj2.poserrbw_prof);
+  FLAG(obj2.poserrcxxw_prof) |= FLAG(obj2.poserrcyyw_prof)
+			| FLAG(obj2.poserrcxyw_prof);
+  FLAG(obj2.poserrthetas_prof) |= FLAG(obj2.poserrtheta1950_prof)
+				| FLAG(obj2.poserrtheta2000_prof);
+  FLAG(obj2.poserrthetaw_prof) |= FLAG(obj2.poserrthetas_prof);
+
+  FLAG(obj2.poserrmx2w_prof) |= FLAG(obj2.poserrmy2w_prof)
+			| FLAG(obj2.poserrmxyw_prof)
+			| FLAG(obj2.poserrthetaw_prof)|FLAG(obj2.poserraw_prof)
+			| FLAG(obj2.poserrcxxw_prof);
+
+  FLAG(obj2.poserra_prof) |= FLAG(obj2.poserrb_prof)
+			| FLAG(obj2.poserrtheta_prof)
+			| FLAG(obj2.poserraw_prof);
+  FLAG(obj2.poserrcxx_prof) |= FLAG(obj2.poserrcyy_prof)
+			| FLAG(obj2.poserrcxy_prof);
+  FLAG(obj2.alpha1950_prof) |= FLAG(obj2.delta1950_prof)
+			| FLAG(obj2.poserrtheta1950_prof);
+  FLAG(obj2.alpha2000_prof) |= FLAG(obj2.delta2000_prof)
+			| FLAG(obj2.alpha1950_prof)
+			| FLAG(obj2.poserrtheta2000_prof);
+  FLAG(obj2.alphas_prof) |= FLAG(obj2.deltas_prof)
+			| FLAG(obj2.alpha2000_prof);
+  FLAG(obj2.xw_prof) |= FLAG(obj2.yw_prof)
+			| FLAG(obj2.alphas_prof);
+
+  FLAG(obj2.x_prof) |= FLAG(obj2.y_prof)
+			| FLAG(obj2.xw_prof)
+			| FLAG(obj2.poserra_prof)
+			| FLAG(obj2.poserrcxx_prof);
+  FLAG(obj2.mag_prof) |= FLAG(obj2.magerr_prof);
+  FLAG(obj2.flux_prof) |= FLAG(obj2.mag_prof) | FLAG(obj2.fluxerr_prof);
+  FLAG(obj2.prof_spheroid_mag) |= FLAG(obj2.prof_spheroid_magerr);
+  FLAG(obj2.prof_spheroid_reff) |= FLAG(obj2.prof_spheroid_refferr);
+  FLAG(obj2.prof_spheroid_aspect) |= FLAG(obj2.prof_spheroid_aspecterr);
+  FLAG(obj2.prof_spheroid_theta) |= FLAG(obj2.prof_spheroid_thetaerr);
+  FLAG(obj2.prof_spheroid_sersicn) |= FLAG(obj2.prof_spheroid_sersicnerr);
+  FLAG(obj2.prof_disk_mag) |= FLAG(obj2.prof_disk_magerr);
+  FLAG(obj2.prof_disk_scale) |= FLAG(obj2.prof_disk_scaleerr);
+  FLAG(obj2.prof_disk_aspect) |= FLAG(obj2.prof_disk_aspecterr);
+  FLAG(obj2.prof_disk_inclination) |= FLAG(obj2.prof_disk_inclinationerr);
+  FLAG(obj2.prof_disk_theta) |= FLAG(obj2.prof_disk_thetaerr);
+  FLAG(obj2.prof_bar_mag) |= FLAG(obj2.prof_bar_magerr);
+  FLAG(obj2.prof_bar_length) |= FLAG(obj2.prof_bar_lengtherr);
+  FLAG(obj2.prof_bar_aspect) |= FLAG(obj2.prof_bar_aspecterr);
+  FLAG(obj2.prof_bar_theta) |= FLAG(obj2.prof_bar_thetaerr);
+  FLAG(obj2.prof_arms_mag) |= FLAG(obj2.prof_arms_magerr);
+  FLAG(obj2.dtheta1950) |= FLAG(obj2.prof_spheroid_theta1950)
+			| FLAG(obj2.prof_disk_theta1950)
+//			| FLAG(obj2.prof_arms_theta1950)
+			| FLAG(obj2.prof_bar_theta1950)
+			| FLAG(obj2.poserrtheta1950_psf)
+			| FLAG(obj2.win_theta1950)
+			| FLAG(obj2.winposerr_theta1950)
+			| FLAG(obj2.poserr_theta1950)
+			| FLAG(obj2.theta1950)
+			| FLAG(obj2.poserrtheta1950_prof);
+  FLAG(obj2.dtheta2000) |= FLAG(obj2.prof_spheroid_theta2000)
+			| FLAG(obj2.prof_disk_theta2000)
+//			| FLAG(obj2.prof_arms_theta2000)
+			| FLAG(obj2.prof_bar_theta2000)
+			| FLAG(obj2.poserrtheta2000_psf)
+			| FLAG(obj2.win_theta2000)
+			| FLAG(obj2.winposerr_theta2000)
+			| FLAG(obj2.poserr_theta2000)
+			| FLAG(obj2.theta2000)
+			| FLAG(obj2.poserrtheta2000_prof);
+
+
+  FLAG(obj2.prof_spheroid_thetas) |= FLAG(obj2.prof_spheroid_theta2000)
+			| FLAG(obj2.prof_spheroid_theta1950);
+  FLAG(obj2.prof_spheroid_thetaw) |= FLAG(obj2.prof_spheroid_thetas);
+  FLAG(obj2.prof_disk_thetas) |= FLAG(obj2.prof_disk_theta2000)
+			| FLAG(obj2.prof_disk_theta1950);
+  FLAG(obj2.prof_disk_thetaw) |= FLAG(obj2.prof_disk_thetas);
+  FLAG(obj2.prof_bar_thetas) |= FLAG(obj2.prof_bar_theta2000)
+			| FLAG(obj2.prof_bar_theta1950);
+  FLAG(obj2.prof_bar_thetaw) |= FLAG(obj2.prof_bar_thetas);
+/*
+  FLAG(obj2.prof_arms_thetaw) |= FLAG(obj2.prof_arms_thetas)
+			| FLAG(obj2.prof_arms_theta2000)
+			| FLAG(obj2.prof_arms_theta1950);
+*/
+  FLAG(obj2.prof_arms_scalew) |= FLAG(obj2.prof_arms_startw)
+			| FLAG(obj2.prof_arms_scaleerrw)
+			| FLAG(obj2.prof_arms_starterrw);
+
+  FLAG(obj2.prof_bar_lengthw) |= FLAG(obj2.prof_bar_aspectw)
+			| FLAG(obj2.prof_bar_thetaw)
+			| FLAG(obj2.prof_bar_lengtherrw)
+			| FLAG(obj2.prof_bar_aspecterrw)
+			| FLAG(obj2.prof_bar_thetaerrw);
+
+  FLAG(obj2.prof_disk_scalew) |= FLAG(obj2.prof_disk_aspectw)
+			| FLAG(obj2.prof_disk_thetaw)
+			| FLAG(obj2.prof_disk_scaleerrw)
+			| FLAG(obj2.prof_disk_aspecterrw)
+			| FLAG(obj2.prof_disk_thetaerrw)
+			| FLAG(obj2.prof_arms_scalew);
+
+  FLAG(obj2.prof_spheroid_reffw) |= FLAG(obj2.prof_spheroid_aspectw)
+			| FLAG(obj2.prof_spheroid_thetaw)
+			| FLAG(obj2.prof_spheroid_refferrw)
+			| FLAG(obj2.prof_spheroid_aspecterrw)
+			| FLAG(obj2.prof_spheroid_thetaerrw);
+
+  FLAG(obj2.prof_flagw) |= FLAG(obj2.prof_spheroid_reffw)
+			| FLAG(obj2.prof_disk_scalew)
+			| FLAG(obj2.prof_bar_lengthw)
+			| FLAG(obj2.prof_arms_scalew);
+			
+  FLAG(obj2.prof_mx2) |= FLAG(obj2.prof_my2) | FLAG(obj2.prof_mxy)
+			| FLAG(obj2.prof_e1) |FLAG(obj2.prof_e2)
+			| FLAG(obj2.prof_eps1) |FLAG(obj2.prof_eps2);
+  FLAG(obj2.prof_arms_flux) |= FLAG(obj2.prof_arms_fluxerr)
+			| FLAG(obj2.prof_arms_mag)
+			| FLAG(obj2.prof_arms_scalew)
+			| FLAG(obj2.prof_arms_scale)
+			| FLAG(obj2.prof_arms_posang)
+			| FLAG(obj2.prof_arms_pitch)
+			| FLAG(obj2.prof_arms_start)
+			| FLAG(obj2.prof_arms_quadfrac);
+  FLAG(obj2.prof_bar_theta) |= FLAG(obj2.prof_bar_lengthw);
+  FLAG(obj2.prof_bar_flux) |= FLAG(obj2.prof_bar_fluxerr)
+			| FLAG(obj2.prof_bar_mag)
+			| FLAG(obj2.prof_bar_lengthw)
+			| FLAG(obj2.prof_bar_length)
+			| FLAG(obj2.prof_bar_aspect)
+			| FLAG(obj2.prof_bar_posang)
+			| FLAG(obj2.prof_bar_theta)
+			| FLAG(obj2.prof_arms_flux);
+  FLAG(obj2.prof_disk_flux) |= FLAG(obj2.prof_disk_fluxerr)
+			| FLAG(obj2.prof_disk_mag)
+			| FLAG(obj2.prof_disk_scalew)
+			| FLAG(obj2.prof_disk_scale)
+			| FLAG(obj2.prof_disk_aspect)
+			| FLAG(obj2.prof_disk_inclination)
+			| FLAG(obj2.prof_disk_theta)
+			| FLAG(obj2.prof_bar_flux);
+  FLAG(obj2.prof_spheroid_flux) |= FLAG(obj2.prof_spheroid_fluxerr)
+			| FLAG(obj2.prof_spheroid_mag)
+			| FLAG(obj2.prof_spheroid_reffw)
+			| FLAG(obj2.prof_spheroid_reff)
+			| FLAG(obj2.prof_spheroid_aspect)
+			| FLAG(obj2.prof_spheroid_theta)
+			| FLAG(obj2.prof_spheroid_sersicn);
+  prefs.prof_flag |= FLAG(obj2.prof_chi2) | FLAG(obj2.prof_niter)
+			| FLAG(obj2.prof_vector) | FLAG(obj2.prof_errvector)
+			| FLAG(obj2.x_prof) | FLAG(obj2.y_prof)
+			| FLAG(obj2.prof_mx2)
+			| FLAG(obj2.prof_disk_flux)
+			| FLAG(obj2.prof_spheroid_flux);
+
+
+/* If only global parameters are requested, fit a Sersic model */
+  if (prefs.prof_flag && !(FLAG(obj2.prof_spheroid_flux)
+			| FLAG(obj2.prof_disk_flux)))
+    {
+    FLAG(obj2.prof_spheroid_flux) |= prefs.prof_flag;
+    FLAG(obj2.prof_spheroid_sersicn) |= prefs.prof_flag;
+    }
+
 
 /*------------------------------ Astrometry ---------------------------------*/
   FLAG(obj2.win_aw) |= FLAG(obj2.win_bw) | FLAG(obj2.win_polarw);
@@ -202,12 +411,12 @@ void	updateparamflags()
 
   FLAG(obj2.peakalpha1950) |= FLAG(obj2.peakdelta1950);
   FLAG(obj2.alpha1950) |= FLAG(obj2.delta1950) |  FLAG(obj2.theta1950)
-			| FLAG(obj2.poserr_theta1950);
+			| FLAG(obj2.poserr_theta1950) | FLAG(obj2.dtheta1950);
+;
   FLAG(obj2.peakalpha2000) |= FLAG(obj2.peakdelta2000)
 			| FLAG(obj2.peakalpha1950);
   FLAG(obj2.alpha2000) |= FLAG(obj2.delta2000) | FLAG(obj2.alpha1950)
-			| FLAG(obj2.theta2000)
-			| FLAG(obj2.poserr_theta2000);
+			| FLAG(obj2.dtheta2000);
   FLAG(obj2.peakalphas) |= FLAG(obj2.peakdeltas) | FLAG(obj2.peakalpha2000);
   FLAG(obj2.alphas) |= FLAG(obj2.deltas) | FLAG(obj2.alpha2000);
   FLAG(obj2.thetas) |= FLAG(obj2.theta1950) | FLAG(obj2.theta2000);
@@ -239,7 +448,7 @@ void	updateparamflags()
 
   FLAG(obj2.flux_best) |= FLAG(obj2.mag_best) | FLAG(obj2.fluxerr_best);
 
-  FLAG(obj2.hl_radius) |= FLAG(obj2.winpos_x);
+  FLAG(obj2.hl_radius) |= FLAG(obj2.winpos_x) | prefs.prof_flag;
 
   FLAG(obj2.flux_auto)  |= FLAG(obj2.mag_auto) | FLAG(obj2.magerr_auto)
 			| FLAG(obj2.fluxerr_auto)
@@ -259,9 +468,6 @@ void	updateparamflags()
 
   FLAG(obj2.flux_aper) |= FLAG(obj2.mag_aper)|FLAG(obj2.magerr_aper)
 			    | FLAG(obj2.fluxerr_aper);
-
-  FLAG(obj.flux_prof) |= FLAG(obj2.mag_prof)|FLAG(obj2.magerr_prof)
-			    | FLAG(obj2.flux_prof) | FLAG(obj2.fluxerr_prof);
 
   FLAG(obj2.flux_galfit) |= FLAG(obj2.mag_galfit) | FLAG(obj2.magerr_galfit)
 			    | FLAG(obj2.fluxerr_galfit);
@@ -330,6 +536,26 @@ void	updateparamflags()
   }
 
 
+/********************************** dumpparams *******************************/
+/*
+Initialize the catalog header
+*/
+void	dumpparams(void)
+  {
+   int		i;
+
+  for (i=0; *objkey[i].name ; i++)
+    if (*objkey[i].unit)
+      printf("#%-22.22s %-58.58s [%s]\n",
+		objkey[i].name, objkey[i].comment, objkey[i].unit);
+    else
+      printf("#%-22.22s %-58.58s\n",
+		objkey[i].name, objkey[i].comment);
+
+  return;
+  }
+
+
 /********************************** initcat **********************************/
 /*
 Initialize the catalog header
@@ -355,10 +581,10 @@ void	initcat(void)
       for (i=0,n=1; i++<objtab->nkey; key=key->nextkey)
         {
         if (*key->unit)
-          fprintf(ascfile, "# %3d %-15.15s %-47.47s [%s]\n",
+          fprintf(ascfile, "# %3d %-22.22s %-58.58s [%s]\n",
 		n, key->name,key->comment, key->unit);
         else
-          fprintf(ascfile, "# %3d %-15.15s %.47s\n",
+          fprintf(ascfile, "# %3d %-22.22s %-58.58s\n",
 		n, key->name,key->comment);
         n += key->nbytes/t_size[key->ttype];
         }
@@ -494,9 +720,9 @@ void	reinitcat(picstruct *field)
       case FITS_LDAC:
 /*------ We create a dummy table (only used through its header) */
         QCALLOC(asctab, tabstruct, 1);
-        asctab->headnblock = field->fitsheadsize/FBSIZE;
-        QMALLOC(asctab->headbuf, char, asctab->headnblock*FBSIZE);
-        memcpy(asctab->headbuf, field->fitshead, asctab->headnblock*FBSIZE);
+        asctab->headnblock = field->tab->headnblock;
+        QMEMCPY(field->tab->headbuf, asctab->headbuf, char,
+		asctab->headnblock*FBSIZE);
         key = headkey;
         while (*key->name)
           addkeyto_head(asctab, key++);
@@ -522,9 +748,9 @@ void	reinitcat(picstruct *field)
       case FITS_TPX:
 /*------ We create a dummy table (only used through its header) */
         QCALLOC(asctab, tabstruct, 1);
-        asctab->headnblock = field->fitsheadsize/FBSIZE;
-        QMALLOC(asctab->headbuf, char, asctab->headnblock*FBSIZE);
-        memcpy(asctab->headbuf, field->fitshead, asctab->headnblock*FBSIZE);
+        asctab->headnblock = field->tab->headnblock;
+        QMEMCPY(field->tab->headbuf, asctab->headbuf, char,
+		asctab->headnblock*FBSIZE);
         key = headkey;
         while (*key->name)
           addkeyto_head(asctab, key++);
@@ -703,8 +929,8 @@ void	reendcat()
       head = key->ptr;
       fitswrite(head, "SEXNDET ", &thecat.ndetect,H_INT,T_LONG);
       fitswrite(head, "SEXNFIN ", &thecat.ntotal, H_INT,T_LONG);
-      fitswrite(head, "SEXDATE ", thecat.ext_date, H_STRING, 0);
-      fitswrite(head, "SEXTIME ", thecat.ext_time, H_STRING, 0);
+      fitswrite(head, "SEXDATE ", thecat.ext_date, H_STRING, T_STRING);
+      fitswrite(head, "SEXTIME ", thecat.ext_time, H_STRING, T_STRING);
       fitswrite(head, "SEXELAPS", &thecat.ext_elapsed, H_FLOAT, T_DOUBLE);
       QFTELL(fitscat->file, pos, fitscat->filename);
       QFSEEK(fitscat->file, tab->headpos, SEEK_SET, fitscat->filename);

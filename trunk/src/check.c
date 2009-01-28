@@ -9,7 +9,7 @@
 *
 *	Contents:	handling of "check-images".
 *
-*	Last modify:	15/06/2004
+*	Last modify:	17/09/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -26,7 +26,7 @@
 #include	"define.h"
 #include	"globals.h"
 #include	"fits/fitscat.h"
-#include	"astrom.h"
+#include	"fitswcs.h"
 #include	"check.h"
 
 /********************************* addcheck **********************************/
@@ -61,8 +61,8 @@ void	addcheck(checkstruct *check, float *psf,
     }
   if (xmin<0)
     {
-    psf += -xmin;
-    w2 -= -xmin;
+    psf -= xmin;
+    w2 += xmin;
     xmin = 0;
     }
 
@@ -181,7 +181,7 @@ initialize check-image (for subsequent writing).
 void	reinitcheck(picstruct *field, checkstruct *check)
 
   {
-   astromstruct	*as;
+   wcsstruct	*wcs;
    char		*buf;
    int		i, ival;
    size_t	padsize;
@@ -190,15 +190,14 @@ void	reinitcheck(picstruct *field, checkstruct *check)
    PIXTYPE	*ptrf;
 
 /* Inherit the field FITS header */
-  check->fitsheadsize = field->fitsheadsize;
-  QMALLOC(check->fitshead, char, check->fitsheadsize);
-  memcpy(check->fitshead, field->fitshead, check->fitsheadsize);
+  check->fitsheadsize = field->tab->headnblock*FBSIZE;
+  QMEMCPY(field->tab->headbuf, check->fitshead, char, check->fitsheadsize);
   check->y = 0;
 /* Neutralize possible scaling factors */
   dval = 1.0;fitswrite(check->fitshead, "BSCALE  ", &dval, H_FLOAT, T_DOUBLE);
   dval = 0.0;fitswrite(check->fitshead, "BZERO   ", &dval, H_FLOAT, T_DOUBLE);
   ival = 1;fitswrite(check->fitshead, "BITSGN  ", &ival, H_INT, T_LONG);
-  if (field->compress_type != ICOMPRESS_NONE)
+  if (field->tab->compress_type != COMPRESS_NONE)
     fitswrite(check->fitshead, "IMAGECOD", "NONE", H_STRING, T_STRING);
   fitswrite(check->fitshead, "ORIGIN  ", BANNER, H_STRING, T_STRING);
 
@@ -242,6 +241,9 @@ void	reinitcheck(picstruct *field, checkstruct *check)
     case CHECK_SUBPCPROTOS:
     case CHECK_PCPROTOS:
     case CHECK_PCOPROTOS:
+    case CHECK_SUBPROFILES:
+    case CHECK_PROFILES:
+    case CHECK_PATTERNS:
       ival = -32;
       fitswrite(check->fitshead, "BITPIX  ", &ival, H_INT, T_LONG);
       check->width = field->width;
@@ -289,24 +291,24 @@ void	reinitcheck(picstruct *field, checkstruct *check)
       check->height = field->nbacky;
       fitswrite(check->fitshead, "NAXIS2  ", &check->height, H_INT, T_LONG);
 /*---- Scale the WCS information if present */
-      if ((as=field->astrom))
+      if ((wcs=field->wcs))
         {
-        dval = as->cdelt[0]*field->backw;
+        dval = wcs->cdelt[0]*field->backw;
         fitswrite(check->fitshead, "CDELT1  ", &dval, H_EXPO, T_DOUBLE);
-        dval = as->cdelt[1]*field->backh;
+        dval = wcs->cdelt[1]*field->backh;
         fitswrite(check->fitshead, "CDELT2  ", &dval, H_EXPO, T_DOUBLE);
-        dval = (as->crpix[0]-0.5)/field->backw + 0.5;
+        dval = (wcs->crpix[0]-0.5)/field->backw + 0.5;
         fitswrite(check->fitshead, "CRPIX1  ", &dval, H_EXPO, T_DOUBLE);
-        dval = (as->crpix[1]-0.5)/field->backh + 0.5;
+        dval = (wcs->crpix[1]-0.5)/field->backh + 0.5;
         fitswrite(check->fitshead, "CRPIX2  ", &dval, H_EXPO, T_DOUBLE);
 
-        dval = as->pc[0]*as->cdelt[0]*field->backw;
+        dval = wcs->cd[0]*field->backw;
         fitswrite(check->fitshead, "CD1_1   ", &dval, H_EXPO, T_DOUBLE);
-        dval = as->pc[1]*as->cdelt[1]*field->backh;
+        dval = wcs->cd[1]*field->backh;
         fitswrite(check->fitshead, "CD1_2  ", &dval, H_EXPO, T_DOUBLE);
-        dval = as->pc[2]*as->cdelt[0]*field->backw;
+        dval = wcs->cd[wcs->naxis]*field->backw;
         fitswrite(check->fitshead, "CD2_1   ", &dval, H_EXPO, T_DOUBLE);
-        dval = as->pc[3]*as->cdelt[1]*field->backh;
+        dval = wcs->cd[wcs->naxis+1]*field->backh;
         fitswrite(check->fitshead, "CD2_2  ", &dval, H_EXPO, T_DOUBLE);
         }
       check->npix = check->width*check->height;
@@ -348,7 +350,7 @@ void	reinitcheck(picstruct *field, checkstruct *check)
       break;
 
     default:
-      error(EXIT_FAILURE, "*Internal Error* in ", "initcheck()!");
+      error(EXIT_FAILURE, "*Internal Error* in ", "reinitcheck()!");
     }
 
   return;
@@ -363,7 +365,8 @@ void	writecheck(checkstruct *check, PIXTYPE *data, int w)
 
   {
   if (check->type == CHECK_APERTURES || check->type == CHECK_SUBPSFPROTOS
-	|| check->type == CHECK_SUBPCPROTOS || check->type == CHECK_PCOPROTOS)
+	|| check->type == CHECK_SUBPCPROTOS || check->type == CHECK_PCOPROTOS
+	|| check->type == CHECK_SUBPROFILES)
     {
     memcpy((PIXTYPE *)check->pix + w*(check->y++), data, w*sizeof(PIXTYPE));
     return;
@@ -424,7 +427,10 @@ void	reendcheck(picstruct *field, checkstruct *check)
     case CHECK_SUBPCPROTOS:
     case CHECK_PCPROTOS:
     case CHECK_PCOPROTOS:
+    case CHECK_SUBPROFILES:
+    case CHECK_PROFILES:
     case CHECK_ASSOC:
+    case CHECK_PATTERNS:
       if (bswapflag)
         swapbytes(check->pix, sizeof(PIXTYPE), (int)check->npix);
       QFWRITE(check->pix,check->npix*sizeof(PIXTYPE),

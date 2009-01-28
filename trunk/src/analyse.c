@@ -9,7 +9,7 @@
 *
 *	Contents:	analyse(), endobject()...: measurements on detections.
 *
-*	Last modify:	12/01/2006
+*	Last modify:	18/11/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -37,11 +37,13 @@
 #include	"image.h"
 #include	"photom.h"
 #include	"psf.h"
+#include	"profit.h"
 #include	"retina.h"
 #include	"som.h"
 #include	"winpos.h"
 
 static obj2struct	*obj2 = &outobj2;
+extern profitstruct	*theprofit;
 
 /********************************* analyse ***********************************/
 void  analyse(picstruct *field, picstruct *dfield, int objnb,
@@ -88,10 +90,10 @@ void  examineiso(picstruct *field, picstruct *dfield, objstruct *obj,
    checkstruct		*check;
    pliststruct		*pixt;
    int			i,j,k,h, photoflag,area,errflag, cleanflag,
-			pospeakflag, profflag, minarea, gainflag;
+			pospeakflag, minarea, gainflag;
    double		tv,sigtv, ngamma,
 			esum, emx2,emy2,emxy, err,gain,backnoise2,dbacknoise2,
-			xm,ym, x,y,var,var2, profflux,proffluxvar;
+			xm,ym, x,y,var,var2;
    float		*heap,*heapt,*heapj,*heapk, swap;
    PIXTYPE		pix, cdpix, tpix, peak,cdpeak, thresh,dthresh;
    static PIXTYPE	threshs[NISO];
@@ -112,8 +114,7 @@ void  examineiso(picstruct *field, picstruct *dfield, objstruct *obj,
     xm = ym = dbacknoise2 = 0.0;	/* to avoid gcc -Wall warnings */
 
   pospeakflag = FLAG(obj.peakx);
-  profflag = FLAG(obj.flux_prof);
-  gain = prefs.gain;
+  gain = field->gain;
   ngamma = field->ngamma;
   photoflag = (prefs.detect_type==PHOTO);
   gainflag = PLISTEXIST(var) && prefs.weightgain_flag;
@@ -143,7 +144,7 @@ void  examineiso(picstruct *field, picstruct *dfield, objstruct *obj,
 
 
 /* Measure essential isophotal parameters in the measurement image... */
-  tv = sigtv = profflux = proffluxvar = 0.0;
+  tv = sigtv = 0.0;
   var = backnoise2 = field->backsig*field->backsig;
   peak = -BIG;
   cdpeak = -BIG;
@@ -177,12 +178,6 @@ void  examineiso(picstruct *field, picstruct *dfield, objstruct *obj,
       var2 += pix/gain*var/backnoise2;
 
     sigtv += var2;
-
-    if (profflag && cdpix>0.0)
-      {
-      profflux += cdpix*pix;
-      proffluxvar += cdpix*var2;
-      }
 
     if (pix>thresh)
       area++;
@@ -243,12 +238,6 @@ void  examineiso(picstruct *field, picstruct *dfield, objstruct *obj,
     {
     obj->mthresh = *heap;
     free(heap);
-    }
-
-  if (profflag)
-    {
-    obj->flux_prof = obj->fdflux>0.0? (float)(profflux/obj->fdflux) : 0.0;
-    obj->fluxerr_prof = obj->fdflux>0.0? (float)(proffluxvar/obj->fdflux):0.0;
     }
 
   if (errflag)
@@ -348,7 +337,7 @@ void  examineiso(picstruct *field, picstruct *dfield, objstruct *obj,
       mx = obj->mx;
       my = obj->my;
       dbkg = obj->dbkg;
-      sat = (double)(prefs.satur_level - obj->bkg);
+      sat = (double)(field->satur_level - obj->bkg);
       s = sx = sy = sxx = sxy = 0.0;
       for (pixt=pixel+obj->firstpix;pixt>=pixel;pixt=pixel+PLIST(pixt,nextpix))
         {
@@ -484,11 +473,6 @@ void	endobject(picstruct *field, picstruct *dfield, picstruct *wfield,
 /*-- Convert the father of photom. error estimates from variance to RMS */
     obj2->flux_iso = obj->flux;
     obj2->fluxerr_iso = sqrt(obj->fluxerr);
-    if (FLAG(obj.flux_prof))
-      {
-      obj2->flux_prof = obj->flux_prof;
-      obj2->fluxerr_prof = sqrt(obj->fluxerr_prof);
-      }
 
     if (FLAG(obj2.flux_isocor))
       computeisocorflux(field, obj);
@@ -512,7 +496,7 @@ void	endobject(picstruct *field, picstruct *dfield, picstruct *wfield,
       compute_winpos(field, wfield, obj);
 
 /*-- What about the peak of the profile? */
-    if (obj->peak+obj->bkg >= prefs.satur_level)
+    if (obj->peak+obj->bkg >= field->satur_level)
       obj->flag |= OBJ_SATUR;
 
 /*-- Check-image CHECK_APERTURES option */
@@ -602,7 +586,7 @@ void	endobject(picstruct *field, picstruct *dfield, picstruct *wfield,
         }
 
       som_phot(thesom, obj->bkg, field->backsig,
-        (float)prefs.gain, obj->mx-ix, obj->my-iy,
+        (float)field->gain, obj->mx-ix, obj->my-iy,
         FLAG(obj2.vector_somfit)?outobj2.vector_somfit:NULL, -1.0);
       obj2->stderr_somfit = thesom->stderror;
       obj2->flux_somfit = thesom->amp;
@@ -616,9 +600,6 @@ void	endobject(picstruct *field, picstruct *dfield, picstruct *wfield,
     if (FLAG(obj2.vigshift))
       copyimage_center(field, outobj2.vigshift, prefs.vigshiftsize[0],
 		prefs.vigshiftsize[1], obj->mx, obj->my);
-
-/*--- Express everything in magnitude units */
-    computemags(field, obj);
 
 /*------------------------------- PSF fitting ------------------------------*/
     nsub = 1;
@@ -654,6 +635,14 @@ void	endobject(picstruct *field, picstruct *dfield, picstruct *wfield,
 		prefs.mag_zeropoint -2.5*log10(thepsfit->flux[j]) : 99.0;
           }
       }
+
+/*----------------------------- Profile fitting -----------------------------*/
+    nsub = 1;
+    if (prefs.prof_flag)
+      profit_fit(theprofit, field, wfield, obj, obj2);
+
+/*--- Express everything in magnitude units */
+    computemags(field, obj);
 
 /*-------------------------------- Astrometry ------------------------------*/
     if (prefs.world_flag)
@@ -702,6 +691,25 @@ void	endobject(picstruct *field, picstruct *dfield, picstruct *wfield,
 	obj->flag&OBJ_DOVERFLOW?'D':'_',
 	obj->flag&OBJ_OVERFLOW?'O':'_');
       writecat(n, objlist);
+      }
+    }
+  else
+    {
+/*-- Treatment of discarded detections */
+/*-- update segmentation map */
+    if ((check=prefs.check[CHECK_SEGMENTATION]))
+      {
+       ULONG	*pix;
+       ULONG	oldsnumber = obj->number;
+       int	dx,dx0,dy,dpix;
+
+      pix = (ULONG *)check->pix + check->width*obj->ymin + obj->xmin;
+      dx0 = obj->xmax-obj->xmin+1;
+      dpix = check->width-dx0;
+      for (dy=obj->ymax-obj->ymin+1; dy--; pix += dpix)
+        for (dx=dx0; dx--; pix++)
+          if (*pix==oldsnumber)
+            *pix = 0;
       }
     }
 

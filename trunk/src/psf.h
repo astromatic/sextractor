@@ -61,7 +61,7 @@ typedef struct pc
   codestruct	*code;
   }	pcstruct;
 
-typedef struct
+typedef struct psf
   {
   char		name[MAXCHAR];	/* Name of the file containing the PSF data */
   int		maskdim;	/* Dimensionality of the tabulated data */

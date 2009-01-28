@@ -9,7 +9,7 @@
 *
 *	Contents:	Functions to handle the configuration file.
 *
-*	Last modify:	12/01/2006
+*	Last modify:	19/09/2008
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -23,6 +23,14 @@
 #include	<stdio.h>
 #include	<stdlib.h>
 #include	<string.h>
+#include        <unistd.h>
+#if defined(USE_THREADS) \
+&& (defined(__APPLE__) || defined(FREEBSD) || defined(NETBSD))	/* BSD, Apple */
+ #include	<sys/types.h>
+ #include	<sys/sysctl.h>
+#elif defined(USE_THREADS) && defined(HAVE_MPCTL)		/* HP/UX */
+ #include	<sys/mpctl.h>
+#endif
 
 #include	"define.h"
 #include	"globals.h"
@@ -370,6 +378,68 @@ int     cistrcmp(char *cs, char *ct, int mode)
   }
 
 
+/********************************* preprefs **********************************/
+/*
+Set number of threads and endianity.
+*/
+void	preprefs()
+
+  {
+   unsigned short	ashort=1;
+#ifdef USE_THREADS
+   int			nproc;
+#endif
+
+/* Test if byteswapping will be needed */
+  bswapflag = *((char *)&ashort);
+
+/* Multithreading */
+#ifdef USE_THREADS
+  if (!prefs.nthreads)
+    {
+/*-- Get the number of processors for parallel builds */
+/*-- See, e.g. http://ndevilla.free.fr/threads */
+    nproc = -1;
+#if defined(_SC_NPROCESSORS_ONLN)		/* AIX, Solaris, Linux */
+    nproc = (int)sysconf(_SC_NPROCESSORS_ONLN);
+#elif defined(_SC_NPROCESSORS_CONF)
+    nproc = (int)sysconf(_SC_NPROCESSORS_CONF);
+#elif defined(__APPLE__) || defined(FREEBSD) || defined(NETBSD)	/* BSD, Apple */
+    {
+     int        mib[2];
+     size_t     len;
+
+     mib[0] = CTL_HW;
+     mib[1] = HW_NCPU;
+     len = sizeof(nproc);
+     sysctl(mib, 2, &nproc, &len, NULL, 0);
+     }
+#elif defined (_SC_NPROC_ONLN)			/* SGI IRIX */
+    nproc = sysconf(_SC_NPROC_ONLN);
+#elif defined(HAVE_MPCTL)			/* HP/UX */
+    nproc =  mpctl(MPC_GETNUMSPUS_SYS, 0, 0);
+#endif
+
+    if (nproc>0)
+      prefs.nthreads = nproc;
+    else
+      {
+      prefs.nthreads = 2;
+      warning("Cannot find the number of CPUs on this system:",
+		"NTHREADS defaulted to 2");
+      }
+    }
+#else
+  if (prefs.nthreads != 1)
+    {
+    prefs.nthreads = 1;
+    warning("NTHREADS != 1 ignored: ",
+	"this build of " BANNER " is single-threaded");
+    }
+#endif
+  }
+
+
 /********************************* useprefs **********************************/
 /*
 Update various structures according to the prefs.
@@ -377,12 +447,8 @@ Update various structures according to the prefs.
 void	useprefs()
 
   {
-   unsigned short	ashort=1;
    int			i, margin, naper;
    char			*str;
-
-/* Test if byteswapping will be needed */
-  bswapflag = *((char *)&ashort);
 
 /*-------------------------------- Images ----------------------------------*/
   prefs.dimage_flag = (prefs.nimage_name>1);
@@ -402,9 +468,10 @@ void	useprefs()
   prefs.world_flag = FLAG(obj2.mxw) || FLAG(obj2.mamaposx)
 		|| FLAG(obj2.peakxw) || FLAG(obj2.winpos_xw)
 		|| FLAG(obj2.mx2w) || FLAG(obj2.win_mx2w)
+		|| FLAG(obj2.xw_prof) || FLAG(obj2.poserrmx2w_prof)
 		|| FLAG(obj2.poserr_mx2w) || FLAG(obj2.winposerr_mx2w)
 		|| FLAG(obj2.npixw) || FLAG(obj2.fdnpixw)
-		|| FLAG(obj2.fwhmw);
+		|| FLAG(obj2.fwhmw) || FLAG(obj2.prof_flagw);
 /* Default astrometric settings */
   strcpy(prefs.coosys, "ICRS");
   prefs.epoch = 2000.0;
@@ -514,6 +581,20 @@ void	useprefs()
           prefs.pc_flag = 1;
     }
 
+/*-------------------------- Profile-fitting -------------------------------*/
+  if (prefs.check_flag)
+    for (i=0; i<prefs.ncheck_type; i++)
+      if (prefs.check_type[i] == CHECK_SUBPROFILES
+	|| prefs.check_type[i] == CHECK_PROFILES)
+        prefs.prof_flag = 1;
+
+/*-------------------------- Pattern-fitting -------------------------------*/
+/* Profile-fitting is possible only if a PSF file is loaded */
+  if (prefs.check_flag)
+    for (i=0; i<prefs.ncheck_type; i++)
+      if (prefs.check_type[i] == CHECK_PATTERNS)
+        prefs.pattern_flag = 1;
+
 /*----------------------------- WEIGHT-images ------------------------------*/
   if (prefs.nweight_type<2)
     prefs.weight_type[1] = prefs.weight_type[0];
@@ -598,3 +679,23 @@ void	useprefs()
   }
 
 
+/********************************* endprefs *********************************/
+/*
+Mostly free memory allocate for static arrays.
+*/
+void	endprefs(void)
+
+  {
+    int i;
+
+  for (i=0; i<prefs.nfimage_name; i++)
+      free(prefs.fimage_name[i]);
+  for (i=0; i<prefs.nwimage_name; i++)
+      free(prefs.wimage_name[i]);
+  for (i=0; i<prefs.npsf_name; i++)
+      free(prefs.psf_name[i]);
+  for (i=0; i<prefs.ncheck_name; i++)
+      free(prefs.check_name[i]);
+
+  return;
+  }
