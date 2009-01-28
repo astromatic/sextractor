@@ -1,7 +1,7 @@
 # Program Makefile for SEx
-# Copyright (C) 2004-2007 Emmanuel Bertin.
+# Copyright (C) 2004-2006 Emmanuel Bertin.
 SUBDIRS			= fits wcs
-bin_PROGRAMS		= sex ldactoasc
+bin_PROGRAMS		= sex
 sex_SOURCES		= analyse.c assoc.c astrom.c back.c bpro.c catout.c \
 			  check.c clean.c extract.c field.c filter.c \
 			  flag.c graph.c growth.c image.c interpolate.c \
@@ -15,8 +15,6 @@ sex_SOURCES		= analyse.c assoc.c astrom.c back.c bpro.c catout.c \
 			  neurro.h param.h photom.h plist.h poly.h prefs.h \
 			  preflist.h psf.h retina.h sexhead1.h sexhead.h \
 			  sexheadsc.h som.h types.h weight.h winpos.h xml.h
-ldactoasc_SOURCES	= ldactoasc.c ldactoasc.h
 AM_CPPFLAGS		= -DXSL_URL=\"file://$(pkgdatadir)/${PACKAGE_NAME}.xsl\"
 sex_LDADD		= $(top_builddir)/src/fits/libfits.a $(top_builddir)/src/wcs/libwcs_c.a
-ldactoasc_LDADD		= $(top_builddir)/src/fits/libfits.a
 DATE=`date +"%Y-%m-%d"`

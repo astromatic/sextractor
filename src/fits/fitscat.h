@@ -9,7 +9,7 @@
 *
 *	Contents:	Simplified versin of the LDACTools: main include file
 *
-*	Last modify:	11/06/2007
+*	Last modify:	10/07/2006
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -282,7 +282,6 @@ extern int	about_cat(catstruct *cat, FILE *stream),
 				long pos),
 		remove_key(tabstruct *tab, char *keyname),
 		remove_keys(tabstruct *tab),
-                removekeywordfrom_head(tabstruct *tab, char *keyword),
 		remove_tab(catstruct *cat, char *tabname, int seg),
 		remove_tabs(catstruct *cat),
 		save_head(catstruct *cat, tabstruct *tab),

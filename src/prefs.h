@@ -9,7 +9,7 @@
 *
 *	Contents:	Keywords for the configuration file.
 *
-*	Last modify:	31/07/2007
+*	Last modify:	13/07/2006
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -52,7 +52,6 @@ typedef struct
   int		deblend_nthresh;			/* threshold number */
   double	deblend_mincont;			/* minimum contrast */
   double	satur_level;				/* saturation level */
-  char		satur_key[8];				/* saturation keyword */
   enum	{CCD, PHOTO}			detect_type;	/* detection type */
 /*----- Flagging */
   char		*(fimage_name[MAXFLAG]);		/* flagmap filenames */
@@ -92,8 +91,6 @@ typedef struct
   double	mag_zeropoint;				/* magnitude offsets */
   double	mag_gamma;				/* for emulsions */
   double	gain;					/* only for CCD */
-  char		gain_key[8];				/* gain keyword
-							   only for CCD */
 /*----- S/G separation */
   double	pixel_scale;				/* in arcsec */
   double	seeing_fwhm;				/* in arcsec */
@@ -215,7 +212,6 @@ typedef struct
 extern int	cistrcmp(char *cs, char *ct, int mode);
 
 extern void	dumpprefs(int state),
-		endprefs(void),
 		readprefs(char *filename,char **argkey,char **argval,int narg),
 		useprefs(void);
 #endif
