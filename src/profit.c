@@ -9,7 +9,7 @@
 *
 *	Contents:	Fit an arbitrary profile combination to a detection.
 *
-*	Last modify:	20/11/2008
+*	Last modify:	29/01/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -168,7 +168,7 @@ OUTPUT	Pointer to an allocated fit structure (containing details about the
 	fit).
 NOTES	It is a modified version of the lm_minimize() of lmfit.
 AUTHOR	E. Bertin (IAP)
-VERSION	20/11/2008
+VERSION	29/01/2009
  ***/
 void	profit_fit(profitstruct *profit,
 		picstruct *field, picstruct *wfield,
@@ -217,8 +217,9 @@ void	profit_fit(profitstruct *profit,
   profit->nresi = profit_copyobjpix(profit, field, wfield);
   if (profit->nresi < nparam)
     {
-    for (p=0; p<nparam; p++)
-      obj2->prof_vector[p] = 0.0;
+    if (FLAG(obj2.prof_vector))
+      for (p=0; p<nparam; p++)
+        obj2->prof_vector[p] = 0.0;
     obj2->prof_niter = 0;
     return;
     }
