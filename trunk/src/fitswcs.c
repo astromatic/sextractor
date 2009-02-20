@@ -9,7 +9,7 @@
 *
 *	Contents:       Read and write WCS header info.
 *
-*	Last modify:	26/04/2008
+*	Last modify:	20/02/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -315,7 +315,7 @@ INPUT	tab structure.
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	02/01/2008
+VERSION	20/02/2009
  ***/
 wcsstruct	*read_wcs(tabstruct *tab)
 
@@ -570,7 +570,7 @@ wcsstruct	*read_wcs(tabstruct *tab)
         for (l=0; l<naxis; l++)
           for (j=0; j<100; j++)
             {
-            sprintf(str, "PV%d_%d", l+1, j);
+            sprintf(str, "PV%d_%d ", l+1, j);
             FITSREADF(buf, str, wcs->projp[j+l*100], 0.0);
             }
       }

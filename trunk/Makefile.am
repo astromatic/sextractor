@@ -1,9 +1,9 @@
 # Main Makefile for SExtractor
-# Copyright (C) 2002-2008 Emmanuel Bertin.
+# Copyright (C) 2002-2009 Emmanuel Bertin.
 AUTOMAKE_OPTIONS	= foreign no-dependencies
 SUBDIRS			= man src tests
 dist_pkgdata_DATA	= xsl/sextractor.xsl
-EXTRA_DIST		= config doc AUTHORS BUGS ChangeLog COPYING HISTORY \
+EXTRA_DIST		= config doc AUTHORS BUGS ChangeLog COPYRIGHT HISTORY \
 			  INSTALL README THANKS \
 			  acx_atlas.m4 acx_prog_cc_optim.m4 \
 			  acx_urbi_resolve_dir.m4
