@@ -9,7 +9,7 @@
 *
 *	Contents:	global type definitions.
 *
-*	Last modify:	25/09/2008
+*	Last modify:	18/03/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -334,6 +334,8 @@ typedef struct
   double	prof_mx2w, prof_my2w, prof_mxyw;/* WORLD profile model moments*/
   float		prof_eps1, prof_eps2;		/* Profile model ellip.vector */
   float		prof_e1, prof_e2;		/* Profile model ellip.vector */
+  float		prof_class_star;		/* Model-fitting star/gal class*/
+  float		prof_concentration;		/* Model-fitting concentration*/
   float		prof_offset_flux;		/* Background offset */
   float		prof_offset_fluxerr;		/* RMS error */
   float		prof_spheroid_flux;		/* Spheroid total flux */

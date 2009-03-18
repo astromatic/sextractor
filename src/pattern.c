@@ -9,7 +9,7 @@
 *
 *	Contents:	Generate and handle image patterns for image fitting.
 *
-*	Last modify:	20/11/2008
+*	Last modify:	18/03/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -140,7 +140,7 @@ INPUT	Pointer to pattern structure.
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	01/10/2008
+VERSION	18/03/2009
  ***/
 void	pattern_fit(patternstruct *pattern, profitstruct *profit)
   {
@@ -162,7 +162,7 @@ void	pattern_fit(patternstruct *pattern, profitstruct *profit)
   for (p=0; p<nvec; p++)
     {
     profit_convolve(profit, inpix);
-    profit_resample(profit, inpix, outpix);
+    profit_resample(profit, inpix, outpix, 1.0);
     outpix1 = pattern->lmodpix;
     for (p2=0; p2<=p; p2++)
       {

@@ -9,7 +9,7 @@
 *
 *	Contents:	functions for output of catalog data.
 *
-*	Last modify:	25/09/2008
+*	Last modify:	18/03/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -205,7 +205,9 @@ void	updateparamflags()
   FLAG(obj2.x_prof) |= FLAG(obj2.y_prof)
 			| FLAG(obj2.xw_prof)
 			| FLAG(obj2.poserra_prof)
-			| FLAG(obj2.poserrcxx_prof);
+			| FLAG(obj2.poserrcxx_prof)
+			| FLAG(obj2.prof_concentration)
+			| FLAG(obj2.prof_class_star);
   FLAG(obj2.mag_prof) |= FLAG(obj2.magerr_prof);
   FLAG(obj2.flux_prof) |= FLAG(obj2.mag_prof) | FLAG(obj2.fluxerr_prof);
   FLAG(obj2.prof_spheroid_mag) |= FLAG(obj2.prof_spheroid_magerr);

@@ -9,7 +9,7 @@
 *
 *	Contents:	Include file for profit.c.
 *
-*	Last modify:	03/10/2008
+*	Last modify:	18/03/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -46,7 +46,7 @@ One must have:	PROFIT_NITER > 0
 
 typedef enum		{PROF_BACK, PROF_SERSIC, PROF_DEVAUCOULEURS,
 			PROF_EXPONENTIAL, PROF_ARMS, PROF_BAR, PROF_INRING,
-			PROF_OUTRING, PROF_SERSIC_TABEX, PROF_NPROF}
+			PROF_OUTRING, PROF_SERSIC_TABEX, PROF_DIRAC, PROF_NPROF}
 				proftypenum; /* Profile code */
 
 typedef enum	{INTERP_NEARESTNEIGHBOUR, INTERP_BILINEAR, INTERP_LANCZOS2,
@@ -172,7 +172,7 @@ void		prof_add(profstruct *prof, profitstruct *profit),
 			void *data, int iflag, int iter, int nfev ),
 		profit_psf(profitstruct *profit),
 		profit_resample(profitstruct *profit, double *inpix,
-			PIXTYPE *outpix),
+			PIXTYPE *outpix, double factor),
 		profit_resetparam(profitstruct *profit, paramenum paramtype),
 		profit_resetparams(profitstruct *profit),
 		profit_unboundtobound(profitstruct *profit, double *param);
