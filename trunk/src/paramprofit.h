@@ -9,7 +9,7 @@
 *
 *	Contents:	Model-fitting parameter list for catalog data.
 *
-*	Last modify:	25/09/2008
+*	Last modify:	18/03/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -166,6 +166,13 @@
   {"EPS2MODEL_IMAGE", "Ellipticity component (quadratic) from model-fitting",
 	&outobj2.prof_eps2, H_FLOAT, T_FLOAT, "%10.6f", "",
 	"src.ellipticity;stat.fit;instr.det", ""},
+
+  {"CONCENTRATION_MODEL", "Concentration parameter from model-fitting",
+	&outobj2.prof_concentration, H_FLOAT, T_FLOAT, "%7.4f", "",
+	"src.morph.param", ""},
+  {"CLASS_STAR_MODEL", "S/G classifier from model-fitting",
+	&outobj2.prof_class_star, H_FLOAT, T_FLOAT, "%7.4f", "",
+	"src.class.starGalaxy", ""},
 
   {"FLUX_BACKOFFSET", "Background offset from fitting",
 	&outobj2.prof_offset_flux, H_FLOAT, T_FLOAT, "%12.7g", "count",

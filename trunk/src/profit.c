@@ -9,7 +9,7 @@
 *
 *	Contents:	Fit an arbitrary profile combination to a detection.
 *
-*	Last modify:	29/01/2009
+*	Last modify:	18/03/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -168,17 +168,18 @@ OUTPUT	Pointer to an allocated fit structure (containing details about the
 	fit).
 NOTES	It is a modified version of the lm_minimize() of lmfit.
 AUTHOR	E. Bertin (IAP)
-VERSION	29/01/2009
+VERSION	18/03/2009
  ***/
 void	profit_fit(profitstruct *profit,
 		picstruct *field, picstruct *wfield,
 		objstruct *obj, obj2struct *obj2)
   {
+    profitstruct	pprofit;
     patternstruct *pattern;
     psfstruct		*psf;
     checkstruct		*check;
     double		*oldparaminit,
-			psf_fwhm, oldchi2, a , cp,sp, emx2,emy2,emxy;
+			psf_fwhm, oldchi2, a , cp,sp, emx2,emy2,emxy, dchi2;
     int			i,j,p, oldniter, nparam, ncomp;
 
   nparam = profit->nparam;
@@ -251,10 +252,6 @@ void	profit_fit(profitstruct *profit,
 
   profit_resetparams(profit);
 
-//for (p=0; p<nparam; p++)
-//printf("%g ", profit->paraminit[p]);
-//printf("\n");
-
 the_gal++;
 
 /* Actual minimisation */
@@ -287,11 +284,6 @@ the_gal++;
   for (p=0; p<profit->nparam; p++)
     profit->param[p] = profit->paraminit[p];
 
-//printf("--> ");
-//for (p=0; p<profit->nparam; p++)
-//printf("%g     %g %g\n", profit->param[p], profit->parammin[p], profit->parammax[p]);
-//printf("(%d)\n", profit->niter);
-
 /* CHECK-Images */
   if ((check = prefs.check[CHECK_SUBPROFILES]))
     {
@@ -305,7 +297,6 @@ the_gal++;
     addcheck(check, profit->lmodpix, profit->objnaxisn[0],profit->objnaxisn[1],
 		profit->ix,profit->iy, 1.0);
     }
-
 /* Fill measurement parameters */
   if (FLAG(obj2.prof_vector))
     {
@@ -326,11 +317,24 @@ the_gal++;
     i = profit->paramindex[PARAM_X];
     j = profit->paramindex[PARAM_Y];
 /*-- Model coordinates follow the FITS convention (first pixel at 1,1) */
-    obj2->x_prof = profit->ix + *profit->paramlist[PARAM_X] + 1.0;
-    obj2->y_prof = profit->iy + *profit->paramlist[PARAM_Y] + 1.0;
-    obj2->poserrmx2_prof = emx2 = profit->covar[i*(nparam+1)];
-    obj2->poserrmy2_prof = emy2 = profit->covar[j*(nparam+1)];
-    obj2->poserrmxy_prof = emxy = profit->covar[i+j*nparam];
+    if (profit->paramlist[PARAM_X])
+      {
+      obj2->x_prof = profit->ix + *profit->paramlist[PARAM_X] + 1.0;
+      obj2->poserrmx2_prof = emx2 = profit->covar[i*(nparam+1)];
+      }
+    else
+      emx2 = 0.0;
+    if (profit->paramlist[PARAM_Y])
+      {
+      obj2->y_prof = profit->iy + *profit->paramlist[PARAM_Y] + 1.0;
+      obj2->poserrmy2_prof = emy2 = profit->covar[j*(nparam+1)];
+      }
+    else
+      emy2 = 0.0;
+    if (profit->paramlist[PARAM_X] && profit->paramlist[PARAM_Y])
+      obj2->poserrmxy_prof = emxy = profit->covar[i+j*nparam];
+    else
+      emxy = 0.0;
 
 /*-- Error ellipse parameters */
     if (FLAG(obj2.poserra_prof))
@@ -508,6 +512,38 @@ the_gal++;
       }
     }
 
+  if (FLAG(obj2.prof_class_star))
+    {
+    pprofit = *profit;
+    memset(pprofit.paramindex, 0, PARAM_NPARAM*sizeof(int));
+    memset(pprofit.paramlist, 0, PARAM_NPARAM*sizeof(double *));
+    pprofit.nparam = 0;
+    QMALLOC(pprofit.prof, profstruct *, 1);
+    pprofit.prof[0] = prof_init(&pprofit, PROF_DIRAC);
+    QMALLOC(pprofit.covar, double, pprofit.nparam*pprofit.nparam);
+    pprofit.nprof = 1;
+    profit_resetparams(&pprofit);
+    if (profit->paramlist[PARAM_X] && profit->paramlist[PARAM_Y])
+      {
+      pprofit.paraminit[pprofit.paramindex[PARAM_X]] = *profit->paramlist[PARAM_X];
+      pprofit.paraminit[pprofit.paramindex[PARAM_Y]] = *profit->paramlist[PARAM_Y];
+      }
+    pprofit.paraminit[pprofit.paramindex[PARAM_DISK_FLUX]] = profit->flux;
+    pprofit.niter = profit_minimize(&pprofit, PROFIT_MAXITER);
+    dchi2 = 0.5*(pprofit.chi2 - obj2->prof_chi2);
+    obj2->prof_class_star = dchi2 < 50.0?
+	(dchi2 > -50.0? 2.0/(1.0+exp(dchi2)) : 2.0) : 0.0;
+    if (profit->flux > 0.0 && pprofit.flux > 0.0)
+      obj2->prof_concentration = -2.5*log10(pprofit.flux / profit->flux);
+    else  if (profit->flux > 0.0)
+      obj2->prof_concentration = 99.0;
+    else  if (pprofit.flux > 0.0)
+      obj2->prof_concentration = -99.0;
+    prof_end(pprofit.prof[0]);
+    free(pprofit.prof);
+    free(pprofit.covar);
+    }
+
 /* clean up. */
   free(profit->modpix);
   free(profit->psfpix);
@@ -517,9 +553,7 @@ the_gal++;
   free(profit->objweight);
   free(profit->resi);
   free(oldparaminit);
-//for (ix=0; ix<profit->nparam;ix++)
-//printf("%10.5f ", sqrt(profit->covar[ix*profit->nparam+ix]));
-//printf("\n");
+
   return;
   }
 
@@ -739,7 +773,7 @@ INPUT	Profile-fitting structure,
 OUTPUT	Vector of residuals.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	15/09/2008
+VERSION	18/03/2009
  ***/
 double	*profit_residuals(profitstruct *profit, picstruct *field,
 		picstruct *wfield, double *param, double *resi)
@@ -750,10 +784,16 @@ double	*profit_residuals(profitstruct *profit, picstruct *field,
 	profit->modnaxisn[0]*profit->modnaxisn[1]*sizeof(double));
   for (p=0; p<profit->nparam; p++)
     profit->param[p] = param[p];
-  for (p=0; p<profit->nprof; p++)
-    prof_add(profit->prof[p], profit);
-  profit_convolve(profit, profit->modpix);
-  profit_resample(profit, profit->modpix, profit->lmodpix);
+/* Simple PSF shortcut */
+  if (profit->nprof == 1 && profit->prof[0]->code == PROF_DIRAC)
+    profit_resample(profit, profit->psfpix, profit->lmodpix, *profit->prof[0]->flux);
+  else
+    {
+    for (p=0; p<profit->nprof; p++)
+      prof_add(profit->prof[p], profit);
+    profit_convolve(profit, profit->modpix);
+    profit_resample(profit, profit->modpix, profit->lmodpix, 1.0);
+    }
   profit_compresi(profit, resi);
 
   return resi;
@@ -770,7 +810,7 @@ INPUT	Profile-fitting structure,
 OUTPUT	Vector of residuals.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	18/09/2008
+VERSION	11/03/2009
  ***/
 double	*profit_compresi(profitstruct *profit, double *resi)
   {
@@ -781,7 +821,6 @@ double	*profit_compresi(profitstruct *profit, double *resi)
    int		npix, ix1,ix2;
   
 /* Compute vector of residuals */
-  npix = profit->objnaxisn[0]*profit->objnaxisn[1];
   resit = resi;
   objpix = profit->objpix;
   objweight = profit->objweight;
@@ -791,6 +830,7 @@ double	*profit_compresi(profitstruct *profit, double *resi)
   x1c = (double)(profit->objnaxisn[0]/2);
   rmin = profit->obj2->hl_radius / 2.0;
   x2 = -(double)(profit->objnaxisn[1]/2);
+  npix = -profit->nparam;
   for (ix2=profit->objnaxisn[1]; ix2--; x2+=1.0)
     {
     x1 = -x1c;
@@ -804,11 +844,14 @@ double	*profit_compresi(profitstruct *profit, double *resi)
         *(resit++) = val2*PROFIT_DYNPARAM;
 //        *(resit++) = val2*(rmin/(sqrt(r2)+rmin));
         error += val2*val2;
+        npix++;
         }
       }
     }
 
-  profit->chi2 = PROFIT_DYNPARAM*PROFIT_DYNPARAM*error/npix;
+  if (npix <= 0)
+    npix = 1;
+  profit->chi2 = PROFIT_DYNPARAM*PROFIT_DYNPARAM*error;
 
   return resi;
   }
@@ -822,9 +865,10 @@ INPUT	Profile-fitting structure.
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	15/09/2008
+VERSION	18/03/2009
  ***/
-void	profit_resample(profitstruct *profit, double *inpix, PIXTYPE *outpix)
+void	profit_resample(profitstruct *profit, double *inpix, PIXTYPE *outpix,
+	double factor)
   {
    double	posin[2], posout[2], dnaxisn[2],
 		*dx,*dy,
@@ -854,7 +898,7 @@ void	profit_resample(profitstruct *profit, double *inpix, PIXTYPE *outpix)
     {
     posin[0] = (posout[0] - xcout)*invpixstep + xcin;
     posin[1] = (posout[1] - ycout)*invpixstep + ycin;
-    flux += ((*(outpix++) = (PIXTYPE)(interpolate_pix(posin, inpix,
+    flux += ((*(outpix++) = (PIXTYPE)(factor*interpolate_pix(posin, inpix,
 		profit->modnaxisn, INTERP_LANCZOS3))));
     for (d=0; d<2; d++)
       if ((posout[d]+=1.0) < dnaxisn[d])
@@ -1569,7 +1613,7 @@ INPUT	Pointer to the profit structure,
 	Upper boundary to the parameter.
 OUTPUT	RETURN_OK if the parameter is registered, RETURN_ERROR otherwise.
 AUTHOR	E. Bertin (IAP)
-VERSION	16/04/2008
+VERSION	15/03/2009
  ***/
 int	profit_setparam(profitstruct *profit, paramenum paramtype,
 		double param, double parammin, double parammax)
@@ -1580,7 +1624,7 @@ int	profit_setparam(profitstruct *profit, paramenum paramtype,
 /* Check whether the parameter has already be registered */
   if ((paramptr=profit->paramlist[(int)paramtype]))
     {
-    index = paramptr - profit->param;
+    index = profit->paramindex[(int)paramtype];
     profit->paraminit[index] = param;
     profit->parammin[index] = parammin;
     profit->parammax[index] = parammax;
@@ -1804,6 +1848,14 @@ profstruct	*prof_init(profitstruct *profit, proftypenum profcode)
       profit_addparam(profit, PARAM_OUTRING_FLUX, &prof->flux);
       profit_addparam(profit, PARAM_OUTRING_WIDTH, &prof->featwidth);
       break;
+    case PROF_DIRAC:
+      prof->naxis = 2;
+      prof->pix = NULL;
+      prof->typscale = 1.0;
+      profit_addparam(profit, PARAM_X, &prof->x[0]);
+      profit_addparam(profit, PARAM_Y, &prof->x[1]);
+      profit_addparam(profit, PARAM_DISK_FLUX, &prof->flux);
+      break;
     case PROF_SERSIC_TABEX:	/* An example of tabulated profile */
       prof->naxis = 3;
       width =  prof->naxisn[0] = PROFIT_PROFRES;
@@ -1928,18 +1980,21 @@ void	prof_add(profstruct *prof, profitstruct *profit)
 
   scaling = profit->pixstep / prof->typscale;
 
-/* Compute Profile CD matrix */
-  ctheta = cos(*prof->posangle*DEG);
-  stheta = sin(*prof->posangle*DEG);
-  saspect = fabs(*prof->aspect);
-  xscale = (*prof->scale==0.0)?
+  if (prof->code!=PROF_DIRAC)
+    {
+/*-- Compute Profile CD matrix */
+    ctheta = cos(*prof->posangle*DEG);
+    stheta = sin(*prof->posangle*DEG);
+    saspect = fabs(*prof->aspect);
+    xscale = (*prof->scale==0.0)?
 		0.0 : fabs(scaling / (*prof->scale*prof->typscale));
-  yscale = (*prof->scale*saspect == 0.0)?
+    yscale = (*prof->scale*saspect == 0.0)?
 		0.0 : fabs(scaling / (*prof->scale*prof->typscale*saspect));
-  cd11 = xscale*ctheta;
-  cd12 = xscale*stheta;
-  cd21 = -yscale*stheta;
-  cd22 = yscale*ctheta;
+    cd11 = xscale*ctheta;
+    cd12 = xscale*stheta;
+    cd21 = -yscale*stheta;
+    cd22 = yscale*ctheta;
+    }
 
   dx1 = 0.0;	/* Shifting operations have been moved to profit_resample() */
   dx2 = 0.0;	/* Shifting operations have been moved to profit_resample() */
@@ -2202,6 +2257,12 @@ width = 3.0;
           x2t += cd21;
           }
         }
+      break;
+    case PROF_DIRAC:
+      memset(profit->pmodpix, 0,
+	profit->modnaxisn[0]*profit->modnaxisn[1]*sizeof(float));
+      profit->pmodpix[profit->modnaxisn[0]/2
+		+ (profit->modnaxisn[1]/2)*profit->modnaxisn[0]] = 1.0;
       break;
     default:
 /*---- Tabulated profile: remap each pixel */
