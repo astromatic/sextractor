@@ -9,7 +9,7 @@
 *
 *	Contents:	Fit an arbitrary profile combination to a detection.
 *
-*	Last modify:	18/03/2009
+*	Last modify:	20/03/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -168,7 +168,7 @@ OUTPUT	Pointer to an allocated fit structure (containing details about the
 	fit).
 NOTES	It is a modified version of the lm_minimize() of lmfit.
 AUTHOR	E. Bertin (IAP)
-VERSION	18/03/2009
+VERSION	20/03/2009
  ***/
 void	profit_fit(profitstruct *profit,
 		picstruct *field, picstruct *wfield,
@@ -256,7 +256,9 @@ the_gal++;
 
 /* Actual minimisation */
   profit->niter = profit_minimize(profit, PROFIT_MAXITER);
+  profit_residuals(profit,field,wfield, 0.0, profit->param,profit->resi);
 
+/*
   QMEMCPY(profit->paraminit, oldparaminit, double, nparam);
   if (profit_setparam(profit, PARAM_ARMS_PITCH, 160.0, 130.0, 175.0)==RETURN_OK)
     {
@@ -274,6 +276,7 @@ the_gal++;
     else
       obj2->prof_flag |= PROFIT_FLIPPED;
     }  
+*/
 
 /* Convert covariance matrix to bound space */
   profit_covarunboundtobound(profit);
@@ -287,13 +290,13 @@ the_gal++;
 /* CHECK-Images */
   if ((check = prefs.check[CHECK_SUBPROFILES]))
     {
-    profit_residuals(profit,field,wfield,profit->param,profit->resi);
+    profit_residuals(profit,field,wfield, 0.0, profit->param,profit->resi);
     addcheck(check, profit->lmodpix, profit->objnaxisn[0],profit->objnaxisn[1],
 		profit->ix,profit->iy, -1.0);
     }
   if ((check = prefs.check[CHECK_PROFILES]))
     {
-    profit_residuals(profit,field,wfield,profit->param,profit->resi);
+    profit_residuals(profit,field,wfield, 0.0, profit->param,profit->resi);
     addcheck(check, profit->lmodpix, profit->objnaxisn[0],profit->objnaxisn[1],
 		profit->ix,profit->iy, 1.0);
     }
@@ -311,7 +314,9 @@ the_gal++;
 
   obj2->prof_niter = profit->niter;
   obj2->flux_prof = profit->flux;
-  obj2->prof_chi2 = profit->chi2;
+  obj2->prof_chi2 = (profit->nresi > profit->nparam)?
+		profit->chi2 / (profit->nresi - profit->nparam) : 0.0;
+
   if (FLAG(obj2.x_prof))
     {
     i = profit->paramindex[PARAM_X];
@@ -429,7 +434,8 @@ the_gal++;
 /* Disk pattern */
     if (prefs.pattern_flag)
       {
-      profit_residuals(profit,field,wfield,profit->param,profit->resi);
+      profit_residuals(profit,field,wfield, PROFIT_DYNPARAM,
+			profit->param,profit->resi);
       pattern = pattern_init(profit, prefs.pattern_type,
 		prefs.prof_disk_patternncomp);
       pattern_fit(pattern, profit);
@@ -530,7 +536,8 @@ the_gal++;
       }
     pprofit.paraminit[pprofit.paramindex[PARAM_DISK_FLUX]] = profit->flux;
     pprofit.niter = profit_minimize(&pprofit, PROFIT_MAXITER);
-    dchi2 = 0.5*(pprofit.chi2 - obj2->prof_chi2);
+    profit_residuals(&pprofit,field,wfield, 0.0, pprofit.param,pprofit.resi);
+    dchi2 = 0.5*(pprofit.chi2 - profit->chi2);
     obj2->prof_class_star = dchi2 < 50.0?
 	(dchi2 > -50.0? 2.0/(1.0+exp(dchi2)) : 2.0) : 0.0;
     if (profit->flux > 0.0 && pprofit.flux > 0.0)
@@ -552,8 +559,9 @@ the_gal++;
   free(profit->objpix);
   free(profit->objweight);
   free(profit->resi);
+/*
   free(oldparaminit);
-
+*/
   return;
   }
 
@@ -752,7 +760,7 @@ void	profit_evaluate(double *par, double *fvec, int m, int n,
 
   profit = (profitstruct *)adata;
   profit_unboundtobound(profit, par);
-  profit_residuals(profit, the_field, the_wfield, par, fvec);
+  profit_residuals(profit, the_field, the_wfield, PROFIT_DYNPARAM, par, fvec);
   profit_boundtounbound(profit, par);
   profit_printout(m, par, n, fvec, adata, 0, -1, 0 );
   return;
@@ -761,22 +769,22 @@ void	profit_evaluate(double *par, double *fvec, int m, int n,
 
 /****** profit_residuals ******************************************************
 PROTO	double *prof_residuals(profitstruct *profit, picstruct *field,
-		picstruct *wfield, double *param, double *resi)
+		picstruct *wfield, double dynparam, double *param, double *resi)
 PURPOSE	Compute the vector of residuals between the data and the galaxy
 	profile model.
 INPUT	Profile-fitting structure,
 	pointer to the field,
 	pointer to the field weight,
-	pointer to the obj,
+	dynamic compression parameter (0=no compression),
 	pointer to the model parameters (output),
 	pointer to the computed residuals (output).
 OUTPUT	Vector of residuals.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	18/03/2009
+VERSION	20/03/2009
  ***/
 double	*profit_residuals(profitstruct *profit, picstruct *field,
-		picstruct *wfield, double *param, double *resi)
+		picstruct *wfield, double dynparam, double *param, double *resi)
   {
    int		p;
 
@@ -786,7 +794,8 @@ double	*profit_residuals(profitstruct *profit, picstruct *field,
     profit->param[p] = param[p];
 /* Simple PSF shortcut */
   if (profit->nprof == 1 && profit->prof[0]->code == PROF_DIRAC)
-    profit_resample(profit, profit->psfpix, profit->lmodpix, *profit->prof[0]->flux);
+    profit_resample(profit, profit->psfpix, profit->lmodpix,
+		*profit->prof[0]->flux);
   else
     {
     for (p=0; p<profit->nprof; p++)
@@ -794,64 +803,73 @@ double	*profit_residuals(profitstruct *profit, picstruct *field,
     profit_convolve(profit, profit->modpix);
     profit_resample(profit, profit->modpix, profit->lmodpix, 1.0);
     }
-  profit_compresi(profit, resi);
+  profit_compresi(profit, dynparam, resi);
 
   return resi;
   }
 
 
 /****** profit_compresi ******************************************************
-PROTO	double *prof_compresi(profitstruct *profit, double *resi)
+PROTO	double *prof_compresi(profitstruct *profit, double dynparam,
+			double *resi)
 PURPOSE	Compute the vector of residuals between the data and the galaxy
 	profile model.
 INPUT	Profile-fitting structure,
-	pointer to the obj,
+	dynamic-compression parameter (0=no compression),
 	vector of residuals (output).
 OUTPUT	Vector of residuals.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	11/03/2009
+VERSION	20/03/2009
  ***/
-double	*profit_compresi(profitstruct *profit, double *resi)
+double	*profit_compresi(profitstruct *profit, double dynparam, double *resi)
   {
    double	*resit,
 		error, x1c,x1,x2,rmin;
    PIXTYPE	*objpix, *objweight, *lmodpix,
 		val,val2,wval, invsig;
-   int		npix, ix1,ix2;
+   int		npix, i;
   
 /* Compute vector of residuals */
   resit = resi;
   objpix = profit->objpix;
   objweight = profit->objweight;
   lmodpix = profit->lmodpix;
-  invsig = 1.0/PROFIT_DYNPARAM;
   error = 0.0;
   x1c = (double)(profit->objnaxisn[0]/2);
   rmin = profit->obj2->hl_radius / 2.0;
   x2 = -(double)(profit->objnaxisn[1]/2);
-  npix = -profit->nparam;
-  for (ix2=profit->objnaxisn[1]; ix2--; x2+=1.0)
+  npix = profit->objnaxisn[0]*profit->objnaxisn[1];
+  if (dynparam > 0.0)
     {
-    x1 = -x1c;
-    for (ix1=profit->objnaxisn[0]; ix1--; x1+=1.0, lmodpix++)
+    invsig = (PIXTYPE)(1.0/dynparam);
+    for (i=npix; i--; lmodpix++)
       {
       val = *(objpix++);
       if ((wval=*(objweight++))>0.0)
         {
-        val2 = (double)(val - *lmodpix)*wval*invsig;
+        val2 = (val - *lmodpix)*wval*invsig;
         val2 = val2>0.0? LOGF(1.0+val2) : -LOGF(1.0-val2);
-        *(resit++) = val2*PROFIT_DYNPARAM;
-//        *(resit++) = val2*(rmin/(sqrt(r2)+rmin));
+        *(resit++) = val2*dynparam;
         error += val2*val2;
-        npix++;
         }
       }
+    profit->chi2 = dynparam*dynparam*error;
     }
-
-  if (npix <= 0)
-    npix = 1;
-  profit->chi2 = PROFIT_DYNPARAM*PROFIT_DYNPARAM*error;
+  else
+    {
+    for (i=npix; i--; lmodpix++)
+      {
+      val = *(objpix++);
+      if ((wval=*(objweight++))>0.0)
+        {
+        val2 = (val - *lmodpix)*wval;
+        *(resit++) = val2;
+        error += val2*val2;
+        }
+      }
+    profit->chi2 = error;
+    }
 
   return resi;
   }

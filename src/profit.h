@@ -9,7 +9,7 @@
 *
 *	Contents:	Include file for profit.c.
 *
-*	Last modify:	18/03/2009
+*	Last modify:	20/03/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -31,7 +31,7 @@
 #define	PROFIT_MAXITER	1000	/* Max. nb of iterations in profile fitting */
 #define	PROFIT_OVERSAMP	5	/* Max. profile oversamp. factor on each axis */
 #define	PROFIT_MAXPROF	8	/* Max. nb of profile components */
-#define	PROFIT_DYNPARAM	100.0	/* Dynamic compression param. in sigma units */
+#define	PROFIT_DYNPARAM	10.0	/* Dynamic compression param. in sigma units */
 #define	PROFIT_BARXFADE	0.1	/* Fract. of bar length crossfaded with arms */
 #define	PROFIT_MAXEXTRA	2	/* Max. nb of extra free params of profiles */
 #define PROFIT_PROFRES	256	/* Pixmap size of model components */
@@ -142,9 +142,11 @@ profitstruct	*profit_init(struct psf *psf);
 
 profstruct	*prof_init(profitstruct *profit, proftypenum profcode);
 
-double		*profit_compresi(profitstruct *profit, double *resi),
+double		*profit_compresi(profitstruct *profit, double dynparam,
+				double *resi),
 		*profit_residuals(profitstruct *profit, picstruct *field,
-			picstruct *wfield, double *param, double *resi),
+			picstruct *wfield, double dynparam,
+			double *param, double *resi),
 		profit_spiralindex(profitstruct *profit);
 
 int		profit_copyobjpix(profitstruct *profit, picstruct *field,
