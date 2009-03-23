@@ -114,6 +114,7 @@ DATE2 = @DATE2@
 DATE3 = @DATE3@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
+DSYMUTIL = @DSYMUTIL@
 ECHO = @ECHO@
 ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
@@ -138,6 +139,7 @@ LN_S = @LN_S@
 LTLIBOBJS = @LTLIBOBJS@
 MAKEINFO = @MAKEINFO@
 MKDIR_P = @MKDIR_P@
+NMEDIT = @NMEDIT@
 OBJEXT = @OBJEXT@
 PACKAGE = @PACKAGE@
 PACKAGER = @PACKAGER@
@@ -205,6 +207,7 @@ sharedstatedir = @sharedstatedir@
 srcdir = @srcdir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
+top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 
@@ -705,53 +708,6 @@ rpm:	dist
 rpm-icc:	dist
 	cp -f $(PACKAGE_NAME)-$(PACKAGE_VERSION).tar.gz $(RPM_SRCDIR)
 	USE_ICC="1" rpmbuild -ba --clean --nodeps $(PACKAGE_NAME).spec
-
-rpm-opteron:	dist
-	cp -f $(PACKAGE_NAME)-$(PACKAGE_VERSION).tar.gz $(RPM_SRCDIR)
-	TPXCC="gcc" TPXFLAGS="-O -g -funroll-loops -fomit-frame-pointer -Wall \
-		-march=opteron" \
-		TPXLDFLAGS="-static -shared-libgcc" \
-		TPXLIBS="-lfftw3 -llapack -lcblas -latlas -lm" \
-		rpmbuild -ba --target=x86_64 --clean $(PACKAGE_NAME).spec
-
-rpm-athlon:	dist
-	cp -f $(PACKAGE_NAME)-$(PACKAGE_VERSION).tar.gz $(RPM_SRCDIR)
-	TPXCC="gcc" TPXFLAGS="-O -g -funroll-loops -fomit-frame-pointer -Wall \
-		-m32 -march=i686 -msse -mfpmath=sse -mtune=athlon" \
-		TPXLDFLAGS="-static -shared-libgcc" \
-		TPXLIBS="-L/usr/lib/ -lm -L/usr/local/lib/ -lfftw3 \
-		-llapack -lcblas -latlas -lm" \
-		rpmbuild -ba --target=i686 --clean $(PACKAGE_NAME).spec
-
-rpm-opteron-icc:	dist
-	cp -f $(PACKAGE_NAME)-$(PACKAGE_VERSION).tar.gz $(RPM_SRCDIR)
-	TPXCC="icc" TPXFLAGS="-O3 -g -axWPT -ip -unroll" \
-		TPXLDFLAGS="-static -shared-libgcc" \
-		TPXLIBS="-lfftw3 -llapack -lcblas -latlas -lm" \
-		rpmbuild -ba --target=x86_64 --clean --nodeps $(PACKAGE_NAME).spec
-
-rpm-athlon-icc:	dist
-	cp -f $(PACKAGE_NAME)-$(PACKAGE_VERSION).tar.gz $(RPM_SRCDIR)
-		TPXCC="icc32" TPXFLAGS="-O3 -g -axKWNPT -ip -unroll" \
-		TPXLDFLAGS="-static -shared-libgcc" \
-		TPXLIBS="-L/usr/local/lib/ -L/usr/lib/ -lfftw3 \
-		-llapack -lcblas -latlas -lm" \
-		rpmbuild -ba --target=i686 --clean $(PACKAGE_NAME).spec
-
-athlon:
-	$(MAKE) CFLAGS="-O -g -pthread -funroll-loops -fomit-frame-pointer \
-		-Wall -m32 -march=i686 -msse -mfpmath=sse -mtune=athlon" \
-		LIBS="-L/usr/lib/ -lpthread -lm -L/usr/local/lib/ \
-		-lfftw3 -lfftw3_threads \
-		-llapack -lcblas -latlas -lm"
-
-pentium-icc:
-	$(MAKE) CC="icc32" CFLAGS="-O3 -axKWNPT -ip -unroll -pthread" \
-		LIBS="-L/usr/lib/ -lpthread -lm -L/usr/local/lib/ -llapack \
-		-lcblas -latlas -lfftw3 -lfftw3_threads"
-
-icc:
-	$(MAKE) CC="icc" CFLAGS="-O3 -g -axWPT -ip -unroll -pthread"
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

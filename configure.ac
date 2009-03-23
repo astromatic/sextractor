@@ -6,7 +6,7 @@ define([AC_CACHE_LOAD],)
 define([AC_CACHE_SAVE],)
 
 # This is your standard Bertin source code...
-AC_INIT(sextractor, 2.8.4, [bertin@iap.fr])
+AC_INIT(sextractor, 2.8.5, [bertin@iap.fr])
 AC_CONFIG_SRCDIR(src/makeit.c)
 AC_CONFIG_AUX_DIR(autoconf)
 AM_CONFIG_HEADER(config.h)
@@ -137,7 +137,7 @@ AC_DEFINE_UNQUOTED([XSL_URL], "$xsl_url",[Default URL of the XSLT filter])
 n_pthreads=16
 AC_ARG_ENABLE(threads,
         [AC_HELP_STRING([--enable-threads@<:@=<max_number_of_threads>@:>@],
-	[Enable multhreading (on with up to $n_pthreads threads by default)])],
+	[Enable multhreading (on with up to 16 threads by default)])],
     if test "$enableval" = "no"; then
       use_pthreads="no"
     else
