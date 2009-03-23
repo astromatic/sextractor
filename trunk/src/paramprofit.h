@@ -9,7 +9,7 @@
 *
 *	Contents:	Model-fitting parameter list for catalog data.
 *
-*	Last modify:	18/03/2009
+*	Last modify:	23/03/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -323,6 +323,7 @@
   {"DISK_PATTERN_SPIRAL", "Disk pattern spiral index",
 	&outobj2.prof_disk_patternspiral, H_FLOAT, T_FLOAT, "%12.4g", "",
 	"stat.fit.param;src.morph.param", ""},
+/*
   {"FLUX_BAR", "Bar total flux from fitting",
 	&outobj2.prof_bar_flux, H_FLOAT, T_FLOAT, "%12.g", "count",
 	"phot.count;stat.fit.param", "ct"},
@@ -416,7 +417,7 @@
   {"ARMS_POSANGERR", "RMS error on fitted spiral arm position angle",
 	&outobj2.prof_arms_posangerr, H_FLOAT, T_FLOAT, "%7.3f", "deg",
 	"stat.error;pos.bodyrc.long;src.morph;stat.fit.param", "deg"},
-/*
+
   {"ARMS_THETA_WORLD", "Pos. angle (CCW/world-x) of spiral arms",
 	&outobj2.prof_arms_thetaw, H_FLOAT, T_FLOAT, "%+7.3f", "deg",
 	"pos.posAng;src.morph;stat.fit.param", "deg"},
@@ -429,7 +430,6 @@
   {"ARMS_THETA_B1950", "Pos. angle (east of north, B1950) of spiral arms",
 	&outobj2.prof_arms_theta1950, H_FLOAT, T_FLOAT, "%+7.3f", "deg",
 	"pos.posAng;src.morph;stat.fit.param", "deg"},
-*/
   {"ARMS_PITCH", "Pitch angle of spiral arms from fitting",
 	&outobj2.prof_arms_pitch, H_FLOAT, T_FLOAT, "%+7.3f", "deg",
 	"pos.posAng;src.morph;stat.fit.param;instr.det", "deg"},
@@ -454,3 +454,4 @@
   {"ARMS_QUADFRACERR", "RMS error on fitted spiral arms quadrature fraction",
 	&outobj2.prof_arms_quadfracerr, H_FLOAT, T_FLOAT, "%6.4f", "deg",
 	"stat.error;phot.count;arith.ratio;src.morph;stat.fit.param", "deg"},
+*/

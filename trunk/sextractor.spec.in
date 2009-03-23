@@ -1,6 +1,7 @@
 %define name @PACKAGE_NAME@
 %define version @PACKAGE_VERSION@
 %define release 1
+%undefine _missing_build_ids_terminate_build
 
 Summary: Extract catalogs of sources from astronomical images
 Name: %{name}
