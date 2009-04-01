@@ -9,7 +9,7 @@
 *
 *	Contents:	global definitions.
 *
-*	Last modify:	14/11/2008
+*	Last modify:	31/03/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -17,7 +17,7 @@
 /* Check if we are using a configure script here */
 #ifndef HAVE_CONFIG_H
 #define		VERSION		"2.x"
-#define		DATE		"2006-01-12"
+#define		DATE		"2009-03-31"
 #define		THREADS_NMAX	16		/* max. number of threads */
 #endif
 
@@ -31,8 +31,8 @@
 //#endif
 #define		EXECUTABLE	"sex"
 #define		COPYRIGHT	"Emmanuel BERTIN <bertin@iap.fr>"
-#define		WEBSITE		"http://terapix.iap.fr/soft/sextractor"
-#define		INSTITUTE	"TERAPIX team at IAP  http://terapix.iap.fr"
+#define		WEBSITE		"http://astromatic.iap.fr/software/sextractor"
+#define		INSTITUTE	"IAP  http://www.iap.fr"
 
 /*--------------------------- Internal constants ----------------------------*/
 
