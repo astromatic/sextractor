@@ -9,7 +9,7 @@
 *
 *	Contents:	global definitions.
 *
-*	Last modify:	04/06/2007
+*	Last modify:	01/04/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -30,8 +30,8 @@
 #define         MYVERSION       VERSION
 #endif
 #define         COPYRIGHT	"Emmanuel BERTIN <bertin@iap.fr>"
-#define		WEBSITE		"http://terapix.iap.fr/soft/sextractor/"
-#define         INSTITUTE	"TERAPIX team at IAP  http://terapix.iap.fr"
+#define		WEBSITE		"http://astromatic.iap.fr/software/sextractor/"
+#define         INSTITUTE	"IAP  http://www.iap.fr"
 
 /*----------------------------- Physical constants --------------------------*/
 

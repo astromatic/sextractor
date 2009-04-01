@@ -8,7 +8,7 @@ dnl IRIX C compiler, NEC SX-5 (Super-UX 10) C compiler, and Cray J90
 dnl (Unicos 10.0.0.8) C compiler.
 dnl
 dnl This macro is a modification of Ville Laurikari's VL_PROG_CC_WARNINGS
-dnl @version 1.3 (2009-03-23)
+dnl @version 1.3 (2009-04-01)
 dnl @authors Emmanuel Bertin <bertin@iap.fr> Ville Laurikari <vl@iki.fi>
 dnl
 AC_DEFUN([ACX_PROG_CC_OPTIM], [
@@ -32,7 +32,7 @@ EOF
       if $CC -V 2>&1 | grep -i "Intel(R) 64" > /dev/null 2>&1 &&
            $CC -c -O conftest.c > /dev/null 2>&1 &&
            test -f conftest.o; then
-        prog_cc_optim_flags="-O3 -axSSE2,SSE3,SSE4.1,SSE4.2 -ip -no-prec-div -unroll"
+        prog_cc_optim_flags="-O3 -axSSE3,SSE4.1,SSE4.2 -ip -no-prec-div -unroll"
         prog_ld_optim_flags="-static-intel"
 
       dnl INTEL C 32bits compiler
