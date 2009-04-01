@@ -8,7 +8,7 @@ Name: %{name}
 Version: %{version}
 Release: %{release}
 Source0: ftp://ftp.iap.fr/pub/from_users/bertin/sextractor/%{name}-%{version}.tar.gz
-URL: http://terapix.iap.fr/soft/%{name}
+URL: http://astromatic.iap.fr/software/%{name}
 License: CeCILL
 Group: Sciences/Astronomy
 BuildRoot: %{_tmppath}/%{name}-buildroot

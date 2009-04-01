@@ -16,8 +16,8 @@
   <xsl:variable name="time" select="/VOTABLE/RESOURCE/RESOURCE[@name='MetaData']/PARAM[@name='Time']/@value"/>
   <HTML>
    <HEAD>
-<!--  <script type="text/javascript" language="javascript"> -->
-    <script src="http://astromatic.iap.fr/xsl/sorttable.js"/>
+    <link rel="shortcut icon" type="image/x-icon" href="http://astromatic.iap.fr/xsl/favicon.ico" />
+    <script type="text/javascript" src="http://astromatic.iap.fr/xsl/sorttable.js"/>
 
     <style type="text/css">
      p {
