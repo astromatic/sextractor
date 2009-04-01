@@ -8,7 +8,7 @@
         ]>
 <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
 <!-- ****************** Global XSL template for SExtractor ****************
-     (C) E.Bertin and C.Marmo 2005-2009
+     (C) E.Bertin and C.Marmo IAP/CNRS/UPMC 2005-2009
      ********************************************************************** -->
 
  <xsl:template match="/">
