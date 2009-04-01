@@ -4,99 +4,126 @@
         <!ENTITY deg "&#176;">
         <!ENTITY amin "&#180;">
         <!ENTITY asec "&#168;">
+        <!ENTITY darr "&#8595;">
         ]>
-
 <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+<!-- ****************** Global XSL template for SExtractor ****************
+     (C) E.Bertin and C.Marmo 2005-2009
+     ********************************************************************** -->
 
-<!-- *********************** Global XSL template ************************** -->
  <xsl:template match="/">
   <xsl:variable name="date" select="/VOTABLE/RESOURCE/RESOURCE[@name='MetaData']/PARAM[@name='Date']/@value"/>
   <xsl:variable name="time" select="/VOTABLE/RESOURCE/RESOURCE[@name='MetaData']/PARAM[@name='Time']/@value"/>
-  <html>
-
-<!-- HTML head  -->
-
-   <head>
-
-<!-- javascript -->
-
+  <HTML>
+   <HEAD>
 <!--  <script type="text/javascript" language="javascript"> -->
-
-    <script src="http://terapix.iap.fr/cplt/xsl/sorttable.js"/>
+    <script src="http://astromatic.iap.fr/xsl/sorttable.js"/>
 
     <style type="text/css">
-     p.sansserif {font-family: sans-serif}
-     body {background-color: white}
+     p {
+      font-family: sans-serif;
+      }
+     p.italic {font-style: italic}
+     body {
+      margin: 10px;
+      background-color: #e0e0e0;
+      background-image: url("http://astromatic.iap.fr/xsl/body_bg.jpg");
+      background-repeat: repeat-x;
+      background-position: top;
+      min-width:662px;
+      }
      mono {font-family: monospace}
-     elen {font-family: monospace; font-size: 100%; font-weight: bold; color: green }
-     elep {font-family: monospace; font-size: 100%; font-weight: bold; color: red }
-     el {font-family: monospace; font-size: 100%; color: black}
-     a {text-decoration: none}
-     table.sortable a.sortheader
-      {
-      background-color:#FFEECC;
+     elmin {color: green }
+     elmax {color: red }
+     el {
+      font-family: monospace;
+      font-size: 100%;
       color: black;
+      }
+     elm {
+      font-family: monospace;
+      font-size: 67%;
+      white-space: nowrap;
+      }
+     elh {font-family: monospace;
+      font-size: 120%;
+      }
+     elhi {
+      font-family: monospace;
+      font-size: 100%;
+      white-space: nowrap;
+      font-weight: normal;
+      font-style: italic;
+      }
+     a {text-decoration: none; font-style: bold; color: #476674}
+     a:hover {text-decoration: underline;}
+     #header {
+      padding: 5px;
+      min-width: 662px;
+      background-image: url("http://astromatic.iap.fr/xsl/astromaticleft.png");
+      background-repeat: repeat-x;
+      background-position: left top;
+      text-align: left;
+      font-size: 1.2em;
+      margin: 0 0 30px 0;
+      color:#d3e7f0;
+      font-weight: bold;
+      }
+     th {
+      background-color:#d3e7f0;
+      border-top: 1px solid white;
+      border-left: 1px solid white;
+      border-right: 1px solid #476674;
+      border-bottom: 1px solid #476674;
+      -moz-border-radius: 3px;
+      -khtml-border-radius: 3px;
+      -webkit-border-radius: 3px;
+      border-radius: 3px;
+      padding: 2px;
+      line-height: 12px;
+      }
+     td {
+      background-color:#f2f4f4;
+      padding-left: 2px;
+      padding-right: 2px;
+      }
+     table.sortable {
+      border-top: 1px solid #476674;
+      border-left: 1px solid #476674;
+      border-right: 1px solid white;
+      border-bottom: 1px solid white;
+      -moz-border-radius: 3px;
+      -khtml-border-radius: 3px;
+      -webkit-border-radius: 3px;
+      border-radius: 3px;
+      }
+     table.sortable a.sortheader {
+      background-color:#d3e7f0;
       font-weight: bold;
       font-size: 80%;
       text-decoration: none;
       display: button;
       }
-     table.sortable span.sortarrow
-      {
+
+     table.sortable span.sortarrow {
       color: black;
       font-weight: bold;
-      text-decoration: none;
+      text-decoration: blink;
       }
-     table.sortable a.sortheader.sub
-      {
-      vertical-align: sub;
-      }
+     table.sortable a.sortheader.sub {vertical-align: sub}
      </style>
 
      <title>
       Processing summary on <xsl:value-of select="$date"/> at <xsl:value-of select="$time"/>
      </title>
-    </head>
-
-<!-- HTML body -->
-
+    </HEAD>
     <BODY>
-     <TABLE BORDER="0" CELLPADDING="0" CELLSPACING="0" WIDTH="100%">
-      <TR>
-       <TD ALIGN="LEFT">
-        <TABLE BORDER="0">
-         <TR>
-          <TD ALIGN="CENTER">
-           <IMG SRC="http://terapix.iap.fr/cplt/xsl/terapixLogo.png" ALT="Terapix"/>
-          </TD>
-          <TD ALIGN="CENTER">
-           <IMG SRC="http://terapix.iap.fr/cplt/xsl/terapixTitle.png" ALT="Logo"/>
-          </TD>
-          <TD ALIGN="CENTER">
-           <FONT color="#669933">
-            <B> Processing summary</B>
-           </FONT>
-          </TD>
-          <TD ALIGN="CENTER">
-           <IMG SRC="http://terapix.iap.fr/cplt/xsl/terapixPicture.gif" ALT="Terapix banner"/>
-          </TD>
-         </TR>
-        </TABLE>
-       </TD>
-      </TR>
-      <TR>
-       <TD>
-        <TABLE BORDER="0" WIDTH="100%" BGCOLOR="#000000">
-         <TR>
-          <TH BGCOLOR="#000000" ALIGN="LEFT"><FONT SIZE="-1" COLOR="#FFFFFF"> Home > Tools > Data reduction</FONT></TH>
-         </TR>
-        </TABLE>
-       </TD>
-      </TR>
-     </TABLE>
-    <xsl:call-template name="VOTable"/>
+     <div id="header">
+      <a href="/"><img style="vertical-align: middle; border:0px" src="http://astromatic.iap.fr/xsl/astromatic.png" title="Astromatic home" alt="Astromatic.net" /></a>  Processing summary
+     </div>
+     <xsl:call-template name="VOTable"/>
    </BODY>
-  </html>
+  </HTML>
  </xsl:template>
 
 <!-- **************** Generic XSL template for VOTables ****************** -->
@@ -191,9 +218,6 @@
     An Error occured!!! </xsl:if>
    <xsl:value-of select="PARAM[@name='Error_Msg']/@value"/></b>
   </p>
-  <p>
-  <sans-serif><i>click to expand or hide tables</i></sans-serif>
-  </p>
  </xsl:template>
 
 <!-- ******************** XSL template for Source List ******************** -->
@@ -201,19 +225,19 @@
   <xsl:choose> 
    <xsl:when test="DATA/TABLEDATA">
     <p>
-     <BUTTON type="button" style="background:#CCEECC; font-family: sans-serif; font-weight: bold;" onclick="showhideTable('sources')">
-     Source List
+     <BUTTON type="button" onclick="showhideTable('sources')" title="click to expand">
+     Source List&nbsp;&darr;
      </BUTTON>
      <TABLE id="sources" class="sortable" style="display: none">
       <TR>
        <xsl:for-each select="FIELD">
-        <TH BGCOLOR="#FFEECC" align="center"><xsl:attribute name="title"><xsl:value-of select="DESCRIPTION"/></xsl:attribute>
-         <xsl:value-of select="@name"/>
-         <xsl:text disable-output-escaping="yes">&#13;&#10;
-
-
-         </xsl:text>
-         <xsl:value-of select="@unit"/>
+        <TH align="center"><xsl:attribute name="title"><xsl:value-of select="DESCRIPTION"/></xsl:attribute>
+         <elh><xsl:value-of select="@name"/></elh>
+         <BR />
+         <elhi>
+          <xsl:value-of select="@unit"/>
+          <xsl:if test="@unit = ''">-</xsl:if>
+         </elhi>
         </TH>
        </xsl:for-each>
       </TR>
@@ -221,7 +245,7 @@
        <xsl:for-each select="TR">
         <tr>
          <xsl:for-each select="TD">
-          <td align="right" BGCOLOR="#EEEEEE">
+          <td align="right" >
            <el><xsl:value-of select="self::TD"/></el>
           </td>
          </xsl:for-each>
@@ -233,20 +257,20 @@
    </xsl:when>
    <xsl:otherwise>
     <p>
-     <BUTTON type="button" style="background:#CCEECC; font-family: sans-serif; font-weight: bold;" onclick="showhideTable('catparam')">
-     Parameter List
+     <BUTTON type="button" onclick="showhideTable('catparam')" title="click to expand">
+     Parameter List&nbsp;&darr;
      </BUTTON>
      <TABLE id="catparam" class="sortable" style="display: none">
       <TR>
-       <TH BGCOLOR="#FFEECC" align="center">Parameter Name</TH>
-       <TH BGCOLOR="#FFEECC" align="center">Description</TH>
+       <TH  align="center">Parameter Name</TH>
+       <TH  align="center">Description</TH>
       </TR>
       <xsl:for-each select="FIELD">
        <tr>
-        <td align="left" BGCOLOR="#EEEEEE">
+        <td align="left" >
          <el><xsl:value-of select="@name"/></el>
         </td>
-        <td align="left" BGCOLOR="#EEEEEE">
+        <td align="left" >
          <el><xsl:value-of select="DESCRIPTION"/></el>
         </td>
        </tr>
@@ -273,65 +297,65 @@
    <xsl:variable name="pixscale" select="count(FIELD[@name='Pixel_Scale']/preceding-sibling::FIELD)+1"/>
    <xsl:variable name="epoch" select="count(FIELD[@name='Epoch']/preceding-sibling::FIELD)+1"/>
    <p>
-    <BUTTON type="button" style="background:#CCEECC; font-family: sans-serif; font-weight: bold;" onclick="showhideTable('extdata')">
-     Summary Table on Output Catalog
+    <BUTTON type="button" onclick="showhideTable('extdata')" title="click to expand">
+     Summary Table on Output Catalog&nbsp;&darr;
     </BUTTON>
-    <TABLE class="sortable" id="extdata" BORDER="2" style="display: none">
+    <TABLE class="sortable" id="extdata" style="display: none">
      <TR>
-      <TH BGCOLOR="#FFEECC">Extension</TH>
-      <TH BGCOLOR="#FFEECC">Date</TH>
-      <TH BGCOLOR="#FFEECC">Time</TH>
-      <TH BGCOLOR="#FFEECC">Duration</TH>
-      <TH BGCOLOR="#FFEECC">Detected Source Number</TH>
-      <TH BGCOLOR="#FFEECC">Sextracted Source Number</TH>
-      <TH BGCOLOR="#FFEECC">Image ID</TH>
-      <TH BGCOLOR="#FFEECC">Mean Background</TH>
-      <TH BGCOLOR="#FFEECC">Sigma Background</TH>
-      <TH BGCOLOR="#FFEECC">Detection Threshold</TH>
-      <TH BGCOLOR="#FFEECC">Weight Scaling</TH>
-      <TH BGCOLOR="#FFEECC">Pixel Scale</TH>
-      <TH BGCOLOR="#FFEECC">Epoch</TH>
+      <TH >Extension</TH>
+      <TH >Date</TH>
+      <TH >Time</TH>
+      <TH >Duration</TH>
+      <TH >Detected Source Number</TH>
+      <TH >Sextracted Source Number</TH>
+      <TH >Image ID</TH>
+      <TH >Mean Background</TH>
+      <TH >Sigma Background</TH>
+      <TH >Detection Threshold</TH>
+      <TH >Weight Scaling</TH>
+      <TH >Pixel Scale</TH>
+      <TH >Epoch</TH>
      </TR>
      <xsl:for-each select="DATA/TABLEDATA">
       <xsl:for-each select="TR">
        <tr>
-        <td align="center" BGCOLOR="#EEEEEE">
+        <td align="center" >
          <el><xsl:value-of select="TD[$extension]"/></el>
         </td>
-        <td align="center" BGCOLOR="#EEEEEE">
+        <td align="center" >
          <el><xsl:value-of select="TD[$date]"/></el>
         </td>
-        <td align="center" BGCOLOR="#EEEEEE">
+        <td align="center" >
          <el><xsl:value-of select="TD[$time]"/></el>
         </td>
-        <td align="center" BGCOLOR="#EEEEEE">
+        <td align="center" >
          <el><xsl:value-of select="TD[$duration]"/></el>
         </td>
-        <td align="center" BGCOLOR="#EEEEEE">
+        <td align="center" >
          <el><xsl:value-of select="TD[$ndet]"/></el>
         </td>
-        <td align="center" BGCOLOR="#EEEEEE">
+        <td align="center" >
          <el><xsl:value-of select="TD[$nsex]"/></el>
         </td>
-        <td align="center" BGCOLOR="#EEEEEE">
+        <td align="center" >
          <el><xsl:value-of select="TD[$imid]"/></el>
         </td>
-        <td align="right" BGCOLOR="#EEEEEE">
+        <td align="right" >
          <el><xsl:value-of select="format-number(TD[$backmean],'#####0.00')"/></el>
         </td>
-        <td align="right" BGCOLOR="#EEEEEE">
+        <td align="right" >
          <el><xsl:value-of select="format-number(TD[$backsig],'###0.000')"/></el>
         </td>
-        <td align="right" BGCOLOR="#EEEEEE">
+        <td align="right" >
          <el><xsl:value-of select="format-number(TD[$thresh],'#####0.00')"/></el>
         </td>
-        <td align="right" BGCOLOR="#EEEEEE">
+        <td align="right" >
          <el><xsl:value-of select="format-number(TD[$wscale],'#####0.00')"/></el>
         </td>
-        <td align="right" BGCOLOR="#EEEEEE">
+        <td align="right" >
          <el><xsl:value-of select="format-number(TD[$pixscale],'#0.000')"/></el>
         </td>
-        <td align="center" BGCOLOR="#EEEEEE">
+        <td align="center" >
          <el><xsl:value-of select="TD[$epoch]"/></el>
         </td>
        </tr>
@@ -344,16 +368,18 @@
 <!-- ******************** XSL template for Config File ******************** -->
   <xsl:template name="Config">
    <p>
-    <BUTTON type="button" style="background:#CCEECC; font-family: sans-serif; font-weight: bold;" onclick="showhideTable('config')">
-     Configuration File: <xsl:value-of select="PARAM[@name='Prefs_Name']/@value"/>
+    <BUTTON type="button" onclick="showhideTable('config')" title="click to expand">
+     Configuration File:
+     <B><xsl:value-of select="PARAM[@name='Prefs_Name']/@value"/></B>
+     &darr;
     </BUTTON>
     <TABLE id="config" class="sortable" style="display: none">
      <TR>
-      <TH BGCOLOR="#FFEECC">Config Parameter</TH>
-      <TH BGCOLOR="#FFEECC">Value</TH>
+      <TH >Config Parameter</TH>
+      <TH >Value</TH>
      </TR>
      <xsl:for-each select="PARAM[position()>2]">
-      <tr BGCOLOR="#EEEEEE">
+      <tr >
        <td><el><xsl:value-of select="@name"/></el></td>
        <td><el><xsl:value-of select="@value"/></el></td>
       </tr>
@@ -361,12 +387,14 @@
     </TABLE>
    </p>
    <p>
-    <BUTTON type="button" style="background:#CCEECC; font-family: monospace; font-weight: bold: font-size: 80%;" onclick="showhideTable('commandline')">
-     Command Line
+    <BUTTON type="button" onclick="showhideTable('commandline')" title="click to expand">
+     Command Line&nbsp;&darr;
     </BUTTON>
     <TABLE id="commandline" style="display: none">
      <TR>
-      <TD BGCOLOR="#FFEECC" style="font-size: 80%;"><el>Command Line: <xsl:value-of select="PARAM[@name='Command_Line']/@value"/></el></TD>
+      <TD  style="font-size: 80%;">
+       <el><xsl:value-of select="PARAM[@name='Command_Line']/@value"/></el>
+      </TD>
      </TR>
     </TABLE>
    </p>
@@ -378,25 +406,25 @@
    <xsl:variable name="time" select="count(FIELD[@name='Time']/preceding-sibling::FIELD)+1"/>
    <xsl:variable name="msg" select="count(FIELD[@name='Msg']/preceding-sibling::FIELD)+1"/>
    <p>
-    <BUTTON type="button" style="background:#CCEECC; font-family: monospace; font-weight: bold: font-size: 80%;" onclick="showhideTable('warnings')">
-     Warnings (limited to the last 100)
+    <BUTTON type="button" onclick="showhideTable('warnings')" title="click to expand">
+     Warnings (limited to the last 100)&nbsp;&darr;
     </BUTTON>
-    <TABLE id="warnings" style="display: none">
+    <TABLE id="warnings" class="sortable" style="display: none">
      <TR style="font-size: 80%;">
-      <TH BGCOLOR="#FFEECC">Date</TH>
-      <TH BGCOLOR="#FFEECC">Time</TH>
-      <TH BGCOLOR="#FFEECC">Message</TH>
+      <TH >Date</TH>
+      <TH >Time</TH>
+      <TH >Message</TH>
      </TR>
      <xsl:for-each select="DATA/TABLEDATA">
       <xsl:for-each select="TR">
        <tr>
-        <td  BGCOLOR="#EEEEEE">
+        <td  >
          <el><xsl:value-of select="TD[$date]"/></el>
         </td>
-        <td BGCOLOR="#EEEEEE">
+        <td >
          <el><xsl:value-of select="TD[$time]"/></el>
         </td>
-        <td align="center" BGCOLOR="#EEEEEE">
+        <td align="center" >
          <el><xsl:value-of select="TD[$msg]"/></el>
         </td>
        </tr>
