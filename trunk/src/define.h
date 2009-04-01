@@ -24,11 +24,7 @@
 /*------------------------ what, who, when and where ------------------------*/
 
 #define		BANNER		"SExtractor"
-//#ifdef USE_THREADS
-//#define		MYVERSION	VERSION "-MP"
-//#else
 #define		MYVERSION	VERSION
-//#endif
 #define		EXECUTABLE	"sex"
 #define		COPYRIGHT	"Emmanuel BERTIN <bertin@iap.fr>"
 #define		WEBSITE		"http://astromatic.iap.fr/software/sextractor"
