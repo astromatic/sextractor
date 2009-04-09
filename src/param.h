@@ -9,7 +9,7 @@
 *
 *	Contents:	parameter list for catalog data.
 *
-*	Last modify:	18/05/2008
+*	Last modify:	08/04/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -135,23 +135,23 @@ keystruct	objkey[] = {
 	&outobj2.vector_somfit, H_FLOAT, T_FLOAT, "%5.2f", "",
 	"src.morph.param", "", 1, &prefs.somfit_vectorsize},
 
+/* The following would use Principal Component fitting.
+   This has been obsoleted by bona fide model fitting.
+
   {"FLUX_GALFIT", "Flux derived from the galaxy fit",
 	&outobj2.flux_galfit, H_FLOAT, T_FLOAT, "%12.7g", "count",
 	"phot.flux;stat.fit.param", "ct"},
-/*
   {"FLUXERR_GALFIT", "RMS error for GALFIT flux",
 	&outobj2.fluxerr_galfit, H_FLOAT, T_FLOAT, "%12.7g", "count"},
-*/
   {"MAG_GALFIT", "Magnitude derived from galaxy fit",
 	&outobj2.mag_galfit, H_FLOAT, T_FLOAT, "%8.4f", "mag",
 	"phot.mag;stat.fit.param", "mag"},
 
-/*
   {"MAGERR_GALFIT", "Magnitude error derived from galaxy fit",
 	&outobj2.magerr_galfit, H_FLOAT, T_FLOAT, "%8.4f", "mag"},
   {"ERROR_GALFIT", "Reduced Chi-square error of the galaxy fit",
 	&outobj2.stderr_galfit, H_FLOAT, T_FLOAT, "%10g", ""},
-*/
+
   {"GALDANG_IMAGE", "Galaxy disk position angle  from the galaxy fit",
 	&outobj2.gdposang, H_FLOAT, T_FLOAT, "%5.1f", "deg",
 	"pos.posAng;stat.fit.param", "deg"},
@@ -179,6 +179,7 @@ keystruct	objkey[] = {
   {"GALBASPEC_IMAGE", "Galaxy bulge aspect ratio from the galaxy fit",
 	&outobj2.gbaspect, H_FLOAT, T_FLOAT, "%5.3f", "",
 	"phys.size.axisRatio;stat.fit.param", ""},
+*/
 
   {"KRON_RADIUS", "Kron apertures in units of A or B",
 	&outobj2.kronfactor, H_FLOAT, T_FLOAT, "%5.2f", "",
@@ -831,6 +832,7 @@ keystruct	objkey[] = {
 	&outobj2.poserrtheta1950_psf, H_FLOAT, T_FLOAT, "%5.1f", "deg",
 	"pos.posAng;pos.errorEllipse", "deg"},
 
+/* Temporarily (at least) deactivated not to confuse users with model-fitting
   {"X2PC_IMAGE", "PC variance along x",
 	&outobj2.mx2_pc, H_EXPO, T_DOUBLE, "%15.10e", "pixel**2",
 	"src.impactParam;instr.det", "pix2"},
@@ -853,6 +855,7 @@ keystruct	objkey[] = {
   {"PC", "Principal components",
 	&outobj2.vector_pc, H_FLOAT, T_FLOAT, "%15.10e", "",
 	"src.morph.param", "", 1, &prefs.pc_vectorsize},
+*/
 
 #include "paramprofit.h"
 
