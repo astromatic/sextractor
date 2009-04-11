@@ -1,0 +1,4 @@
+#! /bin/sh
+# Copyright (C) 2007 Emmanuel Bertin.
+# 
+../src/sex galaxies.fits -WEIGHT_IMAGE galaxies.weight.fits -CATALOG_NAME galaxies.cat
