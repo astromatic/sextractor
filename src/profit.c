@@ -9,7 +9,7 @@
 *
 *	Contents:	Fit an arbitrary profile combination to a detection.
 *
-*	Last modify:	20/03/2009
+*	Last modify:	28/04/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -168,7 +168,7 @@ OUTPUT	Pointer to an allocated fit structure (containing details about the
 	fit).
 NOTES	It is a modified version of the lm_minimize() of lmfit.
 AUTHOR	E. Bertin (IAP)
-VERSION	20/03/2009
+VERSION	15/04/2009
  ***/
 void	profit_fit(profitstruct *profit,
 		picstruct *field, picstruct *wfield,
@@ -178,9 +178,8 @@ void	profit_fit(profitstruct *profit,
     patternstruct *pattern;
     psfstruct		*psf;
     checkstruct		*check;
-    double		*oldparaminit,
-			psf_fwhm, oldchi2, a , cp,sp, emx2,emy2,emxy, dchi2;
-    int			i,j,p, oldniter, nparam, ncomp;
+    double		psf_fwhm, a , cp,sp, emx2,emy2,emxy, dchi2;
+    int			i,j,p, nparam, ncomp;
 
   nparam = profit->nparam;
   if (profit->psfdft)
@@ -256,7 +255,7 @@ the_gal++;
 
 /* Actual minimisation */
   profit->niter = profit_minimize(profit, PROFIT_MAXITER);
-  profit_residuals(profit,field,wfield, 0.0, profit->param,profit->resi);
+  profit_residuals(profit,field,wfield, 10.0, profit->param,profit->resi);
 
 /*
   QMEMCPY(profit->paraminit, oldparaminit, double, nparam);
@@ -536,7 +535,7 @@ the_gal++;
       }
     pprofit.paraminit[pprofit.paramindex[PARAM_DISK_FLUX]] = profit->flux;
     pprofit.niter = profit_minimize(&pprofit, PROFIT_MAXITER);
-    profit_residuals(&pprofit,field,wfield, 0.0, pprofit.param,pprofit.resi);
+    profit_residuals(&pprofit,field,wfield, 10.0, pprofit.param,pprofit.resi);
     dchi2 = 0.5*(pprofit.chi2 - profit->chi2);
     obj2->prof_class_star = dchi2 < 50.0?
 	(dchi2 > -50.0? 2.0/(1.0+exp(dchi2)) : 2.0) : 0.0;
@@ -820,12 +819,12 @@ INPUT	Profile-fitting structure,
 OUTPUT	Vector of residuals.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	20/03/2009
+VERSION	15/04/2009
  ***/
 double	*profit_compresi(profitstruct *profit, double dynparam, double *resi)
   {
    double	*resit,
-		error, x1c,x1,x2,rmin;
+		error, x1c,x2,rmin;
    PIXTYPE	*objpix, *objweight, *lmodpix,
 		val,val2,wval, invsig;
    int		npix, i;
@@ -2550,12 +2549,12 @@ INPUT	Position,
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	11/04/2008
+VERSION	28/04/2009
  ***/
 void	make_kernel(double pos, double *kernel, interpenum interptype)
   {
    double	x, val, sinx1,sinx2,sinx3,cosx1;
-
+printf("%g\n", pos);
   if (interptype == INTERP_NEARESTNEIGHBOUR)
     *kernel = 1;
   else if (interptype == INTERP_BILINEAR)
@@ -2565,7 +2564,7 @@ void	make_kernel(double pos, double *kernel, interpenum interptype)
     }
   else if (interptype == INTERP_LANCZOS2)
     {
-    if (pos<1e-5 && pos>-1e5)
+    if (pos<1e-5 && pos>-1e-5)
       {
       *(kernel++) = 0.0;
       *(kernel++) = 1.0;
@@ -2597,7 +2596,7 @@ void	make_kernel(double pos, double *kernel, interpenum interptype)
     }
   else if (interptype == INTERP_LANCZOS3)
     {
-    if (pos<1e-5 && pos>-1e5)
+    if (pos<1e-5 && pos>-1e-5)
       {
       *(kernel++) = 0.0;
       *(kernel++) = 0.0;
@@ -2639,7 +2638,7 @@ void	make_kernel(double pos, double *kernel, interpenum interptype)
     }
   else if (interptype == INTERP_LANCZOS4)
     {
-    if (pos<1e-5 && pos>-1e5)
+    if (pos<1e-5 && pos>-1e-5)
       {
       *(kernel++) = 0.0;
       *(kernel++) = 0.0;
