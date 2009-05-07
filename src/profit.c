@@ -2554,7 +2554,7 @@ VERSION	28/04/2009
 void	make_kernel(double pos, double *kernel, interpenum interptype)
   {
    double	x, val, sinx1,sinx2,sinx3,cosx1;
-printf("%g\n", pos);
+
   if (interptype == INTERP_NEARESTNEIGHBOUR)
     *kernel = 1;
   else if (interptype == INTERP_BILINEAR)
