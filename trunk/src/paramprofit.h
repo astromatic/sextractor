@@ -9,7 +9,7 @@
 *
 *	Contents:	Model-fitting parameter list for catalog data.
 *
-*	Last modify:	23/03/2009
+*	Last modify:	19/05/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -51,10 +51,10 @@
 	"pos.cartesian.y;stat.fit.param;instr.det;meta.main", "pix"},
 
   {"XMODEL_WORLD", "Fitted position along world x axis",
-	&outobj2.xw_prof, H_FLOAT, T_DOUBLE, "%15.10e", "deg",
+	&outobj2.xw_prof, H_FLOAT, T_DOUBLE, "%18.10e", "deg",
 	"pos.eq.ra;stat.fit.param", "deg"},
   {"YMODEL_WORLD", "Fitted position along world y axis",
-	&outobj2.yw_prof, H_FLOAT, T_DOUBLE, "%15.10e", "deg",
+	&outobj2.yw_prof, H_FLOAT, T_DOUBLE, "%18.10e", "deg",
 	"pos.eq.dec;stat.fit.param", "deg"},
 
   {"ALPHAMODEL_SKY", "Fitted position along right ascension  (native)",
@@ -79,22 +79,22 @@
 	"pos.eq.dec;stat.fit.param", "deg"},
 
   {"ERRX2MODEL_IMAGE", "Variance of fitted position along x",
-	&outobj2.poserrmx2_prof, H_EXPO, T_DOUBLE, "%15.10e", "pixel**2",
+	&outobj2.poserrmx2_prof, H_EXPO, T_DOUBLE, "%18.10e", "pixel**2",
 	"stat.variance;pos.errorEllipse;stat.fit.param;instr.det", "pix2"},
   {"ERRY2MODEL_IMAGE", "Variance of fitted position along y",
-	&outobj2.poserrmy2_prof, H_EXPO, T_DOUBLE, "%15.10e", "pixel**2",
+	&outobj2.poserrmy2_prof, H_EXPO, T_DOUBLE, "%18.10e", "pixel**2",
 	"stat.variance;pos.errorEllipse;stat.fit.param;instr.det", "pix2"},
   {"ERRXYMODEL_IMAGE", "Covariance of fitted position between x and y",
-	&outobj2.poserrmxy_prof, H_EXPO, T_DOUBLE, "%15.10e", "pixel**2",
+	&outobj2.poserrmxy_prof, H_EXPO, T_DOUBLE, "%18.10e", "pixel**2",
 	"stat.covariance;pos.errorEllipse;stat.fit.param;instr.det", "pix2"},
   {"ERRX2MODEL_WORLD", "Variance of fitted position along X-WORLD (alpha)",
-	&outobj2.poserrmx2w_prof, H_EXPO, T_DOUBLE, "%15.10e", "deg**2",
+	&outobj2.poserrmx2w_prof, H_EXPO, T_DOUBLE, "%18.10e", "deg**2",
 	"stat.variance;pos.errorEllipse;stat.fit.param", "deg2"},
   {"ERRY2MODEL_WORLD", "Variance of fitted position along Y-WORLD (delta)",
-	&outobj2.poserrmy2w_prof, H_EXPO, T_DOUBLE, "%15.10e", "deg**2",
+	&outobj2.poserrmy2w_prof, H_EXPO, T_DOUBLE, "%18.10e", "deg**2",
 	"stat.variance;pos.errorEllipse;stat.fit.param", "deg2"},
   {"ERRXYMODEL_WORLD", "Covariance of fitted position X-WORLD/Y-WORLD",
-	&outobj2.poserrmxyw_prof, H_EXPO, T_DOUBLE, "%15.10e", "deg**2",
+	&outobj2.poserrmxyw_prof, H_EXPO, T_DOUBLE, "%18.10e", "deg**2",
 	"stat.covariance;pos.errorEllipse;stat.fit.param", "deg2"},
 
   {"ERRCXXMODEL_IMAGE", "Cxx error ellipse parameter of fitted position",
@@ -123,7 +123,7 @@
 	&outobj2.poserrb_prof, H_FLOAT, T_FLOAT, "%8.4f", "pixel",
 	"stat.stdev;stat.min;pos.errorEllipse;stat.fit.param;instr.det", "pix"},
   {"ERRTHETAMODEL_IMAGE", "Error ellipse pos.angle of fitted position (CCW/x)",
-	&outobj2.poserrtheta_prof, H_FLOAT, T_FLOAT, "%5.1f", "deg",
+	&outobj2.poserrtheta_prof, H_FLOAT, T_FLOAT, "%6.2f", "deg",
 	"pos.posAng;pos.errorEllipse;stat.fit.param;instr.det", "deg"},
   {"ERRAMODEL_WORLD", "World RMS error of fitted position along major axis",
 	&outobj2.poserraw_prof, H_FLOAT, T_FLOAT, "%12.7g", "deg",
@@ -132,27 +132,27 @@
 	&outobj2.poserrbw_prof, H_FLOAT, T_FLOAT, "%12.7g", "deg",
 	"stat.stdev;stat.min;pos.errorEllipse;stat.fit.param", "deg"},
   {"ERRTHETAMODEL_WORLD", "Error ellipse pos.angle of fitted position (CCW/world-x)",
-	&outobj2.poserrthetaw_prof, H_FLOAT, T_FLOAT, "%5.1f", "deg",
+	&outobj2.poserrthetaw_prof, H_FLOAT, T_FLOAT, "%6.2f", "deg",
 	"pos.posAng;pos.errorEllipse;stat.fit.param", "deg"},
   {"ERRTHETAMODEL_SKY", "Native fitted error ellipse pos. angle (east of north)",
-	&outobj2.poserrthetas_prof, H_FLOAT, T_FLOAT, "%5.1f", "deg",
+	&outobj2.poserrthetas_prof, H_FLOAT, T_FLOAT, "%6.2f", "deg",
 	"pos.posAng;pos.errorEllipse;stat.fit.param", "deg"},
   {"ERRTHETAMODEL_J2000", "J2000 fitted error ellipse pos. angle (east of north)",
-	&outobj2.poserrtheta2000_prof, H_FLOAT, T_FLOAT, "%5.1f", "deg",
+	&outobj2.poserrtheta2000_prof, H_FLOAT, T_FLOAT, "%6.2f", "deg",
 	"pos.posAng;pos.errorEllipse;stat.fit.param", "deg"},
   {"ERRTHETAMODEL_B1950", "B1950 fitted error ellipse pos. angle (east of north)",
-	&outobj2.poserrtheta1950_prof, H_FLOAT, T_FLOAT, "%5.1f", "deg",
+	&outobj2.poserrtheta1950_prof, H_FLOAT, T_FLOAT, "%6.2f", "deg",
 	"pos.posAng;pos.errorEllipse;stat.fit.param", "deg"},
 
 
   {"X2MODEL_IMAGE", "Variance along x from model-fitting",
-	&outobj2.prof_mx2, H_EXPO, T_DOUBLE, "%15.10e", "pixel**2",
+	&outobj2.prof_mx2, H_EXPO, T_DOUBLE, "%18.10e", "pixel**2",
 	"src.impactParam;stat.fit;instr.det", "pix2"},
   {"Y2MODEL_IMAGE", "Variance along y from model-fitting",
-	&outobj2.prof_my2, H_EXPO, T_DOUBLE, "%15.10e", "pixel**2",
+	&outobj2.prof_my2, H_EXPO, T_DOUBLE, "%18.10e", "pixel**2",
 	"src.impactParam;stat.fit;instr.det", "pix2"},
   {"XYMODEL_IMAGE", "Covariance between x and y from model-fitting",
-	&outobj2.prof_mxy, H_EXPO, T_DOUBLE, "%15.10e", "pixel**2",
+	&outobj2.prof_mxy, H_EXPO, T_DOUBLE, "%18.10e", "pixel**2",
 	"src.impactParam;stat.fit;instr.det", "pix2"},
   {"E1MODEL_IMAGE", "Ellipticity component from model-fitting",
 	&outobj2.prof_e1, H_FLOAT, T_FLOAT, "%10.6f", "",
