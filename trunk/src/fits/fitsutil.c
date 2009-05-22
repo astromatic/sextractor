@@ -181,7 +181,7 @@ OUTPUT	RETURN_OK if something was found, RETURN_ERROR otherwise.
 NOTES	-.
 AUTHOR	E. Bertin (IAP),
         E.R. Deul - Handling of NaN
-VERSION	04/06/2007
+VERSION	18/05/2009
  ***/
 int	fitspick(char *fitsline, char *keyword, void *ptr, h_type *htype,
 		t_type *ttype, char *comment)
@@ -252,19 +252,19 @@ int	fitspick(char *fitsline, char *keyword, void *ptr, h_type *htype,
     {
     for (i=j; i<80 && fitsline[i]!=(char)'/' && fitsline[i]!=(char)'.'; i++);
 /*-- Handle floats*/
-    if (fitsline[i]==(char)'.') 
-      {
-      fixexponent(fitsline);
-      *((double *)ptr) = atof(fitsline+j);
-      *htype = H_EXPO;
-      *ttype = T_DOUBLE;
-      }
-    else
+    if (i==80 || fitsline[i]!=(char)'.') 
 /*---- Handle ints*/
       {
       *((int *)ptr) = atoi(fitsline+j);
       *htype = H_INT;
       *ttype = T_LONG;
+      }
+    else
+      {
+      fixexponent(fitsline);
+      *((double *)ptr) = atof(fitsline+j);
+      *htype = H_EXPO;
+      *ttype = T_DOUBLE;
       }
     }
 
@@ -340,7 +340,6 @@ int	fitsread(char *fitsbuf, char *keyword, void *ptr, h_type htype,
 			  sscanf(str+10, "    %lf", (double *)ptr);
 			else
 			  sscanf(str+10, "    %f", (float *)ptr);
-printf("%80s\n", str);
 			break;
 
     case H_BOOL:	sscanf(str+10, "%1s", s);
