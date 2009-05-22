@@ -9,7 +9,7 @@
 *
 *	Contents:	functions for handling FITS keywords.
 *
-*	Last modify:	12/06/2007
+*	Last modify:	22/05/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -340,6 +340,7 @@ int	fitsread(char *fitsbuf, char *keyword, void *ptr, h_type htype,
 			  sscanf(str+10, "    %lf", (double *)ptr);
 			else
 			  sscanf(str+10, "    %f", (float *)ptr);
+printf("%80s\n", str);
 			break;
 
     case H_BOOL:	sscanf(str+10, "%1s", s);
@@ -569,22 +570,26 @@ int	fitswrite(char *fitsbuf, char *keyword, void *ptr, h_type htype,
 
 /****** fixexponent ***********************************************************
 PROTO	void fixexponent(char *s)
-PURPOSE	Replaces the FORTRAN 'D' exponent sign to 'E' in a FITS line.
+PURPOSE	Replaces the FORTRAN 'D' exponent sign to 'E' in a FITS line, and filter
+	out non-numerical characters
 INPUT	FITS line
 OUTPUT	-.
 NOTES	-.
-AUTHOR	E. Bertin (IAP & Leiden observatory)
-VERSION	25/04/97
+AUTHOR	E. Bertin (IAP)
+VERSION	22/05/2009
  ***/
 void	fixexponent(char *s)
 
   {
-   int	i;
+   int	c,i;
 
   s += 9;
-  for (i=71; ((int)*s) && (int)*s != '/' && i--; s++)
-    if ((int)*s == 'D' || (int)*s == 'd')
+  for (i=71; (c=(int)*s) && c != '/' && i--; s++)
+    if (c == 'D' || c == 'd')
       *s = (char)'E';
+    else if ((c<'0' || c>'9') && c != '+' && c != '-'
+		&& c != 'e' && c != 'E' && c != '.')
+      *s = ' ';
 
   return;
   }
