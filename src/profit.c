@@ -9,7 +9,7 @@
 *
 *	Contents:	Fit an arbitrary profile combination to a detection.
 *
-*	Last modify:	28/04/2009
+*	Last modify:	29/05/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -168,7 +168,7 @@ OUTPUT	Pointer to an allocated fit structure (containing details about the
 	fit).
 NOTES	It is a modified version of the lm_minimize() of lmfit.
 AUTHOR	E. Bertin (IAP)
-VERSION	15/04/2009
+VERSION	29/05/2009
  ***/
 void	profit_fit(profitstruct *profit,
 		picstruct *field, picstruct *wfield,
@@ -178,10 +178,11 @@ void	profit_fit(profitstruct *profit,
     patternstruct *pattern;
     psfstruct		*psf;
     checkstruct		*check;
-    double		psf_fwhm, a , cp,sp, emx2,emy2,emxy, dchi2;
-    int			i,j,p, nparam, ncomp;
+    double		psf_fwhm, a , cp,sp, emx2,emy2,emxy, dchi2, err;
+    int			i,j,p, nparam, ncomp, nprof;
 
   nparam = profit->nparam;
+  nprof = profit->nprof;
   if (profit->psfdft)
     {
     QFREE(profit->psfdft);
@@ -313,6 +314,26 @@ the_gal++;
 
   obj2->prof_niter = profit->niter;
   obj2->flux_prof = profit->flux;
+  if (FLAG(obj2.fluxerr_prof))
+    {
+    err = 0.0;
+    i = j = 0;					/* avoid gcc -Wall warning */
+    if (profit->paramlist[PARAM_DISK_FLUX])
+      {
+      i = profit->paramindex[PARAM_DISK_FLUX];
+      err += profit->covar[i*(nparam+1)];
+      }
+    if (profit->paramlist[PARAM_SPHEROID_FLUX])
+      {
+      j = profit->paramindex[PARAM_SPHEROID_FLUX];
+      err += profit->covar[j*(nparam+1)];
+      }
+    if (profit->paramlist[PARAM_DISK_FLUX]
+	&& profit->paramlist[PARAM_SPHEROID_FLUX])
+      err += profit->covar[i+j*nparam]+profit->covar[j+i*nparam];
+    obj2->fluxerr_prof = err>0.0? sqrt(err): 0.0;
+    }
+
   obj2->prof_chi2 = (profit->nresi > profit->nparam)?
 		profit->chi2 / (profit->nresi - profit->nparam) : 0.0;
 
@@ -1320,7 +1341,7 @@ INPUT	Profile-fitting structure.
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	18/09/2008
+VERSION	27/05/2009
  ***/
 void	 profit_moments(profitstruct *profit)
   {
@@ -1365,7 +1386,7 @@ void	 profit_moments(profitstruct *profit)
     {
     obj2->prof_eps1 = (mx2 - my2) / (mx2+my2);
     obj2->prof_eps2 = 2.0*mxy / (mx2 + my2);
-    den = mx2+my2-mxy*mxy;
+    den = mx2*my2-mxy*mxy;
     if (den>=0.0)
       den = mx2+my2+2.0*sqrt(den);
     else

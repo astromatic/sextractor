@@ -106,7 +106,7 @@ void	makeit()
 
   if (prefs.prof_flag)
     {
-    fft_init();
+    fft_init(prefs.nthreads);
 /* Create profiles at full resolution */
     NFPRINTF(OUTPUT, "Preparing profile models");
     theprofit = profit_init(thepsf);

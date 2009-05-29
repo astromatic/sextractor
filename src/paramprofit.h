@@ -9,7 +9,7 @@
 *
 *	Contents:	Model-fitting parameter list for catalog data.
 *
-*	Last modify:	19/05/2009
+*	Last modify:	27/05/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -40,7 +40,7 @@
 	&outobj2.mag_prof, H_FLOAT, T_FLOAT, "%8.4f", "mag",
 	"phot.mag;stat.fit.param", "mag"},
   {"MAGERR_MODEL", "RMS error on model-fitting magnitude",
-	&outobj2.mag_prof, H_FLOAT, T_FLOAT, "%8.4f", "mag",
+	&outobj2.magerr_prof, H_FLOAT, T_FLOAT, "%8.4f", "mag",
 	"stat.error;phot.mag;stat.fit.param", "mag"},
 
   {"XMODEL_IMAGE", "X coordinate from model-fitting",

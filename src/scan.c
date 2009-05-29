@@ -47,7 +47,7 @@ INPUT   Measurement field pointer,
 OUTPUT  -.
 NOTES   -.
 AUTHOR  E. Bertin (IAP)
-VERSION 11/01/2008
+VERSION 29/05/2009
  ***/
 void	scanimage(picstruct *field, picstruct *dfield, picstruct **pffield,
 		int nffield, picstruct *wfield, picstruct *dwfield)
@@ -65,7 +65,7 @@ void	scanimage(picstruct *field, picstruct *dfield, picstruct **pffield,
    char			*marker, newmarker, *blankpad, *bpt,*bpt0;
    int			co, i,j, flag, luflag,pstop, xl,xl2,yl, cn,
 			nposize, stacksize, w, h, blankh, maxpixnb,
-			varthreshflag;
+			varthreshflag, ontotal;
    short	       	trunflag;
    PIXTYPE		thresh, relthresh, cdnewsymbol, cdvar,
 			*scan,*dscan,*cdscan,*dwscan,*cdwscan,*cdwscanp,
@@ -548,6 +548,7 @@ void	scanimage(picstruct *field, picstruct *dfield, picstruct **pffield,
     if (cfield->stripy==cfield->stripysclim)
       {
       cleanobj = cleanobjlist->obj+cleanobjlist->nobj-1;
+      ontotal = 0;
       for (i=cleanobjlist->nobj; i--; cleanobj--)
         {
         if (cleanobj->ycmin <= cfield->ymin)
@@ -567,6 +568,13 @@ void	scanimage(picstruct *field, picstruct *dfield, picstruct **pffield,
             QWARNING(gstr, "may have some unBLANKed neighbours:\n"
 		"          You might want to increase MEMORY_PIXSTACK");
             }
+          if ((prefs.prof_flag && !(thecat.ntotal%10)
+		&& thecat.ntotal != ontotal)
+		|| !(thecat.ntotal%400))
+            NPRINTF(OUTPUT, "\33[1M> Line:%5d  "
+		"Objects: %8d detected / %8d sextracted\n\33[1A",
+		yl>=h? h:yl+1, thecat.ndetect, thecat.ntotal);
+          ontotal = thecat.ntotal;
           endobject(field, dfield, wfield, cdwfield, i, cleanobjlist);
           subcleanobj(i);
           cleanobj = cleanobjlist->obj+i;	/* realloc in subcleanobj() */
@@ -574,7 +582,7 @@ void	scanimage(picstruct *field, picstruct *dfield, picstruct **pffield,
         }
       }
 
-    if (!((yl+1)%16))
+    if ((prefs.prof_flag && !(thecat.ntotal%10)) || !((yl+1)%25))
       NPRINTF(OUTPUT, "\33[1M> Line:%5d  "
 		"Objects: %8d detected / %8d sextracted\n\33[1A",
 	yl+1, thecat.ndetect, thecat.ntotal);
@@ -604,8 +612,15 @@ void	scanimage(picstruct *field, picstruct *dfield, picstruct **pffield,
       }
 
 /* Now that all "detected" pixels have been removed, analyse detections */
+  ontotal = 0;
   for (j=cleanobjlist->nobj; j--;)
     {
+    if ((prefs.prof_flag && !(thecat.ntotal%10) && thecat.ntotal != ontotal)
+		|| !(thecat.ntotal%400))
+      NPRINTF(OUTPUT, "\33[1M> Line:%5d  "
+		"Objects: %8d detected / %8d sextracted\n\33[1A",
+	h, thecat.ndetect, thecat.ntotal);
+    ontotal = thecat.ntotal;
     endobject(field, dfield, wfield, cdwfield, 0, cleanobjlist);
     subcleanobj(0);
     }
