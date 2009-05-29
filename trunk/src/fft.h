@@ -9,7 +9,7 @@
 *
 *	Contents:	Include for fft.c.
 *
-*	Last modify:	29/11/2006
+*	Last modify:	28/05/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -32,6 +32,6 @@
 /*---------------------------------- protos --------------------------------*/
 extern void	fft_conv(double *data1, double *fdata2, int *size),
 		fft_end(),
-		fft_init();
+		fft_init(int nthreads);
 
 extern double	*fft_rtf(double *data, int *size);
