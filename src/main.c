@@ -9,7 +9,7 @@
 *
 *	Contents:	Command-line parsing.
 *
-*	Last modify:	12/11/2008
+*	Last modify:	29/05/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -130,7 +130,9 @@ int	main(int argc, char *argv[])
 
   endprefs();
   NFPRINTF(OUTPUT, "");
-  NPRINTF(OUTPUT, "> All done (in %.0f s)\n", prefs.time_diff);
+  NPRINTF(OUTPUT, "> All done (in %.0f s: %.1f detections/s)\n",
+	prefs.time_diff,
+	(double)thecat.ntotal/(prefs.time_diff>0.0? prefs.time_diff : 1.0));
 
   return EXIT_SUCCESS;
   }
