@@ -40,6 +40,7 @@ extern keystruct	objkey[];
 int	main(int argc, char *argv[])
 
   {
+   double	tdiff, lines, dets;
    int		a, narg, nim, opt, opt2;
    char		**argkey, **argval, *str;
 
@@ -130,9 +131,12 @@ int	main(int argc, char *argv[])
 
   endprefs();
   NFPRINTF(OUTPUT, "");
-  NPRINTF(OUTPUT, "> All done (in %.0f s: %.1f detections/s)\n",
-	prefs.time_diff,
-	(double)thecat.ntotal/(prefs.time_diff>0.0? prefs.time_diff : 1.0));
+  tdiff = prefs.time_diff>0.0? prefs.time_diff : 1.0;
+  lines = (double)thefield1.height/tdiff;
+  dets = (double)thecat.ntotal/tdiff;
+  NPRINTF(OUTPUT,
+	"> All done (in %.0f s: %.1f line%s/s , %.1f detection%s/s)\n",
+	prefs.time_diff, lines, lines>1.0? "s":"", dets, dets>1.0? "s":"");
 
   return EXIT_SUCCESS;
   }
