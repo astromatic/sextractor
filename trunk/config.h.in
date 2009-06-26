@@ -47,11 +47,11 @@
 
 /* Define if you have the FFTW single precision multithreaded libraries and
    header files. */
-#undef HAVE_FFTWFT
+#undef HAVE_FFTWF_MP
 
 /* Define if you have the FFTW double precision multithreaded libraries and
    header files. */
-#undef HAVE_FFTWT
+#undef HAVE_FFTW_MP
 
 /* Define to 1 if fseeko (and presumably ftello) exists and is declared. */
 #undef HAVE_FSEEKO
@@ -73,9 +73,6 @@
 
 /* Define to 1 if you have the `m' library (-lm). */
 #undef HAVE_LIBM
-
-/* Define to 1 if you have the `ptcblas' library (-lptcblas). */
-#undef HAVE_LIBPTCBLAS
 
 /* Define to 1 if you have the <limits.h> header file. */
 #undef HAVE_LIMITS_H

@@ -9,7 +9,7 @@ dnl ACTION-IF-FOUND is a list of shell commands to run if BLAS/LAPACK
 dnl is found (HAVE_ATLAS is defined first), and ACTION-IF-NOT-FOUND
 dnl is a list of commands to run it if it is not found.
 dnl
-dnl @version $Id: acx_atlas.m4,v 1.0 2007/10/19 21:30:17 bertin Exp $
+dnl @version $Id: acx_atlas.m4,v 1.0 2009/06/26 14:30:17 bertin Exp $
 dnl @author Emmanuel Bertin <bertin@iap.fr>
 
 AC_DEFUN([ACX_ATLAS], [
@@ -190,9 +190,9 @@ if test x"$acx_atlas_ok" = xyes; then
 	[Define if you have the ATLAS libraries and header files.])
   if test x$3 = xyes; then
 dnl Check whether the multithreaded version of ATLAS is there too:
-    AC_CHECK_LIB(ptcblas, cblas_dgemm,, [acx_atlas_ok=no],
+    AC_CHECK_LIB(ptcblas, cblas_dgemm, [acx_atlast_ok=yes], [acx_atlast_ok=no],
 	[$ATLAS_LIBPATH -lcblas -latlas -lm])
-    if test x$acx_atlas_ok = xyes; then
+    if test x$acx_atlast_ok = xyes; then
       ATLAS_LIB="$ATLAS_LIBPATH -llapack -lptcblas -lcblas -latlas"
       LIBS="$OLIBS"
       AC_SUBST(ATLAS_LIB)
@@ -200,9 +200,12 @@ dnl Check whether the multithreaded version of ATLAS is there too:
 	[Define if you have the parallel ATLAS libraries.])
       $4
     else
-      ATLAS_ERROR="CBLAS/LAPack was compiled without multithreading support!"
-      AC_SUBST(ATLAS_ERROR)
-      $5         
+      ATLAS_LIB="$ATLAS_LIBPATH -llapack -lcblas -latlas"
+      LIBS="$OLIBS"
+      AC_SUBST(ATLAS_LIB)
+      ATLAS_WARN="CBLAS/LAPack was compiled without multithreading support!"
+      AC_SUBST(ATLAS_WARN)
+      $4         
     fi
   else
     ATLAS_LIB="$ATLAS_LIBPATH -llapack -lcblas -latlas"
