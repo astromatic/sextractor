@@ -54,7 +54,7 @@ void    fft_init(int nthreads)
     {
 #ifdef USE_THREADS
     QPTHREAD_MUTEX_INIT(&fftmutex, NULL);
-#ifdef HAVE_FFTWF_MP
+#ifdef HAVE_FFTW_MP
     if (nthreads > 1)
       {
       if (!fftw_init_threads())
@@ -86,7 +86,7 @@ void    fft_end(void)
     {
     firsttimeflag = 0;
 #ifdef USE_THREADS
-#ifdef HAVE_FFTWF_MP
+#ifdef HAVE_FFTW_MP
     fftw_cleanup_threads();
 #endif
     QPTHREAD_MUTEX_DESTROY(&fftmutex);
