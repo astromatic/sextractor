@@ -9,7 +9,7 @@
 *
 *	Contents:	analyse(), endobject()...: measurements on detections.
 *
-*	Last modify:	18/11/2008
+*	Last modify:	20/07/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -385,9 +385,11 @@ Final processing of object data, just before saving it to the catalog.
 void	endobject(picstruct *field, picstruct *dfield, picstruct *wfield,
 		picstruct *dwfield, int n, objliststruct *objlist)
   {
-   checkstruct	*check;
-   int		i,j, ix,iy,selecflag, newnumber,nsub;
    objstruct	*obj;
+   checkstruct	*check;
+   double	rawpos[NAXIS],
+		pixscale2;
+   int		i,j, ix,iy,selecflag, newnumber,nsub;
 
   obj = &objlist->obj[n];
 
@@ -468,6 +470,43 @@ void	endobject(picstruct *field, picstruct *dfield, picstruct *wfield,
       obj2->polar = (obj->a*obj->a - obj->b*obj->b)
 		/ (obj->a*obj->a + obj->b*obj->b);
 
+/*-- Express positions in FOCAL or WORLD coordinates */
+    if (FLAG(obj2.mxf) || FLAG(obj2.mxw))
+      astrom_pos(field, obj);
+
+    if (FLAG(obj2.mx2w)
+	|| FLAG(obj2.win_mx2w)
+	|| FLAG(obj2.poserr_mx2w)
+	|| FLAG(obj2.winposerr_mx2w)
+	|| FLAG(obj2.poserrmx2w_prof)
+	|| FLAG(obj2.prof_flagw)
+	|| ((!prefs.pixel_scale) && (FLAG(obj2.npixw)
+		|| FLAG(obj2.fdnpixw)
+		|| FLAG(obj2.fwhmw))))
+      {
+      rawpos[0] = obj2->posx;
+      rawpos[1] = obj2->posy;
+      pixscale2 = wcs_jacobian(field->wcs, rawpos, obj2->jacob);
+      }
+
+/*-- Express shape parameters in the FOCAL or WORLD frame */
+    if (FLAG(obj2.mx2w))
+      astrom_shapeparam(field, obj);
+/*-- Express position error parameters in the FOCAL or WORLD frame */
+    if (FLAG(obj2.poserr_mx2w))
+      astrom_errparam(field, obj);
+
+    if (FLAG(obj2.npixw))
+      obj2->npixw = obj->npix * (prefs.pixel_scale?
+	field->pixscale/3600.0*field->pixscale/3600.0 : pixscale2);
+    if (FLAG(obj2.fdnpixw))
+      obj2->fdnpixw = obj->fdnpix * (prefs.pixel_scale?
+	field->pixscale/3600.0*field->pixscale/3600.0 : pixscale2);
+
+    if (FLAG(obj2.fwhmw))
+      obj2->fwhmw = obj->fwhm * (prefs.pixel_scale?
+	field->pixscale/3600.0 : sqrt(pixscale2));
+
 /*------------------------------- Photometry -------------------------------*/
 
 /*-- Convert the father of photom. error estimates from variance to RMS */
@@ -493,11 +532,25 @@ void	endobject(picstruct *field, picstruct *dfield, picstruct *wfield,
 
 /*--------------------------- Windowed barycenter --------------------------*/
     if (FLAG(obj2.winpos_x))
+      {
       compute_winpos(field, wfield, obj);
+/*---- Express positions in FOCAL or WORLD coordinates */
+      if (FLAG(obj2.winpos_xf) || FLAG(obj2.winpos_xw))
+        astrom_winpos(field, obj);
+/*---- Express shape parameters in the FOCAL or WORLD frame */
+      if (FLAG(obj2.mx2w))
+        astrom_winshapeparam(field, obj);
+/*---- Express position error parameters in the FOCAL or WORLD frame */
+      if (FLAG(obj2.poserr_mx2w))
+        astrom_winerrparam(field, obj);
+      }
 
-/*-- What about the peak of the profile? */
+/*---------------------------- Peak information ----------------------------*/
     if (obj->peak+obj->bkg >= field->satur_level)
       obj->flag |= OBJ_SATUR;
+/*-- Express positions in FOCAL or WORLD coordinates */
+    if (FLAG(obj2.peakxf) || FLAG(obj2.peakxw))
+      astrom_peakpos(field, obj);
 
 /*-- Check-image CHECK_APERTURES option */
 
@@ -639,14 +692,24 @@ void	endobject(picstruct *field, picstruct *dfield, picstruct *wfield,
 /*----------------------------- Profile fitting -----------------------------*/
     nsub = 1;
     if (prefs.prof_flag)
+      {
       profit_fit(theprofit, field, wfield, obj, obj2);
+/*---- Express positions in FOCAL or WORLD coordinates */
+      if (FLAG(obj2.winpos_xf) || FLAG(obj2.winpos_xw))
+        astrom_profpos(field, obj);
+/*---- Express shape parameters in the FOCAL or WORLD frame */
+      if (FLAG(obj2.mx2w))
+        astrom_profshapeparam(field, obj);
+/*---- Express position error parameters in the FOCAL or WORLD frame */
+      if (FLAG(obj2.poserr_mx2w))
+        astrom_proferrparam(field, obj);
+      }
 
 /*--- Express everything in magnitude units */
     computemags(field, obj);
 
 /*-------------------------------- Astrometry ------------------------------*/
-    if (prefs.world_flag)
-      computeastrom(field, obj);
+
 /*-- Edit min and max coordinates to follow the FITS conventions */
     obj->xmin += 1;
     obj->ymin += 1;
