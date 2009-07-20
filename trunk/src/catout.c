@@ -9,7 +9,7 @@
 *
 *	Contents:	functions for output of catalog data.
 *
-*	Last modify:	29/05/2009
+*	Last modify:	20/07/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -201,13 +201,15 @@ void	updateparamflags()
 			| FLAG(obj2.alpha2000_prof);
   FLAG(obj2.xw_prof) |= FLAG(obj2.yw_prof)
 			| FLAG(obj2.alphas_prof);
-
+  FLAG(obj2.xf_prof) |= FLAG(obj2.yf_prof);
   FLAG(obj2.x_prof) |= FLAG(obj2.y_prof)
 			| FLAG(obj2.xw_prof)
+			| FLAG(obj2.xf_prof)
 			| FLAG(obj2.poserra_prof)
 			| FLAG(obj2.poserrcxx_prof)
 			| FLAG(obj2.prof_concentration)
 			| FLAG(obj2.prof_class_star);
+
   FLAG(obj2.mag_prof) |= FLAG(obj2.magerr_prof);
   FLAG(obj2.magerr_prof) |= FLAG(obj2.fluxerr_prof);
   FLAG(obj2.flux_prof) |= FLAG(obj2.mag_prof) | FLAG(obj2.fluxerr_prof);
@@ -392,6 +394,7 @@ void	updateparamflags()
 			| FLAG(obj2.winposerr_theta2000);
   FLAG(obj2.winpos_alphas) |= FLAG(obj2.winpos_deltas)
 			| FLAG(obj2.winpos_alpha2000);
+  FLAG(obj2.winpos_xf) |= FLAG(obj2.winpos_yf);
   FLAG(obj2.winpos_xw) |= FLAG(obj2.winpos_yw)
 			| FLAG(obj2.winpos_alphas);
 
@@ -432,8 +435,11 @@ void	updateparamflags()
 			| FLAG(obj2.npixw) | FLAG(obj2.fdnpixw)
 			| FLAG(obj2.fwhmw);
   
+  FLAG(obj2.peakxw) |= FLAG(obj2.peakyf);
   FLAG(obj2.peakxw) |= FLAG(obj2.peakyw) | FLAG(obj2.peakalphas);
-  FLAG(obj.peakx) |= FLAG(obj.peaky) | FLAG(obj2.peakxw);
+  FLAG(obj.peakx) |= FLAG(obj.peaky) | FLAG(obj2.peakxw) | FLAG(obj2.peakxf);
+
+  FLAG(obj2.mxf) |= FLAG(obj2.myf);
 
   FLAG(obj2.mxw) |= FLAG(obj2.myw) | FLAG(obj2.mx2w) | FLAG(obj2.alphas)
 		| FLAG(obj2.poserr_mx2w);
@@ -442,7 +448,8 @@ void	updateparamflags()
 			    | FLAG(obj2.flux_win) | FLAG(obj2.fluxerr_win);
   FLAG(obj2.winpos_x) |= FLAG(obj2.winpos_y)
 			| FLAG(obj2.winposerr_mx2) | FLAG(obj2.win_mx2)
-			| FLAG(obj2.winpos_xw) | FLAG(obj2.win_flag)
+			| FLAG(obj2.winpos_xw) | FLAG(obj2.winpos_xf)
+			| FLAG(obj2.win_flag)
 			| FLAG(obj2.flux_win) |FLAG(obj2.winpos_niter);
 
 /*------------------------------ Photometry ---------------------------------*/

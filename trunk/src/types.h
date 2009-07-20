@@ -9,7 +9,7 @@
 *
 *	Contents:	global type definitions.
 *
-*	Last modify:	18/03/2009
+*	Last modify:	20/07/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -153,6 +153,7 @@ typedef struct
 /* ---- astrometric data */
   double	posx,posy;			/* "FITS" pos. in pixels */
   double	jacob[NAXIS*NAXIS];		/* Local deproject. Jacobian */
+ 
   double	mamaposx,mamaposy;		/* "MAMA" pos. in pixels */
   float		sposx,sposy;			/* single precision pos. */
   float		poserr_a, poserr_b,
@@ -170,7 +171,9 @@ typedef struct
 		poserr_cxyw;			/* WORLD error ellipse */
   double	mx2w,my2w,mxyw;			/* WORLD var. and covar. */
   double	peakxw, peakyw;			/* WORLD of brightest pix */
+  double	peakxf, peakyf;			/* FOCAL of brightest pix */
   double	mxw, myw;			/* WORLD barycenters */
+  double	mxf, myf;			/* FOCAL barycenters */
   double	alphas, deltas;			/* native alpha, delta */
   float		thetas;				/* native position angle E/N*/
   double	peakalphas, peakdeltas;		/* native for brightest pix */
@@ -228,12 +231,13 @@ typedef struct
   float		win_aw, win_bw,
 		win_thetaw;			/* WORLD ellipse parameters */
   float		win_polarw;			/* WORLD WIN "polarization" */
-  float		win_thetas;		/* native error pos. angle */
-  float		win_theta2000;		/* J2000 error pos. angle */
-  float		win_theta1950;		/* B1950 error pos. angle */
+  float		win_thetas;			/* native error pos. angle */
+  float		win_theta2000;			/* J2000 error pos. angle */
+  float		win_theta1950;			/* B1950 error pos. angle */
   float		win_cxxw, win_cyyw,
 		win_cxyw;			/* WORLD ellipse parameters */
   double	winpos_xw, winpos_yw;		/* WORLD coordinates */
+  double	winpos_xf, winpos_yf;		/* FOCAL coordinates */
   double	winpos_alphas, winpos_deltas;	/* native alpha, delta */
   double	winpos_alpha2000, winpos_delta2000;	/* J2000 alpha, delta */
   double	winpos_alpha1950, winpos_delta1950;	/* B1950 alpha, delta */
@@ -311,7 +315,8 @@ typedef struct
   float		mag_prof;			/* Mag from model-fitting */
   float		magerr_prof;			/* RMS mag from model-fitting */
   float		x_prof, y_prof;			/* Coords from model-fitting*/
-  double	xw_prof, yw_prof;		/* WORLD coords */
+  double	xw_prof, yw_prof;		/* WORLD coordinates */
+  double	xf_prof, yf_prof;		/* FOCAL coordinates */
   double	alphas_prof, deltas_prof;	/* native alpha, delta */
   double	alpha2000_prof, delta2000_prof;	/* J2000 alpha, delta */
   double	alpha1950_prof, delta1950_prof;	/* B1950 alpha, delta */

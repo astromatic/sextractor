@@ -9,7 +9,7 @@
 *
 *	Contents:	Astrometrical computations.
 *
-*	Last modify:	19/05/2008
+*	Last modify:	20/07/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -79,11 +79,11 @@ void	initastrom(picstruct *field)
   }
 
 
-/**************************** computeastrom *********************************/
+/***************************** astrom_pos **********************************/
 /*
-Compute real WORLD coordinates and dimensions according to FITS info.
+Compute real FOCAL and WORLD coordinates according to FITS info.
 */
-void	computeastrom(picstruct *field, objstruct *obj)
+void	astrom_pos(picstruct *field, objstruct *obj)
 
   {
    wcsstruct	*wcs;
@@ -94,7 +94,16 @@ void	computeastrom(picstruct *field, objstruct *obj)
   wcs = field->wcs;
   lng = wcs->lng;
   lat = wcs->lat;
-  pixscale2 = 0.0;	/* To avoid gcc -Wall warnings */
+
+/* If working with WCS, compute FOCAL coordinates and local matrix */
+  if (FLAG(obj2.mxf))
+    {
+    rawpos[0] = obj2->posx;
+    rawpos[1] = obj2->posy;
+    raw_to_red(wcs, rawpos, wcspos);
+    obj2->mxf = wcspos[0];
+    obj2->myf = wcspos[1];
+    }
 
 /* If working with WCS, compute WORLD coordinates and local matrix */
   if (FLAG(obj2.mxw))
@@ -145,7 +154,58 @@ void	computeastrom(picstruct *field, objstruct *obj)
       }
     }
 
-/* Idem for peak-flux positions */
+/* Custom coordinate system for the MAMA machine */
+  if (FLAG(obj2.mamaposx))
+    {
+    rawpos[0] = obj2->posx - 0.5;
+    rawpos[1] = obj2->posy - 0.5;
+    raw_to_wcs(wcs, rawpos, wcspos);
+    obj2->mamaposx = wcspos[1]*(MAMA_CORFLEX+1.0);
+    obj2->mamaposy = wcspos[0]*(MAMA_CORFLEX+1.0);
+    }
+
+  if (FLAG(obj2.mx2w)
+	|| FLAG(obj2.win_mx2w)
+	|| FLAG(obj2.poserr_mx2w)
+	|| FLAG(obj2.winposerr_mx2w)
+	|| FLAG(obj2.poserrmx2w_prof)
+	|| FLAG(obj2.prof_flagw)
+	|| ((!prefs.pixel_scale) && (FLAG(obj2.npixw)
+		|| FLAG(obj2.fdnpixw)
+		|| FLAG(obj2.fwhmw))))
+    {
+    rawpos[0] = obj2->posx;
+    rawpos[1] = obj2->posy;
+    pixscale2 = wcs_jacobian(wcs, rawpos, obj2->jacob);
+    }
+
+  return;
+  }
+
+
+/***************************** astrom_peakpos *******************************/
+/*
+Compute real FOCAL and WORLD peak coordinates according to FITS info.
+*/
+void	astrom_peakpos(picstruct *field, objstruct *obj)
+
+  {
+   wcsstruct	*wcs;
+   double	rawpos[NAXIS], wcspos[NAXIS];
+   int		lng,lat;
+
+  wcs = field->wcs;
+  lng = wcs->lng;
+  lat = wcs->lat;
+
+  if (FLAG(obj2.peakxf))
+    {
+    rawpos[0] = obj->peakx;
+    rawpos[1] = obj->peaky;
+    raw_to_red(wcs, rawpos, wcspos);
+    obj2->peakxf = wcspos[0];
+    obj2->peakyf = wcspos[1];
+    }
   if (FLAG(obj2.peakxw))
     {
     rawpos[0] = obj->peakx;
@@ -174,7 +234,33 @@ void	computeastrom(picstruct *field, objstruct *obj)
       }
     }
 
-/* Idem for Windowed positions */
+  return;
+  }
+
+
+/****************************** astrom_winpos *******************************/
+/*
+Compute real FOCAL and WORLD windowed coordinates according to FITS info.
+*/
+void	astrom_winpos(picstruct *field, objstruct *obj)
+
+  {
+   wcsstruct	*wcs;
+   double	rawpos[NAXIS], wcspos[NAXIS];
+   int		lng,lat;
+
+  wcs = field->wcs;
+  lng = wcs->lng;
+  lat = wcs->lat;
+
+  if (FLAG(obj2.winpos_xf))
+    {
+    rawpos[0] = obj2->winpos_x;
+    rawpos[1] = obj2->winpos_y;
+    raw_to_red(wcs, rawpos, wcspos);
+    obj2->winpos_xf = wcspos[0];
+    obj2->winpos_yf = wcspos[1];
+    }
   if (FLAG(obj2.winpos_xw))
     {
     rawpos[0] = obj2->winpos_x;
@@ -203,7 +289,33 @@ void	computeastrom(picstruct *field, objstruct *obj)
       }
     }
 
-/* Idem for Model-fitted positions */
+  return;
+  }
+
+
+/****************************** astrom_profpos *******************************/
+/*
+Compute real FOCAL and WORLD profit coordinates according to FITS info.
+*/
+void	astrom_profpos(picstruct *field, objstruct *obj)
+
+  {
+   wcsstruct	*wcs;
+   double	rawpos[NAXIS], wcspos[NAXIS];
+   int		lng,lat;
+
+  wcs = field->wcs;
+  lng = wcs->lng;
+  lat = wcs->lat;
+
+  if (FLAG(obj2.xf_prof))
+    {
+    rawpos[0] = obj2->x_prof;
+    rawpos[1] = obj2->y_prof;
+    raw_to_red(wcs, rawpos, wcspos);
+    obj2->xf_prof = wcspos[0];
+    obj2->yf_prof = wcspos[1];
+    }
   if (FLAG(obj2.xw_prof))
     {
     rawpos[0] = obj2->x_prof;
@@ -231,58 +343,6 @@ void	computeastrom(picstruct *field, objstruct *obj)
         }
       }
     }
-
-/* Custom coordinate system for the MAMA machine */
-  if (FLAG(obj2.mamaposx))
-    {
-    rawpos[0] = obj2->posx - 0.5;
-    rawpos[1] = obj2->posy - 0.5;
-    raw_to_wcs(wcs, rawpos, wcspos);
-    obj2->mamaposx = wcspos[1]*(MAMA_CORFLEX+1.0);
-    obj2->mamaposy = wcspos[0]*(MAMA_CORFLEX+1.0);
-    }
-
-  if (FLAG(obj2.mx2w)
-	|| FLAG(obj2.win_mx2w)
-	|| FLAG(obj2.poserr_mx2w)
-	|| FLAG(obj2.winposerr_mx2w)
-	|| FLAG(obj2.poserrmx2w_prof)
-	|| FLAG(obj2.prof_flagw)
-	|| ((!prefs.pixel_scale) && (FLAG(obj2.npixw)
-		|| FLAG(obj2.fdnpixw)
-		|| FLAG(obj2.fwhmw))))
-    {
-    rawpos[0] = obj2->posx;
-    rawpos[1] = obj2->posy;
-    pixscale2 = wcs_jacobian(wcs, rawpos, obj2->jacob);
-    }
-
-/* Express shape parameters in WORLD frame */
-  if (FLAG(obj2.mx2w))
-    astrom_shapeparam(field, obj);
-  if (FLAG(obj2.win_mx2w))
-    astrom_winshapeparam(field, obj);
-  if (FLAG(obj2.prof_flagw))
-    astrom_profshapeparam(field, obj);
-
-/* Express position error parameters in WORLD frame */
-  if (FLAG(obj2.poserr_mx2w))
-    astrom_errparam(field, obj);
-  if (FLAG(obj2.winposerr_mx2w))
-    astrom_winerrparam(field, obj);
-  if (FLAG(obj2.poserrmx2w_prof))
-    astrom_proferrparam(field, obj);
-
-  if (FLAG(obj2.npixw))
-    obj2->npixw = obj->npix * (prefs.pixel_scale?
-	field->pixscale/3600.0*field->pixscale/3600.0 : pixscale2);
-  if (FLAG(obj2.fdnpixw))
-    obj2->fdnpixw = obj->fdnpix * (prefs.pixel_scale?
-	field->pixscale/3600.0*field->pixscale/3600.0 : pixscale2);
-
-  if (FLAG(obj2.fwhmw))
-    obj2->fwhmw = obj->fwhm * (prefs.pixel_scale?
-	field->pixscale/3600.0 : sqrt(pixscale2));
 
   return;
   }

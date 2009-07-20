@@ -9,7 +9,7 @@
 *
 *	Contents:	parameter list for catalog data.
 *
-*	Last modify:	19/05/2009
+*	Last modify:	20/07/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -222,6 +222,12 @@ keystruct	objkey[] = {
   {"YPEAK_IMAGE", "y-coordinate of the brightest pixel",
 	&outobj.peaky, H_INT, T_LONG, "%10d", "pixel",
 	"pos.cartesian.y", "pix"},
+  {"XPEAK_FOCAL", "Focal-plane x coordinate of the brightest pixel",
+	&outobj2.peakxf, H_FLOAT, T_DOUBLE, "%18.10e", "",
+	"pos.cartesian.x", ""},
+  {"YPEAK_FOCAL", "Focal-plane y coordinate of the brightest pixel",
+	&outobj2.peakyf, H_FLOAT, T_DOUBLE, "%18.10e", "",
+	"pos.cartesian.y", ""},
   {"XPEAK_WORLD", "World-x coordinate of the brightest pixel",
 	&outobj2.peakxw, H_FLOAT, T_DOUBLE, "%18.10e", "deg",
 	"pos.eq.ra", "deg"},
@@ -262,6 +268,12 @@ keystruct	objkey[] = {
   {"Y_IMAGE_DBL", "Object position along y (double precision)",
 	&outobj2.posy, H_FLOAT, T_DOUBLE, "%10.3f", "pixel",
 	"pos.cartesian.x;pos.barycenter;instr.det", "pix"},
+  {"X_FOCAL", "Barycenter position along focal-plane x axis",
+	&outobj2.mxf, H_FLOAT, T_DOUBLE, "%18.10e", "",
+	"pos.cartesian.x", ""},
+  {"Y_FOCAL", "Barycenter position along focal-plane y axis",
+	&outobj2.myf, H_FLOAT, T_DOUBLE, "%18.10e", "",
+	"pos.cartesian.y", ""},
   {"X_WORLD", "Barycenter position along world x axis",
 	&outobj2.mxw, H_FLOAT, T_DOUBLE, "%18.10e", "deg",
 	"pos.eq.ra", "deg"},
@@ -434,6 +446,13 @@ keystruct	objkey[] = {
   {"YWIN_IMAGE", "Windowed position estimate along y",
 	&outobj2.winpos_y, H_FLOAT, T_DOUBLE, "%10.3f", "pixel",
 	"pos.cartesian.y;instr.det", "pix"},
+
+  {"XWIN_FOCAL", "Windowed position along focal-plane x axis",
+	&outobj2.winpos_xf, H_FLOAT, T_DOUBLE, "%18.10e", "",
+	"pos.cartesian.x", ""},
+  {"YWIN_FOCAL", "Windowed position along focal-plane y axis",
+	&outobj2.winpos_yf, H_FLOAT, T_DOUBLE, "%18.10e", "",
+	"pos.cartesian.y", ""},
 
   {"XWIN_WORLD", "Windowed position along world x axis",
 	&outobj2.winpos_xw, H_FLOAT, T_DOUBLE, "%18.10e", "deg",

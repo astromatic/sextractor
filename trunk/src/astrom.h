@@ -9,7 +9,7 @@
 *
 *	Contents:	Astrometrical stuff.
 *
-*	Last modify:	18/05/2008
+*	Last modify:	20/07/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -30,12 +30,15 @@
 /*------------------------------- structures --------------------------------*/
 /*------------------------------- functions ---------------------------------*/
 extern void		astrom_errparam(picstruct *, objstruct *),
+			astrom_peakpos(picstruct *, objstruct *),
+			astrom_pos(picstruct *, objstruct *),
 			astrom_proferrparam(picstruct *, objstruct *),
+			astrom_profpos(picstruct *, objstruct *),
 			astrom_profshapeparam(picstruct *, objstruct *),
 			astrom_shapeparam(picstruct *, objstruct *),
 			astrom_winerrparam(picstruct *, objstruct *),
+			astrom_winpos(picstruct *, objstruct *),
 			astrom_winshapeparam(picstruct *, objstruct *),
-			computeastrom(picstruct *, objstruct *),
 			initastrom(picstruct *),
 			j2b(double, double, double, double *, double *),
 			precess(double,double,double,double,double *,double *);
