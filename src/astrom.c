@@ -9,7 +9,7 @@
 *
 *	Contents:	Astrometrical computations.
 *
-*	Last modify:	20/07/2009
+*	Last modify:	27/08/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -88,7 +88,7 @@ void	astrom_pos(picstruct *field, objstruct *obj)
   {
    wcsstruct	*wcs;
    double	rawpos[NAXIS], wcspos[NAXIS],
-		pixscale2, da,dd;
+		da,dd;
    int		lng,lat;
 
   wcs = field->wcs;
@@ -162,21 +162,6 @@ void	astrom_pos(picstruct *field, objstruct *obj)
     raw_to_wcs(wcs, rawpos, wcspos);
     obj2->mamaposx = wcspos[1]*(MAMA_CORFLEX+1.0);
     obj2->mamaposy = wcspos[0]*(MAMA_CORFLEX+1.0);
-    }
-
-  if (FLAG(obj2.mx2w)
-	|| FLAG(obj2.win_mx2w)
-	|| FLAG(obj2.poserr_mx2w)
-	|| FLAG(obj2.winposerr_mx2w)
-	|| FLAG(obj2.poserrmx2w_prof)
-	|| FLAG(obj2.prof_flagw)
-	|| ((!prefs.pixel_scale) && (FLAG(obj2.npixw)
-		|| FLAG(obj2.fdnpixw)
-		|| FLAG(obj2.fwhmw))))
-    {
-    rawpos[0] = obj2->posx;
-    rawpos[1] = obj2->posy;
-    pixscale2 = wcs_jacobian(wcs, rawpos, obj2->jacob);
     }
 
   return;

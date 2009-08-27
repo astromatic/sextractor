@@ -9,7 +9,7 @@
 *
 *	Contents:	Fit an arbitrary profile combination to a detection.
 *
-*	Last modify:	13/07/2009
+*	Last modify:	07/08/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -168,7 +168,7 @@ OUTPUT	Pointer to an allocated fit structure (containing details about the
 	fit).
 NOTES	It is a modified version of the lm_minimize() of lmfit.
 AUTHOR	E. Bertin (IAP)
-VERSION	13/07/2009
+VERSION	29/05/2009
  ***/
 void	profit_fit(profitstruct *profit,
 		picstruct *field, picstruct *wfield,
@@ -178,10 +178,8 @@ void	profit_fit(profitstruct *profit,
     patternstruct *pattern;
     psfstruct		*psf;
     checkstruct		*check;
-    double		*oldparaminit,
-			psf_fwhm, a , cp,sp, emx2,emy2,emxy, dchi2, err,
-			oldchi2;
-    int			i,j,p, nparam, ncomp, nprof, oldniter;
+    double		psf_fwhm, a , cp,sp, emx2,emy2,emxy, dchi2, err;
+    int			i,j,p, nparam, ncomp, nprof;
 
   nparam = profit->nparam;
   nprof = profit->nprof;
@@ -259,21 +257,7 @@ the_gal++;
 /* Actual minimisation */
   profit->niter = profit_minimize(profit, PROFIT_MAXITER);
   profit_residuals(profit,field,wfield, 10.0, profit->param,profit->resi);
-/*
-  oldchi2 = profit->chi2;
-  oldniter = profit->niter;
-  oldparaminit = profit_reresetparams(profit);
-  profit->niter = profit_minimize(profit, PROFIT_MAXITER);
-  if (profit->chi2 > oldchi2)
-    {
-    memcpy(profit->paraminit, oldparaminit, nparam*sizeof(double));
-    profit->chi2 = oldchi2;
-    profit->niter = oldniter;
-    }
-  else
-    obj2->prof_flag |= PROFIT_FLIPPED;
-  free(oldparaminit);
-*/
+
 /*
   QMEMCPY(profit->paraminit, oldparaminit, double, nparam);
   if (profit_setparam(profit, PARAM_ARMS_PITCH, 160.0, 130.0, 175.0)==RETURN_OK)
@@ -609,7 +593,7 @@ INPUT	Profile-fitting structure.
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	30/06/2009
+VERSION	22/10/2008
  ***/
 void	profit_psf(profitstruct *profit)
   {
@@ -659,7 +643,6 @@ void	profit_psf(profitstruct *profit)
     for (i=profit->modnaxisn[0]*profit->modnaxisn[1]; i--;)
       *(pixout++) *= norm;
     }
-
 
   return;
   }
@@ -714,9 +697,9 @@ int	profit_minimize(profitstruct *profit, int niter)
 
 /* Perform fit */
   lm_opts[0] = 1.0e-3;
-  lm_opts[1] = 1.0e-17;
-  lm_opts[2] = 1.0e-17;
-  lm_opts[3] = 1.0e-17;
+  lm_opts[1] = 1.0e-18;
+  lm_opts[2] = 1.0e-18;
+  lm_opts[3] = 1.0e-18;
   lm_opts[4] = 1.0e-6;
 
   niter = dlevmar_dif(profit_evaluate, profit->paraminit, profit->resi,
@@ -885,8 +868,8 @@ double	*profit_compresi(profitstruct *profit, double dynparam, double *resi)
       val = *(objpix++);
       if ((wval=*(objweight++))>0.0)
         {
-        val2 = (val - *lmodpix)*invsig;
- //       val2 = val2>0.0? sqrt(1.0+val2) - 1.0 : 1.0 - sqrt(1.0-val2);
+        val2 = (val - *lmodpix)*wval*invsig;
+        val2 = val2>0.0? LOGF(1.0+val2) : -LOGF(1.0-val2);
         *(resit++) = val2*dynparam;
         error += val2*val2;
         }
@@ -1641,35 +1624,6 @@ void	profit_resetparam(profitstruct *profit, paramenum paramtype)
   }
 
 
-/****** profit_reresetparams ****************************************************
-PROTO	double *profit_reresetparams(profitstruct *profit)
-PURPOSE	Reset profile parameters once more according to previous findings.
-INPUT	Pointer to the profit structure.
-OUTPUT	-.
-NOTES	-.
-AUTHOR	E. Bertin (IAP)
-VERSION	13/07/2009
- ***/
-double	*profit_reresetparams(profitstruct *profit)
-  {
-   double	*param, *parami;
-   int		p, nparam;
-
-  QMEMCPY(profit->paraminit, param, double, PARAM_NPARAM);
-  nparam = profit->nparam;
-  profit_resetparams(profit);
-  profit_boundtounbound(profit, profit->paraminit);
-  profit_boundtounbound(profit, param);
-  parami = profit->paraminit;
-  for (p=0; p<nparam; p++)
-    parami[p] = 3.0*param[p] - 2.0*parami[p];
-  profit_unboundtobound(profit, profit->paraminit);
-  profit_unboundtobound(profit, param);
-
-  return param;
-  }
-
-
 /****** profit_resetparams ****************************************************
 PROTO	void profit_resetparams(profitstruct *profit)
 PURPOSE	Set the initial, lower and upper boundary values of profile parameters.
@@ -1689,7 +1643,6 @@ void	profit_resetparams(profitstruct *profit)
 
   return;
   }
-
 
 
 /****** profit_setparam ****************************************************
@@ -2038,7 +1991,7 @@ INPUT	Profile structure,
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	03/10/2008
+VERSION	07/08/2009
  ***/
 void	prof_add(profstruct *prof, profitstruct *profit)
   {
@@ -2430,7 +2383,7 @@ width = 3.0;
 /* Threshold and measure the flux */
   flux = 0.0;
   pixin = profit->pmodpix;
-  for (n=npix; n--; pixin++)
+  for (i=npix; i--; pixin++)
     if (*pixin >= thresh)
       flux += *pixin;
     else
@@ -2441,7 +2394,7 @@ width = 3.0;
   prof->fluxfac = fluxfac;
   pixin = profit->pmodpix;
   pixout = profit->modpix;
-  for (n=npix; n--;)
+  for (i=npix; i--;)
     *(pixout++) += fluxfac * *(pixin++);
 
   return;

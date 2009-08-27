@@ -9,7 +9,7 @@
 *
 *	Contents:	Include file for profit.c.
 *
-*	Last modify:	13/07/2009
+*	Last modify:	20/03/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -144,7 +144,6 @@ profstruct	*prof_init(profitstruct *profit, proftypenum profcode);
 
 double		*profit_compresi(profitstruct *profit, double dynparam,
 				double *resi),
-		*profit_reresetparams(profitstruct *profit),
 		*profit_residuals(profitstruct *profit, picstruct *field,
 			picstruct *wfield, double dynparam,
 			double *param, double *resi),
