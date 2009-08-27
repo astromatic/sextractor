@@ -10,7 +10,7 @@
 *
 *	Contents:	Fit the PSF to a detection.
 *
-*	Last modify:	19/12/2007
+*	Last modify:	19/08/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -339,7 +339,7 @@ void	psf_fit(psfstruct *psf, picstruct *field, picstruct *wfield,
   niter = 0;
   npsfmax = prefs.psf_npsfmax;
   pixstep = 1.0/psf->pixstep;
-  gain = field->gain;
+  gain = (field->gain >0.0? field->gain: 1e30);
   backnoise2 = field->backsig*field->backsig;
   satlevel = field->satur_level - obj->bkg;
   wthresh = wfield?wfield->weight_thresh:BIG;
@@ -763,7 +763,7 @@ void    double_psf_fit(psfstruct *ppsf, picstruct *pfield, picstruct *pwfield,
   pdx = pdy =dx = dy = 0.0;
   ppixstep = 1.0/ppsf->pixstep;
   pixstep = 1.0/psf->pixstep;
-  gain = field->gain;
+  gain = (field->gain >0.0? field->gain: 1e30);
   npsfmax=prefs.psf_npsfmax;
   pbacknoise2 = pfield->backsig*pfield->backsig;
   satlevel = field->satur_level - obj->bkg;

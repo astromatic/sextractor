@@ -9,7 +9,7 @@
 *
 *	Contents:	analyse(), endobject()...: measurements on detections.
 *
-*	Last modify:	20/07/2009
+*	Last modify:	27/08/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -474,6 +474,7 @@ void	endobject(picstruct *field, picstruct *dfield, picstruct *wfield,
     if (FLAG(obj2.mxf) || FLAG(obj2.mxw))
       astrom_pos(field, obj);
 
+    pixscale2 = 0.0;	/* To avoid gcc -Wall warnings */
     if (FLAG(obj2.mx2w)
 	|| FLAG(obj2.win_mx2w)
 	|| FLAG(obj2.poserr_mx2w)
