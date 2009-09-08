@@ -1020,8 +1020,8 @@ Build the local PSF (function of "context").
 void	psf_build(psfstruct *psf)
   {
    static double	pos[POLY_MAXDIM];
-   double	*pl, *basis, fac;
-   float	*ppc;
+   double	*basis, fac;
+   float	*ppc, *pl;
    int		i,n,p, ndim, npix;
 
   npix = psf->masksize[0]*psf->masksize[1];

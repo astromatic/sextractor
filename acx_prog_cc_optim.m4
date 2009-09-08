@@ -8,7 +8,7 @@ dnl IRIX C compiler, NEC SX-5 (Super-UX 10) C compiler, and Cray J90
 dnl (Unicos 10.0.0.8) C compiler.
 dnl
 dnl This macro is a modification of Ville Laurikari's VL_PROG_CC_WARNINGS
-dnl @version 1.3 (2009-04-01)
+dnl @version 1.4 (2009-09-08)
 dnl @authors Emmanuel Bertin <bertin@iap.fr> Ville Laurikari <vl@iki.fi>
 dnl
 AC_DEFUN([ACX_PROG_CC_OPTIM], [
@@ -101,8 +101,8 @@ EOF
       rm -f conftest.*
     fi
     if test -n "$prog_cc_optim_flags"; then
-      CFLAGS="$CFLAGS $prog_cc_optim_flags"
-      LDFLAGS="$LDFLAGS $prog_ld_optim_flags"
+      AM_CFLAGS="$CFLAGS $prog_cc_optim_flags"
+      AM_LDFLAGS="$LDFLAGS $prog_ld_optim_flags"
     else
       prog_cc_optim_flags=""
       prog_ld_optim_flags=""

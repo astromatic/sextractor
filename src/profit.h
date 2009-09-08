@@ -9,7 +9,7 @@
 *
 *	Contents:	Include file for profit.c.
 *
-*	Last modify:	20/03/2009
+*	Last modify:	07/09/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -70,32 +70,32 @@ typedef enum	{PARAM_BACK, PARAM_X, PARAM_Y,
 typedef struct
   {
   proftypenum	code;			/* Model code */
-  double	*pix;			/* Full pixmap of the model */
+  float		*pix;			/* Full pixmap of the model */
   int		naxis;			/* Number of pixmap dimensions */
   int		naxisn[3];		/* Pixmap size for each axis */
-  double	typscale;		/* Typical scale in prof pixels */
-  double	fluxfac;		/* Flux normalisation factor */
+  float		typscale;		/* Typical scale in prof pixels */
+  float		fluxfac;		/* Flux normalisation factor */
 /* Generic presentation parameters */
-  double	*flux;			/* Integrated flux */
-  double	*x[2];			/* Coordinate vector */
-  double	*scale;			/* Scaling vector */
-  double	*aspect;		/* Aspect ratio */
-  double	*posangle;		/* Position angle (CCW/NAXIS1)*/
-  double	*featfrac;		/* Feature flux fraction */
-  double	*featscale;		/* Feature relative scalelength */
-  double	*featstart;		/* Feature relative starting radius */
-  double	*featposang;		/* Feature position angle */
-  double	*featpitch;		/* Feature pitch */
-  double	*featpitchvar;		/* Feature pitch variation */
-  double	*featwidth;		/* Feature width */
-  double	*feataspect;		/* Feature aspect ratio */
-  double	*extra[PROFIT_MAXEXTRA];/* Parameters along extra-dimension */
-  double	extrazero[PROFIT_MAXEXTRA]; /* Zero-point along extra-dim. */
-  double	extrascale[PROFIT_MAXEXTRA]; /* Scaling along extra-dim. */
+  float		*flux;			/* Integrated flux */
+  float		*x[2];			/* Coordinate vector */
+  float		*scale;			/* Scaling vector */
+  float		*aspect;		/* Aspect ratio */
+  float		*posangle;		/* Position angle (CCW/NAXIS1)*/
+  float		*featfrac;		/* Feature flux fraction */
+  float		*featscale;		/* Feature relative scalelength */
+  float		*featstart;		/* Feature relative starting radius */
+  float		*featposang;		/* Feature position angle */
+  float		*featpitch;		/* Feature pitch */
+  float		*featpitchvar;		/* Feature pitch variation */
+  float		*featwidth;		/* Feature width */
+  float		*feataspect;		/* Feature aspect ratio */
+  float		*extra[PROFIT_MAXEXTRA];/* Parameters along extra-dimension */
+  float		extrazero[PROFIT_MAXEXTRA]; /* Zero-point along extra-dim. */
+  float		extrascale[PROFIT_MAXEXTRA]; /* Scaling along extra-dim. */
   int		extracycleflag[PROFIT_MAXEXTRA]; /* !=0 for cycling dim. */
   interpenum	interptype[2+PROFIT_MAXEXTRA];	/* Interpolation type */
   int		kernelwidth[2+PROFIT_MAXEXTRA];	/* Kernel size */
-  double	*kernelbuf;		/* Kernel buffer */
+  float		*kernelbuf;		/* Kernel buffer */
   int		kernelnlines;		/* Number of interp kernel lines */
   }	profstruct;
 
@@ -104,22 +104,22 @@ typedef struct
   objstruct	*obj;		/* Current object */
   obj2struct	*obj2;		/* Current object */
   int		nparam;		/* Number of parameters to be fitted */
-  double	*paramlist[PARAM_NPARAM];	/* flat parameter list */
+  float		*paramlist[PARAM_NPARAM];	/* flat parameter list */
   int		paramindex[PARAM_NPARAM];/* Vector of parameter indices */
-  double	param[PARAM_NPARAM];	/* Vector of parameters to be fitted */
-  double	paraminit[PARAM_NPARAM];/* Parameter initial guesses */
-  double	parammin[PARAM_NPARAM];	/* Parameter lower limits */
-  double	parammax[PARAM_NPARAM];	/* Parameter upper limits */
-  double	*covar;		/* Covariance matrix */
-  double	paramerr[PARAM_NPARAM];	/* Std deviations of parameters */
+  float		param[PARAM_NPARAM];	/* Vector of parameters to be fitted */
+  float		paraminit[PARAM_NPARAM];/* Parameter initial guesses */
+  float		parammin[PARAM_NPARAM];	/* Parameter lower limits */
+  float		parammax[PARAM_NPARAM];	/* Parameter upper limits */
+  float		*covar;		/* Covariance matrix */
+  float		paramerr[PARAM_NPARAM];	/* Std deviations of parameters */
   int		niter;		/* Number of iterations */
   profstruct	**prof;		/* Array of pointers to profiles */
   int		nprof;		/* Number of profiles to consider */
   struct psf	*psf;		/* PSF */
-  double	pixstep;	/* Model/PSF sampling step */
-  double	*psfdft;	/* Compressed Fourier Transform of the PSF */
-  double	*psfpix;	/* Full res. pixmap of the PSF */
-  double	*modpix;	/* Full res. pixmap of the complete model */
+  float		pixstep;	/* Model/PSF sampling step */
+  float		*psfdft;	/* Compressed Fourier Transform of the PSF */
+  float		*psfpix;	/* Full res. pixmap of the PSF */
+  float		*modpix;	/* Full res. pixmap of the complete model */
   float		*pmodpix;	/* Full res. pixmap of the partial model */
   int		modnaxisn[3];	/* Dimensions along each axis */
   PIXTYPE	*lmodpix;	/* Low resolution pixmap of the model */
@@ -127,12 +127,12 @@ typedef struct
   PIXTYPE	*objweight;	/* Copy of object weight-map */
   int		objnaxisn[2];	/* Dimensions along each axis */
   int		ix, iy;		/* Integer coordinates of object pixmap */
-  double	*resi;		/* Vector of residuals */
+  float		*resi;		/* Vector of residuals */
   int		nresi;		/* Number of residual elements */
-  double	chi2;		/* Std error per residual element */
-  double	sigma;		/* Standard deviation of the pixel values */
-  double	flux;		/* Total flux in final convolved model */
-  double	spirindex;	/* Spiral index (>0 for CCW) */
+  float		chi2;		/* Std error per residual element */
+  float		sigma;		/* Standard deviation of the pixel values */
+  float		flux;		/* Total flux in final convolved model */
+  float		spirindex;	/* Spiral index (>0 for CCW) */
   }	profitstruct;
 
 /*----------------------------- Global variables ----------------------------*/
@@ -142,41 +142,41 @@ profitstruct	*profit_init(struct psf *psf);
 
 profstruct	*prof_init(profitstruct *profit, proftypenum profcode);
 
-double		*profit_compresi(profitstruct *profit, double dynparam,
-				double *resi),
+float		*profit_compresi(profitstruct *profit, float dynparam,
+				float *resi),
 		*profit_residuals(profitstruct *profit, picstruct *field,
-			picstruct *wfield, double dynparam,
-			double *param, double *resi),
+			picstruct *wfield, float dynparam,
+			float *param, float *resi),
 		profit_spiralindex(profitstruct *profit);
 
 int		profit_copyobjpix(profitstruct *profit, picstruct *field,
 			picstruct *wfield),
 		profit_minimize(profitstruct *profit, int niter),
 		profit_setparam(profitstruct *profit, paramenum paramtype,
-			double param, double parammin, double parammax);
+			float param, float parammin, float parammax);
 
 void		prof_add(profstruct *prof, profitstruct *profit),
 		prof_end(profstruct *prof),
 		profit_addparam(profitstruct *profit, paramenum paramindex,
-			double **param),
-		profit_boundtounbound(profitstruct *profit, double *param),
+			float **param),
+		profit_boundtounbound(profitstruct *profit, float *param),
 		profit_fit(profitstruct *profit,
 			picstruct *field, picstruct *wfield,
 			objstruct *obj, obj2struct *obj2),
-		profit_convolve(profitstruct *profit, double *modpix),
+		profit_convolve(profitstruct *profit, float *modpix),
 		profit_covarunboundtobound(profitstruct *profit),
 		profit_end(profitstruct *profit),
-		profit_evaluate(double *par, double *fvec, int m, int n,
+		profit_evaluate(float *par, float *fvec, int m, int n,
 			void *adata),
 		profit_makedft(profitstruct *profit),
 		profit_moments(profitstruct *profit),
-		profit_printout(int n_par, double* par, int m_dat, double* fvec,
+		profit_printout(int n_par, float* par, int m_dat, float* fvec,
 			void *data, int iflag, int iter, int nfev ),
 		profit_psf(profitstruct *profit),
-		profit_resample(profitstruct *profit, double *inpix,
-			PIXTYPE *outpix, double factor),
+		profit_resample(profitstruct *profit, float *inpix,
+			PIXTYPE *outpix, float factor),
 		profit_resetparam(profitstruct *profit, paramenum paramtype),
 		profit_resetparams(profitstruct *profit),
-		profit_unboundtobound(profitstruct *profit, double *param);
+		profit_unboundtobound(profitstruct *profit, float *param);
 
 #endif

@@ -9,7 +9,7 @@
 *
 *	Contents:	Fit an arbitrary profile combination to a detection.
 *
-*	Last modify:	07/08/2009
+*	Last modify:	07/09/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -18,19 +18,7 @@
 #include        "config.h"
 #endif
 
-#ifdef HAVE_MATHIMF_H
-#include <mathimf.h>
-#else
-#define _GNU_SOURCE
-#include <math.h>
-#endif
-
-#ifdef HAVE_LOGF
-#define	LOGF	logf
-#else
-#define	LOGF	log
-#endif
-
+#include	<math.h>
 #include	<stdio.h>
 #include	<stdlib.h>
 #include	<string.h>
@@ -47,11 +35,11 @@
 #include	"psf.h"
 #include	"profit.h"
 
-static double	prof_interpolate(profstruct *prof, double *posin);
-static double	interpolate_pix(double *posin, double *pix, int *naxisn,
+static float	prof_interpolate(profstruct *prof, float *posin);
+static float	interpolate_pix(float *posin, float *pix, int *naxisn,
 		interpenum interptype);
 
-static void	make_kernel(double pos, double *kernel, interpenum interptype);
+static void	make_kernel(float pos, float *kernel, interpenum interptype);
 
 /*------------------------------- variables ---------------------------------*/
 
@@ -74,7 +62,7 @@ INPUT	Pointer to PSF structure.
 OUTPUT	A pointer to an allocated profit structure.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	26/04/2008
+VERSION	07/09/2009
  ***/
 profitstruct	*profit_init(psfstruct *psf)
   {
@@ -123,7 +111,7 @@ profitstruct	*profit_init(psfstruct *psf)
       nprof++;
       }
 
-  QMALLOC(profit->covar, double, profit->nparam*profit->nparam);
+  QMALLOC(profit->covar, float, profit->nparam*profit->nparam);
   profit->nprof = nprof;
 
   return profit;
@@ -168,7 +156,7 @@ OUTPUT	Pointer to an allocated fit structure (containing details about the
 	fit).
 NOTES	It is a modified version of the lm_minimize() of lmfit.
 AUTHOR	E. Bertin (IAP)
-VERSION	29/05/2009
+VERSION	07/09/2009
  ***/
 void	profit_fit(profitstruct *profit,
 		picstruct *field, picstruct *wfield,
@@ -178,7 +166,8 @@ void	profit_fit(profitstruct *profit,
     patternstruct *pattern;
     psfstruct		*psf;
     checkstruct		*check;
-    double		psf_fwhm, a , cp,sp, emx2,emy2,emxy, dchi2, err;
+    double		emx2,emy2,emxy, a , cp,sp;
+    float		psf_fwhm, dchi2, err;
     int			i,j,p, nparam, ncomp, nprof;
 
   nparam = profit->nparam;
@@ -225,7 +214,7 @@ void	profit_fit(profitstruct *profit,
     return;
     }
 
-  QMALLOC(profit->resi, double, profit->nresi);
+  QMALLOC(profit->resi, float, profit->nresi);
 
 /* Create pixmap at PSF resolution */
   profit->modnaxisn[0] =
@@ -238,8 +227,8 @@ void	profit_fit(profitstruct *profit,
     profit->modnaxisn[0] = profit->modnaxisn[1];
 
 /* Allocate memory for the complete model */
-  QCALLOC(profit->modpix, double, profit->modnaxisn[0]*profit->modnaxisn[1]);
-  QMALLOC(profit->psfpix, double, profit->modnaxisn[0]*profit->modnaxisn[1]);
+  QCALLOC(profit->modpix, float, profit->modnaxisn[0]*profit->modnaxisn[1]);
+  QMALLOC(profit->psfpix, float, profit->modnaxisn[0]*profit->modnaxisn[1]);
 /* Allocate memory for the partial model */
   QMALLOC(profit->pmodpix, float, profit->modnaxisn[0]*profit->modnaxisn[1]);
 
@@ -252,14 +241,14 @@ void	profit_fit(profitstruct *profit,
 
   profit_resetparams(profit);
 
-the_gal++;
+//the_gal++;
 
 /* Actual minimisation */
   profit->niter = profit_minimize(profit, PROFIT_MAXITER);
   profit_residuals(profit,field,wfield, 10.0, profit->param,profit->resi);
 
 /*
-  QMEMCPY(profit->paraminit, oldparaminit, double, nparam);
+  QMEMCPY(profit->paraminit, oldparaminit, float, nparam);
   if (profit_setparam(profit, PARAM_ARMS_PITCH, 160.0, 130.0, 175.0)==RETURN_OK)
     {
     oldchi2 = profit->chi2;
@@ -269,7 +258,7 @@ the_gal++;
     profit->niter = profit_minimize(profit, PROFIT_MAXITER);
     if (profit->chi2 > oldchi2)
       {
-      memcpy(profit->paraminit, oldparaminit, nparam*sizeof(double));
+      memcpy(profit->paraminit, oldparaminit, nparam*sizeof(float));
       profit->chi2 = oldchi2;
       profit->niter = oldniter;
       }
@@ -378,7 +367,7 @@ the_gal++;
 
       obj2->poserra_prof = (float)sqrt(pmx2);
       obj2->poserrb_prof = (float)sqrt(pmy2);
-      obj2->poserrtheta_prof = theta*180.0/PI;
+      obj2->poserrtheta_prof = (float)(theta/DEG);
       }
 
     if (FLAG(obj2.poserrcxx_prof))
@@ -395,7 +384,7 @@ the_gal++;
   if (FLAG(obj2.prof_mx2))
     {
     memset(profit->modpix, 0,
-	profit->modnaxisn[0]*profit->modnaxisn[1]*sizeof(double));
+	profit->modnaxisn[0]*profit->modnaxisn[1]*sizeof(float));
     for (p=0; p<profit->nprof; p++)
       prof_add(profit->prof[p], profit);
     profit_moments(profit);
@@ -542,11 +531,11 @@ the_gal++;
     {
     pprofit = *profit;
     memset(pprofit.paramindex, 0, PARAM_NPARAM*sizeof(int));
-    memset(pprofit.paramlist, 0, PARAM_NPARAM*sizeof(double *));
+    memset(pprofit.paramlist, 0, PARAM_NPARAM*sizeof(float *));
     pprofit.nparam = 0;
     QMALLOC(pprofit.prof, profstruct *, 1);
     pprofit.prof[0] = prof_init(&pprofit, PROF_DIRAC);
-    QMALLOC(pprofit.covar, double, pprofit.nparam*pprofit.nparam);
+    QMALLOC(pprofit.covar, float, pprofit.nparam*pprofit.nparam);
     pprofit.nprof = 1;
     profit_resetparams(&pprofit);
     if (profit->paramlist[PARAM_X] && profit->paramlist[PARAM_Y])
@@ -559,7 +548,7 @@ the_gal++;
     profit_residuals(&pprofit,field,wfield, 10.0, pprofit.param,pprofit.resi);
     dchi2 = 0.5*(pprofit.chi2 - profit->chi2);
     obj2->prof_class_star = dchi2 < 50.0?
-	(dchi2 > -50.0? 2.0/(1.0+exp(dchi2)) : 2.0) : 0.0;
+	(dchi2 > -50.0? 2.0/(1.0+expf(dchi2)) : 2.0) : 0.0;
     if (profit->flux > 0.0 && pprofit.flux > 0.0)
       obj2->prof_concentration = -2.5*log10(pprofit.flux / profit->flux);
     else  if (profit->flux > 0.0)
@@ -593,20 +582,21 @@ INPUT	Profile-fitting structure.
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	22/10/2008
+VERSION	07/09/2009
  ***/
 void	profit_psf(profitstruct *profit)
   {
-   double	posin[2], posout[2], dnaxisn[2],
+   double	flux;
+   float	posin[2], posout[2], dnaxisn[2],
 		*pixout,
-		xcout,ycout, xcin,ycin, invpixstep, flux, norm;
+		xcout,ycout, xcin,ycin, invpixstep, norm;
    int		d,i;
 
   psf = profit->psf;
   psf_build(psf);
 
-  xcout = (double)(profit->modnaxisn[0]/2) + 1.0;	/* FITS convention */
-  ycout = (double)(profit->modnaxisn[1]/2) + 1.0;	/* FITS convention */
+  xcout = (float)(profit->modnaxisn[0]/2) + 1.0;	/* FITS convention */
+  ycout = (float)(profit->modnaxisn[1]/2) + 1.0;	/* FITS convention */
   xcin = (psf->masksize[0]/2) + 1.0;			/* FITS convention */
   ycin = (psf->masksize[1]/2) + 1.0;			/* FITS convention */
   invpixstep = profit->pixstep / psf->pixstep;
@@ -684,15 +674,15 @@ VERSION	23/05/2008
  ***/
 int	profit_minimize(profitstruct *profit, int niter)
   {
-   double		lm_opts[5], info[LM_INFO_SZ];
+   float		lm_opts[5], info[LM_INFO_SZ];
    int			m,n;
 
 /* Allocate work space */
   n = profit->nparam;
   m = profit->nresi;
 
-  memset(profit->resi, 0, profit->nresi*sizeof(double));
-  memset(profit->covar, 0, profit->nparam*profit->nparam*sizeof(double));
+  memset(profit->resi, 0, profit->nresi*sizeof(float));
+  memset(profit->covar, 0, profit->nparam*profit->nparam*sizeof(float));
   profit_boundtounbound(profit, profit->paraminit);
 
 /* Perform fit */
@@ -700,9 +690,9 @@ int	profit_minimize(profitstruct *profit, int niter)
   lm_opts[1] = 1.0e-18;
   lm_opts[2] = 1.0e-18;
   lm_opts[3] = 1.0e-18;
-  lm_opts[4] = 1.0e-6;
+  lm_opts[4] = 1.0e-5;
 
-  niter = dlevmar_dif(profit_evaluate, profit->paraminit, profit->resi,
+  niter = slevmar_dif(profit_evaluate, profit->paraminit, profit->resi,
 	n, m, niter, lm_opts, info, NULL, profit->covar, profit);
 
   profit_unboundtobound(profit, profit->paraminit);
@@ -713,7 +703,7 @@ int	profit_minimize(profitstruct *profit, int niter)
 
 
 /****** profit_printout *******************************************************
-PROTO	void profit_printout(int n_par, double* par, int m_dat, double* fvec,
+PROTO	void profit_printout(int n_par, float* par, int m_dat, float* fvec,
 		void *data, int iflag, int iter, int nfev )
 PURPOSE	Provide a function to print out results to lmfit.
 INPUT	Number of fitted parameters,
@@ -729,7 +719,7 @@ NOTES	Input arguments are there only for compatibility purposes (unused)
 AUTHOR	E. Bertin (IAP)
 VERSION	17/09/2008
  ***/
-void	profit_printout(int n_par, double* par, int m_dat, double* fvec,
+void	profit_printout(int n_par, float* par, int m_dat, float* fvec,
 		void *data, int iflag, int iter, int nfev )
   {
    checkstruct	*check;
@@ -760,7 +750,7 @@ void	profit_printout(int n_par, double* par, int m_dat, double* fvec,
 
 
 /****** profit_evaluate ******************************************************
-PROTO	void profit_evaluate(double *par, double *fvec, int m, int n,
+PROTO	void profit_evaluate(float *par, float *fvec, int m, int n,
 		void *adata)
 PURPOSE	Provide a function returning residuals to levmar.
 INPUT	Pointer to the vector of parameters,
@@ -773,7 +763,7 @@ NOTES	Input arguments are there only for compatibility purposes (unused)
 AUTHOR	E. Bertin (IAP)
 VERSION	18/09/2008
  ***/
-void	profit_evaluate(double *par, double *fvec, int m, int n,
+void	profit_evaluate(float *par, float *fvec, int m, int n,
 			void *adata)
   {
    profitstruct	*profit;
@@ -788,8 +778,8 @@ void	profit_evaluate(double *par, double *fvec, int m, int n,
 
 
 /****** profit_residuals ******************************************************
-PROTO	double *prof_residuals(profitstruct *profit, picstruct *field,
-		picstruct *wfield, double dynparam, double *param, double *resi)
+PROTO	float *prof_residuals(profitstruct *profit, picstruct *field,
+		picstruct *wfield, float dynparam, float *param, float *resi)
 PURPOSE	Compute the vector of residuals between the data and the galaxy
 	profile model.
 INPUT	Profile-fitting structure,
@@ -803,13 +793,13 @@ NOTES	-.
 AUTHOR	E. Bertin (IAP)
 VERSION	20/03/2009
  ***/
-double	*profit_residuals(profitstruct *profit, picstruct *field,
-		picstruct *wfield, double dynparam, double *param, double *resi)
+float	*profit_residuals(profitstruct *profit, picstruct *field,
+		picstruct *wfield, float dynparam, float *param, float *resi)
   {
    int		p;
 
   memset(profit->modpix, 0,
-	profit->modnaxisn[0]*profit->modnaxisn[1]*sizeof(double));
+	profit->modnaxisn[0]*profit->modnaxisn[1]*sizeof(float));
   for (p=0; p<profit->nparam; p++)
     profit->param[p] = param[p];
 /* Simple PSF shortcut */
@@ -830,8 +820,8 @@ double	*profit_residuals(profitstruct *profit, picstruct *field,
 
 
 /****** profit_compresi ******************************************************
-PROTO	double *prof_compresi(profitstruct *profit, double dynparam,
-			double *resi)
+PROTO	float *prof_compresi(profitstruct *profit, float dynparam,
+			float *resi)
 PURPOSE	Compute the vector of residuals between the data and the galaxy
 	profile model.
 INPUT	Profile-fitting structure,
@@ -840,12 +830,12 @@ INPUT	Profile-fitting structure,
 OUTPUT	Vector of residuals.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	15/04/2009
+VERSION	07/09/2009
  ***/
-double	*profit_compresi(profitstruct *profit, double dynparam, double *resi)
+float	*profit_compresi(profitstruct *profit, float dynparam, float *resi)
   {
-   double	*resit,
-		error, x1c,x2,rmin;
+   double	error;
+   float	*resit;
    PIXTYPE	*objpix, *objweight, *lmodpix,
 		val,val2,wval, invsig;
    int		npix, i;
@@ -856,9 +846,6 @@ double	*profit_compresi(profitstruct *profit, double dynparam, double *resi)
   objweight = profit->objweight;
   lmodpix = profit->lmodpix;
   error = 0.0;
-  x1c = (double)(profit->objnaxisn[0]/2);
-  rmin = profit->obj2->hl_radius / 2.0;
-  x2 = -(double)(profit->objnaxisn[1]/2);
   npix = profit->objnaxisn[0]*profit->objnaxisn[1];
   if (dynparam > 0.0)
     {
@@ -869,7 +856,7 @@ double	*profit_compresi(profitstruct *profit, double dynparam, double *resi)
       if ((wval=*(objweight++))>0.0)
         {
         val2 = (val - *lmodpix)*wval*invsig;
-        val2 = val2>0.0? LOGF(1.0+val2) : -LOGF(1.0-val2);
+        val2 = val2>0.0? logf(1.0+val2) : -logf(1.0-val2);
         *(resit++) = val2*dynparam;
         error += val2*val2;
         }
@@ -896,27 +883,28 @@ double	*profit_compresi(profitstruct *profit, double dynparam, double *resi)
 
 
 /****** profit_resample ******************************************************
-PROTO	void	prof_resample(profitstruct *profit, double *inpix,
+PROTO	void	prof_resample(profitstruct *profit, float *inpix,
 		PIXTYPE *outpix)
 PURPOSE	Resample the current full resolution model to image resolution.
 INPUT	Profile-fitting structure.
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	18/03/2009
+VERSION	07/09/2009
  ***/
-void	profit_resample(profitstruct *profit, double *inpix, PIXTYPE *outpix,
-	double factor)
+void	profit_resample(profitstruct *profit, float *inpix, PIXTYPE *outpix,
+	float factor)
   {
-   double	posin[2], posout[2], dnaxisn[2],
+   double	flux;
+   float	posin[2], posout[2], dnaxisn[2],
 		*dx,*dy,
-		xcout,ycout, xcin,ycin, invpixstep, flux;
+		xcout,ycout, xcin,ycin, invpixstep;
    int		d,i;
 
-  xcout = (double)(profit->objnaxisn[0]/2) + 1.0;	/* FITS convention */
+  xcout = (float)(profit->objnaxisn[0]/2) + 1.0;	/* FITS convention */
   if ((dx=(profit->paramlist[PARAM_X])))
     xcout += *dx;
-  ycout = (double)(profit->objnaxisn[1]/2) + 1.0;	/* FITS convention */
+  ycout = (float)(profit->objnaxisn[1]/2) + 1.0;	/* FITS convention */
   if ((dy=(profit->paramlist[PARAM_Y])))
     ycout += *dy;
   xcin = (profit->modnaxisn[0]/2) + 1.0;		/* FITS convention */
@@ -952,7 +940,7 @@ void	profit_resample(profitstruct *profit, double *inpix, PIXTYPE *outpix,
 
 
 /****** profit_convolve *******************************************************
-PROTO	void profit_convolve(profitstruct *profit, double *modpix)
+PROTO	void profit_convolve(profitstruct *profit, float *modpix)
 PURPOSE	Convolve a model image with the local PSF.
 INPUT	Pointer to the profit structure,
 	Pointer to the image raster.
@@ -961,7 +949,7 @@ NOTES	-.
 AUTHOR	E. Bertin (IAP)
 VERSION	15/09/2008
  ***/
-void	profit_convolve(profitstruct *profit, double *modpix)
+void	profit_convolve(profitstruct *profit, float *modpix)
   {
   if (!profit->psfdft)
     profit_makedft(profit);
@@ -984,8 +972,8 @@ VERSION	22/04/2008
 void	profit_makedft(profitstruct *profit)
   {
    psfstruct	*psf;
-   double      *mask,*maskt, *ppix;
-   double       dx,dy, r,r2,rmin,rmin2,rmax,rmax2,rsig,invrsig2;
+   float      *mask,*maskt, *ppix;
+   float       dx,dy, r,r2,rmin,rmin2,rmax,rmax2,rsig,invrsig2;
    int          width,height,npix,offset, psfwidth,psfheight,psfnpix,
                 cpwidth, cpheight,hcpwidth,hcpheight, i,j,x,y;
 
@@ -998,7 +986,7 @@ void	profit_makedft(profitstruct *profit)
   width = profit->modnaxisn[0];
   height = profit->modnaxisn[1];
   npix = width*height;
-  QCALLOC(mask, double, npix);
+  QCALLOC(mask, float, npix);
   cpwidth = (width>psfwidth)?psfwidth:width;
   hcpwidth = cpwidth>>1;
   cpwidth = hcpwidth<<1;
@@ -1055,12 +1043,12 @@ void	profit_makedft(profitstruct *profit)
     dx = 0.0;
     for (x=hcpwidth; x--; dx+=1.0, maskt++)
       if ((r2=dx*dx+dy*dy)>rmin2)
-        *maskt *= (r2>rmax2)?0.0:exp((2*rmin*sqrt(r2)-r2-rmin2)*invrsig2);
+        *maskt *= (r2>rmax2)?0.0:expf((2*rmin*sqrtf(r2)-r2-rmin2)*invrsig2);
     dx = -hcpwidth;
     maskt += offset;
     for (x=hcpwidth; x--; dx+=1.0, maskt++)
       if ((r2=dx*dx+dy*dy)>rmin2)
-        *maskt *= (r2>rmax2)?0.0:exp((2*rmin*sqrt(r2)-r2-rmin2)*invrsig2);
+        *maskt *= (r2>rmax2)?0.0:expf((2*rmin*sqrtf(r2)-r2-rmin2)*invrsig2);
     }
   dy = -hcpheight;
   maskt += width*(height-cpheight);
@@ -1069,12 +1057,12 @@ void	profit_makedft(profitstruct *profit)
     dx = 0.0;
     for (x=hcpwidth; x--; dx+=1.0, maskt++)
       if ((r2=dx*dx+dy*dy)>rmin2)
-        *maskt *= (r2>rmax2)?0.0:exp((2*rmin*sqrt(r2)-r2-rmin2)*invrsig2);
+        *maskt *= (r2>rmax2)?0.0:expf((2*rmin*sqrtf(r2)-r2-rmin2)*invrsig2);
     dx = -hcpwidth;
     maskt += offset;
     for (x=hcpwidth; x--; dx+=1.0, maskt++)
       if ((r2=dx*dx+dy*dy)>rmin2)
-        *maskt *= (r2>rmax2)?0.0:exp((2*rmin*sqrt(r2)-r2-rmin2)*invrsig2);
+        *maskt *= (r2>rmax2)?0.0:expf((2*rmin*sqrtf(r2)-r2-rmin2)*invrsig2);
     }
 
 /* Finally move to Fourier space */
@@ -1101,7 +1089,7 @@ VERSION	18/09/2008
 int	profit_copyobjpix(profitstruct *profit, picstruct *field,
 			picstruct *wfield)
   {
-   double	dx2, dy2, dr2, rad2;
+   float	dx2, dy2, dr2, rad2;
    PIXTYPE	*pixin,*pixout, *wpixin,*wpixout,
 		backnoise2, invgain, satlevel, wthresh, pix, wpix;
    int		i,x,y, xmin,xmax,ymin,ymax, w,h,w2,dw, npix, off, gainflag,
@@ -1222,7 +1210,7 @@ int	profit_copyobjpix(profitstruct *profit, picstruct *field,
 
 
 /****** profit_spiralindex ****************************************************
-PROTO	double profit_spiralindex(profitstruct *profit)
+PROTO	float profit_spiralindex(profitstruct *profit)
 PURPOSE	Compute the spiral index of a galaxy image (positive for arms
 	extending counter-clockwise and negative for arms extending CW, 0 for
 	no spiral pattern).
@@ -1232,11 +1220,11 @@ NOTES	-.
 AUTHOR	E. Bertin (IAP)
 VERSION	18/09/2008
  ***/
-double profit_spiralindex(profitstruct *profit)
+float profit_spiralindex(profitstruct *profit)
   {
    objstruct	*obj;
    obj2struct	*obj2;
-   double	*dx,*dy, *fdx,*fdy, *gdx,*gdy, *gdxt,*gdyt, *pix,
+   float	*dx,*dy, *fdx,*fdy, *gdx,*gdy, *gdxt,*gdyt, *pix,
 		fwhm, invtwosigma2, hw,hh, ohw,ohh, x,y,xstart, tx,ty,txstart,
 		gx,gy, r2, spirindex, invsig, val, sep;
    PIXTYPE	*fpix;
@@ -1253,13 +1241,13 @@ double profit_spiralindex(profitstruct *profit)
   sep = 2.0;
 
   invtwosigma2 = -(2.35*2.35/(2.0*fwhm*fwhm));
-  hw = (double)(profit->objnaxisn[0]/2);
+  hw = (float)(profit->objnaxisn[0]/2);
   ohw = profit->objnaxisn[0] - hw;
-  hh = (double)(profit->objnaxisn[1]/2);
+  hh = (float)(profit->objnaxisn[1]/2);
   ohh = profit->objnaxisn[1] - hh;
   txstart = -hw;
   ty = -hh;
-  QMALLOC(dx, double, npix);
+  QMALLOC(dx, float, npix);
   pix = dx;
   for (j=profit->objnaxisn[1]; j--; ty+=1.0)
     {
@@ -1272,7 +1260,7 @@ double profit_spiralindex(profitstruct *profit)
 		- exp(invtwosigma2*((x-sep)*(x-sep)+y*y));
       }
     }
-  QMALLOC(dy, double, npix);
+  QMALLOC(dy, float, npix);
   pix = dy;
   ty = -hh;
   for (j=profit->objnaxisn[1]; j--; ty+=1.0)
@@ -1287,7 +1275,7 @@ double profit_spiralindex(profitstruct *profit)
       }
     }
 
-  QMALLOC(gdx, double, npix);
+  QMALLOC(gdx, float, npix);
   gdxt = gdx;
   fpix = profit->objpix;
   invsig = npix/profit->sigma;
@@ -1297,7 +1285,7 @@ double profit_spiralindex(profitstruct *profit)
     *(gdxt++) = (val>0.0? log(1.0+val) : -log(1.0-val));
     }
   gdy = NULL;			/* to avoid gcc -Wall warnings */
-  QMEMCPY(gdx, gdy, double, npix);
+  QMEMCPY(gdx, gdy, float, npix);
   fdx = fft_rtf(dx, profit->objnaxisn);
   fft_conv(gdx, fdx, profit->objnaxisn);
   fdy = fft_rtf(dy, profit->objnaxisn);
@@ -1341,21 +1329,21 @@ INPUT	Profile-fitting structure.
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	29/06/2009
+VERSION	07/09/2009
  ***/
 void	 profit_moments(profitstruct *profit)
   {
    objstruct	*obj;
    obj2struct	*obj2;
-   double	*pix,
-		hw,hh, x,y, xstart, val,
-		mx,my, sum, mx2,my2,mxy, den, r2max;
+   double	mx,my, sum, mx2,my2,mxy, den;
+   float	*pix,
+		hw,hh, x,y, xstart, val, r2max;
    int		ix,iy;
 
   obj = profit->obj;
   obj2 = profit->obj2;
-  hw = (double)(profit->modnaxisn[0]/2);
-  hh = (double)(profit->modnaxisn[1]/2);
+  hw = (float)(profit->modnaxisn[0]/2);
+  hh = (float)(profit->modnaxisn[1]/2);
   r2max = hw<hh? hw*hw : hh*hh;
   xstart = -hw;
   y = -hh;
@@ -1407,7 +1395,7 @@ void	 profit_moments(profitstruct *profit)
 
 /****** profit_addparam *******************************************************
 PROTO	void profit_addparam(profitstruct *profit, paramenum paramindex,
-		double **param)
+		float **param)
 PURPOSE	Add a profile parameter to the list of fitted items.
 INPUT	Pointer to the profit structure,
 	Parameter index,
@@ -1418,7 +1406,7 @@ AUTHOR	E. Bertin (IAP)
 VERSION	29/03/2007
  ***/
 void	profit_addparam(profitstruct *profit, paramenum paramindex,
-		double **param)
+		float **param)
   {
 /* Check whether the parameter has already be registered */
   if (profit->paramlist[paramindex])
@@ -1449,7 +1437,7 @@ void	profit_resetparam(profitstruct *profit, paramenum paramtype)
   {
    objstruct	*obj;
    obj2struct	*obj2;
-   double	param, parammin,parammax;
+   float	param, parammin,parammax;
 
   obj = profit->obj;
   obj2 = profit->obj2;
@@ -1647,7 +1635,7 @@ void	profit_resetparams(profitstruct *profit)
 
 /****** profit_setparam ****************************************************
 PROTO	void profit_setparam(profitstruct *profit, paramenum paramtype,
-		double param, double parammin, double parammax)
+		float param, float parammin, float parammax)
 PURPOSE	Set the actual, lower and upper boundary values of a profile parameter.
 INPUT	Pointer to the profit structure,
 	Parameter index,
@@ -1659,9 +1647,9 @@ AUTHOR	E. Bertin (IAP)
 VERSION	15/03/2009
  ***/
 int	profit_setparam(profitstruct *profit, paramenum paramtype,
-		double param, double parammin, double parammax)
+		float param, float parammin, float parammax)
   {
-   double	*paramptr;
+   float	*paramptr;
    int		index;
 
 /* Check whether the parameter has already be registered */
@@ -1679,15 +1667,15 @@ int	profit_setparam(profitstruct *profit, paramenum paramtype,
 
   
 /****** profit_boundtounbound *************************************************
-PROTO	void profit_boundtounbound(profitstruct *profit, double *param)
+PROTO	void profit_boundtounbound(profitstruct *profit, float *param)
 PURPOSE	Convert parameters from bounded to unbounded space.
 INPUT	Pointer to the profit structure.
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	25/05/2007
+VERSION	07/09/2009
  ***/
-void	profit_boundtounbound(profitstruct *profit, double *param)
+void	profit_boundtounbound(profitstruct *profit, float *param)
   {
    double	num,den;
    int		p;
@@ -1697,7 +1685,7 @@ void	profit_boundtounbound(profitstruct *profit, double *param)
       {
       num = param[p] - profit->parammin[p];
       den = profit->parammax[p] - param[p];
-      param[p] = num>1e-100? (den>1e-100? log(num/den): 200.0) : -200.0;
+      param[p] = num>1e-50? (den>1e-50? log(num/den): 50.0) : -50.0;
       }
 
   return;
@@ -1706,22 +1694,22 @@ void	profit_boundtounbound(profitstruct *profit, double *param)
 
 
 /****** profit_unboundtobound *************************************************
-PROTO	void profit_unboundtobound(profitstruct *profit, double *param)
+PROTO	void profit_unboundtobound(profitstruct *profit, float *param)
 PURPOSE	Convert parameters from unbounded to bounded space.
 INPUT	Pointer to the profit structure.
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	18/05/2007
+VERSION	18/05/2009
  ***/
-void	profit_unboundtobound(profitstruct *profit, double *param)
+void	profit_unboundtobound(profitstruct *profit, float *param)
   {
    int		p;
 
   for (p=0; p<profit->nparam; p++)
     if (profit->parammin[p]!=profit->parammax[p])
       param[p] = (profit->parammax[p] - profit->parammin[p])
-		/ (1.0 + exp(-(param[p]>200.0? 200.0 : param[p])))
+		/ (1.0 + exp(-(param[p]>50.0? 50.0 : param[p])))
 		+ profit->parammin[p];
 
   return;
@@ -1735,12 +1723,13 @@ INPUT	Pointer to the profit structure.
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	30/04/2008
+VERSION	07/09/2009
  ***/
 void	profit_covarunboundtobound(profitstruct *profit)
   {
-   double	*covar, *dxdy,*x,*xmin,*xmax,
-		dxmin, dxmax;
+   double	*dxdy,
+		dxmin,dxmax;
+   float	*covar, *x,*xmin,*xmax;
    int		p,p1,p2, nparam;
 
   nparam = profit->nparam;
@@ -1762,7 +1751,7 @@ void	profit_covarunboundtobound(profitstruct *profit)
   covar = profit->covar;
   for (p2=0; p2<nparam; p2++)
     for (p1=0; p1<nparam; p1++)
-      *(covar++) *= dxdy[p1]*dxdy[p2];
+      *(covar++) *= (float)(dxdy[p1]*dxdy[p2]);
 
   free(dxdy);
 
@@ -1783,7 +1772,7 @@ VERSION	22/04/2008
 profstruct	*prof_init(profitstruct *profit, proftypenum profcode)
   {
    profstruct	*prof;
-   double	*pix,
+   float	*pix,
 		rmax2, re2, dy2,r2, scale, zero, k,n, hinvn;
    int		width,height, ixc,iyc, ix,iy, nsub,
 		d,s;
@@ -1904,7 +1893,7 @@ profstruct	*prof_init(profitstruct *profit, proftypenum profcode)
       width =  prof->naxisn[0] = PROFIT_PROFRES;
       height = prof->naxisn[1] = PROFIT_PROFRES;
       nsub = prof->naxisn[2] = PROFIT_PROFSRES;
-      QCALLOC(prof->pix, double, width*height*nsub);
+      QCALLOC(prof->pix, float, width*height*nsub);
       ixc = width/2;
       iyc = height/2;
       rmax2 = (ixc - 1.0)*(ixc - 1.0);
@@ -1954,7 +1943,7 @@ profstruct	*prof_init(profitstruct *profit, proftypenum profcode)
 	(prof->kernelwidth[d] = interp_kernwidth[prof->interptype[d]]);
       }
     prof->kernelnlines /= prof->kernelwidth[0];
-    QMALLOC(prof->kernelbuf, double, prof->kernelnlines);
+    QMALLOC(prof->kernelbuf, float, prof->kernelnlines);
     }
 
   return prof;
@@ -1991,16 +1980,15 @@ INPUT	Profile structure,
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	07/08/2009
+VERSION	07/09/2009
  ***/
 void	prof_add(profstruct *prof, profitstruct *profit)
   {
-   double	posin[PROFIT_MAXEXTRA], posout[2], dnaxisn[2],
-		*pixout,
-		flux,fluxfac, scaling;
-   float	*pixin,
-		amp,ctheta,stheta,cd11,cd12,cd21,cd22, dcd11,dcd21, dx1,dx2,
-		x1,x10,x2, x1cin,x2cin, x1cout,x2cout, xscale,yscale, saspect,
+   double	xscale, yscale, saspect, ctheta,stheta, flux, scaling;
+   float	posin[PROFIT_MAXEXTRA], posout[2], dnaxisn[2],
+		*pixin, *pixout,
+		fluxfac, amp,cd11,cd12,cd21,cd22, dcd11,dcd21, dx1,dx2,
+		x1,x10,x2, x1cin,x2cin, x1cout,x2cout,
 		x1in,x2in, odx, ostep,
 		n,k, hinvn, x1t,x2t, ca,sa, u,umin,
 		armamp,arm2amp, armrdphidr, armrdphidrvar, posang,
@@ -2033,17 +2021,17 @@ void	prof_add(profstruct *prof, profitstruct *profit)
 		0.0 : fabs(scaling / (*prof->scale*prof->typscale));
     yscale = (*prof->scale*saspect == 0.0)?
 		0.0 : fabs(scaling / (*prof->scale*prof->typscale*saspect));
-    cd11 = xscale*ctheta;
-    cd12 = xscale*stheta;
-    cd21 = -yscale*stheta;
-    cd22 = yscale*ctheta;
+    cd11 = (float)(xscale*ctheta);
+    cd12 = (float)(xscale*stheta);
+    cd21 = (float)(-yscale*stheta);
+    cd22 = (float)(yscale*ctheta);
     }
 
   dx1 = 0.0;	/* Shifting operations have been moved to profit_resample() */
   dx2 = 0.0;	/* Shifting operations have been moved to profit_resample() */
 
-  x1cout = (double)(profit->modnaxisn[0]/2);
-  x2cout = (double)(profit->modnaxisn[1]/2);
+  x1cout = (float)(profit->modnaxisn[0]/2);
+  x2cout = (float)(profit->modnaxisn[1]/2);
 
   switch(prof->code)
     {
@@ -2064,7 +2052,7 @@ void	prof_add(profstruct *prof, profitstruct *profit)
           x1in = cd12*x2 + cd11*x1;
           x2in = cd22*x2 + cd21*x1;
           ra = x1in*x1in+x2in*x2in;
-          val = expf(k*PROFIT_POWF(ra,hinvn));
+          val = expf(k*expf(logf(ra)*hinvn));
           noversamp  = (int)(val*PROFIT_OVERSAMP+0.1);
           if (noversamp < 2)
             *(pixin++) = val;
@@ -2325,20 +2313,20 @@ width = 3.0;
         if (posin[d] < 0.99999)
           {
           if (prof->extracycleflag[e])
-            posin[d] += (double)prof->naxisn[d];
+            posin[d] += (float)prof->naxisn[d];
           else
             posin[d] = 1.0;
           }
-        else if (posin[d] > (double)prof->naxisn[d])
+        else if (posin[d] > (float)prof->naxisn[d])
           {
           if (prof->extracycleflag[e])
           posin[d] = (prof->extracycleflag[e])?
-		  fmod(posin[d], (double)prof->naxisn[d])
-		: (double)prof->naxisn[d];
+		  fmod(posin[d], (float)prof->naxisn[d])
+		: (float)prof->naxisn[d];
           }
         }
-      x1cin = (double)(prof->naxisn[0]/2);
-      x2cin = (double)(prof->naxisn[1]/2);
+      x1cin = (float)(prof->naxisn[0]/2);
+      x2cin = (float)(prof->naxisn[1]/2);
       pixin = profit->pmodpix;
       for (i=npix; i--;)
         {
@@ -2385,7 +2373,7 @@ width = 3.0;
   pixin = profit->pmodpix;
   for (i=npix; i--; pixin++)
     if (*pixin >= thresh)
-      flux += *pixin;
+      flux += (double)*pixin;
     else
       *pixin = 0.0;
 
@@ -2402,7 +2390,7 @@ width = 3.0;
 
 
 /****** prof_interpolate ******************************************************
-PROTO	double	prof_interpolate(profstruct *prof, double *posin)
+PROTO	float	prof_interpolate(profstruct *prof, float *posin)
 PURPOSE	Interpolate a multidimensional model profile at a given position.
 INPUT	Profile structure,
 	input position vector.
@@ -2411,9 +2399,9 @@ NOTES	-.
 AUTHOR	E. Bertin (IAP)
 VERSION	10/12/2006
  ***/
-static double	prof_interpolate(profstruct *prof, double *posin)
+static float	prof_interpolate(profstruct *prof, float *posin)
   {
-   double		dpos[2+PROFIT_MAXEXTRA],
+   float		dpos[2+PROFIT_MAXEXTRA],
 			kernel_vector[INTERP_MAXKERNELWIDTH],
 			*kvector, *pixin,*pixout,
 			val;
@@ -2496,7 +2484,7 @@ static double	prof_interpolate(profstruct *prof, double *posin)
 
 
 /****** interpolate_pix ******************************************************
-PROTO	void interpolate_pix(double *posin, double *pix, int naxisn,
+PROTO	void interpolate_pix(float *posin, float *pix, int naxisn,
 		interpenum interptype)
 PURPOSE	Interpolate a model profile at a given position.
 INPUT	Profile structure,
@@ -2508,10 +2496,10 @@ NOTES	-.
 AUTHOR	E. Bertin (IAP)
 VERSION	07/12/2006
  ***/
-static double	interpolate_pix(double *posin, double *pix, int *naxisn,
+static float	interpolate_pix(float *posin, float *pix, int *naxisn,
 			interpenum interptype)
   {
-   double	buffer[INTERP_MAXKERNELWIDTH],
+   float	buffer[INTERP_MAXKERNELWIDTH],
 		kernel[INTERP_MAXKERNELWIDTH], dpos[2],
 		*kvector, *pixin, *pixout,
 		val;
@@ -2567,7 +2555,7 @@ static double	interpolate_pix(double *posin, double *pix, int *naxisn,
 
 
 /****** make_kernel **********************************************************
-PROTO	void make_kernel(double pos, double *kernel, interpenum interptype)
+PROTO	void make_kernel(float pos, float *kernel, interpenum interptype)
 PURPOSE	Conpute interpolation-kernel data
 INPUT	Position,
 	Pointer to the output kernel data,
@@ -2575,11 +2563,11 @@ INPUT	Position,
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	28/04/2009
+VERSION	07/09/2009
  ***/
-void	make_kernel(double pos, double *kernel, interpenum interptype)
+void	make_kernel(float pos, float *kernel, interpenum interptype)
   {
-   double	x, val, sinx1,sinx2,sinx3,cosx1;
+   float	x, val, sinx1,sinx2,sinx3,cosx1;
 
   if (interptype == INTERP_NEARESTNEIGHBOUR)
     *kernel = 1;
@@ -2601,10 +2589,10 @@ void	make_kernel(double pos, double *kernel, interpenum interptype)
       {
       x = -PI/2.0*(pos+1.0);
 #ifdef HAVE_SINCOS
-      sincos(x, &sinx1, &cosx1);
+      sincosf(x, &sinx1, &cosx1);
 #else
-      sinx1 = sin(x);
-      cosx1 = cos(x);
+      sinx1 = sinf(x);
+      cosx1 = cosf(x);
 #endif
       val = (*(kernel++) = sinx1/(x*x));
       x += PI/2.0;
@@ -2635,10 +2623,10 @@ void	make_kernel(double pos, double *kernel, interpenum interptype)
       {
       x = -PI/3.0*(pos+2.0);
 #ifdef HAVE_SINCOS
-      sincos(x, &sinx1, &cosx1);
+      sincosf(x, &sinx1, &cosx1);
 #else
-      sinx1 = sin(x);
-      cosx1 = cos(x);
+      sinx1 = sinf(x);
+      cosx1 = cosf(x);
 #endif
       val = (*(kernel++) = sinx1/(x*x));
       x += PI/3.0;
@@ -2679,10 +2667,10 @@ void	make_kernel(double pos, double *kernel, interpenum interptype)
       {
       x = -PI/4.0*(pos+3.0);
 #ifdef HAVE_SINCOS
-      sincos(x, &sinx1, &cosx1);
+      sincosf(x, &sinx1, &cosx1);
 #else
-      sinx1 = sin(x);
-      cosx1 = cos(x);
+      sinx1 = sinf(x);
+      cosx1 = cosf(x);
 #endif
       val = (*(kernel++) = sinx1/(x*x));
       x += PI/4.0;
