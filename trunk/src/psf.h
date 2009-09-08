@@ -68,7 +68,7 @@ typedef struct psf
   int		*masksize;	/* PSF mask dimensions */
   int		masknpix;	/* Total number of involved PSF pixels */
   float		*maskcomp;      /* Complete pix. data (PSF components) */
-  double	*maskloc;	/* Local PSF */
+  float		*maskloc;	/* Local PSF */
   double	**context;	/* Contexts */
   t_type	*contexttyp;	/* Context types */
   char		**contextname;	/* Array of context key-names */

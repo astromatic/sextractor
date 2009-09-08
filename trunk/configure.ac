@@ -6,7 +6,7 @@ define([AC_CACHE_LOAD],)
 define([AC_CACHE_SAVE],)
 
 # This is your standard Bertin source code...
-AC_INIT(sextractor, 2.8.9, [bertin@iap.fr])
+AC_INIT(sextractor, 2.9.0, [bertin@iap.fr])
 AC_CONFIG_SRCDIR(src/makeit.c)
 AC_CONFIG_AUX_DIR(autoconf)
 AM_CONFIG_HEADER(config.h)
@@ -32,11 +32,16 @@ AC_MSG_RESULT([*********** Configuring:  $PACKAGE $VERSION ($date) **********])
 # Initialize the list of compilers to consider
 cclist="cc gcc"
 
-# Backup and reset the input CFLAGS and LDFLAGS
-mycflags="$CFLAGS"
-CFLAGS=""
-myldflags="$LDFLAGS"
-LDFLAGS=""
+# Provide special option for choosing automatically the compilation flags.
+AC_MSG_CHECKING([if compilation flags are set automatically])
+AC_ARG_ENABLE(automatic-flags,
+	[AC_HELP_STRING([--enable-automatic-flags],
+	[Let the configure script choose the compilation flags \
+(off by default)])],
+        use_autoflag="yes"
+	AC_MSG_RESULT([yes]),
+        use_autoflag="no"
+	AC_MSG_RESULT([no]))
 
 # Provide special option for the Linux Intel C compiler
 AC_MSG_CHECKING([for Linux Intel C compiler mode])
@@ -57,7 +62,12 @@ AC_PROG_CC([$cclist])
 # C Compiler: Check that it is ANSI C and POSIX-compliant
 AM_PROG_CC_STDC
 AC_ISC_POSIX
-ACX_PROG_CC_OPTIM
+# Override automatic CFLAGS and LDFLAGS with those of user
+if test "$use_autoflag" = "yes"; then
+  CFLAGS=""
+  LDFLAGS =""
+  ACX_PROG_CC_OPTIM
+fi
 AC_DISABLE_STATIC
 #AC_DISABLE_SHARED
 AC_PROG_LIBTOOL
@@ -182,13 +192,13 @@ if test "$use_pthreads" = "yes"; then
 # CC, CFLAGS and LIBS are system and compiler-dependent
   ACX_PTHREAD
   CC="$PTHREAD_CC"
-  [CFLAGS="$CFLAGS $PTHREAD_CFLAGS -D_REENTRANT"]
+  [AM_CFLAGS="$AM_CFLAGS $PTHREAD_CFLAGS -D_REENTRANT"]
   LIBS="$PTHREAD_LIBS $LIBS"
 fi
 AM_CONDITIONAL(USE_THREADS, test $use_pthreads = "yes")
 
 ################ handle the FFTW library (Fourier transforms) ################
-ACX_FFTW($fftw_libdir,$fftw_incdir,$use_pthreads,no,
+ACX_FFTW($fftw_libdir,$fftw_incdir,$use_pthreads,yes,
 	[use_fftw=yes],[use_fftw=no])
 if test "$use_fftw" = "yes"; then
   LIBS="$FFTW_LIBS $LIBS"
@@ -214,30 +224,26 @@ fi
 # Link with gprof option
 if test "$use_gprof" = "yes"; then
   if test "$use_icc" = "yes"; then
-    CFLAGS="$CFLAGS -pq"
+    AM_CFLAGS="$AM_CFLAGS -pq"
   else
-    CFLAGS="$CFLAGS -pg"
+    AM_CFLAGS="$AM_CFLAGS -pg"
   fi
   use_static="no"
 fi
 
 # Static linking option
 if test "$use_static" = "yes"; then
-  LDFLAGS="-static -shared-libgcc $LDFLAGS"
+  AM_LDFLAGS="-static -shared-libgcc $AM_LDFLAGS"
 fi
 
-# Override automatic CFLAGS and LDFLAGS with those of user
-#if test -n "$mycflags"; then
-#CFLAGS="$mycflags"
-#fi
-#if test -n "$myldflags"; then
-#LDFLAGS="$myldflags"
-#fi
+AC_SUBST(AM_CFLAGS)
+AC_SUBST(AM_CPPFLAGS)
+AC_SUBST(AM_LDFLAGS)
 
 # Display compiler and linker flags
 AC_MSG_RESULT([***************************************************************])
-AC_MSG_RESULT([Compile cmdline:  $CC $CFLAGS])
-AC_MSG_RESULT([Link    cmdline:  $CC $LDFLAGS $LIBS])
+AC_MSG_RESULT([Compile cmdline:  $CC $AM_CPPFLAGS $CPPFLAGS $AM_CFLAGS $CFLAGS])
+AC_MSG_RESULT([Link    cmdline:  $CC $AM_LDFLAGS $LDFLAGS $LIBS])
 AC_MSG_RESULT([Default XSLT URL: $xsl_url])
 AC_MSG_RESULT([***************************************************************])
 

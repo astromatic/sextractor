@@ -22,16 +22,16 @@
 
 /*------------------------------- Other Macros ------------------------------*/
 #define	QFFTWMALLOC(ptr, typ, nel) \
-		{if (!(ptr = (typ *)fftw_malloc((size_t)(nel)*sizeof(typ)))) \
+		{if (!(ptr = (typ *)fftwf_malloc((size_t)(nel)*sizeof(typ)))) \
 		  error(EXIT_FAILURE, "Not enough memory for ", \
 			#ptr " (" #nel " elements) !");;}
-#define	QFFTWFREE(ptr)	fftw_free(ptr)
+#define	QFFTWFREE(ptr)	fftwf_free(ptr)
 
 /*--------------------------- structure definitions -------------------------*/
 
 /*---------------------------------- protos --------------------------------*/
-extern void	fft_conv(double *data1, double *fdata2, int *size),
+extern void	fft_conv(float *data1, float *fdata2, int *size),
 		fft_end(),
 		fft_init(int nthreads);
 
-extern double	*fft_rtf(double *data, int *size);
+extern float	*fft_rtf(float *data, int *size);
