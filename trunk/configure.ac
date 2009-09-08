@@ -34,8 +34,8 @@ cclist="cc gcc"
 
 # Provide special option for choosing automatically the compilation flags.
 AC_MSG_CHECKING([if compilation flags are set automatically])
-AC_ARG_ENABLE(automatic-flags,
-	[AC_HELP_STRING([--enable-automatic-flags],
+AC_ARG_ENABLE(auto-flags,
+	[AC_HELP_STRING([--enable-auto-flags],
 	[Let the configure script choose the compilation flags \
 (off by default)])],
         use_autoflag="yes"
@@ -172,15 +172,15 @@ AC_ARG_ENABLE(gprof,
         use_gprof="no"
 	AC_MSG_RESULT([no]))
 
-# Enable static linking
-AC_MSG_CHECKING([static linking])
-AC_ARG_ENABLE(static,
-	[AC_HELP_STRING([--enable-static],
-	[Enable static linking \
-(off by default)])],
-        use_static="yes"
+# Enable linking options for making the executable as portable as possible.
+AC_MSG_CHECKING([best linking option])
+AC_ARG_ENABLE(best-link,
+	[AC_HELP_STRING([--enable-best-link],
+	[Choose the right combination of static and dynamic linking to make \
+the executable as portable as possible (off by default)])],
+        use_best="yes"
 	AC_MSG_RESULT([yes]),
-        use_static="no"
+        use_best="no"
 	AC_MSG_RESULT([no]))
 
 ################# Actions to complete in case of multhreading ################
@@ -228,12 +228,12 @@ if test "$use_gprof" = "yes"; then
   else
     AM_CFLAGS="$AM_CFLAGS -pg"
   fi
-  use_static="no"
+  use_best="no"
 fi
 
-# Static linking option
-if test "$use_static" = "yes"; then
-  AM_LDFLAGS="-static -shared-libgcc $AM_LDFLAGS"
+# "Best" linking option
+if test "$use_best" = "yes"; then
+  AM_LDFLAGS="-static -shared-libgcc -static-libtool-libs $AM_LDFLAGS"
 fi
 
 AC_SUBST(AM_CFLAGS)
