@@ -68,8 +68,6 @@ if test "$use_autoflag" = "yes"; then
   LDFLAGS =""
   ACX_PROG_CC_OPTIM
 fi
-AC_DISABLE_STATIC
-#AC_DISABLE_SHARED
 AC_PROG_LIBTOOL
 AC_PROG_INSTALL
 
@@ -233,7 +231,7 @@ fi
 
 # "Best" linking option
 if test "$use_best" = "yes"; then
-  AM_LDFLAGS="-static -shared-libgcc -static-libtool-libs $AM_LDFLAGS"
+  AM_LDFLAGS="-shared-libgcc -static-libtool-libs $AM_LDFLAGS"
 fi
 
 AC_SUBST(AM_CFLAGS)
