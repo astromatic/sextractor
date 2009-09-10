@@ -78,6 +78,9 @@ AC_CHECK_LIB(m, sin)
 AC_HEADER_STDC
 AC_CHECK_HEADERS([fcntl.h limits.h malloc.h stdlib.h string.h sys/mman.h \
 		sys/types.h unistd.h])
+if test $use_icc = "yes" -a $CC = "icc"; then
+  AC_CHECK_HEADERS(mathimf.h)
+fi
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
