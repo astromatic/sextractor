@@ -916,6 +916,78 @@ void	astrom_profshapeparam(picstruct *field, objstruct *obj)
 	: 0.0;
     }
 
+/* Global 2nd-order moments */
+  if (FLAG(obj2.prof_mx2w))
+    {
+    dx2 = obj2->prof_mx2;
+    dy2 = obj2->prof_my2;
+    dxy = obj2->prof_mxy;
+    obj2->prof_mx2w = xm2 = lm0*lm0*dx2 + lm1*lm1*dy2 + lm0*lm1*dxy;
+    obj2->prof_my2w = ym2 = lm2*lm2*dx2 + lm3*lm3*dy2 + lm2*lm3*dxy;
+    obj2->prof_mxyw = xym = lm0*lm2*dx2 + lm1*lm3*dy2 + (lm0*lm3+lm1*lm2)*dxy;
+    temp=xm2-ym2;
+    if (FLAG(obj2.prof_thetaw))
+      {
+      obj2->prof_thetaw = fmod_m90_p90((temp == 0.0)?
+			(45.0) : (0.5*atan2(2.0*xym,temp)/DEG));
+
+/*---- Compute position angles in J2000 or B1950 reference frame */
+      if (wcs->lng != wcs->lat)
+        {
+        if (FLAG(obj2.prof_thetas))
+          obj2->prof_thetas = fmod_m90_p90(lng<lat?
+			((obj2->prof_thetaw>0.0?90:-90.0) - obj2->prof_thetaw)
+			: obj2->prof_thetaw);
+        if (FLAG(obj2.prof_theta2000))
+          obj2->prof_theta2000 = fmod_m90_p90(obj2->prof_thetas
+		+ obj2->dtheta2000);
+        if (FLAG(obj2.prof_theta1950))
+          obj2->prof_theta1950 = fmod_m90_p90(obj2->prof_thetas
+		+ obj2->dtheta1950);
+        }
+      }
+
+    if (FLAG(obj2.prof_aw))
+      {
+      temp = sqrt(0.25*temp*temp+xym*xym);
+      pm2 = 0.5*(xm2+ym2);
+      obj2->prof_aw = (float)sqrt(pm2+temp);
+      obj2->prof_bw = (float)sqrt(pm2-temp);
+      }
+
+    if (FLAG(obj2.prof_cxxw))
+      {
+/*---- Handle large, fully correlated profiles (can cause a singularity...) */
+      if ((temp=xm2*ym2-xym*xym)<1e-6)
+        {
+        temp = 1e-6;
+        xym *= 0.99999;
+        }
+      obj2->prof_cxxw = (float)(ym2/temp);
+      obj2->prof_cyyw = (float)(xm2/temp);
+      obj2->prof_cxyw = (float)(-2*xym/temp);
+      }
+  
+    if (FLAG(obj2.prof_e1w))
+      {
+      if (xm2+ym2 > 1.0/BIG)
+        {
+        obj2->prof_pol1w = (xm2 - ym2) / (xm2+ym2);
+        obj2->prof_pol2w = 2.0*xym / (xm2 + ym2);
+        temp = xm2*ym2-xym*xym;
+        if (temp>=0.0)
+          temp = xm2+ym2+2.0*sqrt(temp);
+        else
+          temp = xm2+ym2;
+        obj2->prof_e1w = (xm2 - ym2) / temp;
+        obj2->prof_e2w = 2.0*xym / temp;
+        }
+      else
+        obj2->prof_pol1w = obj2->prof_pol2w
+	= obj2->prof_e1w = obj2->prof_e2w = 0.0;
+      }
+    }
+
   return;
   }
 

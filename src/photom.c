@@ -9,7 +9,7 @@
 *
 *	Contents:	Compute magnitudes and other photometrical parameters.
 *
-*	Last modify:	02/05/2008
+*	Last modify:	11/09/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -880,6 +880,23 @@ void  computemags(picstruct *field, objstruct *obj)
 			 -2.5*log10(obj2->prof_spheroid_flux)
 			+ prefs.mag_zeropoint
 			:99.0;
+
+  if (FLAG(obj2.prof_spheroid_mumax))
+    obj2->prof_spheroid_mumax = obj2->prof_spheroid_peak > 0.0 ?
+		-2.5*log10((obj2->prof_spheroid_peak)
+		 / (prefs.pixel_scale? field->pixscale*field->pixscale
+				: obj2->pixscale2 * 3600.0*3600.0))
+		+ prefs.mag_zeropoint
+		: 99.0;
+
+  if (FLAG(obj2.prof_spheroid_mueff))
+    obj2->prof_spheroid_mueff = obj2->prof_spheroid_fluxeff > 0.0 ?
+		-2.5*log10((obj2->prof_spheroid_fluxeff)
+		 / (prefs.pixel_scale? field->pixscale*field->pixscale
+				: obj2->pixscale2 * 3600.0*3600.0))
+		+ prefs.mag_zeropoint
+		: 99.0;
+
   if (FLAG(obj2.prof_spheroid_magerr))
     obj2->prof_spheroid_magerr = obj2->prof_spheroid_flux>0.0?
 			 1.086*obj2->prof_spheroid_fluxerr
@@ -896,6 +913,22 @@ void  computemags(picstruct *field, objstruct *obj)
 			 1.086*obj2->prof_disk_fluxerr
 				/ obj2->prof_disk_flux
 			:99.0;
+
+  if (FLAG(obj2.prof_disk_mumax))
+    obj2->prof_disk_mumax = obj2->prof_disk_peak > 0.0 ?
+		-2.5*log10((obj2->prof_disk_peak)
+		 / (prefs.pixel_scale? field->pixscale*field->pixscale
+				: obj2->pixscale2 * 3600.0*3600.0))
+		+ prefs.mag_zeropoint
+		: 99.0;
+
+  if (FLAG(obj2.prof_disk_mueff))
+    obj2->prof_disk_mueff = obj2->prof_disk_fluxeff > 0.0 ?
+		-2.5*log10((obj2->prof_disk_fluxeff)
+		 / (prefs.pixel_scale? field->pixscale*field->pixscale
+				: obj2->pixscale2 * 3600.0*3600.0))
+		+ prefs.mag_zeropoint
+		: 99.0;
 
   if (FLAG(obj2.prof_bar_mag))
     obj2->prof_bar_mag = obj2->prof_bar_flux>0.0?
@@ -938,18 +971,23 @@ void  computemags(picstruct *field, objstruct *obj)
 			 1.086*obj2->fluxerr_galfit/obj2->flux_galfit
 			:99.0;
 
-/* SB units */
+/* Other surface brightnesses */
   if (FLAG(obj2.maxmu))
     outobj2.maxmu = obj->peak > 0.0 ?
 		-2.5*log10((obj->peak)
-		 / (field->pixscale * field->pixscale)) + prefs.mag_zeropoint
+		 / (prefs.pixel_scale? field->pixscale*field->pixscale
+				: obj2->pixscale2 * 3600.0*3600.0))
+		+ prefs.mag_zeropoint
 		: 99.0;
 
   if (FLAG(obj2.threshmu))
     obj2->threshmu = obj->thresh > 0.0 ?
 		-2.5*log10((obj->thresh)
-		 / (field->pixscale * field->pixscale)) + prefs.mag_zeropoint
+		 / (prefs.pixel_scale? field->pixscale*field->pixscale
+				: obj2->pixscale2 * 3600.0*3600.0))
+		+ prefs.mag_zeropoint
 		: 99.0;
+
 
   return;
   }

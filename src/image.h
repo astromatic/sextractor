@@ -9,7 +9,7 @@
 *
 *	Contents:	Include file for image.c.
 *
-*	Last modify:	29/08/98
+*	Last modify:	13/09/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -37,6 +37,6 @@ extern void    	addimage(picstruct *field, float *psf,
 
 extern int	copyimage(picstruct *, PIXTYPE *, int, int, int, int),
 		copyimage_center(picstruct *, PIXTYPE *, int,int, float,float),
-		vignet_resample(double *pix1, int w1, int h1, double *pix2,
-			int w2, int h2, double dx, double dy, double step2);
+		vignet_resample(float *pix1, int w1, int h1, float *pix2,
+			int w2, int h2, float dx, float dy, float step2);
 

@@ -9,7 +9,7 @@
 *
 *	Contents:	functions for output of catalog data.
 *
-*	Last modify:	20/07/2009
+*	Last modify:	11/09/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -219,6 +219,7 @@ void	updateparamflags()
   FLAG(obj2.prof_spheroid_theta) |= FLAG(obj2.prof_spheroid_thetaerr);
   FLAG(obj2.prof_spheroid_sersicn) |= FLAG(obj2.prof_spheroid_sersicnerr);
   FLAG(obj2.prof_disk_mag) |= FLAG(obj2.prof_disk_magerr);
+  FLAG(obj2.prof_disk_peak) |= FLAG(obj2.prof_disk_mumax);
   FLAG(obj2.prof_disk_scale) |= FLAG(obj2.prof_disk_scaleerr);
   FLAG(obj2.prof_disk_aspect) |= FLAG(obj2.prof_disk_aspecterr);
   FLAG(obj2.prof_disk_inclination) |= FLAG(obj2.prof_disk_inclinationerr);
@@ -228,7 +229,22 @@ void	updateparamflags()
   FLAG(obj2.prof_bar_aspect) |= FLAG(obj2.prof_bar_aspecterr);
   FLAG(obj2.prof_bar_theta) |= FLAG(obj2.prof_bar_thetaerr);
   FLAG(obj2.prof_arms_mag) |= FLAG(obj2.prof_arms_magerr);
-  FLAG(obj2.dtheta1950) |= FLAG(obj2.prof_spheroid_theta1950)
+  FLAG(obj2.prof_e1w) |= FLAG(obj2.prof_e2w)
+			| FLAG(obj2.prof_pol1w) | FLAG(obj2.prof_pol2w);
+  FLAG(obj2.prof_aw) |= FLAG(obj2.prof_bw);
+  FLAG(obj2.prof_cxxw) |= FLAG(obj2.prof_cyyw) | FLAG(obj2.prof_cxyw);
+  FLAG(obj2.prof_thetas) |= FLAG(obj2.prof_theta1950)
+			| FLAG(obj2.prof_theta2000);
+  FLAG(obj2.prof_thetaw) |= FLAG(obj2.prof_thetas);
+
+  FLAG(obj2.prof_mx2w) |= FLAG(obj2.prof_my2w)
+			| FLAG(obj2.prof_mxyw)
+			| FLAG(obj2.prof_thetaw) | FLAG(obj2.prof_aw)
+			| FLAG(obj2.prof_cxxw)
+			| FLAG(obj2.prof_e1w);
+
+  FLAG(obj2.dtheta1950) |= FLAG(obj2.prof_theta1950)
+			| FLAG(obj2.prof_spheroid_theta1950)
 			| FLAG(obj2.prof_disk_theta1950)
 //			| FLAG(obj2.prof_arms_theta1950)
 			| FLAG(obj2.prof_bar_theta1950)
@@ -238,7 +254,8 @@ void	updateparamflags()
 			| FLAG(obj2.poserr_theta1950)
 			| FLAG(obj2.theta1950)
 			| FLAG(obj2.poserrtheta1950_prof);
-  FLAG(obj2.dtheta2000) |= FLAG(obj2.prof_spheroid_theta2000)
+  FLAG(obj2.dtheta2000) |= FLAG(obj2.prof_theta2000)
+			| FLAG(obj2.prof_spheroid_theta2000)
 			| FLAG(obj2.prof_disk_theta2000)
 //			| FLAG(obj2.prof_arms_theta2000)
 			| FLAG(obj2.prof_bar_theta2000)
@@ -280,6 +297,9 @@ void	updateparamflags()
 			| FLAG(obj2.prof_disk_aspecterrw)
 			| FLAG(obj2.prof_disk_thetaerrw)
 			| FLAG(obj2.prof_arms_scalew);
+  FLAG(obj2.prof_disk_fluxeff) |= FLAG(obj2.prof_disk_mueff);
+  FLAG(obj2.prof_disk_peak) |= FLAG(obj2.prof_disk_mumax)
+				| FLAG(obj2.prof_disk_fluxeff);
 
   FLAG(obj2.prof_spheroid_reffw) |= FLAG(obj2.prof_spheroid_aspectw)
 			| FLAG(obj2.prof_spheroid_thetaw)
@@ -287,14 +307,32 @@ void	updateparamflags()
 			| FLAG(obj2.prof_spheroid_aspecterrw)
 			| FLAG(obj2.prof_spheroid_thetaerrw);
 
+ FLAG(obj2.prof_mx2w) |= FLAG(obj2.prof_my2w) | FLAG(obj2.prof_mxyw)
+			| FLAG(obj2.prof_e1w) |FLAG(obj2.prof_e2w)
+			| FLAG(obj2.prof_pol1w) |FLAG(obj2.prof_pol2w);
+
+  FLAG(obj2.prof_spheroid_fluxeff) |= FLAG(obj2.prof_spheroid_mueff);
+  FLAG(obj2.prof_spheroid_peak) |= FLAG(obj2.prof_spheroid_mumax)
+				| FLAG(obj2.prof_spheroid_fluxeff);
+
   FLAG(obj2.prof_flagw) |= FLAG(obj2.prof_spheroid_reffw)
 			| FLAG(obj2.prof_disk_scalew)
 			| FLAG(obj2.prof_bar_lengthw)
-			| FLAG(obj2.prof_arms_scalew);
+			| FLAG(obj2.prof_arms_scalew)
+			| FLAG(obj2.prof_mx2w);
 			
+  FLAG(obj2.prof_e1) |= FLAG(obj2.prof_e2)
+			| FLAG(obj2.prof_pol1) | FLAG(obj2.prof_pol2)
+			| FLAG(obj2.prof_e1w);
+  FLAG(obj2.prof_a) |= FLAG(obj2.prof_b) | FLAG(obj2.prof_theta)
+			| FLAG(obj2.prof_aw);
+  FLAG(obj2.prof_cxx) |= FLAG(obj2.prof_cyy)
+			| FLAG(obj2.prof_cxy) | FLAG(obj2.prof_cxxw);
   FLAG(obj2.prof_mx2) |= FLAG(obj2.prof_my2) | FLAG(obj2.prof_mxy)
-			| FLAG(obj2.prof_e1) |FLAG(obj2.prof_e2)
-			| FLAG(obj2.prof_eps1) |FLAG(obj2.prof_eps2);
+			| FLAG(obj2.prof_e1)
+			| FLAG(obj2.prof_a) | FLAG(obj2.prof_cxx)
+			| FLAG(obj2.prof_mx2w);
+
   FLAG(obj2.prof_arms_flux) |= FLAG(obj2.prof_arms_fluxerr)
 			| FLAG(obj2.prof_arms_mag)
 			| FLAG(obj2.prof_arms_scalew)
@@ -319,6 +357,7 @@ void	updateparamflags()
 			| FLAG(obj2.prof_disk_aspect)
 			| FLAG(obj2.prof_disk_inclination)
 			| FLAG(obj2.prof_disk_theta)
+			| FLAG(obj2.prof_disk_peak)
 			| FLAG(obj2.prof_bar_flux);
   FLAG(obj2.prof_spheroid_flux) |= FLAG(obj2.prof_spheroid_fluxerr)
 			| FLAG(obj2.prof_spheroid_mag)
@@ -326,7 +365,8 @@ void	updateparamflags()
 			| FLAG(obj2.prof_spheroid_reff)
 			| FLAG(obj2.prof_spheroid_aspect)
 			| FLAG(obj2.prof_spheroid_theta)
-			| FLAG(obj2.prof_spheroid_sersicn);
+			| FLAG(obj2.prof_spheroid_sersicn)
+			| FLAG(obj2.prof_spheroid_peak);
   prefs.prof_flag |= FLAG(obj2.prof_chi2) | FLAG(obj2.prof_niter)
 			| FLAG(obj2.prof_vector) | FLAG(obj2.prof_errvector)
 			| FLAG(obj2.x_prof) | FLAG(obj2.y_prof)
@@ -431,9 +471,7 @@ void	updateparamflags()
   FLAG(obj2.cxxw) |= FLAG(obj2.cyyw) | FLAG(obj2.cxyw);
 
   FLAG(obj2.mx2w) |= FLAG(obj2.my2w) | FLAG(obj2.mxyw)
-			| FLAG(obj2.thetaw) | FLAG(obj2.aw) | FLAG(obj2.cxxw)
-			| FLAG(obj2.npixw) | FLAG(obj2.fdnpixw)
-			| FLAG(obj2.fwhmw);
+			| FLAG(obj2.thetaw) | FLAG(obj2.aw) | FLAG(obj2.cxxw);
   
   FLAG(obj2.peakxw) |= FLAG(obj2.peakyf);
   FLAG(obj2.peakxw) |= FLAG(obj2.peakyw) | FLAG(obj2.peakalphas);
@@ -451,6 +489,12 @@ void	updateparamflags()
 			| FLAG(obj2.winpos_xw) | FLAG(obj2.winpos_xf)
 			| FLAG(obj2.win_flag)
 			| FLAG(obj2.flux_win) |FLAG(obj2.winpos_niter);
+
+  FLAG(obj2.area_flagw) |= FLAG(obj2.npixw) | FLAG(obj2.fdnpixw)
+			| FLAG(obj2.fwhmw)
+			| FLAG(obj2.maxmu) | FLAG(obj2.threshmu)
+			| FLAG(obj2.prof_spheroid_mumax)
+			| FLAG(obj2.prof_disk_mumax);
 
 /*------------------------------ Photometry ---------------------------------*/
 
@@ -587,6 +631,7 @@ void	initcat(void)
     else
       if (!(ascfile = fopen(prefs.cat_name, "w+")))
         error(EXIT_FAILURE,"*Error*: cannot open ", prefs.cat_name);
+//  setlinebuf(ascfile);
     if (prefs.cat_type == ASCII_HEAD && (key = objtab->key))
       for (i=0,n=1; i++<objtab->nkey; key=key->nextkey)
         {

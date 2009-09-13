@@ -110,8 +110,8 @@
 /* Define if you have POSIX threads libraries and header files. */
 #undef HAVE_PTHREAD
 
-/* Define to 1 if you have the `sincos' function. */
-#undef HAVE_SINCOS
+/* Define to 1 if you have the `sincosf' function. */
+#undef HAVE_SINCOSF
 
 /* Define to 1 if `stat' has the bug that it succeeds when given the
    zero-length file name argument. */

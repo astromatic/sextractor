@@ -44,7 +44,8 @@ int	main(int argc, char *argv[])
    int		a, narg, nim, opt, opt2;
    char		**argkey, **argval, *str;
 
-  if (argc<2)
+setlinebuf(stdout);
+ if (argc<2)
     {
     fprintf(OUTPUT, "\n         %s  version %s (%s)\n", BANNER,MYVERSION,DATE);
     fprintf(OUTPUT, "\nby %s\n", COPYRIGHT);

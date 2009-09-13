@@ -9,7 +9,7 @@
 *
 *	Contents:	analyse(), endobject()...: measurements on detections.
 *
-*	Last modify:	27/08/2009
+*	Last modify:	11/09/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -387,8 +387,7 @@ void	endobject(picstruct *field, picstruct *dfield, picstruct *wfield,
   {
    objstruct	*obj;
    checkstruct	*check;
-   double	rawpos[NAXIS],
-		pixscale2;
+   double	rawpos[NAXIS];
    int		i,j, ix,iy,selecflag, newnumber,nsub;
 
   obj = &objlist->obj[n];
@@ -474,20 +473,18 @@ void	endobject(picstruct *field, picstruct *dfield, picstruct *wfield,
     if (FLAG(obj2.mxf) || FLAG(obj2.mxw))
       astrom_pos(field, obj);
 
-    pixscale2 = 0.0;	/* To avoid gcc -Wall warnings */
+    obj2->pixscale2 = 0.0;	/* To avoid gcc -Wall warnings */
     if (FLAG(obj2.mx2w)
 	|| FLAG(obj2.win_mx2w)
 	|| FLAG(obj2.poserr_mx2w)
 	|| FLAG(obj2.winposerr_mx2w)
 	|| FLAG(obj2.poserrmx2w_prof)
 	|| FLAG(obj2.prof_flagw)
-	|| ((!prefs.pixel_scale) && (FLAG(obj2.npixw)
-		|| FLAG(obj2.fdnpixw)
-		|| FLAG(obj2.fwhmw))))
+	|| ((!prefs.pixel_scale) && FLAG(obj2.area_flagw)))
       {
       rawpos[0] = obj2->posx;
       rawpos[1] = obj2->posy;
-      pixscale2 = wcs_jacobian(field->wcs, rawpos, obj2->jacob);
+      obj2->pixscale2 = wcs_jacobian(field->wcs, rawpos, obj2->jacob);
       }
 
 /*-- Express shape parameters in the FOCAL or WORLD frame */
@@ -499,14 +496,14 @@ void	endobject(picstruct *field, picstruct *dfield, picstruct *wfield,
 
     if (FLAG(obj2.npixw))
       obj2->npixw = obj->npix * (prefs.pixel_scale?
-	field->pixscale/3600.0*field->pixscale/3600.0 : pixscale2);
+	field->pixscale/3600.0*field->pixscale/3600.0 : obj2->pixscale2);
     if (FLAG(obj2.fdnpixw))
       obj2->fdnpixw = obj->fdnpix * (prefs.pixel_scale?
-	field->pixscale/3600.0*field->pixscale/3600.0 : pixscale2);
+	field->pixscale/3600.0*field->pixscale/3600.0 : obj2->pixscale2);
 
     if (FLAG(obj2.fwhmw))
       obj2->fwhmw = obj->fwhm * (prefs.pixel_scale?
-	field->pixscale/3600.0 : sqrt(pixscale2));
+	field->pixscale/3600.0 : sqrt(obj2->pixscale2));
 
 /*------------------------------- Photometry -------------------------------*/
 
@@ -539,10 +536,10 @@ void	endobject(picstruct *field, picstruct *dfield, picstruct *wfield,
       if (FLAG(obj2.winpos_xf) || FLAG(obj2.winpos_xw))
         astrom_winpos(field, obj);
 /*---- Express shape parameters in the FOCAL or WORLD frame */
-      if (FLAG(obj2.mx2w))
+      if (FLAG(obj2.win_mx2w))
         astrom_winshapeparam(field, obj);
 /*---- Express position error parameters in the FOCAL or WORLD frame */
-      if (FLAG(obj2.poserr_mx2w))
+      if (FLAG(obj2.winposerr_mx2w))
         astrom_winerrparam(field, obj);
       }
 
@@ -691,18 +688,17 @@ void	endobject(picstruct *field, picstruct *dfield, picstruct *wfield,
       }
 
 /*----------------------------- Profile fitting -----------------------------*/
-    nsub = 1;
     if (prefs.prof_flag)
       {
       profit_fit(theprofit, field, wfield, obj, obj2);
 /*---- Express positions in FOCAL or WORLD coordinates */
-      if (FLAG(obj2.winpos_xf) || FLAG(obj2.winpos_xw))
+      if (FLAG(obj2.xf_prof) || FLAG(obj2.xw_prof))
         astrom_profpos(field, obj);
 /*---- Express shape parameters in the FOCAL or WORLD frame */
-      if (FLAG(obj2.mx2w))
+      if (FLAG(obj2.prof_flagw))
         astrom_profshapeparam(field, obj);
 /*---- Express position error parameters in the FOCAL or WORLD frame */
-      if (FLAG(obj2.poserr_mx2w))
+      if (FLAG(obj2.poserrmx2w_prof))
         astrom_proferrparam(field, obj);
       }
 
