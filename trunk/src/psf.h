@@ -10,7 +10,7 @@
 *
 *	Contents:	Include file for psffit.c.
 *
-*	Last modify:	12/01/2006
+*	Last modify:	13/09/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -54,10 +54,10 @@ typedef struct pc
   int		*omasksize;	/* PC mask dimensions */
   int		omasknpix;	/* Total number of involved PC pixels */
   float		*omaskcomp; 	/* Original pix data (principal components) */
-  double	*maskcurr;	/* Current model */
-  double	*mx2,*my2,*mxy;	/* 2nd order moments for each component */
-  double	*flux;		/* Flux of each component */
-  double	*bt;		/* B/T for each component */
+  float		*maskcurr;	/* Current model */
+  float		*mx2,*my2,*mxy;	/* 2nd order moments for each component */
+  float		*flux;		/* Flux of each component */
+  float		*bt;		/* B/T for each component */
   codestruct	*code;
   }	pcstruct;
 
@@ -104,21 +104,21 @@ extern void	compute_pos(int *pnpsf,int *pconvflag,int *pnpsfflag,
 		psf_build(psfstruct *psf),
 		psf_end(psfstruct *psf, psfitstruct *psfit),
 		psf_init(psfstruct *psf),
-		svdfit(double *a, double *b, int m, int n, double *sol,
+		svdfit(double *a, float *b, int m, int n, double *sol,
 			double *vmat, double *wmat),
 		svdvar(double *vmat, double *wmat, int n, double *covmat);
 
-extern double	*compute_gradient (double *weight,int width, int height,
-			double *masks, double *maskx, double *masky,
+extern double	*compute_gradient (float *weight,int width, int height,
+			float *masks, float *maskx, float *masky,
 			double *mat),
-		*compute_gradient_phot(double *weight,int width, int height,
-			double *masks, double *pm);
+		*compute_gradient_phot(float *weight,int width, int height,
+			float *masks, double *pm);
 
 extern psfstruct	*psf_load(char *filename);
 
 extern void	pc_end(pcstruct *pc),
-		pc_fit(psfstruct *psf, double *data, double *weight,
-		int width, int height, int ix, int iy, double dx, double dy,
+		pc_fit(psfstruct *psf, float *data, float *weight,
+		int width, int height, int ix, int iy, float dx, float dy,
 		int npc, float backrms),
 		double_psf_fit(psfstruct *psf, picstruct *field,
 			picstruct *wfield, objstruct *obj,

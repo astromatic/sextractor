@@ -9,7 +9,7 @@
 *
 *	Contents:	Functions to handle the configuration file.
 *
-*	Last modify:	26/06/2009
+*	Last modify:	11/09/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -477,8 +477,8 @@ void	useprefs()
 		|| FLAG(obj2.mx2w) || FLAG(obj2.win_mx2w)
 		|| FLAG(obj2.xw_prof) || FLAG(obj2.poserrmx2w_prof)
 		|| FLAG(obj2.poserr_mx2w) || FLAG(obj2.winposerr_mx2w)
-		|| FLAG(obj2.npixw) || FLAG(obj2.fdnpixw)
-		|| FLAG(obj2.fwhmw) || FLAG(obj2.prof_flagw);
+		|| FLAG(obj2.area_flagw) || FLAG(obj2.prof_flagw);
+
 /* Default astrometric settings */
   strcpy(prefs.coosys, "ICRS");
   prefs.epoch = 2000.0;

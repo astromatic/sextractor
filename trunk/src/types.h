@@ -9,7 +9,7 @@
 *
 *	Contents:	global type definitions.
 *
-*	Last modify:	20/07/2009
+*	Last modify:	13/09/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -151,8 +151,10 @@ typedef struct
   float		mag_win;			/* WINdowed magnitude */
   float		magerr_win;			/* WINdowed magnitude error */
 /* ---- astrometric data */
+  BYTE		area_flagw;			/* World area or SB flag */
   double	posx,posy;			/* "FITS" pos. in pixels */
   double	jacob[NAXIS*NAXIS];		/* Local deproject. Jacobian */
+  double	pixscale2;			/* Local pixel area */
   double	mamaposx,mamaposy;		/* "MAMA" pos. in pixels */
   float		sposx,sposy;			/* single precision pos. */
   float		poserr_a, poserr_b,
@@ -334,18 +336,36 @@ typedef struct
   float		poserrtheta1950_prof;		/* B1950 error pos. angle */
   float		poserrcxxw_prof, poserrcyyw_prof,
 		poserrcxyw_prof;		/* WORLD error ellipse */
-  double	prof_mx2, prof_my2, prof_mxy;	/* Profile model moments */
-  double	prof_mx2w, prof_my2w, prof_mxyw;/* WORLD profile model moments*/
-  float		prof_eps1, prof_eps2;		/* Profile model ellip.vector */
-  float		prof_e1, prof_e2;		/* Profile model ellip.vector */
+  double	prof_mx2, prof_my2, prof_mxy;	/* Model-fitting moments */
+  float		prof_a, prof_b,
+		prof_theta;			/* Model-fitting ellip. params*/
+  float		prof_cxx, prof_cyy,
+		prof_cxy;			/* Model-fitting ellip. params*/
+  float		prof_pol1, prof_pol2;		/* Model-fitting pol. vector*/
+  float		prof_e1, prof_e2;		/* Model-fitting ellip.vector*/
+  double	prof_mx2w, prof_my2w,
+		prof_mxyw;			/* WORLD model-fitting moments*/
+  float		prof_aw, prof_bw,
+		prof_thetaw;			/* WORLD ellipse parameters */
+  float		prof_thetas;			/* native error pos. angle */
+  float		prof_theta2000;			/* J2000 error pos. angle */
+  float		prof_theta1950;			/* B1950 error pos. angle */
+  float		prof_cxxw, prof_cyyw,
+		prof_cxyw;			/* WORLD ellipse parameters */
+  float		prof_pol1w, prof_pol2w;		/* WORLD polarisation vector*/
+  float		prof_e1w, prof_e2w;		/* WORLD ellipticity vector*/
   float		prof_class_star;		/* Model-fitting star/gal class*/
   float		prof_concentration;		/* Model-fitting concentration*/
   float		prof_offset_flux;		/* Background offset */
   float		prof_offset_fluxerr;		/* RMS error */
   float		prof_spheroid_flux;		/* Spheroid total flux */
   float		prof_spheroid_fluxerr;		/* RMS error */
+  float		prof_spheroid_peak;		/* Spheroid peak flux */
+  float		prof_spheroid_fluxeff;		/* Spheroid effective flux */
   float		prof_spheroid_mag;		/* Spheroid "total" mag */
   float		prof_spheroid_magerr;		/* RMS error */
+  float		prof_spheroid_mumax;		/* Spehroid peak surf. brigh.*/
+  float		prof_spheroid_mueff;		/* Spheroid effect. surf. bri.*/
   float		prof_spheroid_reff;		/* Spheroid effective radius */
   float		prof_spheroid_refferr;		/* RMS error */
   float		prof_spheroid_reffw;		/* WORLD spheroid eff. radius */
@@ -365,8 +385,12 @@ typedef struct
   float		prof_spheroid_sersicnerr;	/* RMS error */
   float		prof_disk_flux;			/* Disk total flux */
   float		prof_disk_fluxerr;		/* RMS error */
+  float		prof_disk_peak;			/* Disk peak flux */
+  float		prof_disk_fluxeff;		/* Disk effective flux */
   float		prof_disk_mag;			/* Disk "total" mag */
   float		prof_disk_magerr;		/* RMS error */
+  float		prof_disk_mumax;		/* Disk peak surf. brightness */
+  float		prof_disk_mueff;		/* Disk effective surf. bri. */
   float		prof_disk_scale;		/* Disk scale length */
   float		prof_disk_scaleerr;		/* RMS error */
   float		prof_disk_scalew;		/* WORLD disk scale length */

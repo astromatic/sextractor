@@ -9,7 +9,7 @@
 *
 *	Contents:	Function related to image manipulations.
 *
-*	Last modify:	13/12/2002
+*	Last modify:	13/09/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -461,11 +461,11 @@ void	pasteimage(picstruct *field, PIXTYPE *mask, int w,int h,
 Scale and shift a small image through sinc interpolation.
 Image parts which lie outside boundaries are set to 0.
 */
-int	vignet_resample(double *pix1, int w1, int h1,
-			double *pix2, int w2, int h2,
-			double dx, double dy, double step2)
+int	vignet_resample(float *pix1, int w1, int h1,
+			float *pix2, int w2, int h2,
+			float dx, float dy, float step2)
   {
-   double	*mask,*maskt, xc1,xc2,yc1,yc2, xs1,ys1, x1,y1, x,y, dxm,dym,
+   float	*mask,*maskt, xc1,xc2,yc1,yc2, xs1,ys1, x1,y1, x,y, dxm,dym,
 		val,
 		*pix12, *pixin,*pixin0, *pixout,*pixout0;
    int		i,j,k,n,t, *start,*startt, *nmask,*nmaskt,
@@ -474,10 +474,10 @@ int	vignet_resample(double *pix1, int w1, int h1,
 
 
 /* Initialize destination buffer to zero */
-  memset(pix2, 0, w2*h2*sizeof(double));
+  memset(pix2, 0, w2*h2*sizeof(float));
 
-  xc1 = (double)(w1/2);	/* Im1 center x-coord*/
-  xc2 = (double)(w2/2);	/* Im2 center x-coord*/
+  xc1 = (float)(w1/2);	/* Im1 center x-coord*/
+  xc2 = (float)(w2/2);	/* Im2 center x-coord*/
   xs1 = xc1 + dx - xc2*step2;	/* Im1 start x-coord */
 
   if ((int)xs1 >= w1)
@@ -497,8 +497,8 @@ int	vignet_resample(double *pix1, int w1, int h1,
     nx2 = ix2;
   if (nx2<=0)
     return RETURN_ERROR;
-  yc1 = (double)(h1/2);	/* Im1 center y-coord */
-  yc2 = (double)(h2/2);	/* Im2 center y-coord */
+  yc1 = (float)(h1/2);	/* Im1 center y-coord */
+  yc2 = (float)(h2/2);	/* Im2 center y-coord */
   ys1 = yc1 + dy - yc2*step2;	/* Im1 start y-coord */
   if ((int)ys1 >= h1)
     return RETURN_ERROR;
@@ -528,10 +528,10 @@ int	vignet_resample(double *pix1, int w1, int h1,
     ny1 = h1;
 /* Express everything relative to the effective Im1 start (with margin) */
   ny1 -= iys1a;
-  ys1 -= (double)iys1a;
+  ys1 -= (float)iys1a;
 
 /* Allocate interpolant stuff for the x direction */
-  QMALLOC(mask, double, nx2*INTERPW);	/* Interpolation masks */
+  QMALLOC(mask, float, nx2*INTERPW);	/* Interpolation masks */
   QMALLOC(nmask, int, nx2);		/* Interpolation mask sizes */
   QMALLOC(start, int, nx2);		/* Int part of Im1 conv starts */
 /* Compute the local interpolant and data starting points in x */
@@ -547,7 +547,7 @@ int	vignet_resample(double *pix1, int w1, int h1,
     if (ix < 0)
       {
       n = INTERPW+ix;
-      dxm -= (double)ix;
+      dxm -= (float)ix;
       ix = 0;
       }
     else
@@ -560,7 +560,7 @@ int	vignet_resample(double *pix1, int w1, int h1,
       *(maskt++) = INTERPF(x);
     }
 
-  QCALLOC(pix12, double, nx2*ny1);	/* Intermediary frame-buffer */
+  QCALLOC(pix12, float, nx2*ny1);	/* Intermediary frame-buffer */
 
 /* Make the interpolation in x (this includes transposition) */
   pixin0 = pix1+iys1a*w1;
@@ -582,7 +582,7 @@ int	vignet_resample(double *pix1, int w1, int h1,
     }
 
 /* Reallocate interpolant stuff for the y direction */
-  QREALLOC(mask, double, ny2*INTERPH);	/* Interpolation masks */
+  QREALLOC(mask, float, ny2*INTERPH);	/* Interpolation masks */
   QREALLOC(nmask, int, ny2);		/* Interpolation mask sizes */
   QREALLOC(start, int, ny2);		/* Int part of Im1 conv starts */
 
@@ -599,7 +599,7 @@ int	vignet_resample(double *pix1, int w1, int h1,
     if (iy < 0)
       {
       n = INTERPH+iy;
-      dym -= (double)iy;
+      dym -= (float)iy;
       iy = 0;
       }
     else

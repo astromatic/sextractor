@@ -13,7 +13,7 @@ dnl @authors Emmanuel Bertin <bertin@iap.fr> Ville Laurikari <vl@iki.fi>
 dnl
 AC_DEFUN([ACX_PROG_CC_OPTIM], [
   msg="for C compiler optimization flags"
-  AC_CACHE_CHECK($msg, prog_cc_optim_flags, [
+  AC_CACHE_CHECK($msg, prog_cc_optim_cv_flags, [
     if test -n "$CC"; then
       cat > conftest.c <<EOF
 int main(int argc, char **argv) { return 0; }
@@ -32,80 +32,80 @@ EOF
       if $CC -V 2>&1 | grep -i "Intel(R) 64" > /dev/null 2>&1 &&
            $CC -c -O conftest.c > /dev/null 2>&1 &&
            test -f conftest.o; then
-        prog_cc_optim_flags="-O3 -axSSE3,SSE4.1,SSE4.2 -ip -no-prec-div -unroll"
-        prog_ld_optim_flags="-static-intel"
+        prog_cc_optim_cv_flags="-O3 -axSSE3,SSE4.1,SSE4.2 -ip -no-prec-div -unroll"
+        prog_ld_optim_cv_flags="-static-intel"
 
       dnl INTEL C 32bits compiler
       elif $CC -V 2>&1 | grep -i "Intel(R)" > /dev/null 2>&1 &&
            $CC -c -O conftest.c > /dev/null 2>&1 &&
            test -f conftest.o; then
-        prog_cc_optim_flags="-O3 -axSSE2,SSE3,SSE4.1,SSE4.2 -ip -no-prec-div -unroll"
-        prog_ld_optim_flags="-static-intel"
+        prog_cc_optim_cv_flags="-O3 -axSSE2,SSE3,SSE4.1,SSE4.2 -ip -no-prec-div -unroll"
+        prog_ld_optim_cv_flags="-static-intel"
 
       dnl GCC
       elif test "$GCC" = "yes"; then
-        prog_cc_optim_flags="-O3 -g -funroll-loops -fomit-frame-pointer -Wall"
-        prog_ld_optim_flags=""
+        prog_cc_optim_cv_flags="-O3 -g -funroll-loops -fomit-frame-pointer -Wall"
+        prog_ld_optim_cv_flags=""
 
       dnl Solaris C compiler
       elif $CC -V 2>&1 | grep -i "WorkShop" > /dev/null 2>&1 &&
            $CC -c -O conftest.c > /dev/null 2>&1 &&
            test -f conftest.o; then
-        prog_cc_optim_flags="-O"
-        prog_ld_optim_flags=""
+        prog_cc_optim_cv_flags="-O"
+        prog_ld_optim_cv_flags=""
 
       dnl Digital Unix/Compaq C compiler
       elif ($CC -V 2>&1 | grep -i "Digital UNIX Compiler"> /dev/null 2>&1 ||
 	   $CC -V 2>&1 | grep -i "Compaq C"> /dev/null 2>&1) &&
            $CC -c -fast conftest.c > /dev/null 2>&1 &&
            test -f conftest.o; then
-        prog_cc_optim_flags="-fast -tune host"
-        prog_ld_optim_flags=""
+        prog_cc_optim_cv_flags="-fast -tune host"
+        prog_ld_optim_cv_flags=""
 
       dnl C for AIX Compiler
       elif $CC 2>&1 | grep -i "C for AIX Compiler" > /dev/null 2>&1 &&
            $CC -c -qinfo=all -O2 conftest.c > /dev/null 2>&1 &&
            test -f conftest.o; then
-        prog_cc_optim_flags="-O2"
-        prog_ld_optim_flags=""
+        prog_cc_optim_cv_flags="-O2"
+        prog_ld_optim_cv_flags=""
 
       dnl IRIX C compiler
       elif $CC -version 2>&1 | grep -i "MIPSpro Compilers" > /dev/null 2>&1 &&
            $CC -c -fullwarn -O3 conftest.c > /dev/null 2>&1 &&
            test -f conftest.o; then
-        prog_cc_optim_flags="-O3"
-        prog_ld_optim_flags=""
+        prog_cc_optim_cv_flags="-O3"
+        prog_ld_optim_cv_flags=""
 
       dnl HP-UX C compiler
       elif what $CC 2>&1 | grep -i "HP C Compiler" > /dev/null 2>&1 &&
            $CC -c -Aa +O3 conftest.c > /dev/null 2>&1 &&
            test -f conftest.o; then
-        prog_cc_optim_flags="+O3"
-        prog_ld_optim_flags=""
+        prog_cc_optim_cv_flags="+O3"
+        prog_ld_optim_cv_flags=""
 
       dnl The NEC SX-5 (Super-UX 10) C compiler
       elif $CC -V 2>&1 | grep "/SX" > /dev/null 2>&1 &&
            $CC -c -Xc -O conftest.c > /dev/null 2>&1 &&
            test -f conftest.o; then
-        prog_cc_optim_flags="-O"
-        prog_ld_optim_flags=""
+        prog_cc_optim_cv_flags="-O"
+        prog_ld_optim_cv_flags=""
 
       dnl The Cray C compiler (Unicos)
       elif $CC -V 2>&1 | grep -i "Cray" > /dev/null 2>&1 &&
            $CC -c -h conform -O3 conftest.c > /dev/null 2>&1 &&
            test -f conftest.o; then
-        prog_cc_optim_flags="-O3"
-        prog_ld_optim_flags=""
+        prog_cc_optim_cv_flags="-O3"
+        prog_ld_optim_cv_flags=""
 
       fi
       rm -f conftest.*
     fi
-    if test -n "$prog_cc_optim_flags"; then
-      AM_CFLAGS="$CFLAGS $prog_cc_optim_flags"
-      AM_LDFLAGS="$LDFLAGS $prog_ld_optim_flags"
+    if test -n "$prog_cc_optim_cv_flags"; then
+      AM_CFLAGS="$CFLAGS $prog_cc_optim_cv_flags"
+      AM_LDFLAGS="$LDFLAGS $prog_ld_optim_cv_flags"
     else
-      prog_cc_optim_flags=""
-      prog_ld_optim_flags=""
+      prog_cc_optim_cv_flags=""
+      prog_ld_optim_cv_flags=""
     fi
   ])
 ])dnl

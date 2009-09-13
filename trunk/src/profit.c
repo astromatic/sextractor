@@ -9,13 +9,17 @@
 *
 *	Contents:	Fit an arbitrary profile combination to a detection.
 *
-*	Last modify:	07/09/2009
+*	Last modify:	13/09/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
 
 #ifdef HAVE_CONFIG_H
 #include        "config.h"
+#endif
+
+#ifndef HAVE_MATHIMF_H
+#define _GNU_SOURCE
 #endif
 
 #include	<math.h>
@@ -35,6 +39,7 @@
 #include	"psf.h"
 #include	"profit.h"
 
+static double	prof_gamma(double x);
 static float	prof_interpolate(profstruct *prof, float *posin);
 static float	interpolate_pix(float *posin, float *pix, int *naxisn,
 		interpenum interptype);
@@ -156,7 +161,7 @@ OUTPUT	Pointer to an allocated fit structure (containing details about the
 	fit).
 NOTES	It is a modified version of the lm_minimize() of lmfit.
 AUTHOR	E. Bertin (IAP)
-VERSION	07/09/2009
+VERSION	11/09/2009
  ***/
 void	profit_fit(profitstruct *profit,
 		picstruct *field, picstruct *wfield,
@@ -166,7 +171,7 @@ void	profit_fit(profitstruct *profit,
     patternstruct *pattern;
     psfstruct		*psf;
     checkstruct		*check;
-    double		emx2,emy2,emxy, a , cp,sp;
+    double		emx2,emy2,emxy, a , cp,sp, k, n;
     float		psf_fwhm, dchi2, err;
     int			i,j,p, nparam, ncomp, nprof;
 
@@ -412,6 +417,22 @@ void	profit_fit(profitstruct *profit,
       obj2->prof_spheroid_sersicnerr = 
 		profit->paramerr[profit->paramindex[PARAM_SPHEROID_SERSICN]];
       }
+    else
+      obj2->prof_spheroid_sersicn = 4.0;
+    if (FLAG(obj2.prof_spheroid_peak))
+      {
+      n = obj2->prof_spheroid_sersicn;
+      k = 2.0*n - 1.0/3.0 + 4.0/(405.0*n) + 46.0/(25515.0*n*n)
+		+ 131.0/(1148175*n*n*n);	/* Ciotti & Bertin 1999 */
+      obj2->prof_spheroid_peak = obj2->prof_spheroid_reff>0.0?
+	obj2->prof_spheroid_flux * pow(k, 2.0*n)
+	/ (2.0 * PI * obj2->prof_spheroid_sersicn
+		* obj2->prof_spheroid_reff*obj2->prof_spheroid_reff
+		* obj2->prof_spheroid_aspect * prof_gamma(2.0*n))
+	: 0.0;
+      if (FLAG(obj2.prof_spheroid_fluxeff))
+        obj2->prof_spheroid_fluxeff = obj2->prof_spheroid_peak * exp(-k);
+      }
     }
 
 /* Disk */
@@ -438,6 +459,17 @@ void	profit_fit(profitstruct *profit,
         obj2->prof_disk_inclinationerr = obj2->prof_disk_aspecterr
 					/(a>0.1? a : 0.1)/DEG;
         }
+      }
+
+    if (FLAG(obj2.prof_disk_peak))
+      {
+      obj2->prof_disk_peak = obj2->prof_disk_scale>0.0?
+	obj2->prof_disk_flux
+	/ (2.0 * PI * obj2->prof_disk_scale*obj2->prof_disk_scale
+		* obj2->prof_disk_aspect)
+	: 0.0;
+      if (FLAG(obj2.prof_disk_fluxeff))
+        obj2->prof_disk_fluxeff = obj2->prof_disk_peak * 0.186682;
       }
 
 /* Disk pattern */
@@ -574,6 +606,32 @@ void	profit_fit(profitstruct *profit,
   return;
   }
 
+/****i* prof_gamma ************************************************************
+PROTO	double prof_gammaln(double xx)
+PURPOSE	Returns the Gamma function (from Num. Recipes in C, p.168).
+INPUT	A double.
+OUTPUT	Gamma function.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	11/09/009
+*/
+static double	prof_gamma(double xx)
+
+  {
+   double		x,tmp,ser;
+   static double	cof[6]={76.18009173,-86.50532033,24.01409822,
+			-1.231739516,0.120858003e-2,-0.536382e-5};
+   int			j;
+
+  tmp=(x=xx-1.0)+5.5;
+  tmp -= (x+0.5)*log(tmp);
+  ser=1.0;
+  for (j=0;j<6;j++)
+    ser += cof[j]/(x+=1.0);
+
+  return 2.50662827465*ser*exp(-tmp);
+  }
+
 
 /****** profit_psf ************************************************************
 PROTO	void	profit_psf(profitstruct *profit)
@@ -686,11 +744,11 @@ int	profit_minimize(profitstruct *profit, int niter)
   profit_boundtounbound(profit, profit->paraminit);
 
 /* Perform fit */
-  lm_opts[0] = 1.0e-3;
+  lm_opts[0] = 1.0e-4;
   lm_opts[1] = 1.0e-18;
   lm_opts[2] = 1.0e-18;
   lm_opts[3] = 1.0e-18;
-  lm_opts[4] = 1.0e-5;
+  lm_opts[4] = 1.0e-4;
 
   niter = slevmar_dif(profit_evaluate, profit->paraminit, profit->resi,
 	n, m, niter, lm_opts, info, NULL, profit->covar, profit);
@@ -1329,13 +1387,13 @@ INPUT	Profile-fitting structure.
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	07/09/2009
+VERSION	13/09/2009
  ***/
 void	 profit_moments(profitstruct *profit)
   {
    objstruct	*obj;
    obj2struct	*obj2;
-   double	mx,my, sum, mx2,my2,mxy, den;
+   double	mx,my, sum, mx2,my2,mxy, den, temp,temp2,pmx2,theta;
    float	*pix,
 		hw,hh, x,y, xstart, val, r2max;
    int		ix,iy;
@@ -1374,20 +1432,53 @@ void	 profit_moments(profitstruct *profit)
   obj2->prof_mx2 = mx2 = mx2/sum - mx*mx;
   obj2->prof_my2 = my2 = my2/sum - my*my;
   obj2->prof_mxy = mxy = mxy/sum - mx*my;
-  if (mx2+my2 > 1.0/BIG)
+
+/* Handle fully correlated profiles (which cause a singularity...) */
+  if ((temp2=mx2*my2-mxy*mxy)<0.00694)
     {
-    obj2->prof_eps1 = (mx2 - my2) / (mx2+my2);
-    obj2->prof_eps2 = 2.0*mxy / (mx2 + my2);
-    den = mx2*my2-mxy*mxy;
-    if (den>=0.0)
-      den = mx2+my2+2.0*sqrt(den);
-    else
-      den = mx2+my2;
-    obj2->prof_e1 = (mx2 - my2) / den;
-    obj2->prof_e2 = 2.0*mxy / den;
+    mx2 += 0.0833333;
+    my2 += 0.0833333;
+    temp2 = mx2*my2-mxy*mxy;
     }
-  else
-    obj2->prof_eps1 = obj2->prof_eps2 = obj2->prof_e1 = obj2->prof_e2 = 0.0;
+
+  if (FLAG(obj2.prof_e1))
+    {
+    if (mx2+my2 > 1.0/BIG)
+      {
+      obj2->prof_pol1 = (mx2 - my2) / (mx2+my2);
+      obj2->prof_pol2 = 2.0*mxy / (mx2 + my2);
+      if (temp2>=0.0)
+        den = mx2+my2+2.0*sqrt(temp2);
+      else
+        den = mx2+my2;
+      obj2->prof_e1 = (mx2 - my2) / den;
+      obj2->prof_e2 = 2.0*mxy / den;
+      }
+    else
+      obj2->prof_pol1 = obj2->prof_pol2 = obj2->prof_e1 = obj2->prof_e2 = 0.0;
+    }
+
+  if (FLAG(obj2.prof_cxx))
+    {
+    obj2->prof_cxx = (float)(my2/temp2);
+    obj2->prof_cyy = (float)(mx2/temp2);
+    obj2->prof_cxy = (float)(-2*mxy/temp2);
+    }
+
+  if (FLAG(obj2.prof_a))
+    {
+    if ((fabs(temp=mx2-my2)) > 0.0)
+      theta = atan2(2.0 * mxy,temp) / 2.0;
+    else
+      theta = PI/4.0;
+
+    temp = sqrt(0.25*temp*temp+mxy*mxy);
+    pmx2 = 0.5*(mx2+my2);
+    obj2->prof_a = (float)sqrt(pmx2 + temp);
+    obj2->prof_b = (float)sqrt(pmx2 - temp);
+    obj2->prof_theta = theta*180.0/PI;
+    }
+
 
   return;
   }
@@ -1984,13 +2075,13 @@ VERSION	07/09/2009
  ***/
 void	prof_add(profstruct *prof, profitstruct *profit)
   {
-   double	xscale, yscale, saspect, ctheta,stheta, flux, scaling;
+   double	xscale, yscale, saspect, ctheta,stheta, flux, scaling, n;
    float	posin[PROFIT_MAXEXTRA], posout[2], dnaxisn[2],
 		*pixin, *pixout,
 		fluxfac, amp,cd11,cd12,cd21,cd22, dcd11,dcd21, dx1,dx2,
 		x1,x10,x2, x1cin,x2cin, x1cout,x2cout,
 		x1in,x2in, odx, ostep,
-		n,k, hinvn, x1t,x2t, ca,sa, u,umin,
+		k, hinvn, x1t,x2t, ca,sa, u,umin,
 		armamp,arm2amp, armrdphidr, armrdphidrvar, posang,
 		width, invwidth2,
 		r,r2,rmin,r2min, r2minxin,r2minxout, rmax, r2max, invr2xdif,
@@ -2037,8 +2128,8 @@ void	prof_add(profstruct *prof, profitstruct *profit)
     {
     case PROF_SERSIC:
       n = fabs(*prof->extra[0]);
-      k = 1.0/3.0 - 2.0*n - 4.0/(405.0*n) - 46.0/(25515.0*n*n)
-		- 131.0/(1148175*n*n*n);
+      k = (float)(1.0/3.0 - 2.0*n - 4.0/(405.0*n) - 46.0/(25515.0*n*n)
+		- 131.0/(1148175*n*n*n));	/* Ciotti & Bertin 1999 */
       hinvn = 0.5/n;
 /*---- The consequence of sampling on flux is compensated by PSF normalisation*/
       x10 = -x1cout - dx1;
@@ -2588,7 +2679,7 @@ void	make_kernel(float pos, float *kernel, interpenum interptype)
     else
       {
       x = -PI/2.0*(pos+1.0);
-#ifdef HAVE_SINCOS
+#ifdef HAVE_SINCOSF
       sincosf(x, &sinx1, &cosx1);
 #else
       sinx1 = sinf(x);

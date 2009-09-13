@@ -6,7 +6,7 @@ define([AC_CACHE_LOAD],)
 define([AC_CACHE_SAVE],)
 
 # This is your standard Bertin source code...
-AC_INIT(sextractor, 2.9.0, [bertin@iap.fr])
+AC_INIT(sextractor, 2.9.1, [bertin@iap.fr])
 AC_CONFIG_SRCDIR(src/makeit.c)
 AC_CONFIG_AUX_DIR(autoconf)
 AM_CONFIG_HEADER(config.h)
@@ -38,9 +38,7 @@ AC_ARG_ENABLE(auto-flags,
 	[AC_HELP_STRING([--enable-auto-flags],
 	[Let the configure script choose the compilation flags \
 (off by default)])],
-        use_autoflag="yes"
 	AC_MSG_RESULT([yes]),
-        use_autoflag="no"
 	AC_MSG_RESULT([no]))
 
 # Provide special option for the Linux Intel C compiler
@@ -49,10 +47,8 @@ AC_ARG_ENABLE(icc,
 	[AC_HELP_STRING([--enable-icc],
 	[Enable special mode for compilation with the Intel compiler \
 (off by default)])],
-        use_icc="yes"
         cclist="icc $cclist"
 	AC_MSG_RESULT([yes]),
-        use_icc="no"
 	AC_MSG_RESULT([no]))
 
 # Checks for programs.
@@ -63,7 +59,7 @@ AC_PROG_CC([$cclist])
 AM_PROG_CC_STDC
 AC_ISC_POSIX
 # Override automatic CFLAGS and LDFLAGS with those of user
-if test "$use_autoflag" = "yes"; then
+if test "$enable_auto_flags" = "yes"; then
   CFLAGS=""
   LDFLAGS =""
   ACX_PROG_CC_OPTIM
@@ -78,7 +74,7 @@ AC_CHECK_LIB(m, sin)
 AC_HEADER_STDC
 AC_CHECK_HEADERS([fcntl.h limits.h malloc.h stdlib.h string.h sys/mman.h \
 		sys/types.h unistd.h])
-if test $use_icc = "yes" -a $CC = "icc"; then
+if test $enable_icc = "yes" -a $CC = "icc"; then
   AC_CHECK_HEADERS(mathimf.h)
 fi
 
@@ -97,7 +93,7 @@ AC_TYPE_SIGNAL
 AC_FUNC_STAT
 AC_FUNC_STRFTIME
 AC_CHECK_FUNCS([atexit getenv memcpy memmove memset mkdir munmap strstr \
-		sincos logf])
+		sincosf logf])
 
 # Check support for large files
 AC_SYS_LARGEFILE
@@ -168,9 +164,7 @@ AC_ARG_ENABLE(gprof,
 	[AC_HELP_STRING([--enable-gprof],
 	[Enable special mode for compilation with the gprof profiler \
 (off by default)])],
-        use_gprof="yes"
 	AC_MSG_RESULT([yes]),
-        use_gprof="no"
 	AC_MSG_RESULT([no]))
 
 # Enable linking options for making the executable as portable as possible.
@@ -179,9 +173,7 @@ AC_ARG_ENABLE(best-link,
 	[AC_HELP_STRING([--enable-best-link],
 	[Choose the right combination of static and dynamic linking to make \
 the executable as portable as possible (off by default)])],
-        use_best="yes"
 	AC_MSG_RESULT([yes]),
-        use_best="no"
 	AC_MSG_RESULT([no]))
 
 ################# Actions to complete in case of multhreading ################
@@ -223,17 +215,17 @@ else
 fi
 
 # Link with gprof option
-if test "$use_gprof" = "yes"; then
-  if test "$use_icc" = "yes"; then
+if test "$enable_gprof" = "yes"; then
+  if test "$enable_icc" = "yes"; then
     AM_CFLAGS="$AM_CFLAGS -pq"
   else
     AM_CFLAGS="$AM_CFLAGS -pg"
   fi
-  use_best="no"
+  enable_best_link="no"
 fi
 
 # "Best" linking option
-if test "$use_best" = "yes"; then
+if test "$enable_best_link" = "yes"; then
   AM_LDFLAGS="-shared-libgcc -static-libtool-libs $AM_LDFLAGS"
 fi
 
