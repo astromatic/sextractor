@@ -9,7 +9,7 @@
 *
 *	Contents:	Compute magnitudes and other photometrical parameters.
 *
-*	Last modify:	11/09/2009
+*	Last modify:	16/09/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -875,6 +875,30 @@ void  computemags(picstruct *field, objstruct *obj)
 			 1.086*obj2->fluxerr_prof/obj2->flux_prof
 			:99.0;
 
+  if (FLAG(obj2.mumax_prof))
+    obj2->mumax_prof = obj2->peak_prof > 0.0 ?
+		-2.5*log10((obj2->peak_prof)
+		 / (prefs.pixel_scale? field->pixscale*field->pixscale
+				: obj2->pixscale2 * 3600.0*3600.0))
+		+ prefs.mag_zeropoint
+		: 99.0;
+
+  if (FLAG(obj2.mueff_prof))
+    obj2->mueff_prof = obj2->fluxeff_prof > 0.0 ?
+		-2.5*log10((obj2->fluxeff_prof)
+		 / (prefs.pixel_scale? field->pixscale*field->pixscale
+				: obj2->pixscale2 * 3600.0*3600.0))
+		+ prefs.mag_zeropoint
+		: 99.0;
+
+  if (FLAG(obj2.mumean_prof))
+    obj2->mumean_prof = obj2->fluxmean_prof > 0.0 ?
+		-2.5*log10((obj2->fluxmean_prof)
+		 / (prefs.pixel_scale? field->pixscale*field->pixscale
+				: obj2->pixscale2 * 3600.0*3600.0))
+		+ prefs.mag_zeropoint
+		: 99.0;
+
   if (FLAG(obj2.prof_spheroid_mag))
     obj2->prof_spheroid_mag = obj2->prof_spheroid_flux>0.0?
 			 -2.5*log10(obj2->prof_spheroid_flux)
@@ -892,6 +916,14 @@ void  computemags(picstruct *field, objstruct *obj)
   if (FLAG(obj2.prof_spheroid_mueff))
     obj2->prof_spheroid_mueff = obj2->prof_spheroid_fluxeff > 0.0 ?
 		-2.5*log10((obj2->prof_spheroid_fluxeff)
+		 / (prefs.pixel_scale? field->pixscale*field->pixscale
+				: obj2->pixscale2 * 3600.0*3600.0))
+		+ prefs.mag_zeropoint
+		: 99.0;
+
+  if (FLAG(obj2.prof_spheroid_mumean))
+    obj2->prof_spheroid_mumean = obj2->prof_spheroid_fluxmean > 0.0 ?
+		-2.5*log10((obj2->prof_spheroid_fluxmean)
 		 / (prefs.pixel_scale? field->pixscale*field->pixscale
 				: obj2->pixscale2 * 3600.0*3600.0))
 		+ prefs.mag_zeropoint
@@ -925,6 +957,14 @@ void  computemags(picstruct *field, objstruct *obj)
   if (FLAG(obj2.prof_disk_mueff))
     obj2->prof_disk_mueff = obj2->prof_disk_fluxeff > 0.0 ?
 		-2.5*log10((obj2->prof_disk_fluxeff)
+		 / (prefs.pixel_scale? field->pixscale*field->pixscale
+				: obj2->pixscale2 * 3600.0*3600.0))
+		+ prefs.mag_zeropoint
+		: 99.0;
+
+  if (FLAG(obj2.prof_disk_mumean))
+    obj2->prof_disk_mumean = obj2->prof_disk_fluxmean > 0.0 ?
+		-2.5*log10((obj2->prof_disk_fluxmean)
 		 / (prefs.pixel_scale? field->pixscale*field->pixscale
 				: obj2->pixscale2 * 3600.0*3600.0))
 		+ prefs.mag_zeropoint
