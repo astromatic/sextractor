@@ -9,7 +9,7 @@
 *
 *	Contents:	global type definitions.
 *
-*	Last modify:	13/09/2009
+*	Last modify:	16/09/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -305,8 +305,8 @@ typedef struct
   float		mag_galfit;			/* Galaxy tot. mag from fit */
   float		magerr_galfit;			/* RMS error on galfit mag */
 /* ---- Profile-fitting */
-  float		*prof_vector;			/* Profile parameters */
-  float		*prof_errvector;		/* Profile parameter errors */
+  float		*prof_vector;			/* Model parameters */
+  float		*prof_errvector;		/* Model parameter errors */
   float		prof_chi2;			/* Reduced chi2 */
   BYTE		prof_flag;			/* Model-fitting flags */
   BYTE		prof_flagw;			/* Model-fitting WORLD flag */
@@ -315,6 +315,12 @@ typedef struct
   float		fluxerr_prof;			/* RMS error on model flux */
   float		mag_prof;			/* Mag from model-fitting */
   float		magerr_prof;			/* RMS mag from model-fitting */
+  float		peak_prof;			/* Model peak flux */
+  float		fluxeff_prof;			/* Effective model flux */
+  float		fluxmean_prof;			/* Mean effective model flux */
+  float		mumax_prof;			/* Model peak surf. bri. */
+  float		mueff_prof;			/* Model effective surf. bri. */
+  float		mumean_prof;			/* Mean model effective SB */
   float		x_prof, y_prof;			/* Coords from model-fitting*/
   double	xf_prof, yf_prof;		/* FOCAL coordinates */
   double	xw_prof, yw_prof;		/* WORLD coords */
@@ -362,10 +368,12 @@ typedef struct
   float		prof_spheroid_fluxerr;		/* RMS error */
   float		prof_spheroid_peak;		/* Spheroid peak flux */
   float		prof_spheroid_fluxeff;		/* Spheroid effective flux */
+  float		prof_spheroid_fluxmean;		/* Spheroid mean effect. flux */
   float		prof_spheroid_mag;		/* Spheroid "total" mag */
   float		prof_spheroid_magerr;		/* RMS error */
   float		prof_spheroid_mumax;		/* Spehroid peak surf. brigh.*/
   float		prof_spheroid_mueff;		/* Spheroid effect. surf. bri.*/
+  float		prof_spheroid_mumean;		/* Spheroid mean eff. su. bri.*/
   float		prof_spheroid_reff;		/* Spheroid effective radius */
   float		prof_spheroid_refferr;		/* RMS error */
   float		prof_spheroid_reffw;		/* WORLD spheroid eff. radius */
@@ -387,10 +395,12 @@ typedef struct
   float		prof_disk_fluxerr;		/* RMS error */
   float		prof_disk_peak;			/* Disk peak flux */
   float		prof_disk_fluxeff;		/* Disk effective flux */
+  float		prof_disk_fluxmean;		/* Disk mean effective flux */
   float		prof_disk_mag;			/* Disk "total" mag */
   float		prof_disk_magerr;		/* RMS error */
   float		prof_disk_mumax;		/* Disk peak surf. brightness */
   float		prof_disk_mueff;		/* Disk effective surf. bri. */
+  float		prof_disk_mumean;		/* Disk mean eff. surf. bri. */
   float		prof_disk_scale;		/* Disk scale length */
   float		prof_disk_scaleerr;		/* RMS error */
   float		prof_disk_scalew;		/* WORLD disk scale length */

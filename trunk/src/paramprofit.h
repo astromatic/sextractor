@@ -9,7 +9,7 @@
 *
 *	Contents:	Model-fitting parameter list for catalog data.
 *
-*	Last modify:	13/09/2009
+*	Last modify:	16/09/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -42,6 +42,25 @@
   {"MAGERR_MODEL", "RMS error on model-fitting magnitude",
 	&outobj2.magerr_prof, H_FLOAT, T_FLOAT, "%8.4f", "mag",
 	"stat.error;phot.mag;stat.fit.param", "mag"},
+
+  {"FLUX_MAX_MODEL", "Peak model flux above background",
+	&outobj2.peak_prof, H_FLOAT, T_FLOAT, "%12.7g", "count",
+	"phot.flux.sb;stat.max;stat.fit.param", "ct"},
+  {"FLUX_EFF_MODEL", "Effective model flux above background",
+	&outobj2.fluxeff_prof, H_FLOAT, T_FLOAT, "%12.7g", "count",
+	"phot.flux.sb;stat.fit.param", "ct"},
+  {"FLUX_MEAN_MODEL", "Mean effective model flux above background",
+	&outobj2.fluxmean_prof, H_FLOAT, T_FLOAT, "%12.7g", "count",
+	"phot.flux.sb;stat.mean;stat.fit.param", "ct"},
+  {"MU_MAX_MODEL", "Peak model surface brightness above background",
+	&outobj2.mumax_prof, H_FLOAT, T_FLOAT, "%8.4f", "mag * arcsec**(-2)",
+	"phot.mag.sb;stat.max;stat.fit.param", "mag.arcsec-2"},
+  {"MU_EFF_MODEL", "Effective model surface brightness above background",
+	&outobj2.mueff_prof, H_FLOAT, T_FLOAT, "%8.4f", "mag * arcsec**(-2)",
+	"phot.mag.sb;stat.fit.param", "mag.arcsec-2"},
+  {"MU_MEAN_MODEL", "Mean effective model surface brightness above background",
+	&outobj2.mumean_prof, H_FLOAT, T_FLOAT, "%8.4f", "mag * arcsec**(-2)",
+	"phot.mag.sb;stat.mean;stat.fit.param", "mag.arcsec-2"},
 
   {"XMODEL_IMAGE", "X coordinate from model-fitting",
 	&outobj2.x_prof, H_FLOAT, T_FLOAT, "%10.3f", "pixel",
@@ -275,12 +294,18 @@
   {"FLUX_EFF_SPHEROID", "Effective spheroid flux above background",
 	&outobj2.prof_spheroid_fluxeff, H_FLOAT, T_FLOAT, "%12.7g", "count",
 	"phot.flux.sb;stat.fit.param", "ct"},
+  {"FLUX_MEAN_SPHEROID", "Mean effective spheroid flux above background",
+	&outobj2.prof_spheroid_fluxmean, H_FLOAT, T_FLOAT, "%12.7g", "count",
+	"phot.flux.sb;stat.mean;stat.fit.param", "ct"},
   {"MU_MAX_SPHEROID", "Peak spheroid surface brightness above background",
 	&outobj2.prof_spheroid_mumax, H_FLOAT, T_FLOAT, "%8.4f", "mag * arcsec**(-2)",
 	"phot.mag.sb;stat.max;stat.fit.param", "mag.arcsec-2"},
   {"MU_EFF_SPHEROID", "Effective spheroid surface brightness above background",
 	&outobj2.prof_spheroid_mueff, H_FLOAT, T_FLOAT, "%8.4f", "mag * arcsec**(-2)",
 	"phot.mag.sb;stat.fit.param", "mag.arcsec-2"},
+  {"MU_MEAN_SPHEROID", "Mean effective spheroid surface brightness above background",
+	&outobj2.prof_spheroid_mumean, H_FLOAT, T_FLOAT, "%8.4f", "mag * arcsec**(-2)",
+	"phot.mag.sb;stat.mean;stat.fit.param", "mag.arcsec-2"},
   {"SPHEROID_REFF_IMAGE", "Spheroid effective radius from fitting",
 	&outobj2.prof_spheroid_reff, H_FLOAT, T_FLOAT, "%10.4f", "pixel",
 	"src.morph.scLength;stat.fit.param;instr.det", "pix"},
@@ -351,12 +376,18 @@
   {"FLUX_EFF_DISK", "Effective disk flux above background",
 	&outobj2.prof_disk_fluxeff, H_FLOAT, T_FLOAT, "%12.7g", "count",
 	"phot.flux.sb;stat.fit.param", "ct"},
+  {"FLUX_MEAN_DISK", "Mean effective disk flux above background",
+	&outobj2.prof_disk_fluxmean, H_FLOAT, T_FLOAT, "%12.7g", "count",
+	"phot.flux.sb;stat.mean;stat.fit.param", "ct"},
   {"MU_MAX_DISK", "Peak disk surface brightness above background",
 	&outobj2.prof_disk_mumax, H_FLOAT, T_FLOAT, "%8.4f", "mag * arcsec**(-2)",
 	"phot.mag.sb;stat.max;stat.fit.param", "mag.arcsec-2"},
   {"MU_EFF_DISK", "Effective disk surface brightness above background",
 	&outobj2.prof_disk_mueff, H_FLOAT, T_FLOAT, "%8.4f", "mag * arcsec**(-2)",
 	"phot.mag.sb;stat.fit.param", "mag.arcsec-2"},
+  {"MU_MEAN_DISK", "Mean effective disk surface brightness above background",
+	&outobj2.prof_disk_mumean, H_FLOAT, T_FLOAT, "%8.4f", "mag * arcsec**(-2)",
+	"phot.mag.sb;stat.mean;stat.fit.param", "mag.arcsec-2"},
   {"DISK_SCALE_IMAGE", "Disk scalelength from fitting",
 	&outobj2.prof_disk_scale, H_FLOAT, T_FLOAT, "%10.4f", "pixel",
 	"src.morph.scLength;stat.fit.param;instr.det", "pix"},

@@ -9,7 +9,7 @@
 *
 *	Contents:	functions for output of catalog data.
 *
-*	Last modify:	11/09/2009
+*	Last modify:	16/09/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -219,7 +219,6 @@ void	updateparamflags()
   FLAG(obj2.prof_spheroid_theta) |= FLAG(obj2.prof_spheroid_thetaerr);
   FLAG(obj2.prof_spheroid_sersicn) |= FLAG(obj2.prof_spheroid_sersicnerr);
   FLAG(obj2.prof_disk_mag) |= FLAG(obj2.prof_disk_magerr);
-  FLAG(obj2.prof_disk_peak) |= FLAG(obj2.prof_disk_mumax);
   FLAG(obj2.prof_disk_scale) |= FLAG(obj2.prof_disk_scaleerr);
   FLAG(obj2.prof_disk_aspect) |= FLAG(obj2.prof_disk_aspecterr);
   FLAG(obj2.prof_disk_inclination) |= FLAG(obj2.prof_disk_inclinationerr);
@@ -297,9 +296,11 @@ void	updateparamflags()
 			| FLAG(obj2.prof_disk_aspecterrw)
 			| FLAG(obj2.prof_disk_thetaerrw)
 			| FLAG(obj2.prof_arms_scalew);
+  FLAG(obj2.prof_disk_fluxmean) |= FLAG(obj2.prof_disk_mumean);
   FLAG(obj2.prof_disk_fluxeff) |= FLAG(obj2.prof_disk_mueff);
   FLAG(obj2.prof_disk_peak) |= FLAG(obj2.prof_disk_mumax)
-				| FLAG(obj2.prof_disk_fluxeff);
+				| FLAG(obj2.prof_disk_fluxeff)
+				| FLAG(obj2.prof_disk_fluxmean);
 
   FLAG(obj2.prof_spheroid_reffw) |= FLAG(obj2.prof_spheroid_aspectw)
 			| FLAG(obj2.prof_spheroid_thetaw)
@@ -311,9 +312,11 @@ void	updateparamflags()
 			| FLAG(obj2.prof_e1w) |FLAG(obj2.prof_e2w)
 			| FLAG(obj2.prof_pol1w) |FLAG(obj2.prof_pol2w);
 
+  FLAG(obj2.prof_spheroid_fluxmean) |= FLAG(obj2.prof_spheroid_mumean);
   FLAG(obj2.prof_spheroid_fluxeff) |= FLAG(obj2.prof_spheroid_mueff);
   FLAG(obj2.prof_spheroid_peak) |= FLAG(obj2.prof_spheroid_mumax)
-				| FLAG(obj2.prof_spheroid_fluxeff);
+				| FLAG(obj2.prof_spheroid_fluxeff)
+				| FLAG(obj2.prof_spheroid_fluxmean);
 
   FLAG(obj2.prof_flagw) |= FLAG(obj2.prof_spheroid_reffw)
 			| FLAG(obj2.prof_disk_scalew)
@@ -332,6 +335,12 @@ void	updateparamflags()
 			| FLAG(obj2.prof_e1)
 			| FLAG(obj2.prof_a) | FLAG(obj2.prof_cxx)
 			| FLAG(obj2.prof_mx2w);
+  FLAG(obj2.mumax_prof) |= FLAG(obj2.mueff_prof) | FLAG(obj2.mumean_prof);/*!*/
+  FLAG(obj2.fluxmean_prof) |= FLAG(obj2.mumean_prof);
+  FLAG(obj2.fluxeff_prof) |= FLAG(obj2.mueff_prof)
+			| FLAG(obj2.fluxmean_prof);
+  FLAG(obj2.peak_prof) |= FLAG(obj2.mumax_prof)
+			| FLAG(obj2.fluxeff_prof);
 
   FLAG(obj2.prof_arms_flux) |= FLAG(obj2.prof_arms_fluxerr)
 			| FLAG(obj2.prof_arms_mag)
@@ -371,6 +380,7 @@ void	updateparamflags()
 			| FLAG(obj2.prof_vector) | FLAG(obj2.prof_errvector)
 			| FLAG(obj2.x_prof) | FLAG(obj2.y_prof)
 			| FLAG(obj2.prof_mx2)
+			| FLAG(obj2.peak_prof)
 			| FLAG(obj2.prof_disk_flux)
 			| FLAG(obj2.prof_spheroid_flux);
 
@@ -494,7 +504,8 @@ void	updateparamflags()
 			| FLAG(obj2.fwhmw)
 			| FLAG(obj2.maxmu) | FLAG(obj2.threshmu)
 			| FLAG(obj2.prof_spheroid_mumax)
-			| FLAG(obj2.prof_disk_mumax);
+			| FLAG(obj2.prof_disk_mumax)
+			| FLAG(obj2.mumax_prof);
 
 /*------------------------------ Photometry ---------------------------------*/
 

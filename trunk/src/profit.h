@@ -9,7 +9,7 @@
 *
 *	Contents:	Include file for profit.c.
 *
-*	Last modify:	07/09/2009
+*	Last modify:	21/09/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -29,8 +29,10 @@
 /*----------------------------- Internal constants --------------------------*/
 
 #define	PROFIT_MAXITER	1000	/* Max. nb of iterations in profile fitting */
-#define	PROFIT_OVERSAMP	5	/* Max. profile oversamp. factor on each axis */
 #define	PROFIT_MAXPROF	8	/* Max. nb of profile components */
+#define	PROFIT_OVERSAMP	15	/* Max. profile oversamp. factor on each axis */
+#define	PROFIT_HIDEFRES	201	/* Resolution of the high def. model raster */
+#define	PROFIT_REFFFAC	6.0	/* Factor in r_eff for measurement radius*/
 #define	PROFIT_DYNPARAM	10.0	/* Dynamic compression param. in sigma units */
 #define	PROFIT_BARXFADE	0.1	/* Fract. of bar length crossfaded with arms */
 #define	PROFIT_MAXEXTRA	2	/* Max. nb of extra free params of profiles */
@@ -75,6 +77,7 @@ typedef struct
   int		naxisn[3];		/* Pixmap size for each axis */
   float		typscale;		/* Typical scale in prof pixels */
   float		fluxfac;		/* Flux normalisation factor */
+  float		lostfluxfrac;		/* Lost flux fraction */
 /* Generic presentation parameters */
   float		*flux;			/* Integrated flux */
   float		*x[2];			/* Coordinate vector */
@@ -117,6 +120,7 @@ typedef struct
   int		nprof;		/* Number of profiles to consider */
   struct psf	*psf;		/* PSF */
   float		pixstep;	/* Model/PSF sampling step */
+  float		fluxfac;	/* Model flux scaling factor */
   float		*psfdft;	/* Compressed Fourier Transform of the PSF */
   float		*psfpix;	/* Full res. pixmap of the PSF */
   float		*modpix;	/* Full res. pixmap of the complete model */
@@ -147,6 +151,8 @@ float		*profit_compresi(profitstruct *profit, float dynparam,
 		*profit_residuals(profitstruct *profit, picstruct *field,
 			picstruct *wfield, float dynparam,
 			float *param, float *resi),
+		prof_add(profstruct *prof, profitstruct *profit),
+		profit_minradius(profitstruct *profit, float refffac),
 		profit_spiralindex(profitstruct *profit);
 
 int		profit_copyobjpix(profitstruct *profit, picstruct *field,
@@ -155,8 +161,7 @@ int		profit_copyobjpix(profitstruct *profit, picstruct *field,
 		profit_setparam(profitstruct *profit, paramenum paramtype,
 			float param, float parammin, float parammax);
 
-void		prof_add(profstruct *prof, profitstruct *profit),
-		prof_end(profstruct *prof),
+void		prof_end(profstruct *prof),
 		profit_addparam(profitstruct *profit, paramenum paramindex,
 			float **param),
 		profit_boundtounbound(profitstruct *profit, float *param),
@@ -169,7 +174,7 @@ void		prof_add(profstruct *prof, profitstruct *profit),
 		profit_evaluate(float *par, float *fvec, int m, int n,
 			void *adata),
 		profit_makedft(profitstruct *profit),
-		profit_moments(profitstruct *profit),
+		profit_moments(profitstruct *profit, obj2struct *obj2),
 		profit_printout(int n_par, float* par, int m_dat, float* fvec,
 			void *data, int iflag, int iter, int nfev ),
 		profit_psf(profitstruct *profit),
@@ -177,6 +182,8 @@ void		prof_add(profstruct *prof, profitstruct *profit),
 			PIXTYPE *outpix, float factor),
 		profit_resetparam(profitstruct *profit, paramenum paramtype),
 		profit_resetparams(profitstruct *profit),
+		profit_surface(profitstruct *profit, obj2struct *obj2,
+			double lostfluxfrac),
 		profit_unboundtobound(profitstruct *profit, float *param);
 
 #endif
