@@ -9,7 +9,7 @@
 *
 *	Contents:	analyse(), endobject()...: measurements on detections.
 *
-*	Last modify:	11/09/2009
+*	Last modify:	24/09/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -385,10 +385,14 @@ Final processing of object data, just before saving it to the catalog.
 void	endobject(picstruct *field, picstruct *dfield, picstruct *wfield,
 		picstruct *dwfield, int n, objliststruct *objlist)
   {
-   objstruct	*obj;
-   checkstruct	*check;
-   double	rawpos[NAXIS];
-   int		i,j, ix,iy,selecflag, newnumber,nsub;
+   objstruct		*obj;
+   checkstruct		*check;
+   double		rawpos[NAXIS],
+			analtime1;
+   int			i,j, ix,iy,selecflag, newnumber,nsub;
+
+  if (FLAG(obj2.analtime))
+    analtime1 = counter_seconds();
 
   obj = &objlist->obj[n];
 
@@ -736,6 +740,9 @@ void	endobject(picstruct *field, picstruct *dfield, picstruct *wfield,
         if (j)
           obj->number = ++thecat.ntotal;
         }
+
+      if (FLAG(obj2.analtime) && !j)
+        obj2->analtime = (float)(counter_seconds() - analtime1);
 
       FPRINTF(OUTPUT, "%8d %6.1f %6.1f %5.1f %5.1f %12g "
 			"%c%c%c%c%c%c%c%c\n",

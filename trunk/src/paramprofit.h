@@ -9,7 +9,7 @@
 *
 *	Contents:	Model-fitting parameter list for catalog data.
 *
-*	Last modify:	16/09/2009
+*	Last modify:	24/09/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -21,6 +21,10 @@
 	&outobj2.prof_errvector, H_FLOAT, T_FLOAT, "%12.4g", "",
 	"stat.stdev;stat.fit;src.morph.param", "", 1,
 	&prefs.prof_errvectorsize},
+  {"MATRIX_MODELERR", "Model-fitting covariance matrix",
+	&outobj2.prof_errmatrix, H_FLOAT, T_FLOAT, "%12.4g", "",
+	"stat.covariance;stat.fit;src.morph.param", "", 2,
+	prefs.prof_errmatrixsize},
   {"CHI2_MODEL", "Reduced Chi2 of the fit",
 	&outobj2.prof_chi2, H_FLOAT, T_FLOAT, "%12.7g", "",
 	"stat.fit.chi2;src.morph", ""},

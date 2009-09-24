@@ -923,7 +923,7 @@ LM_REAL *a, *b, *work;
 			exit(1);
 		}
 		else{
-      fprintf(stderr, RCAT(RCAT("singular matrix A for ", GETRF) " in ", AX_EQ_B_LU) "()\n");
+//      fprintf(stderr, RCAT(RCAT("singular matrix A for ", GETRF) " in ", AX_EQ_B_LU) "()\n");
 #ifndef LINSOLVERS_RETAIN_MEMORY
       free(buf);
 #endif

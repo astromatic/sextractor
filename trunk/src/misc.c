@@ -9,7 +9,7 @@
 *
 *	Contents:	miscellaneous functions.
 *
-*	Last modify:	13/12/2002
+*	Last modify:	24/09/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -17,6 +17,9 @@
 #ifdef HAVE_CONFIG_H
 #include        "config.h"
 #endif
+
+#include	<time.h>
+#include	<sys/time.h>
 
 #include	"define.h"
 #include	"globals.h"
@@ -67,6 +70,26 @@ float	hmedian(float *ra, int n)
     }
 
 /* (the 'return' is inside the loop!!) */
+  }
+
+
+/****** counter_seconds *******************************************************
+PROTO	double counter_seconds(void)
+PURPOSE	Count the number of seconds (with an arbitrary offset).
+INPUT	-.
+OUTPUT	Returns a number of seconds.
+NOTES	Results are meaningful only for tasks that take one microsec or more.
+AUTHOR	E. Bertin (IAP)
+VERSION	24/09/2009
+ ***/
+double	counter_seconds(void)
+  {
+   struct timeval	tp;
+   struct timezone	tzp;
+   int			dummy;
+
+  dummy = gettimeofday(&tp,&tzp);
+  return (double) tp.tv_sec + (double) tp.tv_usec * 1.0e-6;
   }
 
 
