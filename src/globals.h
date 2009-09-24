@@ -9,7 +9,7 @@
 *
 *	Contents:	global declarations.
 *
-*	Last modify:	11/05/2008
+*	Last modify:	14/09/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -72,6 +72,8 @@ extern void	alloccatparams(void),
 		writecat(int, objliststruct *),
 		write_error(char *msg1, char *msg2),
 		write_vo_fields(FILE *file);
+
+extern double	counter_seconds(void);
 
 extern float	hmedian(float *, int);
 

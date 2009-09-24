@@ -9,7 +9,7 @@
 *
 *	Contents:	Keywords for the configuration file.
 *
-*	Last modify:	20/11/2008
+*	Last modify:	24/09/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -215,6 +215,7 @@ typedef struct
 /*----- Profile-fitting */
   int		prof_vectorsize;			/* nb of params */
   int		prof_errvectorsize;			/* nb of params */
+  int		prof_errmatrixsize[2];			/* nb of params */
   int		prof_disk_patternvectorsize;		/* nb of params */
   int		prof_disk_patternncomp;			/* nb of params */
   int		prof_disk_patternmodvectorsize;		/* nb of params */

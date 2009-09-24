@@ -9,7 +9,7 @@
 *
 *	Contents:	Fit an arbitrary profile combination to a detection.
 *
-*	Last modify:	20/09/2009
+*	Last modify:	24/09/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -163,7 +163,7 @@ OUTPUT	Pointer to an allocated fit structure (containing details about the
 	fit).
 NOTES	It is a modified version of the lm_minimize() of lmfit.
 AUTHOR	E. Bertin (IAP)
-VERSION	21/09/2009
+VERSION	24/09/2009
  ***/
 void	profit_fit(profitstruct *profit,
 		picstruct *field, picstruct *wfield,
@@ -176,9 +176,10 @@ void	profit_fit(profitstruct *profit,
     checkstruct		*check;
     double		emx2,emy2,emxy, a , cp,sp, cn, bn, n;
     float		psf_fwhm, dchi2, err;
-    int			i,j,p, nparam, ncomp, nprof;
+    int			i,j,p, nparam, nparam2, ncomp, nprof;
 
   nparam = profit->nparam;
+  nparam2 = nparam*nparam;
   nprof = profit->nprof;
   if (profit->psfdft)
     {
@@ -218,6 +219,12 @@ void	profit_fit(profitstruct *profit,
     if (FLAG(obj2.prof_vector))
       for (p=0; p<nparam; p++)
         obj2->prof_vector[p] = 0.0;
+    if (FLAG(obj2.prof_errvector))
+      for (p=0; p<nparam; p++)
+        obj2->prof_errvector[p] = 0.0;
+    if (FLAG(obj2.prof_errmatrix))
+      for (p=0; p<nparam2; p++)
+        obj2->prof_errmatrix[p] = 0.0;
     obj2->prof_niter = 0;
     return;
     }
@@ -255,26 +262,6 @@ void	profit_fit(profitstruct *profit,
   profit->niter = profit_minimize(profit, PROFIT_MAXITER);
   profit_residuals(profit,field,wfield, 10.0, profit->param,profit->resi);
 
-/*
-  QMEMCPY(profit->paraminit, oldparaminit, float, nparam);
-  if (profit_setparam(profit, PARAM_ARMS_PITCH, 160.0, 130.0, 175.0)==RETURN_OK)
-    {
-    oldchi2 = profit->chi2;
-    oldniter = profit->niter;
-    profit_resetparams(profit);
-    profit_setparam(profit, PARAM_ARMS_PITCH, 160.0, 130.0, 175.0);
-    profit->niter = profit_minimize(profit, PROFIT_MAXITER);
-    if (profit->chi2 > oldchi2)
-      {
-      memcpy(profit->paraminit, oldparaminit, nparam*sizeof(float));
-      profit->chi2 = oldchi2;
-      profit->niter = oldniter;
-      }
-    else
-      obj2->prof_flag |= PROFIT_FLIPPED;
-    }  
-*/
-
 /* Convert covariance matrix to bound space */
   profit_covarunboundtobound(profit);
   for (p=0; p<nparam; p++)
@@ -308,6 +295,11 @@ void	profit_fit(profitstruct *profit,
     {
     for (p=0; p<nparam; p++)
       obj2->prof_errvector[p]= profit->paramerr[p];
+    }
+  if (FLAG(obj2.prof_errmatrix))
+    {
+    for (p=0; p<nparam2; p++)
+      obj2->prof_errmatrix[p]= profit->covar[p];
     }
 
   obj2->prof_niter = profit->niter;
@@ -601,7 +593,7 @@ void	profit_fit(profitstruct *profit,
     }
 
 /* Star/galaxy classification */
-  if (FLAG(obj2.prof_class_star))
+  if (FLAG(obj2.prof_class_star) || FLAG(obj2.prof_concentration))
     {
     pprofit = *profit;
     memset(pprofit.paramindex, 0, PARAM_NPARAM*sizeof(int));
@@ -620,15 +612,21 @@ void	profit_fit(profitstruct *profit,
     pprofit.paraminit[pprofit.paramindex[PARAM_DISK_FLUX]] = profit->flux;
     pprofit.niter = profit_minimize(&pprofit, PROFIT_MAXITER);
     profit_residuals(&pprofit,field,wfield, 10.0, pprofit.param,pprofit.resi);
-    dchi2 = 0.5*(pprofit.chi2 - profit->chi2);
-    obj2->prof_class_star = dchi2 < 50.0?
+    if (FLAG(obj2.prof_class_star))
+      {
+      dchi2 = 0.5*(pprofit.chi2 - profit->chi2);
+      obj2->prof_class_star = dchi2 < 50.0?
 	(dchi2 > -50.0? 2.0/(1.0+expf(dchi2)) : 2.0) : 0.0;
-    if (profit->flux > 0.0 && pprofit.flux > 0.0)
-      obj2->prof_concentration = -2.5*log10(pprofit.flux / profit->flux);
-    else  if (profit->flux > 0.0)
-      obj2->prof_concentration = 99.0;
-    else  if (pprofit.flux > 0.0)
-      obj2->prof_concentration = -99.0;
+      }
+    if (FLAG(obj2.prof_concentration))
+      {
+      if (profit->flux > 0.0 && pprofit.flux > 0.0)
+        obj2->prof_concentration = -2.5*log10(pprofit.flux / profit->flux);
+      else  if (profit->flux > 0.0)
+        obj2->prof_concentration = 99.0;
+      else  if (pprofit.flux > 0.0)
+        obj2->prof_concentration = -99.0;
+      }
     prof_end(pprofit.prof[0]);
     free(pprofit.prof);
     free(pprofit.covar);
@@ -642,9 +640,7 @@ void	profit_fit(profitstruct *profit,
   free(profit->objpix);
   free(profit->objweight);
   free(profit->resi);
-/*
-  free(oldparaminit);
-*/
+
   return;
   }
 
@@ -970,7 +966,7 @@ INPUT	Profile-fitting structure,
 OUTPUT	Vector of residuals.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	20/03/2009
+VERSION	24/03/2009
  ***/
 float	*profit_residuals(profitstruct *profit, picstruct *field,
 		picstruct *wfield, float dynparam, float *param, float *resi)
@@ -983,8 +979,11 @@ float	*profit_residuals(profitstruct *profit, picstruct *field,
     profit->param[p] = param[p];
 /* Simple PSF shortcut */
   if (profit->nprof == 1 && profit->prof[0]->code == PROF_DIRAC)
+    {
     profit_resample(profit, profit->psfpix, profit->lmodpix,
 		*profit->prof[0]->flux);
+    profit->flux = *profit->prof[0]->flux;
+    }
   else
     {
     profit->flux = 0.0;

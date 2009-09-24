@@ -93,7 +93,7 @@ AC_TYPE_SIGNAL
 AC_FUNC_STAT
 AC_FUNC_STRFTIME
 AC_CHECK_FUNCS([atexit getenv memcpy memmove memset mkdir munmap strstr \
-		sincosf logf])
+		sincosf logf gettimeofday])
 
 # Check support for large files
 AC_SYS_LARGEFILE

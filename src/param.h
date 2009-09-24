@@ -9,7 +9,7 @@
 *
 *	Contents:	parameter list for catalog data.
 *
-*	Last modify:	20/07/2009
+*	Last modify:	24/09/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -850,6 +850,10 @@ keystruct	objkey[] = {
   {"ERRTHTPSF_B1950", "B1950 PSF error ellipse pos. angle (east of north)",
 	&outobj2.poserrtheta1950_psf, H_FLOAT, T_FLOAT, "%6.2f", "deg",
 	"pos.posAng;pos.errorEllipse", "deg"},
+
+  {"DURATION_ANALYSIS", "Duration of analysis for this source",
+	&outobj2.analtime, H_FLOAT, T_FLOAT, "%9.4g", "s",
+	"time.duration;time.processing", "s"},
 
 /* Temporarily (at least) deactivated not to confuse users with model-fitting
   {"X2PC_IMAGE", "PC variance along x",

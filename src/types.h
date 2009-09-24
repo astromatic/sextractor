@@ -9,7 +9,7 @@
 *
 *	Contents:	global type definitions.
 *
-*	Last modify:	16/09/2009
+*	Last modify:	24/09/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -307,6 +307,7 @@ typedef struct
 /* ---- Profile-fitting */
   float		*prof_vector;			/* Model parameters */
   float		*prof_errvector;		/* Model parameter errors */
+  float		*prof_errmatrix;		/* Model parameter covariances*/
   float		prof_chi2;			/* Reduced chi2 */
   BYTE		prof_flag;			/* Model-fitting flags */
   BYTE		prof_flagw;			/* Model-fitting WORLD flag */
@@ -465,8 +466,10 @@ typedef struct
   float		prof_arms_starterrw;		/* RMS error */
   float		prof_arms_quadfrac;		/* Arms quadrature fraction */
   float		prof_arms_quadfracerr;		/* RMS error */
-/* ---- MEF */
+/* ---- MEF ----*/
   short		ext_number;			/* FITS extension number */
+/* ---- Time ---- */
+  float		analtime;			/* Analysis time (s) */
   }	obj2struct;
 
 /*----------------------------- lists of objects ----------------------------*/

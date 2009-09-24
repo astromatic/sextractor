@@ -9,7 +9,7 @@
 *
 *	Contents:	functions for output of catalog data.
 *
-*	Last modify:	16/09/2009
+*	Last modify:	24/09/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -378,6 +378,7 @@ void	updateparamflags()
 			| FLAG(obj2.prof_spheroid_peak);
   prefs.prof_flag |= FLAG(obj2.prof_chi2) | FLAG(obj2.prof_niter)
 			| FLAG(obj2.prof_vector) | FLAG(obj2.prof_errvector)
+			| FLAG(obj2.prof_errmatrix)
 			| FLAG(obj2.x_prof) | FLAG(obj2.y_prof)
 			| FLAG(obj2.prof_mx2)
 			| FLAG(obj2.peak_prof)

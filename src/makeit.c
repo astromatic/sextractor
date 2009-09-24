@@ -9,7 +9,7 @@
 *
 *	Contents:	main program.
 *
-*	Last modify:	20/11/2008
+*	Last modify:	24/09/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -62,7 +62,7 @@ void	makeit()
    patternstruct	*pattern;
    static time_t        thetime1, thetime2;
    struct tm		*tm;
-   int			nflag[MAXFLAG],
+   int			nflag[MAXFLAG], nparam2[2],
 			i, nok, ntab, next, ntabmax, forcextflag,
 			nima0,nima1, nweight0,nweight1, npat;
 
@@ -110,8 +110,10 @@ void	makeit()
 /* Create profiles at full resolution */
     NFPRINTF(OUTPUT, "Preparing profile models");
     theprofit = profit_init(thepsf);
-    changecatparamarrays("VECTOR_PROF", &theprofit->nparam, 1);
-    changecatparamarrays("VECTOR_PROFERR", &theprofit->nparam, 1);
+    changecatparamarrays("VECTOR_MODEL", &theprofit->nparam, 1);
+    changecatparamarrays("VECTOR_MODELERR", &theprofit->nparam, 1);
+    nparam2[0] = nparam2[1] = theprofit->nparam;
+    changecatparamarrays("MATRIX_MODELERR", &nparam2, 2);
     if (prefs.pattern_flag)
       {
       npat = prefs.prof_disk_patternvectorsize;
