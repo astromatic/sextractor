@@ -9,7 +9,7 @@
 *
 *	Contents:	Include file for profit.c.
 *
-*	Last modify:	21/09/2009
+*	Last modify:	24/09/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -30,7 +30,7 @@
 
 #define	PROFIT_MAXITER	1000	/* Max. nb of iterations in profile fitting */
 #define	PROFIT_MAXPROF	8	/* Max. nb of profile components */
-#define	PROFIT_OVERSAMP	15	/* Max. profile oversamp. factor on each axis */
+#define	PROFIT_OVERSAMP	5	/* Max. profile oversamp. factor on each axis */
 #define	PROFIT_HIDEFRES	201	/* Resolution of the high def. model raster */
 #define	PROFIT_REFFFAC	6.0	/* Factor in r_eff for measurement radius*/
 #define	PROFIT_DYNPARAM	10.0	/* Dynamic compression param. in sigma units */

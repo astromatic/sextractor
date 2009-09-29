@@ -9,7 +9,7 @@
 *
 *	Contents:	Model-fitting parameter list for catalog data.
 *
-*	Last modify:	24/09/2009
+*	Last modify:	29/09/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -266,8 +266,11 @@
 	&outobj2.prof_theta1950, H_FLOAT, T_FLOAT, "%+6.2f", "deg",
 	"pos.posAng;stat.fit", "deg"},
 
-  {"CONCENTRATION_MODEL", "Concentration parameter from model-fitting",
-	&outobj2.prof_concentration, H_FLOAT, T_FLOAT, "%7.4f", "",
+  {"SPREAD_MODEL", "Spread parameter from model-fitting",
+	&outobj2.prof_concentration, H_FLOAT, T_FLOAT, "%8.5f", "",
+	"src.morph.param", ""},
+  {"SPREADERR_MODEL", "Spread parameter error from model-fitting",
+	&outobj2.prof_concentrationerr, H_FLOAT, T_FLOAT, "%8.5f", "",
 	"src.morph.param", ""},
   {"CLASS_STAR_MODEL", "S/G classifier from model-fitting",
 	&outobj2.prof_class_star, H_FLOAT, T_FLOAT, "%7.4f", "",

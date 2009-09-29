@@ -113,7 +113,7 @@ void	makeit()
     changecatparamarrays("VECTOR_MODEL", &theprofit->nparam, 1);
     changecatparamarrays("VECTOR_MODELERR", &theprofit->nparam, 1);
     nparam2[0] = nparam2[1] = theprofit->nparam;
-    changecatparamarrays("MATRIX_MODELERR", &nparam2, 2);
+    changecatparamarrays("MATRIX_MODELERR", nparam2, 2);
     if (prefs.pattern_flag)
       {
       npat = prefs.prof_disk_patternvectorsize;

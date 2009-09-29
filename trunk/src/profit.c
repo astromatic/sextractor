@@ -9,7 +9,7 @@
 *
 *	Contents:	Fit an arbitrary profile combination to a detection.
 *
-*	Last modify:	24/09/2009
+*	Last modify:	29/09/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -49,12 +49,22 @@ static void	make_kernel(float pos, float *kernel, interpenum interptype);
 
 /*------------------------------- variables ---------------------------------*/
 
-char		profname[][32]={"background offset", "Sersic spheroid",
+const char	profname[][32]={"background offset", "Sersic spheroid",
 		"De Vaucouleurs spheroid", "exponential disk", "spiral arms",
 		"bar", "inner ring", "outer ring", "tabulated model",
 		""};
 
-int		interp_kernwidth[5]={1,2,4,6,8};
+const int	interp_kernwidth[5]={1,2,4,6,8};
+
+const int	flux_flag[PARAM_NPARAM] = {0,0,0,
+					1,0,0,0,0,
+					1,0,0,0,
+					1,0,0,0,0,0,0,0,
+					1,0,0,
+					1,0,0,
+					1,0,0
+					};
+
 int theniter, the_gal;
 /* "Local" global variables; it seems dirty but it simplifies a lot */
 /* interfacing to the LM routines */
@@ -175,8 +185,11 @@ void	profit_fit(profitstruct *profit,
     psfstruct		*psf;
     checkstruct		*check;
     double		emx2,emy2,emxy, a , cp,sp, cn, bn, n;
-    float		psf_fwhm, dchi2, err;
-    int			i,j,p, nparam, nparam2, ncomp, nprof;
+    float		**list,
+			*cov,
+			psf_fwhm, dchi2, err;
+    int			*index,
+			i,j,p, nparam, nparam2, ncomp, nprof;
 
   nparam = profit->nparam;
   nparam2 = nparam*nparam;
@@ -242,7 +255,8 @@ void	profit_fit(profitstruct *profit,
     profit->modnaxisn[0] = profit->modnaxisn[1];
 
 /* Allocate memory for the complete model */
-  QCALLOC(profit->modpix, float, profit->modnaxisn[0]*profit->modnaxisn[1]);
+  QFFTWMALLOC(profit->modpix, float, profit->modnaxisn[0]*profit->modnaxisn[1]);
+  memset(profit->modpix, 0, profit->modnaxisn[0]*profit->modnaxisn[1]*sizeof(float));
   QMALLOC(profit->psfpix, float, profit->modnaxisn[0]*profit->modnaxisn[1]);
 /* Allocate memory for the partial model */
   QMALLOC(profit->pmodpix, float, profit->modnaxisn[0]*profit->modnaxisn[1]);
@@ -259,6 +273,7 @@ void	profit_fit(profitstruct *profit,
 //the_gal++;
 
 /* Actual minimisation */
+  fft_reset();
   profit->niter = profit_minimize(profit, PROFIT_MAXITER);
   profit_residuals(profit,field,wfield, 10.0, profit->param,profit->resi);
 
@@ -307,20 +322,17 @@ void	profit_fit(profitstruct *profit,
   if (FLAG(obj2.fluxerr_prof))
     {
     err = 0.0;
-    i = j = 0;					/* avoid gcc -Wall warning */
-    if (profit->paramlist[PARAM_DISK_FLUX])
-      {
-      i = profit->paramindex[PARAM_DISK_FLUX];
-      err += profit->covar[i*(nparam+1)];
-      }
-    if (profit->paramlist[PARAM_SPHEROID_FLUX])
-      {
-      j = profit->paramindex[PARAM_SPHEROID_FLUX];
-      err += profit->covar[j*(nparam+1)];
-      }
-    if (profit->paramlist[PARAM_DISK_FLUX]
-	&& profit->paramlist[PARAM_SPHEROID_FLUX])
-      err += profit->covar[i+j*nparam]+profit->covar[j+i*nparam];
+    cov = profit->covar;
+    index = profit->paramindex;
+    list = profit->paramlist;
+    for (i=0; i<PARAM_NPARAM; i++)
+      if (flux_flag[i] && list[i])
+        {
+        cov = profit->covar + nparam*index[i];
+        for (j=0; j<PARAM_NPARAM; j++)
+          if (flux_flag[j] && list[j])
+            err += cov[index[j]];
+        }
     obj2->fluxerr_prof = err>0.0? sqrt(err): 0.0;
     }
 
@@ -626,6 +638,9 @@ void	profit_fit(profitstruct *profit,
         obj2->prof_concentration = 99.0;
       else  if (pprofit.flux > 0.0)
         obj2->prof_concentration = -99.0;
+      if (FLAG(obj2.prof_concentrationerr))
+        obj2->prof_concentrationerr = (obj2->flux_prof > 0.0?
+		1.086*(obj2->fluxerr_prof / obj2->flux_prof) : 99.0);
       }
     prof_end(pprofit.prof[0]);
     free(pprofit.prof);
@@ -861,11 +876,11 @@ int	profit_minimize(profitstruct *profit, int niter)
   profit_boundtounbound(profit, profit->paraminit);
 
 /* Perform fit */
-  lm_opts[0] = 1.0e-4;
-  lm_opts[1] = 1.0e-18;
-  lm_opts[2] = 1.0e-18;
-  lm_opts[3] = 1.0e-18;
-  lm_opts[4] = 1.0e-4;
+  lm_opts[0] = 1.0e-3;
+  lm_opts[1] = 1.0e-17;
+  lm_opts[2] = 1.0e-17;
+  lm_opts[3] = 1.0e-17;
+  lm_opts[4] = 1.0e-6;
 
   niter = slevmar_dif(profit_evaluate, profit->paraminit, profit->resi,
 	n, m, niter, lm_opts, info, NULL, profit->covar, profit);
@@ -2259,13 +2274,13 @@ INPUT	Profile structure,
 OUTPUT	Corrected flux contribution.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	21/09/2009
+VERSION	29/09/2009
  ***/
 float	prof_add(profstruct *prof, profitstruct *profit)
   {
    double	xscale, yscale, saspect, ctheta,stheta, flux, scaling, bn, n;
    float	posin[PROFIT_MAXEXTRA], posout[2], dnaxisn[2],
-		*pixin, *pixout,
+		*pixin, *pixin2, *pixout,
 		fluxfac, amp,cd11,cd12,cd21,cd22, dcd11,dcd21, dx1,dx2,
 		x1,x10,x2, x1cin,x2cin, x1cout,x2cout, x1max,x2max,
 		x1in,x2in, odx, ostep,
@@ -2276,7 +2291,7 @@ float	prof_add(profstruct *prof, profitstruct *profit)
 		r2max1, r2max2, r2min, invr2xdif,
 		val, theta, thresh, ra,rb,rao, num;
    int		npix, noversamp, threshflag,
-		d,e,i, ix1,ix2, idx1,idx2;
+		d,e,i, ix1,ix2, idx1,idx2, nx2, npix2;
 
   npix = profit->modnaxisn[0]*profit->modnaxisn[1];
 
@@ -2311,6 +2326,7 @@ float	prof_add(profstruct *prof, profitstruct *profit)
 
     x1cout = (float)(profit->modnaxisn[0]/2);
     x2cout = (float)(profit->modnaxisn[1]/2);
+    nx2 = profit->modnaxisn[1]/2 + 1;
 
 /*-- Compute the largest r^2 that fits in the frame */
     num = cd11*cd22-cd12*cd21;
@@ -2333,7 +2349,7 @@ float	prof_add(profstruct *prof, profitstruct *profit)
       x10 = -x1cout - dx1;
       x2 = -x2cout - dx2;
       pixin = profit->pmodpix;
-      for (ix2=profit->modnaxisn[1]; ix2--; x2+=1.0)
+      for (ix2=nx2; ix2--; x2+=1.0)
         {
         x1 = x10;
         for (ix1=profit->modnaxisn[0]; ix1--; x1+=1.0)
@@ -2374,6 +2390,13 @@ float	prof_add(profstruct *prof, profitstruct *profit)
             }
           }
         }
+/*---- Copy the symmetric part */
+      if ((npix2=(profit->modnaxisn[1]-nx2)*profit->modnaxisn[0]) > 0)
+        {
+        pixin2 = pixin - profit->modnaxisn[0] - 1;
+        for (i=npix2; i--;)
+          *(pixin++) = *(pixin2--);
+        }
       prof->lostfluxfrac = 1.0 - prof_gammainc(2.0*n, bn*pow(r2max, hinvn));
       threshflag = 0;
       break;
@@ -2382,7 +2405,7 @@ float	prof_add(profstruct *prof, profitstruct *profit)
       x10 = -x1cout - dx1;
       x2 = -x2cout - dx2;
       pixin = profit->pmodpix;
-      for (ix2=profit->modnaxisn[1]; ix2--; x2+=1.0)
+      for (ix2=nx2; ix2--; x2+=1.0)
         {
         x1 = x10;
         for (ix1=profit->modnaxisn[0]; ix1--; x1+=1.0)
@@ -2423,6 +2446,13 @@ float	prof_add(profstruct *prof, profitstruct *profit)
             }
           }
         }
+/*---- Copy the symmetric part */
+      if ((npix2=(profit->modnaxisn[1]-nx2)*profit->modnaxisn[0]) > 0)
+        {
+        pixin2 = pixin - profit->modnaxisn[0] - 1;
+        for (i=npix2; i--;)
+          *(pixin++) = *(pixin2--);
+        }
       prof->lostfluxfrac = 1.0-prof_gammainc(8.0, 7.66924944*pow(r2max, 0.125));
       threshflag = 0;
       break;
@@ -2430,7 +2460,7 @@ float	prof_add(profstruct *prof, profitstruct *profit)
       x10 = -x1cout - dx1;
       x2 = -x2cout - dx2;
       pixin = profit->pmodpix;
-      for (ix2=profit->modnaxisn[1]; ix2--; x2+=1.0)
+      for (ix2=nx2; ix2--; x2+=1.0)
         {
         x1 = x10;
         for (ix1=profit->modnaxisn[0]; ix1--; x1+=1.0)
@@ -2470,6 +2500,13 @@ float	prof_add(profstruct *prof, profitstruct *profit)
             *(pixin++) = val*ostep*ostep;
             }
           }
+        }
+/*---- Copy the symmetric part */
+      if ((npix2=(profit->modnaxisn[1]-nx2)*profit->modnaxisn[0]) > 0)
+        {
+        pixin2 = pixin - profit->modnaxisn[0] - 1;
+        for (i=npix2; i--;)
+          *(pixin++) = *(pixin2--);
         }
       rmax = sqrt(r2max);
       prof->lostfluxfrac = (1.0 + rmax)*exp(-rmax);

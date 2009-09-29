@@ -9,7 +9,7 @@
 *
 *	Contents:	Keywords for the configuration file.
 *
-*	Last modify:	20/11/2008
+*	Last modify:	24/09/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -287,7 +287,7 @@ char *default_prefs[] =
 "*#--------------------------- Experimental Stuff -----------------------------",
 "*",
 "*PSF_NAME         default.psf    # File containing the PSF model",
-"*PSF_NMAX         9              # Max.number of PSFs fitted simultaneously",
+"*PSF_NMAX         2              # Max.number of PSFs fitted simultaneously",
 "*PSFDISPLAY_TYPE  SPLIT          # Catalog type for PSF-fitting: SPLIT or VECTOR",
 "*PATTERN_TYPE     RINGS-HARMONIC # can RINGS-QUADPOLE, RINGS-OCTOPOLE,",
 "*                                # RINGS-HARMONICS or GAUSS-LAGUERRE",

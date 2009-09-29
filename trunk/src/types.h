@@ -9,7 +9,7 @@
 *
 *	Contents:	global type definitions.
 *
-*	Last modify:	24/09/2009
+*	Last modify:	29/09/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -361,8 +361,9 @@ typedef struct
 		prof_cxyw;			/* WORLD ellipse parameters */
   float		prof_pol1w, prof_pol2w;		/* WORLD polarisation vector*/
   float		prof_e1w, prof_e2w;		/* WORLD ellipticity vector*/
-  float		prof_class_star;		/* Model-fitting star/gal class*/
+  float		prof_class_star;		/* Mod.-fitting star/gal class*/
   float		prof_concentration;		/* Model-fitting concentration*/
+  float		prof_concentrationerr;		/* RMS error */
   float		prof_offset_flux;		/* Background offset */
   float		prof_offset_fluxerr;		/* RMS error */
   float		prof_spheroid_flux;		/* Spheroid total flux */
