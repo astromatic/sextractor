@@ -9,7 +9,7 @@
 *
 *	Contents:	functions for output of catalog data.
 *
-*	Last modify:	24/09/2009
+*	Last modify:	29/09/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -175,6 +175,7 @@ void	updateparamflags()
 			| FLAG(obj2.prof_disk_patternspiral);
   FLAG(obj2.prof_disk_scale) |= prefs.pattern_flag;
 
+  FLAG(obj2.prof_concentration) |= FLAG(obj2.prof_concentrationerr);
   FLAG(obj2.poserraw_prof) |= FLAG(obj2.poserrbw_prof);
   FLAG(obj2.poserrcxxw_prof) |= FLAG(obj2.poserrcyyw_prof)
 			| FLAG(obj2.poserrcxyw_prof);
@@ -210,8 +211,8 @@ void	updateparamflags()
 			| FLAG(obj2.prof_concentration)
 			| FLAG(obj2.prof_class_star);
 
-  FLAG(obj2.mag_prof) |= FLAG(obj2.magerr_prof);
-  FLAG(obj2.magerr_prof) |= FLAG(obj2.fluxerr_prof);
+  FLAG(obj2.fluxerr_prof) |= FLAG(obj2.magerr_prof)
+			| FLAG(obj2.prof_concentrationerr);
   FLAG(obj2.flux_prof) |= FLAG(obj2.mag_prof) | FLAG(obj2.fluxerr_prof);
   FLAG(obj2.prof_spheroid_mag) |= FLAG(obj2.prof_spheroid_magerr);
   FLAG(obj2.prof_spheroid_reff) |= FLAG(obj2.prof_spheroid_refferr);
@@ -612,10 +613,10 @@ void	dumpparams(void)
 
   for (i=0; *objkey[i].name ; i++)
     if (*objkey[i].unit)
-      printf("#%-22.22s %-58.58s [%s]\n",
+      printf("#%-24.24s %-57.57s [%s]\n",
 		objkey[i].name, objkey[i].comment, objkey[i].unit);
     else
-      printf("#%-22.22s %-58.58s\n",
+      printf("#%-24.24s %-57.57s\n",
 		objkey[i].name, objkey[i].comment);
 
   return;

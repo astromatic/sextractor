@@ -32,6 +32,7 @@
 /*---------------------------------- protos --------------------------------*/
 extern void	fft_conv(float *data1, float *fdata2, int *size),
 		fft_end(),
-		fft_init(int nthreads);
+		fft_init(int nthreads),
+		fft_reset(void);
 
 extern float	*fft_rtf(float *data, int *size);

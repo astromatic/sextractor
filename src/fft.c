@@ -32,11 +32,12 @@
 #include "threads.h"
 #endif
 
+ fftwf_plan	fplan, bplan;
  int    firsttimeflag;
 #ifdef USE_THREADS
  pthread_mutex_t	fftmutex;
 #endif
-
+ fftwf_complex 	*fdata1;
 #define SWAP(a,b)       tempr=(a);(a)=(b);(b)=tempr
 
 /****** fft_init ************************************************************
@@ -98,6 +99,30 @@ void    fft_end(void)
   }
 
 
+/****** fft_reset ***********************************************************
+PROTO	void fft_reset(void)
+PURPOSE	Reset the FFT plans
+INPUT	-.
+OUTPUT	-.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	26/06/2009
+ ***/
+void    fft_reset(void)
+ {
+  if (fplan)
+    {
+    QFFTWFREE(fdata1);
+    fftwf_destroy_plan(fplan);
+    }
+  if (bplan)
+    fftwf_destroy_plan(bplan);
+  fplan = bplan = NULL;
+
+  return;
+  }
+
+
 /****** fft_conv ************************************************************
 PROTO	void fft_conv(float *data1, float *fdata2, int *size)
 PURPOSE	Optimized 2-dimensional FFT convolution using the FFTW library.
@@ -112,8 +137,7 @@ VERSION	26/03/2007
  ***/
 void    fft_conv(float *data1, float *fdata2, int *size)
   {
-   fftwf_plan	plan;
-   float	*fdata1,*fdata1p,*fdata2p,
+   float	*fdata1p,*fdata2p,
 		real,imag, fac;
    int		i, npix,npix2;
 
@@ -125,18 +149,23 @@ void    fft_conv(float *data1, float *fdata2, int *size)
 #ifdef USE_THREADS
   QPTHREAD_MUTEX_LOCK(&fftmutex);
 #endif
-  QFFTWMALLOC(fdata1, float, npix2);
-  plan = fftwf_plan_dft_r2c_2d(size[1], size[0], data1,
-        (fftwf_complex *)fdata1, FFTW_ESTIMATE|FFTW_DESTROY_INPUT);
+  if (!fplan)
+    {
+    QFFTWMALLOC(fdata1, fftwf_complex, npix2);
+    fplan = fftwf_plan_dft_r2c_2d(size[1], size[0], data1,
+        (fftwf_complex *)fdata1, FFTW_MEASURE|FFTW_DESTROY_INPUT);
+    }
 #ifdef USE_THREADS
   QPTHREAD_MUTEX_UNLOCK(&fftmutex);
 #endif
-  fftwf_execute(plan);
+  fftwf_execute_dft_r2c(fplan, data1, fdata1);
+
+//  fftwf_execute(plan);
 
 #ifdef USE_THREADS
   QPTHREAD_MUTEX_LOCK(&fftmutex);
 #endif
-  fftwf_destroy_plan(plan);
+//  fftwf_destroy_plan(plan);
 #ifdef USE_THREADS
   QPTHREAD_MUTEX_UNLOCK(&fftmutex);
 #endif
@@ -157,20 +186,21 @@ void    fft_conv(float *data1, float *fdata2, int *size)
 #ifdef USE_THREADS
   QPTHREAD_MUTEX_LOCK(&fftmutex);
 #endif
-  plan = fftwf_plan_dft_c2r_2d(size[1], size[0], (fftwf_complex *)fdata1, 
-        data1, FFTW_ESTIMATE|FFTW_DESTROY_INPUT);
+  if (!bplan)
+    bplan = fftwf_plan_dft_c2r_2d(size[1], size[0], (fftwf_complex *)fdata1, 
+        data1, FFTW_MEASURE|FFTW_DESTROY_INPUT);
 #ifdef USE_THREADS
   QPTHREAD_MUTEX_UNLOCK(&fftmutex);
 #endif
+  fftwf_execute_dft_c2r(bplan, fdata1, data1);
 
-  fftwf_execute(plan);
+//  fftwf_execute(plan);
 
 #ifdef USE_THREADS
   QPTHREAD_MUTEX_LOCK(&fftmutex);
 #endif
-  fftwf_destroy_plan(plan);
+//  fftwf_destroy_plan(plan);
 /* Free the fdata1 scratch array */
-  QFFTWFREE(fdata1);
 #ifdef USE_THREADS
   QPTHREAD_MUTEX_UNLOCK(&fftmutex);
 #endif

@@ -9,7 +9,7 @@
 *
 *	Contents:	functions for input of image data.
 *
-*	Last modify:	11/10/2007
+*	Last modify:	29/09/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -245,6 +245,8 @@ void	readimagehead(picstruct *field)
   field->width = tab->naxisn[0];
   field->height = tab->naxisn[1];
   field->npix = (KINGSIZE_T)field->width*field->height;
+  field->bitpix = tab->bitpix;
+  field->bytepix = tab->bytepix;
   if (tab->bitsgn && prefs.fitsunsigned_flag)
     tab->bitsgn = 0;
 
