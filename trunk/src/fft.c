@@ -172,7 +172,7 @@ void    fft_conv(float *data1, float *fdata2, int *size)
 
 /* Actual convolution (Fourier product) */
   fac = 1.0/npix;  
-  fdata1p = fdata1;
+  fdata1p = (float *)fdata1;
   fdata2p = fdata2;
   for (i=npix2/2; i--; fdata2p+=2)
     {

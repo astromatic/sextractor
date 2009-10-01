@@ -10,7 +10,7 @@
 *	Contents:	functions dealing with on-line filtering of the image
 *			(for detection).
 *
-*	Last modify:	13/09/2009
+*	Last modify:	01/10/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -36,10 +36,10 @@
 /*
 Convolve a scan line with an array.
 */
-void	convolve(picstruct *field, PIXTYPE *mscan)
+void	convolve(picstruct *field, PIXTYPE *mscan, int y)
 
   {
-   int		mw,mw2,m0,me,m,mx,dmx, y0,dy, sw,sh;
+   int		mw,mw2,m0,me,m,mx,dmx, y0, dy, sw,sh;
    float	*mask;
    PIXTYPE	*mscane, *s,*s0, *d,*de, mval;
 
@@ -48,7 +48,7 @@ void	convolve(picstruct *field, PIXTYPE *mscan)
   mw = thefilter->convw;
   mw2 = mw/2;
   mscane = mscan+sw;
-  y0 = field->y - (thefilter->convh/2);
+  y0 = y - (thefilter->convh/2);
   if ((dy = field->ymin-y0) > 0)
     {
     m0 = mw*dy;
@@ -265,13 +265,13 @@ void	endfilter()
 /*
 Switch to the appropriate filtering routine.
 */
-void	filter(picstruct *field, PIXTYPE *mscan)
+void	filter(picstruct *field, PIXTYPE *mscan, int y)
 
   {
   if (thefilter->bpann)
-    neurfilter(field, mscan);
+    neurfilter(field, mscan, y);
   else
-    convolve(field, mscan);
+    convolve(field, mscan, y);
 
   return;
   }
@@ -281,7 +281,7 @@ void	filter(picstruct *field, PIXTYPE *mscan)
 /*
 Filter a scan line using an artificial retina.
 */
-void	neurfilter(picstruct *field, PIXTYPE *mscan)
+void	neurfilter(picstruct *field, PIXTYPE *mscan, int y)
 
   {
    PIXTYPE	cval;
@@ -302,7 +302,7 @@ void	neurfilter(picstruct *field, PIXTYPE *mscan)
     {
     if (tflag)
       {
-      cval = PIX(field, x, field->y);
+      cval = PIX(field, x, y);
       if (cval<threshlow || cval>threshhigh)
         {
         *(mscan++) = cval;
@@ -311,7 +311,7 @@ void	neurfilter(picstruct *field, PIXTYPE *mscan)
       }
 /*-- Copy the surrounding image area to the retina */
     copyimage(field, thefilter->conv, thefilter->convw, thefilter->convh,
-		x, field->y);
+		x, y);
     pix = thefilter->conv;
 /*-- Apply a transform of the intensity scale */
     for (i=thefilter->nconv; i--; pix++)

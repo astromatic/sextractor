@@ -9,7 +9,7 @@
 *
 *	Contents:	parameter list for catalog data.
 *
-*	Last modify:	24/09/2009
+*	Last modify:	01/10/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -670,6 +670,12 @@ keystruct	objkey[] = {
   {"NIMAFLAGS_ISO", "Number of flagged pixels entering IMAFLAGS_ISO",
 	outobj.imanflag, H_INT, T_LONG, "%9d", "",
 	"meta.number", "", 1, &prefs.imanflag_size},
+  {"NLOWWEIGHT_ISO", "Nb of pixels with low weight over the iso. profile",
+	&outobj.nzwpix, H_INT, T_LONG, "%9d", "",
+	"meta.number", ""},
+  {"NLOWDWEIGHT_ISO", "Nb of pixels with low det. weight over the iso. profile",
+	&outobj.nzdwpix, H_INT, T_LONG, "%9d", "",
+	"meta.number", ""},
 
   {"FWHM_IMAGE", "FWHM assuming a gaussian core",
 	&outobj.fwhm, H_FLOAT, T_FLOAT, "%8.2f", "pixel",

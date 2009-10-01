@@ -9,7 +9,7 @@
 *
 *	Contents:	analyse(), endobject()...: measurements on detections.
 *
-*	Last modify:	24/09/2009
+*	Last modify:	01/10/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -40,6 +40,7 @@
 #include	"profit.h"
 #include	"retina.h"
 #include	"som.h"
+#include	"weight.h"
 #include	"winpos.h"
 
 static obj2struct	*obj2 = &outobj2;
@@ -62,7 +63,6 @@ void  analyse(picstruct *field, picstruct *dfield, int objnb,
     obj->sigbkg = field->backsig;
 
   examineiso(field, dfield, obj, objlist->plist);
-
 
 /*&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&*/
 /* Put here your calls to custom functions related to isophotal measurements.
@@ -233,6 +233,10 @@ void  examineiso(picstruct *field, picstruct *dfield, objstruct *obj,
 /* Flagging from the flag-map */
   if (PLISTEXIST(flag))
     getflags(obj, pixel);
+
+/* Flag and count pixels with a low weight */
+  if (PLISTEXIST(wflag))
+    weight_count(obj, pixel);
 
   if (cleanflag)
     {

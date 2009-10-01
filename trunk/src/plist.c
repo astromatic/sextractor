@@ -9,7 +9,7 @@
 *
 *	Contents:	functions dealing with the handling of pixel lists.
 *
-*	Last modify:	29/11/2005
+*	Last modify:	01/10/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -184,7 +184,7 @@ void	init_plist(void)
   else
     plistexist_flag = 0;
 
-  if (FLAG(obj.wflag))
+  if (prefs.weight_flag && prefs.dweight_flag && FLAG(obj.wflag))
     {
     plistexist_wflag = 1;
     plistoff_wflag = plistsize;

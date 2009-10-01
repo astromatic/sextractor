@@ -10,7 +10,7 @@
 *	Contents:	functions dealing with on-line filtering of the image
 *			(for detection).
 *
-*	Last modify:	13/09/2009
+*	Last modify:	01/10/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -35,11 +35,11 @@ typedef struct structfilter
 filterstruct	*thefilter;
 
 /*------------------------------- functions ---------------------------------*/
-void		convolve(picstruct *, PIXTYPE *),
+void		convolve(picstruct *, PIXTYPE *, int y),
 		convolve_image(picstruct *field, float *vig1,
 				float *vig2, int width, int height),
-		filter(picstruct *, PIXTYPE *),
-		neurfilter(picstruct *, PIXTYPE *),
+		filter(picstruct *, PIXTYPE *, int y),
+		neurfilter(picstruct *, PIXTYPE *, int y),
 		endfilter(void),
 		getfilter(char *filename);
 
