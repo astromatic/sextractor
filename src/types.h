@@ -9,7 +9,7 @@
 *
 *	Contents:	global type definitions.
 *
-*	Last modify:	29/09/2009
+*	Last modify:	01/10/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -36,8 +36,8 @@
 
 /*----------------------------- weight flags --------------------------------*/
 
-#define		OBJ_WEIGHTZERO	0x0001
-#define		OBJ_DWEIGHTZERO 0x0002
+#define		OBJ_LOWWEIGHT	0x0001
+#define		OBJ_LOWDWEIGHT	0x0002
 
 /*---------------------------- preanalyse flags -----------------------------*/
 
@@ -81,6 +81,8 @@ typedef struct
   int		fdnpix;				/* nb of extracted pix */
   int		dnpix;				/* nb of pix above thresh  */
   int		npix;				/* "" in measured frame */
+  int		nzdwpix;			/* nb of zero-dweights around */
+  int		nzwpix;				/* nb of zero-weights inside */
   float		fdflux;				/* integrated ext. flux */
   float		dflux;				/* integrated det. flux */
   float		flux;				/* integrated mes. flux */
@@ -114,6 +116,7 @@ typedef struct
   float		mthresh;		       	/* max. threshold (ADU) */
   int		iso[NISO];			/* isophotal areas */
   float		fwhm;				/* IMAGE FWHM */
+  
   }	objstruct;
 
 /* II: "BLIND" parameters */

@@ -9,7 +9,7 @@
 *
 *	Contents:	Handling of field structures.
 *
-*	Last modify:	19/12/2007
+*	Last modify:	01/10/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -153,9 +153,10 @@ picstruct	*newfield(char *filename, int flags, int nok)
   if (prefs.filter_flag)
     {
 /*-- If filtering is on, one should consider the height of the conv. mask */
+/*-- + 1 line for detectinhg zero-weight neighbours */
     if (field->stripheight < thefilter->convh)
       field->stripheight = thefilter->convh;
-    if (field->stripmargin < (margin = (thefilter->convh-1)/2))
+    if (field->stripmargin < (margin = (thefilter->convh-1)/2+1))
       field->stripmargin = margin;
     }
 

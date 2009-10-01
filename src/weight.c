@@ -9,7 +9,7 @@
 *
 *	Contents:	Handling of weight maps.
 *
-*	Last modify:	28/11/2003
+*	Last modify:	30/09/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -26,6 +26,7 @@
 #include	"define.h"
 #include	"globals.h"
 #include	"field.h"
+#include	"plist.h"
 #include	"weight.h"
 
 /******************************* newweight **********************************/
@@ -123,4 +124,43 @@ void	weight_to_var(picstruct *wfield, PIXTYPE *data, int npix)
 
   return;
   }
+
+
+/******************************** weight_count *******************************
+PROTO	void weight_count(objstruct *obj, pliststruct *pixel)
+PURPOSE	Count pixels with zero weights.
+INPUT   Objstruct pointer,
+	pixel list pointer.
+OUTPUT  -.
+NOTES   -.
+AUTHOR  E. Bertin (IAP)
+VERSION 01/10/2009
+ ***/
+void	weight_count(objstruct *obj, pliststruct *pixel)
+
+  {
+   pliststruct	*pixt;
+   int		i, nw,ndw, wflag;
+
+  nw = ndw = wflag = 0;
+
+  for (i=obj->firstpix; i!=-1; i=PLIST(pixt,nextpix))
+    {
+    pixt = pixel+i;
+    if (PLISTFLAG(pixt, wflag) & OBJ_LOWWEIGHT)
+      nw++;
+    if (PLISTFLAG(pixt, wflag) & OBJ_LOWDWEIGHT)
+      ndw++;
+    }
+
+  obj->nzwpix = nw;
+  obj->nzdwpix = ndw;
+  obj->wflag = nw? OBJ_LOWWEIGHT : 0;
+  if (ndw)
+    obj->wflag |= OBJ_LOWDWEIGHT;
+
+  return;
+  }
+
+
 

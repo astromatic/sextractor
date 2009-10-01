@@ -9,7 +9,7 @@
 *
 *	Contents:	functions for output of catalog data.
 *
-*	Last modify:	29/09/2009
+*	Last modify:	01/10/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -598,6 +598,8 @@ void	updateparamflags()
   FLAG(obj.iso[0]) |= FLAG(obj2.sprob);
   for (i=0; i<NISO; i++)
     FLAG(obj.iso[0]) |= FLAG(obj.iso[i]);
+
+  FLAG(obj.wflag) |= FLAG(obj.nzwpix) | FLAG(obj.nzdwpix);
 
   return; 
   }
