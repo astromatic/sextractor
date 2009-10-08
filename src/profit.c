@@ -9,7 +9,7 @@
 *
 *	Contents:	Fit an arbitrary profile combination to a detection.
 *
-*	Last modify:	29/09/2009
+*	Last modify:	06/10/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -127,7 +127,7 @@ profitstruct	*profit_init(psfstruct *psf)
       nprof++;
       }
 
-  QMALLOC(profit->covar, float, profit->nparam*profit->nparam);
+  QMALLOC16(profit->covar, float, profit->nparam*profit->nparam);
   profit->nprof = nprof;
   profit->fluxfac = 1.0;	/* Default */
 
@@ -173,7 +173,7 @@ OUTPUT	Pointer to an allocated fit structure (containing details about the
 	fit).
 NOTES	It is a modified version of the lm_minimize() of lmfit.
 AUTHOR	E. Bertin (IAP)
-VERSION	24/09/2009
+VERSION	06/10/2009
  ***/
 void	profit_fit(profitstruct *profit,
 		picstruct *field, picstruct *wfield,
@@ -201,20 +201,29 @@ void	profit_fit(profitstruct *profit,
 
   psf = profit->psf;
   profit->pixstep = psf->pixstep;
+  obj2->prof_flag = 0;
 
 /* Create pixmaps at image resolution */
+  profit->ix = (int)(obj->mx + 0.49999);/* internal convention: 1st pix = 0 */
+  profit->iy = (int)(obj->my + 0.49999);/* internal convention: 1st pix = 0 */
   psf_fwhm = psf->masksize[0]*psf->pixstep;
   profit->objnaxisn[0] = (((int)((obj->xmax-obj->xmin+1) + psf_fwhm + 0.499)
 		*1.2)/2)*2 + 1;
   profit->objnaxisn[1] = (((int)((obj->ymax-obj->ymin+1) + psf_fwhm + 0.499)
 		*1.2)/2)*2 + 1;
-  profit->ix = (int)(obj->mx + 0.49999);/* internal convention: 1st pix = 0 */
-  profit->iy = (int)(obj->my + 0.49999);/* internal convention: 1st pix = 0 */
-
   if (profit->objnaxisn[1]<profit->objnaxisn[0])
     profit->objnaxisn[1] = profit->objnaxisn[0];
   else
     profit->objnaxisn[0] = profit->objnaxisn[1];
+  if (profit->objnaxisn[0]>PROFIT_MAXOBJSIZE)
+    {
+    profit->nsubsamp = ceil((float)profit->objnaxisn[0]/PROFIT_MAXOBJSIZE);
+    profit->objnaxisn[1] = (profit->objnaxisn[0] /= (int)profit->nsubsamp);
+    profit->pixstep *= profit->nsubsamp;
+    obj2->prof_flag |= PROFLAG_OBJSUB;
+    }
+  else
+    profit->nsubsamp = 1.0;
 
 /* Use (dirty) global variables to interface with lmfit */
   the_field = field;
@@ -223,10 +232,11 @@ void	profit_fit(profitstruct *profit,
   profit->obj = obj;
   profit->obj2 = obj2;
 
-  QMALLOC(profit->objpix, PIXTYPE, profit->objnaxisn[0]*profit->objnaxisn[1]);
-  QMALLOC(profit->objweight, PIXTYPE,profit->objnaxisn[0]*profit->objnaxisn[1]);
-  QMALLOC(profit->lmodpix, PIXTYPE, profit->objnaxisn[0]*profit->objnaxisn[1]);
+  QMALLOC16(profit->objpix, PIXTYPE, profit->objnaxisn[0]*profit->objnaxisn[1]);
+  QMALLOC16(profit->objweight, PIXTYPE,profit->objnaxisn[0]*profit->objnaxisn[1]);
+  QMALLOC16(profit->lmodpix, PIXTYPE, profit->objnaxisn[0]*profit->objnaxisn[1]);
   profit->nresi = profit_copyobjpix(profit, field, wfield);
+/* Check if the number of constraints exceeds the number of free parameters */
   if (profit->nresi < nparam)
     {
     if (FLAG(obj2.prof_vector))
@@ -239,10 +249,11 @@ void	profit_fit(profitstruct *profit,
       for (p=0; p<nparam2; p++)
         obj2->prof_errmatrix[p] = 0.0;
     obj2->prof_niter = 0;
+    obj2->prof_flag |= PROFLAG_NOTCONST;
     return;
     }
 
-  QMALLOC(profit->resi, float, profit->nresi);
+  QMALLOC16(profit->resi, float, profit->nresi);
 
 /* Create pixmap at PSF resolution */
   profit->modnaxisn[0] =
@@ -253,19 +264,23 @@ void	profit_fit(profitstruct *profit,
     profit->modnaxisn[1] = profit->modnaxisn[0];
   else
     profit->modnaxisn[0] = profit->modnaxisn[1];
+  if (profit->modnaxisn[0]>PROFIT_MAXMODSIZE)
+    {
+    profit->pixstep = (double)profit->modnaxisn[0] / PROFIT_MAXMODSIZE;
+    profit->modnaxisn[0] = profit->modnaxisn[1] = PROFIT_MAXMODSIZE;
+    obj2->prof_flag |= PROFLAG_MODSUB;
+    }
 
 /* Allocate memory for the complete model */
-  QFFTWMALLOC(profit->modpix, float, profit->modnaxisn[0]*profit->modnaxisn[1]);
+  QMALLOC16(profit->modpix, float, profit->modnaxisn[0]*profit->modnaxisn[1]);
   memset(profit->modpix, 0, profit->modnaxisn[0]*profit->modnaxisn[1]*sizeof(float));
-  QMALLOC(profit->psfpix, float, profit->modnaxisn[0]*profit->modnaxisn[1]);
+  QMALLOC16(profit->psfpix, float, profit->modnaxisn[0]*profit->modnaxisn[1]);
 /* Allocate memory for the partial model */
-  QMALLOC(profit->pmodpix, float, profit->modnaxisn[0]*profit->modnaxisn[1]);
-
+  QMALLOC16(profit->pmodpix, float, profit->modnaxisn[0]*profit->modnaxisn[1]);
 /* Compute the local PSF */
   profit_psf(profit);
 
 /* Set initial guesses and boundaries */
-  obj2->prof_flag = 0;
   profit->sigma = obj->sigbkg;
 
   profit_resetparams(profit);
@@ -274,6 +289,7 @@ void	profit_fit(profitstruct *profit,
 
 /* Actual minimisation */
   fft_reset();
+the_gal++;
   profit->niter = profit_minimize(profit, PROFIT_MAXITER);
   profit_residuals(profit,field,wfield, 10.0, profit->param,profit->resi);
 
@@ -613,7 +629,7 @@ void	profit_fit(profitstruct *profit,
     pprofit.nparam = 0;
     QMALLOC(pprofit.prof, profstruct *, 1);
     pprofit.prof[0] = prof_init(&pprofit, PROF_DIRAC);
-    QMALLOC(pprofit.covar, float, pprofit.nparam*pprofit.nparam);
+    QMALLOC16(pprofit.covar, float, pprofit.nparam*pprofit.nparam);
     pprofit.nprof = 1;
     profit_resetparams(&pprofit);
     if (profit->paramlist[PARAM_X] && profit->paramlist[PARAM_Y])
@@ -648,6 +664,7 @@ void	profit_fit(profitstruct *profit,
     }
 
 /* clean up. */
+  fft_reset();
   free(profit->modpix);
   free(profit->psfpix);
   free(profit->pmodpix);
@@ -796,7 +813,7 @@ INPUT	Profile-fitting structure.
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	07/09/2009
+VERSION	05/10/2009
  ***/
 void	profit_psf(profitstruct *profit)
   {
@@ -839,7 +856,7 @@ void	profit_psf(profitstruct *profit)
     }
 
 /* Normalize PSF flux (just in case...) */
-  flux *= psf->pixstep*psf->pixstep;
+  flux *= profit->pixstep*profit->pixstep;
   if (fabs(flux) > 0.0)
     {
     norm = 1.0/flux;
@@ -1276,23 +1293,21 @@ INPUT	Pointer to the profit structure,
 OUTPUT	The number of valid pixels copied.
 NOTES	Global preferences are used.
 AUTHOR	E. Bertin (IAP)
-VERSION	18/09/2008
+VERSION	07/10/2009
  ***/
 int	profit_copyobjpix(profitstruct *profit, picstruct *field,
 			picstruct *wfield)
   {
-   float	dx2, dy2, dr2, rad2;
-   PIXTYPE	*pixin,*pixout, *wpixin,*wpixout,
-		backnoise2, invgain, satlevel, wthresh, pix, wpix;
-   int		i,x,y, xmin,xmax,ymin,ymax, w,h,w2,dw, npix, off, gainflag,
-		ix,iy;
+   float	dx, dy2, dr2, rad2;
+   PIXTYPE	*pixin,*spixin, *wpixin,*swpixin, *pixout,*wpixout,
+		backnoise2, invgain, satlevel, wthresh, pix,spix, wpix,swpix;
+   int		i,x,y, xmin,xmax,ymin,ymax, w,h,dw, npix, off, gainflag,
+		badflag, sflag, sx,sy,sn,sw, rem, ix,iy;
 
 /* First put the image background to -BIG */
   pixout = profit->objpix;
   wpixout = profit->objweight;
-  w = profit->objnaxisn[0];
-  h = profit->objnaxisn[1];
-  for (i=w*h; i--;)
+  for (i=profit->objnaxisn[0]*profit->objnaxisn[1]; i--;)
     {
     *(pixout++) = -BIG;
     *(wpixout++) = 0.0;
@@ -1305,13 +1320,18 @@ int	profit_copyobjpix(profitstruct *profit, picstruct *field,
     return 0;
 
   backnoise2 = field->backsig*field->backsig;
+  sn = (int)profit->nsubsamp;
+  sflag = (sn>1);
+  w = profit->objnaxisn[0]*sn;
+  h = profit->objnaxisn[1]*sn;
+  if (sflag)
+    backnoise2 *= (PIXTYPE)sn;
   invgain = (field->gain > 0.0) ? 1.0/field->gain : 0.0;
   satlevel = field->satur_level - profit->obj->bkg;
   rad2 = h/2.0;
   if (rad2 > w/2.0)
     rad2 = w/2.0;
   rad2 *= rad2;
-
 
 /* Set the image boundaries */
   pixout = profit->objpix;
@@ -1320,82 +1340,187 @@ int	profit_copyobjpix(profitstruct *profit, picstruct *field,
   ymax = ymin + h;
   if (ymin<field->ymin)
     {
-    off = (field->ymin-ymin)*w;
-    pixout += off;
-    wpixout += off;
-    ymin = field->ymin;
+    off = (field->ymin-ymin-1)/sn + 1;
+    pixout += off*profit->objnaxisn[0];
+    wpixout += off*profit->objnaxisn[0];
+    ymin += off*sn;
     }
   if (ymax>field->ymax)
-    ymax = field->ymax;
+    ymax -= ((ymax-field->ymax-1)/sn + 1)*sn;
 
   xmin = ix-w/2;
   xmax = xmin + w;
-  w2 = w;
+  dw = 0;
   if (xmax>field->width)
     {
-    w2 -= xmax-field->width;
-    xmax = field->width;
+    off = (xmax-field->width-1)/sn + 1;
+    dw += off;
+    xmax -= off*sn;
     }
   if (xmin<0)
     {
-    pixout -= xmin;
-    wpixout -= xmin;
-    w2 += xmin;
-    xmin = 0;
+    off = (-xmin-1)/sn + 1;
+    pixout += off;
+    wpixout += off;
+    dw += off;
+    xmin += off*sn;
+    }
+/* Make sure the input frame size is a multiple of the subsampling step */
+  if (sflag)
+    {
+/*
+    if (((rem=ymax-ymin)%sn))
+      {
+      ymin += rem/2;
+      ymax -= (rem-rem/2);
+      }
+    if (((rem=xmax-xmin)%sn))
+      {
+      xmin += rem/2;
+      pixout += rem/2;
+      wpixout += rem/2;
+      dw += rem;
+      xmax -= (rem-rem/2);
+      }
+*/
+    sw = field->width;
     }
 
 /* Copy the right pixels to the destination */
-  dw = w - w2;
   npix = 0;
   if (wfield)
     {
     wthresh = wfield->weight_thresh;
     gainflag = prefs.weightgain_flag;
-/*-- Do the same for the weights */
-    npix = 0;
-
-    for (y=ymin; y<ymax; y++, pixout+=dw,wpixout+=dw)
+    if (sflag)
       {
-      dy2 = y-iy;
-      dy2 *= dy2;
-      pixin = &PIX(field, xmin, y);
-      wpixin = &PIX(wfield, xmin, y);
-      for (x=xmin; x<xmax; x++)
+/*---- Sub-sampling case */
+      for (y=ymin; y<ymax; y+=sn, pixout+=dw,wpixout+=dw)
         {
-        dx2 = (x-ix);
-        dr2 = dy2 + dx2*dx2;
-        pix = *(pixout++) = *(pixin++);
-        if (dr2<rad2 && pix>-BIG && pix<satlevel && (wpix=*(wpixin++))<wthresh)
+        for (x=xmin; x<xmax; x+=sn)
           {
-          *(wpixout++) = 1.0 / sqrt(wpix+(pix>0.0?
+          pix = wpix = 0.0;
+          badflag = 0;
+          for (sy=0; sy<sn; sy++)
+            {
+            dy2 = (y+sy-iy);
+            dy2 *= dy2;
+            dx = (x-ix);
+            spixin = &PIX(field, x, y+sy);
+            swpixin = &PIX(wfield, x, y+sy);
+            for (sx=sn; sx--;)
+              {
+              dr2 = dy2 + dx*dx;
+              dx++;
+              spix = *(spixin++);
+              swpix = *(swpixin++);
+              if (dr2<rad2 && spix>-BIG && spix<satlevel && swpix<wthresh)
+                {
+                pix += spix;
+                wpix += swpix;
+                }
+              else
+                badflag=1;
+              }
+            }
+          *(pixout++) = pix;
+          if (!badflag)	/* A single bad pixel ruins is all (saturation, etc.)*/
+            {
+            *(wpixout++) = 1.0 / sqrt(wpix+(pix>0.0?
 		(gainflag? pix*wpix/backnoise2:pix)*invgain : 0.0));
-          npix++;
+            npix++;
+            }
+          else
+            *(wpixout++) = 0.0;
           }
-        else
-          *(wpixout++) = 0.0;
         }
       }
+    else
+      for (y=ymin; y<ymax; y++, pixout+=dw,wpixout+=dw)
+        {
+        dy2 = y-iy;
+        dy2 *= dy2;
+        pixin = &PIX(field, xmin, y);
+        wpixin = &PIX(wfield, xmin, y);
+        for (x=xmin; x<xmax; x++)
+          {
+          dx = x-ix;
+          dr2 = dy2 + dx*dx;
+          pix = *(pixin++);
+          wpix = *(wpixin++);
+          if (dr2<rad2 && pix>-BIG && pix<satlevel && wpix<wthresh)
+            {
+            *(pixout++) = pix;
+            *(wpixout++) = 1.0 / sqrt(wpix+(pix>0.0?
+		(gainflag? pix*wpix/backnoise2:pix)*invgain : 0.0));
+            npix++;
+            }
+          else
+            *(pixout++) = *(wpixout++) = 0.0;
+          }
+        }
     }
   else
-    for (y=ymin; y<ymax; y++, pixout+=dw,wpixout+=dw)
+    {
+    if (sflag)
       {
-      dy2 = y-iy;
-      dy2 *= dy2;
-      pixin = &PIX(field, xmin, y);
-      for (x=xmin; x<xmax; x++)
+/*---- Sub-sampling case */
+      for (y=ymin; y<ymax; y+=sn, pixout+=dw, wpixout+=dw)
         {
-        dx2 = (x-ix);
-        dr2 = dy2 + dx2*dx2;
-        pix = *(pixout++) = *(pixin++);
-        if (dr2<rad2 && pix>-BIG)
+        for (x=xmin; x<xmax; x+=sn)
           {
-          *(wpixout++) = 1.0 / sqrt(backnoise2 + (pix>0.0?pix*invgain : 0.0));
-          npix++;
+          pix = 0.0;
+          badflag = 0;
+          for (sy=0; sy<sn; sy++)
+            {
+            dy2 = y+sy-iy;
+            dy2 *= dy2;
+            dx = x-ix;
+            spixin = &PIX(field, x, y+sy);
+            for (sx=sn; sx--;)
+              {
+              dr2 = dy2 + dx*dx;
+              dx++;
+              spix = *(spixin++);
+              if (dr2<rad2 && spix>-BIG && spix<satlevel)
+                pix += spix;
+              else
+                badflag=1;
+              }
+            }
+          *(pixout++) = pix;
+          if (!badflag)	/* A single bad pixel ruins is all (saturation, etc.)*/
+            {
+            *(wpixout++) = 1.0 / sqrt(backnoise2 + (pix>0.0?pix*invgain:0.0));
+            npix++;
+            }
+          else
+            *(wpixout++) = 0.0;
           }
-        else
-          *(wpixout++) = 0.0;
         }
       }
+    else
+      for (y=ymin; y<ymax; y++, pixout+=dw,wpixout+=dw)
+        {
+        dy2 = y-iy;
+        dy2 *= dy2;
+        pixin = &PIX(field, xmin, y);
+        for (x=xmin; x<xmax; x++)
+          {
+          dx = x-ix;
+          dr2 = dy2 + dx*dx;
+          pix = *(pixin++);
+          if (dr2<rad2 && pix>-BIG && pix<satlevel)
+            {
+            *(pixout++) = pix;
+            *(wpixout++) = 1.0 / sqrt(backnoise2 + (pix>0.0?pix*invgain : 0.0));
+            npix++;
+            }
+          else
+            *(pixout++) = *(wpixout++) = 0.0;
+          }
+        }
+    }
  
   return npix;
   }
@@ -1786,7 +1911,7 @@ void	profit_resetparam(profitstruct *profit, paramenum paramtype)
       break;
     case PARAM_DISK_SCALE:	/* From scalelength to Re */
       param = obj2->hl_radius/1.67835*sqrt(obj->a/obj->b);
-      parammin = 0.1;
+      parammin = param/4.0;
       parammax = param * 4.0;
       break;
     case PARAM_DISK_ASPECT:
@@ -2017,7 +2142,7 @@ INPUT	Pointer to the profit structure.
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	07/09/2009
+VERSION	02/10/2009
  ***/
 void	profit_covarunboundtobound(profitstruct *profit)
   {
@@ -2027,7 +2152,7 @@ void	profit_covarunboundtobound(profitstruct *profit)
    int		p,p1,p2, nparam;
 
   nparam = profit->nparam;
-  QMALLOC(dxdy, double, nparam);
+  QMALLOC16(dxdy, double, nparam);
   x = profit->paraminit;
   xmin = profit->parammin;
   xmax = profit->parammax;
@@ -2237,7 +2362,7 @@ profstruct	*prof_init(profitstruct *profit, proftypenum profcode)
 	(prof->kernelwidth[d] = interp_kernwidth[prof->interptype[d]]);
       }
     prof->kernelnlines /= prof->kernelwidth[0];
-    QMALLOC(prof->kernelbuf, float, prof->kernelnlines);
+    QMALLOC16(prof->kernelbuf, float, prof->kernelnlines);
     }
 
   return prof;
@@ -2274,7 +2399,7 @@ INPUT	Profile structure,
 OUTPUT	Corrected flux contribution.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	29/09/2009
+VERSION	08/10/2009
  ***/
 float	prof_add(profstruct *prof, profitstruct *profit)
   {
@@ -2449,7 +2574,7 @@ float	prof_add(profstruct *prof, profitstruct *profit)
 /*---- Copy the symmetric part */
       if ((npix2=(profit->modnaxisn[1]-nx2)*profit->modnaxisn[0]) > 0)
         {
-        pixin2 = pixin - profit->modnaxisn[0] - 1;
+        pixin2 = pixin - profit->modnaxisn[0];
         for (i=npix2; i--;)
           *(pixin++) = *(pixin2--);
         }
@@ -2504,7 +2629,7 @@ float	prof_add(profstruct *prof, profitstruct *profit)
 /*---- Copy the symmetric part */
       if ((npix2=(profit->modnaxisn[1]-nx2)*profit->modnaxisn[0]) > 0)
         {
-        pixin2 = pixin - profit->modnaxisn[0] - 1;
+        pixin2 = pixin - profit->modnaxisn[0];
         for (i=npix2; i--;)
           *(pixin++) = *(pixin2--);
         }
