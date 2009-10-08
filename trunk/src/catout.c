@@ -9,7 +9,7 @@
 *
 *	Contents:	functions for output of catalog data.
 *
-*	Last modify:	01/10/2009
+*	Last modify:	07/10/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -381,6 +381,8 @@ void	updateparamflags()
 			| FLAG(obj2.prof_vector) | FLAG(obj2.prof_errvector)
 			| FLAG(obj2.prof_errmatrix)
 			| FLAG(obj2.x_prof) | FLAG(obj2.y_prof)
+			| FLAG(obj2.prof_flag)
+			| FLAG(obj2.flux_prof)
 			| FLAG(obj2.prof_mx2)
 			| FLAG(obj2.peak_prof)
 			| FLAG(obj2.prof_disk_flux)

@@ -9,7 +9,7 @@
 *
 *	Contents:	global definitions.
 *
-*	Last modify:	31/03/2009
+*	Last modify:	02/10/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -149,6 +149,11 @@
 
 #define	QMALLOC(ptr, typ, nel) \
 		{if (!(ptr = (typ *)malloc((size_t)(nel)*sizeof(typ)))) \
+		  error(EXIT_FAILURE, "Not enough memory for ", \
+			#ptr " (" #nel " elements) !");;}
+
+#define	QMALLOC16(ptr, typ, nel) \
+		{if (posix_memalign((void **)&ptr, 16, (size_t)(nel)*sizeof(typ))) \
 		  error(EXIT_FAILURE, "Not enough memory for ", \
 			#ptr " (" #nel " elements) !");;}
 
