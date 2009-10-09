@@ -9,7 +9,7 @@
 *
 *	Contents:	Fit an arbitrary profile combination to a detection.
 *
-*	Last modify:	06/10/2009
+*	Last modify:	09/10/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -173,7 +173,7 @@ OUTPUT	Pointer to an allocated fit structure (containing details about the
 	fit).
 NOTES	It is a modified version of the lm_minimize() of lmfit.
 AUTHOR	E. Bertin (IAP)
-VERSION	06/10/2009
+VERSION	09/10/2009
  ***/
 void	profit_fit(profitstruct *profit,
 		picstruct *field, picstruct *wfield,
@@ -217,13 +217,14 @@ void	profit_fit(profitstruct *profit,
     profit->objnaxisn[0] = profit->objnaxisn[1];
   if (profit->objnaxisn[0]>PROFIT_MAXOBJSIZE)
     {
-    profit->nsubsamp = ceil((float)profit->objnaxisn[0]/PROFIT_MAXOBJSIZE);
-    profit->objnaxisn[1] = (profit->objnaxisn[0] /= (int)profit->nsubsamp);
-    profit->pixstep *= profit->nsubsamp;
+    profit->subsamp = ceil((float)profit->objnaxisn[0]/PROFIT_MAXOBJSIZE);
+//    profit->fluxfac *= profit->subsamp*profit->subsamp;
+    profit->objnaxisn[1] = (profit->objnaxisn[0] /= (int)profit->subsamp);
+//    profit->pixstep *= profit->subsamp;
     obj2->prof_flag |= PROFLAG_OBJSUB;
     }
   else
-    profit->nsubsamp = 1.0;
+    profit->subsamp = 1.0;
 
 /* Use (dirty) global variables to interface with lmfit */
   the_field = field;
@@ -257,9 +258,11 @@ void	profit_fit(profitstruct *profit,
 
 /* Create pixmap at PSF resolution */
   profit->modnaxisn[0] =
-	((int)(profit->objnaxisn[0]/profit->pixstep +0.4999)/2+1)*2; 
+	((int)(profit->objnaxisn[0]*profit->subsamp/profit->pixstep
+		+0.4999)/2+1)*2; 
   profit->modnaxisn[1] =
-	((int)(profit->objnaxisn[1]/profit->pixstep +0.4999)/2+1)*2; 
+	((int)(profit->objnaxisn[1]*profit->subsamp/profit->pixstep
+		+0.4999)/2+1)*2; 
   if (profit->modnaxisn[1] < profit->modnaxisn[0])
     profit->modnaxisn[1] = profit->modnaxisn[0];
   else
@@ -1101,7 +1104,7 @@ INPUT	Profile-fitting structure.
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	07/09/2009
+VERSION	09/10/2009
  ***/
 void	profit_resample(profitstruct *profit, float *inpix, PIXTYPE *outpix,
 	float factor)
@@ -1109,8 +1112,8 @@ void	profit_resample(profitstruct *profit, float *inpix, PIXTYPE *outpix,
    double	flux;
    float	posin[2], posout[2], dnaxisn[2],
 		*dx,*dy,
-		xcout,ycout, xcin,ycin, invpixstep;
-   int		d,i;
+		xcout,ycout, xcin,ycin, invpixstep, pix, off,step;
+   int		d,i, ix,iy,ns;
 
   xcout = (float)(profit->objnaxisn[0]/2) + 1.0;	/* FITS convention */
   if ((dx=(profit->paramlist[PARAM_X])))
@@ -1120,7 +1123,7 @@ void	profit_resample(profitstruct *profit, float *inpix, PIXTYPE *outpix,
     ycout += *dy;
   xcin = (profit->modnaxisn[0]/2) + 1.0;		/* FITS convention */
   ycin = (profit->modnaxisn[1]/2) + 1.0;		/* FITS convention */
-  invpixstep = 1.0/profit->pixstep;
+  invpixstep = profit->subsamp/profit->pixstep;
 
 /* Initialize multi-dimensional counters */
   for (d=0; d<2; d++)
@@ -1129,20 +1132,45 @@ void	profit_resample(profitstruct *profit, float *inpix, PIXTYPE *outpix,
     dnaxisn[d] = profit->objnaxisn[d]+0.5;
     }
 
-/* Remap each pixel */
+/* Remap each pixel (and rebin if necessary) */
   flux = 0.0;
-  for (i=profit->objnaxisn[0]*profit->objnaxisn[1]; i--;)
+  ns=(int)profit->subsamp;
+  if (ns>1)
     {
-    posin[0] = (posout[0] - xcout)*invpixstep + xcin;
-    posin[1] = (posout[1] - ycout)*invpixstep + ycin;
-    flux += ((*(outpix++) = (PIXTYPE)(factor*interpolate_pix(posin, inpix,
-		profit->modnaxisn, INTERP_LANCZOS3))));
-    for (d=0; d<2; d++)
-      if ((posout[d]+=1.0) < dnaxisn[d])
-        break;
-      else
-        posout[d] = 1.0;
+    step = 1.0/profit->subsamp;
+    off = 0.5*(step - 1.0);
+    xcin += off;
+    ycin += off;
+    for (i=profit->objnaxisn[0]*profit->objnaxisn[1]; i--;)
+      {
+      posin[0] = (posout[0] - xcout)*invpixstep + xcin;
+      posin[1] = (posout[1] - ycout)*invpixstep + ycin;
+      pix = 0.0;
+      for (iy=ns; iy--; posin[1] += step)
+        for (ix=ns; ix--; posin[0] += step)
+          pix += (PIXTYPE)(factor*interpolate_pix(posin, inpix,
+		profit->modnaxisn, INTERP_LANCZOS3));
+      flux += (*(outpix++) = pix);
+      for (d=0; d<2; d++)
+        if ((posout[d]+=1.0) < dnaxisn[d])
+          break;
+        else
+          posout[d] = 1.0;
+      }
     }
+  else
+    for (i=profit->objnaxisn[0]*profit->objnaxisn[1]; i--;)
+      {
+      posin[0] = (posout[0] - xcout)*invpixstep + xcin;
+      posin[1] = (posout[1] - ycout)*invpixstep + ycin;
+      flux += ((*(outpix++) = (PIXTYPE)(factor*interpolate_pix(posin, inpix,
+		profit->modnaxisn, INTERP_LANCZOS3))));
+      for (d=0; d<2; d++)
+        if ((posout[d]+=1.0) < dnaxisn[d])
+          break;
+        else
+          posout[d] = 1.0;
+      }
 
   return;
   }
@@ -1320,7 +1348,7 @@ int	profit_copyobjpix(profitstruct *profit, picstruct *field,
     return 0;
 
   backnoise2 = field->backsig*field->backsig;
-  sn = (int)profit->nsubsamp;
+  sn = (int)profit->subsamp;
   sflag = (sn>1);
   w = profit->objnaxisn[0]*sn;
   h = profit->objnaxisn[1]*sn;
@@ -2399,7 +2427,7 @@ INPUT	Profile structure,
 OUTPUT	Corrected flux contribution.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	08/10/2009
+VERSION	09/10/2009
  ***/
 float	prof_add(profstruct *prof, profitstruct *profit)
   {
@@ -2518,7 +2546,7 @@ float	prof_add(profstruct *prof, profitstruct *profit)
 /*---- Copy the symmetric part */
       if ((npix2=(profit->modnaxisn[1]-nx2)*profit->modnaxisn[0]) > 0)
         {
-        pixin2 = pixin - profit->modnaxisn[0] - 1;
+        pixin2 = pixin - profit->modnaxisn[0];
         for (i=npix2; i--;)
           *(pixin++) = *(pixin2--);
         }
