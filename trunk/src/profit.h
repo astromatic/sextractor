@@ -9,7 +9,7 @@
 *
 *	Contents:	Include file for profit.c.
 *
-*	Last modify:	07/10/2009
+*	Last modify:	09/10/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -36,7 +36,7 @@
 #define	PROFIT_HIDEFRES	201	/* Resolution of the high def. model raster */
 #define	PROFIT_REFFFAC	6.0	/* Factor in r_eff for measurement radius*/
 #define	PROFIT_DYNPARAM	10.0	/* Dynamic compression param. in sigma units */
-#define	PROFIT_MAXMODSIZE  1024	/* Maximum size allowed for the model raster */
+#define	PROFIT_MAXMODSIZE  512	/* Maximum size allowed for the model raster */
 #define	PROFIT_MAXOBJSIZE  512	/* Maximum size allowed for the object raster */
 #define	PROFIT_BARXFADE	0.1	/* Fract. of bar length crossfaded with arms */
 #define	PROFIT_MAXEXTRA	2	/* Max. nb of extra free params of profiles */
@@ -125,7 +125,7 @@ typedef struct
   struct psf	*psf;		/* PSF */
   float		pixstep;	/* Model/PSF sampling step */
   float		fluxfac;	/* Model flux scaling factor */
-  float		nsubsamp;	/* Subsampling factor */
+  float		subsamp;	/* Subsampling factor */
   float		*psfdft;	/* Compressed Fourier Transform of the PSF */
   float		*psfpix;	/* Full res. pixmap of the PSF */
   float		*modpix;	/* Full res. pixmap of the complete model */
