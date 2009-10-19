@@ -210,7 +210,7 @@ void	addcleanobj(objstruct *objin)
   hh1 = hh1 > 0.0 ? 1/sqrt(3*hh1) : 0.0;
 /* ... then from the isophotal limit, which should not be TOO different... */
   hh2 = (objin->ymax-objin->ymin+1.0);
-  margin = (int)((hh1>hh2?hh1:hh2)*MARGIN_SCALE+1.49999);
+  margin = (int)((hh1>hh2?hh1:hh2)*MARGIN_SCALE+MARGIN_OFFSET+0.49999);
   objin->ycmax = objin->ymax+margin;
 /* ... and finally compare with the predefined margin */
   if ((y=(int)(objin->my+0.49999)+prefs.cleanmargin)>objin->ycmax)
