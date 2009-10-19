@@ -9,7 +9,7 @@
 *
 *	Contents:	global definitions.
 *
-*	Last modify:	02/10/2009
+*	Last modify:	12/10/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -36,6 +36,7 @@
 #define	LESSBIG			1e+25		/* a somewhat smaller number */
 #define	DATA_BUFSIZE		262144		/* data buffer size */
 #define	MARGIN_SCALE		2.0		/* Margin / object height */ 
+#define	MARGIN_OFFSET		4.0		/* Margin offset (pixels) */ 
 #define	MAXCHAR			512		/* max. number of characters */
 #define	MAXCHARL		16384		/* max.nb of chars in strlist*/
 #define	MAXDEBAREA		3		/* max. area for deblending */
