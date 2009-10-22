@@ -50,7 +50,7 @@
  * This function requires an analytic Jacobian. In case the latter is unavailable,
  * use LEVMAR_DIF() bellow
  *
- * Returns the number of iterations (>=0) if successfull, LM_ERROR if failed
+ * Returns the number of iterations (>=0) if successful, LM_ERROR if failed
  *
  * For more details, see K. Madsen, H.B. Nielsen and O. Tingleff's lecture notes on 
  * non-linear least squares at http://www.imm.dtu.dk/pubdb/views/edoc_download.php/3215/pdf/imm3215.pdf
@@ -81,6 +81,7 @@ int LEVMAR_DER(
                       *                                 7 - stopped by invalid (i.e. NaN or Inf) "func" values. This is a user error
                       * info[7]= # function evaluations
                       * info[8]= # Jacobian evaluations
+                      * info[9]= # linear systems solved, i.e. # attempts for reducing error
                       */
   LM_REAL *work,     /* working memory at least LM_DER_WORKSZ() reals large, allocated if NULL */
   LM_REAL *covar,    /* O: Covariance matrix corresponding to LS solution; mxm. Set to NULL if not needed. */
@@ -106,7 +107,7 @@ LM_REAL p_eL2, jacTe_inf, pDp_eL2; /* ||e(p)||_2, ||J^T e||_inf, ||e(p+Dp)||_2 *
 LM_REAL p_L2, Dp_L2=LM_REAL_MAX, dF, dL;
 LM_REAL tau, eps1, eps2, eps2_sq, eps3;
 LM_REAL init_p_eL2;
-int nu=2, nu2, stop=0, nfev, njev=0;
+int nu=2, nu2, stop=0, nfev, njev=0, nlss=0;
 const int nm=n*m;
 int (*linsolver)(LM_REAL *A, LM_REAL *B, LM_REAL *x, int m)=NULL;
 
@@ -143,7 +144,7 @@ int (*linsolver)(LM_REAL *A, LM_REAL *B, LM_REAL *x, int m)=NULL;
     work=(LM_REAL *)malloc(worksz*sizeof(LM_REAL)); /* allocate a big chunk in one step */
     if(!work){
       fprintf(stderr, LCAT(LEVMAR_DER, "(): memory allocation request failed\n"));
-      exit(1);
+      return LM_ERROR;
     }
     freework=1;
   }
@@ -181,7 +182,7 @@ int (*linsolver)(LM_REAL *A, LM_REAL *B, LM_REAL *x, int m)=NULL;
     }
 
     /* Compute the Jacobian J at p,  J^T J,  J^T e,  ||J^T e||_inf and ||p||^2.
-     * Since J^T J is symmetric, its computation can be speeded up by computing
+     * Since J^T J is symmetric, its computation can be sped up by computing
      * only its upper triangular part and copying it to the lower part
      */
 
@@ -189,38 +190,51 @@ int (*linsolver)(LM_REAL *A, LM_REAL *B, LM_REAL *x, int m)=NULL;
 
     /* J^T J, J^T e */
     if(nm<__BLOCKSZ__SQ){ // this is a small problem
-      /* This is the straightforward way to compute J^T J, J^T e. However, due to
-       * its noncontinuous memory access pattern, it incures many cache misses when
-       * applied to large minimization problems (i.e. problems involving a large
-       * number of free variables and measurements), in which J is too large to
-       * fit in the L1 cache. For such problems, a cache-efficient blocking scheme
-       * is preferable.
+      /* J^T*J_ij = \sum_l J^T_il * J_lj = \sum_l J_li * J_lj.
+       * Thus, the product J^T J can be computed using an outer loop for
+       * l that adds J_li*J_lj to each element ij of the result. Note that
+       * with this scheme, the accesses to J and JtJ are always along rows,
+       * therefore induces less cache misses compared to the straightforward
+       * algorithm for computing the product (i.e., l loop is innermost one).
+       * A similar scheme applies to the computation of J^T e.
+       * However, for large minimization problems (i.e., involving a large number
+       * of unknowns and measurements) for which J/J^T J rows are too large to
+       * fit in the L1 cache, even this scheme incures many cache misses. In
+       * such cases, a cache-efficient blocking scheme is preferable.
        *
        * Thanks to John Nitao of Lawrence Livermore Lab for pointing out this
        * performance problem.
        *
-       * On the other hand, the straightforward algorithm is faster on small
+       * Note that the non-blocking algorithm is faster on small
        * problems since in this case it avoids the overheads of blocking. 
        */
 
-      for(i=0; i<m; ++i){
-        for(j=i; j<m; ++j){
-          int lm;
+      /* looping downwards saves a few computations */
+      register int l, im;
+      register LM_REAL alpha, *jaclm;
 
-          for(l=0, tmp=0.0; l<n; ++l){
-            lm=l*m;
-            tmp+=jac[lm+i]*jac[lm+j];
-          }
+      for(i=m*m; i-->0; )
+        jacTjac[i]=0.0;
+      for(i=m; i-->0; )
+        jacTe[i]=0.0;
 
-		      /* store tmp in the corresponding upper and lower part elements */
-          jacTjac[i*m+j]=jacTjac[j*m+i]=tmp;
+      for(l=n; l-->0; ){
+        jaclm=jac+l*m;
+        for(i=m; i-->0; ){
+          im=i*m;
+          alpha=jaclm[i]; //jac[l*m+i];
+          for(j=i+1; j-->0; ) /* j<=i computes lower triangular part only */
+            jacTjac[im+j]+=jaclm[j]*alpha; //jac[l*m+j]
+
+          /* J^T e */
+          jacTe[i]+=alpha*e[l];
         }
-
-        /* J^T e */
-        for(l=0, tmp=0.0; l<n; ++l)
-          tmp+=jac[l*m+i]*e[l];
-        jacTe[i]=tmp;
       }
+
+      for(i=m; i-->0; ) /* copy to upper part */
+        for(j=i+1; j<m; ++j)
+          jacTjac[i*m+j]=jacTjac[j*m+i];
+
     }
     else{ // this is a large problem
       /* Cache efficient computation of J^T J based on blocking
@@ -284,15 +298,15 @@ if(!(k%100)){
        * SVD is the slowest but most accurate; LU offers a tradeoff between accuracy and speed
        */
 
-      issolved=AX_EQ_B_LU(jacTjac, jacTe, Dp, m); linsolver=AX_EQ_B_LU;
-      //issolved=AX_EQ_B_CHOL(jacTjac, jacTe, Dp, m); linsolver=AX_EQ_B_CHOL;
-      //issolved=AX_EQ_B_QR(jacTjac, jacTe, Dp, m); linsolver=AX_EQ_B_QR;
-      //issolved=AX_EQ_B_QRLS(jacTjac, jacTe, Dp, m, m); linsolver=AX_EQ_B_QRLS;
-      //issolved=AX_EQ_B_SVD(jacTjac, jacTe, Dp, m); linsolver=AX_EQ_B_SVD;
+      issolved=AX_EQ_B_LU(jacTjac, jacTe, Dp, m); ++nlss; linsolver=AX_EQ_B_LU;
+      //issolved=AX_EQ_B_CHOL(jacTjac, jacTe, Dp, m); ++nlss; linsolver=AX_EQ_B_CHOL;
+      //issolved=AX_EQ_B_QR(jacTjac, jacTe, Dp, m); ++nlss; linsolver=AX_EQ_B_QR;
+      //issolved=AX_EQ_B_QRLS(jacTjac, jacTe, Dp, m, m); ++nlss; linsolver=(int (*)(LM_REAL *A, LM_REAL *B, LM_REAL *x, int m))AX_EQ_B_QRLS;
+      //issolved=AX_EQ_B_SVD(jacTjac, jacTe, Dp, m); ++nlss; linsolver=AX_EQ_B_SVD;
 
 #else
       /* use the LU included with levmar */
-      issolved=AX_EQ_B_LU(jacTjac, jacTe, Dp, m); linsolver=AX_EQ_B_LU;
+      issolved=AX_EQ_B_LU(jacTjac, jacTe, Dp, m); ++nlss; linsolver=AX_EQ_B_LU;
 #endif /* HAVE_LAPACK */
 
       if(issolved){
@@ -389,6 +403,7 @@ if(!(k%100)){
     info[6]=(LM_REAL)stop;
     info[7]=(LM_REAL)nfev;
     info[8]=(LM_REAL)njev;
+    info[9]=(LM_REAL)nlss;
   }
 
   /* covariance matrix */
@@ -436,6 +451,7 @@ int LEVMAR_DIF(
                       *                                 7 - stopped by invalid (i.e. NaN or Inf) "func" values. This is a user error
                       * info[7]= # function evaluations
                       * info[8]= # Jacobian evaluations
+                      * info[9]= # linear systems solved, i.e. # attempts for reducing error
                       */
   LM_REAL *work,     /* working memory at least LM_DIF_WORKSZ() reals large, allocated if NULL */
   LM_REAL *covar,    /* O: Covariance matrix corresponding to LS solution; mxm. Set to NULL if not needed. */
@@ -465,7 +481,7 @@ LM_REAL p_eL2, jacTe_inf, pDp_eL2; /* ||e(p)||_2, ||J^T e||_inf, ||e(p+Dp)||_2 *
 LM_REAL p_L2, Dp_L2=LM_REAL_MAX, dF, dL;
 LM_REAL tau, eps1, eps2, eps2_sq, eps3, delta;
 LM_REAL init_p_eL2;
-int nu, nu2, stop=0, nfev, njap=0, K=(m>=10)? m: 10, updjac, updp=1, newjac;
+int nu, nu2, stop=0, nfev, njap=0, nlss=0, K=(m>=10)? m: 10, updjac, updp=1, newjac;
 const int nm=n*m;
 int (*linsolver)(LM_REAL *A, LM_REAL *B, LM_REAL *x, int m)=NULL;
 
@@ -503,7 +519,7 @@ int (*linsolver)(LM_REAL *A, LM_REAL *B, LM_REAL *x, int m)=NULL;
     work=(LM_REAL *)malloc(worksz*sizeof(LM_REAL)); /* allocate a big chunk in one step */
     if(!work){
       fprintf(stderr, LCAT(LEVMAR_DIF, "(): memory allocation request failed\n"));
-      exit(1);
+      return LM_ERROR;
     }
     freework=1;
   }
@@ -565,37 +581,49 @@ int (*linsolver)(LM_REAL *A, LM_REAL *B, LM_REAL *x, int m)=NULL;
 
       /* J^T J, J^T e */
       if(nm<=__BLOCKSZ__SQ){ // this is a small problem
-        /* This is the straightforward way to compute J^T J, J^T e. However, due to
-         * its noncontinuous memory access pattern, it incures many cache misses when
-         * applied to large minimization problems (i.e. problems involving a large
-         * number of free variables and measurements), in which J is too large to
-         * fit in the L1 cache. For such problems, a cache-efficient blocking scheme
-         * is preferable.
+        /* J^T*J_ij = \sum_l J^T_il * J_lj = \sum_l J_li * J_lj.
+         * Thus, the product J^T J can be computed using an outer loop for
+         * l that adds J_li*J_lj to each element ij of the result. Note that
+         * with this scheme, the accesses to J and JtJ are always along rows,
+         * therefore induces less cache misses compared to the straightforward
+         * algorithm for computing the product (i.e., l loop is innermost one).
+         * A similar scheme applies to the computation of J^T e.
+         * However, for large minimization problems (i.e., involving a large number
+         * of unknowns and measurements) for which J/J^T J rows are too large to
+         * fit in the L1 cache, even this scheme incures many cache misses. In
+         * such cases, a cache-efficient blocking scheme is preferable.
          *
          * Thanks to John Nitao of Lawrence Livermore Lab for pointing out this
          * performance problem.
          *
-         * On the other hand, the straightforward algorithm is faster on small
+         * Note that the non-blocking algorithm is faster on small
          * problems since in this case it avoids the overheads of blocking. 
          */
-      
-        for(i=0; i<m; ++i){
-          for(j=i; j<m; ++j){
-            int lm;
+        register int l, im;
+        register LM_REAL alpha, *jaclm;
 
-            for(l=0, tmp=0.0; l<n; ++l){
-              lm=l*m;
-              tmp+=jac[lm+i]*jac[lm+j];
-            }
+        /* looping downwards saves a few computations */
+        for(i=m*m; i-->0; )
+          jacTjac[i]=0.0;
+        for(i=m; i-->0; )
+          jacTe[i]=0.0;
 
-            jacTjac[i*m+j]=jacTjac[j*m+i]=tmp;
+        for(l=n; l-->0; ){
+          jaclm=jac+l*m;
+          for(i=m; i-->0; ){
+            im=i*m;
+            alpha=jaclm[i]; //jac[l*m+i];
+            for(j=i+1; j-->0; ) /* j<=i computes lower triangular part only */
+              jacTjac[im+j]+=jaclm[j]*alpha; //jac[l*m+j]
+
+            /* J^T e */
+            jacTe[i]+=alpha*e[l];
           }
-
-          /* J^T e */
-          for(l=0, tmp=0.0; l<n; ++l)
-            tmp+=jac[l*m+i]*e[l];
-          jacTe[i]=tmp;
         }
+
+        for(i=m; i-->0; ) /* copy to upper part */
+          for(j=i+1; j<m; ++j)
+            jacTjac[i*m+j]=jacTjac[j*m+i];
       }
       else{ // this is a large problem
         /* Cache efficient computation of J^T J based on blocking
@@ -660,14 +688,14 @@ if(!(k%100)){
      * SVD is the slowest but most accurate; LU offers a tradeoff between accuracy and speed
      */
 
-    issolved=AX_EQ_B_LU(jacTjac, jacTe, Dp, m); linsolver=AX_EQ_B_LU;
-    //issolved=AX_EQ_B_CHOL(jacTjac, jacTe, Dp, m); linsolver=AX_EQ_B_CHOL;
-    //issolved=AX_EQ_B_QR(jacTjac, jacTe, Dp, m); linsolver=AX_EQ_B_QR;
-    //issolved=AX_EQ_B_QRLS(jacTjac, jacTe, Dp, m, m); linsolver=AX_EQ_B_QRLS;
-    //issolved=AX_EQ_B_SVD(jacTjac, jacTe, Dp, m); linsolver=AX_EQ_B_SVD;
+    issolved=AX_EQ_B_LU(jacTjac, jacTe, Dp, m); ++nlss; linsolver=AX_EQ_B_LU;
+    //issolved=AX_EQ_B_CHOL(jacTjac, jacTe, Dp, m); ++nlss; linsolver=AX_EQ_B_CHOL;
+    //issolved=AX_EQ_B_QR(jacTjac, jacTe, Dp, m); ++nlss; linsolver=AX_EQ_B_QR;
+    //issolved=AX_EQ_B_QRLS(jacTjac, jacTe, Dp, m, m); ++nlss; linsolver=(int (*)(LM_REAL *A, LM_REAL *B, LM_REAL *x, int m))AX_EQ_B_QRLS;
+    //issolved=AX_EQ_B_SVD(jacTjac, jacTe, Dp, m); ++nlss; linsolver=AX_EQ_B_SVD;
 #else
     /* use the LU included with levmar */
-    issolved=AX_EQ_B_LU(jacTjac, jacTe, Dp, m); linsolver=AX_EQ_B_LU;
+    issolved=AX_EQ_B_LU(jacTjac, jacTe, Dp, m); ++nlss; linsolver=AX_EQ_B_LU;
 #endif /* HAVE_LAPACK */
 
     if(issolved){
@@ -778,6 +806,7 @@ if(!(k%100)){
     info[6]=(LM_REAL)stop;
     info[7]=(LM_REAL)nfev;
     info[8]=(LM_REAL)njap;
+    info[9]=(LM_REAL)nlss;
   }
 
   /* covariance matrix */

@@ -20,7 +20,13 @@
 #ifndef _MISC_H_
 #define _MISC_H_
 
-/* common prefix for BLAS subroutines. Leave undefined in case of no prefix. You might also need to modify LM_BLAS_PREFIX below */
+/* common suffix for LAPACK subroutines. Define empty in case of no prefix. */
+#define LM_LAPACK_SUFFIX _
+//#define LM_LAPACK_SUFFIX  // define empty
+
+/* common prefix for BLAS subroutines. Leave undefined in case of no prefix.
+ * You might also need to modify LM_BLAS_PREFIX below
+ */
 /* f2c'd BLAS */
 //#define LM_BLAS_PREFIX f2c_
 /* C BLAS */
@@ -35,6 +41,9 @@
 #define LCAT(a, b)    LCAT_(a, b) // force substitution
 #define RCAT_(a, b)    a #b
 #define RCAT(a, b)    RCAT_(a, b) // force substitution
+
+#define LM_MK_LAPACK_NAME(s)  LM_ADD_PREFIX(LM_CAT_(s, LM_LAPACK_SUFFIX))
+
 
 #define __BLOCKSZ__       32 /* block size for cache-friendly matrix-matrix multiply. It should be
                               * such that __BLOCKSZ__^2*sizeof(LM_REAL) is smaller than the CPU (L1)

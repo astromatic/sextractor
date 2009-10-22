@@ -1,6 +1,6 @@
     **************************************************************
                                 LEVMAR
-                              version 2.3
+                              version 2.4
                           By Manolis Lourakis
 
                      Institute of Computer Science
@@ -28,7 +28,7 @@ It is strongly recommended that you *do* employ LAPACK; if you don't have it alr
 I suggest getting clapack from http://www.netlib.org/clapack. However, LAPACK's
 use is not mandatory and the 2nd option makes levmar totally self-contained.
 See lmdemo.c for examples of use and http://www.ics.forth.gr/~lourakis/levmar
-for general comments.
+for general comments. An example of using levmar for data fitting is in expfit.c
 
 The mathematical theory behind levmar is described in the lecture notes entitled
 "Methods for Non-Linear Least Squares Problems", by K. Madsen, H.B. Nielsen and O. Tingleff,
@@ -52,6 +52,10 @@ COMPILATION
  - Under Windows and if Visual C is installed & configured for command line
    use, type "nmake /f Makefile.vc" in a cmd window to build levmar and the
    demo program. In case of trouble, read the comments on top of Makefile.vc
+   Visual C++ project files (levmar.vcproj and lmdemo.vcproj) are also included,
+   however they are not supported and are only meant to serve as a starting point
+   for creating your own. Check http://www.arstdesign.com/articles/prjconverter.html
+   if you need to convert to .dsw/.dsp (i.e., Visual C++ 6.0) project files.
 
  - levmar can also be built under various platforms using the CMake cross-platform
    build system. The included CMakeLists.txt file can be used to generate makefiles
