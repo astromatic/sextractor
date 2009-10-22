@@ -30,6 +30,7 @@
 #define LEVMAR_COVAR LM_ADD_PREFIX(levmar_covar)
 #define LEVMAR_STDDEV LM_ADD_PREFIX(levmar_stddev)
 #define LEVMAR_CORCOEF LM_ADD_PREFIX(levmar_corcoef)
+#define LEVMAR_R2 LM_ADD_PREFIX(levmar_R2)
 #define LEVMAR_BOX_CHECK LM_ADD_PREFIX(levmar_box_check)
 #define LEVMAR_L2NRMXMY LM_ADD_PREFIX(levmar_L2nrmxmy)
 
@@ -47,8 +48,8 @@ static int LEVMAR_PSEUDOINVERSE(LM_REAL *A, LM_REAL *B, int m);
 extern void GEMM(char *transa, char *transb, int *m, int *n, int *k,
           LM_REAL *alpha, LM_REAL *a, int *lda, LM_REAL *b, int *ldb, LM_REAL *beta, LM_REAL *c, int *ldc);
 
-#define GESVD LM_ADD_PREFIX(gesvd_)
-#define GESDD LM_ADD_PREFIX(gesdd_)
+#define GESVD LM_MK_LAPACK_NAME(gesvd)
+#define GESDD LM_MK_LAPACK_NAME(gesdd)
 extern int GESVD(char *jobu, char *jobvt, int *m, int *n, LM_REAL *a, int *lda, LM_REAL *s, LM_REAL *u, int *ldu,
                  LM_REAL *vt, int *ldvt, LM_REAL *work, int *lwork, int *info);
 
@@ -56,8 +57,8 @@ extern int GESVD(char *jobu, char *jobvt, int *m, int *n, LM_REAL *a, int *lda, 
 extern int GESDD(char *jobz, int *m, int *n, LM_REAL *a, int *lda, LM_REAL *s, LM_REAL *u, int *ldu, LM_REAL *vt, int *ldvt,
                  LM_REAL *work, int *lwork, int *iwork, int *info);
 
-/* cholesky decomposition */
-#define POTF2 LM_ADD_PREFIX(potf2_)
+/* Cholesky decomposition */
+#define POTF2 LM_MK_LAPACK_NAME(potf2)
 extern int POTF2(char *uplo, int *n, LM_REAL *a, int *lda, int *info);
 
 #define LEVMAR_CHOLESKY LM_ADD_PREFIX(levmar_chol)
@@ -70,7 +71,7 @@ static int LEVMAR_LUINVERSE(LM_REAL *A, LM_REAL *B, int m);
 
 /* blocked multiplication of the transpose of the nxm matrix a with itself (i.e. a^T a)
  * using a block size of bsize. The product is returned in b.
- * Since a^T a is symmetric, its computation can be speeded up by computing only its
+ * Since a^T a is symmetric, its computation can be sped up by computing only its
  * upper triangular part and copying it to the lower part.
  *
  * More details on blocking can be found at 
@@ -323,7 +324,7 @@ int fvec_sz=n, fjac_sz=n*m, pp_sz=m, fvecp_sz=n;
  * into B using SVD. A and B can coincide
  * 
  * The function returns 0 in case of error (e.g. A is singular),
- * the rank of A if successfull
+ * the rank of A if successful
  *
  * A, B are mxm
  *
@@ -341,31 +342,32 @@ LM_REAL thresh, one_over_denom;
 int info, rank, worksz, *iwork, iworksz;
    
   /* calculate required memory size */
-  worksz=16*m; /* more than needed */
+  worksz=5*m; // min worksize for GESVD
+  //worksz=m*(7*m+4); // min worksize for GESDD
   iworksz=8*m;
   a_sz=m*m;
   u_sz=m*m; s_sz=m; vt_sz=m*m;
 
-  tot_sz=iworksz*sizeof(int) + (a_sz + u_sz + s_sz + vt_sz + worksz)*sizeof(LM_REAL);
+  tot_sz=(a_sz + u_sz + s_sz + vt_sz + worksz)*sizeof(LM_REAL) + iworksz*sizeof(int); /* should be arranged in that order for proper doubles alignment */
 
     buf_sz=tot_sz;
     buf=(LM_REAL *)malloc(buf_sz);
     if(!buf){
       fprintf(stderr, RCAT("memory allocation in ", LEVMAR_PSEUDOINVERSE) "() failed!\n");
-      exit(1);
+      return 0; /* error */
     }
 
-  iwork=(int *)buf;
-  a=(LM_REAL *)(iwork+iworksz);
+  a=buf;
+  u=a+a_sz;
+  s=u+u_sz;
+  vt=s+s_sz;
+  work=vt+vt_sz;
+  iwork=(int *)(work+worksz);
+
   /* store A (column major!) into a */
   for(i=0; i<m; i++)
     for(j=0; j<m; j++)
       a[i+j*m]=A[i*m+j];
-
-  u=a + a_sz;
-  s=u+u_sz;
-  vt=s+s_sz;
-  work=vt+vt_sz;
 
   /* SVD decomposition of A */
   GESVD("A", "A", (int *)&m, (int *)&m, a, (int *)&m, s, u, (int *)&m, vt, (int *)&m, work, (int *)&worksz, &info);
@@ -375,14 +377,12 @@ int info, rank, worksz, *iwork, iworksz;
   if(info!=0){
     if(info<0){
       fprintf(stderr, RCAT(RCAT(RCAT("LAPACK error: illegal value for argument %d of ", GESVD), "/" GESDD) " in ", LEVMAR_PSEUDOINVERSE) "()\n", -info);
-      exit(1);
     }
     else{
       fprintf(stderr, RCAT("LAPACK error: dgesdd (dbdsdc)/dgesvd (dbdsqr) failed to converge in ", LEVMAR_PSEUDOINVERSE) "() [info=%d]\n", info);
-      free(buf);
-
-      return 0;
     }
+    free(buf);
+    return 0;
   }
 
   if(eps<0.0){
@@ -421,8 +421,7 @@ static int SVDINV(LM_REAL *a, LM_REAL *b, int m);
  *
  * A and B are mxm
  *
- * The function returns 0 in case of error,
- * 1 if successfull
+ * The function returns 0 in case of error, 1 if successful
  *
  */
 static int LEVMAR_LUINVERSE(LM_REAL *A, LM_REAL *B, int m)
@@ -439,19 +438,19 @@ LM_REAL *a, *x, *work, max, sum, tmp;
   a_sz=m*m;
   x_sz=m;
   work_sz=m;
-  tot_sz=idx_sz*sizeof(int) + (a_sz+x_sz+work_sz)*sizeof(LM_REAL);
+  tot_sz=(a_sz + x_sz + work_sz)*sizeof(LM_REAL) + idx_sz*sizeof(int); /* should be arranged in that order for proper doubles alignment */
 
   buf_sz=tot_sz;
   buf=(void *)malloc(tot_sz);
   if(!buf){
     fprintf(stderr, RCAT("memory allocation in ", LEVMAR_LUINVERSE) "() failed!\n");
-    exit(1);
+    return 0; /* error */
   }
 
-  idx=(int *)buf;
-  a=(LM_REAL *)(idx + idx_sz);
-  x=a + a_sz;
-  work=x + x_sz;
+  a=buf;
+  x=a+a_sz;
+  work=x+x_sz;
+  idx=(int *)(work+work_sz);
 
   /* avoid destroying A by copying it to a */
   for(i=0; i<a_sz; ++i) a[i]=A[i];
@@ -623,6 +622,44 @@ LM_REAL LEVMAR_CORCOEF(LM_REAL *covar, int m, int i, int j)
    return (LM_REAL)(covar[i*m+j]/sqrt(covar[i*m+i]*covar[j*m+j]));
 }
 
+/* coefficient of determination.
+ * see  http://en.wikipedia.org/wiki/Coefficient_of_determination
+ */
+LM_REAL LEVMAR_R2(void (*func)(LM_REAL *p, LM_REAL *hx, int m, int n, void *adata),
+                  LM_REAL *p, LM_REAL *x, int m, int n, void *adata)
+{
+register int i;
+register LM_REAL tmp;
+LM_REAL SSerr,  // sum of squared errors, i.e. residual sum of squares \sum_i (x_i-hx_i)^2 
+        SStot, // \sum_i (x_i-xavg)^2
+        *hx, xavg;
+
+
+  if((hx=(LM_REAL *)malloc(n*sizeof(LM_REAL)))==NULL){
+    fprintf(stderr, RCAT("memory allocation request failed in ", LEVMAR_R2) "()\n");
+    exit(1);
+  }
+
+  /* hx=f(p) */
+  (*func)(p, hx, m, n, adata);
+
+  for(i=0, tmp=0.0; i<n; ++i)
+    tmp+=x[i];
+  xavg=tmp/(LM_REAL)n;
+  
+  for(i=0, SSerr=SStot=0.0; i<n; ++i){
+    tmp=x[i]-hx[i];
+    SSerr+=tmp*tmp;
+
+    tmp=x[i]-xavg;
+    SStot+=tmp*tmp;
+  }
+
+  free(hx);
+
+  return LM_CNST(1.0) - SSerr/SStot;
+}
+
 /* check box constraints for consistency */
 int LEVMAR_BOX_CHECK(LM_REAL *lb, LM_REAL *ub, int m)
 {
@@ -638,30 +675,36 @@ register int i;
 
 #ifdef HAVE_LAPACK
 
-/* compute the Cholesky decompostion of C in W, s.t. C=W^t W and W is upper triangular */
+/* compute the Cholesky decomposition of C in W, s.t. C=W^t W and W is upper triangular */
 int LEVMAR_CHOLESKY(LM_REAL *C, LM_REAL *W, int m)
 {
 register int i, j;
 int info;
 
-  /* copy weights array C to W (in column-major order!) so that LAPACK won't destroy it */
-  for(i=0; i<m; i++)
-    for(j=0; j<m; j++)
-      W[i+j*m]=C[i*m+j];
+/* compute the Cholesky decomposition of C in W, s.t. C=W^t W and W is upper triangular */
+int LEVMAR_CHOLESKY(LM_REAL *C, LM_REAL *W, int m)
+{
+register int i, j;
+int info;
 
-  /* cholesky decomposition */
+  /* copy weights array C to W so that LAPACK won't destroy it;
+   * C is assumed symmetric, hence no transposition is needed
+   */
+  for(i=0, j=m*m; i<j; ++i)
+    W[i]=C[i];
+
+  /* Cholesky decomposition */
   POTF2("U", (int *)&m, W, (int *)&m, (int *)&info);
   /* error treatment */
   if(info!=0){
-		if(info<0){
-      fprintf(stderr, "LAPACK error: illegal value for argument %d of dpotf2 in %s\n", -info, LCAT(LEVMAR_DER, "()"));
-		  exit(1);
-		}
-		else{
-			fprintf(stderr, "LAPACK error: the leading minor of order %d is not positive definite,\n%s()\n", info,
-						RCAT("and the cholesky factorization could not be completed in ", LEVMAR_CHOLESKY));
-			return LM_ERROR;
-		}
+                if(info<0){
+      fprintf(stderr, "LAPACK error: illegal value for argument %d of dpotf2 in %s\n", -info, LCAT(LEVMAR_CHOLESKY, "()"));
+                }
+                else{
+                        fprintf(stderr, "LAPACK error: the leading minor of order %d is not positive definite,\n%s()\n", info,
+                                                RCAT("and the Cholesky factorization could not be completed in ", LEVMAR_CHOLESKY));
+                }
+    return LM_ERROR;
   }
 
   /* the decomposition is in the upper part of W (in column-major order!).
@@ -699,17 +742,17 @@ register LM_REAL sum0=0.0, sum1=0.0, sum2=0.0, sum3=0.0;
    */ 
   blockn = (n>>bpwr)<<bpwr; /* (n / blocksize) * blocksize; */
 
+  /* unroll the loop in blocks of `blocksize'; looping downwards gains some more speed */
   if(x){
-    /* unroll the loop in blocks of `blocksize' */
-    for(i=0; i<blockn; i+=blocksize){
+    for(i=blockn-1; i>0; i-=blocksize){
               e[i ]=x[i ]-y[i ]; sum0+=e[i ]*e[i ];
-      j1=i+1; e[j1]=x[j1]-y[j1]; sum1+=e[j1]*e[j1];
-      j2=i+2; e[j2]=x[j2]-y[j2]; sum2+=e[j2]*e[j2];
-      j3=i+3; e[j3]=x[j3]-y[j3]; sum3+=e[j3]*e[j3];
-      j4=i+4; e[j4]=x[j4]-y[j4]; sum0+=e[j4]*e[j4];
-      j5=i+5; e[j5]=x[j5]-y[j5]; sum1+=e[j5]*e[j5];
-      j6=i+6; e[j6]=x[j6]-y[j6]; sum2+=e[j6]*e[j6];
-      j7=i+7; e[j7]=x[j7]-y[j7]; sum3+=e[j7]*e[j7];
+      j1=i-1; e[j1]=x[j1]-y[j1]; sum1+=e[j1]*e[j1];
+      j2=i-2; e[j2]=x[j2]-y[j2]; sum2+=e[j2]*e[j2];
+      j3=i-3; e[j3]=x[j3]-y[j3]; sum3+=e[j3]*e[j3];
+      j4=i-4; e[j4]=x[j4]-y[j4]; sum0+=e[j4]*e[j4];
+      j5=i-5; e[j5]=x[j5]-y[j5]; sum1+=e[j5]*e[j5];
+      j6=i-6; e[j6]=x[j6]-y[j6]; sum2+=e[j6]*e[j6];
+      j7=i-7; e[j7]=x[j7]-y[j7]; sum3+=e[j7]*e[j7];
     }
 
    /*
@@ -718,6 +761,7 @@ register LM_REAL sum0=0.0, sum1=0.0, sum2=0.0, sum3=0.0;
     * but a switch is faster (and more interesting) 
     */ 
 
+    i=blockn;
     if(i<n){ 
       /* Jump into the case at the place that will allow
        * us to finish off the appropriate number of items. 
@@ -735,16 +779,15 @@ register LM_REAL sum0=0.0, sum1=0.0, sum2=0.0, sum3=0.0;
     }
   }
   else{ /* x==0 */
-    /* unroll the loop in blocks of `blocksize' */
-    for(i=0; i<blockn; i+=blocksize){
+    for(i=blockn-1; i>0; i-=blocksize){
               e[i ]=-y[i ]; sum0+=e[i ]*e[i ];
-      j1=i+1; e[j1]=-y[j1]; sum1+=e[j1]*e[j1];
-      j2=i+2; e[j2]=-y[j2]; sum2+=e[j2]*e[j2];
-      j3=i+3; e[j3]=-y[j3]; sum3+=e[j3]*e[j3];
-      j4=i+4; e[j4]=-y[j4]; sum0+=e[j4]*e[j4];
-      j5=i+5; e[j5]=-y[j5]; sum1+=e[j5]*e[j5];
-      j6=i+6; e[j6]=-y[j6]; sum2+=e[j6]*e[j6];
-      j7=i+7; e[j7]=-y[j7]; sum3+=e[j7]*e[j7];
+      j1=i-1; e[j1]=-y[j1]; sum1+=e[j1]*e[j1];
+      j2=i-2; e[j2]=-y[j2]; sum2+=e[j2]*e[j2];
+      j3=i-3; e[j3]=-y[j3]; sum3+=e[j3]*e[j3];
+      j4=i-4; e[j4]=-y[j4]; sum0+=e[j4]*e[j4];
+      j5=i-5; e[j5]=-y[j5]; sum1+=e[j5]*e[j5];
+      j6=i-6; e[j6]=-y[j6]; sum2+=e[j6]*e[j6];
+      j7=i-7; e[j7]=-y[j7]; sum3+=e[j7]*e[j7];
     }
 
    /*
@@ -753,6 +796,7 @@ register LM_REAL sum0=0.0, sum1=0.0, sum2=0.0, sum3=0.0;
     * but a switch is faster (and more interesting) 
     */ 
 
+    i=blockn;
     if(i<n){ 
       /* Jump into the case at the place that will allow
        * us to finish off the appropriate number of items. 
@@ -794,7 +838,7 @@ static int SVDINV(LM_REAL *a, LM_REAL *b, int m)
                                   (ct=bt/at,at*sqrt(1.0+ct*ct)) \
                                 : (bt ? (ct=at/bt,bt*sqrt(1.0+ct*ct)): 0.0))
 #define SIGN(a,b) ((b) >= 0.0 ? fabs(a) : -fabs(a))
-#define TOL             1.0e-11
+#define TOL             1.0e-6
 
    int                  flag,i,its,j,jj,k,l,mmi,nm, nml, rank;
    LM_REAL              *vmat,*wmat,
@@ -804,7 +848,6 @@ static int SVDINV(LM_REAL *a, LM_REAL *b, int m)
                         anorm, g, scale,
                         at,bt,ct,maxarg1,maxarg2,
                         thresh, wmax;
-
   anorm = g = scale = 0.0;
   
   rv1=(LM_REAL *)malloc(m*sizeof(LM_REAL));
@@ -953,7 +996,7 @@ static int SVDINV(LM_REAL *a, LM_REAL *b, int m)
         for (l=k;l>=0;l--)
           {
           nm=l-1;
-          if (fabs(rv1[l]) <= anorm*TOL)
+          if (!l || fabs(rv1[l]) <= anorm*TOL)
             {
             flag=0;
             break;
@@ -1103,6 +1146,7 @@ static int SVDINV(LM_REAL *a, LM_REAL *b, int m)
 #undef LEVMAR_COVAR
 #undef LEVMAR_STDDEV
 #undef LEVMAR_CORCOEF
+#undef LEVMAR_R2
 #undef LEVMAR_CHKJAC
 #undef LEVMAR_FDIF_FORW_JAC_APPROX
 #undef LEVMAR_FDIF_CENT_JAC_APPROX

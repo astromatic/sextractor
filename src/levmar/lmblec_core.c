@@ -70,7 +70,6 @@
 #define LEVMAR_BLEC_DER LM_ADD_PREFIX(levmar_blec_der)
 #define LEVMAR_BLEC_DIF LM_ADD_PREFIX(levmar_blec_dif)
 #define LEVMAR_COVAR LM_ADD_PREFIX(levmar_covar)
-#define LEVMAR_FDIF_FORW_JAC_APPROX LM_ADD_PREFIX(levmar_fdif_forw_jac_approx)
 
 struct LMBLEC_DATA{
   LM_REAL *x, *lb, *ub, *w;
@@ -177,7 +176,7 @@ register LM_REAL *lb, *ub, *w, tmp;
  * This function requires an analytic Jacobian. In case the latter is unavailable,
  * use LEVMAR_BLEC_DIF() bellow
  *
- * Returns the number of iterations (>=0) if successfull, LM_ERROR if failed
+ * Returns the number of iterations (>=0) if successful, LM_ERROR if failed
  *
  * For more details on the algorithm implemented by this function, please refer to
  * the comments in the top of this file.
@@ -214,6 +213,7 @@ int LEVMAR_BLEC_DER(
                       *                                 7 - stopped by invalid (i.e. NaN or Inf) "func" values. This is a user error
                       * info[7]= # function evaluations
                       * info[8]= # Jacobian evaluations
+                      * info[9]= # linear systems solved, i.e. # attempts for reducing error
                       */
   LM_REAL *work,     /* working memory at least LM_BLEC_DER_WORKSZ() reals large, allocated if NULL */
   LM_REAL *covar,    /* O: Covariance matrix corresponding to LS solution; mxm. Set to NULL if not needed. */
@@ -232,6 +232,12 @@ int LEVMAR_BLEC_DER(
     return LM_ERROR;
   }
 
+  if(!lb && !ub){
+    fprintf(stderr, RCAT(LCAT(LEVMAR_BLEC_DER, "(): lower and upper bounds for box constraints cannot be both NULL, use "),
+          LEVMAR_LEC_DER) "() in this case!\n");
+    return LM_ERROR;
+  }
+
   if(!LEVMAR_BOX_CHECK(lb, ub, m)){
     fprintf(stderr, LCAT(LEVMAR_BLEC_DER, "(): at least one lower bound exceeds the upper one\n"));
     return LM_ERROR;
@@ -242,7 +248,7 @@ int LEVMAR_BLEC_DER(
     data.x=(LM_REAL *)malloc((n+m)*sizeof(LM_REAL));
     if(!data.x){
       fprintf(stderr, LCAT(LEVMAR_BLEC_DER, "(): memory allocation request #1 failed\n"));
-      exit(1);
+      return LM_ERROR;
     }
 
     for(i=0; i<n; ++i)
@@ -253,16 +259,20 @@ int LEVMAR_BLEC_DER(
   else
     data.x=NULL;
 
-  data.w=(LM_REAL *)malloc(m*sizeof(LM_REAL) + m*sizeof(int));
+  data.w=(LM_REAL *)malloc(m*sizeof(LM_REAL) + m*sizeof(int)); /* should be arranged in that order for proper doubles alignment */
   if(!data.w){
     fprintf(stderr, LCAT(LEVMAR_BLEC_DER, "(): memory allocation request #2 failed\n"));
-    exit(1);
+    if(data.x) free(data.x);
+    return LM_ERROR;
   }
   data.bctype=(int *)(data.w+m);
 
+  /* note: at this point, one of lb, ub are not NULL */
   for(i=0; i<m; ++i){
     data.w[i]=(!wghts)? __BC_WEIGHT__ : wghts[i];
-    if(ub[i]!=LM_REAL_MAX && lb[i]!=LM_REAL_MIN) data.bctype[i]=__BC_INTERVAL__;
+    if(!lb) data.bctype[i]=__BC_HIGH__;
+    else if(!ub) data.bctype[i]=__BC_LOW__;
+    else if(ub[i]!=LM_REAL_MAX && lb[i]!=LM_REAL_MIN) data.bctype[i]=__BC_INTERVAL__;
     else if(lb[i]!=LM_REAL_MIN) data.bctype[i]=__BC_LOW__;
     else data.bctype[i]=__BC_HIGH__;
   }
@@ -318,6 +328,7 @@ int LEVMAR_BLEC_DIF(
                       *                                 7 - stopped by invalid (i.e. NaN or Inf) "func" values. This is a user error
                       * info[7]= # function evaluations
                       * info[8]= # Jacobian evaluations
+                      * info[9]= # linear systems solved, i.e. # attempts for reducing error
                       */
   LM_REAL *work,     /* working memory at least LM_BLEC_DIF_WORKSZ() reals large, allocated if NULL */
   LM_REAL *covar,    /* O: Covariance matrix corresponding to LS solution; mxm. Set to NULL if not needed. */
@@ -330,6 +341,12 @@ int LEVMAR_BLEC_DIF(
   register int i;
   LM_REAL locinfo[LM_INFO_SZ];
 
+  if(!lb && !ub){
+    fprintf(stderr, RCAT(LCAT(LEVMAR_BLEC_DIF, "(): lower and upper bounds for box constraints cannot be both NULL, use "),
+          LEVMAR_LEC_DIF) "() in this case!\n");
+    return LM_ERROR;
+  }
+
   if(!LEVMAR_BOX_CHECK(lb, ub, m)){
     fprintf(stderr, LCAT(LEVMAR_BLEC_DER, "(): at least one lower bound exceeds the upper one\n"));
     return LM_ERROR;
@@ -340,7 +357,7 @@ int LEVMAR_BLEC_DIF(
     data.x=(LM_REAL *)malloc((n+m)*sizeof(LM_REAL));
     if(!data.x){
       fprintf(stderr, LCAT(LEVMAR_BLEC_DER, "(): memory allocation request #1 failed\n"));
-      exit(1);
+      return LM_ERROR;
     }
 
     for(i=0; i<n; ++i)
@@ -351,16 +368,20 @@ int LEVMAR_BLEC_DIF(
   else
     data.x=NULL;
 
-  data.w=(LM_REAL *)malloc(m*sizeof(LM_REAL) + m*sizeof(int));
+  data.w=(LM_REAL *)malloc(m*sizeof(LM_REAL) + m*sizeof(int)); /* should be arranged in that order for proper doubles alignment */
   if(!data.w){
     fprintf(stderr, LCAT(LEVMAR_BLEC_DER, "(): memory allocation request #2 failed\n"));
-    exit(1);
+    if(data.x) free(data.x);
+    return LM_ERROR;
   }
   data.bctype=(int *)(data.w+m);
 
+  /* note: at this point, one of lb, ub are not NULL */
   for(i=0; i<m; ++i){
     data.w[i]=(!wghts)? __BC_WEIGHT__ : wghts[i];
-    if(ub[i]!=LM_REAL_MAX && lb[i]!=LM_REAL_MIN) data.bctype[i]=__BC_INTERVAL__;
+    if(!lb) data.bctype[i]=__BC_HIGH__;
+    else if(!ub) data.bctype[i]=__BC_LOW__;
+    else if(ub[i]!=LM_REAL_MAX && lb[i]!=LM_REAL_MIN) data.bctype[i]=__BC_INTERVAL__;
     else if(lb[i]!=LM_REAL_MIN) data.bctype[i]=__BC_LOW__;
     else data.bctype[i]=__BC_HIGH__;
   }
@@ -385,7 +406,6 @@ int LEVMAR_BLEC_DIF(
 #undef LMBLEC_DATA
 #undef LMBLEC_FUNC
 #undef LMBLEC_JACF
-#undef LEVMAR_FDIF_FORW_JAC_APPROX
 #undef LEVMAR_COVAR
 #undef LEVMAR_LEC_DER
 #undef LEVMAR_LEC_DIF

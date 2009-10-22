@@ -35,9 +35,9 @@
 #define LEVMAR_COVAR LM_ADD_PREFIX(levmar_covar)
 #define LEVMAR_FDIF_FORW_JAC_APPROX LM_ADD_PREFIX(levmar_fdif_forw_jac_approx)
 
-#define GEQP3 LM_ADD_PREFIX(geqp3_)
-#define ORGQR LM_ADD_PREFIX(orgqr_)
-#define TRTRI LM_ADD_PREFIX(trtri_)
+#define GEQP3 LM_MK_LAPACK_NAME(geqp3)
+#define ORGQR LM_MK_LAPACK_NAME(orgqr)
+#define TRTRI LM_MK_LAPACK_NAME(trtri)
 
 struct LMLEC_DATA{
   LM_REAL *c, *Z, *p, *jac;
@@ -76,7 +76,7 @@ extern int TRTRI(char *uplo, char *diag, int *n, LM_REAL *a, int *lda, int *info
  *
  * The function accepts A, b and computes c, Y, Z. If b or c is NULL, c is not
  * computed. Also, Y can be NULL in which case it is not referenced.
- * The function returns 0 in case of error, A's computed rank if successfull
+ * The function returns LM_ERROR in case of error, A's computed rank if successful
  *
  */
 static int LMLEC_ELIM(LM_REAL *A, LM_REAL *b, LM_REAL *c, LM_REAL *Y, LM_REAL *Z, int m, int n)
@@ -109,19 +109,23 @@ register int i, j, k;
   r_sz=mintmn*mintmn; // actually smaller if a is not of full row rank
   Y_sz=(Y)? 0 : tm*tn;
 
-  tot_sz=jpvt_sz*sizeof(int) + (a_sz + tau_sz + r_sz + worksz + Y_sz)*sizeof(LM_REAL);
+  tot_sz=(a_sz + tau_sz + r_sz + worksz + Y_sz)*sizeof(LM_REAL) + jpvt_sz*sizeof(int); /* should be arranged in that order for proper doubles alignment */
   buf=(LM_REAL *)malloc(tot_sz); /* allocate a "big" memory chunk at once */
   if(!buf){
     fprintf(stderr, RCAT("Memory allocation request failed in ", LMLEC_ELIM) "()\n");
-    exit(1);
+    return LM_ERROR;
   }
 
-  a=(LM_REAL *)buf;
-  jpvt=(int *)(a+a_sz);
-  tau=(LM_REAL *)(jpvt + jpvt_sz);
+  a=buf;
+  tau=a+a_sz;
   r=tau+tau_sz;
   work=r+r_sz;
-  if(!Y) Y=work+worksz;
+  if(!Y){
+    Y=work+worksz;
+    jpvt=(int *)(Y+Y_sz);
+  }
+  else
+    jpvt=(int *)(work+worksz);
 
   /* copy input array so that LAPACK won't destroy it. Note that copying is
    * done in row-major order, which equals A^T in column-major
@@ -139,13 +143,12 @@ register int i, j, k;
   if(info!=0){
     if(info<0){
       fprintf(stderr, RCAT(RCAT("LAPACK error: illegal value for argument %d of ", GEQP3) " in ", LMLEC_ELIM) "()\n", -info);
-      exit(1);
     }
     else if(info>0){
       fprintf(stderr, RCAT(RCAT("unknown LAPACK error (%d) for ", GEQP3) " in ", LMLEC_ELIM) "()\n", info);
-      free(buf);
-      return 0;
     }
+    free(buf);
+    return LM_ERROR;
   }
   /* the upper triangular part of a now contains the upper triangle of the unpermuted R */
 
@@ -168,7 +171,6 @@ register int i, j, k;
   if(rank<tn){
     fprintf(stderr, RCAT("\nConstraints matrix in ",  LMLEC_ELIM) "() is not of full row rank (i.e. %d < %d)!\n"
             "Make sure that you do not specify redundant or inconsistent constraints.\n\n", rank, tn);
-    //exit(1);
     free(buf);
     return LM_ERROR;
   }
@@ -188,13 +190,12 @@ register int i, j, k;
   if(info!=0){
     if(info<0){
       fprintf(stderr, RCAT(RCAT("LAPACK error: illegal value for argument %d of ", TRTRI) " in ", LMLEC_ELIM) "()\n", -info);
-      exit(1);
     }
     else if(info>0){
       fprintf(stderr, RCAT(RCAT("A(%d, %d) is exactly zero for ", TRTRI) " (singular matrix) in ", LMLEC_ELIM) "()\n", info, info);
-      free(buf);
-      return 0;
     }
+    free(buf);
+    return LM_ERROR;
   }
   /* then, transpose r in place */
   for(i=0; i<rank; ++i)
@@ -223,13 +224,12 @@ register int i, j, k;
   if(info!=0){
     if(info<0){
       fprintf(stderr, RCAT(RCAT("LAPACK error: illegal value for argument %d of ", ORGQR) " in ", LMLEC_ELIM) "()\n", -info);
-      exit(1);
     }
     else if(info>0){
       fprintf(stderr, RCAT(RCAT("unknown LAPACK error (%d) for ", ORGQR) " in ", LMLEC_ELIM) "()\n", info);
-      free(buf);
-      return 0;
     }
+    free(buf);
+    return LM_ERROR;
   }
 
   /* compute Y=Q_1*R^-T*P^T. Y is tm x rank */
@@ -399,6 +399,7 @@ int LEVMAR_LEC_DER(
                       *                                 7 - stopped by invalid (i.e. NaN or Inf) "func" values. This is a user error
                       * info[7]= # function evaluations
                       * info[8]= # Jacobian evaluations
+                      * info[9]= # linear systems solved, i.e. # attempts for reducing error
                       */
   LM_REAL *work,     /* working memory at least LM_LEC_DER_WORKSZ() reals large, allocated if NULL */
   LM_REAL *covar,    /* O: Covariance matrix corresponding to LS solution; mxm. Set to NULL if not needed. */
@@ -422,14 +423,14 @@ int LEVMAR_LEC_DER(
   mm=m-k;
 
   if(n<mm){
-    fprintf(stderr, LCAT(LEVMAR_LEC_DER, "(): cannot solve a problem with fewer measurements + constraints [%d + %d] than unknowns [%d]\n"), n, k, m);
+    fprintf(stderr, LCAT(LEVMAR_LEC_DER, "(): cannot solve a problem with fewer measurements + equality constraints [%d + %d] than unknowns [%d]\n"), n, k, m);
     return LM_ERROR;
   }
 
   ptr=(LM_REAL *)malloc((2*m + m*mm + n*m + mm)*sizeof(LM_REAL));
   if(!ptr){
     fprintf(stderr, LCAT(LEVMAR_LEC_DER, "(): memory allocation request failed\n"));
-    exit(1);
+    return LM_ERROR;
   }
   data.p=p;
   p0=ptr;
@@ -530,6 +531,7 @@ int LEVMAR_LEC_DIF(
                       *                                 7 - stopped by invalid (i.e. NaN or Inf) "func" values. This is a user error
                       * info[7]= # function evaluations
                       * info[8]= # Jacobian evaluations
+                      * info[9]= # linear systems solved, i.e. # attempts for reducing error
                       */
   LM_REAL *work,     /* working memory at least LM_LEC_DIF_WORKSZ() reals large, allocated if NULL */
   LM_REAL *covar,    /* O: Covariance matrix corresponding to LS solution; mxm. Set to NULL if not needed. */
@@ -547,14 +549,14 @@ int LEVMAR_LEC_DIF(
   mm=m-k;
 
   if(n<mm){
-    fprintf(stderr, LCAT(LEVMAR_LEC_DIF, "(): cannot solve a problem with fewer measurements + constraints [%d + %d] than unknowns [%d]\n"), n, k, m);
+    fprintf(stderr, LCAT(LEVMAR_LEC_DIF, "(): cannot solve a problem with fewer measurements + equality constraints [%d + %d] than unknowns [%d]\n"), n, k, m);
     return LM_ERROR;
   }
 
   ptr=(LM_REAL *)malloc((2*m + m*mm + mm)*sizeof(LM_REAL));
   if(!ptr){
     fprintf(stderr, LCAT(LEVMAR_LEC_DIF, "(): memory allocation request failed\n"));
-    exit(1);
+    return LM_ERROR;
   }
   data.p=p;
   p0=ptr;
@@ -618,7 +620,8 @@ int LEVMAR_LEC_DIF(
     hx=(LM_REAL *)malloc((2*n+n*m)*sizeof(LM_REAL));
     if(!hx){
       fprintf(stderr, LCAT(LEVMAR_LEC_DIF, "(): memory allocation request failed\n"));
-      exit(1);
+      free(ptr);
+      return LM_ERROR;
     }
 
     wrk=hx+n;

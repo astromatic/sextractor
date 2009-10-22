@@ -36,15 +36,17 @@
 
 /* prototypes of LAPACK routines */
 
-#define GEQRF LM_ADD_PREFIX(geqrf_)
-#define ORGQR LM_ADD_PREFIX(orgqr_)
-#define TRTRS LM_ADD_PREFIX(trtrs_)
-#define POTF2 LM_ADD_PREFIX(potf2_)
-#define POTRF LM_ADD_PREFIX(potrf_)
-#define GETRF LM_ADD_PREFIX(getrf_)
-#define GETRS LM_ADD_PREFIX(getrs_)
-#define GESVD LM_ADD_PREFIX(gesvd_)
-#define GESDD LM_ADD_PREFIX(gesdd_)
+
+#define GEQRF LM_MK_LAPACK_NAME(geqrf)
+#define ORGQR LM_MK_LAPACK_NAME(orgqr)
+#define TRTRS LM_MK_LAPACK_NAME(trtrs)
+#define POTF2 LM_MK_LAPACK_NAME(potf2)
+#define POTRF LM_MK_LAPACK_NAME(potrf)
+#define POTRS LM_MK_LAPACK_NAME(potrs)
+#define GETRF LM_MK_LAPACK_NAME(getrf)
+#define GETRS LM_MK_LAPACK_NAME(getrs)
+#define GESVD LM_MK_LAPACK_NAME(gesvd)
+#define GESDD LM_MK_LAPACK_NAME(gesdd)
 
 /* QR decomposition */
 extern int GEQRF(int *m, int *n, LM_REAL *a, int *lda, LM_REAL *tau, LM_REAL *work, int *lwork, int *info);
@@ -53,9 +55,10 @@ extern int ORGQR(int *m, int *n, int *k, LM_REAL *a, int *lda, LM_REAL *tau, LM_
 /* solution of triangular systems */
 extern int TRTRS(char *uplo, char *trans, char *diag, int *n, int *nrhs, LM_REAL *a, int *lda, LM_REAL *b, int *ldb, int *info);
 
-/* cholesky decomposition */
+/* Cholesky decomposition and systems solution */
 extern int POTF2(char *uplo, int *n, LM_REAL *a, int *lda, int *info);
 extern int POTRF(char *uplo, int *n, LM_REAL *a, int *lda, int *info); /* block version of dpotf2 */
+extern int POTRS(char *uplo, int *n, int *nrhs, LM_REAL *a, int *lda, LM_REAL *b, int *ldb, int *info);
 
 /* LU decomposition and systems solution */
 extern int GETRF(int *m, int *n, LM_REAL *a, int *lda, int *ipiv, int *info);
@@ -88,7 +91,7 @@ extern int GESDD(char *jobz, int *m, int *n, LM_REAL *a, int *lda, LM_REAL *s, L
  *
  * A is mxm, b is mx1
  *
- * The function returns 0 in case of error, 1 if successfull
+ * The function returns 0 in case of error, 1 if successful
  *
  * This function is often called repetitively to solve problems of identical
  * dimensions. To avoid repetitive malloc's and free's, allocated memory is
@@ -99,6 +102,8 @@ int AX_EQ_B_QR(LM_REAL *A, LM_REAL *B, LM_REAL *x, int m)
 {
 __STATIC__ LM_REAL *buf=NULL;
 __STATIC__ int buf_sz=0;
+
+static int nb=0; /* no __STATIC__ decl. here! */
 
 LM_REAL *a, *qtb, *tau, *r, *work;
 int a_sz, qtb_sz, tau_sz, r_sz, tot_sz;
@@ -123,7 +128,15 @@ register LM_REAL sum;
     qtb_sz=m;
     tau_sz=m;
     r_sz=m*m; /* only the upper triangular part really needed */
-    worksz=3*m; /* this is probably too much */
+
+if(!nb){
+    LM_REAL tmp;
+
+    worksz=-1; // workspace query; optimal size is returned
+    GEQRF((int *)&m, (int *)&m, NULL, (int *)&m, NULL, (LM_
+    nb=((int)tmp)/m; // optimal worksize is m*nb
+}
+    worksz=nb*m;
     tot_sz=a_sz + qtb_sz + tau_sz + r_sz + worksz;
 
 #ifdef LINSOLVERS_RETAIN_MEMORY
@@ -244,7 +257,7 @@ register LM_REAL sum;
  *
  * A is mxn, b is mx1
  *
- * The function returns 0 in case of error, 1 if successfull
+ * The function returns 0 in case of error, 1 if successful
  *
  * This function is often called repetitively to solve problems of identical
  * dimensions. To avoid repetitive malloc's and free's, allocated memory is
@@ -255,6 +268,8 @@ int AX_EQ_B_QRLS(LM_REAL *A, LM_REAL *B, LM_REAL *x, int m, int n)
 {
 __STATIC__ LM_REAL *buf=NULL;
 __STATIC__ int buf_sz=0;
+
+static int nb=0; /* no __STATIC__ decl. here! */
 
 LM_REAL *a, *atb, *tau, *r, *work;
 int a_sz, atb_sz, tau_sz, r_sz, tot_sz;
@@ -284,7 +299,14 @@ register LM_REAL sum;
     atb_sz=n;
     tau_sz=n;
     r_sz=n*n;
-    worksz=3*n; /* this is probably too much */
+    if(!nb){
+      LM_REAL tmp;
+
+      worksz=-1; // workspace query; optimal size is returned
+      GEQRF((int *)&m, (int *)&m, NULL, (int *)&m, NULL, (LM_
+      nb=((int)tmp)/m; // optimal worksize is m*nb
+    }
+    worksz=nb*m;
     tot_sz=a_sz + atb_sz + tau_sz + r_sz + worksz;
 
 #ifdef LINSOLVERS_RETAIN_MEMORY
@@ -411,7 +433,7 @@ register LM_REAL sum;
  *
  * A is mxm, b is mx1
  *
- * The function returns 0 in case of error, 1 if successfull
+ * The function returns 0 in case of error, 1 if successful
  *
  * This function is often called repetitively to solve problems of identical
  * dimensions. To avoid repetitive malloc's and free's, allocated memory is
@@ -425,7 +447,7 @@ __STATIC__ int buf_sz=0;
 
 LM_REAL *a, *b;
 int a_sz, b_sz, tot_sz;
-register int i, j;
+register int i;
 int info, nrhs=1;
 
     if(!A)
@@ -468,24 +490,29 @@ int info, nrhs=1;
     a=buf;
     b=a+a_sz;
 
-  /* store A (column major!) into a anb B into b */
-	for(i=0; i<m; i++){
-		for(j=0; j<m; j++)
-			a[i+j*m]=A[i*m+j];
-
-    b[i]=B[i];
+  /* store A into a anb B into b. A is assumed symmetric,
+   * hence no transposition is needed
+   */
+  for(i=0; i<m; i++){
+     a[i]=A[i];
+     b[i]=B[i];
   }
+  for(i=m; i<m*m; i++)
+    a[i]=A[i];
 
   /* Cholesky decomposition of A */
-  POTF2("U", (int *)&m, a, (int *)&m, (int *)&info);
+  //POTF2("U", (int *)&m, a, (int *)&m, (int *)&info);
+  POTRF("U", (int *)&m, a, (int *)&m, (int *)&info);
   /* error treatment */
   if(info!=0){
     if(info<0){
-      fprintf(stderr, RCAT(RCAT("LAPACK error: illegal value for argument %d of ", POTF2) " in ", AX_EQ_B_CHOL) "()\n", -info);
+      fprintf(stderr, RCAT(RCAT(RCAT("LAPACK error: illegal value for argument %d of ", POTF2) "/", POTRF) " in ",
+                      AX_EQ_B_CHOL) "()\n", -info);
       exit(1);
     }
     else{
-      fprintf(stderr, RCAT(RCAT("LAPACK error: the leading minor of order %d is not positive definite,\nthe factorization could not be completed for ", POTF2) " in ", AX_EQ_B_CHOL) "()\n", info);
+      fprintf(stderr, RCAT(RCAT(RCAT("LAPACK error: the leading minor of order %d is not positive definite,\nthe factorization could not be completed for ", POTF2) "/", POTRF), " in ",
+                      AX_EQ_B_CHOL) "()\n", info);
 #ifndef LINSOLVERS_RETAIN_MEMORY
       free(buf);
 #endif
@@ -494,7 +521,15 @@ int info, nrhs=1;
     }
   }
 
-  /* solve the linear system U^T y = b */
+  /* solve using the computed Cholesky in one lapack call */
+  POTRS("U", (int *)&m, (int *)&nrhs, a, (int *)&m, b, (int *)&m, &info);
+  if(info<0){
+    fprintf(stderr, RCAT(RCAT("LAPACK error: illegal value for argument %d of ", POTRS) " in ", AX_EQ_B_CHOL) "()\n", -info);
+    exit(1);
+  }
+
+#if 0
+  /* alternative: solve the linear system U^T y = b ... */
   TRTRS("U", "T", "N", (int *)&m, (int *)&nrhs, a, (int *)&m, b, (int *)&m, &info);
   /* error treatment */
   if(info!=0){
@@ -512,7 +547,7 @@ int info, nrhs=1;
     }
   }
 
-  /* solve the linear system U x = y */
+  /* ... solve the linear system U x = y */
   TRTRS("U", "N", "N", (int *)&m, (int *)&nrhs, a, (int *)&m, b, (int *)&m, &info);
   /* error treatment */
   if(info!=0){
@@ -529,6 +564,7 @@ int info, nrhs=1;
       return 0;
     }
   }
+#endif /* 0 */
 
 	/* copy the result in x */
 	for(i=0; i<m; i++)
@@ -551,8 +587,7 @@ int info, nrhs=1;
  *
  * A is mxm, b is mx1
  *
- * The function returns 0 in case of error,
- * 1 if successfull
+ * The function returns 0 in case of error, 1 if successful
  *
  * This function is often called repetitively to solve problems of identical
  * dimensions. To avoid repetitive malloc's and free's, allocated memory is
@@ -564,10 +599,10 @@ int AX_EQ_B_LU(LM_REAL *A, LM_REAL *B, LM_REAL *x, int m)
 __STATIC__ LM_REAL *buf=NULL;
 __STATIC__ int buf_sz=0;
 
-int a_sz, ipiv_sz, b_sz, work_sz, tot_sz;
+int a_sz, ipiv_sz, b_sz, tot_sz;
 register int i, j;
 int info, *ipiv, nrhs=1;
-LM_REAL *a, *b, *work;
+LM_REAL *a, *b;
 
     if(!A)
 #ifdef LINSOLVERS_RETAIN_MEMORY
@@ -585,15 +620,14 @@ LM_REAL *a, *b, *work;
     ipiv_sz=m;
     a_sz=m*m;
     b_sz=m;
-    work_sz=100*m; /* this is probably too much */
-    tot_sz=ipiv_sz + a_sz + b_sz + work_sz; // ipiv_sz counted as LM_REAL here, no harm is done though
+    tot_sz=(a_sz + b_sz)*sizeof(LM_REAL) + ipiv_sz*sizeof(int); /* should be arranged in that order for proper doubles alignment */
 
 #ifdef LINSOLVERS_RETAIN_MEMORY
     if(tot_sz>buf_sz){ /* insufficient memory, allocate a "big" memory chunk at once */
       if(buf) free(buf); /* free previously allocated memory */
 
       buf_sz=tot_sz;
-      buf=(LM_REAL *)malloc(buf_sz*sizeof(LM_REAL));
+      buf=(LM_REAL *)malloc(buf_sz);
       if(!buf){
         fprintf(stderr, RCAT("memory allocation in ", AX_EQ_B_LU) "() failed!\n");
         exit(1);
@@ -601,17 +635,16 @@ LM_REAL *a, *b, *work;
     }
 #else
       buf_sz=tot_sz;
-      buf=(LM_REAL *)malloc(buf_sz*sizeof(LM_REAL));
+      buf=(LM_REAL *)malloc(buf_sz);
       if(!buf){
         fprintf(stderr, RCAT("memory allocation in ", AX_EQ_B_LU) "() failed!\n");
         exit(1);
       }
 #endif /* LINSOLVERS_RETAIN_MEMORY */
 
-    ipiv=(int *)buf;
-    a=(LM_REAL *)(ipiv + ipiv_sz);
+    a=buf;
     b=a+a_sz;
-    work=b+b_sz;
+    ipiv=(int *)(b+b_sz);
 
     /* store A (column major!) into a and B into b */
 	  for(i=0; i<m; i++){
@@ -677,7 +710,7 @@ LM_REAL *a, *b, *work;
  *
  * A is mxm, b is mx1.
  *
- * The function returns 0 in case of error, 1 if successfull
+ * The function returns 0 in case of error, 1 if successful
  *
  * This function is often called repetitively to solve problems of identical
  * dimensions. To avoid repetitive malloc's and free's, allocated memory is
@@ -710,12 +743,21 @@ int info, rank, worksz, *iwork, iworksz;
 #endif /* LINSOLVERS_RETAIN_MEMORY */
    
   /* calculate required memory size */
-  worksz=16*m; /* more than needed */
+#if 1 /* use optimal size */
+  worksz=-1; // workspace query. Keep in mind that GESDD requires more memory than GESVD
+  /* note that optimal work size is returned in thresh */
+  GESVD("A", "A", (int *)&m, (int *)&m, NULL, (int *)&m, NULL, NULL, (int *)&m, NULL, (int *)&m, (LM_REAL *)&thresh, (int *)&worksz, &info);
+  //GESDD("A", (int *)&m, (int *)&m, NULL, (int *)&m, NULL, NULL, (int *)&m, NULL, (int *)&m, (LM_REAL *)&thresh, (int *)&worksz, NULL, &info);
+  worksz=(int)thresh;
+#else /* use minimum size */
+  worksz=5*m; // min worksize for GESVD
+  //worksz=m*(7*m+4); // min worksize for GESDD
+#endif
   iworksz=8*m;
   a_sz=m*m;
   u_sz=m*m; s_sz=m; vt_sz=m*m;
 
-  tot_sz=iworksz*sizeof(int) + (a_sz + u_sz + s_sz + vt_sz + worksz)*sizeof(LM_REAL);
+  tot_sz=(a_sz + u_sz + s_sz + vt_sz + worksz)*sizeof(LM_REAL) + iworksz*sizeof(int); /* should be arranged in that order for proper doubles alignment */
 
 #ifdef LINSOLVERS_RETAIN_MEMORY
   if(tot_sz>buf_sz){ /* insufficient memory, allocate a "big" memory chunk at once */
@@ -737,17 +779,17 @@ int info, rank, worksz, *iwork, iworksz;
     }
 #endif /* LINSOLVERS_RETAIN_MEMORY */
 
-  iwork=(int *)buf;
-  a=(LM_REAL *)(iwork+iworksz);
+  a=buf;
+  u=a+a_sz;
+  s=u+u_sz;
+  vt=s+s_sz;
+  work=vt+vt_sz;
+  iwork=(int *)(work+worksz);
+
   /* store A (column major!) into a */
   for(i=0; i<m; i++)
     for(j=0; j<m; j++)
       a[i+j*m]=A[i*m+j];
-
-  u=a + a_sz;
-  s=u+u_sz;
-  vt=s+s_sz;
-  work=vt+vt_sz;
 
   /* SVD decomposition of A */
   GESVD("A", "A", (int *)&m, (int *)&m, a, (int *)&m, s, u, (int *)&m, vt, (int *)&m, work, (int *)&worksz, &info);
@@ -845,8 +887,7 @@ extern int GETRS(char *trans, int *n, int *nrhs, LM_REAL *a, int *lda, int *ipiv
  *
  * A is mxm, b is mx1
  *
- * The function returns 0 in case of error,
- * 1 if successfull
+ * The function returns 0 in case of error, 1 if successful
  *
  * This function is often called repetitively to solve problems of identical
  * dimensions. To avoid repetitive malloc's and free's, allocated memory is
@@ -862,7 +903,7 @@ __STATIC__ int buf_sz=0;
 int a_sz, ipiv_sz, b_sz, work_sz, tot_sz;
 register int i, j;
 int info, *ipiv;
-LM_REAL *a, *b, *work;
+LM_REAL *a, *b;
     if(!A)
 #ifdef LINSOLVERS_RETAIN_MEMORY
     {
@@ -879,15 +920,14 @@ LM_REAL *a, *b, *work;
     ipiv_sz=m;
     a_sz=m*m;
     b_sz=m;
-    work_sz=100*m; /* this is probably too much */
-    tot_sz=ipiv_sz + a_sz + b_sz + work_sz; // ipiv_sz counted as LM_REAL here, no harm is done though
+    tot_sz=(ipiv_sz + a_sz + b_sz)*sizeof(LM_REAL);
 
 #ifdef LINSOLVERS_RETAIN_MEMORY
     if(tot_sz>buf_sz){ /* insufficient memory, allocate a "big" memory chunk at once */
       if(buf) free(buf); /* free previously allocated memory */
 
       buf_sz=tot_sz;
-      buf=(LM_REAL *)malloc(buf_sz*sizeof(LM_REAL));
+      buf=(void *)malloc(buf_sz);
       if(!buf){
         fprintf(stderr, RCAT("memory allocation in ", AX_EQ_B_LU) "() failed!\n");
         exit(1);
@@ -895,7 +935,7 @@ LM_REAL *a, *b, *work;
     }
 #else
       buf_sz=tot_sz;
-      buf=(LM_REAL *)malloc(buf_sz*sizeof(LM_REAL));
+      buf=(void *))malloc(buf_sz);
       if(!buf){
         fprintf(stderr, RCAT("memory allocation in ", AX_EQ_B_LU) "() failed!\n");
         exit(1);
@@ -905,7 +945,6 @@ LM_REAL *a, *b, *work;
     ipiv=(int *)buf;
     a=(LM_REAL *)(ipiv + ipiv_sz);
     b=a+a_sz;
-    work=b+b_sz;
 
     /* store A (column major!) into a and B into b */
 	  for(i=0; i<m; i++){

@@ -27,7 +27,7 @@
 
 /* specify whether to use LAPACK or not. The first option is strongly recommended */
 #define HAVE_LAPACK /* use LAPACK */
-#undef HAVE_LAPACK  /* uncomment this to force not using LAPACK */
+#undef HAVE_LAPACK */  /* uncomment this to force not using LAPACK */
 
 /* to avoid the overhead of repeated mallocs(), routines in Axb.c can be instructed to
  * retain working memory between calls. Such a choice, however, renders these routines
@@ -79,12 +79,12 @@ extern "C" {
 #define LM_BLEC_DIF_WORKSZ(npar, nmeas, nconstr) LM_LEC_DIF_WORKSZ((npar), (nmeas)+(npar), (nconstr))
 
 #define LM_OPTS_SZ    	 5 /* max(4, 5) */
-#define LM_INFO_SZ    	 9
+#define LM_INFO_SZ    	 10
 #define LM_ERROR         -1
 #define LM_INIT_MU    	 1E-03
 #define LM_STOP_THRESH	 1E-17
 #define LM_DIFF_DELTA    1E-06
-#define LM_VERSION       "2.3 (May 2008)"
+#define LM_VERSION       "2.4 (April 2009)"
 
 #ifdef LM_DBL_PREC
 /* double precision LM, with & without Jacobian */
@@ -241,15 +241,18 @@ extern void slevmar_chkjac(
     float *p, int m, int n, void *adata, float *err);
 #endif /* LM_SNGL_PREC */
 
-/* standard deviation & Pearson's correlation coefficient for best-fit parameters */
+/* standard deviation, coefficient of determination (R2) & Pearson's correlation coefficient for best-fit parameters */
 #ifdef LM_DBL_PREC
 extern double dlevmar_stddev( double *covar, int m, int i);
 extern double dlevmar_corcoef(double *covar, int m, int i, int j);
+extern double dlevmar_R2(void (*func)(double *p, double *hx, int m, int n, void *adata), double *p, double *x, int m, int n, void *adata);
+
 #endif /* LM_DBL_PREC */
 
 #ifdef LM_SNGL_PREC
 extern float slevmar_stddev( float *covar, int m, int i);
 extern float slevmar_corcoef(float *covar, int m, int i, int j);
+extern float slevmar_R2(void (*func)(float *p, float *hx, int m, int n, void *adata), float *p, float *x, int m, int n, void *adata);
 #endif /* LM_SNGL_PREC */
 
 #ifdef __cplusplus

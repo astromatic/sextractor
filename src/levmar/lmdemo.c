@@ -685,7 +685,8 @@ char *probname[]={
 };
 
   opts[0]=LM_INIT_MU; opts[1]=1E-15; opts[2]=1E-15; opts[3]=1E-20;
-  opts[4]=LM_DIFF_DELTA; // relevant only if the finite difference Jacobian version is used 
+  opts[4]=LM_DIFF_DELTA; // relevant only if the Jacobian is approximated using finite differences; specifies forward differencing
+  //opts[4]=-LM_DIFF_DELTA; // specifies central differencing to approximate Jacobian; more accurate but more expensive to compute!
 
   /* uncomment the appropriate line below to select a minimization problem */
   problem=
