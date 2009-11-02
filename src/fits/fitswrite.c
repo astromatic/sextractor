@@ -9,7 +9,7 @@
 *
 *	Contents:	low-level functions for writing LDAC FITS catalogs.
 *
-*	Last modify:	17/07/2006
+*	Last modify:	02/11/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -386,7 +386,7 @@ INPUT	Output stream
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP & Leiden observatory)
-VERSION	12/07/2006
+VERSION	02/11/2009
  ***/
 void	print_obj(FILE *stream, tabstruct *tab)
 
@@ -422,6 +422,11 @@ void	print_obj(FILE *stream, tabstruct *tab)
           break;
         case T_LONG:
           fprintf(stream, *key->printf?key->printf:"%d", *(int *)ptr);
+          if (i)
+            putc(' ', stream);
+          break;
+        case T_LONGLONG:
+          fprintf(stream, *key->printf?key->printf:"%lld", *(LONGLONG *)ptr);
           if (i)
             putc(' ', stream);
           break;
@@ -463,7 +468,7 @@ INPUT	Output stream
 OUTPUT	-.
 NOTES	-.
 AUTHOR	G. Tissier & E.Bertin (IAP)
-VERSION	12/07/2006
+VERSION	02/11/2009
  ***/
 void	voprint_obj(FILE *stream, tabstruct *tab)
 
@@ -503,6 +508,11 @@ void	voprint_obj(FILE *stream, tabstruct *tab)
           break;
         case T_LONG:
           fprintf(stream, *key->printf?key->printf:"%d", *(int *)ptr);
+          if (i)
+            putc(' ', stream);
+          break;
+        case T_LONGLONG:
+          fprintf(stream, *key->printf?key->printf:"%lld", *(LONGLONG *)ptr);
           if (i)
             putc(' ', stream);
           break;

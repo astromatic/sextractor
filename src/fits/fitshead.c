@@ -9,7 +9,7 @@
 *
 *	Contents:	general functions for handling FITS file headers.
 *
-*	Last modify:	20/06/2007
+*	Last modify:	28/10/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -26,7 +26,7 @@
 #include	"fitscat.h"
 
 extern	char	histokeys[][12];
-const int	t_size[] = {1, 2, 4, 4, 8, 1};	/* size in bytes per t_type */
+const int	t_size[] = {1, 2, 4, 8, 4, 8, 1};/* size in bytes per t_type */
 
 /******* get_head *************************************************************
 PROTO	int get_head(tabstruct *tab)
@@ -187,7 +187,7 @@ OUTPUT	RETURN_OK if a binary table was found and mapped, RETURN_ERROR
 	otherwise.
 NOTES	-.
 AUTHOR	E. Bertin (IAP & Leiden observatory)
-VERSION	25/09/2004
+VERSION	28/10/2009
  ***/
 int	readbintabparam_head(tabstruct *tab)
 
@@ -260,6 +260,7 @@ int	readbintabparam_head(tabstruct *tab)
       case T_BYTE:
       case T_SHORT:
       case T_LONG:
+      case T_LONGLONG:
         key->htype = H_INT;
         break;
       case T_FLOAT:
@@ -618,7 +619,7 @@ INPUT	a char pointer (to be filled with the T_FORM string),
 OUTPUT	RETURN_OK if everything went as expected, or RETURN_ERROR otherwise.
 NOTES	-.
 AUTHOR	E. Bertin (IAP & Leiden observatory)
-VERSION	08/02/96
+VERSION	28/10/2009
  ***/
 int	tformof(char *str, t_type ttype, int n)
 
@@ -632,6 +633,8 @@ int	tformof(char *str, t_type ttype, int n)
     case T_SHORT:	t = 'I';
 			break;
     case T_LONG:	t = 'J';
+			break;
+    case T_LONGLONG:	t = 'K';
 			break;
     case T_FLOAT:	t = 'E';
 			break;
@@ -655,7 +658,7 @@ INPUT	TFORM string (see the FITS documentation).
 OUTPUT	size in bytes, or RETURN_ERROR if the TFORM is unknown.
 NOTES	-.
 AUTHOR	E. Bertin (IAP & Leiden observatory)
-VERSION	08/02/96
+VERSION	28/10/2009
  ***/
 int	tsizeof(char *str)
 
@@ -669,13 +672,13 @@ int	tsizeof(char *str)
 
   switch ((int)*str2)
     {
-    case 'L': case 'B': case 'A':	return	n;
-    case 'X':				return	(n-1)/8+1;
-    case 'I':				return	2*n;
-    case 'J': case 'E':			return	4*n;
-    case 'C': case 'D': case 'P':	return	8*n;
-    case 'M':				return	16*n;
-    default:				return	RETURN_ERROR;
+    case 'L': case 'B': case 'A':		return	n;
+    case 'X':					return	(n-1)/8+1;
+    case 'I':					return	2*n;
+    case 'J': case 'E':				return	4*n;
+    case 'C': case 'D': case 'K': case 'P':	return	8*n;
+    case 'M':					return	16*n;
+    default:					return	RETURN_ERROR;
     }
 
   }
@@ -688,7 +691,7 @@ INPUT	TFORM string (see the FITS documentation).
 OUTPUT	size in bytes, or RETURN_ERROR if the TFORM is unknown.
 NOTES	-.
 AUTHOR	E. Bertin (IAP & Leiden observatory)
-VERSION	17/03/2002
+VERSION	28/10/2009
  ***/
 t_type	ttypeof(char *str)
 
@@ -702,6 +705,7 @@ t_type	ttypeof(char *str)
     case 'L': case 'B': case 'X':	return	T_BYTE;
     case 'I':				return	T_SHORT;
     case 'J':				return	T_LONG;
+    case 'K':				return	T_LONGLONG;
     case 'E':				return	T_FLOAT;
     case 'D':				return	T_DOUBLE;
     case 'A':				return	T_STRING;

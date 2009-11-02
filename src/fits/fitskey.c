@@ -9,7 +9,7 @@
 *
 *	Contents:	Functions related to the management of keys.
 *
-*	Last modify:	04/06/2007
+*	Last modify:	02/11/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -575,7 +575,7 @@ NOTES	This is approximately the same code as for read_keys.
 	A NULL keynames pointer means read ALL keys belonging to the table.
 	A NULL mask pointer means NO selection for reading.
 AUTHOR	E. Bertin (IAP & Leiden observatory)
-VERSION	04/06/2007
+VERSION	02/11/2009
  ***/
 void	show_keys(tabstruct *tab, char **keynames, keystruct **keys, int nkeys,
 		BYTE *mask, FILE *stream,
@@ -845,6 +845,30 @@ void	show_keys(tabstruct *tab, char **keynames, keystruct **keys, int nkeys,
                 }
               break;
 
+            case T_LONGLONG:
+              for (j = 0; j<nelem; j++,ptr += esize)
+                {
+                if (key_col[k] == 0 || key_col[k] == j+1) {
+#ifdef HAVE_LONG_LONG_INT
+                   fprintf(stream, *key->printf?key->printf:"%lld",
+		         		*(LONGLONG *)ptr);
+#else
+                   fprintf(stream, *key->printf?key->printf:"%d",
+		         		*(int *)ptr);
+#endif
+                   if (j < nelem-1) {
+                      switch (o_type) {
+                      case SHOW_ASCII:
+                         putc(' ', stream);
+                         break;
+                      case SHOW_SKYCAT:
+                         putc('\t', stream);
+                         break;
+                      }
+                      }
+                   }
+                }
+              break;
             case T_FLOAT:
               for (j = 0; j<nelem; j++,ptr += esize)
                 {

@@ -7,9 +7,9 @@
 *
 *	Author:		E.BERTIN, DeNIS/LDAC
 *
-*	Contents:	Simplified versin of the LDACTools: main include file
+*	Contents:	Simplified version of the LDACTools: main include file
 *
-*	Last modify:	10/10/2007
+*	Last modify:	02/11/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -41,6 +41,7 @@
 #define		BP_BYTE		8
 #define		BP_SHORT	16
 #define		BP_LONG		32
+#define		BP_LONGLONG	64
 #define		BP_FLOAT	(-32)
 #define		BP_DOUBLE	(-64)
 
@@ -67,7 +68,8 @@
 typedef enum            {H_INT, H_FLOAT, H_EXPO, H_BOOL, H_STRING, H_STRINGS,
 			H_COMMENT, H_HCOMMENT, H_KEY}	h_type;
 						/* type of FITS-header data */
-typedef enum		{T_BYTE, T_SHORT, T_LONG, T_FLOAT, T_DOUBLE, T_STRING}
+typedef enum		{T_BYTE, T_SHORT, T_LONG, T_LONGLONG,
+			T_FLOAT, T_DOUBLE, T_STRING}
 				t_type;		/* Type of data */
 typedef enum		{WRITE_ONLY, READ_ONLY}
 				access_type;	/* Type of access */
@@ -77,15 +79,19 @@ typedef enum		{SHOW_ASCII, SHOW_SKYCAT}
 typedef	float		PIXTYPE;		/* Pixel type */
 typedef	unsigned int	FLAGTYPE;		/* Flag type */
 
-#ifdef	HAVE_UNSIGNED_LONG_LONG
-typedef	unsigned long long	KINGSIZE_T;	/* for large sizes */
+#ifdef	HAVE_UNSIGNED_LONG_LONG_INT
+typedef	unsigned long long		KINGSIZE_T;	/* for large sizes */
+typedef unsigned long long		ULONGLONG;
 #else
-typedef	size_t			KINGSIZE_T;	/* better than nothing */
+typedef	size_t				KINGSIZE_T;/* better than nothing */
+typedef union {unsigned int l[2];}	ULONGLONG;
 #endif
-#ifdef HAVE_LONG_LONG
-typedef	long long		KINGLONG;	/* for large sizes */
+#ifdef HAVE_LONG_LONG_INT
+typedef	long long			KINGLONG;	/* for large sizes */
+typedef long long			LONGLONG;
 #else
-typedef	long			KINGLONG;	/* better than nothing */
+typedef	long				KINGLONG;/* better than nothing */
+typedef union {int l[2];}		LONGLONG;
 #endif
 
 #if _FILE_OFFSET_BITS
