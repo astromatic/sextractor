@@ -9,7 +9,7 @@
 *
 *	Contents:	functions for handling FITS keywords.
 *
-*	Last modify:	22/05/2009
+*	Last modify:	02/11/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -310,7 +310,7 @@ INPUT	pointer to the FITS buffer,
 OUTPUT	RETURN_OK if the keyword was found, RETURN_ERROR otherwise.
 NOTES	The buffer MUST contain the ``END     '' keyword.
 AUTHOR	E. Bertin (IAP & Leiden observatory)
-VERSION	04/08/2004
+VERSION	02/11/2009
  ***/
 int	fitsread(char *fitsbuf, char *keyword, void *ptr, h_type htype,
 		t_type ttype)
@@ -328,10 +328,14 @@ int	fitsread(char *fitsbuf, char *keyword, void *ptr, h_type htype,
 
   switch(htype)
     {
-    case H_INT:		if (ttype == T_SHORT)
-			  sscanf(str+10, "    %hd", (short *)ptr);
-			else
+    case H_INT:		if (ttype == T_LONG)
 			  sscanf(str+10, "    %d", (LONG *)ptr);
+			else if (ttype == T_SHORT)
+			  sscanf(str+10, "    %hd", (short *)ptr);
+#ifdef HAVE_LONG_LONG_INT
+			else
+			  sscanf(str+10, "    %lld", (LONGLONG *)ptr);
+#endif
 			break;
 
     case H_FLOAT:
@@ -347,8 +351,12 @@ int	fitsread(char *fitsbuf, char *keyword, void *ptr, h_type htype,
 			  *(BYTE *)ptr = ((int)s[0] == 'T') ? 1 : 0;
                         else if (ttype == T_SHORT)
 			  *(short *)ptr = ((int)s[0] == 'T') ? 1 : 0;
-                        else
+                        else if (ttype == T_LONG)
 			  *(LONG *)ptr = ((int)s[0] == 'T') ? 1 : 0;
+#ifdef HAVE_LONG_LONG_INT
+                        else
+			  *(LONGLONG *)ptr = ((int)s[0] == 'T') ? 1 : 0;
+#endif
 			break;
 
     case H_STRING:	st = ptr;
@@ -439,7 +447,7 @@ OUTPUT	RETURN_OK if the keyword was found, RETURN_ERROR otherwise.
 NOTES	The buffer MUST contain the ``END     '' keyword.
 	The keyword must already exist in the buffer (use fitsadd()).
 AUTHOR	E. Bertin (IAP & Leiden observatory)
-VERSION	21/09/2006
+VERSION	02/11/2009
  ***/
 int	fitswrite(char *fitsbuf, char *keyword, void *ptr, h_type htype,
 		t_type ttype)
@@ -458,8 +466,14 @@ int	fitswrite(char *fitsbuf, char *keyword, void *ptr, h_type htype,
   fitsbuf += 80*pos;
   switch(htype)
     {
-    case H_INT:	sprintf(str, "%20d", (ttype==T_SHORT)?
-				*(short *)ptr: *(int *)ptr);
+    case H_INT:		if (ttype==T_LONG)
+			  sprintf(str, "%20d", *(int *)ptr);
+			else if (ttype==T_SHORT)
+			  sprintf(str, "%20d", *(short *)ptr);
+#ifdef HAVE_LONG_LONG_INT
+			else
+			  sprintf(str, "%20lld", *(LONGLONG *)ptr);
+#endif
 			break;
 
     case H_FLOAT:	sprintf(str, "        %12.4f", (ttype==T_DOUBLE)?

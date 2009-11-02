@@ -9,7 +9,7 @@
 *
 *	Contents:	general functions for handling LDAC FITS catalogs.
 *
-*	Last modify:	15/08/2003
+*	Last modify:	28/10/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -36,7 +36,7 @@ NOTES	-.
 AUTHOR	E.R. Deul(Leiden observatory),
 	E. Bertin (IAP & Leiden observatory): return value modified.
 	E.R. Deul(Leiden observatory): output units
-VERSION	15/08/2003
+VERSION	28/10/2009
  ***/
 int about_tab(catstruct *cat, char *tabname, FILE *stream)
 {
@@ -60,6 +60,7 @@ int about_tab(catstruct *cat, char *tabname, FILE *stream)
     case T_BYTE: fprintf(stream,"Byte"); break;
     case T_SHORT: fprintf(stream,"Short Int"); break;
     case T_LONG: fprintf(stream,"Long Int"); break;
+    case T_LONGLONG: fprintf(stream,"Long Long Int"); break;
     case T_FLOAT: fprintf(stream,"Float"); break;
     case T_DOUBLE: fprintf(stream,"Double"); break;
     case T_STRING: fprintf(stream,"String"); break;

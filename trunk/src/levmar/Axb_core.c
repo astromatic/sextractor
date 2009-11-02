@@ -129,13 +129,13 @@ register LM_REAL sum;
     tau_sz=m;
     r_sz=m*m; /* only the upper triangular part really needed */
 
-if(!nb){
-    LM_REAL tmp;
+    if(!nb){
+      LM_REAL tmp;
 
-    worksz=-1; // workspace query; optimal size is returned
-    GEQRF((int *)&m, (int *)&m, NULL, (int *)&m, NULL, (LM_
-    nb=((int)tmp)/m; // optimal worksize is m*nb
-}
+      worksz=-1; // workspace query; optimal size is returned in tmp
+      GEQRF((int *)&m, (int *)&m, NULL, (int *)&m, NULL, (LM_REAL *)&tmp, (int *)&worksz, (int *)&info);
+      nb=((int)tmp)/m; // optimal worksize is m*nb
+    }
     worksz=nb*m;
     tot_sz=a_sz + qtb_sz + tau_sz + r_sz + worksz;
 
@@ -302,8 +302,8 @@ register LM_REAL sum;
     if(!nb){
       LM_REAL tmp;
 
-      worksz=-1; // workspace query; optimal size is returned
-      GEQRF((int *)&m, (int *)&m, NULL, (int *)&m, NULL, (LM_
+      worksz=-1; // workspace query; optimal size is returned in tmp
+      GEQRF((int *)&m, (int *)&m, NULL, (int *)&m, NULL, (LM_REAL *)&tmp, (int *)&worksz, (int *)&info);
       nb=((int)tmp)/m; // optimal worksize is m*nb
     }
     worksz=nb*m;
@@ -490,15 +490,15 @@ int info, nrhs=1;
     a=buf;
     b=a+a_sz;
 
-  /* store A into a anb B into b. A is assumed symmetric,
-   * hence no transposition is needed
-   */
-  for(i=0; i<m; i++){
-     a[i]=A[i];
-     b[i]=B[i];
-  }
-  for(i=m; i<m*m; i++)
-    a[i]=A[i];
+    /* store A into a anb B into b. A is assumed symmetric,
+     * hence no transposition is needed
+     */
+    for(i=0; i<m; i++){
+      a[i]=A[i];
+      b[i]=B[i];
+    }
+   for(i=m; i<m*m; i++)
+      a[i]=A[i];
 
   /* Cholesky decomposition of A */
   //POTF2("U", (int *)&m, a, (int *)&m, (int *)&info);
@@ -897,7 +897,7 @@ extern int GETRS(char *trans, int *n, int *nrhs, LM_REAL *a, int *lda, int *ipiv
 int AX_EQ_B_LU(LM_REAL *A, LM_REAL *B, LM_REAL *x, int m)
 {
 
-__STATIC__ LM_REAL *buf=NULL;
+__STATIC__ void *buf=NULL;
 __STATIC__ int buf_sz=0;
 
 int a_sz, ipiv_sz, b_sz, work_sz, tot_sz;
@@ -935,7 +935,7 @@ LM_REAL *a, *b;
     }
 #else
       buf_sz=tot_sz;
-      buf=(void *))malloc(buf_sz);
+      buf=(void *)malloc(buf_sz);
       if(!buf){
         fprintf(stderr, RCAT("memory allocation in ", AX_EQ_B_LU) "() failed!\n");
         exit(1);

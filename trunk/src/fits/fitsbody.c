@@ -9,7 +9,7 @@
 *
 *	Contents:       Handle memory allocation for FITS bodies.
 *
-*	Last modify:	10/10/2007
+*	Last modify:	02/11/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -191,7 +191,7 @@ INPUT	A pointer to the tab structure,
 OUTPUT	-.
 NOTES	.
 AUTHOR	E. Bertin (IAP)
-VERSION	10/10/2007
+VERSION	02/11/2009
  ***/
 void	read_body(tabstruct *tab, PIXTYPE *ptr, size_t size)
   {
@@ -202,6 +202,8 @@ void	read_body(tabstruct *tab, PIXTYPE *ptr, size_t size)
 			cval, cblank;
   unsigned short	suval, sublank;
   short			val16, sval, sblank;
+  ULONGLONG		lluval, llublank;
+  LONGLONG		llval, llblank;
   unsigned int		iuval, iublank;
   int			curval, dval, blankflag, ival, iblank;
   
@@ -321,6 +323,38 @@ void	read_body(tabstruct *tab, PIXTYPE *ptr, size_t size)
 	      }
             break;
 
+#ifdef HAVE_LONG_LONG_INT
+          case BP_LONGLONG:
+            if (bswapflag)
+              swapbytes(bufdata, 8, spoonful);
+            if (blankflag)
+	      {
+              if (tab->bitsgn)
+                {
+                llblank = (LONGLONG)tab->blank;
+                for (i=spoonful; i--; bufdata += sizeof(LONGLONG))
+                  *(ptr++) = ((llval = *((LONGLONG *)bufdata)) == llblank)?
+			-BIG : ival*bs + bz;
+                }
+              else
+                {
+                llublank = (ULONGLONG)tab->blank;
+                for (i=spoonful; i--; bufdata += sizeof(ULONGLONG))
+                  *(ptr++) = ((lluval = *((ULONGLONG *)bufdata)) == llublank)?
+			-BIG : iuval*bs + bz;
+                }
+	      }
+            else
+	      {
+              if (tab->bitsgn)
+                for (i=spoonful; i--; bufdata += sizeof(LONGLONG))
+                  *(ptr++) = *((LONGLONG *)bufdata)*bs + bz;
+              else
+                for (i=spoonful; i--; bufdata += sizeof(ULONGLONG))
+                  *(ptr++) = *((ULONGLONG *)bufdata)*bs + bz;
+	      }
+            break;
+#endif
           case BP_FLOAT:
             if (bswapflag)
               swapbytes(bufdata, 4, spoonful);
@@ -328,7 +362,6 @@ void	read_body(tabstruct *tab, PIXTYPE *ptr, size_t size)
               *(ptr++) = ((0x7f800000&*(unsigned int *)bufdata) == 0x7f800000)?
 			-BIG : *((float *)bufdata)*bs + bz;
             break;
-
           case BP_DOUBLE:
             if (bswapflag)
 	      {
@@ -463,7 +496,7 @@ INPUT	A pointer to the tab structure,
 OUTPUT	-.
 NOTES	.
 AUTHOR	E. Bertin (IAP)
-VERSION	11/10/2007
+VERSION	02/11/2009
  ***/
 void	read_ibody(tabstruct *tab, FLAGTYPE *ptr, size_t size)
   {
@@ -510,6 +543,14 @@ void	read_ibody(tabstruct *tab, FLAGTYPE *ptr, size_t size)
               *(ptr++) = (FLAGTYPE)*((unsigned long *)bufdata);
             break;
 
+#ifdef HAVE_LONG_LONG_INT
+          case BP_LONGLONG:
+            if (bswapflag)
+              swapbytes(bufdata, 8, spoonful);
+            for (i=spoonful; i--; bufdata += sizeof(ULONGLONG))
+              *(ptr++) = (FLAGTYPE)*((ULONGLONG *)bufdata);
+            break;
+#endif
           case BP_FLOAT:
           case BP_DOUBLE:
             error(EXIT_FAILURE,"*Error*: I was expecting integers in ",
@@ -631,7 +672,7 @@ INPUT	A pointer to the tab structure,
 OUTPUT	-.
 NOTES	.
 AUTHOR	E. Bertin (IAP)
-VERSION	11/10/2007
+VERSION	02/11/2009
  ***/
 void	write_body(tabstruct *tab, PIXTYPE *ptr, size_t size)
   {
@@ -711,6 +752,24 @@ void	write_body(tabstruct *tab, PIXTYPE *ptr, size_t size)
               swapbytes(cbufdata0, 4, spoonful);
             break;
 
+#ifdef HAVE_LONG_LONG_INT
+          case BP_LONGLONG:
+           if (tab->bitsgn)
+              {
+               LONGLONG	*bufdata = (LONGLONG *)cbufdata0;
+              for (i=spoonful; i--;)
+                *(bufdata++) = (LONGLONG)((*(ptr++)-bz)/bs+0.49999);
+              }
+            else
+              {
+               ULONGLONG	*bufdata = (ULONGLONG *)cbufdata0;
+              for (i=spoonful; i--;)
+                *(bufdata++) = (ULONGLONG)((*(ptr++)-bz)/bs+0.49999);
+              }
+            if (bswapflag)
+              swapbytes(cbufdata0, 8, spoonful);
+            break;
+#endif
           case BP_FLOAT:
             {
              float	*bufdata = (float *)cbufdata0;

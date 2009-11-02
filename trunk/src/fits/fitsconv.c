@@ -9,10 +9,15 @@
 *
 *	Contents:	functions for converting LDAC FITS catalogs.
 *
-*	Last modify:	25/09/2004
+*	Last modify:	02/11/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
+
+#ifdef HAVE_CONFIG_H
+#include	"config.h"
+#endif
+
 #include	<stdio.h>
 #include	<stdlib.h>
 #include	<string.h>
@@ -128,15 +133,42 @@ INPUT	Pointer to element to convert,
 OUTPUT	-.
 NOTES	ttypeconv does not yet handle arrays.
 AUTHOR  E. Bertin (IAP)
-VERSION 25/09/2004
+VERSION 02/11/2009
  ***/
 
 void	ttypeconv(void *ptrin, void *ptrout, t_type ttypein, t_type ttypeout)
 
   {
-   union	{char tbyte; short tshort; int tlong; float tfloat;
-		 double tdouble; char tstring;} ival;
+   union	{char tbyte; short tshort; int tlong; LONGLONG tlonglong;
+		 float tfloat; double tdouble; char tstring;} ival;
 
+#ifdef HAVE_LONG_LONG_INT
+#define		OUTCONV(x, y)			\
+      switch(y)					\
+         {					\
+         case T_BYTE:				\
+         case T_STRING:				\
+	   *((char *)ptrout) = (char)x;		\
+           break;				\
+         case T_SHORT:				\
+           *((short *)ptrout) = (short)x;	\
+           break;				\
+         case T_LONG:				\
+           *((int *)ptrout) = (int)x;		\
+           break;				\
+         case T_LONGLONG:			\
+           *((LONGLONG *)ptrout) = (LONGLONG)x;	\
+           break;				\
+         case T_FLOAT:				\
+           *((float *)ptrout) = (float)x;	\
+           break;				\
+         case T_DOUBLE:				\
+           *((double *)ptrout) = (double)x;	\
+           break;				\
+         default:				\
+	   break;				\
+         }
+#else
 #define		OUTCONV(x, y)			\
       switch(y)					\
          {					\
@@ -159,29 +191,30 @@ void	ttypeconv(void *ptrin, void *ptrout, t_type ttypein, t_type ttypeout)
          default:				\
 	   break;				\
          }
+#endif
 
   switch(ttypein)
     {
     case T_BYTE:
     case T_STRING:
-      ival.tbyte = *(char *)ptrin;
-      OUTCONV(ival.tbyte, ttypeout);
+      OUTCONV(*(char *)ptrin, ttypeout);
       break;
     case T_SHORT:
-      ival.tshort = *(short *)ptrin;
-      OUTCONV(ival.tshort, ttypeout);
+      OUTCONV(*(short *)ptrin, ttypeout);
       break;
     case T_LONG:
-      ival.tlong = *(int *)ptrin;
-      OUTCONV(ival.tlong, ttypeout);
+      OUTCONV(*(int *)ptrin, ttypeout);
       break;
+#ifdef HAVE_LONG_LONG_INT
+    case T_LONGLONG:
+      OUTCONV(*(LONGLONG *)ptrin, ttypeout);
+      break;
+#endif
     case T_FLOAT:
-      ival.tfloat = *(float *)ptrin;
-      OUTCONV(ival.tfloat, ttypeout);
+      OUTCONV(*(float *)ptrin, ttypeout);
       break;
     case T_DOUBLE:
-      ival.tdouble = *(double *)ptrin;
-      OUTCONV(ival.tdouble, ttypeout);
+      OUTCONV(*(double *)ptrin, ttypeout);
       break;
     default:
       break;
