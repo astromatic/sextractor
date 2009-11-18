@@ -9,7 +9,7 @@
 *
 *	Contents:	Include file for pattern.c.
 *
-*	Last modify:	19/11/2008
+*	Last modify:	18/11/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -52,14 +52,14 @@ typedef struct
   int		ncomp;			/* Number of independent components */
   int		nmodes;			/* Number of modes per component */
   int		nfreq;			/* Number of waves per component */
-  double	x[2];			/* Coordinate vector */
-  double	rmax;			/* Largest radius in units of scale */
-  double	*r;			/* Reduced radius */
-  double	*norm;			/* Pattern vector norm */
-  double	*coeff;			/* Fitted pattern coefficients */
-  double	*mcoeff;		/* Modulus from pattern coefficients */
-  double	*acoeff;		/* Argument from pattern coefficients */
-  double	*modpix;		/* Pattern pixmaps */
+  float		x[2];			/* Coordinate vector */
+  float		rmax;			/* Largest radius in units of scale */
+  float		*r;			/* Reduced radius */
+  float		*norm;			/* Pattern vector norm */
+  float		*coeff;			/* Fitted pattern coefficients */
+  float		*mcoeff;		/* Modulus from pattern coefficients */
+  float		*acoeff;		/* Argument from pattern coefficients */
+  float		*modpix;		/* Pattern pixmaps */
   PIXTYPE	*lmodpix;		/* Low resolution pattern pixmaps */
   int		size[3];		/* Pixmap size for each axis */
   }	patternstruct;

@@ -24,7 +24,7 @@ if test x$2 = x; then
   if test x$1 = x; then
     AC_CHECK_HEADER(fftw3.h,[acx_fftw_ok=yes])
     if test x$acx_fftw_ok = xyes; then
-      AC_DEFINE(FFTW_H, "fftw.h", [FFTW header filename.])
+      AC_DEFINE(FFTW_H, "fftw3.h", [FFTW header filename.])
     else
       AC_CHECK_HEADER(fftw/fftw3.h,[acx_fftw_ok=yes])
       if test x$acx_fftw_ok = xyes; then
@@ -36,11 +36,11 @@ if test x$2 = x; then
   else
     AC_CHECK_HEADER($1/include/fftw3.h,[acx_fftw_ok=yes])
     if test x$acx_fftw_ok = xyes; then
-      AC_DEFINE(FFTW_H, "$1/include/fftw3.h", [FFTW header filename.])
+      AC_DEFINE(FFTW_H, $1"/include/fftw3.h, [FFTW header filename.])
     else
       AC_CHECK_HEADER(fftw3.h,[acx_fftw_ok=yes])
       if test x$acx_fftw_ok = xyes; then
-        AC_DEFINE(FFTW_H, "fftw.h", [FFTW header filename.])
+        AC_DEFINE(FFTW_H, "fftw3.h", [FFTW header filename.])
       else
         FFTW_ERROR="FFTW include files not found in $1/include!"
       fi
@@ -49,7 +49,7 @@ if test x$2 = x; then
 else
   AC_CHECK_HEADER($2/fftw3.h,[acx_fftw_ok=yes])
   if test x$acx_fftw_ok = xyes; then
-    AC_DEFINE(FFTW_H, "$2/fftw3.h", [FFTW header filename.])
+    AC_DEFINE_UNQUOTED(FFTW_H, "$2/fftw3.h", [FFTW header filename.])
   else
     FFTW_ERROR="FFTW include files not found in $2!"
   fi

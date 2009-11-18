@@ -6,7 +6,7 @@ define([AC_CACHE_LOAD],)
 define([AC_CACHE_SAVE],)
 
 # This is your standard Bertin source code...
-AC_INIT(sextractor, 2.9.8, [bertin@iap.fr])
+AC_INIT(sextractor, 2.9.9, [bertin@iap.fr])
 AC_CONFIG_SRCDIR(src/makeit.c)
 AC_CONFIG_AUX_DIR(autoconf)
 AM_CONFIG_HEADER(config.h)
@@ -74,7 +74,7 @@ AC_CHECK_LIB(m, sin)
 AC_HEADER_STDC
 AC_CHECK_HEADERS([fcntl.h limits.h malloc.h stdlib.h string.h sys/mman.h \
 		sys/types.h unistd.h])
-if test $enable_icc = "yes" -a $CC = "icc"; then
+if test "$enable_icc" = "yes" -a "$CC" = "icc"; then
   AC_CHECK_HEADERS(mathimf.h)
 fi
 

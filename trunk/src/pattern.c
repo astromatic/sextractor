@@ -53,7 +53,7 @@ INPUT	Pointer to a profit structure,
 OUTPUT	Pointer to the new pattern structure.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	19/11/2008
+VERSION	18/11/2009
  ***/
 patternstruct	*pattern_init(profitstruct *profit, pattypenum ptype, int ncomp)
   {
@@ -91,18 +91,18 @@ patternstruct	*pattern_init(profitstruct *profit, pattypenum ptype, int ncomp)
 
   ninpix = pattern->size[0]*pattern->size[1] * pattern->size[2];
   noutpix = profit->objnaxisn[0]*profit->objnaxisn[1] * pattern->size[2];
-  QMALLOC(pattern->coeff, double, pattern->size[2]);
-  QMALLOC(pattern->norm, double, pattern->size[2]);
-  QMALLOC(pattern->modpix, double, ninpix);
+  QMALLOC(pattern->coeff, float, pattern->size[2]);
+  QMALLOC(pattern->norm, float, pattern->size[2]);
+  QMALLOC(pattern->modpix, float, ninpix);
   QMALLOC(pattern->lmodpix, PIXTYPE, noutpix);
   if (pattern->ncomp)
     {
-    QMALLOC(pattern->r, double, pattern->ncomp);
+    QMALLOC(pattern->r, float, pattern->ncomp);
     }
   if (pattern->nfreq)
     {
-    QMALLOC(pattern->mcoeff, double, ncomp*pattern->nfreq);
-    QMALLOC(pattern->acoeff, double, ncomp*pattern->nfreq);
+    QMALLOC(pattern->mcoeff, float, ncomp*pattern->nfreq);
+    QMALLOC(pattern->acoeff, float, ncomp*pattern->nfreq);
     }
 
   return pattern;
@@ -140,13 +140,14 @@ INPUT	Pointer to pattern structure.
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	18/03/2009
+VERSION	18/11/2009
  ***/
 void	pattern_fit(patternstruct *pattern, profitstruct *profit)
   {
    checkstruct	*check;
-   double	*inpix, *doutpix1, *alpha,*beta,
+   double	*alpha,*beta,*betat,
 		dval, dprod;
+   float	*inpix, *doutpix1, *coefft;
    PIXTYPE	*outpix,*outpix1,*outpix2;
    PIXTYPE	*weightpix;
    int		n,p,p2, nvec, ninpix, noutpix;
@@ -154,7 +155,7 @@ void	pattern_fit(patternstruct *pattern, profitstruct *profit)
   nvec = pattern->size[2];
   pattern_create(pattern, profit);
   QMALLOC(alpha, double, nvec*nvec);
-  beta = pattern->coeff;
+  QMALLOC(beta, double, nvec);
   inpix = pattern->modpix;
   ninpix = pattern->size[0]*pattern->size[1];
   outpix = pattern->lmodpix;
@@ -199,10 +200,15 @@ void	pattern_fit(patternstruct *pattern, profitstruct *profit)
 /* Solve the system */
   clapack_dpotrf(CblasRowMajor,CblasUpper,nvec,alpha,nvec);
   clapack_dpotrs(CblasRowMajor,CblasUpper,nvec,1,alpha,nvec,beta,nvec);
+  betat = beta;
+  coefft = pattern->coeff;
+  for (p=nvec; p--;)
+    *(coefft++) = (float)*(betat++);
 
   pattern_compmodarg(pattern, profit);
 
   free(alpha);
+  free(beta);
 
   if ((check = prefs.check[CHECK_PATTERNS]))
     {
@@ -280,7 +286,7 @@ VERSION	20/11/2008
  ***/
 void	pattern_compmodarg(patternstruct *pattern, profitstruct *profit)
   {
-   double	*coeff,*mcoeff,*acoeff, *normt,
+   float	*coeff,*mcoeff,*acoeff, *normt,
 		arg,argo,darg, ima,rea;
    int		f,p, nfreq;
 
@@ -388,13 +394,12 @@ INPUT	Pointer to pattern structure,
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	20/11/2008
+VERSION	18/11/2009
  ***/
 void	pattern_create(patternstruct *pattern, profitstruct *profit)
   {
    double		*scbuf[PATTERN_FMAX],*scpix[PATTERN_FMAX],
-			*scpixt,*cpix,*spix, *pix, *r2buf,*r2pix,*modpix,
-			*normt, *pmodpix,
+			*scpixt,*r2buf,*r2pix,
 			x1,x2, x1t,x2t, r,r2,r2min,r2max,
 			mod,ang,ang0, cosang,sinang, angcoeff, posangle,flux,
 			ctheta,stheta, saspect,xscale,yscale, scale, aspect,
@@ -406,6 +411,8 @@ void	pattern_create(patternstruct *pattern, profitstruct *profit)
 
    double		*fr2,*fr2t,*fexpr2,*fexpr2t,*ftheta,*fthetat,
 			dm,fac, beta, invbeta2;
+   float		*normt, *cpix,*spix, *pmodpix,*pix,*modpix,
+			fnorm;
    int			m,n, nmax, kmax,hnmm;
 
 /* Compute Profile CD matrix */
@@ -513,12 +520,12 @@ void	pattern_create(patternstruct *pattern, profitstruct *profit)
               sinang = sin(ang);
               cosang = cos(ang);
 #endif
-              *(cpix++) = cmod = mod*cosang;
-              *(spix++) = smod = mod*sinang;
+              *(cpix++) = (float)(cmod = mod*cosang);
+              *(spix++) = (float)(smod = mod*sinang);
               cnorm += cmod*cmod;
               snorm += smod*smod;
-              cpnorm += cmod*cmod**pmodpix**pmodpix;
-              spnorm += smod*smod**pmodpix**pmodpix;
+              cpnorm += cmod*cmod*(double)(*pmodpix**pmodpix);
+              spnorm += smod*smod*(double)(*pmodpix**pmodpix);
               }
             else
               *(cpix++) = *(spix++) = 0.0;
@@ -528,7 +535,7 @@ void	pattern_create(patternstruct *pattern, profitstruct *profit)
           }
         cpix -= npix;
         cnorm = (cnorm > 0.0? 1.0/sqrt(cnorm) : 1.0);
-        *(normt++) = cnorm*sqrt(cpnorm);
+        *(normt++) = (float)cnorm*sqrt(cpnorm);
         for (i=npix; i--;)
           *(cpix++) *= cnorm;
         spix -= npix;
@@ -596,8 +603,8 @@ void	pattern_create(patternstruct *pattern, profitstruct *profit)
                 {
                 r = sqrt(r2);
                 dval = (r<r0) ? (r-rl)/(r0-rl) : (rh-r)/(rh-r0);
-                *(pix++) = dval = (dval<0.5)?
-			2.0*dval*dval : 1.0-2.0*(1.0-dval)*(1.0-dval);
+                *(pix++) = (float)(dval = (dval<0.5)?
+			2.0*dval*dval : 1.0-2.0*(1.0-dval)*(1.0-dval));
                 norm += dval*dval;
                 }
               else
@@ -607,8 +614,9 @@ void	pattern_create(patternstruct *pattern, profitstruct *profit)
             pnorm = norm*sbd*sbd;
             norm0 = norm = (norm > 1.0/BIG? 1.0/sqrt(norm) : 1.0);
             *(normt++) = pnorm > 1.0/BIG? 1.0/sqrt(pnorm) : 0.0;
+            fnorm = (float)norm;
             for (i=npix; i--;)
-              *(pix++) *= norm;
+              *(pix++) *= fnorm;
             modpix = pix;
             }
           else
@@ -617,22 +625,23 @@ void	pattern_create(patternstruct *pattern, profitstruct *profit)
             scpixt = scbuf[f-1];
             for (i=npix; i--; pmodpix++)
               {
-              *(pix++) = dval = *(modpix++)**(scpixt++);
+              *(pix++) = (float)(dval = *(modpix++)**(scpixt++));
               norm += dval*dval;
               pnorm += dval*dval**pmodpix**pmodpix;
               }
             pix -= npix;
             pnorm = norm*sbd*sbd;
             norm = (norm > 0.0? 1.0/sqrt(norm) : 1.0);
-            *(normt++) = pnorm > 1.0/BIG? norm0/sqrt(pnorm) : 0.0;
+            *(normt++) = (float)(pnorm > 1.0/BIG? norm0/sqrt(pnorm) : 0.0);
+            fnorm = (float)norm;
             for (i=npix; i--;)
-              *(pix++) *= norm;
+              *(pix++) *= fnorm;
             modpix -= npix;
             norm = pnorm = 0.0;
             pmodpix = profit->modpix;
             for (i=npix; i--; pmodpix++)
               {
-              *(pix++) = dval = *(modpix++)**(scpixt++);
+              *(pix++) = (float)(dval = *(modpix++)**(scpixt++));
               norm += dval*dval;
               pnorm += dval*dval**pmodpix**pmodpix;
               }
@@ -640,8 +649,9 @@ void	pattern_create(patternstruct *pattern, profitstruct *profit)
             pnorm = norm*sbd*sbd;
             norm = (norm > 0.0? 1.0/sqrt(norm) : 1.0);
             *(normt++) = pnorm > 1.0/BIG? norm0/sqrt(pnorm) : 0.0;
+            fnorm = (float)norm;
             for (i=npix; i--;)
-              *(pix++) *= norm;
+              *(pix++) *= fnorm;
             }
           }
         }
@@ -701,17 +711,18 @@ void	pattern_create(patternstruct *pattern, profitstruct *profit)
           norm = 0.0;
           for (i=npix; i--;fr2t++)
             {
-            *(pix++) = dval = fac*pow(*fr2t, dm/2.0)
+            *(pix++) = (float)(dval = fac*pow(*fr2t, dm/2.0)
 			*psf_laguerre(*fr2t, hnmm, m)
-			**(fexpr2t++)*cos(dm**(fthetat++));
+			**(fexpr2t++)*cos(dm**(fthetat++)));
             norm += dval*dval;
             }
           pix -= npix;
           pnorm = norm*sbd*sbd;
           norm = (norm > 0.0? 1.0/sqrt(norm) : 1.0);
           *(normt++) = pnorm > 1.0/BIG? norm0/sqrt(pnorm) : 0.0;
+          fnorm = (float)norm;
           for (i=npix; i--;)
-            *(pix++) *= norm;
+            *(pix++) *= fnorm;
           if (m!=0)
             {
             fr2t = fr2;
@@ -720,17 +731,18 @@ void	pattern_create(patternstruct *pattern, profitstruct *profit)
             norm = 0.0;
             for (i=npix; i--; fr2t++)
               {
-              *(pix++) = dval = fac*pow(*fr2t, dm/2.0)
+              *(pix++) = (float)(dval = fac*pow(*fr2t, dm/2.0)
 			*psf_laguerre(*fr2t, hnmm, m)
-			**(fexpr2t++)*sin(dm**(fthetat++));
+			**(fexpr2t++)*sin(dm**(fthetat++)));
               norm += dval*dval;
               }
             pix -= npix;
             pnorm = norm*sbd*sbd;
             norm = (norm > 0.0? 1.0/sqrt(norm) : 1.0);
             *(normt++) = pnorm > 1.0/BIG? norm0/sqrt(pnorm) : 0.0;
+            fnorm = (float)norm;
             for (i=npix; i--;)
-              *(pix++) *= norm;
+              *(pix++) *= fnorm;
             }
           }
         }

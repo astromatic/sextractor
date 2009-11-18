@@ -9,7 +9,7 @@
 *
 *       Contents:       Routines dealing with float precision FFT.
 *
-*       Last modify:    08/10/2009
+*       Last modify:    17/11/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -22,7 +22,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <fftw3.h>
+#include FFTW_H
 
 #include "define.h"
 #include "globals.h"
