@@ -61,7 +61,7 @@ AC_ISC_POSIX
 # Override automatic CFLAGS and LDFLAGS with those of user
 if test "$enable_auto_flags" = "yes"; then
   CFLAGS=""
-  LDFLAGS =""
+  LDFLAGS=""
   ACX_PROG_CC_OPTIM
 fi
 AC_PROG_LIBTOOL

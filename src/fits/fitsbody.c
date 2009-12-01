@@ -9,7 +9,7 @@
 *
 *	Contents:       Handle memory allocation for FITS bodies.
 *
-*	Last modify:	02/11/2009
+*	Last modify:	19/11/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -191,7 +191,7 @@ INPUT	A pointer to the tab structure,
 OUTPUT	-.
 NOTES	.
 AUTHOR	E. Bertin (IAP)
-VERSION	02/11/2009
+VERSION	19/11/2009
  ***/
 void	read_body(tabstruct *tab, PIXTYPE *ptr, size_t size)
   {
@@ -334,14 +334,14 @@ void	read_body(tabstruct *tab, PIXTYPE *ptr, size_t size)
                 llblank = (LONGLONG)tab->blank;
                 for (i=spoonful; i--; bufdata += sizeof(LONGLONG))
                   *(ptr++) = ((llval = *((LONGLONG *)bufdata)) == llblank)?
-			-BIG : ival*bs + bz;
+			-BIG : llval*bs + bz;
                 }
               else
                 {
                 llublank = (ULONGLONG)tab->blank;
                 for (i=spoonful; i--; bufdata += sizeof(ULONGLONG))
                   *(ptr++) = ((lluval = *((ULONGLONG *)bufdata)) == llublank)?
-			-BIG : iuval*bs + bz;
+			-BIG : lluval*bs + bz;
                 }
 	      }
             else

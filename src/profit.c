@@ -9,7 +9,7 @@
 *
 *	Contents:	Fit an arbitrary profile combination to a detection.
 *
-*	Last modify:	19/10/2009
+*	Last modify:	01/12/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -173,7 +173,7 @@ OUTPUT	Pointer to an allocated fit structure (containing details about the
 	fit).
 NOTES	It is a modified version of the lm_minimize() of lmfit.
 AUTHOR	E. Bertin (IAP)
-VERSION	19/10/2009
+VERSION	01/12/2009
  ***/
 void	profit_fit(profitstruct *profit,
 		picstruct *field, picstruct *wfield,
@@ -363,14 +363,14 @@ the_gal++;
 /*-- Model coordinates follow the FITS convention (first pixel at 1,1) */
     if (profit->paramlist[PARAM_X])
       {
-      obj2->x_prof = profit->ix + *profit->paramlist[PARAM_X] + 1.0;
+      obj2->x_prof = (double)profit->ix + *profit->paramlist[PARAM_X] + 1.0;
       obj2->poserrmx2_prof = emx2 = profit->covar[i*(nparam+1)];
       }
     else
       emx2 = 0.0;
     if (profit->paramlist[PARAM_Y])
       {
-      obj2->y_prof = profit->iy + *profit->paramlist[PARAM_Y] + 1.0;
+      obj2->y_prof = (double)profit->iy + *profit->paramlist[PARAM_Y] + 1.0;
       obj2->poserrmy2_prof = emy2 = profit->covar[j*(nparam+1)];
       }
     else
@@ -1319,7 +1319,7 @@ INPUT	Pointer to the profit structure,
 OUTPUT	The number of valid pixels copied.
 NOTES	Global preferences are used.
 AUTHOR	E. Bertin (IAP)
-VERSION	07/10/2009
+VERSION	01/12/2009
  ***/
 int	profit_copyobjpix(profitstruct *profit, picstruct *field,
 			picstruct *wfield)
@@ -1328,7 +1328,7 @@ int	profit_copyobjpix(profitstruct *profit, picstruct *field,
    PIXTYPE	*pixin,*spixin, *wpixin,*swpixin, *pixout,*wpixout,
 		backnoise2, invgain, satlevel, wthresh, pix,spix, wpix,swpix;
    int		i,x,y, xmin,xmax,ymin,ymax, w,h,dw, npix, off, gainflag,
-		badflag, sflag, sx,sy,sn,sw, rem, ix,iy;
+		badflag, sflag, sx,sy,sn,sw, ix,iy;
 
 /* First put the image background to -BIG */
   pixout = profit->objpix;

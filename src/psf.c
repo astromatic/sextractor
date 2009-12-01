@@ -10,7 +10,7 @@
 *
 *	Contents:	Fit the PSF to a detection.
 *
-*	Last modify:	19/08/2009
+*	Last modify:	01/12/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -329,7 +329,7 @@ void	psf_fit(psfstruct *psf, picstruct *field, picstruct *wfield,
 			r2, valmax, psf_fwhm;
   float			**psfmasks, **psfmaskx,**psfmasky,
 			*ps, *dh, *wh, pixstep,fluxerr;
-  PIXTYPE		*datah, *weighth, *cpix;
+  PIXTYPE		*datah, *weighth;
   int			i,j,p, npsf,npsfmax, npix, nppix, ix,iy,niter,
 			width, height, pwidth,pheight, x,y,
 			xmax,ymax, wbad, gainflag, convflag, npsfflag,

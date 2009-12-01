@@ -9,7 +9,7 @@
 *
 *	Contents:	global type definitions.
 *
-*	Last modify:	01/10/2009
+*	Last modify:	01/12/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -325,7 +325,7 @@ typedef struct
   float		mumax_prof;			/* Model peak surf. bri. */
   float		mueff_prof;			/* Model effective surf. bri. */
   float		mumean_prof;			/* Mean model effective SB */
-  float		x_prof, y_prof;			/* Coords from model-fitting*/
+  double	x_prof, y_prof;			/* Coords from model-fitting*/
   double	xf_prof, yf_prof;		/* FOCAL coordinates */
   double	xw_prof, yw_prof;		/* WORLD coords */
   double	alphas_prof, deltas_prof;	/* native alpha, delta */

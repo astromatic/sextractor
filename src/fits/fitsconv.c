@@ -9,7 +9,7 @@
 *
 *	Contents:	functions for converting LDAC FITS catalogs.
 *
-*	Last modify:	02/11/2009
+*	Last modify:	19/11/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -133,14 +133,14 @@ INPUT	Pointer to element to convert,
 OUTPUT	-.
 NOTES	ttypeconv does not yet handle arrays.
 AUTHOR  E. Bertin (IAP)
-VERSION 02/11/2009
+VERSION 19/11/2009
  ***/
 
 void	ttypeconv(void *ptrin, void *ptrout, t_type ttypein, t_type ttypeout)
 
   {
-   union	{char tbyte; short tshort; int tlong; LONGLONG tlonglong;
-		 float tfloat; double tdouble; char tstring;} ival;
+//   union	{char tbyte; short tshort; int tlong; LONGLONG tlonglong;
+//		 float tfloat; double tdouble; char tstring;} ival;
 
 #ifdef HAVE_LONG_LONG_INT
 #define		OUTCONV(x, y)			\

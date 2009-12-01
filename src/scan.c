@@ -10,7 +10,7 @@
 *	Contents:	functions for extraction of connected pixels from
 *			a pixmap.
 *
-*	Last modify:	01/10/2009
+*	Last modify:	01/12/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -48,7 +48,7 @@ INPUT   Measurement field pointer,
 OUTPUT  -.
 NOTES   -.
 AUTHOR  E. Bertin (IAP)
-VERSION 01/10/2009
+VERSION 01/12/2009
  ***/
 void	scanimage(picstruct *field, picstruct *dfield, picstruct **pffield,
 		int nffield, picstruct *wfield, picstruct *dwfield)
@@ -290,14 +290,11 @@ void	scanimage(picstruct *field, picstruct *dfield, picstruct **pffield,
       else
         dscan = scan;
 
-      if (cdwfield && PLISTEXIST(wflag))
-/*------ Copy the previously filtered weight line to track bad pixel limits */
-        {
-        }
       if (prefs.filter_flag)
         {
         filter(cfield, cdscan, cfield->y);
         if (cdwfield)
+          {
           if (PLISTEXIST(wflag))
             {
             if (yl==0)
@@ -311,6 +308,7 @@ void	scanimage(picstruct *field, picstruct *dfield, picstruct **pffield,
             }
           else
             filter(cdwfield, cdwscan, yl);
+          }
         }
       else
         {
