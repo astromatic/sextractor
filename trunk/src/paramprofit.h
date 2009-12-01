@@ -9,7 +9,7 @@
 *
 *	Contents:	Model-fitting parameter list for catalog data.
 *
-*	Last modify:	12/10/2009
+*	Last modify:	01/12/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -67,10 +67,10 @@
 	"phot.mag.sb;stat.mean;stat.fit.param", "mag.arcsec-2"},
 
   {"XMODEL_IMAGE", "X coordinate from model-fitting",
-	&outobj2.x_prof, H_FLOAT, T_FLOAT, "%10.3f", "pixel",
+	&outobj2.x_prof, H_FLOAT, T_DOUBLE, "%10.3f", "pixel",
 	"pos.cartesian.x;stat.fit.param;instr.det;meta.main", "pix"},
   {"YMODEL_IMAGE", "Y coordinate from model-fitting",
-	&outobj2.y_prof, H_FLOAT, T_FLOAT, "%10.3f", "pixel",
+	&outobj2.y_prof, H_FLOAT, T_DOUBLE, "%10.3f", "pixel",
 	"pos.cartesian.y;stat.fit.param;instr.det;meta.main", "pix"},
 
   {"XFOCAL_WORLD", "Fitted position along focal-plane x axis",

@@ -4447,7 +4447,7 @@ fi
 # Override automatic CFLAGS and LDFLAGS with those of user
 if test "$enable_auto_flags" = "yes"; then
   CFLAGS=""
-  LDFLAGS =""
+  LDFLAGS=""
 
   msg="for C compiler optimization flags"
   { $as_echo "$as_me:$LINENO: checking $msg" >&5

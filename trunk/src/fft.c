@@ -9,7 +9,7 @@
 *
 *       Contents:       Routines dealing with float precision FFT.
 *
-*       Last modify:    17/11/2009
+*       Last modify:    01/12/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -133,12 +133,11 @@ OUTPUT	-.
 NOTES	For data1 and fdata2, memory must be allocated for
 	size[0]* ... * 2*(size[naxis-1]/2+1) floats (padding required).
 AUTHOR	E. Bertin (IAP)
-VERSION	08/10/2009
+VERSION	01/12/2009
  ***/
 void    fft_conv(float *data1, float *fdata2, int *size)
   {
-   fftwf_complex	*fdata0;
-   float		*fdata1p,*fdata2p,*data0,
+   float		*fdata1p,*fdata2p,
 			real,imag, fac;
    int			i, npix,npix2;
 

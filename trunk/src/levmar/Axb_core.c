@@ -900,7 +900,7 @@ int AX_EQ_B_LU(LM_REAL *A, LM_REAL *B, LM_REAL *x, int m)
 __STATIC__ void *buf=NULL;
 __STATIC__ int buf_sz=0;
 
-int a_sz, ipiv_sz, b_sz, work_sz, tot_sz;
+int a_sz, ipiv_sz, b_sz, tot_sz;
 register int i, j;
 int info, *ipiv;
 LM_REAL *a, *b;

@@ -9,7 +9,7 @@
 *
 *	Contents:	analyse(), endobject()...: measurements on detections.
 *
-*	Last modify:	01/10/2009
+*	Last modify:	01/12/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -397,6 +397,8 @@ void	endobject(picstruct *field, picstruct *dfield, picstruct *wfield,
 
   if (FLAG(obj2.analtime))
     analtime1 = counter_seconds();
+  else
+    analtime1 = 0.0;		/* To avoid gcc -Wall warnings */
 
   obj = &objlist->obj[n];
 

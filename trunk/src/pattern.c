@@ -9,7 +9,7 @@
 *
 *	Contents:	Generate and handle image patterns for image fitting.
 *
-*	Last modify:	18/03/2009
+*	Last modify:	01/12/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -394,7 +394,7 @@ INPUT	Pointer to pattern structure,
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	18/11/2009
+VERSION	01/12/2009
  ***/
 void	pattern_create(patternstruct *pattern, profitstruct *profit)
   {
@@ -719,7 +719,7 @@ void	pattern_create(patternstruct *pattern, profitstruct *profit)
           pix -= npix;
           pnorm = norm*sbd*sbd;
           norm = (norm > 0.0? 1.0/sqrt(norm) : 1.0);
-          *(normt++) = pnorm > 1.0/BIG? norm0/sqrt(pnorm) : 0.0;
+          *(normt++) = pnorm > 1.0/BIG? norm/sqrt(pnorm) : 0.0;
           fnorm = (float)norm;
           for (i=npix; i--;)
             *(pix++) *= fnorm;
@@ -739,7 +739,7 @@ void	pattern_create(patternstruct *pattern, profitstruct *profit)
             pix -= npix;
             pnorm = norm*sbd*sbd;
             norm = (norm > 0.0? 1.0/sqrt(norm) : 1.0);
-            *(normt++) = pnorm > 1.0/BIG? norm0/sqrt(pnorm) : 0.0;
+            *(normt++) = pnorm > 1.0/BIG? norm/sqrt(pnorm) : 0.0;
             fnorm = (float)norm;
             for (i=npix; i--;)
               *(pix++) *= fnorm;
