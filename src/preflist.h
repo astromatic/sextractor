@@ -9,7 +9,7 @@
 *
 *	Contents:	Keywords for the configuration file.
 *
-*	Last modify:	24/09/2009
+*	Last modify:	14/12/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -125,8 +125,6 @@
   {"PSF_NAME", P_STRINGLIST, prefs.psf_name, 0,0, 0.0,0.0,
    {""}, 1, 2, &prefs.npsf_name},	/*?*/
   {"PSF_NMAX", P_INT, &prefs.psf_npsfmax, 1, PSF_NPSFMAX},
-  {"PSFDISPLAY_TYPE", P_KEY, &prefs.psfdisplay_type, 0,0, 0.0,0.0,
-   {"SPLIT","VECTOR",""}},
   {"SATUR_KEY", P_STRING, prefs.satur_key},
   {"SATUR_LEVEL", P_FLOAT, &prefs.satur_level, 0,0, -1e+30, 1e+30},
   {"SEEING_FWHM", P_FLOAT, &prefs.seeing_fwhm, 0,0, 1e-10, 1e+10},
@@ -288,7 +286,6 @@ char *default_prefs[] =
 "*",
 "*PSF_NAME         default.psf    # File containing the PSF model",
 "*PSF_NMAX         2              # Max.number of PSFs fitted simultaneously",
-"*PSFDISPLAY_TYPE  SPLIT          # Catalog type for PSF-fitting: SPLIT or VECTOR",
 "*PATTERN_TYPE     RINGS-HARMONIC # can RINGS-QUADPOLE, RINGS-OCTOPOLE,",
 "*                                # RINGS-HARMONICS or GAUSS-LAGUERRE",
 "*SOM_NAME         default.som    # File containing Self-Organizing Map weights",

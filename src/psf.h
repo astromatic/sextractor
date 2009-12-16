@@ -10,7 +10,7 @@
 *
 *	Contents:	Include file for psffit.c.
 *
-*	Last modify:	13/09/2009
+*	Last modify:	14/12/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -84,8 +84,9 @@ typedef struct
   {
   int		niter;		/* Number of iterations required */
   int		npsf;		/* Number of fitted stars for this detection */
-  float		*x,*y;		/* Position derived from the PSF-fitting */
+  double	*x,*y;		/* Position derived from the PSF-fitting */
   float		*flux;		/* Flux derived from the PSF-fitting */
+  float		*fluxerr;	/* Flux error estimated from the PSF-fitting */
   }	psfitstruct;
 
 /*----------------------------- Global variables ----------------------------*/
@@ -100,7 +101,7 @@ extern void	compute_pos(int *pnpsf,int *pconvflag,int *pnpsfflag,
 			double *pdx,double *pdy),
 		compute_pos_phot(int *pnpsf,double *sol,double *flux),
 		compute_poserr(int j,double *var,double *sol,obj2struct *obj2,
-			double *x2, double *y2,double *xy),
+			double *x2, double *y2,double *xy, int npsf),
 		psf_build(psfstruct *psf),
 		psf_end(psfstruct *psf, psfitstruct *psfit),
 		psf_init(psfstruct *psf),

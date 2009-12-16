@@ -9,7 +9,7 @@
 *
 *	Contents:	XML logging.
 *
-*	Last modify:	19/12/2007
+*	Last modify:	14/12/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -217,7 +217,7 @@ INPUT	Pointer to the output file (or stream),
 OUTPUT	RETURN_OK if everything went fine, RETURN_ERROR otherwise.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	19/12/2007
+VERSION	14/12/2009
  ***/
 int	write_xml_meta(FILE *file, char *error)
   {
@@ -763,11 +763,6 @@ int	write_xml_meta(FILE *file, char *error)
     fprintf(file, "   <PARAM name=\"PSF_NMax\" datatype=\"int\""
 	" ucd=\"meta.number;obs.param\" value=\"%d\"/>\n",
     	prefs.psf_npsfmax);
-    fprintf(file,
-	"   <PARAM name=\"PSFDisplay_Type\" datatype=\"char\" arraysize=\"*\""
-	" ucd=\"meta.code;obs.param\" value=\"%s\"/>\n",
-    	key[findkeys("PSFDISPLAY_TYPE", keylist,
-			FIND_STRICT)].keylist[prefs.psfdisplay_type]);
 
     fprintf(file,
 	"   <PARAM name=\"SOM_Name\" datatype=\"char\" arraysize=\"*\""

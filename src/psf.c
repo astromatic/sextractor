@@ -10,7 +10,7 @@
 *
 *	Contents:	Fit the PSF to a detection.
 *
-*	Last modify:	01/12/2009
+*	Last modify:	14/12/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -47,13 +47,15 @@ Allocate memory and stuff for the PSF-fitting.
 void	psf_init(psfstruct *psf)
   {
   QMALLOC(thepsfit, psfitstruct, 1);
-  QMALLOC(thepsfit->x, float, prefs.psf_npsfmax);
-  QMALLOC(thepsfit->y, float, prefs.psf_npsfmax);
+  QMALLOC(thepsfit->x, double, prefs.psf_npsfmax);
+  QMALLOC(thepsfit->y, double, prefs.psf_npsfmax);
   QMALLOC(thepsfit->flux, float, prefs.psf_npsfmax);
+  QMALLOC(thepsfit->fluxerr, float, prefs.psf_npsfmax);
   QMALLOC(ppsfit, psfitstruct, 1); /*?*/
-  QMALLOC(ppsfit->x, float, prefs.psf_npsfmax);
-  QMALLOC(ppsfit->y, float, prefs.psf_npsfmax);
+  QMALLOC(ppsfit->x, double, prefs.psf_npsfmax);
+  QMALLOC(ppsfit->y, double, prefs.psf_npsfmax);
   QMALLOC(ppsfit->flux, float, prefs.psf_npsfmax);
+  QMALLOC(ppsfit->fluxerr, float, prefs.psf_npsfmax);
 
   return;
   }  
@@ -89,6 +91,7 @@ void	psf_end(psfstruct *psf, psfitstruct *psfit)
     free(psfit->x);
     free(psfit->y);
     free(psfit->flux);
+    free(psfit->fluxerr);
     free(psfit);
     }
 
@@ -315,9 +318,10 @@ void	psf_fit(psfstruct *psf, picstruct *field, picstruct *wfield,
   static obj2struct     *obj2 = &outobj2;
   static double		x2[PSF_NPSFMAX],y2[PSF_NPSFMAX],xy[PSF_NPSFMAX],
 			deltax[PSF_NPSFMAX],
-			deltay[PSF_NPSFMAX],flux[PSF_NPSFMAX],
+			deltay[PSF_NPSFMAX],
+			flux[PSF_NPSFMAX],fluxerr[PSF_NPSFMAX],
 			deltaxb[PSF_NPSFMAX],deltayb[PSF_NPSFMAX],
-			fluxb[PSF_NPSFMAX],
+			fluxb[PSF_NPSFMAX],fluxerrb[PSF_NPSFMAX],
 			sol[PSF_NTOT], covmat[PSF_NTOT*PSF_NTOT], 
 			vmat[PSF_NTOT*PSF_NTOT], wmat[PSF_NTOT];
   float			*data, *data2, *data3, *weight, *d, *w;
@@ -328,7 +332,7 @@ void	psf_fit(psfstruct *psf, picstruct *field, picstruct *wfield,
 			backnoise2, gain, radmin2,radmax2,satlevel,chi2,
 			r2, valmax, psf_fwhm;
   float			**psfmasks, **psfmaskx,**psfmasky,
-			*ps, *dh, *wh, pixstep,fluxerr;
+			*ps, *dh, *wh, pixstep;
   PIXTYPE		*datah, *weighth;
   int			i,j,p, npsf,npsfmax, npix, nppix, ix,iy,niter,
 			width, height, pwidth,pheight, x,y,
@@ -355,6 +359,7 @@ void	psf_fit(psfstruct *psf, picstruct *field, picstruct *wfield,
       thepsfit->x[j] = obj2->posx;
       thepsfit->y[j] = obj2->posy;
       thepsfit->flux[j] = 0.0;
+      thepsfit->fluxerr[j] = 0.0;
     }
 
   /* Scale data area with object "size" */
@@ -369,18 +374,11 @@ void	psf_fit(psfstruct *psf, picstruct *field, picstruct *wfield,
   npix = width*height;
   radmin2 = PSF_MINSHIFT*PSF_MINSHIFT;
   radmax2 = npix/2.0;
-  fluxerr = 0.0;
 
   /* Scale total area with PSF FWHM */
   pwidth = (int)(psf->masksize[0]*psf->pixstep)+width;;
   pheight = (int)(psf->masksize[1]*psf->pixstep)+height;
   nppix = pwidth*pheight;
-
-  /* Allocate working space */
-   if (prefs.psf_flag==1)
-      if (prefs.dpsf_flag!=1)
-        if(!FLAG(obj2.fluxerr_psf))
-            QMALLOC(obj2->fluxerr_psf, float, prefs.psf_npsfmax);  
 
   QMALLOC(weighth, PIXTYPE, npix);
   QMALLOC(weight, float, npix);
@@ -453,7 +451,7 @@ void	psf_fit(psfstruct *psf, picstruct *field, picstruct *wfield,
 
   npsfflag = 1;
   r2 = psf_fwhm*psf_fwhm/2.0;
-  fluxb[0] = deltaxb[0] = deltayb[0] = 0.0;
+  fluxb[0] = fluxerrb[0] = deltaxb[0] = deltayb[0] = 0.0;
 
   for (npsf=1; npsf<=npsfmax && npsfflag; npsf++)
     {
@@ -534,16 +532,17 @@ void	psf_fit(psfstruct *psf, picstruct *field, picstruct *wfield,
           compute_pos( &npsf, &convflag, &npsfflag,radmin2,radmax2,
                        r2, sol,flux, deltax, deltay,&dx,&dy);
         }
-      for (j=0; j<npsf; j++)
-        {
+
 /*-- Compute variances and covariances */
-          svdvar(vmat, wmat, npsf*PSF_NA, covmat);
-          var = covmat;
+      svdvar(vmat, wmat, npsf*PSF_NA, covmat);
+      var = covmat;
+      for (j=0; j<npsf; j++, var += (npsf*PSF_NA+1)*PSF_NA)
+        {
 /*---- First, the error on the flux estimate */      
-          fluxerr = sqrt(*var)>0.0?  sqrt(*var):999999.0;
+          fluxerr[j] = sqrt(*var)>0.0?  sqrt(*var):999999.0;
           //if (flux[j]<12*fluxerr && j>0)
           //  npsfmax--,flux[j]=0;
-          if (flux[j]<12*fluxerr && j>0)
+          if (flux[j]<12*fluxerr[j] && j>0)
                  {
                    flux[j]=0,kill++,npsfmax--;
                    //if(j==npsfmax-1)
@@ -558,7 +557,7 @@ void	psf_fit(psfstruct *psf, picstruct *field, picstruct *wfield,
               deltaxb[j] = deltax[j];
               deltayb[j] = deltay[j];
               fluxb[j] = flux[j];
-              obj2->fluxerr_psf[j]=fluxerr;
+              fluxerrb[j]=fluxerr[j];
             }
         }
     }
@@ -580,17 +579,14 @@ void	psf_fit(psfstruct *psf, picstruct *field, picstruct *wfield,
         continue; 
 
       if (FLAG(obj2.poserrmx2_psf))
-        {
-          compute_poserr(j,var,sol,obj2,x2,y2,xy);
-        }
-      else
-        var += 3*PSF_NA+3;  
+        compute_poserr(j,covmat,sol,obj2,x2,y2,xy, npsf);
       
       deltax[i] = deltaxb[j];
       deltay[i] = deltayb[j];
-      flux[i++] = fluxb[j];
+      flux[i] = fluxb[j];
+      fluxerr[i++] = fluxerrb[j];
     }
-  
+
   npsf = i;
 
   /* Compute chi2 if asked to 
@@ -651,6 +647,7 @@ void	psf_fit(psfstruct *psf, picstruct *field, picstruct *wfield,
       thepsfit->x[j] = ix+deltax[j]+1.0;
       thepsfit->y[j] = iy+deltay[j]+1.0;
       thepsfit->flux[j] = flux[j];
+      thepsfit->fluxerr[j] = fluxerr[j];
     }
 
 
@@ -732,7 +729,8 @@ void    double_psf_fit(psfstruct *ppsf, picstruct *pfield, picstruct *pwfield,
 {
   static double      /* sum[PSF_NPSFMAX]*/ pdeltax[PSF_NPSFMAX],
     pdeltay[PSF_NPSFMAX],psol[PSF_NPSFMAX], pcovmat[PSF_NPSFMAX*PSF_NPSFMAX], 
-    pvmat[PSF_NPSFMAX*PSF_NPSFMAX], pwmat[PSF_NPSFMAX],pflux[PSF_NPSFMAX];
+    pvmat[PSF_NPSFMAX*PSF_NPSFMAX], pwmat[PSF_NPSFMAX],pflux[PSF_NPSFMAX],
+    pfluxerr[PSF_NPSFMAX];
 
     double *pmat,
      *pm, /* *pps,  *px, *py,*/
@@ -769,15 +767,13 @@ void    double_psf_fit(psfstruct *ppsf, picstruct *pfield, picstruct *pwfield,
   /* Initialize outputs */
   ppsfit->niter = 0;
   ppsfit->npsf = 0;
-  if(!FLAG(obj2.fluxerr_psf))
-    QMALLOC(obj2->fluxerr_psf, float, npsfmax);
   for (j=0; j<npsfmax; j++) 
     {
       ppsfit->x[j] = 999999.0;
       ppsfit->y[j] = 999999.0;
       ppsfit->flux[j] = 0.0;
-      obj2->fluxerr_psf[j] = 0.0;
-      pdeltax[j]= pdeltay[j]=psol[j]=  pwmat[j]=pflux[j]=0.0;
+      ppsfit->fluxerr[j] = 0.0;
+      pdeltax[j]= pdeltay[j]=psol[j]= pwmat[j]=pflux[j]=pfluxerr[j]=0.0;
    
     }
 
@@ -819,6 +815,7 @@ void    double_psf_fit(psfstruct *ppsf, picstruct *pfield, picstruct *pwfield,
       pdeltax[j] =thepsfit->x[j]-ix-1 ;
       pdeltay[j] =thepsfit->y[j]-iy-1 ;
       ppsfit->flux[j] = 0;
+      ppsfit->fluxerr[j] = 0;
     }
 
 /*-------------------  Now the photometry fit ---------------------*/
@@ -920,7 +917,7 @@ void    double_psf_fit(psfstruct *ppsf, picstruct *pfield, picstruct *pwfield,
         {
           svdvar(pvmat, pwmat, j, pcovmat);
           pvar = pcovmat;
-          obj2->fluxerr_psf[k]= sqrt(*pvar)>0.0 && sqrt(*pvar)<99? 
+          pfluxerr[k]= sqrt(*pvar)>0.0 && sqrt(*pvar)<99? 
             sqrt(*pvar):99;
         }
     }
@@ -971,9 +968,11 @@ void    double_psf_fit(psfstruct *ppsf, picstruct *pfield, picstruct *pwfield,
       thepsfit->x[j] = ix+pdeltax[j]+1.0;
       thepsfit->y[j] = iy+pdeltay[j]+1.0;
       thepsfit->flux[j] = pflux[j];
+      thepsfit->fluxerr[j] = pfluxerr[j];
       ppsfit->x[j] = ix+pdeltax[j]+1.0;
       ppsfit->y[j] = iy+pdeltay[j]+1.0;
       ppsfit->flux[j] = pflux[j];
+      ppsfit->fluxerr[j] = pfluxerr[j];
     }
     
   
@@ -1179,23 +1178,20 @@ void compute_pos_phot(int *pnpsf,double *sol,double *flux)
 *********/
 
 void compute_poserr( int j,double *var,double *sol,obj2struct *obj2,double *x2,
-                    double *y2,double *xy)
+                    double *y2,double *xy, int npsf)
 {
-  double vara,covab,varb;
+  double vara,covab,varb, f2;
 
   /*------ Variances and covariance along x and y */
-  vara = *(var += PSF_NA+1);
+  vara = *(var += (PSF_NA*npsf+1)*(j*PSF_NA+1));
   covab = *(++var);
-  varb = *(var += PSF_NA);
-  var += PSF_NA+1;
-  obj2->poserrmx2_psf = (vara*x2[j]*x2[j]+varb*xy[j]*xy[j]
-                         +2*covab*x2[j]*xy[j])/(sol[0]*sol[0]);
-  obj2->poserrmy2_psf = (varb*y2[j]*y2[j]+vara*xy[j]*xy[j]
-                         +2*covab*y2[j]*xy[j])/(sol[0]*sol[0]);
-  obj2->poserrmxy_psf = (vara*x2[j]*xy[j]+varb*y2[j]*xy[j]
-                         +covab*(x2[j]*y2[j]+xy[j]*xy[j]))
-    /(sol[0]*sol[0]);
-  
+  varb = *(var += PSF_NA*npsf);
+  f2 = sol[PSF_NA*j];
+  f2 *= f2;
+  obj2->poserrmx2_psf = vara/f2;
+  obj2->poserrmy2_psf = varb/f2;
+  obj2->poserrmxy_psf = covab/f2;
+
   /*------ If requested, translate variances to major and minor error axes... */
   if (FLAG(obj2.poserra_psf))
     {
@@ -1210,7 +1206,7 @@ void compute_poserr( int j,double *var,double *sol,obj2struct *obj2,double *x2,
       pmy2 = pmx2 = 0.5*(obj2->poserrmx2_psf+obj2->poserrmy2_psf);
       pmx2+=temp;
       pmy2-=temp;
-      
+
       obj2->poserra_psf = (float)sqrt(pmx2);
       obj2->poserrb_psf = (float)sqrt(pmy2);
       obj2->poserrtheta_psf = theta*180.0/PI;

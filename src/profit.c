@@ -9,7 +9,7 @@
 *
 *	Contents:	Fit an arbitrary profile combination to a detection.
 *
-*	Last modify:	01/12/2009
+*	Last modify:	15/12/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -173,7 +173,7 @@ OUTPUT	Pointer to an allocated fit structure (containing details about the
 	fit).
 NOTES	It is a modified version of the lm_minimize() of lmfit.
 AUTHOR	E. Bertin (IAP)
-VERSION	01/12/2009
+VERSION	14/12/2009
  ***/
 void	profit_fit(profitstruct *profit,
 		picstruct *field, picstruct *wfield,
@@ -187,7 +187,7 @@ void	profit_fit(profitstruct *profit,
     double		emx2,emy2,emxy, a , cp,sp, cn, bn, n;
     float		**list,
 			*cov,
-			psf_fwhm, dchi2, err;
+			psf_fwhm, dchi2, err, aspect;
     int			*index,
 			i,j,p, nparam, nparam2, ncomp, nprof;
 
@@ -455,6 +455,15 @@ the_gal++;
 /* Spheroid */
   if (FLAG(obj2.prof_spheroid_flux))
     {
+    if ((aspect = *profit->paramlist[PARAM_SPHEROID_ASPECT]) > 1.0)
+      {
+      *profit->paramlist[PARAM_SPHEROID_REFF] *= aspect;
+      profit->paramerr[profit->paramindex[PARAM_SPHEROID_REFF]] *= aspect;
+      profit->paramerr[profit->paramindex[PARAM_SPHEROID_ASPECT]]
+			/= (aspect*aspect);
+      *profit->paramlist[PARAM_SPHEROID_ASPECT] = 1.0 / aspect;
+      *profit->paramlist[PARAM_SPHEROID_POSANG] += 90.0;
+      }
     obj2->prof_spheroid_flux = *profit->paramlist[PARAM_SPHEROID_FLUX];
     obj2->prof_spheroid_fluxerr =
 		profit->paramerr[profit->paramindex[PARAM_SPHEROID_FLUX]];
@@ -498,6 +507,15 @@ the_gal++;
 /* Disk */
   if (FLAG(obj2.prof_disk_flux))
     {
+    if ((aspect = *profit->paramlist[PARAM_DISK_ASPECT]) > 1.0)
+      {
+      *profit->paramlist[PARAM_DISK_SCALE] *= aspect;
+      profit->paramerr[profit->paramindex[PARAM_DISK_SCALE]] *= aspect;
+      profit->paramerr[profit->paramindex[PARAM_DISK_ASPECT]]
+			/= (aspect*aspect);
+      *profit->paramlist[PARAM_DISK_ASPECT] = 1.0 / aspect;
+      *profit->paramlist[PARAM_DISK_POSANG] += 90.0;
+      }
     obj2->prof_disk_flux = *profit->paramlist[PARAM_DISK_FLUX];
     obj2->prof_disk_fluxerr =
 		profit->paramerr[profit->paramindex[PARAM_DISK_FLUX]];
@@ -1876,13 +1894,13 @@ INPUT	Pointer to the profit structure,
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	25/09/2008
+VERSION	15/12/2009
  ***/
 void	profit_resetparam(profitstruct *profit, paramenum paramtype)
   {
    objstruct	*obj;
    obj2struct	*obj2;
-   float	param, parammin,parammax;
+   float	param, parammin,parammax, range;
 
   obj = profit->obj;
   obj2 = profit->obj2;
@@ -1897,13 +1915,19 @@ void	profit_resetparam(profitstruct *profit, paramenum paramtype)
       break;
     case PARAM_X:
       param = obj->mx - (int)(obj->mx+0.49999);
-      parammin = -obj2->hl_radius*4;
-      parammax =  obj2->hl_radius*4;
+      range = fabs(obj2->hl_radius*4.0);
+      if (range>profit->objnaxisn[0]*2.0)
+        range = profit->objnaxisn[0]*2.0;
+      parammin = -range;
+      parammax =  range;
       break;
     case PARAM_Y:
       param = obj->my - (int)(obj->my+0.49999);
-      parammin = -obj2->hl_radius*4;
-      parammax =  obj2->hl_radius*4;
+      range = fabs(obj2->hl_radius*4);
+      if (range>profit->objnaxisn[1]*2)
+        range = profit->objnaxisn[1]*2;
+      parammin = -range;
+      parammax =  range;
       break;
     case PARAM_SPHEROID_FLUX:
       param = obj2->flux_auto/2.0;
@@ -1911,7 +1935,7 @@ void	profit_resetparam(profitstruct *profit, paramenum paramtype)
       parammax = 2*obj2->flux_auto;
       break;
     case PARAM_SPHEROID_REFF:
-      param = obj2->hl_radius;
+      param = fabs(obj2->hl_radius);
       parammin = 0.1;
       parammax = param * 4.0;
       break;
@@ -1919,6 +1943,7 @@ void	profit_resetparam(profitstruct *profit, paramenum paramtype)
       param = FLAG(obj2.prof_disk_flux)? 1.0 : obj->b/obj->a;
       parammin = FLAG(obj2.prof_disk_flux)? 0.5 : 0.01;
       parammax = 1.0;
+parammax = FLAG(obj2.prof_disk_flux)? 2.0 : 100.0;
       break;
     case PARAM_SPHEROID_POSANG:
       param = obj->theta;
@@ -1936,14 +1961,14 @@ void	profit_resetparam(profitstruct *profit, paramenum paramtype)
       parammax = 2*obj2->flux_auto;
       break;
     case PARAM_DISK_SCALE:	/* From scalelength to Re */
-      param = obj2->hl_radius/1.67835*sqrt(obj->a/obj->b);
+      param = fabs(obj2->hl_radius)/1.67835*sqrt(obj->a/obj->b);
       parammin = param/4.0;
       parammax = param * 4.0;
       break;
     case PARAM_DISK_ASPECT:
       param = obj->b/obj->a;
       parammin = 0.01;
-      parammax = 1.0;
+      parammax = 100.0;
       break;
     case PARAM_DISK_POSANG:
       param = obj->theta;
@@ -2425,7 +2450,7 @@ INPUT	Profile structure,
 OUTPUT	Corrected flux contribution.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	09/10/2009
+VERSION	14/12/2009
  ***/
 float	prof_add(profstruct *prof, profitstruct *profit)
   {
@@ -2544,7 +2569,12 @@ float	prof_add(profstruct *prof, profitstruct *profit)
 /*---- Copy the symmetric part */
       if ((npix2=(profit->modnaxisn[1]-nx2)*profit->modnaxisn[0]) > 0)
         {
-        pixin2 = pixin - profit->modnaxisn[0];
+        pixin2 = pixin - profit->modnaxisn[0] - 1;
+        if (!(profit->modnaxisn[0]&1))
+          {
+          *(pixin++) = 0.0;
+          npix2--;
+          }
         for (i=npix2; i--;)
           *(pixin++) = *(pixin2--);
         }
@@ -2600,7 +2630,12 @@ float	prof_add(profstruct *prof, profitstruct *profit)
 /*---- Copy the symmetric part */
       if ((npix2=(profit->modnaxisn[1]-nx2)*profit->modnaxisn[0]) > 0)
         {
-        pixin2 = pixin - profit->modnaxisn[0];
+        pixin2 = pixin - profit->modnaxisn[0] - 1;
+        if (!(profit->modnaxisn[0]&1))
+          {
+          *(pixin++) = 0.0;
+          npix2--;
+          }
         for (i=npix2; i--;)
           *(pixin++) = *(pixin2--);
         }
@@ -2655,7 +2690,12 @@ float	prof_add(profstruct *prof, profitstruct *profit)
 /*---- Copy the symmetric part */
       if ((npix2=(profit->modnaxisn[1]-nx2)*profit->modnaxisn[0]) > 0)
         {
-        pixin2 = pixin - profit->modnaxisn[0];
+        pixin2 = pixin - profit->modnaxisn[0] - 1;
+        if (!(profit->modnaxisn[0]&1))
+          {
+          *(pixin++) = 0.0;
+          npix2--;
+          }
         for (i=npix2; i--;)
           *(pixin++) = *(pixin2--);
         }

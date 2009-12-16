@@ -9,7 +9,7 @@
 *
 *	Contents:	parameter list for catalog data.
 *
-*	Last modify:	01/10/2009
+*	Last modify:	14/12/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -738,51 +738,51 @@ keystruct	objkey[] = {
 	"phys.size.radius;instr.det", "pix",  1, &prefs.flux_radiussize},
 
   {"XPSF_IMAGE", "X coordinate from PSF-fitting",
-	&outobj2.x_psf, H_FLOAT, T_FLOAT, "%10.3f", "pixel",
-	"pos.cartesian.x;stat.fit.param;instr.det", "pix", 1, &prefs.psf_xsize},
+	&outobj2.x_psf, H_FLOAT, T_DOUBLE, "%10.3f", "pixel",
+	"pos.cartesian.x;stat.fit.param;instr.det", "pix"},
   {"YPSF_IMAGE", "Y coordinate from PSF-fitting",
-	&outobj2.y_psf, H_FLOAT, T_FLOAT, "%10.3f", "pixel",
-	"pos.cartesian.y;stat.fit.param;instr.det", "pix", 1, &prefs.psf_ysize},
+	&outobj2.y_psf, H_FLOAT, T_DOUBLE, "%10.3f", "pixel",
+	"pos.cartesian.y;stat.fit.param;instr.det", "pix"},
   {"XPSF_WORLD", "PSF position along world x axis",
 	&outobj2.xw_psf, H_FLOAT, T_DOUBLE, "%18.10e", "deg",
-	"pos.eq.ra;stat.fit.param", "deg", 1, &prefs.psf_xwsize},
+	"pos.eq.ra;stat.fit.param", "deg"},
   {"YPSF_WORLD", "PSF position along world y axis",
 	&outobj2.yw_psf, H_FLOAT, T_DOUBLE, "%18.10e", "deg",
-	"pos.eq.dec;stat.fit.param", "deg", 1, &prefs.psf_ywsize},
+	"pos.eq.dec;stat.fit.param", "deg"},
 
   {"ALPHAPSF_SKY", "Right ascension of the fitted PSF (native)",
 	&outobj2.alphas_psf, H_FLOAT, T_DOUBLE, "%11.7f", "deg",
-	"pos.eq.ra;stat.fit.param", "deg", 1, &prefs.psf_alphassize},
+	"pos.eq.ra;stat.fit.param", "deg"},
   {"DELTAPSF_SKY", "Declination of the fitted PSF (native)",
 	&outobj2.deltas_psf, H_FLOAT, T_DOUBLE, "%+11.7f", "deg",
-	"pos.eq.dec;stat.fit.param", "deg", 1, &prefs.psf_deltassize},
+	"pos.eq.dec;stat.fit.param", "deg"},
 
   {"ALPHAPSF_J2000", "Right ascension of the fitted PSF (J2000)",
 	&outobj2.alpha2000_psf, H_FLOAT, T_DOUBLE, "%11.7f", "deg",
-	"pos.eq.ra;stat.fit.param", "deg", 1, &prefs.psf_alpha2000size},
+	"pos.eq.ra;stat.fit.param", "deg"},
   {"DELTAPSF_J2000", "Declination of the fitted PSF (J2000)",
 	&outobj2.delta2000_psf, H_FLOAT, T_DOUBLE, "%+11.7f", "deg",
-	"pos.eq.dec;stat.fit.param", "deg", 1, &prefs.psf_delta2000size},
+	"pos.eq.dec;stat.fit.param", "deg"},
 
   {"ALPHAPSF_B1950", "Right ascension of the fitted PSF (B1950)",
 	&outobj2.alpha1950_psf, H_FLOAT, T_DOUBLE, "%11.7f", "deg",
-	"pos.eq.ra;stat.fit.param", "deg", 1, &prefs.psf_alpha1950size},
+	"pos.eq.ra;stat.fit.param", "deg"},
   {"DELTAPSF_B1950", "Declination of the fitted PSF (B1950)",
 	&outobj2.delta1950_psf, H_FLOAT, T_DOUBLE, "%+11.7f", "deg",
-	"pos.eq.dec;stat.fit.param", "deg", 1, &prefs.psf_delta1950size},
+	"pos.eq.dec;stat.fit.param", "deg"},
 
   {"FLUX_PSF", "Flux from PSF-fitting",
 	&outobj2.flux_psf, H_FLOAT, T_FLOAT, "%12.7g", "count",
-	"phot.count;stat.fit.param", "ct", 1, &prefs.psf_fluxsize},
+	"phot.count;stat.fit.param", "ct"},
   {"FLUXERR_PSF", "RMS flux error for PSF-fitting",
 	&outobj2.fluxerr_psf, H_FLOAT, T_FLOAT, "%12.7g", "count",
-	"stat.stdev;phot.count", "ct", 1, &prefs.psf_fluxerrsize},
+	"stat.stdev;phot.count", "ct"},
   {"MAG_PSF", "Magnitude from PSF-fitting",
 	&outobj2.mag_psf, H_FLOAT, T_FLOAT, "%8.4f", "mag",
-	"phot.mag", "mag", 1, &prefs.psf_magsize},
+	"phot.mag", "mag"},
   {"MAGERR_PSF", "RMS magnitude error from PSF-fitting",
 	&outobj2.magerr_psf, H_FLOAT, T_FLOAT, "%8.4f", "mag",
-	"stat.stdev;phot.mag", "mag", 1, &prefs.psf_magsize},
+	"stat.stdev;phot.mag", "mag"},
 
   {"NITER_PSF", "Number of iterations for PSF-fitting",
 	&outobj2.niter_psf, H_INT, T_SHORT, "%3d", "",
