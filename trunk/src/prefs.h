@@ -9,7 +9,7 @@
 *
 *	Contents:	Keywords for the configuration file.
 *
-*	Last modify:	24/09/2009
+*	Last modify:	14/12/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -197,8 +197,6 @@ typedef struct
   char		*(psf_name[2]);				/* PSF filename */
   int		npsf_name;				/* nb of params */
   int		psf_npsfmax;				/* Max # of PSFs */
-  enum	{PSFDISPLAY_SPLIT, PSFDISPLAY_VECTOR}
-		psfdisplay_type;			/* PSF display type */
   int		psf_xsize,psf_ysize;			/* nb of params */
   int		psf_xwsize,psf_ywsize;			/* nb of params */
   int		psf_alphassize,psf_deltassize;		/* nb of params */

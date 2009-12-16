@@ -9,7 +9,7 @@
 *
 *	Contents:	Astrometrical computations.
 *
-*	Last modify:	27/08/2009
+*	Last modify:	15/12/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -46,15 +46,7 @@ void	initastrom(picstruct *field)
 /* Test if the WCS is in use */
   if (wcs->lng != wcs->lat)
     {
-    if (FLAG(obj2.theta2000) || FLAG(obj2.theta1950)
-	|| FLAG(obj2.poserr_theta2000) || FLAG(obj2.poserr_theta1950)
-	|| FLAG(obj2.win_theta2000) || FLAG(obj2.win_theta1950)
-	|| FLAG(obj2.winposerr_theta2000) || FLAG(obj2.winposerr_theta1950)
-	|| FLAG(obj2.prof_spheroid_theta2000)
-	|| FLAG(obj2.prof_spheroid_theta1950)
-	|| FLAG(obj2.prof_disk_theta2000) || FLAG(obj2.prof_disk_theta1950)
-//	|| FLAG(obj2.prof_arms_theta2000) || FLAG(obj2.prof_arms_theta1950)
-	|| FLAG(obj2.prof_bar_theta2000) || FLAG(obj2.prof_bar_theta1950))
+    if (FLAG(obj2.dtheta2000) || FLAG(obj2.dtheta1950))
       {
       if (fabs(wcs->equinox-2000.0)>0.003)
         precess(wcs->equinox, 0.0, 90.0, 2000.0, &wcs->ap2000, &wcs->dp2000);
@@ -270,6 +262,61 @@ void	astrom_winpos(picstruct *field, objstruct *obj)
         if (FLAG(obj2.winpos_alpha1950))
           j2b(wcs->equinox, obj2->winpos_alpha2000, obj2->winpos_delta2000,
 		&obj2->winpos_alpha1950, &obj2->winpos_delta1950);
+        }
+      }
+    }
+
+  return;
+  }
+
+
+/****************************** astrom_psfpos *******************************/
+/*
+Compute real FOCAL and WORLD PSF coordinates according to FITS info.
+*/
+void	astrom_psfpos(picstruct *field, objstruct *obj)
+
+  {
+   wcsstruct	*wcs;
+   double	rawpos[NAXIS], wcspos[NAXIS];
+   int		lng,lat;
+
+  wcs = field->wcs;
+  lng = wcs->lng;
+  lat = wcs->lat;
+
+  if (FLAG(obj2.xf_psf))
+    {
+    rawpos[0] = obj2->x_psf;
+    rawpos[1] = obj2->y_psf;
+    raw_to_red(wcs, rawpos, wcspos);
+    obj2->xf_psf = wcspos[0];
+    obj2->yf_psf = wcspos[1];
+    }
+  if (FLAG(obj2.xw_psf))
+    {
+    rawpos[0] = obj2->x_psf;
+    rawpos[1] = obj2->y_psf;
+    raw_to_wcs(wcs, rawpos, wcspos);
+    obj2->xw_psf = wcspos[0];
+    obj2->yw_psf = wcspos[1];
+    if (lng != lat)
+      {
+      obj2->alphas_psf = lng<lat? obj2->xw_psf : obj2->yw_psf;
+      obj2->deltas_psf = lng<lat? obj2->yw_psf : obj2->xw_psf;
+      if (FLAG(obj2.alpha2000_psf))
+        {
+        if (fabs(wcs->equinox-2000.0)>0.003)
+          precess(wcs->equinox, wcspos[0], wcspos[1],
+		2000.0, &obj2->alpha2000_psf, &obj2->delta2000_psf);
+        else
+          {
+          obj2->alpha2000_psf = lng<lat? obj2->xw_psf : obj2->yw_psf;
+          obj2->delta2000_psf = lng<lat? obj2->yw_psf : obj2->xw_psf;
+          }
+        if (FLAG(obj2.alpha1950_psf))
+          j2b(wcs->equinox, obj2->alpha2000_psf, obj2->delta2000_psf,
+		&obj2->alpha1950_psf, &obj2->delta1950_psf);
         }
       }
     }
@@ -638,6 +685,84 @@ void	astrom_winerrparam(picstruct *field, objstruct *obj)
     obj2->winposerr_cxxw = (float)(ym2/temp);
     obj2->winposerr_cyyw = (float)(xm2/temp);
     obj2->winposerr_cxyw = (float)(-2*xym/temp);
+    }
+
+  return;
+  }
+
+
+/***************************** astrom_psferrparam ***************************/
+/*
+Compute error ellipse parameters in WORLD and SKY coordinates.
+*/
+void	astrom_psferrparam(picstruct *field, objstruct *obj)
+  {
+   wcsstruct	*wcs;
+   double	dx2,dy2,dxy, xm2,ym2,xym, temp,pm2, lm0,lm1,lm2,lm3;
+   int		lng,lat, naxis;
+
+  wcs = field->wcs;
+  naxis = wcs->naxis;
+  lng = wcs->lng;
+  lat = wcs->lat;
+  if (lng == lat)
+    {
+    lng = 0;
+    lat = 1;
+    }
+  lm0 = obj2->jacob[lng+naxis*lng];
+  lm1 = obj2->jacob[lat+naxis*lng];
+  lm2 = obj2->jacob[lng+naxis*lat];
+  lm3 = obj2->jacob[lat+naxis*lat];
+
+/* All WORLD params based on 2nd order moments have to pass through here */
+  dx2 = obj2->poserrmx2_psf;
+  dy2 = obj2->poserrmy2_psf;
+  dxy = obj2->poserrmxy_psf;
+  obj2->poserrmx2w_psf = xm2 = lm0*lm0*dx2+lm1*lm1*dy2+lm0*lm1*dxy;
+  obj2->poserrmy2w_psf = ym2 = lm2*lm2*dx2+lm3*lm3*dy2+lm2*lm3*dxy;
+  obj2->poserrmxyw_psf = xym = lm0*lm2*dx2+lm1*lm3*dy2+(lm0*lm3+lm1*lm2)*dxy;
+  temp=xm2-ym2;
+  if (FLAG(obj2.poserrthetaw_psf))
+    {
+    obj2->poserrthetaw_psf = (fmod_m90_p90(temp==0.0)?
+				(45.0):(0.5*atan2(2.0*xym,temp)/DEG));
+
+/*-- Compute position angles in J2000 or B1950 reference frame */
+    if (wcs->lng != wcs->lat)
+      {
+      if (FLAG(obj2.poserrthetas_psf))
+        obj2->poserrthetas_psf = fmod_m90_p90(lng<lat?
+		((obj2->poserrthetaw_psf>0.0?90:-90.0)-obj2->poserrthetaw_psf)
+		: obj2->poserrthetaw_psf);
+      if (FLAG(obj2.poserrtheta2000_psf))
+        obj2->poserrtheta2000_psf = fmod_m90_p90(obj2->poserrthetas_psf
+				+ obj2->dtheta2000);
+      if (FLAG(obj2.poserrtheta1950_psf))
+        obj2->poserrtheta1950_psf = fmod_m90_p90(obj2->poserrthetas_psf
+				+ obj2->dtheta1950);
+      }
+    }
+
+  if (FLAG(obj2.poserraw_psf))
+    {
+    temp = sqrt(0.25*temp*temp+xym*xym);
+    pm2 = 0.5*(xm2+ym2);
+    obj2->poserraw_psf = (float)sqrt(pm2+temp);
+    obj2->poserrbw_psf = (float)sqrt(pm2-temp);
+    }
+
+  if (FLAG(obj2.poserrcxxw_psf))
+    {
+/*-- Handle large, fully correlated profiles (can cause a singularity...) */
+    if ((temp=xm2*ym2-xym*xym)<1e-6)
+      {
+      temp = 1e-6;
+      xym *= 0.99999;
+      }
+    obj2->poserrcxxw_psf = (float)(ym2/temp);
+    obj2->poserrcyyw_psf = (float)(xm2/temp);
+    obj2->poserrcxyw_psf = (float)(-2*xym/temp);
     }
 
   return;

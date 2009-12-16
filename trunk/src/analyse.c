@@ -9,7 +9,7 @@
 *
 *	Contents:	analyse(), endobject()...: measurements on detections.
 *
-*	Last modify:	01/12/2009
+*	Last modify:	15/12/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -488,6 +488,7 @@ void	endobject(picstruct *field, picstruct *dfield, picstruct *wfield,
 	|| FLAG(obj2.win_mx2w)
 	|| FLAG(obj2.poserr_mx2w)
 	|| FLAG(obj2.winposerr_mx2w)
+	|| FLAG(obj2.poserrmx2w_psf)
 	|| FLAG(obj2.poserrmx2w_prof)
 	|| FLAG(obj2.prof_flagw)
 	|| ((!prefs.pixel_scale) && FLAG(obj2.area_flagw)))
@@ -671,30 +672,9 @@ void	endobject(picstruct *field, picstruct *dfield, picstruct *wfield,
       else
         psf_fit(thepsf, field, wfield, obj);
       obj2->npsf = thepsfit->npsf;
-      if (prefs.psfdisplay_type == PSFDISPLAY_SPLIT)
-        {
-        nsub = thepsfit->npsf;
-        if (nsub<1)
-          nsub = 1;
-        }
-      else
-        for (j=0; j<thepsfit->npsf; j++)
-          {
-          if (FLAG(obj2.x_psf) && j<prefs.psf_xsize)
-            obj2->x_psf[j] = thepsfit->x[j];
-          if (FLAG(obj2.y_psf) && j<prefs.psf_ysize)
-            obj2->y_psf[j] = thepsfit->y[j];
-          if (FLAG(obj2.flux_psf) && j<prefs.psf_fluxsize)
-            obj2->flux_psf[j] = thepsfit->flux[j];
-          if (FLAG(obj2.magerr_psf) && j<prefs.psf_magerrsize)
-            obj2->magerr_psf[j] = obj2->fluxerr_psf[j]>0.0?
-		1.086*obj2->fluxerr_psf[j]/thepsfit->flux[j] : 99.0;
-          if (FLAG(obj2.fluxerr_psf) && j<prefs.psf_fluxerrsize)
-            obj2->fluxerr_psf[j] = obj2->fluxerr_psf[j];     
-          if (FLAG(obj2.mag_psf) && j<prefs.psf_magsize)
-            obj2->mag_psf[j] = thepsfit->flux[j]>0.0?
-		prefs.mag_zeropoint -2.5*log10(thepsfit->flux[j]) : 99.0;
-          }
+      nsub = thepsfit->npsf;
+      if (nsub<1)
+        nsub = 1;
       }
 
 /*----------------------------- Profile fitting -----------------------------*/
@@ -726,23 +706,26 @@ void	endobject(picstruct *field, picstruct *dfield, picstruct *wfield,
 /*-- Go through each newly identified component */
     for (j=0; j<nsub; j++)
       {
-      if (prefs.psf_flag && prefs.psfdisplay_type == PSFDISPLAY_SPLIT)
+      if (prefs.psf_flag)
         {
-        if (FLAG(obj2.x_psf))
-          obj2->x_psf[0] = thepsfit->x[j];
-        if (FLAG(obj2.y_psf))
-          obj2->y_psf[0] = thepsfit->y[j];
+        obj2->x_psf = thepsfit->x[j];
+        obj2->y_psf = thepsfit->y[j];
+        if (FLAG(obj2.xf_psf) || FLAG(obj2.xw_psf))
+          astrom_psfpos(field, obj);
+/*------ Express position error parameters in the FOCAL or WORLD frame */
+        if (FLAG(obj2.poserrmx2w_psf))
+          astrom_psferrparam(field, obj);
         if (FLAG(obj2.flux_psf))
-          obj2->flux_psf[0] = thepsfit->flux[j]>0.0? thepsfit->flux[j]:0.0; /*?*/
+          obj2->flux_psf = thepsfit->flux[j]>0.0? thepsfit->flux[j]:0.0; /*?*/
         if (FLAG(obj2.mag_psf))
-          obj2->mag_psf[0] = thepsfit->flux[j]>0.0?
+          obj2->mag_psf = thepsfit->flux[j]>0.0?
 		prefs.mag_zeropoint -2.5*log10(thepsfit->flux[j]) : 99.0;
-        if (FLAG(obj2.magerr_psf))
-          obj2->magerr_psf[0]=
-		(thepsfit->flux[j]>0.0 && obj2->fluxerr_psf[j]>0.0) ? /*?*/
-			1.086*obj2->fluxerr_psf[j]/thepsfit->flux[j] : 99.0;
         if (FLAG(obj2.fluxerr_psf))
-          obj2->fluxerr_psf[0]= obj2->fluxerr_psf[j];
+          obj2->fluxerr_psf= thepsfit->fluxerr[j];
+        if (FLAG(obj2.magerr_psf))
+          obj2->magerr_psf =
+		(thepsfit->flux[j]>0.0 && thepsfit->fluxerr[j]>0.0) ? /*?*/
+			1.086*thepsfit->fluxerr[j]/thepsfit->flux[j] : 99.0;
         if (j)
           obj->number = ++thecat.ntotal;
         }

@@ -263,11 +263,12 @@ typedef struct
   float		*flux_radius;			/* f-light-radii */
   float		hl_radius;			/* Scalar half-light radius */
 /* ---- PSF-fitting */
-  float		*flux_psf;			/* Flux from PSF-fitting */
-  float		*fluxerr_psf;			/* RMS error on PSF flux */
-  float		*mag_psf;			/* Mag from PSF-fitting */
-  float		*magerr_psf;			/* RMS mag from PSF-fitting */
-  float		*x_psf, *y_psf;			/* Coords from PSF-fitting */
+  float		flux_psf;			/* Flux from PSF-fitting */
+  float		fluxerr_psf;			/* RMS error on PSF flux */
+  float		mag_psf;			/* Mag from PSF-fitting */
+  float		magerr_psf;			/* RMS mag from PSF-fitting */
+  double	x_psf, y_psf;			/* Coords from PSF-fitting */
+  double	xf_psf, yf_psf;			/* FOCAL coordinates */
   short		niter_psf;			/* # of PSF-fitting iterat. */
   short		npsf;				/* # of fitted PSFs */
   float		chi2_psf;			/* Red. chi2 of PSF-fitting */

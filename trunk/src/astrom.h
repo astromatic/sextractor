@@ -9,7 +9,7 @@
 *
 *	Contents:	Astrometrical stuff.
 *
-*	Last modify:	20/07/2009
+*	Last modify:	15/12/2009
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -35,6 +35,8 @@ extern void		astrom_errparam(picstruct *, objstruct *),
 			astrom_proferrparam(picstruct *, objstruct *),
 			astrom_profpos(picstruct *, objstruct *),
 			astrom_profshapeparam(picstruct *, objstruct *),
+			astrom_psferrparam(picstruct *, objstruct *),
+			astrom_psfpos(picstruct *, objstruct *),
 			astrom_shapeparam(picstruct *, objstruct *),
 			astrom_winerrparam(picstruct *, objstruct *),
 			astrom_winpos(picstruct *, objstruct *),
