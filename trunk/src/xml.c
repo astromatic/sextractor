@@ -9,7 +9,7 @@
 *
 *	Contents:	XML logging.
 *
-*	Last modify:	14/12/2009
+*	Last modify:	21/01/2010
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -217,7 +217,7 @@ INPUT	Pointer to the output file (or stream),
 OUTPUT	RETURN_OK if everything went fine, RETURN_ERROR otherwise.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	14/12/2009
+VERSION	21/01/2010
  ***/
 int	write_xml_meta(FILE *file, char *error)
   {
@@ -468,8 +468,12 @@ int	write_xml_meta(FILE *file, char *error)
     	key[findkeys("DETECT_TYPE", keylist,
 			FIND_STRICT)].keylist[prefs.detect_type]);
     fprintf(file, "   <PARAM name=\"Detect_MinArea\" datatype=\"int\""
-	" ucd=\"phys.area;obs.param\" value=\"%d\" unit=\"pix2\"/>\n",
+	" ucd=\"phys.area;stat.min;obs.param;\" value=\"%d\" unit=\"pix2\"/>\n",
     	prefs.ext_minarea);
+
+    fprintf(file, "   <PARAM name=\"Detect_MaxArea\" datatype=\"int\""
+	" ucd=\"phys.area;stat.max;obs.param\" value=\"%d\" unit=\"pix2\"/>\n",
+    	prefs.ext_maxarea);
 
     fprintf(file,
 	"   <PARAM name=\"Thresh_Type\" datatype=\"char\" arraysize=\"*\""

@@ -10,7 +10,7 @@
 *	Contents:	functions for extraction of connected pixels from
 *			a pixmap.
 *
-*	Last modify:	01/12/2009
+*	Last modify:	21/01/2010
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -791,6 +791,8 @@ void  sortit(picstruct *field, picstruct *dfield, picstruct *wfield,
   for (i=0; i<objlist2->nobj; i++)
     {
     preanalyse(i, objlist2, ANALYSE_FULL|ANALYSE_ROBUST);
+    if (prefs.ext_maxarea && objlist2->obj[i].fdnpix > prefs.ext_maxarea)
+      continue; 
     analyse(field, dfield, i, objlist2);
     cobj = objlist2->obj + i;
     if (prefs.blank_flag)

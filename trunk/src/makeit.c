@@ -9,7 +9,7 @@
 *
 *	Contents:	main program.
 *
-*	Last modify:	24/09/2009
+*	Last modify:	21/01/2010
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -47,6 +47,7 @@ static int		selectext(char *filename);
 time_t			thetimet, thetimet2;
 extern profitstruct	*theprofit;
 extern char		profname[][32];
+double			dtime;
 
 /******************************** makeit *************************************/
 /*
@@ -70,6 +71,7 @@ void	makeit()
   error_installfunc(write_error);
 
 /* Processing start date and time */
+  dtime = counter_seconds();
   thetimet = time(NULL);
   tm = localtime(&thetimet);
   sprintf(prefs.sdate_start,"%04d-%02d-%02d",
@@ -532,7 +534,7 @@ void	makeit()
 	tm->tm_year+1900, tm->tm_mon+1, tm->tm_mday);
   sprintf(prefs.stime_end,"%02d:%02d:%02d",
 	tm->tm_hour, tm->tm_min, tm->tm_sec);
-  prefs.time_diff = difftime(thetimet2, thetimet);
+  prefs.time_diff = counter_seconds() - dtime;
 
 /* Write XML */
   if (prefs.xml_flag)
@@ -619,4 +621,5 @@ void	write_error(char *msg1, char *msg2)
 
   return;
   }
+
 
