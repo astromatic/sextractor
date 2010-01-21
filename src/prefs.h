@@ -9,7 +9,7 @@
 *
 *	Contents:	Keywords for the configuration file.
 *
-*	Last modify:	14/12/2009
+*	Last modify:	21/01/2010
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -53,6 +53,7 @@ typedef struct
 /*----- extraction */
   int		dimage_flag;				/* detect. image ? */
   int		ext_minarea;				/* min area in pix. */
+  int		ext_maxarea;				/* max area in pix. */
   int		deb_maxarea;				/* max deblend. area */
   int		filter_flag;				/* smoothing on/off */
   char		filter_name[MAXCHAR];			/* mask filename */

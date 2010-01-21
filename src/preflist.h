@@ -9,7 +9,7 @@
 *
 *	Contents:	Keywords for the configuration file.
 *
-*	Last modify:	14/12/2009
+*	Last modify:	21/01/2010
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -78,6 +78,7 @@
   {"DEBLEND_MINCONT", P_FLOAT, &prefs.deblend_mincont, 0,0, 0.0,1.0},
   {"DEBLEND_NTHRESH", P_INT, &prefs.deblend_nthresh, 1,64},
   {"DETECT_MINAREA", P_INT, &prefs.ext_minarea, 1,1000000},
+  {"DETECT_MAXAREA", P_INT, &prefs.ext_maxarea, 0,1000000000},
   {"DETECT_THRESH", P_FLOATLIST, prefs.dthresh, 0,0, -BIG, BIG,
    {""}, 1, 2, &prefs.ndthresh},
   {"DETECT_TYPE", P_KEY, &prefs.detect_type, 0,0, 0.0,0.0,
@@ -168,7 +169,8 @@ char *default_prefs[] =
 "#------------------------------- Extraction ----------------------------------",
 " ",
 "DETECT_TYPE      CCD            # CCD (linear) or PHOTO (with gamma correction)",
-"DETECT_MINAREA   5              # minimum number of pixels above threshold",
+"DETECT_MINAREA   5              # min. # of pixels above threshold",
+"*DETECT_MAXAREA   0              # max. # of pixels above threshold (0=unlimited)",
 "*THRESH_TYPE      RELATIVE       # threshold type: RELATIVE (in sigmas)",
 "*                                # or ABSOLUTE (in ADUs)",
 "DETECT_THRESH    1.5            # <sigmas> or <threshold>,<ZP> in mag.arcsec-2",

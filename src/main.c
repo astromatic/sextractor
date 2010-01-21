@@ -9,7 +9,7 @@
 *
 *	Contents:	Command-line parsing.
 *
-*	Last modify:	29/05/2009
+*	Last modify:	21/01/2010
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -132,11 +132,11 @@ setlinebuf(stdout);
 
   endprefs();
   NFPRINTF(OUTPUT, "");
-  tdiff = prefs.time_diff>0.0? prefs.time_diff : 1.0;
+  tdiff = prefs.time_diff>0.0? prefs.time_diff : 0.001;
   lines = (double)thefield1.height/tdiff;
   dets = (double)thecat.ntotal/tdiff;
   NPRINTF(OUTPUT,
-	"> All done (in %.0f s: %.1f line%s/s , %.1f detection%s/s)\n",
+	"> All done (in %.1f s: %.1f line%s/s , %.1f detection%s/s)\n",
 	prefs.time_diff, lines, lines>1.0? "s":"", dets, dets>1.0? "s":"");
 
   return EXIT_SUCCESS;
