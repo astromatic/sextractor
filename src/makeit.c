@@ -483,7 +483,7 @@ void	makeit()
     if (dwfield)
       endfield(dwfield);
 
-    QPRINTF(OUTPUT, "Objects: detected %-8d / sextracted %-8d               \n",
+    QPRINTF(OUTPUT, "      Objects: detected %-8d / sextracted %-8d        \n\n",
 	thecat.ndetect, thecat.ntotal);
     }
 

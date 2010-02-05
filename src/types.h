@@ -9,7 +9,7 @@
 *
 *	Contents:	global type definitions.
 *
-*	Last modify:	01/12/2009
+*	Last modify:	05/02/2010
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -494,6 +494,8 @@ typedef struct pic
   {
   char		filename[MAXCHAR];	/* pointer to the image filename */
   char		*rfilename;		/* pointer to the reduced image name */
+  char		hfilename[MAXCHAR];	/* external header filename */
+  int		headflag;		/* external header found? */
   char		ident[MAXCHAR];		/* field identifier (read from FITS)*/
   char		rident[MAXCHAR];	/* field identifier (relative) */
   catstruct	*cat;			/* FITS structure */
