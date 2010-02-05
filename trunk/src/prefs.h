@@ -9,7 +9,7 @@
 *
 *	Contents:	Keywords for the configuration file.
 *
-*	Last modify:	21/01/2010
+*	Last modify:	05/02/2010
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -42,6 +42,7 @@ typedef struct
   char		*(image_name[2]);			/* image filenames */
   int		nimage_name;				/* nb of params */
   char		cat_name[MAXCHAR];			/* catalog filename*/
+  char		head_suffix[MAXCHAR];			/* ext. header suffix */
 /*----- thresholding */
   double	dthresh[2];				/* detect. threshold */
   int		ndthresh;				/* (1 or 2 entries) */

@@ -8,7 +8,7 @@
         ]>
 <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
 <!-- ****************** Global XSL template for SExtractor ****************
-     (C) E.Bertin and C.Marmo IAP/CNRS/UPMC 2005-2009
+     (C) E.Bertin and C.Marmo IAP/CNRS/UPMC 2005-2010
      ********************************************************************** -->
 
  <xsl:template match="/">
@@ -35,6 +35,11 @@
      mono {font-family: monospace}
      elmin {color: green }
      elmax {color: red }
+     elen {
+      font-family: monospace;
+      font-weight: bold;
+      color: green
+      }
      el {
       font-family: monospace;
       font-size: 100%;
@@ -68,6 +73,14 @@
       margin: 0 0 30px 0;
       color:#d3e7f0;
       font-weight: bold;
+      }
+     hr {
+      background-color:#9ABBCA;
+      border-bottom:1px solid #FFFFFF;
+      border-left:1px solid #9ABBCA;
+      border-right:0 none;
+      border-top:0 none;
+      height:2px;
       }
      th {
       background-color:#d3e7f0;
@@ -284,12 +297,14 @@
 <!-- ******************* XSL template for Extension Data ****************** -->
   <xsl:template name="extdata">
    <xsl:variable name="extension" select="count(FIELD[@name='Extension']/preceding-sibling::FIELD)+1"/>
+   <xsl:variable name="headflag" select="count(FIELD[@name='External_Header']/preceding-sibling::FIELD)+1"/>
    <xsl:variable name="date" select="count(FIELD[@name='Date']/preceding-sibling::FIELD)+1"/>
    <xsl:variable name="time" select="count(FIELD[@name='Time']/preceding-sibling::FIELD)+1"/>
    <xsl:variable name="duration" select="count(FIELD[@name='Duration']/preceding-sibling::FIELD)+1"/>
    <xsl:variable name="ndet" select="count(FIELD[@name='NDetect']/preceding-sibling::FIELD)+1"/>
    <xsl:variable name="nsex" select="count(FIELD[@name='NSextracted']/preceding-sibling::FIELD)+1"/>
    <xsl:variable name="imid" select="count(FIELD[@name='Image_Ident']/preceding-sibling::FIELD)+1"/>
+   <xsl:variable name="nimage" select="FIELD[@name='Background_Mean']/@arraysize"/>
    <xsl:variable name="backmean" select="count(FIELD[@name='Background_Mean']/preceding-sibling::FIELD)+1"/>
    <xsl:variable name="backsig" select="count(FIELD[@name='Background_StDev']/preceding-sibling::FIELD)+1"/>
    <xsl:variable name="thresh" select="count(FIELD[@name='Threshold']/preceding-sibling::FIELD)+1"/>
@@ -302,7 +317,8 @@
     </BUTTON>
     <TABLE class="sortable" id="extdata" style="display: none">
      <TR>
-      <TH >Extension</TH>
+      <TH>Extension</TH>
+      <TH>Ext.Header</TH>
       <TH >Date</TH>
       <TH >Time</TH>
       <TH >Duration</TH>
@@ -322,6 +338,39 @@
         <td align="center" >
          <el><xsl:value-of select="TD[$extension]"/></el>
         </td>
+        <td align="center">
+         <xsl:choose>
+          <xsl:when test="$nimage = 2">
+           <xsl:choose>
+            <xsl:when test="substring(TD[$headflag],1,1) = 'T'">
+             <elen>H</elen>
+            </xsl:when>
+            <xsl:otherwise>
+             <el>-</el>
+            </xsl:otherwise>
+           </xsl:choose>
+           <HR/>
+           <xsl:choose>
+            <xsl:when test="substring(TD[$headflag],3,1) = 'T'">
+             <elen>H</elen>
+            </xsl:when>
+            <xsl:otherwise>
+             <el>-</el>
+            </xsl:otherwise>
+           </xsl:choose>
+          </xsl:when>
+          <xsl:otherwise>
+           <xsl:choose>
+            <xsl:when test="TD[$headflag] = 'T'">
+             <elen>H</elen>
+            </xsl:when>
+            <xsl:otherwise>
+             <el>-</el>
+            </xsl:otherwise>
+           </xsl:choose>
+          </xsl:otherwise>
+         </xsl:choose>
+        </td>
         <td align="center" >
          <el><xsl:value-of select="TD[$date]"/></el>
         </td>
@@ -338,25 +387,88 @@
          <el><xsl:value-of select="TD[$nsex]"/></el>
         </td>
         <td align="center" >
-         <el><xsl:value-of select="TD[$imid]"/></el>
+         <xsl:choose>
+          <xsl:when test="$nimage = 2">
+           <el><xsl:value-of select="substring-before(TD[$imid], ',')"/></el>
+           <HR/>
+           <el><xsl:value-of select="substring-after(TD[$imid], ',')"/></el>
+          </xsl:when>
+          <xsl:otherwise>
+           <el><xsl:value-of select="TD[$imid]"/></el>
+          </xsl:otherwise>
+         </xsl:choose>
         </td>
         <td align="right" >
-         <el><xsl:value-of select="format-number(TD[$backmean],'#####0.00')"/></el>
+         <xsl:choose>
+          <xsl:when test="$nimage = 2">
+           <el><xsl:value-of select="format-number(substring-before(TD[$backmean], ' '),'#####0.00')"/></el>
+           <HR/>
+           <el><xsl:value-of select="format-number(substring-after(TD[$backmean], ' '),'#####0.00')"/></el>
+          </xsl:when>
+          <xsl:otherwise>
+           <el><xsl:value-of select="format-number(TD[$backmean],'#####0.00')"/></el>
+          </xsl:otherwise>
+         </xsl:choose>
         </td>
         <td align="right" >
-         <el><xsl:value-of select="format-number(TD[$backsig],'###0.000')"/></el>
+         <xsl:choose>
+          <xsl:when test="$nimage = 2">
+           <el><xsl:value-of select="format-number(substring-before(TD[$backsig], ' '),'###0.000')"/></el>
+           <HR/>
+           <el><xsl:value-of select="format-number(substring-after(TD[$backsig], ' '),'###0.000')"/></el>
+          </xsl:when>
+          <xsl:otherwise>
+           <el><xsl:value-of select="format-number(TD[$backsig],'###0.000')"/></el>
+          </xsl:otherwise>
+         </xsl:choose>
         </td>
         <td align="right" >
-         <el><xsl:value-of select="format-number(TD[$thresh],'#####0.00')"/></el>
+         <xsl:choose>
+          <xsl:when test="$nimage = 2">
+           <el><xsl:value-of select="format-number(substring-before(TD[$thresh], ' '),'#####0.00')"/></el>
+           <HR/>
+           <el><xsl:value-of select="format-number(substring-after(TD[$thresh], ' '),'#####0.00')"/></el>
+          </xsl:when>
+          <xsl:otherwise>
+           <el><xsl:value-of select="format-number(TD[$thresh],'#####0.00')"/></el>
+          </xsl:otherwise>
+         </xsl:choose>
         </td>
         <td align="right" >
-         <el><xsl:value-of select="format-number(TD[$wscale],'#####0.00')"/></el>
+         <xsl:choose>
+          <xsl:when test="$nimage = 2">
+           <el><xsl:value-of select="format-number(substring-before(TD[$wscale], ' '),'#####0.00')"/></el>
+           <HR/>
+           <el><xsl:value-of select="format-number(substring-after(TD[$wscale], ' '),'#####0.00')"/></el>
+          </xsl:when>
+          <xsl:otherwise>
+           <el><xsl:value-of select="format-number(TD[$wscale],'#####0.00')"/></el>
+          </xsl:otherwise>
+         </xsl:choose>
         </td>
         <td align="right" >
-         <el><xsl:value-of select="format-number(TD[$pixscale],'#0.000')"/></el>
+         <xsl:choose>
+          <xsl:when test="$nimage = 2">
+           <el><xsl:value-of select="format-number(substring-before(TD[$pixscale], ' '),'#0.000')"/></el>
+           <HR/>
+           <el><xsl:value-of select="format-number(substring-after(TD[$pixscale], ' '),'#0.000')"/></el>
+          </xsl:when>
+          <xsl:otherwise>
+           <el><xsl:value-of select="format-number(TD[$pixscale],'#0.000')"/></el>
+          </xsl:otherwise>
+         </xsl:choose>
         </td>
         <td align="center" >
-         <el><xsl:value-of select="TD[$epoch]"/></el>
+         <xsl:choose>
+          <xsl:when test="$nimage = 2">
+           <el><xsl:value-of select="substring-before(TD[$epoch], ' ')"/></el>
+           <HR/>
+           <el><xsl:value-of select="substring-after(TD[$epoch], ' ')"/></el>
+          </xsl:when>
+          <xsl:otherwise>
+           <el><xsl:value-of select="TD[$epoch]"/></el>
+          </xsl:otherwise>
+         </xsl:choose>
         </td>
        </tr>
       </xsl:for-each>

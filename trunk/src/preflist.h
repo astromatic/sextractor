@@ -9,7 +9,7 @@
 *
 *	Contents:	Keywords for the configuration file.
 *
-*	Last modify:	21/01/2010
+*	Last modify:	05/02/2010
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -94,6 +94,7 @@
    {"OR","AND","MIN", "MAX", "MOST",""}, 0, MAXFLAG, &idummy},
   {"GAIN", P_FLOAT, &prefs.gain, 0,0, 0.0, 1e+30},
   {"GAIN_KEY", P_STRING, prefs.gain_key},
+  {"HEADER_SUFFIX", P_STRING, prefs.head_suffix},
   {"INTERP_MAXXLAG", P_INTLIST, prefs.interp_xtimeout, 1,1000000, 0.0,0.0,
    {""}, 1, 2, &prefs.ninterp_xtimeout},
   {"INTERP_MAXYLAG", P_INTLIST, prefs.interp_ytimeout, 1,1000000, 0.0,0.0,
@@ -267,6 +268,7 @@ char *default_prefs[] =
 "#----------------------------- Miscellaneous ---------------------------------",
 " ",
 "VERBOSE_TYPE     NORMAL         # can be QUIET, NORMAL or FULL",
+"HEADER_SUFFIX    .head          # Filename extension for additional headers",
 "WRITE_XML        N              # Write XML file (Y/N)?",
 "XML_NAME         sex.xml        # Filename for XML output",
 "*XSL_URL          " XSL_URL,

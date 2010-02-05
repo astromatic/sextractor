@@ -9,7 +9,7 @@
 *
 *	Contents:	XML logging.
 *
-*	Last modify:	21/01/2010
+*	Last modify:	05/02/2010
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -82,7 +82,7 @@ INPUT	-.
 OUTPUT	RETURN_OK if everything went fine, RETURN_ERROR otherwise.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	19/12/2007
+VERSION	05/02/2010
  ***/
 int	update_xml(sexcatstruct *sexcat, picstruct *dfield, picstruct *field,
 		picstruct *dwfield, picstruct *wfield)
@@ -94,6 +94,8 @@ int	update_xml(sexcatstruct *sexcat, picstruct *dfield, picstruct *field,
 			"");
   x = &xmlstack[nxml++];
   x->currext = sexcat->currext;
+  x->headflag[0] = dfield->headflag;
+  x->headflag[1] = field->headflag;
   x->ndetect = sexcat->ndetect;
   x->ntotal = sexcat->ntotal;
   strcpy(x->ext_date, sexcat->ext_date);
@@ -217,7 +219,7 @@ INPUT	Pointer to the output file (or stream),
 OUTPUT	RETURN_OK if everything went fine, RETURN_ERROR otherwise.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	21/01/2010
+VERSION	05/02/2010
  ***/
 int	write_xml_meta(FILE *file, char *error)
   {
@@ -319,13 +321,16 @@ int	write_xml_meta(FILE *file, char *error)
   fprintf(file, "   <PARAM name=\"NExtensions\" datatype=\"int\""
 	" ucd=\"meta.number;meta.dataset\" value=\"%d\"/>\n",
 	nxmlmax);
-  fprintf(file, "   <!-- CurrExtension may differ fromq n_extensions"
+  fprintf(file, "   <!-- CurrExtension may differ from Nextensions"
 	" if an error occurred -->\n");
   fprintf(file, "   <PARAM name=\"CurrExtension\" datatype=\"int\""
 	" ucd=\"meta.number;meta.dataset\" value=\"%d\"/>\n",
 	nxml);
   fprintf(file, "   <FIELD name=\"Extension\" datatype=\"int\""
 	" ucd=\"meta.record\"/>\n");
+  fprintf(file, "   <FIELD name=\"External_Header\" datatype=\"boolean\""
+	" arraysize=\"%d\" ucd=\"meta.code\"/>\n",
+	prefs.nimage_name);
   fprintf(file, "   <FIELD name=\"Date\" datatype=\"char\" arraysize=\"*\""
 	" ucd=\"meta.record;time.event.end\"/>\n");
   fprintf(file, "   <FIELD name=\"Time\" datatype=\"char\" arraysize=\"*\""
@@ -366,7 +371,7 @@ int	write_xml_meta(FILE *file, char *error)
   for (n=0; n<nxml; n++)
     if (prefs.nimage_name>1)
       fprintf(file, "     <TR>\n"
-	"      <TD>%d</TD><TD>%s</TD><TD>%s</TD><TD>%.0f</TD>"
+	"      <TD>%d</TD><TD>%c %c</TD><TD>%s</TD><TD>%s</TD><TD>%.0f</TD>"
 	"<TD>%d</TD><TD>%d</TD>\n"
 	"      <TD>%s,%s</TD><TD>%g %g</TD>\n"
 	"      <TD>%g %g</TD><TD>%g %g</TD><TD>%g %g</TD>"
@@ -374,6 +379,7 @@ int	write_xml_meta(FILE *file, char *error)
 	"      <TD>%g %g</TD><TD>%g %g</TD>\n"
 	"     </TR>\n",
 	xmlstack[n].currext,
+	xmlstack[n].headflag[0]?'T':'F',xmlstack[n].headflag[1]?'T':'F',
 	xmlstack[n].ext_date,
 	xmlstack[n].ext_time,
 	xmlstack[n].ext_elapsed,
@@ -390,13 +396,14 @@ int	write_xml_meta(FILE *file, char *error)
 	xmlstack[n].satur_level[0], xmlstack[n].satur_level[1]);
     else
       fprintf(file, "    <TR>\n"
-	"     <TD>%d</TD><TD>%s</TD><TD>%s</TD><TD>%.0f</TD>"
+	"     <TD>%d</TD><TD>%c</TD><TD>%s</TD><TD>%s</TD><TD>%.0f</TD>"
 	"<TD>%d</TD><TD>%d</TD>\n"
 	"     <TD>%s</TD><TD>%g</TD>\n"
 	"     <TD>%g</TD><TD>%g</TD><TD>%g</TD><TD>%g</TD><TD>%f</TD>\n"
 	"     <TD>%g</TD><TD>%g</TD>\n"
 	"    </TR>\n",
 	xmlstack[n].currext,
+	xmlstack[n].headflag[0]?'T':'F',
 	xmlstack[n].ext_date,
 	xmlstack[n].ext_time,
 	xmlstack[n].ext_elapsed,
@@ -755,6 +762,10 @@ int	write_xml_meta(FILE *file, char *error)
     	key[findkeys("VERBOSE_TYPE", keylist,
 			FIND_STRICT)].keylist[prefs.verbose_type]);
 
+    fprintf(file,
+	"   <PARAM name=\"Header_Suffix\" datatype=\"char\" arraysize=\"*\""
+	" ucd=\"meta.dataset;meta.file\" value=\"%s\"/>\n",
+	prefs.head_suffix);
     fprintf(file,
 	"   <PARAM name=\"FITS_Unsigned\" datatype=\"boolean\""
 	" ucd=\"meta.code;obs.param\" value=\"%c\"/>\n",

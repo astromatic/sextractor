@@ -9,7 +9,7 @@
 *
 *	Contents:	Handling of field structures.
 *
-*	Last modify:	01/10/2009
+*	Last modify:	05/02/2010
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -33,6 +33,7 @@
 #include	"field.h"
 #include	"filter.h"
 #include	"fitswcs.h"
+#include	"header.h"
 #include	"interpolate.h"
 
 /********************************* newfield **********************************/
@@ -45,6 +46,7 @@ picstruct	*newfield(char *filename, int flags, int nok)
    picstruct	*field;
    catstruct	*cat;
    tabstruct	*tab;
+   char		*pstr;
    int		nok2, ntab, margin;
 
 /* Move to nok'th valid FITS image extension */
@@ -77,27 +79,37 @@ picstruct	*newfield(char *filename, int flags, int nok)
   else
     field->rfilename++;
 
+/* Create a file name with a "header" extension */
+  strcpy(field->hfilename, filename);
+  if (!(pstr = strrchr(field->hfilename, '.')))
+    pstr = field->hfilename+strlen(field->hfilename);
+  sprintf(pstr, "%s", prefs.head_suffix);
+
   sprintf(gstr, "Looking for %s", field->rfilename);
   NFPRINTF(OUTPUT, gstr);
 /* Check the image exists and read important info (image size, etc...) */
   field->file = cat->file;
-  
+
+  field->headflag = !read_aschead(field->hfilename, nok2 - 1, field->tab);
   readimagehead(field);
 
   if (cat->ntab>1)
-    sprintf(gstr, "[%d/%d]", nok2, cat->tab->naxis<2? cat->ntab-1 : cat->ntab);
-  QPRINTF(OUTPUT, "%s \"%.20s\" %s / %d x %d / %d bits %s data\n",
+    sprintf(gstr, " [%d/%d]", nok2, cat->tab->naxis<2? cat->ntab-1 : cat->ntab);
+  QPRINTF(OUTPUT, "----- %s %s%s\n",
 	flags&FLAG_FIELD?   "Flagging  from:" :
        (flags&(RMS_FIELD|VAR_FIELD|WEIGHT_FIELD)?
 			     "Weighting from:" :
        (flags&MEASURE_FIELD? "Measuring from:" :
 			     "Detecting from:")),
+	field->rfilename,
+        cat->ntab>1? gstr : "");
+  QPRINTF(OUTPUT, "      \"%.20s\" / %s / %dx%d / %d bits %s\n",
 	field->ident,
-        cat->ntab>1? gstr : "",
+	field->headflag? "EXT. HEADER" : "no ext. header",
 	field->width, field->height, field->bytepix*8,
 	field->bitpix>0?
-	(field->tab->compress_type!=COMPRESS_NONE?"COMPRESSED":"INTEGER")
-	:"FLOATING POINT");
+	(field->tab->compress_type!=COMPRESS_NONE?"(compressed)":"(integers)")
+	:"(floats)");
 
 /* Check the astrometric system and do the setup of the astrometric stuff */
   if (prefs.world_flag && (flags & (MEASURE_FIELD|DETECT_FIELD)))
