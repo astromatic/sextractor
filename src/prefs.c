@@ -9,7 +9,7 @@
 *
 *	Contents:	Functions to handle the configuration file.
 *
-*	Last modify:	11/09/2009
+*	Last modify:	08/03/2010
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -588,12 +588,20 @@ void	useprefs()
           prefs.pc_flag = 1;
     }
 
-/*-------------------------- Profile-fitting -------------------------------*/
+/*----------------------------- Model-fitting -------------------------------*/
   if (prefs.check_flag)
     for (i=0; i<prefs.ncheck_type; i++)
-      if (prefs.check_type[i] == CHECK_SUBPROFILES
-	|| prefs.check_type[i] == CHECK_PROFILES)
+      if (prefs.check_type[i] == CHECK_PROFILES
+	|| prefs.check_type[i] == CHECK_SUBPROFILES
+	|| prefs.check_type[i] == CHECK_SPHEROIDS
+	|| prefs.check_type[i] == CHECK_SUBSPHEROIDS
+	|| prefs.check_type[i] == CHECK_DISKS
+	|| prefs.check_type[i] == CHECK_SUBDISKS)
         prefs.prof_flag = 1;
+
+/*--------------------------- Adaptive class-star ---------------------------*/
+  if (prefs.seeing_fwhm == 0)
+    prefs.psf_flag = 1;
 
 /*-------------------------- Pattern-fitting -------------------------------*/
 /* Profile-fitting is possible only if a PSF file is loaded */

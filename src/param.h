@@ -9,7 +9,7 @@
 *
 *	Contents:	parameter list for catalog data.
 *
-*	Last modify:	14/12/2009
+*	Last modify:	18/05/2010
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -702,7 +702,7 @@ keystruct	objkey[] = {
 	&outobj2.win_polarw, H_FLOAT, T_FLOAT, "%7.5f", "",
 	"src.ellipticity", ""},
   {"CLASS_STAR", "S/G classifier output",
-	&outobj2.sprob, H_FLOAT, T_FLOAT, "%5.2f", "",
+	&outobj2.sprob, H_FLOAT, T_FLOAT, "%6.3f", "",
 	"src.class.starGalaxy", ""},
   {"VIGNET", "Pixel data around detection",
 	&outobj2.vignet, H_FLOAT, T_FLOAT, "%12.7g", "count",

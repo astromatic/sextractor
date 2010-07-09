@@ -9,7 +9,7 @@
 *
 *	Contents:	Model-fitting parameter list for catalog data.
 *
-*	Last modify:	01/12/2009
+*	Last modify:	25/05/2010
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -272,10 +272,11 @@
   {"SPREADERR_MODEL", "Spread parameter error from model-fitting",
 	&outobj2.prof_concentrationerr, H_FLOAT, T_FLOAT, "%8.5f", "",
 	"src.morph.param", ""},
+/*
   {"CLASS_STAR_MODEL", "S/G classifier from model-fitting",
 	&outobj2.prof_class_star, H_FLOAT, T_FLOAT, "%7.4f", "",
 	"src.class.starGalaxy", ""},
-
+*/
   {"FLUX_BACKOFFSET", "Background offset from fitting",
 	&outobj2.prof_offset_flux, H_FLOAT, T_FLOAT, "%12.7g", "count",
 	"instr.skyLevel;arith.diff;stat.fit.param", "ct"},
@@ -446,6 +447,7 @@
   {"DISK_THETA_B1950", "Disk position angle (east of north, B1950)",
 	&outobj2.prof_disk_theta1950, H_FLOAT, T_FLOAT, "%+7.3f", "deg",
 	"pos.posAng;src.morph;stat.fit.param", "deg"},
+/*
   {"DISK_PATTERN_VECTOR", "Disk pattern fitted coefficients",
 	&outobj2.prof_disk_patternvector, H_FLOAT, T_FLOAT, "%12.4g", "",
 	"stat.fit.param;src.morph.param", "", 1,
@@ -461,7 +463,7 @@
   {"DISK_PATTERN_SPIRAL", "Disk pattern spiral index",
 	&outobj2.prof_disk_patternspiral, H_FLOAT, T_FLOAT, "%12.4g", "",
 	"stat.fit.param;src.morph.param", ""},
-/*
+
   {"FLUX_BAR", "Bar total flux from fitting",
 	&outobj2.prof_bar_flux, H_FLOAT, T_FLOAT, "%12.g", "count",
 	"phot.count;stat.fit.param", "ct"},

@@ -9,7 +9,7 @@
 *
 *	Contents:	XML logging.
 *
-*	Last modify:	05/02/2010
+*	Last modify:	25/05/2010
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -172,7 +172,7 @@ INPUT	file or stream pointer.
 OUTPUT	RETURN_OK if everything went fine, RETURN_ERROR otherwise.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	14/07/2006
+VERSION	25/05/2010
  ***/
 int	write_xml_header(FILE *file)
   {
@@ -188,7 +188,7 @@ int	write_xml_header(FILE *file)
   fprintf(file, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
   fprintf(file, "<?xml-stylesheet type=\"text/xsl\" href=\"%s\"?>\n",
 	prefs.xsl_name);
-  fprintf(file, "<VOTABLE "
+  fprintf(file, "<VOTABLE version=\"1.1\" "
 	"xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" "
 	"xsi:noNamespaceSchemaLocation="
 	"\"http://www.ivoa.net/xml/VOTable/v1.1\">\n");

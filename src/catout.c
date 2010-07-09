@@ -9,7 +9,7 @@
 *
 *	Contents:	functions for output of catalog data.
 *
-*	Last modify:	07/10/2009
+*	Last modify:	08/07/2010
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -193,6 +193,9 @@ void	updateparamflags()
 			| FLAG(obj2.poserraw_prof);
   FLAG(obj2.poserrcxx_prof) |= FLAG(obj2.poserrcyy_prof)
 			| FLAG(obj2.poserrcxy_prof);
+  FLAG(obj2.poserrmx2_prof) |= FLAG(obj2.poserrmy2_prof)
+			| FLAG(obj2.poserrmxy_prof)
+			| FLAG(obj2.poserrmx2w_prof);
   FLAG(obj2.alpha1950_prof) |= FLAG(obj2.delta1950_prof)
 			| FLAG(obj2.poserrtheta1950_prof);
   FLAG(obj2.alpha2000_prof) |= FLAG(obj2.delta2000_prof)
@@ -208,6 +211,7 @@ void	updateparamflags()
 			| FLAG(obj2.xf_prof)
 			| FLAG(obj2.poserra_prof)
 			| FLAG(obj2.poserrcxx_prof)
+			| FLAG(obj2.poserrmx2_prof)
 			| FLAG(obj2.prof_concentration)
 			| FLAG(obj2.prof_class_star);
 
@@ -336,12 +340,10 @@ void	updateparamflags()
 			| FLAG(obj2.prof_e1)
 			| FLAG(obj2.prof_a) | FLAG(obj2.prof_cxx)
 			| FLAG(obj2.prof_mx2w);
-  FLAG(obj2.mumax_prof) |= FLAG(obj2.mueff_prof) | FLAG(obj2.mumean_prof);/*!*/
   FLAG(obj2.fluxmean_prof) |= FLAG(obj2.mumean_prof);
   FLAG(obj2.fluxeff_prof) |= FLAG(obj2.mueff_prof)
 			| FLAG(obj2.fluxmean_prof);
-  FLAG(obj2.peak_prof) |= FLAG(obj2.mumax_prof)
-			| FLAG(obj2.fluxeff_prof);
+  FLAG(obj2.peak_prof) |= FLAG(obj2.mumax_prof);
 
   FLAG(obj2.prof_arms_flux) |= FLAG(obj2.prof_arms_fluxerr)
 			| FLAG(obj2.prof_arms_mag)

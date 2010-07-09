@@ -9,7 +9,7 @@
 *
 *	Contents:	Fit an arbitrary profile combination to a detection.
 *
-*	Last modify:	15/12/2009
+*	Last modify:	07/07/2010
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -38,6 +38,12 @@
 #include	"pattern.h"
 #include	"psf.h"
 #include	"profit.h"
+
+#define INTERPW		6	/* Interpolation function range (x) */
+#define INTERPH		6	/* Interpolation function range (y) */
+
+#define INTERPF(x)	(x==0.0?1.0:sinf(PI*x)*sinf(PI*x/3.0)/(PI*PI/3.0*x*x))
+				/* Lanczos approximation */
 
 static double	prof_gammainc(double x, double a),
 		prof_gamma(double x);
@@ -78,7 +84,7 @@ INPUT	Pointer to PSF structure.
 OUTPUT	A pointer to an allocated profit structure.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	07/09/2009
+VERSION	02/07/2010
  ***/
 profitstruct	*profit_init(psfstruct *psf)
   {
@@ -127,8 +133,19 @@ profitstruct	*profit_init(psfstruct *psf)
       nprof++;
       }
 
+/* Allocate memory for the complete model */
+  QMALLOC16(profit->modpix, float, PROFIT_MAXMODSIZE*PROFIT_MAXMODSIZE);
+  QMALLOC16(profit->modpix2, float, PROFIT_MAXMODSIZE*PROFIT_MAXMODSIZE);
+  QMALLOC16(profit->cmodpix, float, PROFIT_MAXMODSIZE*PROFIT_MAXMODSIZE);
+  QMALLOC16(profit->psfpix, float, PROFIT_MAXMODSIZE*PROFIT_MAXMODSIZE);
+  QMALLOC16(profit->objpix, PIXTYPE, PROFIT_MAXOBJSIZE*PROFIT_MAXOBJSIZE);
+  QMALLOC16(profit->objweight, PIXTYPE, PROFIT_MAXOBJSIZE*PROFIT_MAXOBJSIZE);
+  QMALLOC16(profit->lmodpix, PIXTYPE, PROFIT_MAXOBJSIZE*PROFIT_MAXOBJSIZE);
+  QMALLOC16(profit->lmodpix2, PIXTYPE, PROFIT_MAXOBJSIZE*PROFIT_MAXOBJSIZE);
+  QMALLOC16(profit->resi, float, PROFIT_MAXOBJSIZE*PROFIT_MAXOBJSIZE);
   QMALLOC16(profit->covar, float, profit->nparam*profit->nparam);
   profit->nprof = nprof;
+  profit->oversamp = PROFIT_OVERSAMP;
   profit->fluxfac = 1.0;	/* Default */
 
   return profit;
@@ -142,7 +159,7 @@ INPUT	Prof structure.
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	26/04/2008
+VERSION	06/04/2010
  ***/
 void	profit_end(profitstruct *profit)
   {
@@ -150,6 +167,15 @@ void	profit_end(profitstruct *profit)
 
   for (p=0; p<profit->nprof; p++)
     prof_end(profit->prof[p]);
+  free(profit->modpix);
+  free(profit->modpix2);
+  free(profit->cmodpix);
+  free(profit->psfpix);
+  free(profit->lmodpix);
+  free(profit->lmodpix2);
+  free(profit->objpix);
+  free(profit->objweight);
+  free(profit->resi);
   free(profit->prof);
   free(profit->covar);
   free(profit->psfdft);
@@ -173,7 +199,7 @@ OUTPUT	Pointer to an allocated fit structure (containing details about the
 	fit).
 NOTES	It is a modified version of the lm_minimize() of lmfit.
 AUTHOR	E. Bertin (IAP)
-VERSION	14/12/2009
+VERSION	08/03/2010
  ***/
 void	profit_fit(profitstruct *profit,
 		picstruct *field, picstruct *wfield,
@@ -181,13 +207,15 @@ void	profit_fit(profitstruct *profit,
   {
     profitstruct	pprofit;
     profitstruct	hdprofit;
-    patternstruct *pattern;
+    patternstruct	*pattern;
     psfstruct		*psf;
     checkstruct		*check;
     double		emx2,emy2,emxy, a , cp,sp, cn, bn, n;
-    float		**list,
+    float		param0[PARAM_NPARAM], param1[PARAM_NPARAM],
+			param[PARAM_NPARAM],
+			**list,
 			*cov,
-			psf_fwhm, dchi2, err, aspect;
+			psf_fwhm, dchi2, err, aspect, chi2;
     int			*index,
 			i,j,p, nparam, nparam2, ncomp, nprof;
 
@@ -223,6 +251,7 @@ void	profit_fit(profitstruct *profit,
     }
   else
     profit->subsamp = 1.0;
+  profit->nobjpix = profit->objnaxisn[0]*profit->objnaxisn[1];
 
 /* Use (dirty) global variables to interface with lmfit */
   the_field = field;
@@ -231,9 +260,6 @@ void	profit_fit(profitstruct *profit,
   profit->obj = obj;
   profit->obj2 = obj2;
 
-  QMALLOC16(profit->objpix, PIXTYPE, profit->objnaxisn[0]*profit->objnaxisn[1]);
-  QMALLOC16(profit->objweight, PIXTYPE,profit->objnaxisn[0]*profit->objnaxisn[1]);
-  QMALLOC16(profit->lmodpix, PIXTYPE, profit->objnaxisn[0]*profit->objnaxisn[1]);
   profit->nresi = profit_copyobjpix(profit, field, wfield);
 /* Check if the number of constraints exceeds the number of free parameters */
   if (profit->nresi < nparam)
@@ -252,8 +278,6 @@ void	profit_fit(profitstruct *profit,
     return;
     }
 
-  QMALLOC16(profit->resi, float, profit->nresi);
-
 /* Create pixmap at PSF resolution */
   profit->modnaxisn[0] =
 	((int)(profit->objnaxisn[0]*profit->subsamp/profit->pixstep
@@ -271,13 +295,8 @@ void	profit_fit(profitstruct *profit,
     profit->modnaxisn[0] = profit->modnaxisn[1] = PROFIT_MAXMODSIZE;
     obj2->prof_flag |= PROFLAG_MODSUB;
     }
+  profit->nmodpix = profit->modnaxisn[0]*profit->modnaxisn[1];
 
-/* Allocate memory for the complete model */
-  QMALLOC16(profit->modpix, float, profit->modnaxisn[0]*profit->modnaxisn[1]);
-  memset(profit->modpix, 0, profit->modnaxisn[0]*profit->modnaxisn[1]*sizeof(float));
-  QMALLOC16(profit->psfpix, float, profit->modnaxisn[0]*profit->modnaxisn[1]);
-/* Allocate memory for the partial model */
-  QMALLOC16(profit->pmodpix, float, profit->modnaxisn[0]*profit->modnaxisn[1]);
 /* Compute the local PSF */
   profit_psf(profit);
 
@@ -286,42 +305,117 @@ void	profit_fit(profitstruct *profit,
 
   profit_resetparams(profit);
 
-//the_gal++;
-
 /* Actual minimisation */
   fft_reset();
 the_gal++;
-  profit->niter = profit_minimize(profit, PROFIT_MAXITER);
-  profit_residuals(profit,field,wfield, 10.0, profit->param,profit->resi);
+  for (p=0; p<profit->nparam; p++)
+    profit->freeparam_flag[p] = 1;
+  profit->nfreeparam = profit->nparam;
 
-/* Convert covariance matrix to bound space */
-  profit_covarunboundtobound(profit);
+  profit->niter = profit_minimize(profit, PROFIT_MAXITER);
+/*
+  chi2 = profit->chi2;
+  for (p=0; p<nparam; p++)
+    param1[p] = profit->paraminit[p];
+  profit_resetparams(profit);
+  for (p=0; p<nparam; p++)
+    profit->paraminit[p] = param1[p] + (profit->paraminit[p]<param1[p]?1.0:-1.0)
+			* sqrt(profit->covar[p*(nparam+1)]);
+
+  profit->niter = profit_minimize(profit, PROFIT_MAXITER);
+  if (chi2<profit->chi2)
+    for (p=0; p<nparam; p++)
+      profit->paraminit[p] = param1[p];
+
+list = profit->paramlist;
+index = profit->paramindex;
+for (i=0; i<PARAM_NPARAM; i++)
+if (list[i] && i!= PARAM_SPHEROID_ASPECT && i!=PARAM_SPHEROID_POSANG)
+profit->freeparam_flag[index[i]] = 0;
+profit->nfreeparam = 2;
+profit->niter = profit_minimize(profit, PROFIT_MAXITER);
+*/
   for (p=0; p<nparam; p++)
     profit->paramerr[p]= sqrt(profit->covar[p*(nparam+1)]);
 
-/* Equate param and paraminit vectors to avoid confusion later on */
-  for (p=0; p<profit->nparam; p++)
-    profit->param[p] = profit->paraminit[p];
-
 /* CHECK-Images */
-  if ((check = prefs.check[CHECK_SUBPROFILES]))
-    {
-    profit_residuals(profit,field,wfield, 0.0, profit->param,profit->resi);
-    addcheck(check, profit->lmodpix, profit->objnaxisn[0],profit->objnaxisn[1],
-		profit->ix,profit->iy, -1.0);
-    }
   if ((check = prefs.check[CHECK_PROFILES]))
     {
-    profit_residuals(profit,field,wfield, 0.0, profit->param,profit->resi);
+    profit_residuals(profit,field,wfield, 0.0, profit->paraminit, NULL);
     addcheck(check, profit->lmodpix, profit->objnaxisn[0],profit->objnaxisn[1],
 		profit->ix,profit->iy, 1.0);
     }
+  if ((check = prefs.check[CHECK_SUBPROFILES]))
+    {
+    profit_residuals(profit,field,wfield, 0.0, profit->paraminit, NULL);
+    addcheck(check, profit->lmodpix, profit->objnaxisn[0],profit->objnaxisn[1],
+		profit->ix,profit->iy, -1.0);
+    }
+  if ((check = prefs.check[CHECK_SPHEROIDS]))
+    {
+/*-- Set to 0 flux components that do not belong to spheroids */
+    for (p=0; p<profit->nparam; p++)
+      param[p] = profit->paraminit[p];
+    list = profit->paramlist;
+    index = profit->paramindex;
+    for (i=0; i<PARAM_NPARAM; i++)
+      if (list[i] && flux_flag[i] && i!= PARAM_SPHEROID_FLUX)
+        param[index[i]] = 0.0;
+    profit_residuals(profit,field,wfield, 0.0, param, NULL);
+    addcheck(check, profit->lmodpix, profit->objnaxisn[0],profit->objnaxisn[1],
+		profit->ix,profit->iy, 1.0);
+    }
+  if ((check = prefs.check[CHECK_SUBSPHEROIDS]))
+    {
+/*-- Set to 0 flux components that do not belong to spheroids */
+    for (p=0; p<profit->nparam; p++)
+      param[p] = profit->paraminit[p];
+    list = profit->paramlist;
+    index = profit->paramindex;
+    for (i=0; i<PARAM_NPARAM; i++)
+      if (list[i] && flux_flag[i] && i!= PARAM_SPHEROID_FLUX)
+        param[index[i]] = 0.0;
+    profit_residuals(profit,field,wfield, 0.0, param, NULL);
+    addcheck(check, profit->lmodpix, profit->objnaxisn[0],profit->objnaxisn[1],
+		profit->ix,profit->iy, -1.0);
+    }
+  if ((check = prefs.check[CHECK_DISKS]))
+    {
+/*-- Set to 0 flux components that do not belong to disks */
+    for (p=0; p<profit->nparam; p++)
+      param[p] = profit->paraminit[p];
+    list = profit->paramlist;
+    index = profit->paramindex;
+    for (i=0; i<PARAM_NPARAM; i++)
+      if (list[i] && flux_flag[i] && i!= PARAM_DISK_FLUX)
+        param[index[i]] = 0.0;
+    profit_residuals(profit,field,wfield, 0.0, param, NULL);
+    addcheck(check, profit->lmodpix, profit->objnaxisn[0],profit->objnaxisn[1],
+		profit->ix,profit->iy, 1.0);
+    }
+  if ((check = prefs.check[CHECK_SUBDISKS]))
+    {
+/*-- Set to 0 flux components that do not belong to disks */
+    for (p=0; p<profit->nparam; p++)
+      param[p] = profit->paraminit[p];
+    list = profit->paramlist;
+    index = profit->paramindex;
+    for (i=0; i<PARAM_NPARAM; i++)
+      if (list[i] && flux_flag[i] && i!= PARAM_DISK_FLUX)
+        param[index[i]] = 0.0;
+    profit_residuals(profit,field,wfield, 0.0, param, NULL);
+    addcheck(check, profit->lmodpix, profit->objnaxisn[0],profit->objnaxisn[1],
+		profit->ix,profit->iy, -1.0);
+    }
+
+/* Compute compressed residuals */
+  profit_residuals(profit,field,wfield, 10.0, profit->paraminit,profit->resi);
 
 /* Fill measurement parameters */
   if (FLAG(obj2.prof_vector))
     {
     for (p=0; p<nparam; p++)
-      obj2->prof_vector[p]= profit->param[p];
+      obj2->prof_vector[p]= profit->paraminit[p];
     }
   if (FLAG(obj2.prof_errvector))
     {
@@ -410,47 +504,12 @@ the_gal++;
       }
     }
 
-/* Do measurements on the rasterised model (shear and surface brightnesses) */
-  if (FLAG(obj2.prof_mx2) || FLAG(obj2.peak_prof))
-    {
-     float	scalefac, imsizefac, flux, lost, sum, lostfluxfrac;
+  if (FLAG(obj2.prof_mx2))
+    profit_moments(profit, obj2);
 
-/*-- Allocate "high-definition" rasters only to make measurements */
-    hdprofit.modnaxisn[0] = hdprofit.modnaxisn[1] = PROFIT_HIDEFRES;
-/*-- Find best image size factor from fitting results */
-    imsizefac = 2.0*profit_minradius(profit, PROFIT_REFFFAC)/profit->pixstep
-	/ (float)profit->modnaxisn[0];
-    if (imsizefac<0.01)
-      imsizefac = 0.01;
-    else if (imsizefac>100.0)
-      imsizefac = 100.0;
-    scalefac = (float)hdprofit.modnaxisn[0] / (float)profit->modnaxisn[0]
-		/ imsizefac;
-    hdprofit.pixstep = profit->pixstep / scalefac;
-    hdprofit.fluxfac = scalefac*scalefac;
-    QCALLOC(hdprofit.modpix, float,
-	hdprofit.modnaxisn[0]*hdprofit.modnaxisn[1]*sizeof(float));
-    QCALLOC(hdprofit.pmodpix, float,
-	hdprofit.modnaxisn[0]*hdprofit.modnaxisn[1]*sizeof(float));
-
-    lost = sum = 0.0;
-    for (p=0; p<profit->nprof; p++)
-      {
-      sum += (flux = prof_add(profit->prof[p], &hdprofit));
-      lost += flux*profit->prof[p]->lostfluxfrac;
-      }
-    lostfluxfrac = sum > 0.0? lost / sum : 0.0;
-
-    if (FLAG(obj2.prof_mx2))
-      profit_moments(&hdprofit, obj2);
-
-    if (FLAG(obj2.peak_prof))
-      profit_surface(&hdprofit, obj2, lostfluxfrac);
-
-/*-- Free rasters */
-    free(hdprofit.modpix);
-    free(hdprofit.pmodpix);
-    }
+/* Do measurements on the rasterised model (surface brightnesses) */
+  if (FLAG(obj2.peak_prof))
+    profit_surface(profit, obj2); 
 
 /* Spheroid */
   if (FLAG(obj2.prof_spheroid_flux))
@@ -556,7 +615,7 @@ the_gal++;
     if (prefs.pattern_flag)
       {
       profit_residuals(profit,field,wfield, PROFIT_DYNPARAM,
-			profit->param,profit->resi);
+			profit->paraminit,profit->resi);
       pattern = pattern_init(profit, prefs.pattern_type,
 		prefs.prof_disk_patternncomp);
       pattern_fit(pattern, profit);
@@ -657,8 +716,12 @@ the_gal++;
       pprofit.paraminit[pprofit.paramindex[PARAM_Y]] = *profit->paramlist[PARAM_Y];
       }
     pprofit.paraminit[pprofit.paramindex[PARAM_DISK_FLUX]] = profit->flux;
+    for (p=0; p<pprofit.nparam; p++)
+      pprofit.freeparam_flag[p] = 1;
+    pprofit.nfreeparam = pprofit.nparam;
     pprofit.niter = profit_minimize(&pprofit, PROFIT_MAXITER);
-    profit_residuals(&pprofit,field,wfield, 10.0, pprofit.param,pprofit.resi);
+    profit_residuals(&pprofit,field,wfield, 10.0, pprofit.paraminit,
+			pprofit.resi);
     if (FLAG(obj2.prof_class_star))
       {
       dchi2 = 0.5*(pprofit.chi2 - profit->chi2);
@@ -684,13 +747,6 @@ the_gal++;
 
 /* clean up. */
   fft_reset();
-  free(profit->modpix);
-  free(profit->psfpix);
-  free(profit->pmodpix);
-  free(profit->lmodpix);
-  free(profit->objpix);
-  free(profit->objweight);
-  free(profit->resi);
 
   return;
   }
@@ -832,7 +888,7 @@ INPUT	Profile-fitting structure.
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	05/10/2009
+VERSION	07/07/2010
  ***/
 void	profit_psf(profitstruct *profit)
   {
@@ -876,13 +932,13 @@ void	profit_psf(profitstruct *profit)
 
 /* Normalize PSF flux (just in case...) */
   flux *= profit->pixstep*profit->pixstep;
-  if (fabs(flux) > 0.0)
-    {
-    norm = 1.0/flux;
-    pixout = profit->psfpix;
-    for (i=profit->modnaxisn[0]*profit->modnaxisn[1]; i--;)
-      *(pixout++) *= norm;
-    }
+  if (fabs(flux) <= 0.0)
+    error(EXIT_FAILURE, "*Error*: PSF model is empty or negative: ", psf->name);
+
+  norm = 1.0/flux;
+  pixout = profit->psfpix;
+  for (i=profit->modnaxisn[0]*profit->modnaxisn[1]; i--;)
+    *(pixout++) *= norm;  
 
   return;
   }
@@ -896,33 +952,33 @@ INPUT	Pointer to the profit structure involved in the fit,
 OUTPUT	Number of iterations used.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	23/05/2008
+VERSION	02/04/2010
  ***/
 int	profit_minimize(profitstruct *profit, int niter)
   {
-   float		lm_opts[5], info[LM_INFO_SZ];
-   int			m,n;
+   double		lm_opts[5], info[LM_INFO_SZ];
+   double		dcovar[PARAM_NPARAM*PARAM_NPARAM],
+			dparam[PARAM_NPARAM];
 
-/* Allocate work space */
-  n = profit->nparam;
-  m = profit->nresi;
-
-  memset(profit->resi, 0, profit->nresi*sizeof(float));
-  memset(profit->covar, 0, profit->nparam*profit->nparam*sizeof(float));
-  profit_boundtounbound(profit, profit->paraminit);
+  profit->iter = 0;
+  memset(dcovar, 0, profit->nparam*profit->nparam*sizeof(double));
 
 /* Perform fit */
   lm_opts[0] = 1.0e-3;
-  lm_opts[1] = 1.0e-17;
-  lm_opts[2] = 1.0e-17;
-  lm_opts[3] = 1.0e-17;
-  lm_opts[4] = 1.0e-6;
+  lm_opts[1] = 1.0e-12;
+  lm_opts[2] = 1.0e-12;
+  lm_opts[3] = 1.0e-12;
+  lm_opts[4] = 1.0e-3;
 
-  niter = slevmar_dif(profit_evaluate, profit->paraminit, profit->resi,
-	n, m, niter, lm_opts, info, NULL, profit->covar, profit);
+  profit_boundtounbound(profit, profit->paraminit, dparam, PARAM_ALLPARAMS);
 
-  profit_unboundtobound(profit, profit->paraminit);
+  niter = dlevmar_dif(profit_evaluate, dparam, NULL, profit->nfreeparam,
+		profit->nresi, niter, lm_opts, info, NULL, dcovar, profit);
 
+  profit_unboundtobound(profit, dparam, profit->paraminit, PARAM_ALLPARAMS);
+
+/* Convert covariance matrix to bounded space */
+  profit_covarunboundtobound(profit, dcovar, profit->covar);
 
   return niter;
   }
@@ -976,29 +1032,182 @@ void	profit_printout(int n_par, float* par, int m_dat, float* fvec,
 
 
 /****** profit_evaluate ******************************************************
-PROTO	void profit_evaluate(float *par, float *fvec, int m, int n,
-		void *adata)
+PROTO	void profit_evaluate(double *par, double *fvec, int m, int n,
+			void *adata)
 PURPOSE	Provide a function returning residuals to levmar.
 INPUT	Pointer to the vector of parameters,
 	pointer to the vector of residuals (output),
 	number of model parameters,
 	number of data points,
-	pointer to a data structure (unused).
+	pointer to a data structure (we use it for the profit structure here).
 OUTPUT	-.
-NOTES	Input arguments are there only for compatibility purposes (unused)
+NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	18/09/2008
+VERSION	08/07/2010
  ***/
-void	profit_evaluate(float *par, float *fvec, int m, int n,
-			void *adata)
+void	profit_evaluate(double *dpar, double *fvec, int m, int n, void *adata)
   {
-   profitstruct	*profit;
+   profitstruct		*profit;
+   profstruct		**prof;
+   double		*dpar0, *dresi;
+   float		*modpixt, *profpixt, *resi,
+			tparam, val;
+   PIXTYPE		*lmodpixt,*lmodpix2t, *objpix,*weight,
+			wval;
+   int			c,f,i,p,q, fd,pd, jflag,sflag, nprof;
 
   profit = (profitstruct *)adata;
-  profit_unboundtobound(profit, par);
-  profit_residuals(profit, the_field, the_wfield, PROFIT_DYNPARAM, par, fvec);
-  profit_boundtounbound(profit, par);
-  profit_printout(m, par, n, fvec, adata, 0, -1, 0 );
+
+/* Detect "Jacobian-related" calls */
+  jflag = pd = fd = 0;
+  dpar0 = profit->dparam;
+  if (profit->iter)
+    {
+    f = q = 0;
+    for (p=0; p<profit->nparam; p++)
+      {
+      if (dpar[f] - dpar0[f] != 0.0)
+        {
+        pd = p;
+        fd = f;
+        q++;
+        }
+      if (profit->freeparam_flag[p])
+        f++;
+      }
+    if (f>0 && q==1)
+      jflag = 1;
+    }
+
+  if (jflag)
+    {
+    prof = profit->prof;
+    nprof = profit->nprof;
+
+/*-- "Jacobian call" */
+    tparam = profit->param[pd];
+    profit_unboundtobound(profit, &dpar[fd], &profit->param[pd], pd);
+    sflag = 1;
+    switch(profit->paramrevindex[pd])
+      {
+      case PARAM_X:
+      case PARAM_Y:
+        profit_resample(profit, profit->cmodpix, profit->lmodpix2, 1.0);
+        lmodpixt = profit->lmodpix;
+        lmodpix2t = profit->lmodpix2;
+        for (i=profit->nobjpix;i--;)
+          *(lmodpix2t++) -= *(lmodpixt++);
+        break;
+      case PARAM_SPHEROID_FLUX:
+      case PARAM_DISK_FLUX:
+      case PARAM_ARMS_FLUX:
+      case PARAM_BAR_FLUX:
+        if (nprof==1 && tparam != 0.0)
+          {
+          lmodpixt = profit->lmodpix;
+          lmodpix2t = profit->lmodpix2;
+          val = (profit->param[pd] - tparam) / tparam;
+          for (i=profit->nobjpix;i--;)
+            *(lmodpix2t++) = val**(lmodpixt++);
+          }
+        else
+          {
+          for (c=0; c<nprof; c++)
+            if (prof[c]->flux == &profit->param[pd])
+              break;
+          memcpy(profit->modpix, prof[c]->pix, profit->nmodpix*sizeof(float));
+          profit_convolve(profit, profit->modpix);
+          profit_resample(profit, profit->modpix, profit->lmodpix2,
+		profit->param[pd] - tparam);
+          }
+        break;
+      case PARAM_SPHEROID_REFF:
+      case PARAM_SPHEROID_ASPECT:
+      case PARAM_SPHEROID_POSANG:
+      case PARAM_SPHEROID_SERSICN:
+        sflag = 0;			/* We are in the same switch */
+        for (c=0; c<nprof; c++)
+          if (prof[c]->code == PROF_SERSIC
+		|| prof[c]->code == PROF_DEVAUCOULEURS)
+            break; 
+      case PARAM_DISK_SCALE:
+      case PARAM_DISK_ASPECT:
+      case PARAM_DISK_POSANG:
+        if (sflag)
+          for (c=0; c<nprof; c++)
+            if (prof[c]->code == PROF_EXPONENTIAL)
+              break; 
+        sflag = 0;
+      case PARAM_ARMS_QUADFRAC:
+      case PARAM_ARMS_SCALE:
+      case PARAM_ARMS_START:
+      case PARAM_ARMS_POSANG:
+      case PARAM_ARMS_PITCH:
+      case PARAM_ARMS_PITCHVAR:
+      case PARAM_ARMS_WIDTH:
+        if (sflag)
+          for (c=0; c<nprof; c++)
+            if (prof[c]->code == PROF_ARMS)
+              break; 
+        sflag = 0;
+      case PARAM_BAR_ASPECT:
+      case PARAM_BAR_POSANG:
+        if (sflag)
+          for (c=0; c<nprof; c++)
+            if (prof[c]->code == PROF_ARMS)
+              break; 
+        modpixt = profit->modpix;
+        profpixt = prof[c]->pix;
+        val = -*prof[c]->flux;
+        for (i=profit->nmodpix;i--;)
+          *(modpixt++) = val**(profpixt++);
+        memcpy(profit->modpix2, prof[c]->pix, profit->nmodpix*sizeof(float));
+        prof_add(profit, prof[c], 0);
+        memcpy(prof[c]->pix, profit->modpix2, profit->nmodpix*sizeof(float));
+        profit_convolve(profit, profit->modpix);
+        profit_resample(profit, profit->modpix, profit->lmodpix2, 1.0);
+        break;
+      default:
+        error(EXIT_FAILURE, "*Internal Error*: ",
+			"unknown parameter index in profit_jacobian()");
+        break;
+      }
+    objpix = profit->objpix;
+    weight = profit->objweight;
+    lmodpixt = profit->lmodpix;
+    lmodpix2t = profit->lmodpix2;
+    resi = profit->resi;
+    dresi = fvec;
+    if (PROFIT_DYNPARAM > 0.0)
+      for (i=profit->nobjpix;i--; lmodpixt++, lmodpix2t++)
+        {
+        val = *(objpix++);
+        if ((wval=*(weight++))>0.0)
+          *(dresi++) = *(resi++) + *lmodpix2t
+		* wval/(1.0+wval*fabs(*lmodpixt - val)/PROFIT_DYNPARAM);
+        }
+    else
+      for (i=profit->nobjpix;i--; lmodpix2t++)
+        if ((wval=*(weight++))>0.0)
+          *(dresi++) = *(resi++) + *lmodpix2t * wval;
+    }
+  else
+    {
+/*-- "Regular call" */
+    for (p=0; p<profit->nparam; p++)
+      dpar0[p] = dpar[p];
+    profit_unboundtobound(profit, dpar, profit->param, PARAM_ALLPARAMS);
+
+    profit_residuals(profit, the_field, the_wfield, PROFIT_DYNPARAM,
+	profit->param, profit->resi);
+
+    for (p=0; p<profit->nresi; p++)
+      fvec[p] = profit->resi[p];
+    }
+
+//  profit_printout(m, par, n, fvec, adata, 0, -1, 0 );
+  profit->iter++;
+
   return;
   }
 
@@ -1017,15 +1226,15 @@ INPUT	Profile-fitting structure,
 OUTPUT	Vector of residuals.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	24/03/2009
+VERSION	08/07/2010
  ***/
 float	*profit_residuals(profitstruct *profit, picstruct *field,
 		picstruct *wfield, float dynparam, float *param, float *resi)
   {
-   int		p;
+   int		p, nmodpix;
 
-  memset(profit->modpix, 0,
-	profit->modnaxisn[0]*profit->modnaxisn[1]*sizeof(float));
+  nmodpix = profit->modnaxisn[0]*profit->modnaxisn[1]*sizeof(float);
+  memset(profit->modpix, 0, nmodpix);
   for (p=0; p<profit->nparam; p++)
     profit->param[p] = param[p];
 /* Simple PSF shortcut */
@@ -1039,11 +1248,14 @@ float	*profit_residuals(profitstruct *profit, picstruct *field,
     {
     profit->flux = 0.0;
     for (p=0; p<profit->nprof; p++)
-      profit->flux += prof_add(profit->prof[p], profit);
-    profit_convolve(profit, profit->modpix);
-    profit_resample(profit, profit->modpix, profit->lmodpix, 1.0);
+      profit->flux += prof_add(profit, profit->prof[p], 0);
+    memcpy(profit->cmodpix, profit->modpix, profit->nmodpix*sizeof(float));
+    profit_convolve(profit, profit->cmodpix);
+    profit_resample(profit, profit->cmodpix, profit->lmodpix, 1.0);
     }
-  profit_compresi(profit, dynparam, resi);
+
+  if (resi)
+    profit_compresi(profit, dynparam, resi);
 
   return resi;
   }
@@ -1085,7 +1297,7 @@ float	*profit_compresi(profitstruct *profit, float dynparam, float *resi)
       val = *(objpix++);
       if ((wval=*(objweight++))>0.0)
         {
-        val2 = (val - *lmodpix)*wval*invsig;
+        val2 = (*lmodpix - val)*wval*invsig;
         val2 = val2>0.0? logf(1.0+val2) : -logf(1.0-val2);
         *(resit++) = val2*dynparam;
         error += val2*val2;
@@ -1100,7 +1312,7 @@ float	*profit_compresi(profitstruct *profit, float dynparam, float *resi)
       val = *(objpix++);
       if ((wval=*(objweight++))>0.0)
         {
-        val2 = (val - *lmodpix)*wval;
+        val2 = (*lmodpix - val)*wval;
         *(resit++) = val2;
         error += val2*val2;
         }
@@ -1113,82 +1325,206 @@ float	*profit_compresi(profitstruct *profit, float dynparam, float *resi)
 
 
 /****** profit_resample ******************************************************
-PROTO	void	prof_resample(profitstruct *profit, float *inpix,
-		PIXTYPE *outpix)
+PROTO	int	prof_resample(profitstruct *profit, float *inpix,
+		PIXTYPE *outpix, float factor)
 PURPOSE	Resample the current full resolution model to image resolution.
-INPUT	Profile-fitting structure.
-OUTPUT	-.
+INPUT	Profile-fitting structure,
+	pointer to input raster,
+	pointer to output raster,
+	multiplicating factor.
+OUTPUT	RETURN_ERROR if the rasters don't overlap, RETURN_OK otherwise.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	09/10/2009
+VERSION	01/05/2010
  ***/
-void	profit_resample(profitstruct *profit, float *inpix, PIXTYPE *outpix,
+int	profit_resample(profitstruct *profit, float *inpix, PIXTYPE *outpix,
 	float factor)
   {
-   double	flux;
-   float	posin[2], posout[2], dnaxisn[2],
-		*dx,*dy,
-		xcout,ycout, xcin,ycin, invpixstep, pix, off,step;
-   int		d,i, ix,iy,ns;
+   PIXTYPE	*pixout,*pixout0;
+   float	*pixin,*pixin0, *mask,*maskt, *pixinout, *dpixin,*dpixin0,
+		*dpixout,*dpixout0, *dx,*dy,
+		xcin,xcout,ycin,ycout, xsin,ysin, xin,yin, x,y, dxm,dym, val,
+		invpixstep;
+   int		*start,*startt, *nmask,*nmaskt,
+		i,j,k,n,t, 
+		ixsout,iysout, ixout,iyout, dixout,diyout, nxout,nyout,
+		iysina, nyin, hmw,hmh, ix,iy, ixin,iyin;
 
-  xcout = (float)(profit->objnaxisn[0]/2) + 1.0;	/* FITS convention */
-  if ((dx=(profit->paramlist[PARAM_X])))
-    xcout += *dx;
-  ycout = (float)(profit->objnaxisn[1]/2) + 1.0;	/* FITS convention */
-  if ((dy=(profit->paramlist[PARAM_Y])))
-    ycout += *dy;
-  xcin = (profit->modnaxisn[0]/2) + 1.0;		/* FITS convention */
-  ycin = (profit->modnaxisn[1]/2) + 1.0;		/* FITS convention */
   invpixstep = profit->subsamp/profit->pixstep;
 
-/* Initialize multi-dimensional counters */
-  for (d=0; d<2; d++)
+  xcin = (profit->modnaxisn[0]/2);
+  xcout = (float)(profit->objnaxisn[0]/2);
+  if ((dx=(profit->paramlist[PARAM_X])))
+    xcout += *dx;
+
+  xsin = xcin - xcout*invpixstep;			/* Input start x-coord*/
+  if ((int)xsin >= profit->modnaxisn[0])
+    return RETURN_ERROR;
+  ixsout = 0;				/* Int. part of output start x-coord */
+  if (xsin<0.0)
     {
-    posout[d] = 1.0;					/* FITS convention */
-    dnaxisn[d] = profit->objnaxisn[d]+0.5;
+    dixout = (int)(1.0-xsin/invpixstep);
+/*-- Simply leave here if the images do not overlap in x */
+    if (dixout >= profit->objnaxisn[0])
+      return RETURN_ERROR;
+    ixsout += dixout;
+    xsin += dixout*invpixstep;
+    }
+  nxout = (int)((profit->modnaxisn[0]-xsin)/invpixstep);/* nb of interpolated
+							input pixels along x */
+  if (nxout>(ixout=profit->objnaxisn[0]-ixsout))
+    nxout = ixout;
+  if (!nxout)
+    return RETURN_ERROR;
+
+  ycin = (profit->modnaxisn[1]/2);
+  ycout = (float)(profit->objnaxisn[1]/2);
+  if ((dy=(profit->paramlist[PARAM_Y])))
+    ycout += *dy;
+
+  ysin = ycin - ycout*invpixstep;		/* Input start y-coord*/
+  if ((int)ysin >= profit->modnaxisn[1])
+    return RETURN_ERROR;
+  iysout = 0;				/* Int. part of output start y-coord */
+  if (ysin<0.0)
+    {
+    diyout = (int)(1.0-ysin/invpixstep);
+/*-- Simply leave here if the images do not overlap in y */
+    if (diyout >= profit->objnaxisn[1])
+      return RETURN_ERROR;
+    iysout += diyout;
+    ysin += diyout*invpixstep;
+    }
+  nyout = (int)((profit->modnaxisn[1]-ysin)/invpixstep);/* nb of interpolated
+							input pixels along y */
+  if (nyout>(iyout=profit->objnaxisn[1]-iysout))
+    nyout = iyout;
+  if (!nyout)
+    return RETURN_ERROR;
+
+/* Set the yrange for the x-resampling with some margin for interpolation */
+  iysina = (int)ysin;	/* Int. part of Input start y-coord with margin */
+  hmh = INTERPH/2 - 1;	/* Interpolant start */
+  if (iysina<0 || ((iysina -= hmh)< 0))
+    iysina = 0;
+  nyin = (int)(ysin+nyout*invpixstep)+INTERPH-hmh;/* Interpolated Input y size*/
+  if (nyin>profit->modnaxisn[1])						/* with margin */
+    nyin = profit->modnaxisn[1];
+/* Express everything relative to the effective Input start (with margin) */
+  nyin -= iysina;
+  ysin -= (float)iysina;
+
+/* Allocate interpolant stuff for the x direction */
+  QMALLOC(mask, float, nxout*INTERPW);	/* Interpolation masks */
+  QMALLOC(nmask, int, nxout);		/* Interpolation mask sizes */
+  QMALLOC(start, int, nxout);		/* Int. part of Input conv starts */
+/* Compute the local interpolant and data starting points in x */
+  hmw = INTERPW/2 - 1;
+  xin = xsin;
+  maskt = mask;
+  nmaskt = nmask;
+  startt = start;
+  for (j=nxout; j--; xin+=invpixstep)
+    {
+    ix = (ixin=(int)xin) - hmw;
+    dxm = ixin - xin - hmw;	/* starting point in the interpolation func */
+    if (ix < 0)
+      {
+      n = INTERPW+ix;
+      dxm -= (float)ix;
+      ix = 0;
+      }
+    else
+      n = INTERPW;
+    if (n>(t=profit->modnaxisn[0]-ix))
+      n=t;
+    *(startt++) = ix;
+    *(nmaskt++) = n;
+    for (x=dxm, i=n; i--; x+=1.0)
+      *(maskt++) = INTERPF(x);
     }
 
-/* Remap each pixel (and rebin if necessary) */
-  flux = 0.0;
-  ns=(int)profit->subsamp;
-  if (ns>1)
+  QCALLOC(pixinout, float, nxout*nyin);	/* Intermediary frame-buffer */
+
+/* Make the interpolation in x (this includes transposition) */
+  pixin0 = inpix + iysina*profit->modnaxisn[0];
+  dpixout0 = pixinout;
+  for (k=nyin; k--; pixin0+=profit->modnaxisn[0], dpixout0++)
     {
-    step = 1.0/profit->subsamp;
-    off = 0.5*(step - 1.0);
-    xcin += off;
-    ycin += off;
-    for (i=profit->objnaxisn[0]*profit->objnaxisn[1]; i--;)
+    maskt = mask;
+    nmaskt = nmask;
+    startt = start;
+    dpixout = dpixout0;
+    for (j=nxout; j--; dpixout+=nyin)
       {
-      posin[0] = (posout[0] - xcout)*invpixstep + xcin;
-      posin[1] = (posout[1] - ycout)*invpixstep + ycin;
-      pix = 0.0;
-      for (iy=ns; iy--; posin[1] += step)
-        for (ix=ns; ix--; posin[0] += step)
-          pix += (PIXTYPE)(factor*interpolate_pix(posin, inpix,
-		profit->modnaxisn, INTERP_LANCZOS3));
-      flux += (*(outpix++) = pix);
-      for (d=0; d<2; d++)
-        if ((posout[d]+=1.0) < dnaxisn[d])
-          break;
-        else
-          posout[d] = 1.0;
+      pixin = pixin0+*(startt++);
+      val = 0.0; 
+      for (i=*(nmaskt++); i--;)
+        val += *(maskt++)**(pixin++);
+      *dpixout = val;
       }
     }
-  else
-    for (i=profit->objnaxisn[0]*profit->objnaxisn[1]; i--;)
-      {
-      posin[0] = (posout[0] - xcout)*invpixstep + xcin;
-      posin[1] = (posout[1] - ycout)*invpixstep + ycin;
-      flux += ((*(outpix++) = (PIXTYPE)(factor*interpolate_pix(posin, inpix,
-		profit->modnaxisn, INTERP_LANCZOS3))));
-      for (d=0; d<2; d++)
-        if ((posout[d]+=1.0) < dnaxisn[d])
-          break;
-        else
-          posout[d] = 1.0;
-      }
 
-  return;
+/* Reallocate interpolant stuff for the y direction */
+  QREALLOC(mask, float, nyout*INTERPH);	/* Interpolation masks */
+  QREALLOC(nmask, int, nyout);			/* Interpolation mask sizes */
+  QREALLOC(start, int, nyout);		/* Int. part of Input conv starts */
+
+/* Compute the local interpolant and data starting points in y */
+  hmh = INTERPH/2 - 1;
+  yin = ysin;
+  maskt = mask;
+  nmaskt = nmask;
+  startt = start;
+  for (j=nyout; j--; yin+=invpixstep)
+    {
+    iy = (iyin=(int)yin) - hmh;
+    dym = iyin - yin - hmh;	/* starting point in the interpolation func */
+    if (iy < 0)
+      {
+      n = INTERPH+iy;
+      dym -= (float)iy;
+      iy = 0;
+      }
+    else
+      n = INTERPH;
+    if (n>(t=nyin-iy))
+      n=t;
+    *(startt++) = iy;
+    *(nmaskt++) = n;
+    for (y=dym, i=n; i--; y+=1.0)
+      *(maskt++) = INTERPF(y);
+    }
+
+/* Initialize destination buffer to zero */
+  memset(outpix, 0, (size_t)profit->nobjpix*sizeof(PIXTYPE));
+
+/* Make the interpolation in y and transpose once again */
+  dpixin0 = pixinout;
+  pixout0 = outpix+ixsout+iysout*profit->objnaxisn[0];
+  for (k=nxout; k--; dpixin0+=nyin, pixout0++)
+    {
+    maskt = mask;
+    nmaskt = nmask;
+    startt = start;
+    pixout = pixout0;
+    for (j=nyout; j--; pixout+=profit->objnaxisn[0])
+      {
+      dpixin = dpixin0+*(startt++);
+      val = 0.0; 
+      for (i=*(nmaskt++); i--;)
+        val += *(maskt++)**(dpixin++);
+       *pixout = (PIXTYPE)(factor*val);
+      }
+    }
+
+/* Free memory */
+  free(pixinout);
+  free(mask);
+  free(nmask);
+  free(start);
+
+  return RETURN_OK;
   }
 
 
@@ -1691,47 +2027,60 @@ INPUT	Profile-fitting structure,
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	17/09/2009
+VERSION	07/07/2010
  ***/
 void	 profit_moments(profitstruct *profit, obj2struct *obj2)
   {
-   double	mx,my, sum, mx2,my2,mxy, den, temp,temp2,pmx2,theta;
-   float	*pix,
-		hw,hh, x,y, xstart, val, r2max;
-   int		ix,iy;
+   profstruct	*prof;
+   double	m0, mx2,my2,mxy, den, temp,temp2,pmx2,theta;
+   int		p;
 
-  hw = (float)(profit->modnaxisn[0]/2);
-  hh = (float)(profit->modnaxisn[1]/2);
-  r2max = hw<hh? hw*hw : hh*hh;
-  xstart = -hw;
-  y = -hh;
-  pix = profit->modpix;
-  mx2 = my2 = mxy = mx = my = sum = 0.0;
-  for (iy=profit->modnaxisn[1]; iy--; y+=1.0)
+/*  hw = (float)(profit->modnaxisn[0]/2);*/
+/*  hh = (float)(profit->modnaxisn[1]/2);*/
+/*  r2max = hw<hh? hw*hw : hh*hh;*/
+/*  xstart = -hw;*/
+/*  y = -hh;*/
+/*  pix = profit->modpix;*/
+/*  mx2 = my2 = mxy = mx = my = sum = 0.0;*/
+/*  for (iy=profit->modnaxisn[1]; iy--; y+=1.0)*/
+/*    {*/
+/*    x = xstart;*/
+/*    for (ix=profit->modnaxisn[0]; ix--; x+=1.0)*/
+/*      if (y*y+x*x <= r2max)*/
+/*        {*/
+/*        val = *(pix++);*/
+/*        sum += val;*/
+/*        mx  += val*x;*/
+/*        my  += val*y;*/
+/*        mx2 += val*x*x;*/
+/*        mxy += val*x*y;*/
+/*        my2 += val*y*y;*/
+/*        }*/
+/*      else*/
+/*        pix++;*/
+/*    }*/
+
+/*  if (sum <= 1.0/BIG)*/
+/*    sum = 1.0;*/
+/*  mx /= sum;*/
+/*  my /= sum;*/
+/*  obj2->prof_mx2 = mx2 = mx2/sum - mx*mx;*/
+/*  obj2->prof_my2 = my2 = my2/sum - my*my;*/
+/*  obj2->prof_mxy = mxy = mxy/sum - mx*my;*/
+
+  m0 = mx2 = my2 = mxy = 0.0;
+  for (p=0; p<profit->nprof; p++)
     {
-    x = xstart;
-    for (ix=profit->modnaxisn[0]; ix--; x+=1.0)
-      if (y*y+x*x <= r2max)
-        {
-        val = *(pix++);
-        sum += val;
-        mx  += val*x;
-        my  += val*y;
-        mx2 += val*x*x;
-        mxy += val*x*y;
-        my2 += val*y*y;
-        }
-      else
-        pix++;
+    prof = profit->prof[p];
+    prof_moments(profit, prof);
+    m0 += *prof->flux;
+    mx2 += prof->mx2**prof->flux;
+    my2 += prof->my2**prof->flux;
+    mxy += prof->mxy**prof->flux;
     }
-
-  if (sum <= 1.0/BIG)
-    sum = 1.0;
-  mx /= sum;
-  my /= sum;
-  obj2->prof_mx2 = mx2 = mx2/sum - mx*mx;
-  obj2->prof_my2 = my2 = my2/sum - my*my;
-  obj2->prof_mxy = mxy = mxy/sum - mx*my;
+  obj2->prof_mx2 = mx2 / m0;
+  obj2->prof_my2 = my2 / m0;
+  obj2->prof_mxy = mxy / m0;
 
 /* Handle fully correlated profiles (which cause a singularity...) */
   if ((temp2=mx2*my2-mxy*mxy)<0.00694)
@@ -1779,39 +2128,112 @@ void	 profit_moments(profitstruct *profit, obj2struct *obj2)
     obj2->prof_theta = theta*180.0/PI;
     }
 
-
   return;
   }
 
 
 /****** profit_surface ****************************************************
-PROTO	void profit_surface(profitstruct *profit, obj2struct *obj2,
-			double lostfluxfrac)
+PROTO	void profit_surface(profitstruct *profit, obj2struct *obj2)
 PURPOSE	Compute surface brightnesses from the unconvolved object model.
 INPUT	Pointer to the profile-fitting structure,
-	Pointer to obj2 structure,
-	Fraction of total flux lost in model.
+	Pointer to obj2 structure.
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	21/09/2009
+VERSION	08/07/2010
  ***/
-void	 profit_surface(profitstruct *profit, obj2struct *obj2,
-			double lostfluxfrac)
+void	 profit_surface(profitstruct *profit, obj2struct *obj2)
   {
+   profitstruct	hdprofit;
    double	dsum,dhsum,dsumoff, dhval, frac, seff;
-   float	*spix, *spixt;
-   int		i, npix, neff;
+   float	*spix, *spixt,
+		val,vmax,
+		scalefac, imsizefac, flux, lost, sum, lostfluxfrac;
+   int		i,p, imax, npix, neff;
 
-  npix = profit->modnaxisn[0]*profit->modnaxisn[1];
-/* Sort model pixel values */
-  spix = NULL;				/* to avoid gcc -Wall warnings */
-  QMEMCPY(profit->modpix, spix, float, npix);
-  hmedian(spix, npix);
-  obj2->peak_prof = spix[npix-1];
+/* Allocate "high-definition" raster only to make measurements */
+  hdprofit.oversamp = PROFIT_OVERSAMP;
+  hdprofit.modnaxisn[0] = hdprofit.modnaxisn[1] = PROFIT_HIDEFRES;
+  npix = hdprofit.nmodpix = hdprofit.modnaxisn[0]*hdprofit.modnaxisn[1];
+/* Find best image size factor from fitting results */
+  imsizefac = 2.0*profit_minradius(profit, PROFIT_REFFFAC)/profit->pixstep
+	/ (float)profit->modnaxisn[0];
+  if (imsizefac<0.01)
+    imsizefac = 0.01;
+  else if (imsizefac>100.0)
+    imsizefac = 100.0;
+  scalefac = (float)hdprofit.modnaxisn[0] / (float)profit->modnaxisn[0]
+	/ imsizefac;
+  hdprofit.pixstep = profit->pixstep / scalefac;
+  hdprofit.fluxfac = scalefac*scalefac;
+  QCALLOC(hdprofit.modpix, float,npix*sizeof(float));
+
+  for (p=0; p<profit->nparam; p++)
+    profit->param[p] = profit->paraminit[p];
+  lost = sum = 0.0;
+
+  for (p=0; p<profit->nprof; p++)
+    {
+    sum += (flux = prof_add(&hdprofit, profit->prof[p],0));
+    lost += flux*profit->prof[p]->lostfluxfrac;
+    }
+  lostfluxfrac = sum > 0.0? lost / sum : 0.0;
+
+/*
+char filename[256];
+sprintf(filename, "raster_%02d.fits", the_gal);
+check=initcheck(filename, CHECK_OTHER, 0);
+check->width = hdprofit.modnaxisn[0];
+check->height = hdprofit.modnaxisn[1];
+reinitcheck(the_field, check);
+memcpy(check->pix,hdprofit.modpix,check->npix*sizeof(float));
+
+
+int r,t;
+double ratio,ratio0,ang,ang0, x,x0,y,y0;
+list = profit->paramlist;
+index = profit->paramindex;
+for (p=0; p<nparam; p++)
+param[p] = profit->paraminit[p];
+
+ratio0 = profit->paraminit[index[PARAM_SPHEROID_ASPECT]];
+ang0 = profit->paraminit[index[PARAM_SPHEROID_POSANG]];
+x0 = profit->paraminit[index[PARAM_X]];
+y0 = profit->paraminit[index[PARAM_Y]];
+for (r=0;r<check->height;r++)
+for (t=0; t<check->width;t++)
+{
+//x = (r-10.0)/100.0 + x0;
+//y = (t-10.0)/100.0 + y0;
+ratio = ratio0*exp((r-10.0)/400.0);
+ang = ang0+(t-10.0)/3.0;
+
+for (i=0; i<PARAM_NPARAM; i++)
+{
+//if (list[i] && i==PARAM_X)
+//param[index[i]] = x;
+//if (list[i] && i==PARAM_Y)
+//param[index[i]] = y;
+if (list[i] && i==PARAM_SPHEROID_ASPECT)
+param[index[i]] = ratio;
+if (list[i] && i==PARAM_SPHEROID_POSANG)
+param[index[i]] = ang;
+//if (list[i] && i==PARAM_SPHEROID_REFF)
+//param[index[i]] = profit->paraminit[index[i]]*sqrt(ratio0/ratio);
+}
+profit_residuals(profit,field,wfield, PROFIT_DYNPARAM, param,profit->resi);
+*((float *)check->pix + t + r*check->width) = profit->chi2;
+}
+reendcheck(the_field, check);
+endcheck(check);
+*/
 
   if (FLAG(obj2.fluxeff_prof))
     {
+/*-- Sort model pixel values */
+    spix = NULL;			/* to avoid gcc -Wall warnings */
+    QMEMCPY(hdprofit.modpix, spix, float, npix);
+    hmedian(spix, npix);
 /*-- Build a cumulative distribution */
     dsum = 0.0;
     spixt = spix;
@@ -1848,9 +2270,34 @@ void	 profit_surface(profitstruct *profit, obj2struct *obj2,
         dsum += (double)*(spixt++);
       obj2->fluxmean_prof = seff > 0.0? dsum / seff : 0.0;
       }
+    free(spix);
     }
 
-  free(spix);
+/* Compute model peak (overwrites oversampled model!!) */
+  if (FLAG(obj2.peak_prof))
+    {
+/*-- Find position of maximum pixel in current hi-def raster */
+    imax = 0;
+    vmax = -BIG;
+    spixt = hdprofit.modpix;
+    for (i=npix; i--;)
+      if ((val=*(spixt++))>vmax)
+        {
+        vmax = val;
+        imax = i;
+        }
+    imax = npix-1 - imax;
+/*-- Recompute hi-def model raster without oversampling */
+/*-- and with the same flux correction factor */
+    hdprofit.oversamp = 0;
+    memset(hdprofit.modpix,0, npix*sizeof(float));
+    for (p=0; p<profit->nprof; p++)
+      prof_add(&hdprofit, profit->prof[p], 1);
+    obj2->peak_prof = hdprofit.modpix[imax];
+    }
+
+/* Free hi-def model raster */
+  free(hdprofit.modpix);
 
   return;
   }
@@ -1866,7 +2313,7 @@ INPUT	Pointer to the profit structure,
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	29/03/2007
+VERSION	29/03/2010
  ***/
 void	profit_addparam(profitstruct *profit, paramenum paramindex,
 		float **param)
@@ -1879,7 +2326,8 @@ void	profit_addparam(profitstruct *profit, paramenum paramindex,
 /*-- No */
     {
     *param = profit->paramlist[paramindex] = &profit->param[profit->nparam];
-    profit->paramindex[paramindex] = profit->nparam++;
+    profit->paramindex[paramindex] = profit->nparam;
+    profit->paramrevindex[profit->nparam++] = paramindex;
     }
 
   return;
@@ -1894,7 +2342,7 @@ INPUT	Pointer to the profit structure,
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	15/12/2009
+VERSION	02/07/2010
  ***/
 void	profit_resetparam(profitstruct *profit, paramenum paramtype)
   {
@@ -1915,7 +2363,7 @@ void	profit_resetparam(profitstruct *profit, paramenum paramtype)
       break;
     case PARAM_X:
       param = obj->mx - (int)(obj->mx+0.49999);
-      range = fabs(obj2->hl_radius*4.0);
+      range = obj2->hl_radius*4.0;
       if (range>profit->objnaxisn[0]*2.0)
         range = profit->objnaxisn[0]*2.0;
       parammin = -range;
@@ -1923,7 +2371,7 @@ void	profit_resetparam(profitstruct *profit, paramenum paramtype)
       break;
     case PARAM_Y:
       param = obj->my - (int)(obj->my+0.49999);
-      range = fabs(obj2->hl_radius*4);
+      range = obj2->hl_radius*4.0;
       if (range>profit->objnaxisn[1]*2)
         range = profit->objnaxisn[1]*2;
       parammin = -range;
@@ -1935,20 +2383,19 @@ void	profit_resetparam(profitstruct *profit, paramenum paramtype)
       parammax = 2*obj2->flux_auto;
       break;
     case PARAM_SPHEROID_REFF:
-      param = fabs(obj2->hl_radius);
+      param = obj2->hl_radius;
       parammin = 0.1;
       parammax = param * 4.0;
       break;
     case PARAM_SPHEROID_ASPECT:
       param = FLAG(obj2.prof_disk_flux)? 1.0 : obj->b/obj->a;
       parammin = FLAG(obj2.prof_disk_flux)? 0.5 : 0.01;
-      parammax = 1.0;
-parammax = FLAG(obj2.prof_disk_flux)? 2.0 : 100.0;
+      parammax = FLAG(obj2.prof_disk_flux)? 2.0 : 100.0;
       break;
     case PARAM_SPHEROID_POSANG:
       param = obj->theta;
-      parammin = 0.0;
-      parammax =  0.0;
+      parammin = 90.0;
+      parammax =  90.0;
       break;
     case PARAM_SPHEROID_SERSICN:
       param = 4.0;
@@ -1961,7 +2408,7 @@ parammax = FLAG(obj2.prof_disk_flux)? 2.0 : 100.0;
       parammax = 2*obj2->flux_auto;
       break;
     case PARAM_DISK_SCALE:	/* From scalelength to Re */
-      param = fabs(obj2->hl_radius)/1.67835*sqrt(obj->a/obj->b);
+      param = obj2->hl_radius/1.67835*sqrt(obj->a/obj->b);
       parammin = param/4.0;
       parammax = param * 4.0;
       break;
@@ -1972,8 +2419,8 @@ parammax = FLAG(obj2.prof_disk_flux)? 2.0 : 100.0;
       break;
     case PARAM_DISK_POSANG:
       param = obj->theta;
-      parammin = 0.0;
-      parammax =  0.0;
+      parammin = 90.0;
+      parammax =  90.0;
       break;
     case PARAM_ARMS_FLUX:
       param = obj2->flux_auto/2.0;
@@ -2137,91 +2584,166 @@ int	profit_setparam(profitstruct *profit, paramenum paramtype,
 
   
 /****** profit_boundtounbound *************************************************
-PROTO	void profit_boundtounbound(profitstruct *profit, float *param)
+PROTO	void profit_boundtounbound(profitstruct *profit,
+				float *param, double *dparam, int index)
 PURPOSE	Convert parameters from bounded to unbounded space.
-INPUT	Pointer to the profit structure.
+INPUT	Pointer to the profit structure,
+	input array of single precision parameters,
+	output (incomplete) array of double precision parameters,
+	parameter selection index (<0 = all parameters)
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	07/09/2009
+VERSION	29/03/2010
  ***/
-void	profit_boundtounbound(profitstruct *profit, float *param)
+void	profit_boundtounbound(profitstruct *profit,
+				float *param, double *dparam, int index)
   {
    double	num,den;
-   int		p;
+   float	tparam;
+   int		f,p, pstart,np;
 
-  for (p=0; p<profit->nparam; p++)
-    if (profit->parammin[p]!=profit->parammax[p])
+  if (index<0)
+    {
+    pstart = 0;
+    np = profit->nparam;
+    }
+  else
+    {
+    pstart = index;
+    np = pstart+1;
+    }
+
+  f = 0;
+  for (p=pstart ; p<np; p++)
+    if (profit->freeparam_flag[p])
       {
-      num = param[p] - profit->parammin[p];
-      den = profit->parammax[p] - param[p];
-      param[p] = num>1e-50? (den>1e-50? log(num/den): 50.0) : -50.0;
+      tparam = param[p-pstart];
+      if (profit->parammin[p]!=profit->parammax[p])
+        {
+        num = tparam - profit->parammin[p];
+        den = profit->parammax[p] - tparam;
+        dparam[f] = num>1e-50? (den>1e-50? log(num/den): 50.0) : -50.0;
+        }
+      else if (profit->parammax[p] > 0.0 || profit->parammax[p] < 0.0)
+        dparam[f] = param[p-pstart] / profit->parammax[p];
+
+      f++;
       }
 
   return;
-
   }
 
 
 /****** profit_unboundtobound *************************************************
-PROTO	void profit_unboundtobound(profitstruct *profit, float *param)
+PROTO	void profit_unboundtobound(profitstruct *profit,
+				double *dparam, float *param, int index)
 PURPOSE	Convert parameters from unbounded to bounded space.
-INPUT	Pointer to the profit structure.
+INPUT	Pointer to the profit structure,
+	input (incomplete) array of double precision parameters,
+	output array of single precision parameters.
+	parameter selection index (<0 = all parameters)
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	18/05/2009
+VERSION	08/07/2010
  ***/
-void	profit_unboundtobound(profitstruct *profit, float *param)
+void	profit_unboundtobound(profitstruct *profit,
+				double *dparam, float *param, int index)
   {
-   int		p;
+   int		f,p, pstart,np;
 
-  for (p=0; p<profit->nparam; p++)
-    if (profit->parammin[p]!=profit->parammax[p])
-      param[p] = (profit->parammax[p] - profit->parammin[p])
-		/ (1.0 + exp(-(param[p]>50.0? 50.0 : param[p])))
-		+ profit->parammin[p];
+  if (index<0)
+    {
+    pstart = 0;
+    np = profit->nparam;
+    }
+  else
+    {
+    pstart = index;
+    np = pstart+1;
+    }
+
+  f = 0;
+  for (p=pstart; p<np; p++)
+    {
+    if (profit->freeparam_flag[p])
+      {
+      param[p-pstart] = (profit->parammin[p]!=profit->parammax[p])?
+		((profit->parammax[p] - profit->parammin[p])
+		/ (1.0 + exp(-(dparam[f]>50.0? 50.0
+				: (dparam[f]<-50.0? -50.0: dparam[f]))))
+		+ profit->parammin[p])
+		:  dparam[f]*profit->parammax[p];
+      f++;
+      }
+    else
+      param[p-pstart] = profit->paraminit[p];
+    }
 
   return;
   }
 
 
 /****** profit_covarunboundtobound ********************************************
-PROTO	void profit_covarunboundtobound(profitstruct *profit)
+PROTO	void profit_covarunboundtobound(profitstruct *profit,
+				double *dcovar, float *covar)
 PURPOSE	Convert covariance matrix from unbounded to bounded space.
-INPUT	Pointer to the profit structure.
+INPUT	Pointer to the profit structure,
+	input (incomplete) matrix of double precision covariances,
+	output matrix of single precision covariances.
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	02/10/2009
+VERSION	08/07/2010
  ***/
-void	profit_covarunboundtobound(profitstruct *profit)
+void	profit_covarunboundtobound(profitstruct *profit,
+				double *dcovar, float *covar)
   {
    double	*dxdy,
 		dxmin,dxmax;
-   float	*covar, *x,*xmin,*xmax;
-   int		p,p1,p2, nparam;
+   float	*x,*xmin,*xmax;
+   int		*fflag,
+		f,f1,f2, nfree, p,p1,p2, nparam;
 
   nparam = profit->nparam;
-  QMALLOC16(dxdy, double, nparam);
+  fflag = profit->freeparam_flag;
+  nfree = profit->nfreeparam;
+  QMALLOC16(dxdy, double, nfree);
   x = profit->paraminit;
   xmin = profit->parammin;
   xmax = profit->parammax;
+  f = 0;
   for (p=0; p<profit->nparam; p++)
-    if (xmin[p]!=xmax[p])
+    if (fflag[p])
       {
-      dxmin = x[p] - xmin[p];
-      dxmax= xmax[p] - x[p];
-      dxdy[p] = (fabs(dxmin) < 1.0/BIG && fabs(dxmax) < 1.0/BIG) ?
+      if (xmin[p]!=xmax[p])
+        {
+        dxmin = x[p] - xmin[p];
+        dxmax= xmax[p] - x[p];
+        dxdy[f++] = (fabs(dxmin) < 1.0/BIG && fabs(dxmax) < 1.0/BIG) ?
 		0.0 : dxmin*dxmax/(dxmin+dxmax);
+        }
+      else
+        dxdy[f++] = xmax[p];
       }
-    else
-      dxdy[p] = 1.0;
 
-  covar = profit->covar;
+  memset(profit->covar, 0, nparam*nparam*sizeof(float));
+  f2 = 0;
   for (p2=0; p2<nparam; p2++)
-    for (p1=0; p1<nparam; p1++)
-      *(covar++) *= (float)(dxdy[p1]*dxdy[p2]);
+    {
+    if (fflag[p2])
+      {
+      f1 = 0;
+      for (p1=0; p1<nparam; p1++)
+        if (fflag[p1])
+          {
+          covar[p2*nparam+p1] = (float)(dcovar[f2*nfree+f1]*dxdy[f1]*dxdy[f2]);
+          f1++;
+          }
+      f2++;
+      }
+    }
 
   free(dxdy);
 
@@ -2237,7 +2759,7 @@ INPUT	Pointer to the profile-fitting structure,
 OUTPUT	A pointer to an allocated prof structure.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	22/04/2008
+VERSION	07/04/2010
  ***/
 profstruct	*prof_init(profitstruct *profit, proftypenum profcode)
   {
@@ -2258,8 +2780,12 @@ profstruct	*prof_init(profitstruct *profit, proftypenum profcode)
       prof->typscale = 1.0;
       break;
     case PROF_SERSIC:
-      prof->naxis = 3;
-      prof->pix = NULL;
+      prof->naxis = 2;
+      prof->naxisn[0] = PROFIT_MAXMODSIZE;
+      prof->naxisn[1] = PROFIT_MAXMODSIZE;
+      prof->naxisn[2] = 1;
+      prof->npix = prof->naxisn[0]*prof->naxisn[1]*prof->naxisn[2];
+      QMALLOC(prof->pix, float, prof->npix);
       prof->typscale = 1.0;
       profit_addparam(profit, PARAM_X, &prof->x[0]);
       profit_addparam(profit, PARAM_Y, &prof->x[1]);
@@ -2271,7 +2797,11 @@ profstruct	*prof_init(profitstruct *profit, proftypenum profcode)
       break;
     case PROF_DEVAUCOULEURS:
       prof->naxis = 2;
-      prof->pix = NULL;
+      prof->naxisn[0] = PROFIT_MAXMODSIZE;
+      prof->naxisn[1] = PROFIT_MAXMODSIZE;
+      prof->naxisn[2] = 1;
+      prof->npix = prof->naxisn[0]*prof->naxisn[1]*prof->naxisn[2];
+      QMALLOC(prof->pix, float, profit->nmodpix);
       prof->typscale = 1.0;
       profit_addparam(profit, PARAM_X, &prof->x[0]);
       profit_addparam(profit, PARAM_Y, &prof->x[1]);
@@ -2282,7 +2812,11 @@ profstruct	*prof_init(profitstruct *profit, proftypenum profcode)
       break;
     case PROF_EXPONENTIAL:
       prof->naxis = 2;
-      prof->pix = NULL;
+      prof->naxisn[0] = PROFIT_MAXMODSIZE;
+      prof->naxisn[1] = PROFIT_MAXMODSIZE;
+      prof->naxisn[2] = 1;
+      prof->npix = prof->naxisn[0]*prof->naxisn[1]*prof->naxisn[2];
+      QMALLOC(prof->pix, float, profit->nmodpix);
       prof->typscale = 1.0;
       profit_addparam(profit, PARAM_X, &prof->x[0]);
       profit_addparam(profit, PARAM_Y, &prof->x[1]);
@@ -2293,7 +2827,11 @@ profstruct	*prof_init(profitstruct *profit, proftypenum profcode)
       break;
     case PROF_ARMS:
       prof->naxis = 2;
-      prof->pix = NULL;
+      prof->naxisn[0] = PROFIT_MAXMODSIZE;
+      prof->naxisn[1] = PROFIT_MAXMODSIZE;
+      prof->naxisn[2] = 1;
+      prof->npix = prof->naxisn[0]*prof->naxisn[1]*prof->naxisn[2];
+      QMALLOC(prof->pix, float, profit->nmodpix);
       prof->typscale = 1.0;
       profit_addparam(profit, PARAM_X, &prof->x[0]);
       profit_addparam(profit, PARAM_Y, &prof->x[1]);
@@ -2311,7 +2849,11 @@ profstruct	*prof_init(profitstruct *profit, proftypenum profcode)
       break;
     case PROF_BAR:
       prof->naxis = 2;
-      prof->pix = NULL;
+      prof->naxisn[0] = PROFIT_MAXMODSIZE;
+      prof->naxisn[1] = PROFIT_MAXMODSIZE;
+      prof->naxisn[2] = 1;
+      prof->npix = prof->naxisn[0]*prof->naxisn[1]*prof->naxisn[2];
+      QMALLOC(prof->pix, float, profit->nmodpix);
       prof->typscale = 1.0;
       profit_addparam(profit, PARAM_X, &prof->x[0]);
       profit_addparam(profit, PARAM_Y, &prof->x[1]);
@@ -2325,7 +2867,11 @@ profstruct	*prof_init(profitstruct *profit, proftypenum profcode)
       break;
     case PROF_INRING:
       prof->naxis = 2;
-      prof->pix = NULL;
+      prof->naxisn[0] = PROFIT_MAXMODSIZE;
+      prof->naxisn[1] = PROFIT_MAXMODSIZE;
+      prof->naxisn[2] = 1;
+      prof->npix = prof->naxisn[0]*prof->naxisn[1]*prof->naxisn[2];
+      QMALLOC(prof->pix, float, profit->nmodpix);
       prof->typscale = 1.0;
       profit_addparam(profit, PARAM_X, &prof->x[0]);
       profit_addparam(profit, PARAM_Y, &prof->x[1]);
@@ -2339,7 +2885,11 @@ profstruct	*prof_init(profitstruct *profit, proftypenum profcode)
       break;
     case PROF_OUTRING:
       prof->naxis = 2;
-      prof->pix = NULL;
+      prof->naxisn[0] = PROFIT_MAXMODSIZE;
+      prof->naxisn[1] = PROFIT_MAXMODSIZE;
+      prof->naxisn[2] = 1;
+      prof->npix = prof->naxisn[0]*prof->naxisn[1]*prof->naxisn[2];
+      QMALLOC(prof->pix, float, profit->nmodpix);
       prof->typscale = 1.0;
       profit_addparam(profit, PARAM_X, &prof->x[0]);
       profit_addparam(profit, PARAM_Y, &prof->x[1]);
@@ -2352,7 +2902,10 @@ profstruct	*prof_init(profitstruct *profit, proftypenum profcode)
       break;
     case PROF_DIRAC:
       prof->naxis = 2;
-      prof->pix = NULL;
+      prof->naxisn[0] = PROFIT_MAXMODSIZE;
+      prof->naxisn[1] = PROFIT_MAXMODSIZE;
+      prof->naxisn[2] = 1;
+      prof->npix = prof->naxisn[0]*prof->naxisn[1]*prof->naxisn[2];
       prof->typscale = 1.0;
       profit_addparam(profit, PARAM_X, &prof->x[0]);
       profit_addparam(profit, PARAM_Y, &prof->x[1]);
@@ -2403,7 +2956,9 @@ profstruct	*prof_init(profitstruct *profit, proftypenum profcode)
       break;
     }
 
-  if (prof->pix)
+  QMALLOC(prof->pix, float, prof->npix);
+
+  if (prof->naxis>2)
     {
     prof->kernelnlines = 1;
     for (d=0; d<prof->naxis; d++)
@@ -2443,16 +2998,18 @@ void	prof_end(profstruct *prof)
 
 
 /****** prof_add **************************************************************
-PROTO	float prof_add(profstruct *prof, profitstruct *profit)
+PROTO	float prof_add(profitstruct *profit, profstruct *prof,
+		int extfluxfac_flag)
 PURPOSE	Add a model profile to an image.
-INPUT	Profile structure,
-	profile-fitting structure.
-OUTPUT	Corrected flux contribution.
+INPUT	Profile-fitting structure,
+	profile structure,
+	flag (0 if flux correction factor is to be computed internally) 
+OUTPUT	Total (asymptotic) flux contribution.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	14/12/2009
+VERSION	08/07/2010
  ***/
-float	prof_add(profstruct *prof, profitstruct *profit)
+float	prof_add(profitstruct *profit, profstruct *prof, int extfluxfac_flag)
   {
    double	xscale, yscale, saspect, ctheta,stheta, flux, scaling, bn, n;
    float	posin[PROFIT_MAXEXTRA], posout[2], dnaxisn[2],
@@ -2469,7 +3026,7 @@ float	prof_add(profstruct *prof, profitstruct *profit)
    int		npix, noversamp, threshflag,
 		d,e,i, ix1,ix2, idx1,idx2, nx2, npix2;
 
-  npix = profit->modnaxisn[0]*profit->modnaxisn[1];
+  npix = profit->nmodpix;
 
   if (prof->code==PROF_BACK)
     {
@@ -2524,7 +3081,7 @@ float	prof_add(profstruct *prof, profitstruct *profit)
 /*---- The consequence of sampling on flux is compensated by PSF normalisation*/
       x10 = -x1cout - dx1;
       x2 = -x2cout - dx2;
-      pixin = profit->pmodpix;
+      pixin = prof->pix;
       for (ix2=nx2; ix2--; x2+=1.0)
         {
         x1 = x10;
@@ -2539,7 +3096,7 @@ float	prof_add(profstruct *prof, profitstruct *profit)
             continue;
             }
           val = expf(k*expf(logf(ra)*hinvn));
-          noversamp  = (int)(val*PROFIT_OVERSAMP+0.1);
+          noversamp  = (int)(val*profit->oversamp+0.1);
           if (noversamp < 2)
             *(pixin++) = val;
           else
@@ -2585,7 +3142,7 @@ float	prof_add(profstruct *prof, profitstruct *profit)
 /*---- The consequence of sampling on flux is compensated by PSF normalisation*/
       x10 = -x1cout - dx1;
       x2 = -x2cout - dx2;
-      pixin = profit->pmodpix;
+      pixin = prof->pix;
       for (ix2=nx2; ix2--; x2+=1.0)
         {
         x1 = x10;
@@ -2600,7 +3157,7 @@ float	prof_add(profstruct *prof, profitstruct *profit)
             continue;
             }
           val = expf(-7.66924944f*PROFIT_POWF(ra,0.125));
-          noversamp  = (int)(sqrt(val)*PROFIT_OVERSAMP+0.1);
+          noversamp  = (int)(sqrt(val)*profit->oversamp+0.1);
           if (noversamp < 2)
             *(pixin++) = val;
           else
@@ -2645,7 +3202,7 @@ float	prof_add(profstruct *prof, profitstruct *profit)
     case PROF_EXPONENTIAL:
       x10 = -x1cout - dx1;
       x2 = -x2cout - dx2;
-      pixin = profit->pmodpix;
+      pixin = prof->pix;
       for (ix2=nx2; ix2--; x2+=1.0)
         {
         x1 = x10;
@@ -2660,7 +3217,7 @@ float	prof_add(profstruct *prof, profitstruct *profit)
             continue;
             }
           val = expf(-sqrtf(ra));
-          noversamp  = (int)(val*sqrt(PROFIT_OVERSAMP)+0.1);
+          noversamp  = (int)(val*sqrt(profit->oversamp)+0.1);
           if (noversamp < 2)
             *(pixin++) = val;
           else
@@ -2721,7 +3278,7 @@ float	prof_add(profstruct *prof, profitstruct *profit)
 width = 3.0;
       x1 = -x1cout - dx1;
       x2 = -x2cout - dx2;
-      pixin = profit->pmodpix;
+      pixin = prof->pix;
       for (ix2=profit->modnaxisn[1]; ix2--; x2+=1.0)
         {
         x1t = cd12*x2 + cd11*x1;
@@ -2768,7 +3325,7 @@ width = 3.0;
       sa = sinf(posang);
       x1 = -x1cout - dx1;
       x2 = -x2cout - dx2;
-      pixin = profit->pmodpix;
+      pixin = prof->pix;
       for (ix2=profit->modnaxisn[1]; ix2--; x2+=1.0)
         {
         x1t = cd12*x2 + cd11*x1;
@@ -2806,7 +3363,7 @@ width = 3.0;
       cd21 /= *prof->feataspect;
       x1 = -x1cout - dx1;
       x2 = -x2cout - dx2;
-      pixin = profit->pmodpix;
+      pixin = prof->pix;
       for (ix2=profit->modnaxisn[1]; ix2--; x2+=1.0)
         {
         x1t = cd12*x2 + cd11*x1;
@@ -2839,7 +3396,7 @@ width = 3.0;
       invwidth2 = 0.5 / (*prof->featwidth**prof->featwidth);
       x1 = -x1cout - dx1;
       x2 = -x2cout - dx2;
-      pixin = profit->pmodpix;
+      pixin = prof->pix;
       for (ix2=profit->modnaxisn[1]; ix2--; x2+=1.0)
         {
         x1t = cd12*x2 + cd11*x1;
@@ -2862,9 +3419,8 @@ width = 3.0;
       threshflag = 1;
       break;
     case PROF_DIRAC:
-      memset(profit->pmodpix, 0,
-	profit->modnaxisn[0]*profit->modnaxisn[1]*sizeof(float));
-      profit->pmodpix[profit->modnaxisn[0]/2
+      memset(prof->pix, 0, npix*sizeof(float));
+      prof->pix[profit->modnaxisn[0]/2
 		+ (profit->modnaxisn[1]/2)*profit->modnaxisn[0]] = 1.0;
       prof->lostfluxfrac = 0.0;
       threshflag = 0;
@@ -2901,7 +3457,7 @@ width = 3.0;
         }
       x1cin = (float)(prof->naxisn[0]/2);
       x2cin = (float)(prof->naxisn[1]/2);
-      pixin = profit->pmodpix;
+      pixin = prof->pix;
       for (i=npix; i--;)
         {
         x1 = posout[0] - x1cout - 1.0 - dx1;
@@ -2937,7 +3493,7 @@ width = 3.0;
 
 /*-- Find best threshold (the max around the circle with radius rmax */
     dx2 = -x2cout;
-    pixin = profit->pmodpix;
+    pixin = prof->pix;
     thresh = -BIG;
     for (ix2=profit->modnaxisn[1]; ix2--; dx2 += 1.0)
       {
@@ -2949,7 +3505,7 @@ width = 3.0;
 
 /*-- Threshold and measure the flux */
     flux = 0.0;
-    pixin = profit->pmodpix;
+    pixin = prof->pix;
     for (i=npix; i--; pixin++)
       if (*pixin >= thresh)
         flux += (double)*pixin;
@@ -2959,24 +3515,92 @@ width = 3.0;
   else
     {
     flux = 0.0;
-    pixin = profit->pmodpix;
+    pixin = prof->pix;
     for (i=npix; i--;)
       flux += (double)*(pixin++);
     }
 
-  if (prof->lostfluxfrac < 1.0)
-    flux /= (1.0 - prof->lostfluxfrac);
+  if (extfluxfac_flag)
+    fluxfac = prof->fluxfac;
+  else
+    {
+    if (prof->lostfluxfrac < 1.0)
+      flux /= (1.0 - prof->lostfluxfrac);
+
+    prof->fluxfac = fluxfac = fabs(flux)>0.0? profit->fluxfac/flux : 0.0;
+    }
+
+  pixin = prof->pix;
+  for (i=npix; i--;)
+    *(pixin++) *= fluxfac;
 
 /* Correct final flux */
-  fluxfac = profit->fluxfac ;
-  fluxfac *= fabs(flux)>0.0? *prof->flux / flux : 1.0;
-//  prof->fluxfac = fluxfac;
-  pixin = profit->pmodpix;
+  fluxfac = *prof->flux;
+  pixin = prof->pix;
   pixout = profit->modpix;
   for (i=npix; i--;)
-    *(pixout++) += fluxfac * *(pixin++);
+    *(pixout++) += fluxfac**(pixin++);
 
   return *prof->flux;
+  }
+
+
+/****** prof_moments **********************************************************
+PROTO	void	prof_moments(profitstruct *profit, profstruct *prof)
+PURPOSE	Computes (analytically or numerically) the 2nd moments of a profile
+	model.
+INPUT	Profile-fitting structure,
+	profile structure.
+OUTPUT	-.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	08/07/2010
+ ***/
+void	prof_moments(profitstruct *profit, profstruct *prof)
+  {
+   double	m20,m02, ct,st, bn, n;
+
+  if (prof->posangle)
+    {
+    switch(prof->code)
+      {
+      case PROF_SERSIC:
+        n = fabs(*prof->extra[0]);
+        bn = 2.0*n - 1.0/3.0 + 4.0/(405.0*n) + 46.0/(25515.0*n*n)
+		+ 131.0/(1148175*n*n*n);	/* Ciotti & Bertin 1999 */
+        m20 = 0.5 * *prof->scale**prof->scale
+		* prof_gamma(4.0*n) / (prof_gamma(2.0*n) * pow(bn, 2.0*n));
+        break; 
+      case PROF_DEVAUCOULEURS:
+        m20 = 10.83995 * *prof->scale**prof->scale;
+        break;
+      case PROF_EXPONENTIAL:
+        m20 = 3.0 * *prof->scale**prof->scale;
+        break;
+      case PROF_ARMS:
+      case PROF_BAR:
+      case PROF_INRING:
+      case PROF_OUTRING:
+        m20 = 1.0 / 1.0;
+        break;
+      default:
+        m20 = 0.0;		/* to avoid gcc -Wall warnings */
+        error(EXIT_FAILURE, "*Internal Error*: Unknown oriented model in ",
+		"prof_moments()");
+      break;
+      }
+
+    m02 = m20**prof->aspect**prof->aspect;
+    ct = cos(*prof->posangle*DEG);
+    st = sin(*prof->posangle*DEG);
+    prof->mx2 = ct*ct*m20 + st*st*m02;
+    prof->my2 = st*st*m20 + ct*ct*m02;
+    prof->mxy = ct*st*(m20 - m02);
+    }
+  else
+    prof->mx2 = prof->my2 = prof->mxy = 0.0;
+
+  return;
   }
 
 

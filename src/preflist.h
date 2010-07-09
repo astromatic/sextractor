@@ -9,7 +9,7 @@
 *
 *	Contents:	Keywords for the configuration file.
 *
-*	Last modify:	05/02/2010
+*	Last modify:	18/05/2010
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -69,9 +69,10 @@
    "BACKGROUND", "BACKGROUND_RMS", "MINIBACKGROUND",
    "MINIBACK_RMS", "-BACKGROUND",
    "FILTERED", "OBJECTS", "APERTURES", "SEGMENTATION", "ASSOC",
-   "-OBJECTS", "-PSFS", "PSFS",
-   "-PC_CONVPROTOS", "PC_CONVPROTOS", "PC_PROTOS", 
-   "MAP_SOM", "-MODELS", "MODELS", "PATTERNS", ""},
+   "-OBJECTS", "PSFS", "-PSFS",
+   "PC_CONVPROTOS", "-PC_CONVPROTOS", "PC_PROTOS", 
+   "MAP_SOM", "MODELS", "-MODELS", "SPHEROIDS", "-SPHEROIDS",
+   "DISKS", "-DISKS", "PATTERNS", "OTHER", ""},
    0, 17, &prefs.ncheck_type},
   {"CLEAN", P_BOOL, &prefs.clean_flag},
   {"CLEAN_PARAM", P_FLOAT, &prefs.clean_param, 0,0, 0.1,10.0},
@@ -129,7 +130,7 @@
   {"PSF_NMAX", P_INT, &prefs.psf_npsfmax, 1, PSF_NPSFMAX},
   {"SATUR_KEY", P_STRING, prefs.satur_key},
   {"SATUR_LEVEL", P_FLOAT, &prefs.satur_level, 0,0, -1e+30, 1e+30},
-  {"SEEING_FWHM", P_FLOAT, &prefs.seeing_fwhm, 0,0, 1e-10, 1e+10},
+  {"SEEING_FWHM", P_FLOAT, &prefs.seeing_fwhm, 0,0, 0.0, 1e+10},
   {"SOM_NAME", P_STRING, prefs.som_name},
   {"STARNNW_NAME", P_STRING, prefs.nnw_name},
   {"THRESH_TYPE", P_KEYLIST, prefs.thresh_type, 0,0, 0.0,0.0,

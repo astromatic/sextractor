@@ -9,7 +9,7 @@
 *
 *	Contents:	handling of "check-images".
 *
-*	Last modify:	17/09/2008
+*	Last modify:	23/03/2010
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -236,13 +236,17 @@ void	reinitcheck(picstruct *field, checkstruct *check)
 
     case CHECK_OBJECTS:
     case CHECK_APERTURES:
-    case CHECK_SUBPSFPROTOS:
     case CHECK_PSFPROTOS:
-    case CHECK_SUBPCPROTOS:
+    case CHECK_SUBPSFPROTOS:
     case CHECK_PCPROTOS:
+    case CHECK_SUBPCPROTOS:
     case CHECK_PCOPROTOS:
-    case CHECK_SUBPROFILES:
     case CHECK_PROFILES:
+    case CHECK_SUBPROFILES:
+    case CHECK_SPHEROIDS:
+    case CHECK_SUBSPHEROIDS:
+    case CHECK_DISKS:
+    case CHECK_SUBDISKS:
     case CHECK_PATTERNS:
       ival = -32;
       fitswrite(check->fitshead, "BITPIX  ", &ival, H_INT, T_LONG);
@@ -349,6 +353,20 @@ void	reinitcheck(picstruct *field, checkstruct *check)
       free(check->fitshead);
       break;
 
+    case CHECK_OTHER:
+      ival = -32;
+      fitswrite(check->fitshead, "BITPIX  ", &ival, H_INT, T_LONG);
+      fitswrite(check->fitshead, "NAXIS1  ", &check->width, H_INT, T_LONG);
+      fitswrite(check->fitshead, "NAXIS2  ", &check->height, H_INT, T_LONG);
+      check->npix = check->width*check->height;
+      QMALLOC(ptrf, PIXTYPE, check->npix);
+      check->pix = (void *)ptrf;
+      for (i=check->npix; i--;)
+        *(ptrf++) = -10.0;
+      QFWRITE(check->fitshead,check->fitsheadsize,check->file,check->filename);
+      free(check->fitshead);
+      break;
+
     default:
       error(EXIT_FAILURE, "*Internal Error* in ", "reinitcheck()!");
     }
@@ -366,7 +384,8 @@ void	writecheck(checkstruct *check, PIXTYPE *data, int w)
   {
   if (check->type == CHECK_APERTURES || check->type == CHECK_SUBPSFPROTOS
 	|| check->type == CHECK_SUBPCPROTOS || check->type == CHECK_PCOPROTOS
-	|| check->type == CHECK_SUBPROFILES)
+	|| check->type == CHECK_SUBPROFILES || check->type == CHECK_SUBSPHEROIDS
+	|| check->type == CHECK_SUBDISKS)
     {
     memcpy((PIXTYPE *)check->pix + w*(check->y++), data, w*sizeof(PIXTYPE));
     return;
@@ -422,15 +441,21 @@ void	reendcheck(picstruct *field, checkstruct *check)
 
     case CHECK_OBJECTS:
     case CHECK_APERTURES:
-    case CHECK_SUBPSFPROTOS:
     case CHECK_PSFPROTOS:
-    case CHECK_SUBPCPROTOS:
+    case CHECK_SUBPSFPROTOS:
     case CHECK_PCPROTOS:
+    case CHECK_SUBPCPROTOS:
     case CHECK_PCOPROTOS:
-    case CHECK_SUBPROFILES:
     case CHECK_PROFILES:
+    case CHECK_SUBPROFILES:
+    case CHECK_SPHEROIDS:
+    case CHECK_SUBSPHEROIDS:
+    case CHECK_DISKS:
+    case CHECK_SUBDISKS:
     case CHECK_ASSOC:
     case CHECK_PATTERNS:
+    case CHECK_MAPSOM:
+    case CHECK_OTHER:
       if (bswapflag)
         swapbytes(check->pix, sizeof(PIXTYPE), (int)check->npix);
       QFWRITE(check->pix,check->npix*sizeof(PIXTYPE),
@@ -460,15 +485,6 @@ void	reendcheck(picstruct *field, checkstruct *check)
       padsize = (FBSIZE -((check->npix*sizeof(PIXTYPE))%FBSIZE)) % FBSIZE;
       break;
       }
-
-    case CHECK_MAPSOM:
-      if (bswapflag)
-        swapbytes(check->pix, sizeof(PIXTYPE), (int)check->npix);
-      QFWRITE(check->pix,check->npix*sizeof(PIXTYPE),
-		check->file,check->filename);
-      free(check->pix);
-      padsize = (FBSIZE -((check->npix*sizeof(USHORT))%FBSIZE)) % FBSIZE;
-      break;
 
     default:
       error(EXIT_FAILURE, "*Internal Error* in ", "endcheck()!");

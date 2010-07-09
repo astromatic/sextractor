@@ -9,7 +9,7 @@
 *
 *	Contents:	Include file for growth.c.
 *
-*	Last modify:	04/05/98
+*	Last modify:	02/07/2010
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -18,8 +18,8 @@
 
 #define	GROWTH_NSTEP	64	/* number of growth curve samples */
 #define	GROWTH_OVERSAMP	5	/* pixel oversampling in each dimension */
-#define	GROWTH_NSIG	3*MARGIN_SCALE	/* MAG_AUTO analysis range (number */
-					/* of sigma) */
+#define	GROWTH_NSIG	3*MARGIN_SCALE	/* MAG_AUTO analysis range (nsigmas) */
+#define	GROWTH_MINHLRAD	0.5	/* Minimum internal half-light radius (pixels)*/
 
 /* NOTES:
 One must have:	GROWTH_SAMP >= 1

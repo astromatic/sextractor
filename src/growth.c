@@ -9,7 +9,7 @@
 *
 *	Contents:	Make growth curves.
 *
-*	Last modify:	19/12/2007
+*	Last modify:	02/07/2010
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -336,6 +336,8 @@ void	makeavergrowth(picstruct *field, picstruct *wfield, objstruct *obj)
 		  	i + (tv - *(growtht-1))/dg
 			: i)
 		: (*growth !=0.0 ?tv/(*growth) : 0.0));
+      if (obj2->flux_radius[j] > rlim)
+        obj2->flux_radius[j] = rlim;
       }
     }
 
@@ -346,10 +348,14 @@ void	makeavergrowth(picstruct *field, picstruct *wfield, objstruct *obj)
     tv = 0.5*obj2->flux_auto;
     growtht = growth-1;
     for (i=0; i<n && *(++growtht)<tv; i++);
-    obj2->hl_radius = step*(i? ((dg=*growtht - *(growtht-1)) != 0.0 ?
+    obj2->hl_radius = fabs(step*(i? ((dg=*growtht - *(growtht-1)) != 0.0 ?
 		  	i + (tv - *(growtht-1))/dg
 			: i)
-		: (*growth !=0.0 ?tv/(*growth) : 0.0));
+		: (*growth !=0.0 ?tv/(*growth) : 0.0)));
+    if (obj2->hl_radius > rlim)
+      obj2->hl_radius = rlim;
+    if (obj2->hl_radius < GROWTH_MINHLRAD)
+      obj2->hl_radius = GROWTH_MINHLRAD;
     }
 
   return;
