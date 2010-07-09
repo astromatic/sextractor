@@ -9,7 +9,7 @@
 *
 *	Contents:	header (FITS format #1) and templates for catalog data.
 *
-*	Last modify:	19/12/2007
+*	Last modify:	02/07/2010
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -95,8 +95,8 @@ keystruct	headkey1[] = {
 	&prefs.clean_param, H_FLOAT, T_DOUBLE, "%8f"},
   {"SEXCLNST", "CLEANING OBJECT-STACK",
 	&prefs.deblend_nthresh, H_INT, T_LONG, "%6d"},
-  {"SEXAPERD", "APERTURE DIAMETER (PIXELS)",
-	&prefs.apert[0], H_INT, T_LONG, "%7.1f"},
+  {"SEXAPERD", "1ST APERTURE DIAMETER (PIXELS)",
+	&prefs.apert[0], H_FLOAT, T_DOUBLE, "%8.2f"},
   {"SEXAPEK1", "KRON PARAMETER",
 	&prefs.autoparam[0], H_FLOAT, T_DOUBLE, "%4.1f"},
   {"SEXAPEK2", "KRON ANALYSIS RADIUS",

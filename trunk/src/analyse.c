@@ -395,6 +395,11 @@ void	endobject(picstruct *field, picstruct *dfield, picstruct *wfield,
 			analtime1;
    int			i,j, ix,iy,selecflag, newnumber,nsub;
 
+   if (prefs.psf_flag || prefs.prof_flag)
+     thepsf->build_flag = 0;	/* Reset PSF building flag */
+   if (prefs.dpsf_flag)
+     ppsf->build_flag = 0;	/* Reset PSF building flag */
+
   if (FLAG(obj2.analtime))
     analtime1 = counter_seconds();
   else
@@ -589,7 +594,8 @@ void	endobject(picstruct *field, picstruct *dfield, picstruct *wfield,
       {
        double	fac2, input[10], output, fwhm;
 
-      fwhm = prefs.seeing_fwhm;
+      fwhm = (prefs.seeing_fwhm==0.0)? psf_fwhm(thepsf)*field->pixscale
+				: prefs.seeing_fwhm;
 
       fac2 = fwhm/field->pixscale;
       fac2 *= fac2;

@@ -9,7 +9,7 @@
 *
 *	Contents:	Include file for profit.c.
 *
-*	Last modify:	09/10/2009
+*	Last modify:	08/07/2010
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -30,11 +30,12 @@
 
 /*----------------------------- Internal constants --------------------------*/
 
+#define	PARAM_ALLPARAMS	(-1)	/* All parameters */
 #define	PROFIT_MAXITER	1000	/* Max. nb of iterations in profile fitting */
 #define	PROFIT_MAXPROF	8	/* Max. nb of profile components */
 #define	PROFIT_OVERSAMP	5	/* Max. profile oversamp. factor on each axis */
-#define	PROFIT_HIDEFRES	201	/* Resolution of the high def. model raster */
-#define	PROFIT_REFFFAC	6.0	/* Factor in r_eff for measurement radius*/
+#define	PROFIT_HIDEFRES	201	/* Hi. def. model resol. (must be <MAXMODSIZE)*/
+#define	PROFIT_REFFFAC	3.0	/* Factor in r_eff for measurement radius*/
 #define	PROFIT_DYNPARAM	10.0	/* Dynamic compression param. in sigma units */
 #define	PROFIT_MAXMODSIZE  512	/* Maximum size allowed for the model raster */
 #define	PROFIT_MAXOBJSIZE  512	/* Maximum size allowed for the object raster */
@@ -79,9 +80,11 @@ typedef struct
   float		*pix;			/* Full pixmap of the model */
   int		naxis;			/* Number of pixmap dimensions */
   int		naxisn[3];		/* Pixmap size for each axis */
+  int		npix;			/* Total number of prof pixels */
   float		typscale;		/* Typical scale in prof pixels */
   float		fluxfac;		/* Flux normalisation factor */
   float		lostfluxfrac;		/* Lost flux fraction */
+  float		m0,mx2,my2,mxy;		/* 2nd order moments */
 /* Generic presentation parameters */
   float		*flux;			/* Integrated flux */
   float		*x[2];			/* Coordinate vector */
@@ -113,12 +116,16 @@ typedef struct
   int		nparam;		/* Number of parameters to be fitted */
   float		*paramlist[PARAM_NPARAM];	/* flat parameter list */
   int		paramindex[PARAM_NPARAM];/* Vector of parameter indices */
+  int		paramrevindex[PARAM_NPARAM];/* Vector of reversed indices */
+  int		freeparam_flag[PARAM_NPARAM]; /* Free parameter flag */
+  int		nfreeparam;		/* Number of free parameters */
   float		param[PARAM_NPARAM];	/* Vector of parameters to be fitted */
   float		paraminit[PARAM_NPARAM];/* Parameter initial guesses */
   float		parammin[PARAM_NPARAM];	/* Parameter lower limits */
   float		parammax[PARAM_NPARAM];	/* Parameter upper limits */
-  float		*covar;		/* Covariance matrix */
   float		paramerr[PARAM_NPARAM];	/* Std deviations of parameters */
+  float		*covar;		/* Covariance matrix */
+  int		iter;		/* Iteration counter */
   int		niter;		/* Number of iterations */
   profstruct	**prof;		/* Array of pointers to profiles */
   int		nprof;		/* Number of profiles to consider */
@@ -126,15 +133,20 @@ typedef struct
   float		pixstep;	/* Model/PSF sampling step */
   float		fluxfac;	/* Model flux scaling factor */
   float		subsamp;	/* Subsampling factor */
+  int		oversamp;	/* Oversampling factor */
   float		*psfdft;	/* Compressed Fourier Transform of the PSF */
   float		*psfpix;	/* Full res. pixmap of the PSF */
   float		*modpix;	/* Full res. pixmap of the complete model */
-  float		*pmodpix;	/* Full res. pixmap of the partial model */
+  float		*modpix2;	/* 2nd full res. pixmap of the complete model */
+  float		*cmodpix;	/* Full res. pixmap of the convolved model */
   int		modnaxisn[3];	/* Dimensions along each axis */
+  int		nmodpix;	/* Total number of model pixels */
   PIXTYPE	*lmodpix;	/* Low resolution pixmap of the model */
+  PIXTYPE	*lmodpix2;	/* 2nd low resolution pixmap of the model */
   PIXTYPE	*objpix;	/* Copy of object pixmap */
   PIXTYPE	*objweight;	/* Copy of object weight-map */
   int		objnaxisn[2];	/* Dimensions along each axis */
+  int		nobjpix;	/* Total number of "final" pixels */
   int		ix, iy;		/* Integer coordinates of object pixmap */
   float		*resi;		/* Vector of residuals */
   int		nresi;		/* Number of residual elements */
@@ -142,6 +154,8 @@ typedef struct
   float		sigma;		/* Standard deviation of the pixel values */
   float		flux;		/* Total flux in final convolved model */
   float		spirindex;	/* Spiral index (>0 for CCW) */
+/* Buffers */
+  double	dparam[PARAM_NPARAM];
   }	profitstruct;
 
 /*----------------------------- Global variables ----------------------------*/
@@ -156,39 +170,43 @@ float		*profit_compresi(profitstruct *profit, float dynparam,
 		*profit_residuals(profitstruct *profit, picstruct *field,
 			picstruct *wfield, float dynparam,
 			float *param, float *resi),
-		prof_add(profstruct *prof, profitstruct *profit),
+		prof_add(profitstruct *profit, profstruct *prof,
+			int extfluxfac_flag),
 		profit_minradius(profitstruct *profit, float refffac),
 		profit_spiralindex(profitstruct *profit);
 
 int		profit_copyobjpix(profitstruct *profit, picstruct *field,
 			picstruct *wfield),
 		profit_minimize(profitstruct *profit, int niter),
+		profit_resample(profitstruct *profit, float *inpix,
+			PIXTYPE *outpix, float factor),
 		profit_setparam(profitstruct *profit, paramenum paramtype,
 			float param, float parammin, float parammax);
 
 void		prof_end(profstruct *prof),
+		prof_moments(profitstruct *profit, profstruct *prof),
 		profit_addparam(profitstruct *profit, paramenum paramindex,
 			float **param),
-		profit_boundtounbound(profitstruct *profit, float *param),
+		profit_boundtounbound(profitstruct *profit,
+			float *param, double *dparam, int index),
 		profit_fit(profitstruct *profit,
 			picstruct *field, picstruct *wfield,
 			objstruct *obj, obj2struct *obj2),
 		profit_convolve(profitstruct *profit, float *modpix),
-		profit_covarunboundtobound(profitstruct *profit),
+		profit_covarunboundtobound(profitstruct *profit,
+			double *dparam, float *param),
 		profit_end(profitstruct *profit),
-		profit_evaluate(float *par, float *fvec, int m, int n,
+		profit_evaluate(double *par, double *fvec, int m, int n,
 			void *adata),
 		profit_makedft(profitstruct *profit),
 		profit_moments(profitstruct *profit, obj2struct *obj2),
 		profit_printout(int n_par, float* par, int m_dat, float* fvec,
 			void *data, int iflag, int iter, int nfev ),
 		profit_psf(profitstruct *profit),
-		profit_resample(profitstruct *profit, float *inpix,
-			PIXTYPE *outpix, float factor),
 		profit_resetparam(profitstruct *profit, paramenum paramtype),
 		profit_resetparams(profitstruct *profit),
-		profit_surface(profitstruct *profit, obj2struct *obj2,
-			double lostfluxfrac),
-		profit_unboundtobound(profitstruct *profit, float *param);
+		profit_surface(profitstruct *profit, obj2struct *obj2),
+		profit_unboundtobound(profitstruct *profit,
+			double *dparam, float *param, int index);
 
 #endif

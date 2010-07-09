@@ -10,7 +10,7 @@
 *
 *	Contents:	Fit the PSF to a detection.
 *
-*	Last modify:	14/12/2009
+*	Last modify:	07/07/2010
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -255,7 +255,8 @@ psfstruct	*psf_load(char *filename)
     psf->fwhm = 3.0;
 
 /* PSF oversampling: defaulted to 1 */
-  if (fitsread(head, "PSF_SAMP", &psf->pixstep,H_FLOAT,T_FLOAT) != RETURN_OK)
+  if (fitsread(head, "PSF_SAMP", &psf->pixstep,H_FLOAT,T_FLOAT) != RETURN_OK
+	|| psf->pixstep <= 0.0)
     psf->pixstep = 1.0;
 
 /* Load the PSF mask data */
@@ -1016,6 +1017,9 @@ void	psf_build(psfstruct *psf)
    float	*ppc, *pl;
    int		i,n,p, ndim, npix;
 
+  if (psf->build_flag)
+    return;
+
   npix = psf->masksize[0]*psf->masksize[1];
 
 /* Reset the Local PSF mask */
@@ -1042,7 +1046,39 @@ void	psf_build(psfstruct *psf)
       *(pl++) +=  fac**(ppc++);
     }
 
+  psf->build_flag = 1;
+
   return;
+  }
+
+
+/******************************** psf_fwhm **********************************/
+/*
+Return the local PSF FWHM.
+*/
+double	psf_fwhm(psfstruct *psf)
+  {
+   float	*pl,
+		val, max;
+   int		n,p, npix;
+
+  if (!psf->build_flag)
+    psf_build(psf);
+
+  npix = psf->masksize[0]*psf->masksize[1];
+  max = -BIG;
+  pl = psf->maskloc;
+  for (p=npix; p--;)
+    if ((val=*(pl++)) > max)
+      max = val;
+  pl = psf->maskloc;
+  max /= 2.0;
+  n = 0;
+  for (p=npix; p--;)
+    if (*(pl++) >= max)
+      n++;
+
+  return 2.0*sqrt(n/PI)*psf->pixstep;
   }
 
 

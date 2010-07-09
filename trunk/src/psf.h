@@ -10,7 +10,7 @@
 *
 *	Contents:	Include file for psffit.c.
 *
-*	Last modify:	14/12/2009
+*	Last modify:	18/05/2010
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -78,6 +78,7 @@ typedef struct psf
   pcstruct	*pc;		/* PC components */
   double	fwhm;		/* Typical PSF FWHM */
   float		pixstep;	/* PSF sampling step */
+  int		build_flag;	/* Set if the current PSF has been computed */
   }	psfstruct;
 
 typedef struct
@@ -113,7 +114,8 @@ extern double	*compute_gradient (float *weight,int width, int height,
 			float *masks, float *maskx, float *masky,
 			double *mat),
 		*compute_gradient_phot(float *weight,int width, int height,
-			float *masks, double *pm);
+			float *masks, double *pm),
+		psf_fwhm(psfstruct *psf);
 
 extern psfstruct	*psf_load(char *filename);
 
@@ -129,3 +131,4 @@ extern void	pc_end(pcstruct *pc),
 		psf_readcontext(psfstruct *psf, picstruct *field);
 
 extern pcstruct	*pc_load(catstruct *cat);
+
