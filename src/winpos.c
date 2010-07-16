@@ -9,7 +9,7 @@
 *
 *	Contents:	Compute windowed barycenter
 *
-*	Last modify:	19/12/2007
+*	Last modify:	16/07/2010
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -38,16 +38,16 @@ INPUT	Picture structure pointer,
 OUTPUT  -.
 NOTES   obj->posx and obj->posy are taken as initial centroid guesses.
 AUTHOR  E. Bertin (IAP)
-VERSION 19/12/2007
+VERSION 16/07/2010
  ***/
 void	compute_winpos(picstruct *field, picstruct *wfield, objstruct *obj)
 
   {
-   float		r2, raper,raper2, rintlim,rintlim2,rextlim2,
-			dx,dx1,dy,dy2, sig, pdbkg,
-                        offsetx,offsety,scalex,scaley,scale2, ngamma, locarea;
-   double               tv, tv2, pix, var, backnoise2, gain, locpix,
-			dxpos,dypos, twosig2, err,err2, emx2,emy2,emxy,
+   float		r2,invtwosig2, raper,raper2, rintlim,rintlim2,rextlim2,
+			dx,dx1,dy,dy2, sig, invngamma, pdbkg,
+                        offsetx,offsety,scalex,scaley,scale2, locarea;
+   double               tv, norm, pix, var, backnoise2, invgain, locpix,
+			dxpos,dypos, err,err2, emx2,emy2,emxy,
 			esum, temp,temp2, mx2, my2,mxy,pmx2, theta, mx,my,
 			mx2ph, my2ph;
    int                  i,x,y, x2,y2, xmin,xmax,ymin,ymax, sx,sy, w,h,
@@ -70,9 +70,9 @@ void	compute_winpos(picstruct *field, picstruct *wfield, objstruct *obj)
   errflag = FLAG(obj2.winposerr_mx2);
   momentflag = FLAG(obj2.win_mx2) | FLAG(obj2.winposerr_mx2);
   var = backnoise2 = field->backsig*field->backsig;
-  gain = field->gain;
+  invgain = field->gain>0.0? 1.0/field->gain : 0.0;
   sig = obj2->hl_radius*2.0/2.35; /* From half-FWHM to sigma */
-  twosig2 = 2.0*sig*sig;
+  invtwosig2 = 1.0/(2.0*sig*sig);
 
 /* Integration radius */
   raper = WINPOS_NSIG*sig;
@@ -80,12 +80,12 @@ void	compute_winpos(picstruct *field, picstruct *wfield, objstruct *obj)
 /* For photographic data */
   if (pflag)
     {
-    ngamma = field->ngamma;
-    pdbkg = exp(obj->dbkg/ngamma);
+    invngamma = 1.0/field->ngamma;
+    pdbkg = expf(obj->dbkg*invngamma);
     }
   else
     {
-    ngamma = 0.0;
+    invngamma = 0.0;
     pdbkg = 0.0;
     }
   raper2 = raper*raper;
@@ -165,7 +165,7 @@ void	compute_winpos(picstruct *field, picstruct *wfield, objstruct *obj)
             }
           else
             locarea = 1.0;
-          locarea *= exp(-r2/twosig2);
+          locarea *= expf(-r2*invtwosig2);
 /*-------- Here begin tests for pixel and/or weight overflows. Things are a */
 /*-------- bit intricated to have it running as fast as possible in the most */
 /*-------- common cases */
@@ -191,7 +191,7 @@ void	compute_winpos(picstruct *field, picstruct *wfield, objstruct *obj)
               }
             }
           if (pflag)
-            pix=exp(pix/ngamma);
+            pix = expf(pix*invngamma);
           dx = x - mx;
           dy = y - my;
           locpix = locarea*pix;
@@ -202,13 +202,13 @@ void	compute_winpos(picstruct *field, picstruct *wfield, objstruct *obj)
             {
             err = var;
             if (pflag)
-              err *= locpix*pix/(ngamma*ngamma);
-            else if (gain>0.0 && pix>0.0)
+              err *= locpix*pix*invngamma*invngamma;
+            else if (invgain>0.0 && pix>0.0)
               {
               if (gainflag)
-                err += pix/gain*var/backnoise2;
+                err += pix*invgain*var/backnoise2;
               else
-                err += pix/gain;
+                err += pix*invgain;
               }
             err2 = locarea*locarea*err;
             esum += err2;
@@ -228,8 +228,8 @@ void	compute_winpos(picstruct *field, picstruct *wfield, objstruct *obj)
 
     if (tv>0.0)
       {
-      mx += (dxpos /= tv)*WINPOS_GRADFAC;
-      my += (dypos /= tv)*WINPOS_GRADFAC;
+      mx += (dxpos /= tv)*WINPOS_FAC;
+      my += (dypos /= tv)*WINPOS_FAC;
       }
     else
       break;
@@ -252,8 +252,7 @@ void	compute_winpos(picstruct *field, picstruct *wfield, objstruct *obj)
     obj2->fluxerr_win = sqrt(esum);
     }
   temp2=mx2*my2-mxy*mxy;
-  obj2->win_flag = (tv <= 0.0)*4 + (mx2 < 0.0 || my2 < 0.0)*2
-	+ (temp2<0.0);
+  obj2->win_flag = (tv <= 0.0)*4 + (mx2 < 0.0 || my2 < 0.0)*2 + (temp2<0.0);
   if (obj2->win_flag)
     {
 /*--- Negative values: revert to isophotal estimates */
@@ -299,12 +298,12 @@ void	compute_winpos(picstruct *field, picstruct *wfield, objstruct *obj)
     {
     if (errflag)
       {
-      tv2 = tv*tv;
-      emx2 /= tv2;
-      emy2 /= tv2;
-      emxy /= tv2;
+      norm = WINPOS_FAC*WINPOS_FAC/(tv*tv);
+      emx2 *= norm;
+      emy2 *= norm;
+      emxy *= norm;
 /*-- Handle fully correlated profiles (which cause a singularity...) */
-      esum *= 0.08333/tv2;
+      esum *= 0.08333*norm;
       if (obj->singuflag && (emx2*emy2-emxy*emxy) < esum*esum)
         {
         emx2 += esum;
