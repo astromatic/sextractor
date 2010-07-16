@@ -9,7 +9,7 @@
 *
 *	Contents:	functions for output of catalog data.
 *
-*	Last modify:	08/07/2010
+*	Last modify:	12/07/2010
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -439,7 +439,8 @@ void	updateparamflags()
   FLAG(obj2.winposerr_mx2) |= FLAG(obj2.winposerr_my2)
 			| FLAG(obj2.winposerr_mxy)
 			| FLAG(obj2.winposerr_a) | FLAG(obj2.winposerr_cxx)
-			| FLAG(obj2.winposerr_mx2w);
+			| FLAG(obj2.winposerr_mx2w)
+			| FLAG(obj2.fluxerr_win) | FLAG(obj2.magerr_win);
 
   FLAG(obj2.winpos_alpha1950) |= FLAG(obj2.winpos_delta1950)
 			| FLAG(obj2.win_theta1950)
