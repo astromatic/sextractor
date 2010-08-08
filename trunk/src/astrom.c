@@ -9,7 +9,7 @@
 *
 *	Contents:	Astrometrical computations.
 *
-*	Last modify:	15/12/2009
+*	Last modify:	03/08/2010
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -1093,12 +1093,21 @@ void	astrom_profshapeparam(picstruct *field, objstruct *obj)
       obj2->prof_cxyw = (float)(-2*xym/temp);
       }
   
-    if (FLAG(obj2.prof_e1w))
+    if (FLAG(obj2.prof_pol1w))
       {
       if (xm2+ym2 > 1.0/BIG)
         {
         obj2->prof_pol1w = (xm2 - ym2) / (xm2+ym2);
         obj2->prof_pol2w = 2.0*xym / (xm2 + ym2);
+        }
+      else
+        obj2->prof_pol1w = obj2->prof_pol2w = 0.0;
+      }
+
+    if (FLAG(obj2.prof_e1w))
+      {
+      if (xm2+ym2 > 1.0/BIG)
+        {
         temp = xm2*ym2-xym*xym;
         if (temp>=0.0)
           temp = xm2+ym2+2.0*sqrt(temp);
@@ -1108,8 +1117,7 @@ void	astrom_profshapeparam(picstruct *field, objstruct *obj)
         obj2->prof_e2w = 2.0*xym / temp;
         }
       else
-        obj2->prof_pol1w = obj2->prof_pol2w
-	= obj2->prof_e1w = obj2->prof_e2w = 0.0;
+        obj2->prof_e1w = obj2->prof_e2w = 0.0;
       }
     }
 

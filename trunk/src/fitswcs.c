@@ -9,7 +9,7 @@
 *
 *	Contents:       Read and write WCS header info.
 *
-*	Last modify:	20/02/2009
+*	Last modify:	30/07/2010
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -315,7 +315,7 @@ INPUT	tab structure.
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	20/02/2009
+VERSION	30/07/2010
  ***/
 wcsstruct	*read_wcs(tabstruct *tab)
 
@@ -433,7 +433,7 @@ wcsstruct	*read_wcs(tabstruct *tab)
     else
       {
 /*---- Search for an observation date expressed in "civilian" format */
-      FITSREADS(buf, "DATE-OBS ", str, "");
+      FITSREADS(buf, "DATE-OBS", str, "");
       if (*str)
         {
 /*------ Decode DATE-OBS format: DD/MM/YY or YYYY-MM-DD */
