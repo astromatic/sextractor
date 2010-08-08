@@ -9,7 +9,7 @@
 *
 *	Contents:	functions for output of catalog data.
 *
-*	Last modify:	12/07/2010
+*	Last modify:	03/08/2010
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -233,8 +233,8 @@ void	updateparamflags()
   FLAG(obj2.prof_bar_aspect) |= FLAG(obj2.prof_bar_aspecterr);
   FLAG(obj2.prof_bar_theta) |= FLAG(obj2.prof_bar_thetaerr);
   FLAG(obj2.prof_arms_mag) |= FLAG(obj2.prof_arms_magerr);
-  FLAG(obj2.prof_e1w) |= FLAG(obj2.prof_e2w)
-			| FLAG(obj2.prof_pol1w) | FLAG(obj2.prof_pol2w);
+  FLAG(obj2.prof_e1w) |= FLAG(obj2.prof_e2w);
+  FLAG(obj2.prof_pol1w) |= FLAG(obj2.prof_pol2w);
   FLAG(obj2.prof_aw) |= FLAG(obj2.prof_bw);
   FLAG(obj2.prof_cxxw) |= FLAG(obj2.prof_cyyw) | FLAG(obj2.prof_cxyw);
   FLAG(obj2.prof_thetas) |= FLAG(obj2.prof_theta1950)
@@ -245,7 +245,7 @@ void	updateparamflags()
 			| FLAG(obj2.prof_mxyw)
 			| FLAG(obj2.prof_thetaw) | FLAG(obj2.prof_aw)
 			| FLAG(obj2.prof_cxxw)
-			| FLAG(obj2.prof_e1w);
+			| FLAG(obj2.prof_e1w) | FLAG(obj2.prof_pol1w);
 
   FLAG(obj2.dtheta1950) |= FLAG(obj2.prof_theta1950)
 			| FLAG(obj2.prof_spheroid_theta1950)
@@ -313,10 +313,6 @@ void	updateparamflags()
 			| FLAG(obj2.prof_spheroid_aspecterrw)
 			| FLAG(obj2.prof_spheroid_thetaerrw);
 
- FLAG(obj2.prof_mx2w) |= FLAG(obj2.prof_my2w) | FLAG(obj2.prof_mxyw)
-			| FLAG(obj2.prof_e1w) |FLAG(obj2.prof_e2w)
-			| FLAG(obj2.prof_pol1w) |FLAG(obj2.prof_pol2w);
-
   FLAG(obj2.prof_spheroid_fluxmean) |= FLAG(obj2.prof_spheroid_mumean);
   FLAG(obj2.prof_spheroid_fluxeff) |= FLAG(obj2.prof_spheroid_mueff);
   FLAG(obj2.prof_spheroid_peak) |= FLAG(obj2.prof_spheroid_mumax)
@@ -328,16 +324,21 @@ void	updateparamflags()
 			| FLAG(obj2.prof_bar_lengthw)
 			| FLAG(obj2.prof_arms_scalew)
 			| FLAG(obj2.prof_mx2w);
+
+  FLAG(obj2.proferr_e1) |= FLAG(obj2.proferr_e2) | FLAG(obj2.profcorr_e12);
 			
   FLAG(obj2.prof_e1) |= FLAG(obj2.prof_e2)
-			| FLAG(obj2.prof_pol1) | FLAG(obj2.prof_pol2)
-			| FLAG(obj2.prof_e1w);
+			| FLAG(obj2.proferr_e1) | FLAG(obj2.prof_e1w);
+  FLAG(obj2.proferr_pol1) |= FLAG(obj2.proferr_pol2)
+			| FLAG(obj2.profcorr_pol12);
+  FLAG(obj2.prof_pol1) |= FLAG(obj2.prof_pol2)
+			| FLAG(obj2.proferr_pol1) | FLAG(obj2.prof_pol1w);
   FLAG(obj2.prof_a) |= FLAG(obj2.prof_b) | FLAG(obj2.prof_theta)
 			| FLAG(obj2.prof_aw);
   FLAG(obj2.prof_cxx) |= FLAG(obj2.prof_cyy)
 			| FLAG(obj2.prof_cxy) | FLAG(obj2.prof_cxxw);
   FLAG(obj2.prof_mx2) |= FLAG(obj2.prof_my2) | FLAG(obj2.prof_mxy)
-			| FLAG(obj2.prof_e1)
+			| FLAG(obj2.prof_e1) | FLAG(obj2.prof_pol1)
 			| FLAG(obj2.prof_a) | FLAG(obj2.prof_cxx)
 			| FLAG(obj2.prof_mx2w);
   FLAG(obj2.fluxmean_prof) |= FLAG(obj2.mumean_prof);

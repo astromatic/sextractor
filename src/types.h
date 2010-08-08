@@ -9,7 +9,7 @@
 *
 *	Contents:	global type definitions.
 *
-*	Last modify:	23/03/2010
+*	Last modify:	21/07/2010
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -355,7 +355,11 @@ typedef struct
   float		prof_cxx, prof_cyy,
 		prof_cxy;			/* Model-fitting ellip. params*/
   float		prof_pol1, prof_pol2;		/* Model-fitting pol. vector*/
+  float		proferr_pol1, proferr_pol2,
+		profcorr_pol12;			/* Model-fitting pol. errors */
   float		prof_e1, prof_e2;		/* Model-fitting ellip.vector*/
+  float		proferr_e1, proferr_e2,
+		profcorr_e12;			/* Model-fitting ellip. errors */
   double	prof_mx2w, prof_my2w,
 		prof_mxyw;			/* WORLD model-fitting moments*/
   float		prof_aw, prof_bw,

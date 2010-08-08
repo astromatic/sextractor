@@ -19,7 +19,7 @@
 #define	WINPOS_NITERMAX	16	/* Maximum number of steps */
 #define	WINPOS_NSIG	4	/* Measurement radius */
 #define	WINPOS_OVERSAMP	11	/* oversampling in each dimension */
-#define	WINPOS_STEPMIN	0.001	/* Minimum change in position for continueing*/
+#define	WINPOS_STEPMIN	0.0001	/* Minimum change in position for continueing*/
 #define	WINPOS_FAC	2.0	/* Centroid offset factor (2 for a Gaussian) */
 
 /* NOTES:

@@ -9,7 +9,7 @@
 *
 *	Contents:	Fit an arbitrary profile combination to a detection.
 *
-*	Last modify:	07/07/2010
+*	Last modify:	03/08/2010
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -2027,13 +2027,18 @@ INPUT	Profile-fitting structure,
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	07/07/2010
+VERSION	03/08/2010
  ***/
 void	 profit_moments(profitstruct *profit, obj2struct *obj2)
   {
    profstruct	*prof;
-   double	m0, mx2,my2,mxy, den, temp,temp2,pmx2,theta;
-   int		p;
+   double	*jac,*jact, *pjac,*pjact,
+		*dmx2,*dmx2t,*dmy2,*dmy2t,*dmxy,*dmxyt, *de1,*de1t,*de2,*de2t,
+		m0,invm0, mx2,my2,mxy, invden, temp,temp2,invstemp2,temp3,
+		pmx2,theta, flux, var1,var2,cov, dval;
+   float	 *covart;
+   int		findex[PROF_NPROF],
+		i,j,p, nparam;
 
 /*  hw = (float)(profit->modnaxisn[0]/2);*/
 /*  hh = (float)(profit->modnaxisn[1]/2);*/
@@ -2068,19 +2073,57 @@ void	 profit_moments(profitstruct *profit, obj2struct *obj2)
 /*  obj2->prof_my2 = my2 = my2/sum - my*my;*/
 /*  obj2->prof_mxy = mxy = mxy/sum - mx*my;*/
 
+  nparam = profit->nparam;
+  if (FLAG(obj2.proferr_e1) || FLAG(obj2.proferr_pol1))
+    {
+/*-- Set up Jacobian matrices */
+    QCALLOC(jac, double, nparam*3);
+    QMALLOC(pjac, double, nparam*3);
+    dmx2 = jac;
+    dmy2 = jac+nparam;
+    dmxy = jac+2*nparam;
+    }
+  else
+    jac = pjac = NULL;
+
   m0 = mx2 = my2 = mxy = 0.0;
   for (p=0; p<profit->nprof; p++)
     {
     prof = profit->prof[p];
-    prof_moments(profit, prof);
-    m0 += *prof->flux;
-    mx2 += prof->mx2**prof->flux;
-    my2 += prof->my2**prof->flux;
-    mxy += prof->mxy**prof->flux;
+    findex[p] = prof_moments(profit, prof, pjac);
+    flux = *prof->flux;
+    m0 += flux;
+    mx2 += prof->mx2*flux;
+    my2 += prof->my2*flux;
+    mxy += prof->mxy*flux;
+    if (jac)
+      {
+      jact = jac;
+      pjact = pjac;
+      for (j=nparam*3; j--;)
+        *(jact++) += flux * *(pjact++);
+      dmx2[findex[p]] += prof->mx2;
+      dmy2[findex[p]] += prof->my2;
+      dmxy[findex[p]] += prof->mxy;
+      }
     }
-  obj2->prof_mx2 = mx2 / m0;
-  obj2->prof_my2 = my2 / m0;
-  obj2->prof_mxy = mxy / m0;
+  invm0 = 1.0 / m0;
+  obj2->prof_mx2 = (mx2 *= invm0);
+  obj2->prof_my2 = (my2 *= invm0);
+  obj2->prof_mxy = (mxy *= invm0);
+/* Complete the flux derivative of moments */
+  if (jac)
+    {
+    for (p=0; p<profit->nprof; p++)
+      {
+      dmx2[findex[p]] -= mx2;
+      dmy2[findex[p]] -= my2;
+      dmxy[findex[p]] -= mxy;
+      }
+    jact = jac;
+    for (j=nparam*3; j--;)
+      *(jact++) *= invm0;
+    }
 
 /* Handle fully correlated profiles (which cause a singularity...) */
   if ((temp2=mx2*my2-mxy*mxy)<0.00694)
@@ -2090,21 +2133,125 @@ void	 profit_moments(profitstruct *profit, obj2struct *obj2)
     temp2 = mx2*my2-mxy*mxy;
     }
 
-  if (FLAG(obj2.prof_e1))
+  if (FLAG(obj2.prof_pol1))
     {
     if (mx2+my2 > 1.0/BIG)
       {
       obj2->prof_pol1 = (mx2 - my2) / (mx2+my2);
       obj2->prof_pol2 = 2.0*mxy / (mx2 + my2);
-      if (temp2>=0.0)
-        den = mx2+my2+2.0*sqrt(temp2);
-      else
-        den = mx2+my2;
-      obj2->prof_e1 = (mx2 - my2) / den;
-      obj2->prof_e2 = 2.0*mxy / den;
+      if (jac)
+        {
+/*------ Compute Jacobian of polarisation and ellipticity */
+        if (FLAG(obj2.proferr_pol1))
+          {
+          invden = 2.0/((mx2+my2)*(mx2+my2));
+/*-------- Ellipticity */
+          dmx2t = dmx2;
+          dmy2t = dmy2;
+          dmxyt = dmxy;
+          de1t = de1 = pjac;			/* We re-use pjac */
+          de2t = de2 = pjac + nparam;		/* We re-use pjac */
+          for (j=nparam; j--;)
+            {
+            *(de1t++) = invden*(*dmx2t*my2-*dmy2t*mx2);
+            *(de2t++) = invden*(*(dmxyt++)*(mx2+my2)
+			- mxy*(*(dmx2t++)-*(dmy2t++)));
+            }
+/*-------- Use the Jacobians to compute errors */
+          covart = profit->covar;
+          var1 = 0.0;
+          for (j=0; j<nparam; j++)
+            {
+            dval = 0.0;
+            de1t = de1;
+            for (i=nparam; i--;)
+              dval += *(covart++)**(de1t++);
+            var1 += dval*de1[j];
+            }
+          obj2->proferr_pol1 = (float)sqrt(var1<0.0? 0.0: var1);
+          covart = profit->covar;
+          cov = var2 = 0.0;
+          for (j=0; j<nparam; j++)
+            {
+            dval = 0.0;
+            de2t = de2;
+            for (i=nparam; i--;)
+              dval += *(covart++)**(de2t++);
+            cov += dval*de1[j];
+            var2 += dval*de2[j];
+            }
+          obj2->proferr_pol2 = (float)sqrt(var2<0.0? 0.0: var2);
+          obj2->profcorr_pol12 = (dval=var1*var2) > 0.0? (float)(cov/sqrt(dval))
+							: 0.0;
+          }
+        }
       }
     else
-      obj2->prof_pol1 = obj2->prof_pol2 = obj2->prof_e1 = obj2->prof_e2 = 0.0;
+      obj2->prof_pol1 = obj2->prof_pol2
+	= obj2->proferr_pol1 = obj2->proferr_pol2 = obj2->profcorr_pol12 = 0.0;
+    }
+
+  if (FLAG(obj2.prof_e1))
+    {
+    if (mx2+my2 > 1.0/BIG)
+      {
+      if (temp2>=0.0)
+        invden = 1.0/(mx2+my2+2.0*sqrt(temp2));
+      else
+        invden = 1.0/(mx2+my2);
+      obj2->prof_e1 = (float)(invden * (mx2 - my2));
+      obj2->prof_e2 = (float)(2.0 * invden * mxy);
+      if (jac)
+        {
+/*------ Compute Jacobian of polarisation and ellipticity */
+        invstemp2 = (temp2>=0.0) ? 1.0/sqrt(temp2) : 0.0;
+        if (FLAG(obj2.proferr_e1))
+          {
+/*-------- Ellipticity */
+          dmx2t = dmx2;
+          dmy2t = dmy2;
+          dmxyt = dmxy;
+          de1t = de1 = pjac;			/* We re-use pjac */
+          de2t = de2 = pjac + nparam;		/* We re-use pjac */
+          for (j=nparam; j--;)
+            {
+            temp3 = invden*(*dmx2t+*dmy2t
+			+ invstemp2 * (*dmx2t*my2+mx2**dmy2t-2.0*mxy**dmxyt));
+            *(de1t++) = invden*(*(dmx2t++) - *(dmy2t++) - (mx2-my2)*temp3);
+            *(de2t++) = 2.0*invden*(*(dmxyt++) - mxy*temp3);
+            }
+/*-------- Use the Jacobians to compute errors */
+          covart = profit->covar;
+          var1 = 0.0;
+          for (j=0; j<nparam; j++)
+            {
+            dval = 0.0;
+            de1t = de1;
+            for (i=nparam; i--;)
+              dval += *(covart++)**(de1t++);
+            var1 += dval*de1[j];
+            }
+          obj2->proferr_e1 = (float)sqrt(var1<0.0? 0.0: var1);
+          covart = profit->covar;
+          cov = var2 = 0.0;
+          for (j=0; j<nparam; j++)
+            {
+            dval = 0.0;
+            de2t = de2;
+            for (i=nparam; i--;)
+              dval += *(covart++)**(de2t++);
+            cov += dval*de1[j];
+            var2 += dval*de2[j];
+            }
+          obj2->proferr_e2 = (float)sqrt(var2<0.0? 0.0: var2);
+          obj2->profcorr_e12 = (dval=var1*var2) > 0.0? (float)(cov/sqrt(dval))
+							: 0.0;
+          }
+        }
+      }
+    else
+      obj2->prof_e1 = obj2->prof_e2
+	= obj2->proferr_e1 = obj2->proferr_e2 = obj2->profcorr_e12 = 0.0;
     }
 
   if (FLAG(obj2.prof_cxx))
@@ -2127,6 +2274,10 @@ void	 profit_moments(profitstruct *profit, obj2struct *obj2)
     obj2->prof_b = (float)sqrt(pmx2 - temp);
     obj2->prof_theta = theta*180.0/PI;
     }
+
+/* Free memory used by Jacobians */
+  free(jac);
+  free(pjac);
 
   return;
   }
@@ -2695,13 +2846,12 @@ INPUT	Pointer to the profit structure,
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	08/07/2010
+VERSION	27/07/2010
  ***/
 void	profit_covarunboundtobound(profitstruct *profit,
 				double *dcovar, float *covar)
   {
-   double	*dxdy,
-		dxmin,dxmax;
+   double	*dxdy;
    float	*x,*xmin,*xmax;
    int		*fflag,
 		f,f1,f2, nfree, p,p1,p2, nparam;
@@ -2718,12 +2868,7 @@ void	profit_covarunboundtobound(profitstruct *profit,
     if (fflag[p])
       {
       if (xmin[p]!=xmax[p])
-        {
-        dxmin = x[p] - xmin[p];
-        dxmax= xmax[p] - x[p];
-        dxdy[f++] = (fabs(dxmin) < 1.0/BIG && fabs(dxmax) < 1.0/BIG) ?
-		0.0 : dxmin*dxmax/(dxmin+dxmax);
-        }
+        dxdy[f++] = (x[p] - xmin[p]) * (xmax[p] - x[p]) / (xmax[p] - xmin[p]);
       else
         dxdy[f++] = xmax[p];
       }
@@ -3546,61 +3691,160 @@ width = 3.0;
 
 
 /****** prof_moments **********************************************************
-PROTO	void	prof_moments(profitstruct *profit, profstruct *prof)
-PURPOSE	Computes (analytically or numerically) the 2nd moments of a profile
-	model.
+PROTO	int	prof_moments(profitstruct *profit, profstruct *prof)
+PURPOSE	Computes (analytically or numerically) the 2nd moments of a profile.
 INPUT	Profile-fitting structure,
-	profile structure.
-OUTPUT	-.
-NOTES	-.
+	profile structure,
+	optional pointer to 3xnparam Jacobian matrix.
+OUTPUT	Index to the profile flux for further processing.
+NOTES	.
 AUTHOR	E. Bertin (IAP)
-VERSION	08/07/2010
+VERSION	21/07/2010
  ***/
-void	prof_moments(profitstruct *profit, profstruct *prof)
+int	prof_moments(profitstruct *profit, profstruct *prof, double *jac)
   {
-   double	m20,m02, ct,st, bn, n;
+   double	*dmx2,*dmy2,*dmxy,
+		m20, a2, ct,st, mx2fac, my2fac,mxyfac, dc2,ds2,dcs,
+		bn,bn2, n,n2, nfac,nfac2, hscale2, dmdn;
+   int		nparam, index;
 
+  if (jac)
+/*-- Clear output Jacobian */
+    {
+    nparam = profit->nparam;
+    memset(jac, 0, nparam*3*sizeof(double));
+    dmx2 = jac;
+    dmy2 = jac + nparam;
+    dmxy = jac + 2*nparam;
+    }
   if (prof->posangle)
     {
+    a2 = *prof->aspect**prof->aspect;
+    ct = cos(*prof->posangle*DEG);
+    st = sin(*prof->posangle*DEG);
+    mx2fac = ct*ct + st*st*a2;
+    my2fac = st*st + ct*ct*a2;
+    mxyfac = ct*st * (1.0 - a2);
+    if (jac)
+      {
+      dc2 = -2.0*ct*st*DEG;
+      ds2 =  2.0*ct*st*DEG;
+      dcs = (ct*ct - st*st)*DEG;
+      }
     switch(prof->code)
       {
       case PROF_SERSIC:
         n = fabs(*prof->extra[0]);
         bn = 2.0*n - 1.0/3.0 + 4.0/(405.0*n) + 46.0/(25515.0*n*n)
 		+ 131.0/(1148175*n*n*n);	/* Ciotti & Bertin 1999 */
-        m20 = 0.5 * *prof->scale**prof->scale
-		* prof_gamma(4.0*n) / (prof_gamma(2.0*n) * pow(bn, 2.0*n));
+        nfac  = prof_gamma(4.0*n) / (prof_gamma(2.0*n)*pow(bn, 2.0*n));
+        hscale2 = 0.5 * *prof->scale**prof->scale;
+        m20 = hscale2 * nfac;
+        if (jac)
+          {
+          dmx2[profit->paramindex[PARAM_SPHEROID_REFF]]
+			= *prof->scale * nfac * mx2fac;
+          dmy2[profit->paramindex[PARAM_SPHEROID_REFF]]
+			= *prof->scale * nfac * my2fac;
+          dmxy[profit->paramindex[PARAM_SPHEROID_REFF]]
+			= *prof->scale * nfac * mxyfac;
+          n2 = n+0.01;
+          bn2 = 2.0*n2 - 1.0/3.0 + 4.0/(405.0*n2) + 46.0/(25515.0*n2*n2)
+		+ 131.0/(1148175*n2*n2*n2);	/* Ciotti & Bertin 1999 */
+          nfac2 = prof_gamma(4.0*n2) / (prof_gamma(2.0*n2)*pow(bn2, 2.0*n2));
+          dmdn = 100.0 * hscale2 * (nfac2-nfac);
+          dmx2[profit->paramindex[PARAM_SPHEROID_SERSICN]] = dmdn * mx2fac;
+          dmy2[profit->paramindex[PARAM_SPHEROID_SERSICN]] = dmdn * my2fac;
+          dmxy[profit->paramindex[PARAM_SPHEROID_SERSICN]] = dmdn * mxyfac;
+          dmx2[profit->paramindex[PARAM_SPHEROID_ASPECT]]
+			= 2.0 * m20 * st*st * *prof->aspect;
+          dmy2[profit->paramindex[PARAM_SPHEROID_ASPECT]]
+			= 2.0 * m20 * ct*ct * *prof->aspect;
+          dmxy[profit->paramindex[PARAM_SPHEROID_ASPECT]]
+			= -2.0 * m20 * ct*st * *prof->aspect;
+          dmx2[profit->paramindex[PARAM_SPHEROID_POSANG]] = m20 * (dc2+ds2*a2);
+          dmy2[profit->paramindex[PARAM_SPHEROID_POSANG]] = m20 * (ds2+dc2*a2);
+          dmxy[profit->paramindex[PARAM_SPHEROID_POSANG]] = m20 * (1.0-a2)*dcs;
+          }
+        index = profit->paramindex[PARAM_SPHEROID_FLUX];
         break; 
       case PROF_DEVAUCOULEURS:
         m20 = 10.83995 * *prof->scale**prof->scale;
+        if (jac)
+          {
+          dmx2[profit->paramindex[PARAM_SPHEROID_REFF]]
+			= 21.680 * *prof->scale * mx2fac;
+          dmy2[profit->paramindex[PARAM_SPHEROID_REFF]]
+			= 21.680 * *prof->scale * my2fac;
+          dmxy[profit->paramindex[PARAM_SPHEROID_REFF]]
+			= 21.680 * *prof->scale * mxyfac;
+          dmx2[profit->paramindex[PARAM_SPHEROID_ASPECT]]
+			= 2.0 * m20 * st*st * *prof->aspect;
+          dmy2[profit->paramindex[PARAM_SPHEROID_ASPECT]]
+			= 2.0 * m20 * ct*ct * *prof->aspect;
+          dmxy[profit->paramindex[PARAM_SPHEROID_ASPECT]]
+			= -2.0 * m20 * ct*st * *prof->aspect;
+          dmx2[profit->paramindex[PARAM_SPHEROID_POSANG]] = m20 * (dc2+ds2*a2);
+          dmy2[profit->paramindex[PARAM_SPHEROID_POSANG]] = m20 * (ds2+dc2*a2);
+          dmxy[profit->paramindex[PARAM_SPHEROID_POSANG]] = m20 * (1.0-a2)*dcs;
+          }
+        index = profit->paramindex[PARAM_SPHEROID_FLUX];
         break;
       case PROF_EXPONENTIAL:
         m20 = 3.0 * *prof->scale**prof->scale;
+        if (jac)
+          {
+          dmx2[profit->paramindex[PARAM_DISK_SCALE]]
+			= 6.0 * *prof->scale * mx2fac;
+          dmy2[profit->paramindex[PARAM_DISK_SCALE]]
+			= 6.0 * *prof->scale * my2fac;
+          dmxy[profit->paramindex[PARAM_DISK_SCALE]]
+			= 6.0 * *prof->scale * mxyfac;
+          dmx2[profit->paramindex[PARAM_DISK_ASPECT]]
+			= 2.0 * m20 * st*st * *prof->aspect;
+          dmy2[profit->paramindex[PARAM_DISK_ASPECT]]
+			= 2.0 * m20 * ct*ct * *prof->aspect;
+          dmxy[profit->paramindex[PARAM_DISK_ASPECT]]
+			= -2.0 * m20 * ct*st * *prof->aspect;
+          dmx2[profit->paramindex[PARAM_DISK_POSANG]] = m20 * (dc2 + ds2*a2);
+          dmy2[profit->paramindex[PARAM_DISK_POSANG]] = m20 * (ds2 + dc2*a2);
+          dmxy[profit->paramindex[PARAM_DISK_POSANG]] = m20 * (1.0 - a2) * dcs;
+          }
+        index = profit->paramindex[PARAM_DISK_FLUX];
         break;
       case PROF_ARMS:
+        m20 = 1.0;
+        index = profit->paramindex[PARAM_ARMS_FLUX];
+        break;
       case PROF_BAR:
+        m20 = 1.0;
+        index = profit->paramindex[PARAM_BAR_FLUX];
+        break;
       case PROF_INRING:
+        m20 = 1.0;
+        index = profit->paramindex[PARAM_INRING_FLUX];
+        break;
       case PROF_OUTRING:
-        m20 = 1.0 / 1.0;
+        m20 = 1.0;
+        index = profit->paramindex[PARAM_OUTRING_FLUX];
         break;
       default:
         m20 = 0.0;		/* to avoid gcc -Wall warnings */
+        index = 0;		/* to avoid gcc -Wall warnings */
         error(EXIT_FAILURE, "*Internal Error*: Unknown oriented model in ",
 		"prof_moments()");
       break;
       }
 
-    m02 = m20**prof->aspect**prof->aspect;
-    ct = cos(*prof->posangle*DEG);
-    st = sin(*prof->posangle*DEG);
-    prof->mx2 = ct*ct*m20 + st*st*m02;
-    prof->my2 = st*st*m20 + ct*ct*m02;
-    prof->mxy = ct*st*(m20 - m02);
+    prof->mx2 = m20*mx2fac;
+    prof->my2 = m20*my2fac;
+    prof->mxy = m20*mxyfac;
+    
     }
   else
     prof->mx2 = prof->my2 = prof->mxy = 0.0;
 
-  return;
+  return index;
   }
 
 
