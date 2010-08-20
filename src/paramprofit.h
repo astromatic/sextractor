@@ -9,7 +9,7 @@
 *
 *	Contents:	Model-fitting parameter list for catalog data.
 *
-*	Last modify:	03/08/2010
+*	Last modify:	20/08/2010
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -198,23 +198,23 @@
 	"src.ellipticity;stat.fit;instr.det", ""},
 
   {"ELLIP1ERRMODEL_IMAGE", "Ellipticity component std.error from model-fitting",
-	&outobj2.proferr_e1, H_FLOAT, T_FLOAT, "%10.6f", "",
+	&outobj2.prof_e1err, H_FLOAT, T_FLOAT, "%10.6f", "",
 	"stat.error;src.ellipticity;stat.fit;instr.det", ""},
   {"ELLIP2ERRMODEL_IMAGE", "Ellipticity component std.error from model-fitting",
-	&outobj2.proferr_e2, H_FLOAT, T_FLOAT, "%10.6f", "",
+	&outobj2.prof_e2err, H_FLOAT, T_FLOAT, "%10.6f", "",
 	"stat.error;src.ellipticity;stat.fit;instr.det", ""},
   {"ELLIPCORRMODEL_IMAGE", "Corr.coeff between ellip.components from model-fitting",
-	&outobj2.profcorr_e12, H_FLOAT, T_FLOAT, "%10.6f", "",
+	&outobj2.prof_e12corr, H_FLOAT, T_FLOAT, "%10.6f", "",
 	"stat.correlation;src.ellipticity;stat.fit;instr.det", ""},
 
   {"POLAR1ERRMODEL_IMAGE", "Polarisation component std.error from model-fitting",
-	&outobj2.proferr_pol1, H_FLOAT, T_FLOAT, "%10.6f", "",
+	&outobj2.prof_pol1err, H_FLOAT, T_FLOAT, "%10.6f", "",
 	"stat.error;src.ellipticity;stat.fit;instr.det", ""},
   {"POLAR2ERRMODEL_IMAGE", "Polarisation component std.error from model-fitting",
-	&outobj2.proferr_pol2, H_FLOAT, T_FLOAT, "%10.6f", "",
+	&outobj2.prof_pol2err, H_FLOAT, T_FLOAT, "%10.6f", "",
 	"stat.error;src.ellipticity;stat.fit;instr.det", ""},
   {"POLARCORRMODEL_IMAGE", "Corr.coeff between polar. components from fitting",
-	&outobj2.profcorr_pol12, H_FLOAT, T_FLOAT, "%10.6f", "",
+	&outobj2.prof_pol12corr, H_FLOAT, T_FLOAT, "%10.6f", "",
 	"stat.correlation;src.ellipticity;stat.fit;instr.det", ""},
 
   {"X2MODEL_WORLD", "Variance along X-WORLD (alpha) from model-fitting",
@@ -238,6 +238,26 @@
   {"POLAR2MODEL_WORLD", "Polarisation component from model-fitting",
 	&outobj2.prof_pol2w, H_FLOAT, T_FLOAT, "%10.6f", "",
 	"src.ellipticity;stat.fit", ""},
+
+  {"ELLIP1ERRMODEL_WORLD", "Ellipticity component std.error from model-fitting",
+	&outobj2.prof_e1errw, H_FLOAT, T_FLOAT, "%10.6f", "",
+	"stat.error;src.ellipticity;stat.fit", ""},
+  {"ELLIP2ERRMODEL_WORLD", "Ellipticity component std.error from model-fitting",
+	&outobj2.prof_e2errw, H_FLOAT, T_FLOAT, "%10.6f", "",
+	"stat.error;src.ellipticity;stat.fit", ""},
+  {"ELLIPCORRMODEL_WORLD", "Corr.coeff between ellip.components from model-fitting",
+	&outobj2.prof_e12corrw, H_FLOAT, T_FLOAT, "%10.6f", "",
+	"stat.correlation;src.ellipticity;stat.fit", ""},
+
+  {"POLAR1ERRMODEL_WORLD", "Polarisation component std.error from model-fitting",
+	&outobj2.prof_pol1errw, H_FLOAT, T_FLOAT, "%10.6f", "",
+	"stat.error;src.ellipticity;stat.fit", ""},
+  {"POLAR2ERRMODEL_WORLD", "Polarisation component std.error from model-fitting",
+	&outobj2.prof_pol2errw, H_FLOAT, T_FLOAT, "%10.6f", "",
+	"stat.error;src.ellipticity;stat.fit", ""},
+  {"POLARCORRMODEL_WORLD", "Corr.coeff between polar. components from fitting",
+	&outobj2.prof_pol12corrw, H_FLOAT, T_FLOAT, "%10.6f", "",
+	"stat.correlation;src.ellipticity;stat.fit", ""},
 
   {"CXXMODEL_IMAGE", "Cxx ellipse parameter from model-fitting",
 	&outobj2.prof_cxx, H_EXPO, T_FLOAT, "%15.7e", "pixel**(-2)",

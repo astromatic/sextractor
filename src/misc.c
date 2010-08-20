@@ -9,7 +9,7 @@
 *
 *	Contents:	miscellaneous functions.
 *
-*	Last modify:	24/09/2009
+*	Last modify:	20/08/2010
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -70,6 +70,60 @@ float	hmedian(float *ra, int n)
     }
 
 /* (the 'return' is inside the loop!!) */
+  }
+
+
+/****** propagate_covar ******************************************************
+PROTO	void	propagate_covar(double *vi, double *d, double *vo,
+				int ni, int no,	double *temp)
+PURPOSE	Compute Dt.V.D (propagate covariance matrix errors)
+INPUT	Pointer to the original covariance matrix,
+	pointer to the matrix of derivatives,
+	input number of parameters,
+	output number of parameters,
+	pointer to a ni*no work array.
+OUTPUT	-.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	20/08/2010
+ ***/
+void propagate_covar(double *vi, double *d, double *vo,
+				int ni, int no,	double *temp)
+  {
+   double	*vit,*dt,*vot,*tempt,
+		dval;
+   int		i,j,k;
+
+  tempt = temp;
+  vit = vi;
+  for (j=0; j<ni; j++)
+    {
+    dt = d;
+    for (i=no; i--;)
+      {
+      vit = vi + j*ni;
+      dval = 0.0;
+      for (k=ni; k--;)
+        dval += *(vit++)**(dt++);
+      *(tempt++) = dval;
+      }
+    }
+
+  vot = vo;
+  for (j=0; j<no; j++)
+    {
+    for (i=0; i<no; i++)
+      {
+      dt = d + j*ni;
+      tempt = temp + i;
+      dval = 0.0;
+      for (k=ni; k--; tempt+=no)
+        dval += *(dt++)**tempt;
+      *(vot++) = dval;
+      }
+    }
+
+  return;
   }
 
 
