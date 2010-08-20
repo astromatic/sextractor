@@ -9,7 +9,7 @@
 *
 *	Contents:	Fit an arbitrary profile combination to a detection.
 *
-*	Last modify:	03/08/2010
+*	Last modify:	19/08/2010
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -2027,15 +2027,17 @@ INPUT	Profile-fitting structure,
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	03/08/2010
+VERSION	20/08/2010
  ***/
 void	 profit_moments(profitstruct *profit, obj2struct *obj2)
   {
    profstruct	*prof;
-   double	*jac,*jact, *pjac,*pjact,
-		*dmx2,*dmx2t,*dmy2,*dmy2t,*dmxy,*dmxyt, *de1,*de1t,*de2,*de2t,
-		m0,invm0, mx2,my2,mxy, invden, temp,temp2,invstemp2,temp3,
-		pmx2,theta, flux, var1,var2,cov, dval;
+   double	dpdmx2[6], cov[4],
+		*jac,*jact, *pjac,*pjact, *dcovar,*dcovart,
+		*dmx2,*dmy2,*dmxy,
+		m0,invm0, mx2,my2,mxy, den,invden,
+		temp, temp2,invtemp2,invstemp2,
+		pmx2,theta, flux, dval;
    float	 *covart;
    int		findex[PROF_NPROF],
 		i,j,p, nparam;
@@ -2074,17 +2076,22 @@ void	 profit_moments(profitstruct *profit, obj2struct *obj2)
 /*  obj2->prof_mxy = mxy = mxy/sum - mx*my;*/
 
   nparam = profit->nparam;
-  if (FLAG(obj2.proferr_e1) || FLAG(obj2.proferr_pol1))
+  if (FLAG(obj2.prof_e1err) || FLAG(obj2.prof_pol1err))
     {
 /*-- Set up Jacobian matrices */
     QCALLOC(jac, double, nparam*3);
-    QMALLOC(pjac, double, nparam*3);
+    QMALLOC(pjac, double, (nparam<2? 6 : nparam*3));
+    QMALLOC(dcovar, double, nparam*nparam);
+    dcovart = dcovar;
+    covart = profit->covar;
+    for (i=nparam*nparam; i--;)
+      *(dcovart++) = (double)(*(covart++));
     dmx2 = jac;
     dmy2 = jac+nparam;
     dmxy = jac+2*nparam;
     }
   else
-    jac = pjac = NULL;
+    jac = pjac = dcovar = dmx2 = dmy2 = dmxy = NULL;
 
   m0 = mx2 = my2 = mxy = 0.0;
   for (p=0; p<profit->nprof; p++)
@@ -2102,9 +2109,6 @@ void	 profit_moments(profitstruct *profit, obj2struct *obj2)
       pjact = pjac;
       for (j=nparam*3; j--;)
         *(jact++) += flux * *(pjact++);
-      dmx2[findex[p]] += prof->mx2;
-      dmy2[findex[p]] += prof->my2;
-      dmxy[findex[p]] += prof->mxy;
       }
     }
   invm0 = 1.0 / m0;
@@ -2116,9 +2120,10 @@ void	 profit_moments(profitstruct *profit, obj2struct *obj2)
     {
     for (p=0; p<profit->nprof; p++)
       {
-      dmx2[findex[p]] -= mx2;
-      dmy2[findex[p]] -= my2;
-      dmxy[findex[p]] -= mxy;
+      prof = profit->prof[p];
+      dmx2[findex[p]] = prof->mx2 - mx2;
+      dmy2[findex[p]] = prof->my2 - my2;
+      dmxy[findex[p]] = prof->mxy - mxy;
       }
     jact = jac;
     for (j=nparam*3; j--;)
@@ -2133,132 +2138,83 @@ void	 profit_moments(profitstruct *profit, obj2struct *obj2)
     temp2 = mx2*my2-mxy*mxy;
     }
 
+/* Use the Jacobians to compute the moment covariance matrix */
+  if (jac)
+    propagate_covar(dcovar, jac, obj2->prof_mx2cov, nparam, 3,
+						pjac);	/* We re-use pjac */
+
   if (FLAG(obj2.prof_pol1))
     {
+/*--- "Polarisation", i.e. module = (a^2-b^2)/(a^2+b^2) */
     if (mx2+my2 > 1.0/BIG)
       {
       obj2->prof_pol1 = (mx2 - my2) / (mx2+my2);
       obj2->prof_pol2 = 2.0*mxy / (mx2 + my2);
-      if (jac)
+      if (FLAG(obj2.prof_pol1err))
         {
-/*------ Compute Jacobian of polarisation and ellipticity */
-        if (FLAG(obj2.proferr_pol1))
-          {
-          invden = 2.0/((mx2+my2)*(mx2+my2));
-/*-------- Ellipticity */
-          dmx2t = dmx2;
-          dmy2t = dmy2;
-          dmxyt = dmxy;
-          de1t = de1 = pjac;			/* We re-use pjac */
-          de2t = de2 = pjac + nparam;		/* We re-use pjac */
-          for (j=nparam; j--;)
-            {
-            *(de1t++) = invden*(*dmx2t*my2-*dmy2t*mx2);
-            *(de2t++) = invden*(*(dmxyt++)*(mx2+my2)
-			- mxy*(*(dmx2t++)-*(dmy2t++)));
-            }
-/*-------- Use the Jacobians to compute errors */
-          covart = profit->covar;
-          var1 = 0.0;
-          for (j=0; j<nparam; j++)
-            {
-            dval = 0.0;
-            de1t = de1;
-            for (i=nparam; i--;)
-              dval += *(covart++)**(de1t++);
-            var1 += dval*de1[j];
-            }
-          obj2->proferr_pol1 = (float)sqrt(var1<0.0? 0.0: var1);
-          covart = profit->covar;
-          cov = var2 = 0.0;
-          for (j=0; j<nparam; j++)
-            {
-            dval = 0.0;
-            de2t = de2;
-            for (i=nparam; i--;)
-              dval += *(covart++)**(de2t++);
-            cov += dval*de1[j];
-            var2 += dval*de2[j];
-            }
-          obj2->proferr_pol2 = (float)sqrt(var2<0.0? 0.0: var2);
-          obj2->profcorr_pol12 = (dval=var1*var2) > 0.0? (float)(cov/sqrt(dval))
-							: 0.0;
-          }
+/*------ Compute the Jacobian of polarisation */
+        invden = 1.0/(mx2+my2);
+        dpdmx2[0] =  2.0*my2*invden*invden;
+        dpdmx2[1] = -2.0*mx2*invden*invden;
+        dpdmx2[2] =  0.0;
+        dpdmx2[3] = -2.0*mxy*invden*invden;
+        dpdmx2[4] = -2.0*mxy*invden*invden;
+        dpdmx2[5] =  2.0*invden;
+
+/*------ Use the Jacobian to compute the polarisation covariance matrix */
+        propagate_covar(obj2->prof_mx2cov, dpdmx2, cov, 3, 2,
+						pjac);	/* We re-use pjac */
+        obj2->prof_pol1err = (float)sqrt(cov[0]<0.0? 0.0: cov[0]);
+        obj2->prof_pol2err = (float)sqrt(cov[3]<0.0? 0.0: cov[3]);
+        obj2->prof_pol12corr = (dval=cov[0]*cov[3]) > 0.0?
+					(float)(cov[1]/sqrt(dval)) : 0.0;
         }
       }
     else
       obj2->prof_pol1 = obj2->prof_pol2
-	= obj2->proferr_pol1 = obj2->proferr_pol2 = obj2->profcorr_pol12 = 0.0;
+	= obj2->prof_pol1err = obj2->prof_pol2err = obj2->prof_pol12corr = 0.0;
     }
 
   if (FLAG(obj2.prof_e1))
     {
+/*--- "Ellipticity", i.e. module = (a-b)/(a+b) */
     if (mx2+my2 > 1.0/BIG)
       {
-      if (temp2>=0.0)
-        invden = 1.0/(mx2+my2+2.0*sqrt(temp2));
-      else
-        invden = 1.0/(mx2+my2);
+      den = (temp2>=0.0) ? mx2+my2+2.0*sqrt(temp2) : mx2+my2;
+      invden = 1.0/den;
       obj2->prof_e1 = (float)(invden * (mx2 - my2));
       obj2->prof_e2 = (float)(2.0 * invden * mxy);
-      if (jac)
+      if (FLAG(obj2.prof_e1err))
         {
-/*------ Compute Jacobian of polarisation and ellipticity */
+/*------ Compute the Jacobian of ellipticity */
         invstemp2 = (temp2>=0.0) ? 1.0/sqrt(temp2) : 0.0;
-        if (FLAG(obj2.proferr_e1))
-          {
-/*-------- Ellipticity */
-          dmx2t = dmx2;
-          dmy2t = dmy2;
-          dmxyt = dmxy;
-          de1t = de1 = pjac;			/* We re-use pjac */
-          de2t = de2 = pjac + nparam;		/* We re-use pjac */
-          for (j=nparam; j--;)
-            {
-            temp3 = invden*(*dmx2t+*dmy2t
-			+ invstemp2 * (*dmx2t*my2+mx2**dmy2t-2.0*mxy**dmxyt));
-            *(de1t++) = invden*(*(dmx2t++) - *(dmy2t++) - (mx2-my2)*temp3);
-            *(de2t++) = 2.0*invden*(*(dmxyt++) - mxy*temp3);
-            }
-/*-------- Use the Jacobians to compute errors */
-          covart = profit->covar;
-          var1 = 0.0;
-          for (j=0; j<nparam; j++)
-            {
-            dval = 0.0;
-            de1t = de1;
-            for (i=nparam; i--;)
-              dval += *(covart++)**(de1t++);
-            var1 += dval*de1[j];
-            }
-          obj2->proferr_e1 = (float)sqrt(var1<0.0? 0.0: var1);
-          covart = profit->covar;
-          cov = var2 = 0.0;
-          for (j=0; j<nparam; j++)
-            {
-            dval = 0.0;
-            de2t = de2;
-            for (i=nparam; i--;)
-              dval += *(covart++)**(de2t++);
-            cov += dval*de1[j];
-            var2 += dval*de2[j];
-            }
-          obj2->proferr_e2 = (float)sqrt(var2<0.0? 0.0: var2);
-          obj2->profcorr_e12 = (dval=var1*var2) > 0.0? (float)(cov/sqrt(dval))
-							: 0.0;
-          }
+        dpdmx2[0] = ( den - (1.0+my2*invstemp2)*(mx2-my2))*invden*invden;
+        dpdmx2[1] = (-den - (1.0+mx2*invstemp2)*(mx2-my2))*invden*invden;
+        dpdmx2[2] = 2.0*mxy*invstemp2*(mx2-my2)*invden*invden;
+        dpdmx2[3] = -2.0*mxy*(1.0+my2*invstemp2)*invden*invden;
+        dpdmx2[4] = -2.0*mxy*(1.0+mx2*invstemp2)*invden*invden;
+        dpdmx2[5] =  (2.0*den+4.0*mxy*mxy*invstemp2)*invden*invden;
+
+/*------ Use the Jacobian to compute the ellipticity covariance matrix */
+        propagate_covar(obj2->prof_mx2cov, dpdmx2, cov, 3, 2,
+					pjac);	/* We re-use pjac */
+        obj2->prof_e1err = (float)sqrt(cov[0]<0.0? 0.0: cov[0]);
+        obj2->prof_e2err = (float)sqrt(cov[3]<0.0? 0.0: cov[3]);
+        obj2->prof_e12corr = (dval=cov[0]*cov[3]) > 0.0?
+					(float)(cov[1]/sqrt(dval)) : 0.0;
         }
       }
     else
       obj2->prof_e1 = obj2->prof_e2
-	= obj2->proferr_e1 = obj2->proferr_e2 = obj2->profcorr_e12 = 0.0;
+	= obj2->prof_e1err = obj2->prof_e2err = obj2->prof_e12corr = 0.0;
     }
 
   if (FLAG(obj2.prof_cxx))
     {
-    obj2->prof_cxx = (float)(my2/temp2);
-    obj2->prof_cyy = (float)(mx2/temp2);
-    obj2->prof_cxy = (float)(-2*mxy/temp2);
+    invtemp2 = (temp2>=0.0) ? 1.0/temp2 : 0.0;
+    obj2->prof_cxx = (float)(my2*invtemp2);
+    obj2->prof_cyy = (float)(mx2*invtemp2);
+    obj2->prof_cxy = (float)(-2*mxy*invtemp2);
     }
 
   if (FLAG(obj2.prof_a))
@@ -2278,6 +2234,7 @@ void	 profit_moments(profitstruct *profit, obj2struct *obj2)
 /* Free memory used by Jacobians */
   free(jac);
   free(pjac);
+  free(dcovar);
 
   return;
   }
@@ -3699,7 +3656,7 @@ INPUT	Profile-fitting structure,
 OUTPUT	Index to the profile flux for further processing.
 NOTES	.
 AUTHOR	E. Bertin (IAP)
-VERSION	21/07/2010
+VERSION	20/08/2010
  ***/
 int	prof_moments(profitstruct *profit, profstruct *prof, double *jac)
   {
@@ -3717,6 +3674,13 @@ int	prof_moments(profitstruct *profit, profstruct *prof, double *jac)
     dmy2 = jac + nparam;
     dmxy = jac + 2*nparam;
     }
+  else
+    dmx2 = dmy2 = dmxy = NULL;		/* To avoid gcc -Wall warnings */
+
+  m20 = 0.0;				/* to avoid gcc -Wall warnings */
+  index = 0;				/* to avoid gcc -Wall warnings */
+
+
   if (prof->posangle)
     {
     a2 = *prof->aspect**prof->aspect;
@@ -3731,6 +3695,8 @@ int	prof_moments(profitstruct *profit, profstruct *prof, double *jac)
       ds2 =  2.0*ct*st*DEG;
       dcs = (ct*ct - st*st)*DEG;
       }
+    else
+      dc2 = ds2 = dcs = 0.0;		/* To avoid gcc -Wall warnings */
     switch(prof->code)
       {
       case PROF_SERSIC:
@@ -3829,8 +3795,6 @@ int	prof_moments(profitstruct *profit, profstruct *prof, double *jac)
         index = profit->paramindex[PARAM_OUTRING_FLUX];
         break;
       default:
-        m20 = 0.0;		/* to avoid gcc -Wall warnings */
-        index = 0;		/* to avoid gcc -Wall warnings */
         error(EXIT_FAILURE, "*Internal Error*: Unknown oriented model in ",
 		"prof_moments()");
       break;
