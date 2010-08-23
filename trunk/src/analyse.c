@@ -9,7 +9,7 @@
 *
 *	Contents:	analyse(), endobject()...: measurements on detections.
 *
-*	Last modify:	15/12/2009
+*	Last modify:	23/08/2010
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -684,6 +684,7 @@ void	endobject(picstruct *field, picstruct *dfield, picstruct *wfield,
       }
 
 /*----------------------------- Profile fitting -----------------------------*/
+#ifdef USE_MODEL
     if (prefs.prof_flag)
       {
       profit_fit(theprofit, field, wfield, obj, obj2);
@@ -697,7 +698,7 @@ void	endobject(picstruct *field, picstruct *dfield, picstruct *wfield,
       if (FLAG(obj2.poserrmx2w_prof))
         astrom_proferrparam(field, obj);
       }
-
+#endif
 /*--- Express everything in magnitude units */
     computemags(field, obj);
 

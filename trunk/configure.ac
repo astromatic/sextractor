@@ -6,7 +6,7 @@ define([AC_CACHE_LOAD],)
 define([AC_CACHE_SAVE],)
 
 # This is your standard Bertin source code...
-AC_INIT(sextractor, 2.11.11, [bertin@iap.fr])
+AC_INIT(sextractor, 2.12.0, [bertin@iap.fr])
 AC_CONFIG_SRCDIR(src/makeit.c)
 AC_CONFIG_AUX_DIR(autoconf)
 AM_CONFIG_HEADER(config.h)
@@ -142,6 +142,20 @@ AC_ARG_WITH(xsl_url,
 
 AC_DEFINE_UNQUOTED([XSL_URL], "$xsl_url",[Default URL of the XSLT filter])
 
+# Provide special option to disable model-fitting (enabled by default)
+AC_MSG_CHECKING([if model-fitting should be disabled])
+AC_ARG_ENABLE([model-fitting],
+	[AC_HELP_STRING([--disable-model-fitting],
+	[Disable model-fitting and ATLAS/FFTW dependency \
+(enabled by default)])],
+	[use_model="$enableval"],
+	[use_model="yes"])
+if test "$use_model" = "no"; then
+  AC_MSG_RESULT([yes])
+else
+  AC_MSG_RESULT([no])
+fi
+
 # Set flags for multithreading
 n_pthreads=16
 AC_ARG_ENABLE(threads,
@@ -178,6 +192,16 @@ the executable as portable as possible (off by default)])],
 	AC_MSG_RESULT([yes]),
 	AC_MSG_RESULT([no]))
 
+############# Actions to complete if model-fitting is activated ##############
+AC_MSG_CHECKING([for model-fitting configure option])
+if test "$use_model" = "yes"; then
+  AC_MSG_RESULT([enabled])
+  AC_DEFINE(USE_MODEL, 1, [Triggers model-fitting and linking with ATLAS/FFTW])
+else
+  AC_MSG_RESULT([disabled])
+fi
+AM_CONDITIONAL(USE_MODEL, [test $use_model = "yes"])
+
 ################# Actions to complete in case of multhreading ################
 AC_DEFINE_UNQUOTED(THREADS_NMAX, $n_pthreads,[Maximum number of POSIX threads])
 if test "$use_pthreads" = "yes"; then
@@ -190,30 +214,34 @@ if test "$use_pthreads" = "yes"; then
   [AM_CFLAGS="$AM_CFLAGS $PTHREAD_CFLAGS -D_REENTRANT"]
   LIBS="$PTHREAD_LIBS $LIBS"
 fi
-AM_CONDITIONAL(USE_THREADS, test $use_pthreads = "yes")
+AM_CONDITIONAL(USE_THREADS, [test $use_pthreads = "yes"])
 
 ################ handle the FFTW library (Fourier transforms) ################
-ACX_FFTW($fftw_libdir,$fftw_incdir,$use_pthreads,yes,
+if test "$use_model" = "yes"; then
+  ACX_FFTW($fftw_libdir,$fftw_incdir,$use_pthreads,yes,
 	[use_fftw=yes],[use_fftw=no])
-if test "$use_fftw" = "yes"; then
-  LIBS="$FFTW_LIBS $LIBS"
-  if test "$FFTW_WARN" != ""; then
-    AC_MSG_WARN([$FFTW_WARN])
+  if test "$use_fftw" = "yes"; then
+    LIBS="$FFTW_LIBS $LIBS"
+    if test "$FFTW_WARN" != ""; then
+      AC_MSG_WARN([$FFTW_WARN])
+    fi
+  else
+    AC_MSG_ERROR([$FFTW_ERROR Exiting.])
   fi
-else
-  AC_MSG_ERROR([$FFTW_ERROR Exiting.])
 fi
 
 ################## handle the ATLAS library(linear algebra) ##################
-ACX_ATLAS($atlas_libdir,$atlas_incdir,$use_pthreads,
+if test "$use_model" = "yes"; then
+  ACX_ATLAS($atlas_libdir,$atlas_incdir,$use_pthreads,
 	[use_atlas=yes],[use_atlas=no])
-if test "$use_atlas" = "yes"; then
-  LIBS="$ATLAS_LIB $LIBS"
-  if test "$ATLAS_WARN" != ""; then
-    AC_MSG_WARN([$ATLAS_WARN])
+  if test "$use_atlas" = "yes"; then
+    LIBS="$ATLAS_LIB $LIBS"
+    if test "$ATLAS_WARN" != ""; then
+      AC_MSG_WARN([$ATLAS_WARN])
+    fi
+  else
+    AC_MSG_ERROR([$ATLAS_ERROR Exiting.])
   fi
-else
-  AC_MSG_ERROR([$ATLAS_ERROR Exiting.])
 fi
 
 # Link with gprof option

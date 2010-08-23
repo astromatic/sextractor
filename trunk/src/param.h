@@ -9,7 +9,7 @@
 *
 *	Contents:	parameter list for catalog data.
 *
-*	Last modify:	18/05/2010
+*	Last modify:	23/08/2010
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -886,7 +886,9 @@ keystruct	objkey[] = {
 	"src.morph.param", "", 1, &prefs.pc_vectorsize},
 */
 
+#ifdef USE_MODEL
 #include "paramprofit.h"
+#endif
 
   {""}
   };
