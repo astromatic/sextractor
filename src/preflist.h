@@ -9,7 +9,7 @@
 *
 *	Contents:	Keywords for the configuration file.
 *
-*	Last modify:	18/05/2010
+*	Last modify:	23/08/2010
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -70,9 +70,12 @@
    "MINIBACK_RMS", "-BACKGROUND",
    "FILTERED", "OBJECTS", "APERTURES", "SEGMENTATION", "ASSOC",
    "-OBJECTS", "PSFS", "-PSFS",
-   "PC_CONVPROTOS", "-PC_CONVPROTOS", "PC_PROTOS", 
-   "MAP_SOM", "MODELS", "-MODELS", "SPHEROIDS", "-SPHEROIDS",
-   "DISKS", "-DISKS", "PATTERNS", "OTHER", ""},
+   "PC_CONVPROTOS", "-PC_CONVPROTOS", "PC_PROTOS",  "MAP_SOM",
+#ifdef USE_MODEL
+   "MODELS", "-MODELS", "SPHEROIDS", "-SPHEROIDS",
+   "DISKS", "-DISKS", "PATTERNS",
+#endif
+   "OTHER", ""},
    0, 17, &prefs.ncheck_type},
   {"CLEAN", P_BOOL, &prefs.clean_flag},
   {"CLEAN_PARAM", P_FLOAT, &prefs.clean_param, 0,0, 0.1,10.0},
