@@ -2,11 +2,17 @@ function [ret, popt, info, covar]=levmar(fname, jacname, p0, x, itmax, opts, typ
 % LEVMAR  matlab MEX interface to the levmar non-linear least squares minimization
 % library available from http://www.ics.forth.gr/~lourakis/levmar/
 % 
-% levmar can be used in any of the 4 following ways:
+% levmar can be used in any of the 8 following ways:
 % [ret, popt, info, covar]=levmar(fname, jacname, p0, x, itmax, opts, 'unc', ...)
 % [ret, popt, info, covar]=levmar(fname, jacname, p0, x, itmax, opts, 'bc', lb, ub, ...)
 % [ret, popt, info, covar]=levmar(fname, jacname, p0, x, itmax, opts, 'lec', A, b, ...)
 % [ret, popt, info, covar]=levmar(fname, jacname, p0, x, itmax, opts, 'blec', lb, ub, A, b, wghts, ...)
+%
+% [ret, popt, info, covar]=levmar(fname, jacname, p0, x, itmax, opts, 'bleic', lb, ub, A, b, C, d, ...)
+% [ret, popt, info, covar]=levmar(fname, jacname, p0, x, itmax, opts, 'blic', lb, ub, C, d, ...)
+% [ret, popt, info, covar]=levmar(fname, jacname, p0, x, itmax, opts, 'leic', A, b, C, d, ...)
+% [ret, popt, info, covar]=levmar(fname, jacname, p0, x, itmax, opts, 'lic', C, d, ...)
+%
 %  
 % The dots at the end denote any additional, problem specific data that are passed uniterpreted to
 % all invocations of fname and jacname, see below for details.
@@ -44,12 +50,19 @@ function [ret, popt, info, covar]=levmar(fname, jacname, p0, x, itmax, opts, typ
 %      'bc' specifies minimization subject to box constraints.
 %      'lec' specifies minimization subject to linear equation constraints.
 %      'blec' specifies minimization subject to box and linear equation constraints.
+%      'bleic' specifies minimization subject to box, linear equation and inequality constraints.
+%      'blic' specifies minimization subject to box and linear inequality constraints.
+%      'leic' specifies minimization subject to linear equation and inequality constraints.
+%      'lic' specifies minimization subject to linear inequality constraints.
 %      If omitted, a default of 'unc' is assumed. Depending on the minimization type, the MEX
-%      interface will invoke one of dlevmar_XXX, dlevmar_bc_XXX, dlevmar_lec_XXX or dlevmar_blec_XXX
+%      interface will invoke one of dlevmar_XXX, dlevmar_bc_XXX, dlevmar_lec_XXX, dlevmar_blec_XXX or dlevmar_bleic_XXX
 %
 % - lb, ub: vectors of doubles specifying lower and upper bounds for p, respectively
 %
 % - A, b: k x m matrix and k vector specifying linear equation constraints for p, i.e. A*p=b
+%      A should have full rank.
+%
+% - C, d: k x m matrix and k vector specifying linear inequality constraints for p, i.e. C*p>=d
 %      A should have full rank.
 %
 % - wghts: vector of doubles specifying the weights for the penalty terms corresponding to

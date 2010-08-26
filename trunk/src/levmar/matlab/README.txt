@@ -1,5 +1,6 @@
 This directory contains a matlab MEX interface to levmar. This interface
 has been tested with Matlab v. 6.5 R13 under linux and v. 7.4 R2007 under Windows.
+Users have also reported success with GNU Octave.
 
 FILES
 The following files are included:

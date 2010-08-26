@@ -27,7 +27,7 @@
 #include <stdlib.h>
 #include <math.h>
 
-#include "lm.h"
+#include "levmar.h"
 #include "misc.h"
 
 
@@ -35,10 +35,8 @@
 
 #ifdef _MSC_VER
 #pragma message("Linearly constrained optimization requires LAPACK and was not compiled!")
-/*
 #else
-#warning Linearly constrained optimization requires LAPACK and was not compiled!
-*/
+//#warning Linearly constrained optimization requires LAPACK and was not compiled!
 #endif // _MSC_VER
 
 #else // LAPACK present

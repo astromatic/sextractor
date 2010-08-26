@@ -28,7 +28,7 @@
 #include <math.h>
 #include <float.h>
 
-#include "lm.h"
+#include "levmar.h"
 #include "compiler.h"
 #include "misc.h"
 

@@ -1,4 +1,4 @@
-function jac = bt3_jac(p, adata)
+function jac = jacbt3(p, adata)
   n=5;
   m=5;
 

@@ -28,7 +28,7 @@
 #include <stdlib.h>
 #include <math.h>
 
-#include "lm.h"
+#include "levmar.h"
 #include "misc.h"
 
 #if !defined(LM_DBL_PREC) && !defined(LM_SNGL_PREC)
