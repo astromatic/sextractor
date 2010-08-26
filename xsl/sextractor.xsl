@@ -16,8 +16,8 @@
   <xsl:variable name="time" select="/VOTABLE/RESOURCE/RESOURCE[@name='MetaData']/PARAM[@name='Time']/@value"/>
   <HTML>
    <HEAD>
-    <link rel="shortcut icon" type="image/x-icon" href="http://astromatic.iap.fr/xsl/favicon.ico" />
-    <script type="text/javascript" src="http://astromatic.iap.fr/xsl/sorttable.js"/>
+    <link rel="shortcut icon" type="image/x-icon" href="http://astromatic.net/xsl/favicon.ico" />
+    <script type="text/javascript" src="http://astromatic.net/xsl/sorttable.js"/>
 
     <style type="text/css">
      p {
@@ -27,7 +27,7 @@
      body {
       margin: 10px;
       background-color: #e0e0e0;
-      background-image: url("http://astromatic.iap.fr/xsl/body_bg.jpg");
+      background-image: url("http://astromatic.net/xsl/body_bg.jpg");
       background-repeat: repeat-x;
       background-position: top;
       min-width:662px;
@@ -65,7 +65,7 @@
      #header {
       padding: 5px;
       min-width: 662px;
-      background-image: url("http://astromatic.iap.fr/xsl/astromaticleft.png");
+      background-image: url("http://astromatic.net/xsl/astromaticleft.png");
       background-repeat: repeat-x;
       background-position: left top;
       text-align: left;
@@ -132,7 +132,7 @@
     </HEAD>
     <BODY>
      <div id="header">
-      <a href="/"><img style="vertical-align: middle; border:0px" src="http://astromatic.iap.fr/xsl/astromatic.png" title="Astromatic home" alt="Astromatic.net" /></a>  Processing summary
+      <a href="/"><img style="vertical-align: middle; border:0px" src="http://astromatic.net/xsl/astromatic.png" title="Astromatic home" alt="Astromatic.net" /></a>  Processing summary
      </div>
      <xsl:call-template name="VOTable"/>
    </BODY>

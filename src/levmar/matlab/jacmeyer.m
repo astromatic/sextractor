@@ -1,4 +1,4 @@
-function jac = meyer_jac(p, data1, data2)
+function jac = jacmeyer(p, data1, data2)
   n=16;
   m=3;
 

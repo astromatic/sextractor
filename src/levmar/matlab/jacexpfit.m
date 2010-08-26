@@ -1,4 +1,4 @@
-function jac = expfit_jac(p, data)
+function jac = jacexpfit(p, data)
   n=data;
   m=max(size(p));
 

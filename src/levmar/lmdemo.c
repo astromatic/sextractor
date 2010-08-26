@@ -28,7 +28,7 @@
 #include <math.h>
 #include <float.h>
 
-#include "lm.h"
+#include "levmar.h"
 
 #ifndef LM_DBL_PREC
 #error Demo program assumes that levmar has been compiled with double precision, see LM_DBL_PREC!
@@ -159,6 +159,36 @@ double ui, tmp;
 	  jac[j++]=tmp;
 	  jac[j++]=10.0*p[0]*tmp/(ui+p[2]);
 	  jac[j++]=-10.0*p[0]*p[1]*tmp/((ui+p[2])*(ui+p[2]));
+  }
+}
+
+/* Osborne's problem, minimum at (0.3754, 1.9358, -1.4647, 0.0129, 0.0221) */
+void osborne(double *p, double *x, int m, int n, void *data)
+{
+register int i;
+double t;
+
+	for(i=0; i<n; ++i){
+    t=10*i;
+    x[i]=p[0] + p[1]*exp(-p[3]*t) + p[2]*exp(-p[4]*t);
+	}
+}
+
+void jacosborne(double *p, double *jac, int m, int n, void *data)
+{
+register int i, j;
+double t, tmp1, tmp2;
+
+  for(i=j=0; i<n; ++i){
+    t=10*i;
+	  tmp1=exp(-p[3]*t);
+    tmp2=exp(-p[4]*t);
+
+	  jac[j++]=1.0;
+	  jac[j++]=tmp1;
+	  jac[j++]=tmp2;
+    jac[j++]=-p[1]*t*tmp1;
+    jac[j++]=-p[2]*t*tmp2;
   }
 }
 
@@ -471,7 +501,7 @@ register int j=0;
   jac[j++]=1.0;
 }
 
-/* Hock - Schittkowski (modified) problem 52 (box/linearly constrained), minimum at (-0.09, 0.03, 0.25, -0.19, 0.03)
+/* Hock - Schittkowski (modified #1) problem 52 (box/linearly constrained), minimum at (-0.09, 0.03, 0.25, -0.19, 0.03)
  * constr1: p[0] + 3*p[1] = 0;
  * constr2: p[2] +   p[3] - 2*p[4] = 0;
  * constr3: p[1] -   p[4] = 0;
@@ -484,7 +514,7 @@ register int j=0;
  * constr8:   0.0 <= p[4] <= 0.3;
  *
  */
-void modhs52(double *p, double *x, int m, int n, void *data)
+void mod1hs52(double *p, double *x, int m, int n, void *data)
 {
   x[0]=4.0*p[0]-p[1];
   x[1]=p[1]+p[2]-2.0;
@@ -492,7 +522,7 @@ void modhs52(double *p, double *x, int m, int n, void *data)
   x[3]=p[4]-1.0;
 }
 
-void jacmodhs52(double *p, double *jac, int m, int n, void *data)
+void jacmod1hs52(double *p, double *jac, int m, int n, void *data)
 {
 register int j=0;
 
@@ -519,6 +549,60 @@ register int j=0;
   jac[j++]=0.0;
   jac[j++]=0.0;
   jac[j++]=1.0;
+}
+
+
+/* Hock - Schittkowski (modified #2) problem 52 (linear inequality constrained), minimum at (0.5, 2.0, 0.0, 1.0, 1.0)
+ * A fifth term [(p[0]-0.5)^2] is added to the objective function and 
+ * the equality contraints are replaced by the following inequalities:
+ * constr1: p[0] + 3*p[1] >= -1.0;
+ * constr2: p[2] +   p[3] - 2*p[4] >= -2.0;
+ * constr3: p[1] -   p[4] <= 7.0;
+ *
+ *
+ */
+void mod2hs52(double *p, double *x, int m, int n, void *data)
+{
+  x[0]=4.0*p[0]-p[1];
+  x[1]=p[1]+p[2]-2.0;
+  x[2]=p[3]-1.0;
+  x[3]=p[4]-1.0;
+  x[4]=p[0]-0.5;
+}
+
+void jacmod2hs52(double *p, double *jac, int m, int n, void *data)
+{
+register int j=0;
+
+  jac[j++]=4.0;
+  jac[j++]=-1.0;
+  jac[j++]=0.0;
+  jac[j++]=0.0;
+  jac[j++]=0.0;
+
+  jac[j++]=0.0;
+  jac[j++]=1.0;
+  jac[j++]=1.0;
+  jac[j++]=0.0;
+  jac[j++]=0.0;
+
+  jac[j++]=0.0;
+  jac[j++]=0.0;
+  jac[j++]=0.0;
+  jac[j++]=1.0;
+  jac[j++]=0.0;
+
+  jac[j++]=0.0;
+  jac[j++]=0.0;
+  jac[j++]=0.0;
+  jac[j++]=0.0;
+  jac[j++]=1.0;
+
+  jac[j++]=1.0;
+  jac[j++]=0.0;
+  jac[j++]=0.0;
+  jac[j++]=0.0;
+  jac[j++]=0.0;
 }
 
 /* Schittkowski (modified) problem 235 (box/linearly constrained), minimum at (-1.725, 2.9, 0.725)
@@ -653,13 +737,55 @@ register int j=0;
   jac[j+3]=R9*p[1]+2*p[3];
 }
 
+/* Hock - Schittkowski (modified) problem 76 (linear inequalities & equations constrained), minimum at (0.0, 0.00909091, 0.372727, 0.354545)
+ * The non-squared terms in the objective function have been removed, the rhs of constr2 has been changed to 0.4 (from 4)
+ * and constr3 has been changed to an equation.
+ *
+ * constr1: p[0] + 2*p[1] + p[2] + p[3] <= 5;
+ * constr2: 3*p[0] + p[1] + 2*p[2] - p[3] <= 0.4;
+ * constr3: p[1] + 4*p[2] = 1.5;
+ *
+ */
+void modhs76(double *p, double *x, int m, int n, void *data)
+{
+  x[0]=p[0];
+  x[1]=sqrt(0.5)*p[1];
+  x[2]=p[2];
+  x[3]=sqrt(0.5)*p[3];
+}
+
+void jacmodhs76(double *p, double *jac, int m, int n, void *data)
+{
+register int j=0;
+
+  jac[j++]=1.0;
+  jac[j++]=0.0;
+  jac[j++]=0.0;
+  jac[j++]=0.0;
+
+  jac[j++]=0.0;
+  jac[j++]=sqrt(0.5);
+  jac[j++]=0.0;
+  jac[j++]=0.0;
+
+  jac[j++]=0.0;
+  jac[j++]=0.0;
+  jac[j++]=1.0;
+  jac[j++]=0.0;
+
+  jac[j++]=0.0;
+  jac[j++]=0.0;
+  jac[j++]=0.0;
+  jac[j++]=sqrt(0.5);
+}
+
 
 
 int main()
 {
 register int i, j;
 int problem, ret;
-double p[5], // 6 is max(2, 3, 5)
+double p[5], // 5 is max(2, 3, 5)
 	   x[16]; // 16 is max(2, 3, 5, 6, 16)
 int m, n;
 double opts[LM_OPTS_SZ], info[LM_INFO_SZ];
@@ -669,6 +795,7 @@ char *probname[]={
     "Powell's function",
     "Wood's function",
     "Meyer's (reformulated) problem",
+    "Osborne's problem",
     "helical valley function",
     "Boggs & Tolle's problem #3",
     "Hock - Schittkowski problem #28",
@@ -679,13 +806,15 @@ char *probname[]={
     "hatfldb problem",
     "hatfldc problem",
     "equilibrium combustion problem",
-    "Hock - Schittkowski modified problem #52",
+    "Hock - Schittkowski modified #1 problem #52",
     "Schittkowski modified problem #235",
     "Boggs & Tolle modified problem #7",
+    "Hock - Schittkowski modified #2 problem #52",
+    "Hock - Schittkowski modified problem #76",
 };
 
   opts[0]=LM_INIT_MU; opts[1]=1E-15; opts[2]=1E-15; opts[3]=1E-20;
-  opts[4]=LM_DIFF_DELTA; // relevant only if the Jacobian is approximated using finite differences; specifies forward differencing
+  opts[4]= LM_DIFF_DELTA; // relevant only if the Jacobian is approximated using finite differences; specifies forward differencing 
   //opts[4]=-LM_DIFF_DELTA; // specifies central differencing to approximate Jacobian; more accurate but more expensive to compute!
 
   /* uncomment the appropriate line below to select a minimization problem */
@@ -695,12 +824,13 @@ char *probname[]={
 		  //2; // Powell's function
       //3; // Wood's function
 		  4; // Meyer's (reformulated) problem
-      //5; // helical valley function
+		  //5; // Osborne's problem
+      //6; // helical valley function
 #ifdef HAVE_LAPACK
-      //6; // Boggs & Tolle's problem 3
-      //7; // Hock - Schittkowski problem 28
-      //8; // Hock - Schittkowski problem 48
-      //9; // Hock - Schittkowski problem 51
+      //7; // Boggs & Tolle's problem 3
+      //8; // Hock - Schittkowski problem 28
+      //9; // Hock - Schittkowski problem 48
+      //10; // Hock - Schittkowski problem 51
 #else // no LAPACK
 #ifdef _MSC_VER
 #pragma message("LAPACK not available, some test problems cannot be used")
@@ -709,21 +839,24 @@ char *probname[]={
 #endif // _MSC_VER
 
 #endif /* HAVE_LAPACK */
-      //10; // Hock - Schittkowski problem 01
-      //11; // Hock - Schittkowski modified problem 21
-      //12; // hatfldb problem
-      //13; // hatfldc problem
-      //14; // equilibrium combustion problem
+      //11; // Hock - Schittkowski problem 01
+      //12; // Hock - Schittkowski modified problem 21
+      //13; // hatfldb problem
+      //14; // hatfldc problem
+      //15; // equilibrium combustion problem
 #ifdef HAVE_LAPACK
-      //15; // Hock - Schittkowski modified problem 52
-      //16; // Schittkowski modified problem 235
-      //17; // Boggs & Tolle modified problem #7
+      //16; // Hock - Schittkowski modified #1 problem 52
+      //17; // Schittkowski modified problem 235
+      //18; // Boggs & Tolle modified problem #7
+      //19; // Hock - Schittkowski modified #2 problem 52
+      //20; // Hock - Schittkowski modified problem #76"
 #endif /* HAVE_LAPACK */
 				
   switch(problem){
   default: fprintf(stderr, "unknown problem specified (#%d)! Note that some minimization problems require LAPACK.\n", problem);
            exit(1);
     break;
+
   case 0:
   /* Rosenbrock function */
     m=2; n=2;
@@ -798,10 +931,27 @@ char *probname[]={
     for(i=0; i<n; ++i) printf("gradient %d, err %g\n", i, err[i]);
    }
 */
-
   break;
 
   case 5:
+  /* Osborne's data fitting problem */
+  {
+    double x33[]={
+      8.44E-1, 9.08E-1, 9.32E-1, 9.36E-1, 9.25E-1, 9.08E-1, 8.81E-1,
+      8.5E-1, 8.18E-1, 7.84E-1, 7.51E-1, 7.18E-1, 6.85E-1, 6.58E-1,
+      6.28E-1, 6.03E-1, 5.8E-1, 5.58E-1, 5.38E-1, 5.22E-1, 5.06E-1,
+      4.9E-1, 4.78E-1, 4.67E-1, 4.57E-1, 4.48E-1, 4.38E-1, 4.31E-1,
+      4.24E-1, 4.2E-1, 4.14E-1, 4.11E-1, 4.06E-1};
+
+    m=5; n=33;
+    p[0]=0.5; p[1]=1.5; p[2]=-1.0; p[3]=1.0E-2; p[4]=2.0E-2;
+
+    ret=dlevmar_der(osborne, jacosborne, p, x33, m, n, 1000, opts, info, NULL, NULL, NULL); // with analytic Jacobian
+    //ret=dlevmar_dif(osborne, p, x33, m, n, 1000, opts, info, NULL, NULL, NULL);  // no Jacobian
+  }
+  break;
+
+  case 6:
   /* helical valley function */
     m=3; n=3;
     p[0]=-1.0; p[1]=0.0; p[2]=0.0;
@@ -811,7 +961,7 @@ char *probname[]={
   break;
 
 #ifdef HAVE_LAPACK
-  case 6:
+  case 7:
   /* Boggs-Tolle problem 3 */
     m=5; n=5;
     p[0]=2.0; p[1]=2.0; p[2]=2.0;
@@ -826,7 +976,8 @@ char *probname[]={
     //ret=dlevmar_lec_dif(bt3, p, x, m, n, A, b, 3, 1000, opts, info, NULL, NULL, NULL); // lin. constraints, no Jacobian
     }
   break;
-  case 7:
+
+  case 8:
   /* Hock - Schittkowski problem 28 */
     m=3; n=3;
     p[0]=-4.0; p[1]=1.0; p[2]=1.0;
@@ -840,7 +991,8 @@ char *probname[]={
     //ret=dlevmar_lec_dif(hs28, p, x, m, n, A, b, 1, 1000, opts, info, NULL, NULL, NULL); // lin. constraints, no Jacobian
     }
   break;
-  case 8:
+
+  case 9:
   /* Hock - Schittkowski problem 48 */
     m=5; n=5;
     p[0]=3.0; p[1]=5.0; p[2]=-3.0;
@@ -855,7 +1007,8 @@ char *probname[]={
     //ret=dlevmar_lec_dif(hs48, p, x, m, n, A, b, 2, 1000, opts, info, NULL, NULL, NULL); // lin. constraints, no Jacobian
     }
   break;
-  case 9:
+
+  case 10:
   /* Hock - Schittkowski problem 51 */
     m=5; n=5;
     p[0]=2.5; p[1]=0.5; p[2]=2.0;
@@ -870,9 +1023,10 @@ char *probname[]={
     //ret=dlevmar_lec_dif(hs51, p, x, m, n, A, b, 3, 1000, opts, info, NULL, NULL, NULL); // lin. constraints, no Jacobian
     }
   break;
+
 #endif /* HAVE_LAPACK */
 
-  case 10:
+  case 11:
   /* Hock - Schittkowski problem 01 */
     m=2; n=2;
     p[0]=-2.0; p[1]=1.0;
@@ -887,7 +1041,8 @@ char *probname[]={
       ret=dlevmar_bc_der(hs01, jachs01, p, x, m, n, lb, ub, 1000, opts, info, NULL, NULL, NULL); // with analytic Jacobian
     }
     break;
-  case 11:
+
+  case 12:
   /* Hock - Schittkowski (modified) problem 21 */
     m=2; n=2;
     p[0]=-1.0; p[1]=-1.0;
@@ -902,7 +1057,8 @@ char *probname[]={
       ret=dlevmar_bc_der(hs21, jachs21, p, x, m, n, lb, ub, 1000, opts, info, NULL, NULL, NULL); // with analytic Jacobian
     }
     break;
-  case 12:
+
+  case 13:
   /* hatfldb problem */
     m=4; n=4;
     p[0]=p[1]=p[2]=p[3]=0.1;
@@ -919,7 +1075,8 @@ char *probname[]={
       ret=dlevmar_bc_der(hatfldb, jachatfldb, p, x, m, n, lb, ub, 1000, opts, info, NULL, NULL, NULL); // with analytic Jacobian
     }
     break;
-  case 13:
+
+  case 14:
   /* hatfldc problem */
     m=4; n=4;
     p[0]=p[1]=p[2]=p[3]=0.9;
@@ -935,7 +1092,8 @@ char *probname[]={
       ret=dlevmar_bc_der(hatfldc, jachatfldc, p, x, m, n, lb, ub, 1000, opts, info, NULL, NULL, NULL); // with analytic Jacobian
     }
     break;
-  case 14:
+
+  case 15:
   /* equilibrium combustion problem */
     m=5; n=5;
     p[0]=p[1]=p[2]=p[3]=p[4]=0.0001;
@@ -951,9 +1109,10 @@ char *probname[]={
       ret=dlevmar_bc_der(combust, jaccombust, p, x, m, n, lb, ub, 5000, opts, info, NULL, NULL, NULL); // with analytic Jacobian
     }
     break;
+
 #ifdef HAVE_LAPACK
-  case 15:
-  /* Hock - Schittkowski modified problem 52 */
+  case 16:
+  /* Hock - Schittkowski modified #1 problem 52 */
     m=5; n=4;
     p[0]=2.0; p[1]=2.0; p[2]=2.0;
     p[3]=2.0; p[4]=2.0;
@@ -970,11 +1129,12 @@ char *probname[]={
       lb[0]=-0.09; lb[1]=0.0; lb[2]=-DBL_MAX; lb[3]=-0.2; lb[4]=0.0;
       ub[0]=DBL_MAX; ub[1]=0.3; ub[2]=0.25; ub[3]=0.3; ub[4]=0.3;
 
-      ret=dlevmar_blec_der(modhs52, jacmodhs52, p, x, m, n, lb, ub, A, b, 3, weights, 1000, opts, info, NULL, NULL, NULL); // box & lin. constraints, analytic Jacobian
-      //ret=dlevmar_blec_dif(modhs52, p, x, m, n, lb, ub, A, b, 3, weights, 1000, opts, info, NULL, NULL, NULL); // box & lin. constraints, no Jacobian
+      ret=dlevmar_blec_der(mod1hs52, jacmod1hs52, p, x, m, n, lb, ub, A, b, 3, weights, 1000, opts, info, NULL, NULL, NULL); // box & lin. constraints, analytic Jacobian
+      //ret=dlevmar_blec_dif(mod1hs52, p, x, m, n, lb, ub, A, b, 3, weights, 1000, opts, info, NULL, NULL, NULL); // box & lin. constraints, no Jacobian
     }
     break;
-  case 16:
+
+  case 17:
   /* Schittkowski modified problem 235 */
     m=3; n=2;
     p[0]=-2.0; p[1]=3.0; p[2]=1.0;
@@ -993,7 +1153,8 @@ char *probname[]={
       //ret=dlevmar_blec_dif(mods235, p, x, m, n, lb, ub, A, b, 2, NULL, 1000, opts, info, NULL, NULL, NULL); // box & lin. constraints, no Jacobian
     }
     break;
-  case 17:
+
+  case 18:
   /* Boggs & Tolle modified problem 7 */
     m=5; n=5;
     p[0]=-2.0; p[1]=1.0; p[2]=1.0; p[3]=1.0; p[4]=1.0;
@@ -1012,6 +1173,47 @@ char *probname[]={
       //ret=dlevmar_blec_dif(modbt7, p, x, m, n, lb, ub, A, b, 3, NULL, 10000, opts, info, NULL, NULL, NULL); // box & lin. constraints, no Jacobian
     }
     break;
+
+  case 19:
+  /* Hock - Schittkowski modified #2 problem 52 */
+    m=5; n=5;
+    p[0]=2.0; p[1]=2.0; p[2]=2.0;
+    p[3]=2.0; p[4]=2.0;
+    for(i=0; i<n; i++) x[i]=0.0;
+
+    {
+      double C[3*5]={1.0, 3.0, 0.0, 0.0, 0.0,  0.0, 0.0, 1.0, 1.0, -2.0,  0.0, -1.0, 0.0, 0.0, 1.0},
+             d[3]={-1.0, -2.0, -7.0};
+
+      ret=dlevmar_bleic_der(mod2hs52, jacmod2hs52, p, x, m, n, NULL, NULL, NULL, NULL, 0, C, d, 3, 1000, opts, info, NULL, NULL, NULL); // lin. ineq. constraints, analytic Jacobian
+      //ret=dlevmar_bleic_dif(mod2hs52, p, x, m, n, NULL, NULL, NULL, NULL, 0, C, d, 3, 1000, opts, info, NULL, NULL, NULL); // lin. ineq. constraints, no Jacobian
+    }
+    break;
+
+  case 20:
+  /* Hock - Schittkowski modified problem 76 */
+    m=4; n=4;
+    p[0]=0.5; p[1]=0.5; p[2]=0.5; p[3]=0.5;
+    for(i=0; i<n; i++) x[i]=0.0;
+
+    {
+      double A[1*4]={0.0, 1.0, 4.0, 0.0},
+             b[1]={1.5};
+
+      double C[2*4]={-1.0, -2.0, -1.0, -1.0,   -3.0, -1.0, -2.0, 1.0},
+             d[2]={-5.0, -0.4};
+
+      double lb[4]={0.0, 0.0, 0.0, 0.0};
+
+      ret=dlevmar_bleic_der(modhs76, jacmodhs76, p, x, m, n, lb, NULL, A, b, 1, C, d, 2, 1000, opts, info, NULL, NULL, NULL); // lin. ineq. constraints, analytic Jacobian
+      //ret=dlevmar_bleic_dif(modhs76, p, x, m, n, lb, NULL, A, b, 1, C, d, 2, 1000, opts, info, NULL, NULL, NULL); // lin. ineq. constraints, no Jacobian
+      /* variations:
+       * if no lb is used, the minimizer is (-0.1135922 0.1330097 0.3417476 0.07572816)
+       * if the rhs of constr2 is 4.0, the minimizer is (0.0, 0.166667, 0.333333, 0.0)
+       */
+    }
+    break;
+
 #endif /* HAVE_LAPACK */
   } /* switch */
   

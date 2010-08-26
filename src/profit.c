@@ -9,7 +9,7 @@
 *
 *	Contents:	Fit an arbitrary profile combination to a detection.
 *
-*	Last modify:	19/08/2010
+*	Last modify:	26/08/2010
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -31,7 +31,7 @@
 #include	"globals.h"
 #include	"prefs.h"
 #include	"fits/fitscat.h"
-#include	"levmar/lm.h"
+#include	"levmar/levmar.h"
 #include	"fft.h"
 #include	"fitswcs.h"
 #include	"check.h"
@@ -199,14 +199,13 @@ OUTPUT	Pointer to an allocated fit structure (containing details about the
 	fit).
 NOTES	It is a modified version of the lm_minimize() of lmfit.
 AUTHOR	E. Bertin (IAP)
-VERSION	08/03/2010
+VERSION	26/08/2010
  ***/
 void	profit_fit(profitstruct *profit,
 		picstruct *field, picstruct *wfield,
 		objstruct *obj, obj2struct *obj2)
   {
     profitstruct	pprofit;
-    profitstruct	hdprofit;
     patternstruct	*pattern;
     psfstruct		*psf;
     checkstruct		*check;
@@ -2450,7 +2449,7 @@ INPUT	Pointer to the profit structure,
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	02/07/2010
+VERSION	26/08/2010
  ***/
 void	profit_resetparam(profitstruct *profit, paramenum paramtype)
   {
@@ -2631,6 +2630,8 @@ void	profit_resetparam(profitstruct *profit, paramenum paramtype)
 
   if (parammin!=parammax && (param<=parammin || param>=parammax))
     param = (parammin+parammax)/2.0;
+  else if (parammin==0.0 && parammax==0.0)
+    parammax = 1.0;
   profit_setparam(profit, paramtype, param, parammin, parammax);
 
   return;

@@ -5,8 +5,8 @@ PROJECT(LEVMAR)
 #CMAKE_MINIMUM_REQUIRED(VERSION 1.4)
 
 # compiler flags
-ADD_DEFINITIONS(-DLINSOLVERS_RETAIN_MEMORY) # do not free memory between linear solvers calls
-#REMOVE_DEFINITIONS(-DLINSOLVERS_RETAIN_MEMORY)
+#ADD_DEFINITIONS(-DLINSOLVERS_RETAIN_MEMORY) # do not free memory between linear solvers calls
+#REMOVE_DEFINITIONS(-DLINSOLVERS_RETAIN_MEMORY) # free memory between calls
 
 # f2c is sometimes equivalent to libF77 & libI77; in that case, set HAVE_F2C to 0
 SET(HAVE_F2C 1 CACHE BOOL "Do we have f2c or F77/I77?" )
@@ -26,17 +26,19 @@ ENDIF(HAVE_F2C)
 
 ########################## NO CHANGES BEYOND THIS POINT ##########################
 
+INCLUDE_DIRECTORIES(.)
 #INCLUDE_DIRECTORIES(/usr/include)
-LINK_DIRECTORIES(${LAPACKBLAS_DIR})
 
 # levmar library source files
 ADD_LIBRARY(levmar STATIC
-  lm.c Axb.c misc.c lmlec.c lmbc.c lmblec.c
-  lm.h misc.h compiler.h
+  lm.c Axb.c misc.c lmlec.c lmbc.c lmblec.c lmbleic.c
+  levmar.h misc.h compiler.h
 )
 
 # demo program
-ADD_EXECUTABLE(lmdemo lmdemo.c lm.h)
+LINK_DIRECTORIES(${LAPACKBLAS_DIR})
+LINK_DIRECTORIES(.)
+ADD_EXECUTABLE(lmdemo lmdemo.c levmar.h)
 # libraries the demo depends on
 IF(HAVE_F2C)
   TARGET_LINK_LIBRARIES(lmdemo levmar ${LAPACK_LIB} ${BLAS_LIB} ${F2C_LIB})

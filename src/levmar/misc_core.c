@@ -579,8 +579,8 @@ int rnk;
 LM_REAL fact;
 
 #ifdef HAVE_LAPACK
-  rnk=LEVMAR_PSEUDOINVERSE(JtJ, C, m);
-  if(!rnk) return 0;
+   rnk=LEVMAR_PSEUDOINVERSE(JtJ, C, m);
+   if(!rnk) return 0;
 #else
 #ifdef _MSC_VER
 #pragma message("LAPACK not available, LU will be used for matrix inversion when computing the covariance; this might be unstable at times")
@@ -592,10 +592,9 @@ LM_REAL fact;
 
 //   rnk=LEVMAR_LUINVERSE(JtJ, C, m);
 
-  rnk = SVDINV(JtJ, C, m);
+   rnk = SVDINV(JtJ, C, m);
 
-  if (!rnk)
-    return 0;
+   if (!rnk) return 0;
 
 //  rnk=m; /* assume full rank */
 #endif /* HAVE_LAPACK */
@@ -695,12 +694,6 @@ int LEVMAR_CHOLESKY(LM_REAL *C, LM_REAL *W, int m)
 register int i, j;
 int info;
 
-/* compute the Cholesky decomposition of C in W, s.t. C=W^t W and W is upper triangular */
-int LEVMAR_CHOLESKY(LM_REAL *C, LM_REAL *W, int m)
-{
-register int i, j;
-int info;
-
   /* copy weights array C to W so that LAPACK won't destroy it;
    * C is assumed symmetric, hence no transposition is needed
    */
@@ -711,13 +704,13 @@ int info;
   POTF2("U", (int *)&m, W, (int *)&m, (int *)&info);
   /* error treatment */
   if(info!=0){
-                if(info<0){
+		if(info<0){
       fprintf(stderr, "LAPACK error: illegal value for argument %d of dpotf2 in %s\n", -info, LCAT(LEVMAR_CHOLESKY, "()"));
-                }
-                else{
-                        fprintf(stderr, "LAPACK error: the leading minor of order %d is not positive definite,\n%s()\n", info,
-                                                RCAT("and the Cholesky factorization could not be completed in ", LEVMAR_CHOLESKY));
-                }
+		}
+		else{
+			fprintf(stderr, "LAPACK error: the leading minor of order %d is not positive definite,\n%s()\n", info,
+						RCAT("and the Cholesky factorization could not be completed in ", LEVMAR_CHOLESKY));
+		}
     return LM_ERROR;
   }
 
@@ -783,12 +776,12 @@ register LM_REAL sum0=0.0, sum1=0.0, sum2=0.0, sum3=0.0;
 
       switch(n - i){ 
         case 7 : e[i]=x[i]-y[i]; sum0+=e[i]*e[i]; ++i;
-        case 6 : e[i]=x[i]-y[i]; sum0+=e[i]*e[i]; ++i;
-        case 5 : e[i]=x[i]-y[i]; sum0+=e[i]*e[i]; ++i;
-        case 4 : e[i]=x[i]-y[i]; sum0+=e[i]*e[i]; ++i;
+        case 6 : e[i]=x[i]-y[i]; sum1+=e[i]*e[i]; ++i;
+        case 5 : e[i]=x[i]-y[i]; sum2+=e[i]*e[i]; ++i;
+        case 4 : e[i]=x[i]-y[i]; sum3+=e[i]*e[i]; ++i;
         case 3 : e[i]=x[i]-y[i]; sum0+=e[i]*e[i]; ++i;
-        case 2 : e[i]=x[i]-y[i]; sum0+=e[i]*e[i]; ++i;
-        case 1 : e[i]=x[i]-y[i]; sum0+=e[i]*e[i]; ++i;
+        case 2 : e[i]=x[i]-y[i]; sum1+=e[i]*e[i]; ++i;
+        case 1 : e[i]=x[i]-y[i]; sum2+=e[i]*e[i]; //++i;
       }
     }
   }
@@ -818,12 +811,12 @@ register LM_REAL sum0=0.0, sum1=0.0, sum2=0.0, sum3=0.0;
 
       switch(n - i){ 
         case 7 : e[i]=-y[i]; sum0+=e[i]*e[i]; ++i;
-        case 6 : e[i]=-y[i]; sum0+=e[i]*e[i]; ++i;
-        case 5 : e[i]=-y[i]; sum0+=e[i]*e[i]; ++i;
-        case 4 : e[i]=-y[i]; sum0+=e[i]*e[i]; ++i;
+        case 6 : e[i]=-y[i]; sum1+=e[i]*e[i]; ++i;
+        case 5 : e[i]=-y[i]; sum2+=e[i]*e[i]; ++i;
+        case 4 : e[i]=-y[i]; sum3+=e[i]*e[i]; ++i;
         case 3 : e[i]=-y[i]; sum0+=e[i]*e[i]; ++i;
-        case 2 : e[i]=-y[i]; sum0+=e[i]*e[i]; ++i;
-        case 1 : e[i]=-y[i]; sum0+=e[i]*e[i]; ++i;
+        case 2 : e[i]=-y[i]; sum1+=e[i]*e[i]; ++i;
+        case 1 : e[i]=-y[i]; sum2+=e[i]*e[i]; //++i;
       }
     }
   }

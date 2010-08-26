@@ -1,3 +1,8 @@
+% Demo program for levmar's MEX-file interface
+% Performs minimization of several test problems
+
+format long;
+
 % Unconstrained minimization
 
 % fitting the exponential model x_i=p(1)*exp(-p(2)*i)+p(3) of expfit.c to noisy measurements obtained with (5.0 0.1 1.0)
@@ -38,6 +43,24 @@ disp('Meyer''s (reformulated) problem');
 popt
 
 
+% Osborne's problem
+p0=[0.5, 1.5, -1.0, 1.0E-2, 2.0E-2];
+
+x=[8.44E-1, 9.08E-1, 9.32E-1, 9.36E-1, 9.25E-1, 9.08E-1, 8.81E-1,...
+8.5E-1, 8.18E-1, 7.84E-1, 7.51E-1, 7.18E-1, 6.85E-1, 6.58E-1,...
+6.28E-1, 6.03E-1, 5.8E-1, 5.58E-1, 5.38E-1, 5.22E-1, 5.06E-1,...
+4.9E-1, 4.78E-1, 4.67E-1, 4.57E-1, 4.48E-1, 4.38E-1, 4.31E-1,...
+4.24E-1, 4.2E-1, 4.14E-1, 4.11E-1, 4.06E-1];
+
+
+options=[1E-03, 1E-15, 1E-15, 1E-20, 1E-06];
+
+[ret, popt, info, covar]=levmar('osborne', 'jacosborne', p0, x, 200, options);
+%[ret, popt, info, covar]=levmar('osborne', p0, x, 200, options, 'unc');
+disp('Osborne''s problem');
+popt
+
+
 % Linear constraints
 
 % Boggs-Tolle problem 3
@@ -72,7 +95,7 @@ popt
 
 % Box and linear constraints
 
-% Hock-Schittkowski modified problem 52
+% Hock-Schittkowski modified problem 52 (#1)
 p0=[2.0, 2.0, 2.0, 2.0, 2.0];
 x=[0.0, 0.0, 0.0, 0.0];
 lb=[-0.09, 0.0, -realmax, -0.2, 0.0];
@@ -84,10 +107,10 @@ b=[0.0, 0.0, 0.0]';
 options=[1E-03, 1E-15, 1E-15, 1E-20];
 
 [ret, popt, info, covar]=levmar('modhs52', 'jacmodhs52', p0, x, 200, options, 'blec', lb, ub, A, b);
-disp('Hock-Schittkowski modified problem 52');
+disp('Hock-Schittkowski modified problem 52 (#1)');
 popt
 
-% Hock-Schittkowski modified problem 235
+% Schittkowski modified problem 235
 p0=[-2.0, 3.0, 1.0];
 x=[0.0, 0.0];
 lb=[-realmax, 0.1, 0.7];
@@ -101,3 +124,17 @@ options=[1E-03, 1E-15, 1E-15, 1E-20];
 disp('Hock-Schittkowski modified problem 235');
 popt
 
+% Box, linear equation & inequality constraints
+p0=[0.5, 0.5, 0.5, 0.5];
+x=[0.0, 0.0, 0.0, 0.0];
+lb=[0.0, 0.0, 0.0, 0.0];
+ub=[realmax, realmax, realmax, realmax];
+A=[0.0, 1.0, 4.0, 0.0];
+b=[1.5]';
+C=[-1.0, -2.0, -1.0, -1.0;
+   -3.0, -1.0, -2.0, 1.0];
+d=[-5.0, -0.4]';
+
+[ret, popt, info, covar]=levmar('modhs76', 'jacmodhs76', p0, x, 200, options, 'bleic', lb, ub, A, b, C, d);
+disp('Hock-Schittkowski modified problem 76');
+popt

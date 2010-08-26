@@ -1,6 +1,6 @@
     **************************************************************
                                 LEVMAR
-                              version 2.4
+                              version 2.5
                           By Manolis Lourakis
 
                      Institute of Computer Science
@@ -12,15 +12,15 @@
 GENERAL
 This is levmar, a copylefted C/C++ implementation of the Levenberg-Marquardt non-linear
 least squares algorithm. levmar includes double and single precision LM versions, both
-with analytic and finite difference approximated jacobians. levmar also has some support
-for constrained non-linear least squares, allowing linear equation and box constraints.
-You have the following options regarding the solution of the underlying augmented normal
-equations:
+with analytic and finite difference approximated Jacobians. levmar also has some support
+for constrained non-linear least squares, allowing linear equation, box and linear
+inequality constraints. The following options regarding the solution of the underlying
+augmented normal equations are offered:
 
 1) Assuming that you have LAPACK (or an equivalent vendor library such as ESSL, MKL,
    NAG, ...) installed, you can use the included LAPACK-based solvers (default).
 
-2) If you don't have LAPACK or decide not to use it, undefine HAVE_LAPACK in lm.h
+2) If you don't have LAPACK or decide not to use it, undefine HAVE_LAPACK in levmar.h
    and a LAPACK-free, LU-based linear systems solver will by used. Also, the line
    setting the variable LAPACKLIBS in the Makefile should be commented out.
 
@@ -38,12 +38,12 @@ LICENSE
 levmar is released under the GNU Public License (GPL), which can be found in the included
 LICENSE file. Note that under the terms of GPL, commercial use is allowed only if a software
 employing levmar is also published in source under the GPL. However, if you are interested
-in using levmar in a proprietary commercial apprlication, a commercial license for levmar
+in using levmar in a proprietary commercial application, a commercial license for levmar
 can be obtained by contacting the author using the email address at the end of this file.
 
 COMPILATION
  - You might first consider setting a few configuration options at the top of
-   lm.h. See the accompanying comments for more details.
+   levmar.h. See the accompanying comments for more details.
 
  - On a Linux/Unix system, typing "make" will build both levmar and the demo
    program using gcc. Alternatively, if Intel's C++ compiler is installed, it
@@ -63,7 +63,7 @@ COMPILATION
    for details.
 
 MATLAB INTERFACE
-Since version 2.2, the levmar distrubution includes a matlab interface.
+Since version 2.2, the levmar distribution includes a matlab interface.
 See the 'matlab' subdirectory for more information and examples of use.
 
 Notice that *_core.c files are not to be compiled directly; For example,
