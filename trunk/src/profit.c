@@ -35,15 +35,10 @@
 #include	"fft.h"
 #include	"fitswcs.h"
 #include	"check.h"
+#include	"image.h"
 #include	"pattern.h"
 #include	"psf.h"
 #include	"profit.h"
-
-#define INTERPW		6	/* Interpolation function range (x) */
-#define INTERPH		6	/* Interpolation function range (y) */
-
-#define INTERPF(x)	(x==0.0?1.0:sinf(PI*x)*sinf(PI*x/3.0)/(PI*PI/3.0*x*x))
-				/* Lanczos approximation */
 
 static double	prof_gammainc(double x, double a),
 		prof_gamma(double x);
@@ -1334,7 +1329,7 @@ INPUT	Profile-fitting structure,
 OUTPUT	RETURN_ERROR if the rasters don't overlap, RETURN_OK otherwise.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	01/05/2010
+VERSION	12/09/2010
  ***/
 int	profit_resample(profitstruct *profit, float *inpix, PIXTYPE *outpix,
 	float factor)
@@ -1343,7 +1338,7 @@ int	profit_resample(profitstruct *profit, float *inpix, PIXTYPE *outpix,
    float	*pixin,*pixin0, *mask,*maskt, *pixinout, *dpixin,*dpixin0,
 		*dpixout,*dpixout0, *dx,*dy,
 		xcin,xcout,ycin,ycout, xsin,ysin, xin,yin, x,y, dxm,dym, val,
-		invpixstep;
+		invpixstep, norm;
    int		*start,*startt, *nmask,*nmaskt,
 		i,j,k,n,t, 
 		ixsout,iysout, ixout,iyout, dixout,diyout, nxout,nyout,
@@ -1403,10 +1398,10 @@ int	profit_resample(profitstruct *profit, float *inpix, PIXTYPE *outpix,
 
 /* Set the yrange for the x-resampling with some margin for interpolation */
   iysina = (int)ysin;	/* Int. part of Input start y-coord with margin */
-  hmh = INTERPH/2 - 1;	/* Interpolant start */
+  hmh = INTERPW/2 - 1;	/* Interpolant start */
   if (iysina<0 || ((iysina -= hmh)< 0))
     iysina = 0;
-  nyin = (int)(ysin+nyout*invpixstep)+INTERPH-hmh;/* Interpolated Input y size*/
+  nyin = (int)(ysin+nyout*invpixstep)+INTERPW-hmh;/* Interpolated Input y size*/
   if (nyin>profit->modnaxisn[1])						/* with margin */
     nyin = profit->modnaxisn[1];
 /* Express everything relative to the effective Input start (with margin) */
@@ -1439,8 +1434,13 @@ int	profit_resample(profitstruct *profit, float *inpix, PIXTYPE *outpix,
       n=t;
     *(startt++) = ix;
     *(nmaskt++) = n;
+    norm = 0.0;
     for (x=dxm, i=n; i--; x+=1.0)
-      *(maskt++) = INTERPF(x);
+      norm += (*(maskt++) = INTERPF(x));
+    norm = norm>0.0? 1.0/norm : 1.0;
+    maskt -= n;
+    for (i=n; i--;)
+      *(maskt++) *= norm;
     }
 
   QCALLOC(pixinout, float, nxout*nyin);	/* Intermediary frame-buffer */
@@ -1465,12 +1465,12 @@ int	profit_resample(profitstruct *profit, float *inpix, PIXTYPE *outpix,
     }
 
 /* Reallocate interpolant stuff for the y direction */
-  QREALLOC(mask, float, nyout*INTERPH);	/* Interpolation masks */
+  QREALLOC(mask, float, nyout*INTERPW);	/* Interpolation masks */
   QREALLOC(nmask, int, nyout);			/* Interpolation mask sizes */
   QREALLOC(start, int, nyout);		/* Int. part of Input conv starts */
 
 /* Compute the local interpolant and data starting points in y */
-  hmh = INTERPH/2 - 1;
+  hmh = INTERPW/2 - 1;
   yin = ysin;
   maskt = mask;
   nmaskt = nmask;
@@ -1481,18 +1481,23 @@ int	profit_resample(profitstruct *profit, float *inpix, PIXTYPE *outpix,
     dym = iyin - yin - hmh;	/* starting point in the interpolation func */
     if (iy < 0)
       {
-      n = INTERPH+iy;
+      n = INTERPW+iy;
       dym -= (float)iy;
       iy = 0;
       }
     else
-      n = INTERPH;
+      n = INTERPW;
     if (n>(t=nyin-iy))
       n=t;
     *(startt++) = iy;
     *(nmaskt++) = n;
+    norm = 0.0;
     for (y=dym, i=n; i--; y+=1.0)
-      *(maskt++) = INTERPF(y);
+      norm += (*(maskt++) = INTERPF(y));
+    norm = norm>0.0? 1.0/norm : 1.0;
+    maskt -= n;
+    for (i=n; i--;)
+      *(maskt++) *= norm;
     }
 
 /* Initialize destination buffer to zero */

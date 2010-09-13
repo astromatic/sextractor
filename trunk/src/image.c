@@ -9,7 +9,7 @@
 *
 *	Contents:	Function related to image manipulations.
 *
-*	Last modify:	13/09/2009
+*	Last modify:	12/09/2010
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -27,7 +27,7 @@
 #include	"prefs.h"
 #include	"image.h"
 
-static float	interpm[INTERPW*INTERPH];
+static float	interpm[INTERPW*INTERPW];
 
 /********************************* copyimage *********************************/
 /*
@@ -158,10 +158,10 @@ int	copyimage_center(picstruct *field, PIXTYPE *dest, int w,int h,
 
 /* Compute the interpolation mask */
   ddx0 = -(idmx=(INTERPW-(dx>0.0?1:0))/2)-dx;
-  ddy = -(idmy=(INTERPH-(dy>0.0?1:0))/2)-dy;
+  ddy = -(idmy=(INTERPW-(dy>0.0?1:0))/2)-dy;
   sum = 0.0;
   m = interpm;
-  for (my=INTERPH; my--; ddy+=1.0)
+  for (my=INTERPW; my--; ddy+=1.0)
     {
     ddx = ddx0;
     fy = INTERPF(ddy);
@@ -171,7 +171,7 @@ int	copyimage_center(picstruct *field, PIXTYPE *dest, int w,int h,
 
 /* Normalize it */
   m = interpm;
-  for (i=INTERPW*INTERPH; i--;)
+  for (i=INTERPW*INTERPW; i--;)
     *(m++) /= sum;
 
 /* Do the interpolation */
@@ -180,7 +180,7 @@ int	copyimage_center(picstruct *field, PIXTYPE *dest, int w,int h,
   ymin = iy - h/2 - idmy;
   sw = field->width;
   sh = field->stripheight;
-  for (my=INTERPH; my--; ymin++)
+  for (my=INTERPW; my--; ymin++)
     {
 /*-- Set the image boundaries in y */
     if ((idy = field->ymin-ymin) > 0)
@@ -269,10 +269,10 @@ free(psf2);
 
 /* Compute the interpolation mask */
   ddx0 = -(idmx=(INTERPW-(dx>0.0?1:0))/2)-dx;
-  ddy = -(idmy=(INTERPH-(dy>0.0?1:0))/2)-dy;
+  ddy = -(idmy=(INTERPW-(dy>0.0?1:0))/2)-dy;
   sum = 0.0;
   m = interpm;
-  for (my=INTERPH; my--; ddy+=1.0)
+  for (my=INTERPW; my--; ddy+=1.0)
     {
     ddx = ddx0;
     fy = INTERPF(ddy);
@@ -282,7 +282,7 @@ free(psf2);
 
 /* Normalize it */
   m = interpm;
-  for (i=INTERPW*INTERPH; i--;)
+  for (i=INTERPW*INTERPW; i--;)
     *(m++) /= sum;
 
 /* Do the interpolation */
@@ -291,7 +291,7 @@ free(psf2);
   ymin = iy - h/2 - idmy;
   sw = field->width;
   sh = field->stripheight;
-  for (my=INTERPH; my--; ymin++)
+  for (my=INTERPW; my--; ymin++)
     {
 /*-- Set the image boundaries in y */
     if ((idy = field->ymin-ymin) > 0)
@@ -466,7 +466,7 @@ int	vignet_resample(float *pix1, int w1, int h1,
 			float dx, float dy, float step2)
   {
    float	*mask,*maskt, xc1,xc2,yc1,yc2, xs1,ys1, x1,y1, x,y, dxm,dym,
-		val,
+		val, norm,
 		*pix12, *pixin,*pixin0, *pixout,*pixout0;
    int		i,j,k,n,t, *start,*startt, *nmask,*nmaskt,
 		ixs2,iys2, ix2,iy2, dix2,diy2, nx2,ny2, iys1a, ny1, hmw,hmh,
@@ -520,7 +520,7 @@ int	vignet_resample(float *pix1, int w1, int h1,
 
 /* Set the yrange for the x-resampling with some margin for interpolation */
   iys1a = (int)ys1;		/* Int part of Im1 start y-coord with margin */
-  hmh = INTERPH/2 - 1;		/* Interpolant start */
+  hmh = INTERPW/2 - 1;		/* Interpolant start */
   if (iys1a<0 || ((iys1a -= hmh)< 0))
     iys1a = 0;
   ny1 = (int)(ys1+ny2*step2)+INTERPW-hmh;	/* Interpolated Im1 y size */
@@ -556,8 +556,13 @@ int	vignet_resample(float *pix1, int w1, int h1,
       n=t;
     *(startt++) = ix;
     *(nmaskt++) = n;
+    norm = 0.0;
     for (x=dxm, i=n; i--; x+=1.0)
-      *(maskt++) = INTERPF(x);
+      norm += (*(maskt++) = INTERPF(x));
+    norm = norm>0.0? 1.0/norm : 1.0;
+    maskt -= n;
+    for (i=n; i--;)
+      *(maskt++) *= norm;
     }
 
   QCALLOC(pix12, float, nx2*ny1);	/* Intermediary frame-buffer */
@@ -582,12 +587,12 @@ int	vignet_resample(float *pix1, int w1, int h1,
     }
 
 /* Reallocate interpolant stuff for the y direction */
-  QREALLOC(mask, float, ny2*INTERPH);	/* Interpolation masks */
+  QREALLOC(mask, float, ny2*INTERPW);	/* Interpolation masks */
   QREALLOC(nmask, int, ny2);		/* Interpolation mask sizes */
   QREALLOC(start, int, ny2);		/* Int part of Im1 conv starts */
 
 /* Compute the local interpolant and data starting points in y */
-  hmh = INTERPH/2 - 1;
+  hmh = INTERPW/2 - 1;
   y1 = ys1;
   maskt = mask;
   nmaskt = nmask;
@@ -598,18 +603,23 @@ int	vignet_resample(float *pix1, int w1, int h1,
     dym = iy1 - y1 - hmh;	/* starting point in the interpolation func */
     if (iy < 0)
       {
-      n = INTERPH+iy;
+      n = INTERPW+iy;
       dym -= (float)iy;
       iy = 0;
       }
     else
-      n = INTERPH;
+      n = INTERPW;
     if (n>(t=ny1-iy))
       n=t;
     *(startt++) = iy;
     *(nmaskt++) = n;
+    norm = 0.0;
     for (y=dym, i=n; i--; y+=1.0)
-      *(maskt++) = INTERPF(y);
+      norm += (*(maskt++) = INTERPF(y));
+    norm = norm>0.0? 1.0/norm : 1.0;
+    maskt -= n;
+    for (i=n; i--;)
+      *(maskt++) *= norm;
     }
 
 /* Make the interpolation in y  and transpose once again */
