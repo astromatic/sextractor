@@ -834,7 +834,7 @@ OUTPUT	Matrix rank.
 NOTES	Loosely adapted from Numerical Recipes in C, 2nd Ed. (p. 671). The a
 	and v matrices are transposed with respect to the N.R. convention.
 AUTHOR	E. Bertin (IAP)
-VERSION	30/05/2008
+VERSION	02/09/2010
  ***/
 
 static int SVDINV(LM_REAL *a, LM_REAL *b, int m)
@@ -847,7 +847,6 @@ static int SVDINV(LM_REAL *a, LM_REAL *b, int m)
                                   (ct=bt/at,at*sqrt(1.0+ct*ct)) \
                                 : (bt ? (ct=at/bt,bt*sqrt(1.0+ct*ct)): 0.0))
 #define SIGN(a,b) ((b) >= 0.0 ? fabs(a) : -fabs(a))
-#define TOL             1.0e-6
 
    int                  flag,i,its,j,jj,k,l,nm, rank;
    LM_REAL              *vmat,*wmat,
@@ -855,9 +854,11 @@ static int SVDINV(LM_REAL *a, LM_REAL *b, int m)
 			c,f,h,s,x,y,z,
                         anorm, g, scale,
                         at,bt,ct,maxarg1,maxarg2,
-                        thresh, wmax;
+                        thresh, wmax, tol,tanorm;
   anorm = g = scale = 0.0;
-  
+
+  tol = sizeof(anorm)>4? 1.0e-9 : 1.0e-6;
+
   rv1=(LM_REAL *)malloc(m*sizeof(LM_REAL));
   tmp=(LM_REAL *)malloc(m*sizeof(LM_REAL));
   vmat=(LM_REAL *)malloc(m*m*sizeof(LM_REAL));
@@ -897,7 +898,7 @@ static int SVDINV(LM_REAL *a, LM_REAL *b, int m)
       }
     wmat[i]= scale * g;
     g = s = scale = 0.0;
-    if (i != m-1)
+    if (l != m)
       {
       for (k=l; k<m; k++)
         scale += fabs(a[i*m+k]);
@@ -926,7 +927,8 @@ static int SVDINV(LM_REAL *a, LM_REAL *b, int m)
           a[i*m+k] *= scale;
         }
       }
-    anorm=MAX(anorm,(fabs(wmat[i])+fabs(rv1[i])));
+    anorm = MAX(anorm,(fabs(wmat[i])+fabs(rv1[i])));
+    tanorm = tol*anorm;
     }
 
   for (i=m;i--;)
@@ -989,12 +991,12 @@ static int SVDINV(LM_REAL *a, LM_REAL *b, int m)
       for (l=k+1; l--; )
         {
         nm=l-1;
-        if ((double)(fabs(rv1[l])+anorm) == anorm)
+        if (fabs(rv1[l]) <= tanorm || !l)
           {
           flag=0;
           break;
           }
-        if ((double)(fabs(wmat[nm])+anorm) == anorm)
+        if (fabs(wmat[nm]) <= tanorm)
           break;
         }
       if (flag)
@@ -1005,7 +1007,7 @@ static int SVDINV(LM_REAL *a, LM_REAL *b, int m)
           {
           f = s * rv1[i];
           rv1[i] = c * rv1[i];
-          if ((double)(fabs(f) + anorm) == anorm)
+          if (fabs(f) <= tanorm)
             break;
           g = wmat[i];
           h = PYTHAG(f,g);
@@ -1095,7 +1097,7 @@ static int SVDINV(LM_REAL *a, LM_REAL *b, int m)
   for (j=m;j--; w++)
     if (*w > wmax)
       wmax=*w;
-  thresh=TOL*wmax;
+  thresh=tol*wmax;
   rank = 0;
   w = wmat;
   for (j=m;j--; w++)
@@ -1128,7 +1130,6 @@ static int SVDINV(LM_REAL *a, LM_REAL *b, int m)
 #undef SIGN
 #undef MAX
 #undef PYTHAG
-#undef TOL
 /* undefine everything. THIS MUST REMAIN AT THE END OF THE FILE */
 #undef LEVMAR_PSEUDOINVERSE
 #undef LEVMAR_LUINVERSE

@@ -9,17 +9,19 @@
 *
 *	Contents:	Include file for image.c.
 *
-*	Last modify:	13/09/2009
+*	Last modify:	12/09/2010
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
 
 /*----------------------------- Internal constants --------------------------*/
 
-#define INTERPW	6		/* Interpolation function range (x) */
-#define INTERPH		6	/* Interpolation function range (y) */
+#define INTERPW		8	/* Interpolation function range */
+#define	INTERPFAC	4.0	/* Interpolation envelope factor */
 
-#define INTERPF(x)	(x==0.0?1.0:sin(PI*x)*sin(PI*x/3.0)/(PI*PI/3.0*x*x))
+#define	INTERPF(x)	(x<1e-5 && x>-1e-5? 1.0 \
+			:(x>INTERPFAC?0.0:(x<-INTERPFAC?0.0 \
+			:sinf(PI*x)*sinf(PI/INTERPFAC*x)/(PI*PI/INTERPFAC*x*x))))
 				/* Lanczos approximation */
 
 /*--------------------------- structure definitions -------------------------*/
