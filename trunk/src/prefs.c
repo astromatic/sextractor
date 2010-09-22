@@ -9,7 +9,7 @@
 *
 *	Contents:	Functions to handle the configuration file.
 *
-*	Last modify:	08/03/2010
+*	Last modify:	22/09/2010
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -600,7 +600,7 @@ void	useprefs()
         prefs.prof_flag = 1;
 
 /*--------------------------- Adaptive class-star ---------------------------*/
-  if (prefs.seeing_fwhm == 0)
+  if (prefs.seeing_fwhm == 0 && FLAG(obj2.sprob))
     prefs.psf_flag = 1;
 
 /*-------------------------- Pattern-fitting -------------------------------*/
