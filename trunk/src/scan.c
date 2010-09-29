@@ -10,7 +10,7 @@
 *	Contents:	functions for extraction of connected pixels from
 *			a pixmap.
 *
-*	Last modify:	21/01/2010
+*	Last modify:	28/09/2010
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -48,7 +48,7 @@ INPUT   Measurement field pointer,
 OUTPUT  -.
 NOTES   -.
 AUTHOR  E. Bertin (IAP)
-VERSION 01/12/2009
+VERSION 28/09/2010
  ***/
 void	scanimage(picstruct *field, picstruct *dfield, picstruct **pffield,
 		int nffield, picstruct *wfield, picstruct *dwfield)
@@ -101,7 +101,7 @@ void	scanimage(picstruct *field, picstruct *dfield, picstruct **pffield,
   w = cfield->width;
   h = cfield->height;
   objlist.dthresh = cfield->dthresh;
-  objlist.thresh = cfield->thresh;
+  objlist.thresh = field->thresh;
   cfield->yblank = 1;
   field->y = field->stripy = 0;
   field->ymin = field->stripylim = 0;

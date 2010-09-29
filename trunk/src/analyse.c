@@ -9,7 +9,7 @@
 *
 *	Contents:	analyse(), endobject()...: measurements on detections.
 *
-*	Last modify:	23/08/2010
+*	Last modify:	28/09/2010
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -93,9 +93,9 @@ void  examineiso(picstruct *field, picstruct *dfield, objstruct *obj,
 			pospeakflag, minarea, gainflag;
    double		tv,sigtv, ngamma,
 			esum, emx2,emy2,emxy, err,gain,backnoise2,dbacknoise2,
-			xm,ym, x,y,var,var2;
+			xm,ym, x,y,var,var2, threshfac;
    float		*heap,*heapt,*heapj,*heapk, swap;
-   PIXTYPE		pix, cdpix, tpix, peak,cdpeak, thresh,dthresh;
+   PIXTYPE		pix, cdpix, tpix, peak,cdpeak, thresh,dthresh,minthresh;
    static PIXTYPE	threshs[NISO];
 
 
@@ -149,6 +149,8 @@ void  examineiso(picstruct *field, picstruct *dfield, objstruct *obj,
   peak = -BIG;
   cdpeak = -BIG;
   thresh = field->thresh;
+  minthresh = (PLISTEXIST(var))? BIG : thresh;
+  threshfac = field->backsig > 0.0 ? field->thresh / field->backsig : 1.0;
   dthresh = dfield->dthresh;
   area = 0;
   for (pixt=pixel+obj->firstpix; pixt>=pixel; pixt=pixel+PLIST(pixt,nextpix))
@@ -165,7 +167,13 @@ void  examineiso(picstruct *field, picstruct *dfield, objstruct *obj,
       obj->peaky =  PLIST(pixt,y) + 1;
       }
     if (PLISTEXIST(var))
+      {
       var = PLISTPIX(pixt, var);
+      thresh = threshfac*sqrt(var);
+      if (thresh < minthresh)
+        minthresh = thresh;
+      }
+
     if (photoflag)
       {
       pix = exp(pix/ngamma);
@@ -178,7 +186,6 @@ void  examineiso(picstruct *field, picstruct *dfield, objstruct *obj,
       var2 += pix/gain*var/backnoise2;
 
     sigtv += var2;
-
     if (pix>thresh)
       area++;
     tv += pix;
@@ -283,8 +290,7 @@ void  examineiso(picstruct *field, picstruct *dfield, objstruct *obj,
   obj->flux = tv;
   obj->fluxerr = sigtv;
   obj->peak = peak;
-
-  obj->thresh -= obj->dbkg;
+  obj->thresh = minthresh - obj->dbkg;
   obj->peak -= obj->dbkg;
 
 /* Initialize isophotal thresholds so as to sample optimally the full profile*/

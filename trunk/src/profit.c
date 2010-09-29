@@ -229,9 +229,9 @@ void	profit_fit(profitstruct *profit,
   profit->ix = (int)(obj->mx + 0.49999);/* internal convention: 1st pix = 0 */
   profit->iy = (int)(obj->my + 0.49999);/* internal convention: 1st pix = 0 */
   psf_fwhm = psf->masksize[0]*psf->pixstep;
-  profit->objnaxisn[0] = (((int)((obj->xmax-obj->xmin+1) + psf_fwhm + 0.499)
+  profit->objnaxisn[0] = (((int)(obj2->hl_radius*6.0 + psf_fwhm + 0.499)
 		*1.2)/2)*2 + 1;
-  profit->objnaxisn[1] = (((int)((obj->ymax-obj->ymin+1) + psf_fwhm + 0.499)
+  profit->objnaxisn[1] = (((int)(obj2->hl_radius*6.0 + psf_fwhm + 0.499)
 		*1.2)/2)*2 + 1;
   if (profit->objnaxisn[1]<profit->objnaxisn[0])
     profit->objnaxisn[1] = profit->objnaxisn[0];
