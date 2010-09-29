@@ -9,7 +9,7 @@
 *
 *	Contents:	XML logging.
 *
-*	Last modify:	25/05/2010
+*	Last modify:	03/08/2010
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -219,7 +219,7 @@ INPUT	Pointer to the output file (or stream),
 OUTPUT	RETURN_OK if everything went fine, RETURN_ERROR otherwise.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	05/02/2010
+VERSION	03/08/2010
  ***/
 int	write_xml_meta(FILE *file, char *error)
   {
@@ -388,8 +388,8 @@ int	write_xml_meta(FILE *file, char *error)
 	xmlstack[n].ident[0], xmlstack[n].ident[1],
 	xmlstack[n].backmean[0], xmlstack[n].backmean[1],
 	xmlstack[n].backsig[0], xmlstack[n].backsig[1],
-	xmlstack[n].sigfac[0], xmlstack[n].sigfac[1],
 	xmlstack[n].thresh[0], xmlstack[n].thresh[1],
+	xmlstack[n].sigfac[0], xmlstack[n].sigfac[1],
 	xmlstack[n].pixscale[0], xmlstack[n].pixscale[1],
 	xmlstack[n].epoch[0], xmlstack[n].epoch[1],
 	xmlstack[n].gain[0], xmlstack[n].gain[1],
@@ -412,8 +412,8 @@ int	write_xml_meta(FILE *file, char *error)
 	xmlstack[n].ident[0],
 	xmlstack[n].backmean[0],
 	xmlstack[n].backsig[0],
-	xmlstack[n].sigfac[0],
 	xmlstack[n].thresh[0],
+	xmlstack[n].sigfac[0],
 	xmlstack[n].pixscale[0],
         xmlstack[n].epoch[0],
 	xmlstack[n].gain[0],

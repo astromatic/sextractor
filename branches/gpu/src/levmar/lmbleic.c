@@ -1,7 +1,7 @@
 /////////////////////////////////////////////////////////////////////////////////
 // 
 //  Levenberg - Marquardt non-linear minimization algorithm
-//  Copyright (C) 2004-05  Manolis Lourakis (lourakis at ics forth gr)
+//  Copyright (C) 2009  Manolis Lourakis (lourakis at ics forth gr)
 //  Institute of Computer Science, Foundation for Research & Technology - Hellas
 //  Heraklion, Crete, Greece.
 //
@@ -17,11 +17,11 @@
 //
 /////////////////////////////////////////////////////////////////////////////////
 
-/******************************************************************************** 
- * Box-constrained Levenberg-Marquardt nonlinear minimization. The same core code
- * is used with appropriate #defines to derive single and double precision versions,
- * see also lmbc_core.c
- ********************************************************************************/
+/*******************************************************************************
+ * Wrappers for linear inequality constrained Levenberg-Marquardt minimization.
+ * The same core code is used with appropriate #defines to derive single and
+ * double precision versions, see also lmbleic_core.c
+ *******************************************************************************/
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -29,11 +29,18 @@
 #include <float.h>
 
 #include "levmar.h"
-#include "compiler.h"
 #include "misc.h"
 
-#define EPSILON       1E-12
-#define ONE_THIRD     0.3333333334 /* 1.0/3.0 */
+
+#ifndef HAVE_LAPACK
+
+#ifdef _MSC_VER
+#pragma message("Linear inequalities constrained optimization requires LAPACK and was not compiled!")
+#else
+//#warning Linear inequalities constrained optimization requires LAPACK and was not compiled!
+#endif // _MSC_VER
+
+#else // LAPACK present
 
 #if !defined(LM_DBL_PREC) && !defined(LM_SNGL_PREC)
 #error At least one of LM_DBL_PREC, LM_SNGL_PREC should be defined!
@@ -47,18 +54,15 @@
 
 #define LM_REAL_MAX FLT_MAX
 #define LM_REAL_MIN -FLT_MAX
-
-#define LM_REAL_EPSILON FLT_EPSILON
 #define __SUBCNST(x) x##F
 #define LM_CNST(x) __SUBCNST(x) // force substitution
 
-#include "lmbc_core.c" // read in core code
+#include "lmbleic_core.c" // read in core code
 
 #undef LM_REAL
 #undef LM_PREFIX
 #undef LM_REAL_MAX
 #undef LM_REAL_MIN
-#undef LM_REAL_EPSILON
 #undef __SUBCNST
 #undef LM_CNST
 #endif /* LM_SNGL_PREC */
@@ -70,16 +74,16 @@
 
 #define LM_REAL_MAX DBL_MAX
 #define LM_REAL_MIN -DBL_MAX
-
-#define LM_REAL_EPSILON DBL_EPSILON
 #define LM_CNST(x) (x)
 
-#include "lmbc_core.c" // read in core code
+#include "lmbleic_core.c" // read in core code
 
 #undef LM_REAL
 #undef LM_PREFIX
 #undef LM_REAL_MAX
 #undef LM_REAL_MIN
-#undef LM_REAL_EPSILON
 #undef LM_CNST
 #endif /* LM_DBL_PREC */
+
+#endif /* HAVE_LAPACK */
+

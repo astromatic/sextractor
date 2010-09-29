@@ -38,4 +38,8 @@
 #define LM_FINITE finite // other than MSVC, ICC, GCC, let's hope this will work
 #endif 
 
+#ifdef _MSC_VER // avoid deprecation warnings in VS2005
+#define _CRT_SECURE_NO_WARNINGS
+#endif
+
 #endif /* _COMPILER_H_ */

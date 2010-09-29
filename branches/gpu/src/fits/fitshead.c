@@ -9,7 +9,7 @@
 *
 *	Contents:	general functions for handling FITS file headers.
 *
-*	Last modify:	28/10/2009
+*	Last modify:	20/07/2010
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -187,7 +187,7 @@ OUTPUT	RETURN_OK if a binary table was found and mapped, RETURN_ERROR
 	otherwise.
 NOTES	-.
 AUTHOR	E. Bertin (IAP & Leiden observatory)
-VERSION	28/10/2009
+VERSION	20/07/2010
  ***/
 int	readbintabparam_head(tabstruct *tab)
 
@@ -271,7 +271,7 @@ int	readbintabparam_head(tabstruct *tab)
         key->htype = H_STRING;
         break;
       default:
-        error(EXIT_FAILURE, "*Internal Error*: Unkwown T_TYPE for ", str);
+        error(EXIT_FAILURE, "*Error*: Unknown TFORM in ", cat->filename);
       }
 
 /*--handle the special case of multimensional arrays*/

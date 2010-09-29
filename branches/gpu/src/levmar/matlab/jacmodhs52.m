@@ -1,4 +1,4 @@
-function jac = modhs52_jac(p)
+function jac = jacmodhs52(p)
   m=5;
 
   jac(1, 1:m)=[4.0, -1.0, 0.0, 0.0, 0.0];

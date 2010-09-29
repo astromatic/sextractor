@@ -9,7 +9,7 @@
 *
 *	Contents:	global type definitions.
 *
-*	Last modify:	23/03/2010
+*	Last modify:	20/08/2010
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -350,12 +350,17 @@ typedef struct
   float		poserrcxxw_prof, poserrcyyw_prof,
 		poserrcxyw_prof;		/* WORLD error ellipse */
   double	prof_mx2, prof_my2, prof_mxy;	/* Model-fitting moments */
+  double	prof_mx2cov[9];			/* Mod-fit moment cov. matrix */
   float		prof_a, prof_b,
 		prof_theta;			/* Model-fitting ellip. params*/
   float		prof_cxx, prof_cyy,
 		prof_cxy;			/* Model-fitting ellip. params*/
   float		prof_pol1, prof_pol2;		/* Model-fitting pol. vector*/
+  float		prof_pol1err, prof_pol2err,
+		prof_pol12corr;			/* Model-fitting pol. errors */
   float		prof_e1, prof_e2;		/* Model-fitting ellip.vector*/
+  float		prof_e1err, prof_e2err,
+		prof_e12corr;			/* Model-fitting ellip. errors */
   double	prof_mx2w, prof_my2w,
 		prof_mxyw;			/* WORLD model-fitting moments*/
   float		prof_aw, prof_bw,
@@ -366,7 +371,11 @@ typedef struct
   float		prof_cxxw, prof_cyyw,
 		prof_cxyw;			/* WORLD ellipse parameters */
   float		prof_pol1w, prof_pol2w;		/* WORLD polarisation vector*/
+  float		prof_pol1errw, prof_pol2errw,
+		prof_pol12corrw;		/* WORLD polarisation errors */
   float		prof_e1w, prof_e2w;		/* WORLD ellipticity vector*/
+  float		prof_e1errw, prof_e2errw,
+		prof_e12corrw;			/* WORLD ellipticity errors */
   float		prof_class_star;		/* Mod.-fitting star/gal class*/
   float		prof_concentration;		/* Model-fitting concentration*/
   float		prof_concentrationerr;		/* RMS error */

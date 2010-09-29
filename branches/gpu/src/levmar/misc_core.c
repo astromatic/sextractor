@@ -543,6 +543,16 @@ LM_REAL *a, *x, *work, max, sum, tmp;
 }
 #endif /* HAVE_LAPACK */
 
+/* precision-specific definitions */
+/* Added by EB */
+#ifdef HAVE_CONFIG_H
+#include        "config.h"
+#endif
+#include        ATLAS_LAPACK_H
+#define ATLAS_POTRF	LM_CAT_(clapack_, LM_ADD_PREFIX(potrf))
+#define ATLAS_POTRI	LM_CAT_(clapack_, LM_ADD_PREFIX(potri))
+/* End added by EB */
+
 /*
  * This function computes in C the covariance matrix corresponding to a least
  * squares fit. JtJ is the approximate Hessian at the solution (i.e. J^T*J, where
@@ -564,7 +574,7 @@ LM_REAL *a, *x, *work, max, sum, tmp;
  */
 int LEVMAR_COVAR(LM_REAL *JtJ, LM_REAL *C, LM_REAL sumsq, int m, int n)
 {
-register int i;
+register int i,j;
 int rnk;
 LM_REAL fact;
 
@@ -581,23 +591,26 @@ LM_REAL fact;
 #endif // _MSC_VER
 
 //   rnk=LEVMAR_LUINVERSE(JtJ, C, m);
+
    rnk = SVDINV(JtJ, C, m);
-   if(!rnk) return 0;
 
-//   rnk=m; /* assume full rank */
+   if (!rnk) return 0;
+
+//  rnk=m; /* assume full rank */
 #endif /* HAVE_LAPACK */
+  
+  fact=(LM_REAL)n/(LM_REAL)(n-rnk);
+  for(i=0; i<m*m; ++i)
+    C[i]*=fact;
 
-//   fact=sumsq/(LM_REAL)(n-rnk);
-//   for(i=0; i<m*m; ++i)
-//     C[i]*=fact;
-
-    fact=(LM_REAL)n/(LM_REAL)(n-rnk);
-   for(i=0; i<m*m; ++i)
-     C[i]*=fact;
-
-   for(i=0; i<m; ++i)
-     if (C[i*(m+1)]<0.0)
-       C[i*(m+1)] = 0.0;
+  for(i=0; i<m; ++i)
+    if (C[i*(m+1)]<0.0 || fabs(C[i*(m+1)])>1e30)
+      {
+      for(j=0; j<m; ++j)
+        C[i*m+j] = 0.0;
+      for(j=0; j<m; ++j)
+        C[j*m+i] = 0.0;
+      }
 
    return rnk;
 }
@@ -681,12 +694,6 @@ int LEVMAR_CHOLESKY(LM_REAL *C, LM_REAL *W, int m)
 register int i, j;
 int info;
 
-/* compute the Cholesky decomposition of C in W, s.t. C=W^t W and W is upper triangular */
-int LEVMAR_CHOLESKY(LM_REAL *C, LM_REAL *W, int m)
-{
-register int i, j;
-int info;
-
   /* copy weights array C to W so that LAPACK won't destroy it;
    * C is assumed symmetric, hence no transposition is needed
    */
@@ -697,13 +704,13 @@ int info;
   POTF2("U", (int *)&m, W, (int *)&m, (int *)&info);
   /* error treatment */
   if(info!=0){
-                if(info<0){
+		if(info<0){
       fprintf(stderr, "LAPACK error: illegal value for argument %d of dpotf2 in %s\n", -info, LCAT(LEVMAR_CHOLESKY, "()"));
-                }
-                else{
-                        fprintf(stderr, "LAPACK error: the leading minor of order %d is not positive definite,\n%s()\n", info,
-                                                RCAT("and the Cholesky factorization could not be completed in ", LEVMAR_CHOLESKY));
-                }
+		}
+		else{
+			fprintf(stderr, "LAPACK error: the leading minor of order %d is not positive definite,\n%s()\n", info,
+						RCAT("and the Cholesky factorization could not be completed in ", LEVMAR_CHOLESKY));
+		}
     return LM_ERROR;
   }
 
@@ -769,12 +776,12 @@ register LM_REAL sum0=0.0, sum1=0.0, sum2=0.0, sum3=0.0;
 
       switch(n - i){ 
         case 7 : e[i]=x[i]-y[i]; sum0+=e[i]*e[i]; ++i;
-        case 6 : e[i]=x[i]-y[i]; sum0+=e[i]*e[i]; ++i;
-        case 5 : e[i]=x[i]-y[i]; sum0+=e[i]*e[i]; ++i;
-        case 4 : e[i]=x[i]-y[i]; sum0+=e[i]*e[i]; ++i;
+        case 6 : e[i]=x[i]-y[i]; sum1+=e[i]*e[i]; ++i;
+        case 5 : e[i]=x[i]-y[i]; sum2+=e[i]*e[i]; ++i;
+        case 4 : e[i]=x[i]-y[i]; sum3+=e[i]*e[i]; ++i;
         case 3 : e[i]=x[i]-y[i]; sum0+=e[i]*e[i]; ++i;
-        case 2 : e[i]=x[i]-y[i]; sum0+=e[i]*e[i]; ++i;
-        case 1 : e[i]=x[i]-y[i]; sum0+=e[i]*e[i]; ++i;
+        case 2 : e[i]=x[i]-y[i]; sum1+=e[i]*e[i]; ++i;
+        case 1 : e[i]=x[i]-y[i]; sum2+=e[i]*e[i]; //++i;
       }
     }
   }
@@ -804,12 +811,12 @@ register LM_REAL sum0=0.0, sum1=0.0, sum2=0.0, sum3=0.0;
 
       switch(n - i){ 
         case 7 : e[i]=-y[i]; sum0+=e[i]*e[i]; ++i;
-        case 6 : e[i]=-y[i]; sum0+=e[i]*e[i]; ++i;
-        case 5 : e[i]=-y[i]; sum0+=e[i]*e[i]; ++i;
-        case 4 : e[i]=-y[i]; sum0+=e[i]*e[i]; ++i;
+        case 6 : e[i]=-y[i]; sum1+=e[i]*e[i]; ++i;
+        case 5 : e[i]=-y[i]; sum2+=e[i]*e[i]; ++i;
+        case 4 : e[i]=-y[i]; sum3+=e[i]*e[i]; ++i;
         case 3 : e[i]=-y[i]; sum0+=e[i]*e[i]; ++i;
-        case 2 : e[i]=-y[i]; sum0+=e[i]*e[i]; ++i;
-        case 1 : e[i]=-y[i]; sum0+=e[i]*e[i]; ++i;
+        case 2 : e[i]=-y[i]; sum1+=e[i]*e[i]; ++i;
+        case 1 : e[i]=-y[i]; sum2+=e[i]*e[i]; //++i;
       }
     }
   }
@@ -827,284 +834,270 @@ OUTPUT	Matrix rank.
 NOTES	Loosely adapted from Numerical Recipes in C, 2nd Ed. (p. 671). The a
 	and v matrices are transposed with respect to the N.R. convention.
 AUTHOR	E. Bertin (IAP)
-VERSION	30/05/2008
+VERSION	02/09/2010
  ***/
 
 static int SVDINV(LM_REAL *a, LM_REAL *b, int m)
   {
+#define MIN(a,b) (maxarg1=(a),maxarg2=(b),(maxarg1) < (maxarg2) ?\
+        (maxarg1) : (maxarg2))
 #define MAX(a,b) (maxarg1=(a),maxarg2=(b),(maxarg1) > (maxarg2) ?\
         (maxarg1) : (maxarg2))
 #define PYTHAG(a,b)     ((at=fabs(a)) > (bt=fabs(b)) ? \
                                   (ct=bt/at,at*sqrt(1.0+ct*ct)) \
                                 : (bt ? (ct=at/bt,bt*sqrt(1.0+ct*ct)): 0.0))
 #define SIGN(a,b) ((b) >= 0.0 ? fabs(a) : -fabs(a))
-#define TOL             1.0e-6
 
-   int                  flag,i,its,j,jj,k,l,mmi,nm, nml, rank;
+   int                  flag,i,its,j,jj,k,l,nm, rank;
    LM_REAL              *vmat,*wmat,
-			*w,*ap,*ap0,*ap1,*ap10,*rv1p,*vp,*vp0,*vp1,*vp10,
-                        *rv1,*tmp,
+			*w,*rv1,*tmp,
 			c,f,h,s,x,y,z,
                         anorm, g, scale,
                         at,bt,ct,maxarg1,maxarg2,
-                        thresh, wmax;
+                        thresh, wmax, tol,tanorm;
   anorm = g = scale = 0.0;
-  
+
+  tol = sizeof(anorm)>4? 1.0e-9 : 1.0e-6;
+
   rv1=(LM_REAL *)malloc(m*sizeof(LM_REAL));
   tmp=(LM_REAL *)malloc(m*sizeof(LM_REAL));
   vmat=(LM_REAL *)malloc(m*m*sizeof(LM_REAL));
   wmat=(LM_REAL *)malloc(m*sizeof(LM_REAL));
 
-  l = nm = nml = 0;	/* To avoid gcc -Wall warnings */
-  for (i=0;i<m;i++)
+  l = nm = 0;	/* To avoid gcc -Wall warnings */
+
+  for (i=0; i<m; i++)
     {
     l = i+1;
-    nml = m-l;
     rv1[i] = scale*g;
     g = s = scale = 0.0;
-    mmi = m - i;
-    ap = ap0 = a+i*(m+1);
-    for (k=mmi;k--;)
-      scale += fabs(*(ap++));
+    for (k=i; k<m; k++)
+      scale += fabs(a[k*m+i]);
     if (scale)
       {
-      for (ap=ap0,k=mmi; k--; ap++)
+      for (k=i; k<m; k++)
         {
-        *ap /= scale;
-        s += *ap**ap;
+        a[k*m+i] /= scale;
+        s += a[k*m+i]*a[k*m+i];
         }
-      f = *ap0;
+      f = a[i*m+i];
       g = -SIGN(sqrt(s),f);
-      h = f*g-s;
-      *ap0 = f-g;
-      ap10 = a+l*m+i;
-      for (j=nml;j--; ap10+=m)
+      h = f*g - s;
+      a[i*m+i] = f-g;
+      for (j=l; j<m; j++)
         {
         s = 0.0;
-        for (ap=ap0,ap1=ap10,k=mmi; k--;)
-          s += *(ap1++)**(ap++);
+        for (k=i; k<m; k++)
+          s += a[k*m+i] * a[k*m+j];
         f = s/h;
-        for (ap=ap0,ap1=ap10,k=mmi; k--;)
-          *(ap1++) += f**(ap++);
+        for (k=i; k<m; k++)
+          a[k*m+j] += f * a[k*m+i];
         }
-      for (ap=ap0,k=mmi; k--;)
-        *(ap++) *= scale;
+      for (k=i; k<m; k++)
+        a[k*m+i] *= scale;
       }
-    wmat[i] = scale*g;
+    wmat[i]= scale * g;
     g = s = scale = 0.0;
-    if (i+1 != m)
+    if (l != m)
       {
-      ap = ap0 = a+i+m*l;
-      for (k=nml;k--; ap+=m)
-        scale += fabs(*ap);
+      for (k=l; k<m; k++)
+        scale += fabs(a[i*m+k]);
       if (scale)
         {
-        for (ap=ap0,k=nml;k--; ap+=m)
+        for (k=l; k<m; k++)
           {
-          *ap /= scale;
-          s += *ap**ap;
+          a[i*m+k] /= scale;
+          s += a[i*m+k] * a[i*m+k];
           }
-        f=*ap0;
+        f = a[i*m+l];
         g = -SIGN(sqrt(s),f);
-        h=f*g-s;
-        *ap0=f-g;
-        rv1p = rv1+l;
-        for (ap=ap0,k=nml;k--; ap+=m)
-          *(rv1p++) = *ap/h;
-        ap10 = a+l+m*l;
-        for (j=m-l; j--; ap10++)
+        h = f*g - s;
+        a[i*m+l] = f - g;
+        for (k=l; k<m; k++)
+          rv1[k] = a[i*m+k] / h;
+        for (j=l; j<m; j++)
           {
-          for (s=0.0,ap=ap0,ap1=ap10,k=nml; k--; ap+=m,ap1+=m)
-            s += *ap1**ap;
-          rv1p = rv1+l;
-          for (ap1=ap10,k=nml;k--; ap1+=m)
-            *ap1 += s**(rv1p++);
+          s = 0.0;
+          for (k=l; k<m; k++)
+            s += a[j*m+k] * a[i*m+k];
+          for (k=l; k<m; k++)
+            a[j*m+k] += s * rv1[k];
           }
-        for (ap=ap0,k=nml;k--; ap+=m)
-          *ap *= scale;
+        for (k=l; k<m; k++)
+          a[i*m+k] *= scale;
         }
       }
-    anorm=MAX(anorm,(fabs(wmat[i])+fabs(rv1[i])));
+    anorm = MAX(anorm,(fabs(wmat[i])+fabs(rv1[i])));
+    tanorm = tol*anorm;
     }
 
-  for (i=m-1;i>=0;i--)
+  for (i=m;i--;)
     {
     if (i < m-1)
       {
       if (g)
         {
-        ap0 = a+l*m+i;
-        vp0 = vmat+i*m+l;
-        vp10 = vmat+l*m+l;
-        g *= *ap0;
-        for (ap=ap0,vp=vp0,j=nml; j--; ap+=m)
-          *(vp++) = *ap/g;
-        for (j=nml; j--; vp10+=m)
+        for (j=l; j<m; j++)
+          vmat[j*m+i]=(a[i*m+j]/a[i*m+l]) / g;
+        for (j=l; j<m; j++)
           {
-          for (s=0.0,ap=ap0,vp1=vp10,k=nml; k--; ap+=m)
-            s += *ap**(vp1++);
-          for (vp=vp0,vp1=vp10,k=nml; k--;)
-            *(vp1++) += s**(vp++);
+           s = 0.0;
+          for (k=l; k<m; k++)
+            s += a[i*m+k] * vmat[k*m+j];
+          for (k=l; k<m; k++)
+            vmat[k*m+j] += s * vmat[k*m+i];
           }
         }
-      vp = vmat+l*m+i;
-      vp1 = vmat+i*m+l;
-      for (j=nml; j--; vp+=m)
-        *vp = *(vp1++) = 0.0;
+      for (j=l; j<m; j++)
+        vmat[i*m+j] = vmat[j*m+i] =0.0;
       }
-    vmat[i*m+i]=1.0;
-    g=rv1[i];
-    l=i;
-    nml = m-l;
+    vmat[i*m+i] = 1.0;
+    g = rv1[i];
+    l = i;
     }
 
-  for (i=m; --i>=0;)
+  for (i=m; i--;)
     {
-    l=i+1;
-    nml = m-l;
-    mmi=m-i;
-    g=wmat[i];
-    ap0 = a+i*m+i;
-    ap10 = ap0 + m;
-    for (ap=ap10,j=nml;j--;ap+=m)
-      *ap=0.0;
+    l = i+1;
+    g = wmat[i];
+    for (j=l; j<m;j++)
+      a[i*m+j] = 0.0;
     if (g)
       {
-      g=1.0/g;
-      for (j=nml;j--; ap10+=m)
+      g = 1.0/g;
+      for (j=l; j<m; j++)
         {
-        for (s=0.0,ap=ap0,ap1=ap10,k=mmi; --k;)
-              s += *(++ap)**(++ap1);
-        f = (s/(*ap0))*g;
-        for (ap=ap0,ap1=ap10,k=mmi;k--;)
-          *(ap1++) += f**(ap++);
+        s = 0.0;
+        for (k=l; k<m; k++)
+          s += a[k*m+i] * a[k*m+j];
+        f = (s / a[i*m+i]) * g;
+        for (k=i; k<m; k++)
+          a[k*m+j] += f * a[k*m+i];
         }
-      for (ap=ap0,j=mmi;j--;)
-        *(ap++) *= g;
+      for (j=i; j<m; j++)
+        a[j*m+i] *= g;
       }
     else
-      for (ap=ap0,j=mmi;j--;)
-        *(ap++)=0.0;
-    ++(*ap0);
+      for (j=i; j<m; j++)
+        a[j*m+i] = 0.0;
+      ++a[i*m+i];
     }
 
-  for (k=m; --k>=0;)
+  for (k=m; k--;)
+    {
+    for (its=0; its<30; its++)
       {
-      for (its=0;its<100;its++)
+      flag = 1;
+      for (l=k+1; l--; )
         {
-        flag=1;
-        for (l=k;l>=0;l--)
+        nm=l-1;
+        if (fabs(rv1[l]) <= tanorm || !l)
           {
-          nm=l-1;
-          if (!l || fabs(rv1[l]) <= anorm*TOL)
-            {
-            flag=0;
-            break;
-            }
-          if (fabs(wmat[nm]) <= anorm*TOL)
-            break;
-          }
-        if (flag)
-          {
-          c=0.0;
-          s=1.0;
-          ap0 = a+nm*m;
-          ap10 = a+l*m;
-          for (i=l; i<=k; i++,ap10+=m)
-            {
-            f=s*rv1[i];
-            if (fabs(f) <= anorm*TOL)
-              break;
-            g=wmat[i];
-            h=PYTHAG(f,g);
-            wmat[i]=h;
-            h=1.0/h;
-            c=g*h;
-            s=(-f*h);
-            for (ap=ap0,ap1=ap10,j=m; j--;)
-              {
-              z = *ap1;
-              y = *ap;
-              *(ap++) = y*c+z*s;
-              *(ap1++) = z*c-y*s;
-              }
-            }
-          }
-        z=wmat[k];
-        if (l == k)
-          {
-          if (z < 0.0)
-            {
-            wmat[k] = -z;
-            vp = vmat+k*m;
-            for (j=m; j--; vp++)
-              *vp = (-*vp);
-            }
+          flag=0;
           break;
           }
-        x=wmat[l];
-        nm=k-1;
-        y=wmat[nm];
-        g=rv1[nm];
-        h=rv1[k];
-        f=((y-z)*(y+z)+(g-h)*(g+h))/(2.0*h*y);
-        g=PYTHAG(f,1.0);
-        f=((x-z)*(x+z)+h*((y/(f+SIGN(g,f)))-h))/x;
-        c=s=1.0;
-        ap10 = a+l*m;
-        vp10 = vmat+l*m;
-        for (j=l;j<=nm;j++,ap10+=m,vp10+=m)
+        if (fabs(wmat[nm]) <= tanorm)
+          break;
+        }
+      if (flag)
+        {
+        c = 0.0;
+        s = 1.0;
+        for (i=l; i<=k; i++)
           {
-          i=j+1;
-          g=rv1[i];
-          y=wmat[i];
-          h=s*g;
-          g=c*g;
-          z=PYTHAG(f,h);
-          rv1[j]=z;
-          c=f/z;
-          s=h/z;
-          f=x*c+g*s;
-          g=g*c-x*s;
-          h=y*s;
-          y=y*c;
-          for (vp=(vp1=vp10)+m,jj=m; jj--;)
+          f = s * rv1[i];
+          rv1[i] = c * rv1[i];
+          if (fabs(f) <= tanorm)
+            break;
+          g = wmat[i];
+          h = PYTHAG(f,g);
+          wmat[i] = h;
+          h = 1.0 / h;
+          c = g * h;
+          s = -f * h;
+          for (j=0; j<m; j++)
             {
-            z = *vp;
-            x = *vp1;
-            *(vp1++) = x*c+z*s;
-            *(vp++) = z*c-x*s;
-            }
-          z=PYTHAG(f,h);
-          wmat[j]=z;
-          if (z)
-            {
-            z=1.0/z;
-            c=f*z;
-            s=h*z;
-            }
-          f=c*g+s*y;
-          x=c*y-s*g;
-          for (ap=(ap1=ap10)+m,jj=m; jj--;)
-            {
-            z = *ap;
-            y = *ap1;
-            *(ap1++) = y*c+z*s;
-            *(ap++) = z*c-y*s;
+            y = a[j*m+nm];
+            z = a[j*m+i];
+            a[j*m+nm] = y*c + z*s;
+            a[j*m+i] = z*c - y*s;
             }
           }
-        rv1[l]=0.0;
-        rv1[k]=f;
-        wmat[k]=x;
         }
+      z = wmat[k];
+      if (l==k)
+        {
+        if (z < 0.0)
+          {
+          wmat[k] = -z;
+          for (j=0; j<m; j++)
+            vmat[j*m+k] = -vmat[j*m+k];
+          }
+        break;
+        }
+      if (its == 29)
+        return 0;
+      x = wmat[l];
+      nm = k-1;
+      y = wmat[nm];
+      g = rv1[nm];
+      h = rv1[k];
+      f = ((y-z)*(y+z) + (g-h)*(g+h)) / (2.0*h*y);
+      g = PYTHAG(f, 1.0);
+      f = ((x-z)*(x+z) + h * ((y / (f+SIGN(g,f))) - h)) / x;
+      c = s = 1.0;
+      for (j=l; j<=nm; j++)
+        {
+        i = j+1;
+        g = rv1[i];
+        y = wmat[i];
+        h = s * g;
+        g = c * g;
+        z = PYTHAG(f, h);
+        rv1[j] = z;
+        c = f / z;
+        s = h / z;
+        f = x*c + g*s;
+        g = g*c - x*s;
+        h = y*s;
+        y *= c;
+        for (jj=0; jj<m; jj++)
+          {
+          x = vmat[jj*m+j];
+          z = vmat[jj*m+i];
+          vmat[jj*m+j] = x*c + z*s;
+          vmat[jj*m+i] = z*c - x*s;
+          }
+        z = PYTHAG(f, h);
+        wmat[j] = z;
+        if (z)
+          {
+          z = 1.0 / z;
+          c = f*z;
+          s = h*z;
+          }
+        f = c*g + s*y;
+        x = c*y - s*g;
+        for (jj=0; jj<m; jj++)
+          {
+          y = a[jj*m+j];
+          z = a[jj*m+i];
+          a[jj*m+j] = y*c + z*s;
+          a[jj*m+i] = z*c - y*s;
+          }
+        }
+      rv1[l] = 0.0;
+      rv1[k] = f;
+      wmat[k] = x;
       }
+    }
 
   wmax=0.0;
   w = wmat;
   for (j=m;j--; w++)
     if (*w > wmax)
       wmax=*w;
-  thresh=TOL*wmax;
+  thresh=tol*wmax;
   rank = 0;
   w = wmat;
   for (j=m;j--; w++)
@@ -1121,7 +1114,7 @@ static int SVDINV(LM_REAL *a, LM_REAL *b, int m)
       {
       s = 0.0;
       for (k=0; k<m; k++)
-        s += vmat[j+k*m]*a[i+k*m]*wmat[k];
+        s += vmat[k+j*m]*a[k+i*m]*wmat[k];
       b[j+i*m] = s;
       }
 
@@ -1137,7 +1130,6 @@ static int SVDINV(LM_REAL *a, LM_REAL *b, int m)
 #undef SIGN
 #undef MAX
 #undef PYTHAG
-#undef TOL
 /* undefine everything. THIS MUST REMAIN AT THE END OF THE FILE */
 #undef LEVMAR_PSEUDOINVERSE
 #undef LEVMAR_LUINVERSE

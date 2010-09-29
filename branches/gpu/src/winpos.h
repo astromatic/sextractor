@@ -9,7 +9,7 @@
 *
 *	Contents:	Include file for winpos.c.
 *
-*	Last modify:	25/08/2005
+*	Last modify:	16/07/2010
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -18,9 +18,9 @@
 
 #define	WINPOS_NITERMAX	16	/* Maximum number of steps */
 #define	WINPOS_NSIG	4	/* Measurement radius */
-#define	WINPOS_OVERSAMP	3	/* oversampling in each dimension */
-#define	WINPOS_STEPMIN	0.001	/* Minimum change in position for continueing*/
-#define	WINPOS_GRADFAC	2.0	/* Gradient descent acceleration factor */
+#define	WINPOS_OVERSAMP	11	/* oversampling in each dimension */
+#define	WINPOS_STEPMIN	0.0001	/* Minimum change in position for continueing*/
+#define	WINPOS_FAC	2.0	/* Centroid offset factor (2 for a Gaussian) */
 
 /* NOTES:
 One must have:

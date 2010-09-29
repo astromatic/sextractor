@@ -53,22 +53,36 @@ PROGRAMS = $(bin_PROGRAMS)
 am_ldactoasc_OBJECTS = ldactoasc.$(OBJEXT)
 ldactoasc_OBJECTS = $(am_ldactoasc_OBJECTS)
 ldactoasc_DEPENDENCIES = $(top_builddir)/src/fits/libfits.a
+am__sex_SOURCES_DIST = analyse.c assoc.c astrom.c back.c bpro.c \
+	catout.c check.c clean.c extract.c fft.c field.c filter.c \
+	fitswcs.c flag.c graph.c growth.c header.c image.c \
+	interpolate.c main.c makeit.c manobjlist.c misc.c neurro.c \
+	pattern.c pc.c photom.c plist.c prefs.c profit.c psf.c \
+	readimage.c refine.c retina.c scan.c som.c weight.c winpos.c \
+	xml.c assoc.h astrom.h back.h bpro.h check.h clean.h define.h \
+	extract.h fft.h field.h filter.h fitswcs.h flag.h globals.h \
+	growth.h header.h image.h interpolate.h key.h neurro.h param.h \
+	paramprofit.h pattern.h photom.h plist.h prefs.h preflist.h \
+	profit.h psf.h retina.h sexhead1.h sexhead.h sexheadsc.h som.h \
+	threads.h types.h wcscelsys.h weight.h winpos.h xml.h
+@USE_MODEL_TRUE@am__objects_1 = fft.$(OBJEXT)
+@USE_MODEL_TRUE@am__objects_2 = pattern.$(OBJEXT)
+@USE_MODEL_TRUE@am__objects_3 = profit.$(OBJEXT)
 am_sex_OBJECTS = analyse.$(OBJEXT) assoc.$(OBJEXT) astrom.$(OBJEXT) \
 	back.$(OBJEXT) bpro.$(OBJEXT) catout.$(OBJEXT) check.$(OBJEXT) \
-	clean.$(OBJEXT) extract.$(OBJEXT) fft.$(OBJEXT) \
+	clean.$(OBJEXT) extract.$(OBJEXT) $(am__objects_1) \
 	field.$(OBJEXT) filter.$(OBJEXT) fitswcs.$(OBJEXT) \
 	flag.$(OBJEXT) graph.$(OBJEXT) growth.$(OBJEXT) \
 	header.$(OBJEXT) image.$(OBJEXT) interpolate.$(OBJEXT) \
 	main.$(OBJEXT) makeit.$(OBJEXT) manobjlist.$(OBJEXT) \
-	misc.$(OBJEXT) neurro.$(OBJEXT) pattern.$(OBJEXT) pc.$(OBJEXT) \
+	misc.$(OBJEXT) neurro.$(OBJEXT) $(am__objects_2) pc.$(OBJEXT) \
 	photom.$(OBJEXT) plist.$(OBJEXT) prefs.$(OBJEXT) \
-	profit.$(OBJEXT) psf.$(OBJEXT) readimage.$(OBJEXT) \
+	$(am__objects_3) psf.$(OBJEXT) readimage.$(OBJEXT) \
 	refine.$(OBJEXT) retina.$(OBJEXT) scan.$(OBJEXT) som.$(OBJEXT) \
 	weight.$(OBJEXT) winpos.$(OBJEXT) xml.$(OBJEXT)
 sex_OBJECTS = $(am_sex_OBJECTS)
 sex_DEPENDENCIES = $(top_builddir)/src/fits/libfits.a \
-	$(top_builddir)/src/wcs/libwcs_c.a \
-	$(top_builddir)/src/levmar/liblevmar.a
+	$(top_builddir)/src/wcs/libwcs_c.a $(LEVLIB)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/autoconf/depcomp
 am__depfiles_maybe = depfiles
@@ -82,7 +96,7 @@ LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
 SOURCES = $(ldactoasc_SOURCES) $(sex_SOURCES)
-DIST_SOURCES = $(ldactoasc_SOURCES) $(sex_SOURCES)
+DIST_SOURCES = $(ldactoasc_SOURCES) $(am__sex_SOURCES_DIST)
 RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	html-recursive info-recursive install-data-recursive \
 	install-dvi-recursive install-exec-recursive \
@@ -94,7 +108,7 @@ RECURSIVE_CLEAN_TARGETS = mostlyclean-recursive clean-recursive	\
   distclean-recursive maintainer-clean-recursive
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = $(SUBDIRS)
+DIST_SUBDIRS = fits levmar wcs
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 AMTAR = @AMTAR@
@@ -223,14 +237,20 @@ top_srcdir = @top_srcdir@
 
 # Program Makefile for SEx
 # Copyright (C) 2004-2010 Emmanuel Bertin.
-SUBDIRS = fits levmar wcs
+@USE_MODEL_TRUE@FFTSOURCE = fft.c
+@USE_MODEL_TRUE@PATTERNSOURCE = pattern.c
+@USE_MODEL_TRUE@PROFITSOURCE = profit.c
+@USE_MODEL_TRUE@LEVLIB = $(top_builddir)/src/levmar/liblevmar.a
+@USE_MODEL_TRUE@LEVDIR = levmar
+SUBDIRS = fits $(LEVDIR) wcs
 sex_SOURCES = analyse.c assoc.c astrom.c back.c bpro.c catout.c \
-			  check.c clean.c extract.c fft.c field.c filter.c \
-			  fitswcs.c flag.c graph.c growth.c header.c image.c \
-			  interpolate.c main.c makeit.c manobjlist.c misc.c \
-			  neurro.c pattern.c pc.c photom.c plist.c prefs.c \
-			  profit.c psf.c readimage.c refine.c retina.c scan.c \
-			  som.c weight.c winpos.c xml.c \
+			  check.c clean.c extract.c $(FFTSOURCE) field.c \
+			  filter.c fitswcs.c flag.c graph.c growth.c header.c \
+			  image.c interpolate.c main.c makeit.c manobjlist.c \
+			  misc.c neurro.c $(PATTERNSOURCE) pc.c photom.c \
+			  plist.c prefs.c $(PROFITSOURCE) psf.c readimage.c \
+			  refine.c retina.c scan.c som.c weight.c winpos.c \
+			  xml.c \
 			  assoc.h astrom.h back.h bpro.h check.h clean.h \
 			  define.h extract.h fft.h field.h filter.h fitswcs.h \
 			  flag.h globals.h growth.h header.h image.h \
@@ -243,7 +263,7 @@ sex_SOURCES = analyse.c assoc.c astrom.c back.c bpro.c catout.c \
 ldactoasc_SOURCES = ldactoasc.c ldactoasc.h
 sex_LDADD = $(top_builddir)/src/fits/libfits.a \
 			  $(top_builddir)/src/wcs/libwcs_c.a \
-			  $(top_builddir)/src/levmar/liblevmar.a 
+			  $(LEVLIB) 
 
 ldactoasc_LDADD = $(top_builddir)/src/fits/libfits.a
 DATE = `date +"%Y-%m-%d"`

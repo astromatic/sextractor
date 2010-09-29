@@ -9,7 +9,7 @@
 *
 *	Contents:	main program.
 *
-*	Last modify:	21/01/2010
+*	Last modify:	23/08/2010
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -108,6 +108,7 @@ void	makeit()
 
   if (prefs.prof_flag)
     {
+#ifdef USE_MODEL
     fft_init(prefs.nthreads);
 /* Create profiles at full resolution */
     NFPRINTF(OUTPUT, "Preparing profile models");
@@ -151,6 +152,11 @@ void	makeit()
       QPRINTF(OUTPUT, "%s", profname[theprofit->prof[i]->code]);
       }
     QPRINTF(OUTPUT, "\n");
+#else
+    error(EXIT_FAILURE,
+		"*Error*: model-fitting is not supported in this build.\n",
+			" Please check your configure options");
+#endif
     }
 
   if (prefs.filter_flag)
@@ -512,11 +518,13 @@ void	makeit()
   if (prefs.growth_flag)
     endgrowth();
 
+#ifdef USE_MODEL
   if (prefs.prof_flag)
     {
     profit_end(theprofit);
     fft_end();
     }
+#endif
 
   if (prefs.psf_flag || prefs.prof_flag)
     psf_end(thepsf,thepsfit); /*?*/

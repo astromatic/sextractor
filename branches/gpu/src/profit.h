@@ -9,7 +9,7 @@
 *
 *	Contents:	Include file for profit.c.
 *
-*	Last modify:	08/07/2010
+*	Last modify:	21/07/2010
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -178,13 +178,14 @@ float		*profit_compresi(profitstruct *profit, float dynparam,
 int		profit_copyobjpix(profitstruct *profit, picstruct *field,
 			picstruct *wfield),
 		profit_minimize(profitstruct *profit, int niter),
+		prof_moments(profitstruct *profit, profstruct *prof,
+				double *jac),
 		profit_resample(profitstruct *profit, float *inpix,
 			PIXTYPE *outpix, float factor),
 		profit_setparam(profitstruct *profit, paramenum paramtype,
 			float param, float parammin, float parammax);
 
 void		prof_end(profstruct *prof),
-		prof_moments(profitstruct *profit, profstruct *prof),
 		profit_addparam(profitstruct *profit, paramenum paramindex,
 			float **param),
 		profit_boundtounbound(profitstruct *profit,

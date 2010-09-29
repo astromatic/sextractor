@@ -9,7 +9,7 @@
 *
 *	Contents:	global declarations.
 *
-*	Last modify:	01/10/2009
+*	Last modify:	20/08/2010
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -54,6 +54,8 @@ extern void	alloccatparams(void),
 		neurclose(void),
 		neurresp(double *, double *),
 		preanalyse(int, objliststruct *, int),
+		propagate_covar(double *vi, double *d, double *vo,
+				int ni, int no,	double *temp),
 		readcatparams(char *),
 		readdata(picstruct *, PIXTYPE *, int),
 		readidata(picstruct *, FLAGTYPE *, int),

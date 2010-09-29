@@ -27,7 +27,7 @@
 #define		MYVERSION	VERSION
 #define		EXECUTABLE	"sex"
 #define		COPYRIGHT	"Emmanuel BERTIN <bertin@iap.fr>"
-#define		WEBSITE		"http://astromatic.iap.fr/software/sextractor"
+#define		WEBSITE		"http://astromatic.net/software/sextractor"
 #define		INSTITUTE	"IAP  http://www.iap.fr"
 
 /*--------------------------- Internal constants ----------------------------*/

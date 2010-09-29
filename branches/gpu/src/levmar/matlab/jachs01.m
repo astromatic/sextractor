@@ -1,4 +1,4 @@
-function jac = hs01_jac(p)
+function jac = jachs01(p)
   m=2;
 
   jac(1, 1:m)=[-20.0*p(1), 10.0];

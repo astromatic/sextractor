@@ -24,7 +24,7 @@
 #include <string.h>
 #include <ctype.h>
 
-#include <lm.h>
+#include <levmar.h>
 
 #include <mex.h>
 
@@ -46,6 +46,10 @@
 #define MIN_CONSTRAINED_BC    1
 #define MIN_CONSTRAINED_LEC   2
 #define MIN_CONSTRAINED_BLEC  3
+#define MIN_CONSTRAINED_BLEIC 4
+#define MIN_CONSTRAINED_BLIC  5
+#define MIN_CONSTRAINED_LEIC  6
+#define MIN_CONSTRAINED_LIC   7
 
 struct mexdata {
   /* matlab names of the fitting function & its Jacobian */
@@ -68,9 +72,9 @@ static void matlabFmtdErrMsgTxt(char *fmt, ...)
 char  buf[256];
 va_list args;
 
-	va_start(args, fmt);
-	vsprintf(buf, fmt, args);
-	va_end(args);
+  va_start(args, fmt);
+  vsprintf(buf, fmt, args);
+  va_end(args);
 
   mexErrMsgTxt(buf);
 }
@@ -81,9 +85,9 @@ static void matlabFmtdWarnMsgTxt(char *fmt, ...)
 char  buf[256];
 va_list args;
 
-	va_start(args, fmt);
-	vsprintf(buf, fmt, args);
-	va_end(args);
+  va_start(args, fmt);
+  vsprintf(buf, fmt, args);
+  va_end(args);
 
   mexWarnMsgTxt(buf);
 }
@@ -183,7 +187,7 @@ double *mp;
   else if(!mxIsDouble(lhs[0]) || mxIsComplex(lhs[0]) || !(mxGetM(lhs[0])==1 || mxGetN(lhs[0])==1) ||
       __MAX__(mxGetM(lhs[0]), mxGetN(lhs[0]))!=n){
     fprintf(stderr, "levmar: '%s' should produce a real vector with %d elements (got %d).\n",
-                    dat->fname, m, __MAX__(mxGetM(lhs[0]), mxGetN(lhs[0])));
+                    dat->fname, n, __MAX__(mxGetM(lhs[0]), mxGetN(lhs[0])));
     ret=1;
   }
   /* delete the matrix created by matlab */
@@ -220,20 +224,26 @@ double *mp;
 [ret, p, info, covar]=levmar_bc  (f, j, p0, x, itmax, opts, 'bc',   lb, ub,              ...)
 [ret, p, info, covar]=levmar_lec (f, j, p0, x, itmax, opts, 'lec',          A, b,        ...)
 [ret, p, info, covar]=levmar_blec(f, j, p0, x, itmax, opts, 'blec', lb, ub, A, b, wghts, ...)
+
+[ret, p, info, covar]=levmar_bleic(f, j, p0, x, itmax, opts, 'bleic', lb, ub, A, b, C, d, ...)
+[ret, p, info, covar]=levmar_blic (f, j, p0, x, itmax, opts, 'blic',  lb, ub,       C, d, ...)
+[ret, p, info, covar]=levmar_leic (f, j, p0, x, itmax, opts, 'leic',          A, b, C, d, ...)
+[ret, p, info, covar]=levmar_lic  (f, j, p0, x, itmax, opts, 'lic',                 C, d, ...)
+
 */
 
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *Prhs[])
 {
 register int i;
 register double *pdbl;
-mxArray **prhs=(mxArray **)&Prhs[0], *At;
+mxArray **prhs=(mxArray **)&Prhs[0], *At, *Ct;
 struct mexdata mdata;
 int len, status;
 double *p, *p0, *ret, *x;
-int m, n, havejac, Arows, itmax, nopts, mintype, nextra;
+int m, n, havejac, Arows, Crows, itmax, nopts, mintype, nextra;
 double opts[LM_OPTS_SZ]={LM_INIT_MU, LM_STOP_THRESH, LM_STOP_THRESH, LM_STOP_THRESH, LM_DIFF_DELTA};
 double info[LM_INFO_SZ];
-double *lb=NULL, *ub=NULL, *A=NULL, *b=NULL, *wghts=NULL, *covar=NULL;
+double *lb=NULL, *ub=NULL, *A=NULL, *b=NULL, *wghts=NULL, *C=NULL, *d=NULL, *covar=NULL;
 
   /* parse input args; start by checking their number */
   if((nrhs<5))
@@ -362,6 +372,10 @@ if(!mxIsDouble(prhs[1]) || mxIsComplex(prhs[1]) || !(mxGetM(prhs[1])==1 && mxGet
     else if(!strncmp(minhowto, "bc", 2)) mintype=MIN_CONSTRAINED_BC;
     else if(!strncmp(minhowto, "lec", 3)) mintype=MIN_CONSTRAINED_LEC;
     else if(!strncmp(minhowto, "blec", 4)) mintype=MIN_CONSTRAINED_BLEC;
+    else if(!strncmp(minhowto, "bleic", 5)) mintype=MIN_CONSTRAINED_BLEIC;
+    else if(!strncmp(minhowto, "blic", 4)) mintype=MIN_CONSTRAINED_BLIC;
+    else if(!strncmp(minhowto, "leic", 4)) mintype=MIN_CONSTRAINED_LEIC;
+    else if(!strncmp(minhowto, "lic", 3)) mintype=MIN_CONSTRAINED_BLIC;
     else matlabFmtdErrMsgTxt("levmar: unknown minimization type '%s'.", minhowto);
 
     mxFree(minhowto);
@@ -378,7 +392,7 @@ if(!mxIsDouble(prhs[1]) || mxIsComplex(prhs[1]) || !(mxGetM(prhs[1])==1 && mxGet
    * upon the minimization type determined above
    */
   /** lb, ub **/
-  if(nrhs>=7 && (mintype==MIN_CONSTRAINED_BC || mintype==MIN_CONSTRAINED_BLEC)){
+  if(nrhs>=7 && (mintype==MIN_CONSTRAINED_BC || mintype==MIN_CONSTRAINED_BLEC || mintype==MIN_CONSTRAINED_BLIC || mintype==MIN_CONSTRAINED_BLEIC)){
     /* check if the next two arguments are real row or column vectors */
     if(mxIsDouble(prhs[5]) && !mxIsComplex(prhs[5]) && (mxGetM(prhs[5])==1 || mxGetN(prhs[5])==1)){
       if(mxIsDouble(prhs[6]) && !mxIsComplex(prhs[6]) && (mxGetM(prhs[6])==1 || mxGetN(prhs[6])==1)){
@@ -397,7 +411,7 @@ if(!mxIsDouble(prhs[1]) || mxIsComplex(prhs[1]) || !(mxGetM(prhs[1])==1 && mxGet
   }
 
   /** A, b **/
-  if(nrhs>=7 && (mintype==MIN_CONSTRAINED_LEC || mintype==MIN_CONSTRAINED_BLEC)){
+  if(nrhs>=7 && (mintype==MIN_CONSTRAINED_LEC || mintype==MIN_CONSTRAINED_BLEC || mintype==MIN_CONSTRAINED_LEIC || mintype==MIN_CONSTRAINED_BLEIC)){
     /* check if the next two arguments are a real matrix and a real row or column vector */
     if(mxIsDouble(prhs[5]) && !mxIsComplex(prhs[5]) && mxGetM(prhs[5])>=1 && mxGetN(prhs[5])>=1){
       if(mxIsDouble(prhs[6]) && !mxIsComplex(prhs[6]) && (mxGetM(prhs[6])==1 || mxGetN(prhs[6])==1)){
@@ -428,6 +442,27 @@ if(!mxIsDouble(prhs[1]) || mxIsComplex(prhs[1]) || !(mxGetM(prhs[1])==1 && mxGet
       }
     }
   }
+
+  /** C, d **/
+  if(nrhs>=7 && (mintype==MIN_CONSTRAINED_BLEIC || mintype==MIN_CONSTRAINED_BLIC || mintype==MIN_CONSTRAINED_LEIC || mintype==MIN_CONSTRAINED_LIC)){
+    /* check if the next two arguments are a real matrix and a real row or column vector */
+    if(mxIsDouble(prhs[5]) && !mxIsComplex(prhs[5]) && mxGetM(prhs[5])>=1 && mxGetN(prhs[5])>=1){
+      if(mxIsDouble(prhs[6]) && !mxIsComplex(prhs[6]) && (mxGetM(prhs[6])==1 || mxGetN(prhs[6])==1)){
+        if((i=mxGetN(prhs[5]))!=m)
+          matlabFmtdErrMsgTxt("levmar: C must have %d columns, got %d.", m, i);
+        if((i=__MAX__(mxGetM(prhs[6]), mxGetN(prhs[6])))!=(Crows=mxGetM(prhs[5])))
+          matlabFmtdErrMsgTxt("levmar: d must have %d elements, got %d.", Crows, i);
+
+        Ct=prhs[5];
+        d=mxGetPr(prhs[6]);
+        C=getTranspose(Ct);
+
+        prhs+=2;
+        nrhs-=2;
+      }
+    }
+  }
+
   /* arguments below this point are assumed to be extra arguments passed
    * to every invocation of the fitting function and its Jacobian
    */
@@ -471,8 +506,8 @@ extraargs:
     covar=mxMalloc(m*m*sizeof(double));
 
   /* invoke levmar */
-  if(!lb && !ub){
-    if(!A && !b){ /* no constraints */
+  switch(mintype){
+    case MIN_UNCONSTRAINED: /* no constraints */
       if(havejac)
         status=dlevmar_der(func, jacfunc, p, x, m, n, itmax, opts, info, NULL, covar, (void *)&mdata);
       else
@@ -481,8 +516,18 @@ extraargs:
   fflush(stderr);
   fprintf(stderr, "LEVMAR: calling dlevmar_der()/dlevmar_dif()\n");
 #endif /* DEBUG */
-    }
-    else{ /* linear constraints */
+    break;
+    case MIN_CONSTRAINED_BC: /* box constraints */
+      if(havejac)
+        status=dlevmar_bc_der(func, jacfunc, p, x, m, n, lb, ub, itmax, opts, info, NULL, covar, (void *)&mdata);
+      else
+        status=dlevmar_bc_dif(func,          p, x, m, n, lb, ub, itmax, opts, info, NULL, covar, (void *)&mdata);
+#ifdef DEBUG
+  fflush(stderr);
+  fprintf(stderr, "LEVMAR: calling dlevmar_bc_der()/dlevmar_bc_dif()\n");
+#endif /* DEBUG */
+    break;
+    case MIN_CONSTRAINED_LEC:  /* linear equation constraints */
 #ifdef HAVE_LAPACK
       if(havejac)
         status=dlevmar_lec_der(func, jacfunc, p, x, m, n, A, b, Arows, itmax, opts, info, NULL, covar, (void *)&mdata);
@@ -496,20 +541,8 @@ extraargs:
   fflush(stderr);
   fprintf(stderr, "LEVMAR: calling dlevmar_lec_der()/dlevmar_lec_dif()\n");
 #endif /* DEBUG */
-    }
-  }
-  else{
-    if(!A && !b){ /* box constraints */
-      if(havejac)
-        status=dlevmar_bc_der(func, jacfunc, p, x, m, n, lb, ub, itmax, opts, info, NULL, covar, (void *)&mdata);
-      else
-        status=dlevmar_bc_dif(func,          p, x, m, n, lb, ub, itmax, opts, info, NULL, covar, (void *)&mdata);
-#ifdef DEBUG
-  fflush(stderr);
-  fprintf(stderr, "LEVMAR: calling dlevmar_bc_der()/dlevmar_bc_dif()\n");
-#endif /* DEBUG */
-    }
-    else{ /* box & linear constraints */
+    break;
+    case MIN_CONSTRAINED_BLEC: /* box & linear equation constraints */
 #ifdef HAVE_LAPACK
       if(havejac)
         status=dlevmar_blec_der(func, jacfunc, p, x, m, n, lb, ub, A, b, Arows, wghts, itmax, opts, info, NULL, covar, (void *)&mdata);
@@ -523,8 +556,71 @@ extraargs:
   fflush(stderr);
   fprintf(stderr, "LEVMAR: calling dlevmar_blec_der()/dlevmar_blec_dif()\n");
 #endif /* DEBUG */
-    }
+    break;
+    case MIN_CONSTRAINED_BLEIC: /* box, linear equation & inequalities constraints */
+#ifdef HAVE_LAPACK
+      if(havejac)
+        status=dlevmar_bleic_der(func, jacfunc, p, x, m, n, lb, ub, A, b, Arows, C, d, Crows, itmax, opts, info, NULL, covar, (void *)&mdata);
+      else
+        status=dlevmar_bleic_dif(func, p, x, m, n, lb, ub, A, b, Arows, C, d, Crows, itmax, opts, info, NULL, covar, (void *)&mdata);
+#else
+      mexErrMsgTxt("levmar: no box, linear equation & inequality constraints support, HAVE_LAPACK was not defined during MEX-file compilation.");
+#endif /* HAVE_LAPACK */
+
+#ifdef DEBUG
+  fflush(stderr);
+  fprintf(stderr, "LEVMAR: calling dlevmar_bleic_der()/dlevmar_bleic_dif()\n");
+#endif /* DEBUG */
+    break;
+    case MIN_CONSTRAINED_BLIC: /* box, linear inequalities constraints */
+#ifdef HAVE_LAPACK
+      if(havejac)
+        status=dlevmar_bleic_der(func, jacfunc, p, x, m, n, lb, ub, NULL, NULL, 0, C, d, Crows, itmax, opts, info, NULL, covar, (void *)&mdata);
+      else
+        status=dlevmar_bleic_dif(func, p, x, m, n, lb, ub, NULL, NULL, 0, C, d, Crows, itmax, opts, info, NULL, covar, (void *)&mdata);
+#else
+      mexErrMsgTxt("levmar: no box & linear inequality constraints support, HAVE_LAPACK was not defined during MEX-file compilation.");
+#endif /* HAVE_LAPACK */
+
+#ifdef DEBUG
+  fflush(stderr);
+  fprintf(stderr, "LEVMAR: calling dlevmar_blic_der()/dlevmar_blic_dif()\n");
+#endif /* DEBUG */
+    break;
+    case MIN_CONSTRAINED_LEIC: /* linear equation & inequalities constraints */
+#ifdef HAVE_LAPACK
+      if(havejac)
+        status=dlevmar_bleic_der(func, jacfunc, p, x, m, n, NULL, NULL, A, b, Arows, C, d, Crows, itmax, opts, info, NULL, covar, (void *)&mdata);
+      else
+        status=dlevmar_bleic_dif(func, p, x, m, n, NULL, NULL, A, b, Arows, C, d, Crows, itmax, opts, info, NULL, covar, (void *)&mdata);
+#else
+      mexErrMsgTxt("levmar: no linear equation & inequality constraints support, HAVE_LAPACK was not defined during MEX-file compilation.");
+#endif /* HAVE_LAPACK */
+
+#ifdef DEBUG
+  fflush(stderr);
+  fprintf(stderr, "LEVMAR: calling dlevmar_leic_der()/dlevmar_leic_dif()\n");
+#endif /* DEBUG */
+    break;
+    case MIN_CONSTRAINED_LIC: /* linear inequalities constraints */
+#ifdef HAVE_LAPACK
+      if(havejac)
+        status=dlevmar_bleic_der(func, jacfunc, p, x, m, n, NULL, NULL, NULL, NULL, 0, C, d, Crows, itmax, opts, info, NULL, covar, (void *)&mdata);
+      else
+        status=dlevmar_bleic_dif(func, p, x, m, n, NULL, NULL, NULL, NULL, 0, C, d, Crows, itmax, opts, info, NULL, covar, (void *)&mdata);
+#else
+      mexErrMsgTxt("levmar: no linear equation & inequality constraints support, HAVE_LAPACK was not defined during MEX-file compilation.");
+#endif /* HAVE_LAPACK */
+
+#ifdef DEBUG
+  fflush(stderr);
+  fprintf(stderr, "LEVMAR: calling dlevmar_lic_der()/dlevmar_lic_dif()\n");
+#endif /* DEBUG */
+    break;
+    default:
+      mexErrMsgTxt("levmar: unexpected internal error.");
   }
+
 #ifdef DEBUG
   fflush(stderr);
   printf("LEVMAR: minimization returned %d in %g iter, reason %g\n\tSolution: ", status, info[5], info[6]);
@@ -568,6 +664,7 @@ cleanup:
   /* cleanup */
   mxDestroyArray(mdata.rhs[0]);
   if(A) mxFree(A);
+  if(C) mxFree(C);
 
   mxFree(mdata.fname);
   if(havejac) mxFree(mdata.jacname);

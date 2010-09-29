@@ -9,7 +9,7 @@
 *
 *	Contents:	Astrometrical computations.
 *
-*	Last modify:	15/12/2009
+*	Last modify:	20/08/2010
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
@@ -854,7 +854,9 @@ Compute profile-fitting shape parameters in WORLD and SKY coordinates.
 void	astrom_profshapeparam(picstruct *field, objstruct *obj)
   {
    wcsstruct	*wcs;
-   double	dx2,dy2,dxy, xm2,ym2,xym, temp,pm2, lm0,lm1,lm2,lm3, ct,st;
+   double	mat[9], tempmat[9], mx2wcov[9], dpdmx2[6], cov[4],
+		dx2,dy2,dxy, xm2,ym2,xym, pm2, lm0,lm1,lm2,lm3, ct,st,
+		temp, invstemp, den, invden, dval;
    int		lng,lat, naxis;
 
   wcs = field->wcs;
@@ -1047,9 +1049,18 @@ void	astrom_profshapeparam(picstruct *field, objstruct *obj)
     dx2 = obj2->prof_mx2;
     dy2 = obj2->prof_my2;
     dxy = obj2->prof_mxy;
-    obj2->prof_mx2w = xm2 = lm0*lm0*dx2 + lm1*lm1*dy2 + lm0*lm1*dxy;
-    obj2->prof_my2w = ym2 = lm2*lm2*dx2 + lm3*lm3*dy2 + lm2*lm3*dxy;
-    obj2->prof_mxyw = xym = lm0*lm2*dx2 + lm1*lm3*dy2 + (lm0*lm3+lm1*lm2)*dxy;
+    mat[0] = lm0*lm0;
+    mat[3] = lm1*lm1;
+    mat[6] = lm0*lm1;
+    mat[1] = lm2*lm2;
+    mat[4] = lm3*lm3;
+    mat[7] = lm2*lm3;
+    mat[2] = lm0*lm2;
+    mat[5] = lm1*lm3;
+    mat[8] = lm0*lm3+lm1*lm2;
+    obj2->prof_mx2w = xm2 = mat[0]*dx2 + mat[3]*dy2 + mat[6]*dxy;
+    obj2->prof_my2w = ym2 = mat[1]*dx2 + mat[4]*dy2 + mat[7]*dxy;
+    obj2->prof_mxyw = xym = mat[2]*dx2 + mat[5]*dy2 + mat[8]*dxy;
     temp=xm2-ym2;
     if (FLAG(obj2.prof_thetaw))
       {
@@ -1093,23 +1104,69 @@ void	astrom_profshapeparam(picstruct *field, objstruct *obj)
       obj2->prof_cxyw = (float)(-2*xym/temp);
       }
   
-    if (FLAG(obj2.prof_e1w))
+/*-- Use the Jacobians to compute the moment covariance matrix */
+    if (FLAG(obj2.prof_pol1errw) || FLAG(obj2.prof_e1errw))
+      propagate_covar(obj2->prof_mx2cov, mat, mx2wcov, 3, 3, tempmat);
+
+    if (FLAG(obj2.prof_pol1w))
       {
       if (xm2+ym2 > 1.0/BIG)
         {
         obj2->prof_pol1w = (xm2 - ym2) / (xm2+ym2);
         obj2->prof_pol2w = 2.0*xym / (xm2 + ym2);
-        temp = xm2*ym2-xym*xym;
-        if (temp>=0.0)
-          temp = xm2+ym2+2.0*sqrt(temp);
-        else
-          temp = xm2+ym2;
-        obj2->prof_e1w = (xm2 - ym2) / temp;
-        obj2->prof_e2w = 2.0*xym / temp;
+        if (FLAG(obj2.prof_pol1errw))
+          {
+/*-------- Compute the Jacobian of polarisation */
+          invden = 1.0/(xm2+ym2);
+          dpdmx2[0] =  2.0*ym2*invden*invden;
+          dpdmx2[1] = -2.0*xm2*invden*invden;
+          dpdmx2[2] =  0.0;
+          dpdmx2[3] = -2.0*xym*invden*invden;
+          dpdmx2[4] = -2.0*xym*invden*invden;
+          dpdmx2[5] =  2.0*invden;
+          propagate_covar(mx2wcov, dpdmx2, cov, 3, 2, tempmat);
+          obj2->prof_pol1errw = (float)sqrt(cov[0]<0.0? 0.0: cov[0]);
+          obj2->prof_pol2errw = (float)sqrt(cov[3]<0.0? 0.0: cov[3]);
+          obj2->prof_pol12corrw = (dval=cov[0]*cov[3]) > 0.0?
+					(float)(cov[1]/sqrt(dval)) : 0.0;
+          }
         }
       else
-        obj2->prof_pol1w = obj2->prof_pol2w
-	= obj2->prof_e1w = obj2->prof_e2w = 0.0;
+        obj2->prof_pol1w = obj2->prof_pol2w = obj2->prof_pol1errw
+		= obj2->prof_pol2errw = obj2->prof_pol12corrw = 0.0;
+      }
+
+    if (FLAG(obj2.prof_e1w))
+      {
+      if (xm2+ym2 > 1.0/BIG)
+        {
+        temp = xm2*ym2 - xym*xym;
+        den = (temp>=0.0) ? xm2+ym2+2.0*sqrt(temp) : xm2+ym2;
+        invden = 1.0/den;
+        obj2->prof_e1w = (float)(invden*(xm2 - ym2));
+        obj2->prof_e2w = (float)(2.0 * invden * xym);
+        if (FLAG(obj2.prof_e1errw))
+        {
+/*------ Compute the Jacobian of ellipticity */
+        invstemp = (temp>=0.0) ? 1.0/sqrt(temp) : 0.0;
+        dpdmx2[0] = ( den - (1.0+ym2*invstemp)*(xm2-ym2))*invden*invden;
+        dpdmx2[1] = (-den - (1.0+xm2*invstemp)*(xm2-ym2))*invden*invden;
+        dpdmx2[2] = 2.0*xym*invstemp*(xm2-ym2)*invden*invden;
+        dpdmx2[3] = -2.0*xym*(1.0+ym2*invstemp)*invden*invden;
+        dpdmx2[4] = -2.0*xym*(1.0+xm2*invstemp)*invden*invden;
+        dpdmx2[5] =  (2.0*den+4.0*xym*xym*invstemp)*invden*invden;
+
+/*------ Use the Jacobian to compute the ellipticity covariance matrix */
+        propagate_covar(mx2wcov, dpdmx2, cov, 3, 2, tempmat);
+        obj2->prof_e1errw = (float)sqrt(cov[0]<0.0? 0.0: cov[0]);
+        obj2->prof_e2errw = (float)sqrt(cov[3]<0.0? 0.0: cov[3]);
+        obj2->prof_e12corrw = (dval=cov[0]*cov[3]) > 0.0?
+					(float)(cov[1]/sqrt(dval)) : 0.0;
+        }
+        }
+      else
+        obj2->prof_e1w = obj2->prof_e2w = obj2->prof_e1errw
+		= obj2->prof_e2errw = obj2->prof_e12corrw = 0.0;
       }
     }
 

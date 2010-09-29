@@ -9,9 +9,10 @@ input image is a MEF.
 configuration files like default.param are still needed, though.
 
 The SExtractor homepage is
-http://terapix.iap.fr/soft/sextractor
+http://astromatic.net/software/sextractor
 In case of problems, questions or suggestions related to the software, please
-refer to the TERAPIX forum:
-http://terapix.iap.fr/forum/
+refer to the SExtractor forum:
+http://astromatic.net/forum/forumdisplay.php?fid=4
 
 					Emmanuel Bertin.
+

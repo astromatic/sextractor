@@ -37,6 +37,7 @@
 #define AX_EQ_B_QR LM_ADD_PREFIX(Ax_eq_b_QR)
 #define AX_EQ_B_QRLS LM_ADD_PREFIX(Ax_eq_b_QRLS)
 #define AX_EQ_B_SVD LM_ADD_PREFIX(Ax_eq_b_SVD)
+#define AX_EQ_B_BK LM_ADD_PREFIX(Ax_eq_b_BK)
 #else
 #define AX_EQ_B_LU LM_ADD_PREFIX(Ax_eq_b_LU_noLapack)
 #endif /* HAVE_LAPACK */
@@ -293,11 +294,12 @@ if(!(k%100)){
 
       /* solve augmented equations */
 #ifdef HAVE_LAPACK
-      /* 5 alternatives are available: LU, Cholesky, 2 variants of QR decomposition and SVD.
+      /* 6 alternatives are available: LU, Cholesky, 2 variants of QR decomposition, SVD and LDLt.
        * Cholesky is the fastest but might be inaccurate; QR is slower but more accurate;
        * SVD is the slowest but most accurate; LU offers a tradeoff between accuracy and speed
        */
 
+      //issolved=AX_EQ_B_BK(jacTjac, jacTe, Dp, m); ++nlss; linsolver=AX_EQ_B_BK;
       issolved=AX_EQ_B_LU(jacTjac, jacTe, Dp, m); ++nlss; linsolver=AX_EQ_B_LU;
       //issolved=AX_EQ_B_CHOL(jacTjac, jacTe, Dp, m); ++nlss; linsolver=AX_EQ_B_CHOL;
       //issolved=AX_EQ_B_QR(jacTjac, jacTe, Dp, m); ++nlss; linsolver=AX_EQ_B_QR;
@@ -516,7 +518,7 @@ int (*linsolver)(LM_REAL *A, LM_REAL *B, LM_REAL *x, int m)=NULL;
 
   if(!work){
     worksz=LM_DIF_WORKSZ(m, n); //4*n+4*m + n*m + m*m;
-    work=(LM_REAL *)malloc(worksz*sizeof(LM_REAL)); /* allocate a big chunk in one step */
+    work=(LM_REAL *)calloc(1,worksz*sizeof(LM_REAL)); /* allocate a big chunk in one step */
     if(!work){
       fprintf(stderr, LCAT(LEVMAR_DIF, "(): memory allocation request failed\n"));
       return LM_ERROR;
@@ -683,11 +685,12 @@ if(!(k%100)){
 
     /* solve augmented equations */
 #ifdef HAVE_LAPACK
-    /* 5 alternatives are available: LU, Cholesky, 2 variants of QR decomposition and SVD.
+    /* 6 alternatives are available: LU, Cholesky, 2 variants of QR decomposition, SVD and LDLt.
      * Cholesky is the fastest but might be inaccurate; QR is slower but more accurate;
      * SVD is the slowest but most accurate; LU offers a tradeoff between accuracy and speed
      */
 
+    //issolved=AX_EQ_B_BK(jacTjac, jacTe, Dp, m); ++nlss; linsolver=AX_EQ_B_BK;
     issolved=AX_EQ_B_LU(jacTjac, jacTe, Dp, m); ++nlss; linsolver=AX_EQ_B_LU;
     //issolved=AX_EQ_B_CHOL(jacTjac, jacTe, Dp, m); ++nlss; linsolver=AX_EQ_B_CHOL;
     //issolved=AX_EQ_B_QR(jacTjac, jacTe, Dp, m); ++nlss; linsolver=AX_EQ_B_QR;
@@ -837,3 +840,4 @@ if(!(k%100)){
 #undef AX_EQ_B_QR
 #undef AX_EQ_B_QRLS
 #undef AX_EQ_B_SVD
+#undef AX_EQ_B_BK
