@@ -1,6 +1,36 @@
-dnl @synopsis ACX_ATLAS([ATLAS_LIBDIR, ATLAS_INCDIR, ATLAS_PFLAG, [ACTION-IF-FOUND[, ACTION-IF-NOT-FOUND]]])
-dnl This macro figures out if the ATLAS library and header files
-dnl are installed.
+dnl
+dnl				acx_atlas.m4
+dnl
+dnl Figure out if the ATLAS library and header files are installed.
+dnl
+dnl %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+dnl
+dnl	This file part of:	AstrOmatic software
+dnl
+dnl	Copyright:		(C) 2003-2010 IAP/CNRS/UPMC
+dnl
+dnl	Author:			Emmanuel Bertin (IAP)
+dnl
+dnl	License:		GNU General Public License
+dnl
+dnl	AstrOmatic software is free software: you can redistribute it and/or
+dnl	modify it under the terms of the GNU General Public License as
+dnl	published by the Free Software Foundation, either version 3 of the
+dnl	License, or (at your option) any later version.
+dnl	AstrOmatic software is distributed in the hope that it will be useful,
+dnl	but WITHOUT ANY WARRANTY; without even the implied warranty of
+dnl	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+dnl	GNU General Public License for more details.
+dnl	You should have received a copy of the GNU General Public License
+dnl	along with AstrOmatic software.
+dnl	If not, see <http://www.gnu.org/licenses/>.
+dnl
+dnl	Last modified:		10/10/2010
+dnl
+dnl %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+dnl
+dnl @synopsis ACX_ATLAS([ATLAS_LIBDIR, ATLAS_INCDIR, ATLAS_PFLAG,
+dnl                     [ACTION-IF-FOUND[, ACTION-IF-NOT-FOUND]]])
 dnl You may wish to use these variables in your default LIBS:
 dnl
 dnl        LIBS="$ATLAS_LIBS $LIBS"
@@ -8,9 +38,6 @@ dnl
 dnl ACTION-IF-FOUND is a list of shell commands to run if BLAS/LAPACK
 dnl is found (HAVE_ATLAS is defined first), and ACTION-IF-NOT-FOUND
 dnl is a list of commands to run it if it is not found.
-dnl
-dnl @version $Id: acx_atlas.m4,v 1.0 2009/06/26 14:30:17 bertin Exp $
-dnl @author Emmanuel Bertin <bertin@iap.fr>
 
 AC_DEFUN([ACX_ATLAS], [
 AC_REQUIRE([AC_CANONICAL_HOST])

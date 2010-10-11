@@ -1,18 +1,33 @@
- /*
- 				poly.c
-
-*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+/*
+*				poly.c
 *
-*	Part of:	A program using Polynomials
+* Manage polynomials.
 *
-*	Author:		E.BERTIN (IAP)
+*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 *
-*	Contents:	Polynomial fitting
+*	This file part of:	AstrOmatic WCS library
 *
-*	Last modify:	08/03/2005
+*	Copyright:		(C) 1998-2010 IAP/CNRS/UPMC
 *
-*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-*/
+*	Author:			Emmanuel Bertin (IAP)
+*
+*	License:		GNU General Public License
+*
+*	AstrOmatic software is free software: you can redistribute it and/or
+*	modify it under the terms of the GNU General Public License as
+*	published by the Free Software Foundation, either version 3 of the
+*	License, or (at your option) any later version.
+*	AstrOmatic software is distributed in the hope that it will be useful,
+*	but WITHOUT ANY WARRANTY; without even the implied warranty of
+*	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*	GNU General Public License for more details.
+*	You should have received a copy of the GNU General Public License
+*	along with AstrOmatic software.
+*	If not, see <http://www.gnu.org/licenses/>.
+*
+*	Last modified:		10/10/2010
+*
+*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
 #ifdef HAVE_CONFIG_H
 #include	"config.h"
@@ -24,7 +39,9 @@
 #include	<string.h>
 
 #include	"poly.h"
-
+#ifdef HAVE_ATLAS
+#include	ATLAS_LAPACK_H
+#endif
 
 #define	QCALLOC(ptr, typ, nel) \
 		{if (!(ptr = (typ *)calloc((size_t)(nel),sizeof(typ)))) \
@@ -338,7 +355,7 @@ OUTPUT  -.
 NOTES   Requires quadruple-precision. **For the time beeing, this function
 	returns completely wrong results!!**
 AUTHOR  E. Bertin (IAP)
-VERSION 03/03/2004
+VERSION 05/10/2010
  ***/
 void	poly_addcste(polystruct *poly, double *cste)
   {
@@ -395,21 +412,13 @@ void	poly_addcste(polystruct *poly, double *cste)
       for (j=ndim; j--; mcoefft += maxdegree)
         val *= mcoefft[*(powerst2++)];
       acoeff[i] += val*coeff[p];
-/*
-printf("%g \n", val);
-*/
       }
     }
 
 /* Add the new coefficients to the previous ones */
 
   for (i=0; i<ncoeff; i++)
-{
-/*
-printf("%g %g\n", coeff[i], (double)acoeff[i]);
-*/
     coeff[i] = (double)acoeff[i];
-}
 
   free(acoeff);
   free(mcoeff);
@@ -421,47 +430,44 @@ printf("%g %g\n", coeff[i], (double)acoeff[i]);
 
 /****** poly_solve ************************************************************
 PROTO   void poly_solve(double *a, double *b, int n)
-PURPOSE Solve a system of linear equations, using Cholesky decomposition or
-	SVD (if the former fails due to hidden correlation between variables).
+PURPOSE Solve a system of linear equations, using Cholesky decomposition.
 INPUT   Pointer to the (pseudo 2D) matrix of coefficients,
         pointer to the 1D column vector,
         matrix size.
 OUTPUT  -.
 NOTES   -.
 AUTHOR  E. Bertin (IAP, Leiden observatory & ESO)
-VERSION 21/09/2004
+VERSION 10/10/2010
  ***/
 void	poly_solve(double *a, double *b, int n)
   {
    double	*vmat,*wmat;
 
+#ifdef HAVE_ATLAS
+  clapack_dposv(CblasRowMajor, CblasUpper, n, 1, a, n, b, n);
+#else
   if (cholsolve(a,b,n))
-    {
-    QMALLOC(vmat, double, n*n);
-    QMALLOC(wmat, double, n);
-    svdsolve(a, b, n,n, vmat,wmat);
-    free(vmat);
-    free(wmat);
-    }
+    qerror("*Error*: singular matrix found ", "while deprojecting" );
+#endif
 
   return;
   }
 
+
 /****** cholsolve *************************************************************
-PROTO   void cholsolve(double *a, double *b, int n)
-PURPOSE Solve a system of linear equations, using Cholesky decomposition.
-INPUT   Pointer to the (pseudo 2D) matrix of coefficients,
-        pointer to the 1D column vector,
-        matrix size.
-OUTPUT  -1 if the matrix is not positive-definite, 0 otherwise.
-NOTES   Based on Numerical Recipes, 2nd ed. (Chap 2.9). The matrix of
-        coefficients must be symmetric and positive definite.
-AUTHOR  E. Bertin (IAP, Leiden observatory & ESO)
-VERSION	28/10/2003
+PROTO	void cholsolve(double *a, double *b, int n)
+PURPOSE	Solve a system of linear equations, using Cholesky decomposition.
+INPUT	Pointer to the (pseudo 2D) matrix of coefficients,
+	pointer to the 1D column vector,
+ 	matrix size.
+OUTPUT	-1 if the matrix is not positive-definite, 0 otherwise.
+NOTES	Based on algorithm described in Numerical Recipes, 2nd ed. (Chap 2.9).
+	The matrix of coefficients must be symmetric and positive definite.
+AUTHOR	E. Bertin (IAP)
+VERSION	10/10/2010
  ***/
 int	cholsolve(double *a, double *b, int n)
   {
-   void	qerror(char *msg1, char *msg2);
    double	*p, *x, sum;
    int		i,j,k;
 
@@ -472,7 +478,8 @@ int	cholsolve(double *a, double *b, int n)
   for (i=0; i<n; i++)
     for (j=i; j<n; j++)
       {
-      for (sum=a[i*n+j],k=i-1; k>=0; k--)
+      sum = a[i*n+j];
+      for (k=i; k--;)
         sum -= a[i*n+k]*a[j*n+k];
       if (i==j)
         {
@@ -491,14 +498,15 @@ int	cholsolve(double *a, double *b, int n)
   x = b;		/* Just to save memory:  the solution replaces b */
   for (i=0; i<n; i++)
     {
-    for (sum=b[i],k=i-1; k>=0; k--)
+    for (sum=b[i],k=i; k--;)
       sum -= a[i*n+k]*x[k];
     x[i] = sum/p[i];
     }
 
-  for (i=n-1; i>=0; i--)
+  for (i=n; i--;)
     {
-    for (sum=x[i],k=i+1; k<n; k++)
+    sum = x[i];
+    for (k=i; ++k<n;)
       sum -= a[k*n+i]*x[k];
     x[i] = sum/p[i];
     }
@@ -508,348 +516,6 @@ int	cholsolve(double *a, double *b, int n)
   return 0;
   }
 
-
-/****** svdsolve *************************************************************
-PROTO   void svdsolve(double *a, double *b, int m, int n, double *vmat,
-		double *wmat)
-PURPOSE General least-square fit A.x = b, based on Singular Value
-	Decomposition (SVD).
-	Loosely adapted from Numerical Recipes in C, 2nd Ed. (p. 671).
-INPUT   Pointer to the (pseudo 2D) matrix of coefficients,
-        pointer to the 1D column vector (replaced by solution in output),
-        number of matrix rows,
-	number of matrix columns,
-	pointer to the (pseudo 2D) SVD matrix,
-	pointer to the diagonal (1D) matrix of singular values.	
-OUTPUT  -.
-NOTES   Loosely adapted from Numerical Recipes in C, 2nd Ed. (p. 671). The a
-	and v matrices are transposed with respect to the N.R. convention.
-AUTHOR  E. Bertin (IAP)
-VERSION 26/12/2003
- ***/
-void svdsolve(double *a, double *b, int m, int n, double *vmat, double *wmat)
-  {
-#define MAX(a,b) (maxarg1=(a),maxarg2=(b),(maxarg1) > (maxarg2) ?\
-        (maxarg1) : (maxarg2))
-#define PYTHAG(a,b)     ((at=fabs(a)) > (bt=fabs(b)) ? \
-                                  (ct=bt/at,at*sqrt(1.0+ct*ct)) \
-                                : (bt ? (ct=at/bt,bt*sqrt(1.0+ct*ct)): 0.0))
-#define SIGN(a,b) ((b) >= 0.0 ? fabs(a) : -fabs(a))
-#define TOL             1.0e-11
-   void	qerror(char *msg1, char *msg2);
-
-   int                  flag,i,its,j,jj,k,l,mmi,nm, nml;
-   double               *w,*ap,*ap0,*ap1,*ap10,*rv1p,*vp,*vp0,*vp1,*vp10,
-                        *bp,*tmpp, *rv1,*tmp, *sol,
-			c,f,h,s,x,y,z,
-                        anorm, g, scale,
-                        at,bt,ct,maxarg1,maxarg2,
-                        thresh, wmax;
-
-  anorm = g = scale = 0.0;
-  if (m < n)
-    qerror("*Error*: Not enough rows for solving the system ", "in svdfit()");
-  
-  sol = b;	/* The solution overwrites the input column matrix */
-  QMALLOC(rv1, double, n);
-  QMALLOC(tmp, double, n);
-  l = nm = nml = 0;	/* To avoid gcc -Wall warnings */
-  for (i=0;i<n;i++)
-    {
-    l = i+1;
-    nml = n-l;
-    rv1[i] = scale*g;
-    g = s = scale = 0.0;
-    if ((mmi = m - i) > 0)
-      {
-      ap = ap0 = a+i*(m+1);
-      for (k=mmi;k--;)
-        scale += fabs(*(ap++));
-      if (scale)
-        {
-        for (ap=ap0,k=mmi; k--; ap++)
-          {
-          *ap /= scale;
-          s += *ap**ap;
-          }
-        f = *ap0;
-        g = -SIGN(sqrt(s),f);
-        h = f*g-s;
-        *ap0 = f-g;
-        ap10 = a+l*m+i;
-        for (j=nml;j--; ap10+=m)
-          {
-          for (s=0.0,ap=ap0,ap1=ap10,k=mmi; k--;)
-            s += *(ap1++)**(ap++);
-          f = s/h;
-          for (ap=ap0,ap1=ap10,k=mmi; k--;)
-            *(ap1++) += f**(ap++);
-          }
-        for (ap=ap0,k=mmi; k--;)
-          *(ap++) *= scale;
-        }
-      }
-    wmat[i] = scale*g;
-    g = s = scale = 0.0;
-    if (i < m && i+1 != n)
-      {
-      ap = ap0 = a+i+m*l;
-      for (k=nml;k--; ap+=m)
-        scale += fabs(*ap);
-      if (scale)
-        {
-        for (ap=ap0,k=nml;k--; ap+=m)
-          {
-          *ap /= scale;
-          s += *ap**ap;
-          }
-        f=*ap0;
-        g = -SIGN(sqrt(s),f);
-        h=f*g-s;
-        *ap0=f-g;
-        rv1p = rv1+l;
-        for (ap=ap0,k=nml;k--; ap+=m)
-          *(rv1p++) = *ap/h;
-        ap10 = a+l+m*l;
-        for (j=m-l; j--; ap10++)
-          {
-          for (s=0.0,ap=ap0,ap1=ap10,k=nml; k--; ap+=m,ap1+=m)
-            s += *ap1**ap;
-          rv1p = rv1+l;
-          for (ap1=ap10,k=nml;k--; ap1+=m)
-            *ap1 += s**(rv1p++);
-          }
-        for (ap=ap0,k=nml;k--; ap+=m)
-          *ap *= scale;
-        }
-      }
-    anorm=MAX(anorm,(fabs(wmat[i])+fabs(rv1[i])));
-    }
-
-  for (i=n-1;i>=0;i--)
-    {
-    if (i < n-1)
-      {
-      if (g)
-        {
-        ap0 = a+l*m+i;
-        vp0 = vmat+i*n+l;
-        vp10 = vmat+l*n+l;
-        g *= *ap0;
-        for (ap=ap0,vp=vp0,j=nml; j--; ap+=m)
-          *(vp++) = *ap/g;
-        for (j=nml; j--; vp10+=n)
-          {
-          for (s=0.0,ap=ap0,vp1=vp10,k=nml; k--; ap+=m)
-            s += *ap**(vp1++);
-          for (vp=vp0,vp1=vp10,k=nml; k--;)
-            *(vp1++) += s**(vp++);
-          }
-        }
-      vp = vmat+l*n+i;
-      vp1 = vmat+i*n+l;
-      for (j=nml; j--; vp+=n)
-        *vp = *(vp1++) = 0.0;
-      }
-    vmat[i*n+i]=1.0;
-    g=rv1[i];
-    l=i;
-    nml = n-l;
-    }
-
-  for (i=(m<n?m:n); --i>=0;)
-    {
-    l=i+1;
-    nml = n-l;
-    mmi=m-i;
-    g=wmat[i];
-    ap0 = a+i*m+i;
-    ap10 = ap0 + m;
-    for (ap=ap10,j=nml;j--;ap+=m)
-      *ap=0.0;
-    if (g)
-      {
-      g=1.0/g;
-      for (j=nml;j--; ap10+=m)
-        {
-        for (s=0.0,ap=ap0,ap1=ap10,k=mmi; --k;)
-              s += *(++ap)**(++ap1);
-        f = (s/(*ap0))*g;
-        for (ap=ap0,ap1=ap10,k=mmi;k--;)
-          *(ap1++) += f**(ap++);
-        }
-      for (ap=ap0,j=mmi;j--;)
-        *(ap++) *= g;
-      }
-    else
-      for (ap=ap0,j=mmi;j--;)
-        *(ap++)=0.0;
-    ++(*ap0);
-    }
-
-  for (k=n; --k>=0;)
-      {
-      for (its=0;its<100;its++)
-        {
-        flag=1;
-        for (l=k;l>=0;l--)
-          {
-          nm=l-1;
-          if (fabs(rv1[l])+anorm == anorm)
-            {
-            flag=0;
-            break;
-            }
-          if (fabs(wmat[nm])+anorm == anorm)
-            break;
-          }
-        if (flag)
-          {
-          c=0.0;
-          s=1.0;
-          ap0 = a+nm*m;
-          ap10 = a+l*m;
-          for (i=l; i<=k; i++,ap10+=m)
-            {
-            f=s*rv1[i];
-            if (fabs(f)+anorm == anorm)
-              break;
-            g=wmat[i];
-            h=PYTHAG(f,g);
-            wmat[i]=h;
-            h=1.0/h;
-            c=g*h;
-            s=(-f*h);
-            for (ap=ap0,ap1=ap10,j=m; j--;)
-              {
-              z = *ap1;
-              y = *ap;
-              *(ap++) = y*c+z*s;
-              *(ap1++) = z*c-y*s;
-              }
-            }
-          }
-        z=wmat[k];
-        if (l == k)
-          {
-          if (z < 0.0)
-            {
-            wmat[k] = -z;
-            vp = vmat+k*n;
-            for (j=n; j--; vp++)
-              *vp = (-*vp);
-            }
-          break;
-          }
-        if (its == 99)
-          qerror("*Error*: No convergence in 100 SVD iterations ",
-                "in svdfit()");
-        x=wmat[l];
-        nm=k-1;
-        y=wmat[nm];
-        g=rv1[nm];
-        h=rv1[k];
-        f=((y-z)*(y+z)+(g-h)*(g+h))/(2.0*h*y);
-        g=PYTHAG(f,1.0);
-        f=((x-z)*(x+z)+h*((y/(f+SIGN(g,f)))-h))/x;
-        c=s=1.0;
-        ap10 = a+l*m;
-        vp10 = vmat+l*n;
-        for (j=l;j<=nm;j++,ap10+=m,vp10+=n)
-          {
-          i=j+1;
-          g=rv1[i];
-          y=wmat[i];
-          h=s*g;
-          g=c*g;
-          z=PYTHAG(f,h);
-          rv1[j]=z;
-          c=f/z;
-          s=h/z;
-          f=x*c+g*s;
-          g=g*c-x*s;
-          h=y*s;
-          y=y*c;
-          for (vp=(vp1=vp10)+n,jj=n; jj--;)
-            {
-            z = *vp;
-            x = *vp1;
-            *(vp1++) = x*c+z*s;
-            *(vp++) = z*c-x*s;
-            }
-          z=PYTHAG(f,h);
-          wmat[j]=z;
-          if (z)
-            {
-            z=1.0/z;
-            c=f*z;
-            s=h*z;
-            }
-          f=c*g+s*y;
-          x=c*y-s*g;
-          for (ap=(ap1=ap10)+m,jj=m; jj--;)
-            {
-            z = *ap;
-            y = *ap1;
-            *(ap1++) = y*c+z*s;
-            *(ap++) = z*c-y*s;
-            }
-          }
-        rv1[l]=0.0;
-        rv1[k]=f;
-        wmat[k]=x;
-        }
-      }
-
-  wmax=0.0;
-  w = wmat;
-  for (j=n;j--; w++)
-    if (*w > wmax)
-      wmax=*w;
-  thresh=TOL*wmax;
-  w = wmat;
-  for (j=n;j--; w++)
-    if (*w < thresh)
-      *w = 0.0;
-
-  w = wmat;
-  ap = a;
-  tmpp = tmp;
-  for (j=n; j--; w++)
-    {
-    s=0.0;
-    if (*w)
-      {
-      bp = b;
-      for (i=m; i--;)
-        s += *(ap++)**(bp++);
-      s /= *w;
-      }
-    else
-      ap += m;
-    *(tmpp++) = s;
-    }
-
-  vp0 = vmat;
-  for (j=0; j<n; j++,vp0++)
-    {
-    s=0.0;
-    tmpp = tmp;
-    for (vp=vp0,jj=n; jj--; vp+=n)
-      s += *vp**(tmpp++);
-    sol[j]=s;
-    }
-/* Free temporary arrays */
-  free(tmp);
-  free(rv1);
-
-  return;
-  }
-
-#undef SIGN
-#undef MAX
-#undef PYTHAG
-#undef TOL
 
 /****** poly_powers ***********************************************************
 PROTO   int *poly_powers(polystruct *poly)

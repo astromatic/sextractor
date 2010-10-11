@@ -1,4 +1,40 @@
-
+dnl
+dnl				acx_urbi_resolve_dir.m4
+dnl
+dnl Enable a reasonable set of optimization flags for the C compiler. 
+dnl
+dnl %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+dnl
+dnl	This file part of:	AstrOmatic software
+dnl
+dnl	Copyright:		(C) 2007-2010 IAP/CNRS/UPMC (this version)
+dnl				(C) 2007 Akim Demaille (original version)
+dnl
+dnl	Authors:		Emmanuel Bertin (IAP)
+dnl				Akim Demaille (original script)
+dnl
+dnl	License:		GPL
+dnl
+dnl	AstrOmatic software is free software: you can redistribute it and/or
+dnl	modify it under the terms of the GNU General Public License as
+dnl	published by the Free Software Foundation, either version 3 of the
+dnl	License, or (at your option) any later version.
+dnl	AstrOmatic software is distributed in the hope that it will be useful,
+dnl	but WITHOUT ANY WARRANTY; without even the implied warranty of
+dnl	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+dnl	GNU General Public License for more details.
+dnl	You should have received a copy of the GNU General Public License
+dnl	along with AstrOmatic software.
+dnl	If not, see <http://www.gnu.org/licenses/>.
+dnl
+dnl	Last modified:		09/10/2010
+dnl
+dnl %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+dnl
+dnl @synopsis ACX_URBI_RESOLVE_DIR
+dnl
+dnl Return a directory with all inner variables expanded.
+dnl Based on a macro kindly provided by Akim Demaille  <akim@lrde.epita.fr>.
 
 # URBI_RESOLVE_DIR_PREPARE
 # ------------------------
@@ -6,7 +42,7 @@
 m4_defun([URBI_RESOLVE_DIR_PREPARE],
 [# PATH urbi_resolve_dir(DIR)
 # --------------------------
-# Return the DIR with all inner variables expanded.
+# 
 urbi_resolve_dir ()
 {
   ac_$0_dir=$[]1

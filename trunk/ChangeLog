@@ -1,37 +1,454 @@
-/*
-                                ChangeLog
-
-*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-*
-*       Part of:        SExtractor
-*
-*       Author:         E. BERTIN (IAP)
-*
-*       Contents:       log of changes made to the SExtractor source
-*
-*       Last modify:    17/01/2007
-*
-*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-*/
-
-------------------------------------------------------------------------
-r380 | bertin | 2007-01-17 17:52:49 +0100 (Wed, 17 Jan 2007) | 3 lines
-
-Added options for compiling with icc (Intel compiler).
-Pushed version number to 2.5.1.
-
-------------------------------------------------------------------------
-r365 | bertin | 2006-11-09 18:39:27 +0100 (Thu, 09 Nov 2006) | 2 lines
-
-Undo previous changes (wrong repository!!).
-
-------------------------------------------------------------------------
-r364 | bertin | 2006-11-09 17:58:18 +0100 (Thu, 09 Nov 2006) | 2 lines
-
-Added lmfit routines by Joachim Wuttke in the form of a library.
+#
+#				ChangeLog
+#
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+#
+#	This file part of:	SExtractor
+#
+#	Copyright:		(C) 1997-2010 IAP/CNRS/UPMC
+#
+#	Author:			Emmanuel Bertin (IAP)
+#
+#	License:		GNU General Public License
+#
+#	SExtractor is free software: you can redistribute it and/or modify
+#	it under the terms of the GNU General Public License as published by
+#	the Free Software Foundation, either version 3 of the License, or
+# 	(at your option) any later version.
+#	SExtractor is distributed in the hope that it will be useful,
+#	but WITHOUT ANY WARRANTY; without even the implied warranty of
+#	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#	GNU General Public License for more details.
+#	You should have received a copy of the GNU General Public License
+#	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
+#
+#	Last modified:		11/10/2010
+#
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 ------------------------------------------------------------------------
-r358 | bertin | 2006-10-29 21:04:25 +0100 (Sun, 29 Oct 2006) | 5 lines
+r231 | bertin | 2010-09-29 17:11:15 +0200 (Wed, 29 Sep 2010) | 3 lines
+
+Fixed issue with adaptive CLASS_STAR in dual image mode (thanks to N.Sevilla).
+Pushed version number to 2.12.3.
+
+------------------------------------------------------------------------
+r230 | bertin | 2010-09-22 17:54:49 +0200 (Wed, 22 Sep 2010) | 2 lines
+
+Allowed SEEING_FWHM to be 0 if no PSF is available and CLASS_STAR is not in the
+parameter list.
+
+------------------------------------------------------------------------
+r229 | bertin | 2010-09-13 11:05:21 +0200 (Mon, 13 Sep 2010) | 6 lines
+
+Removed singular matrix warnings in LevMar solver calls.
+Changed the management of tolerances in Hessian inversion SVD.
+Pushed Lanczos interpolator to 4th order in PSF and model-fitting.
+Normalized the interpolating function so that the DC component gain is 1.
+Pushed version number 2.12.2.
+
+------------------------------------------------------------------------
+r228 | bertin | 2010-08-26 16:30:26 +0200 (Thu, 26 Aug 2010) | 5 lines
+
+Fixed model-fitting issue with empty images in dual-image mode (thanks to
+V. de Lapparent for reporting).
+Updated LevMar to version 2.5.
+Updated URLs in various places.
+Pushed version number to 2.12.1.
+
+------------------------------------------------------------------------
+r227 | bertin | 2010-08-23 15:17:00 +0200 (Mon, 23 Aug 2010) | 3 lines
+
+Added --disable-model-fitting configure option to turn-off model-fitting
+features and to allow compiling SExtractor without requiring the ATLAS and
+FFTW libraries.
+Version number pushed to 2.12.0.
+
+------------------------------------------------------------------------
+r226 | bertin | 2010-08-20 18:32:32 +0200 (Fri, 20 Aug 2010) | 2 lines
+
+Added  POLAR1ERRMODEL_WORLD,POLAR2ERRMODEL_WORLD,POLARCORRMODEL_WORLD,
+ELLIP1ERRMODEL_WORLD,ELLIP2ERRMODEL_WORLD and ELLIPCORRMODEL_WORLD measurement
+parameters.
+
+------------------------------------------------------------------------
+r225 | bertin | 2010-08-08 19:34:14 +0200 (Sun, 08 Aug 2010) | 9 lines
+
+Fixed detection threshold missing in XML metadata output.
+Fixed TFORM error message in fitshead.c (thanks to S.Guieu).
+Fixed model-fitting error variance/covariance issue (bug in matrix inversion).
+Added ELLIP1ERRMODEL_IMAGE, ELLIP2ERRMODEL_IMAGE, ELLIPCORRMODEL_IMAGE,
+POLAR1ERRMODEL_IMAGE, POLAR2ERRMODEL_IMAGE, POLARCORRMODEL_IMAGE (more testing
+is needed and WORLD versions are not yet functional).
+Narrowed the tolerance constraint for stopping windowed centering iterations.
+Fixed incorrect reading of the DATE-OBS FITS keyword when EPOCH and MJD-OBS are missing.
+Pushed version number to 2.11.11.
+
+------------------------------------------------------------------------
+r224 | bertin | 2010-07-16 11:05:40 +0200 (Fri, 16 Jul 2010) | 5 lines
+
+Fixed WINdowed position error estimates that were underestimated by a factor 2
+(thanks to G.Bernstein).
+Fixed FLUXERR_WIN triggering issue.
+Optimized WIN parameter computations.
+Pushed version number to 2.11.8.
+
+------------------------------------------------------------------------
+r221 | bertin | 2010-07-09 16:41:51 +0200 (Fri, 09 Jul 2010) | 20 lines
+
+Added VOTABLE "version" attribute to XML output.
+Reverted minimization algorithm back to double precision (while keeping single
+precision for data and parameters in "bounded" space).
+Added specific handling of "Jacobian calls" in model-fitting.
+Sped up the resampling process in model-fitting.
+Tuned up minimization algorithm in model-fitting.
+Added shortcuts to the computation of the local PSF model. 
+Fixed triggering issues with some model-fitting parameters (thanks to
+S.Serrano).
+Removed CLASS_STAR_MODEL and DISK_PATTERN* measurement parameters.
+Added automatic tracking of the PSF FWHM from the local PSF model if
+SEEING_FWHM is 0 for CLASS_STAR.
+Fixed excessive WIN parameter computation time on large ring-shaped objects.
+Fixed model-fitting issue with null half-light radii (thanks to S.Desai and
+B.Armstrong).
+Fixed aperture display value error in FITS-LDAC catalogue header.
+Removed redundant update_tab() calls in FITS library.
+Fixed comment copy issue for slashes within strings in FITS library (thanks to
+F.Schuller).
+Added check of PSF values; SExtractor will now exit in error in the case where
+all PSF components sum up to 0.
+Replaced computation of model second moments and ellipticities with analytical
+estimates.
+Improved the accuracy of peak and average model surface brightness estimates.
+Fixed some compiler warnings.
+Pushed version number to 2.11.7.
+
+------------------------------------------------------------------------
+r220 | bertin | 2010-02-05 14:17:20 +0100 (Fri, 05 Feb 2010) | 5 lines
+
+Added reading of .head ASCII headers (suggestion from M.Monnerville and
+P.Hudelot).
+Improved real-time display.
+Fixed various issues with XSLT in double image mode.
+Pushed version number to 2.11.0.
+
+------------------------------------------------------------------------
+r219 | bertin | 2010-01-21 14:38:14 +0100 (Thu, 21 Jan 2010) | 3 lines
+
+Added the DETECT_MAXAREA (advanced) configuration keyword (as suggested by
+V.Terron).
+Improved processing time display.
+
+------------------------------------------------------------------------
+r218 | bertin | 2009-12-16 01:02:21 +0100 (Wed, 16 Dec 2009) | 9 lines
+
+Fixed world coordinates in PSF-fitting.
+Fixed error ellipse measurements in PSF-fitting (but works only for PSF_NMAX=1
+currently).
+Simplified PSF parameter handling (removed PSFDISPLAY_TYPE configuration
+option).
+Simplified triggering of local north axis computation.
+Allowed model axis ratios to exceed 1 to facilitate convergence.
+Fixed alignment bug for symmetric models.
+Restricted maximum allowed range for model coordinates.
+Pushed version number to 2.10.0.
+
+------------------------------------------------------------------------
+r217 | bertin | 2009-12-01 14:46:19 +0100 (Tue, 01 Dec 2009) | 3 lines
+
+Set XMODEL_IMAGE and YMODEL_IMAGE data types back to double precision (thanks
+to S.Desai).
+Fixed various compilation warnings.
+
+------------------------------------------------------------------------
+r216 | bertin | 2009-11-18 17:45:26 +0100 (Wed, 18 Nov 2009) | 4 lines
+
+Fixed issue with FFTW configure for custom library paths.
+Fixed compilation warnings in pattern.c and lm.h.
+Pushed version number to 2.9.9.
+
+------------------------------------------------------------------------
+r215 | bertin | 2009-11-02 17:25:36 +0100 (Mon, 02 Nov 2009) | 3 lines
+
+Fixed typos introduced in the 2.4 LevMar custom update.
+Added support for 64 bit binary table elements in FITS library (thanks to J.P.
+McFarland).
+
+------------------------------------------------------------------------
+r214 | bertin | 2009-10-22 21:36:54 +0200 (Thu, 22 Oct 2009) | 4 lines
+
+Fixed issue with SVD on some objects.
+Updated the LevMar library to V2.4.
+Pushed version number to 2.9.7.
+
+------------------------------------------------------------------------
+r213 | bertin | 2009-10-19 17:10:20 +0200 (Mon, 19 Oct 2009) | 4 lines
+
+Fixed MODELS check-image.
+Fixed X/YMODEL_WORLD issue.
+Increased CLEANing margin for model-fitting.
+
+------------------------------------------------------------------------
+r212 | bertin | 2009-10-09 18:21:18 +0200 (Fri, 09 Oct 2009) | 5 lines
+
+Improved the quality of model resampling for subsampled objects.
+Implemented a more consistent model size and flux scaling scheme for subsampled
+objects.
+Fixed Sersic model generation bug.
+Pushed version number to 2.9.6.
+
+------------------------------------------------------------------------
+r211 | bertin | 2009-10-08 23:34:46 +0200 (Thu, 08 Oct 2009) | 6 lines
+
+Added automatic image rebinning for fitting very large objects (>512 pixels).
+Fixed several issues related to image and weight copy prior to fitting.
+Fixed bug with symmetric models.
+Fixed issue with new FFT planning scheme.
+Pushed version number to 2.9.5.
+
+------------------------------------------------------------------------
+r210 | bertin | 2009-10-01 17:54:49 +0200 (Thu, 01 Oct 2009) | 4 lines
+
+Added new NLOWWEIGHT_ISO and NLOWDWEIGHT_ISO parameters that count the number
+of bad pixels within the measured isophotal footprint, and within one pixel of
+the detected isophotal footprint, respectively.
+FLAGS_WEIGHT is now working without crashing.
+Pushed version number to 2.9.3.
+
+------------------------------------------------------------------------
+r209 | bertin | 2009-09-29 18:54:34 +0200 (Tue, 29 Sep 2009) | 6 lines
+
+Fixed BITPIX display info.
+Changed CONCENTRATION_MODEL to SPREAD_MODEL.
+Added SPREADERR_MODEL measurement (currently a crude estimate).
+Optimized FFT calls.
+Set PSF_NMAX to 2 by default.
+
+------------------------------------------------------------------------
+r208 | bertin | 2009-09-24 14:38:44 +0200 (Thu, 24 Sep 2009) | 5 lines
+
+Fixed CONCENTRATION_MODEL issue.
+Removed singular matrix warning.
+Added MATRIX_MODELERR measurement parameters.
+Added DURATION_ANALYSIS measurement parameter.
+
+------------------------------------------------------------------------
+r207 | bertin | 2009-09-21 14:27:28 +0200 (Mon, 21 Sep 2009) | 6 lines
+
+Added FLUX_MAX_MODEL, FLUX_EFF_MODEL, FLUX_MEAN_MODEL, MU_MAX_MODEL,
+MU_EFF_MODEL and MU_MEAN_MODEL parameters (FLUX_MAX_MODEL estimator still
+somewhat inacurrate).
+Added FLUX_MAX_SPHEROID, FLUX_EFF_SPHEROID, FLUX_MEAN_SPHEROID, MU_MAX_SPHEROID,
+MU_EFF_SPHEROID, MU_MEAN_SPHEROID parameters.
+Added FLUX_MAX_DISK, FLUX_EFF_DISK, FLUX_MEAN_DISK, MU_MAX_DISK, MU_EFF_DISK
+and MU_MEAN_DISK parameters.
+Changed the way total model fluxes and model moments are computed.
+Pushed version number to 2.9.2.
+
+------------------------------------------------------------------------
+r206 | bertin | 2009-09-14 00:24:01 +0200 (Mon, 14 Sep 2009) | 10 lines
+
+Changed ExMODEL parameters to ELLIPx_MODEL.
+Changed EPSxMODEL parameters to POLARx_MODEL.
+Added AMODEL, BMODEL, THETAMODEL for both _IMAGE and _WORLD coordinates.
+Added CXXMODEL CYYMODEL, CXYMODEL for both _IMAGE and _WORLD coordinates.
+AddedTHETAMODEL_SKY,THETAMODEL_J2000,THETAMODEL_B1950.
+Added ELLIPxMODEL_WORLD and POLARxMODEL_WORLD.
+Fixed broken PSF-fitting.
+Fixed warnings while generating the configure (thanks to S.Pascual).
+Pushed version number to 2.9.1.
+
+------------------------------------------------------------------------
+r205 | bertin | 2009-09-10 19:28:28 +0200 (Thu, 10 Sep 2009) | 2 lines
+
+Put back missing item in configure file.
+
+------------------------------------------------------------------------
+r204 | bertin | 2009-09-09 17:49:41 +0200 (Wed, 09 Sep 2009) | 2 lines
+
+Cleaned up configure file.
+
+------------------------------------------------------------------------
+r203 | bertin | 2009-09-09 11:47:17 +0200 (Wed, 09 Sep 2009) | 2 lines
+
+Added new rpm-best option in Makefile.am.
+
+------------------------------------------------------------------------
+r202 | bertin | 2009-09-08 22:11:04 +0200 (Tue, 08 Sep 2009) | 3 lines
+
+Changed the --enable-automatic-flags configure option to --enable-auto-flags.
+Added --enable-best-link configure option.
+
+------------------------------------------------------------------------
+r201 | bertin | 2009-09-08 18:58:59 +0200 (Tue, 08 Sep 2009) | 4 lines
+
+Switched to single precision for model fitting.
+Changed configure behaviour towards CFLAGS and LDFLAGS: automatic settings are
+now applied only if the --enable-automatic-flags configure option is set
+(thanks to S.Pascual).
+Version number pushed to 2.9.0.
+
+------------------------------------------------------------------------
+r200 | bertin | 2009-08-27 23:25:14 +0200 (Thu, 27 Aug 2009) | 5 lines
+
+Removed redundant code in astrom_pos().
+Fixed random crashes with model fitting (thanks to S.Desai).
+Fixed gain problem in PSF fitting.
+Pushed version number to 2.8.9.
+
+------------------------------------------------------------------------
+r199 | bertin | 2009-07-20 21:41:29 +0200 (Mon, 20 Jul 2009) | 3 lines
+
+Added FOCAL coordinates for centering parameters.
+Re-organized astrometric calls.
+
+------------------------------------------------------------------------
+r198 | bertin | 2009-06-26 17:41:48 +0200 (Fri, 26 Jun 2009) | 2 lines
+
+Fixed incorrect FFTW type in multithread check.
+
+------------------------------------------------------------------------
+r197 | bertin | 2009-06-26 17:13:08 +0200 (Fri, 26 Jun 2009) | 6 lines
+
+Made parallel version of ATLAS not mandatory for the multithread option (unused).
+Replaced configuration error with warning if FFTW is not multithreaded and
+multithreading has been activated (unused).
+Added autoconfig support for FFTW multithreaded versions combined in libfftw3
+(unused).
+Added runtime warning if ATLAS is not multithreaded and multithreading is on
+(unused).
+Version number pushed to 2.8.8.
+
+------------------------------------------------------------------------
+r196 | bertin | 2009-05-29 21:17:33 +0200 (Fri, 29 May 2009) | 2 lines
+
+Further refinements on display.
+
+------------------------------------------------------------------------
+r195 | bertin | 2009-05-29 18:35:54 +0200 (Fri, 29 May 2009) | 2 lines
+
+Improved online display.
+
+------------------------------------------------------------------------
+r194 | bertin | 2009-05-29 18:21:25 +0200 (Fri, 29 May 2009) | 6 lines
+
+Removed multithreading in FFTs (would degrade performance).
+Added computation of FLUXERR_MODEL and MAGERR_MODEL.
+Fixed a numerical bug in E1MODEL_IMAGE and E2MODEL_IMAGE.
+Improved onscreen display.
+Pushed version number to 2.8.7
+
+------------------------------------------------------------------------
+r193 | bertin | 2009-05-22 14:26:11 +0200 (Fri, 22 May 2009) | 2 lines
+
+Included Chiara's MissFITS fix in fitspick().
+
+------------------------------------------------------------------------
+r192 | bertin | 2009-05-22 14:14:26 +0200 (Fri, 22 May 2009) | 3 lines
+
+Added filtering of non-numerical characters for floating-point FITS keywords
+(thanks to D.G. Bonfield for the suggestion).
+
+------------------------------------------------------------------------
+r191 | bertin | 2009-05-19 17:40:54 +0200 (Tue, 19 May 2009) | 2 lines
+
+Increased field format size from %15.10e to %18.10e and from %5.1f to %6.2f.
+
+------------------------------------------------------------------------
+r190 | bertin | 2009-05-07 11:18:57 +0200 (Thu, 07 May 2009) | 2 lines
+
+Removed forgotten debug printout.
+
+------------------------------------------------------------------------
+r189 | bertin | 2009-04-28 19:40:43 +0200 (Tue, 28 Apr 2009) | 2 lines
+
+Fixed bug in make_kernel() test bug (thanks to R.Owen).
+
+------------------------------------------------------------------------
+r187 | bertin | 2009-04-09 15:31:57 +0200 (Thu, 09 Apr 2009) | 2 lines
+
+Forgot to regenerate configure file.
+
+------------------------------------------------------------------------
+r186 | bertin | 2009-04-09 15:29:59 +0200 (Thu, 09 Apr 2009) | 3 lines
+
+Removed obsolete measurement parameters.
+Pushed version number to 2.8.6
+
+------------------------------------------------------------------------
+r185 | bertin | 2009-04-01 18:53:14 +0200 (Wed, 01 Apr 2009) | 2 lines
+
+More junk cleaning.
+
+------------------------------------------------------------------------
+r184 | bertin | 2009-04-01 18:17:33 +0200 (Wed, 01 Apr 2009) | 4 lines
+
+Fixed icc 11 compilations options on x86-64 architecture.
+Cleaned up obsolete references.
+Added favicon to XSLT filter.
+
+------------------------------------------------------------------------
+r183 | bertin | 2009-04-01 15:53:17 +0200 (Wed, 01 Apr 2009) | 2 lines
+
+Added another refinement to the XSLT filter.
+
+------------------------------------------------------------------------
+r182 | bertin | 2009-04-01 13:11:33 +0200 (Wed, 01 Apr 2009) | 2 lines
+
+Updated XSLT filter (AstrOmatic theme).
+
+------------------------------------------------------------------------
+r181 | bertin | 2009-03-23 19:21:58 +0100 (Mon, 23 Mar 2009) | 8 lines
+
+Removed unstable and buggy measurements from parameter list.
+Cleaned up Makefile.am RPM options.
+Fixed rpm build issue on Fedora Core 10.
+Fixed display of max thread number in configure help.
+Updated icc compilation flags to 11.0 syntax.
+Set the license string to CeCILL in the .spec file.
+Pushed version number to 2.8.5.
+
+------------------------------------------------------------------------
+r180 | bertin | 2009-03-20 14:11:44 +0100 (Fri, 20 Mar 2009) | 3 lines
+
+Put back model chi2 normalisation.
+Made handling of dynamic compression and chi2 computations more flexible.
+
+------------------------------------------------------------------------
+r179 | bertin | 2009-03-18 15:43:36 +0100 (Wed, 18 Mar 2009) | 3 lines
+
+Added CONCENTRATION_MODEL and finalized CLASS_ST parameters.
+Version number pushed to 2.8.4.
+
+------------------------------------------------------------------------
+r178 | bertin | 2009-03-10 14:05:07 +0100 (Tue, 10 Mar 2009) | 1 line
+
+Set mime-type property of SExtractor doc to application/pdf
+------------------------------------------------------------------------
+r177 | bertin | 2009-02-20 19:06:45 +0100 (Fri, 20 Feb 2009) | 4 lines
+
+Fixed bug which would cause the mapping to depend on the ordering of PVs.
+Changed software license to CeCILL (French equivalent of GPL).
+Pushed version number to 2.8.3.
+
+------------------------------------------------------------------------
+r176 | bertin | 2009-01-29 19:34:29 +0100 (Thu, 29 Jan 2009) | 1 line
+
+Fixed crash with model fitting on small objects
+------------------------------------------------------------------------
+r175 | bertin | 2009-01-28 22:52:45 +0100 (Wed, 28 Jan 2009) | 1 line
+
+Nothing
+------------------------------------------------------------------------
+r173 | bertin | 2009-01-28 18:37:46 +0100 (Wed, 28 Jan 2009) | 1 line
+
+merged with SExFIGI branch
+------------------------------------------------------------------------
+r39 | bertin | 2009-01-28 17:05:55 +0100 (Wed, 28 Jan 2009) | 1 line
+
+Moved software to trunk
+------------------------------------------------------------------------
+r22 | bertin | 2006-10-29 21:04:25 +0100 (Sun, 29 Oct 2006) | 5 lines
 
 Updated FITS library to the latest version.
 Fixed some UCDs in output parameters.
@@ -39,40 +456,30 @@ Applied patch by Sergio Pascual for configuring the path to the XSL file.
 Updated the BUGS section.
 
 ------------------------------------------------------------------------
-r327 | bertin | 2006-08-16 18:06:49 +0200 (Wed, 16 Aug 2006) | 2 lines
+r21 | bertin | 2006-08-16 18:06:49 +0200 (Wed, 16 Aug 2006) | 2 lines
 
 Discard NaN pixels in non-weighted background measurements (as in SWarp).
 
 ------------------------------------------------------------------------
-r305 | baillard | 2006-07-19 15:28:15 +0200 (Wed, 19 Jul 2006) | 2 lines
-
-Change name
-
-------------------------------------------------------------------------
-r303 | baillard | 2006-07-19 15:05:48 +0200 (Wed, 19 Jul 2006) | 2 lines
-
-Change names
-
-------------------------------------------------------------------------
-r295 | baillard | 2006-07-18 13:54:43 +0200 (Tue, 18 Jul 2006) | 2 lines
+r20 | baillard | 2006-07-18 13:54:43 +0200 (Tue, 18 Jul 2006) | 2 lines
 
 Move sextractor to public repository
 
 ------------------------------------------------------------------------
-r290 | bertin | 2006-07-17 19:56:12 +0200 (Mon, 17 Jul 2006) | 4 lines
+r19 | bertin | 2006-07-17 19:56:12 +0200 (Mon, 17 Jul 2006) | 4 lines
 
 Doc: keyword list updated.
 ChangeLog updated.
 Back-propagated destructive byte-swapping bugfix in FITS library.
 
 ------------------------------------------------------------------------
-r289 | bertin | 2006-07-14 20:25:09 +0200 (Fri, 14 Jul 2006) | 3 lines
+r18 | bertin | 2006-07-14 20:25:09 +0200 (Fri, 14 Jul 2006) | 3 lines
 
 Removed warnings in psf.c (P.Delorme's edits) using brute-force.
 Switched ChangeLog to SVN format.
 
 ------------------------------------------------------------------------
-r288 | bertin | 2006-07-14 20:13:39 +0200 (Fri, 14 Jul 2006) | 8 lines
+r17 | bertin | 2006-07-14 20:13:39 +0200 (Fri, 14 Jul 2006) | 8 lines
 
 Yet another rewriting of the XML part. Meta-data, error messages and catalog
 info are now consistant between the catalog and the XML metadata file. Still
@@ -88,7 +495,7 @@ Updated config/default.sex, BUGS HISTORY and README files.
 Ready for release of V2.5.
 
 ------------------------------------------------------------------------
-r286 | bertin | 2006-07-13 22:06:48 +0200 (Thu, 13 Jul 2006) | 5 lines
+r16 | bertin | 2006-07-13 22:06:48 +0200 (Thu, 13 Jul 2006) | 5 lines
 
 XML VOTable approach changed again: support for error messaging in VO catalog
 (not only metadata) and FITS serialization of LDAC files in XML output.
@@ -97,19 +504,19 @@ Removed MAMA_CORFLEX advanced config parameter (replaced with define).
 Version number pushed to 2.5.
 
 ------------------------------------------------------------------------
-r285 | bertin | 2006-07-12 20:34:06 +0200 (Wed, 12 Jul 2006) | 4 lines
+r15 | bertin | 2006-07-12 20:34:06 +0200 (Wed, 12 Jul 2006) | 4 lines
 
 Improved XML VOTable (still waiting for F.Ochsenbein comments, though).
 Added meta-data to VOTable catalog output.
 Fixed potential bug with long command lines.
 
 ------------------------------------------------------------------------
-r283 | bertin | 2006-07-11 23:04:18 +0200 (Tue, 11 Jul 2006) | 2 lines
+r14 | bertin | 2006-07-11 23:04:18 +0200 (Tue, 11 Jul 2006) | 2 lines
 
 Completed the conversion of XML output to the VOTable format.
 
 ------------------------------------------------------------------------
-r280 | bertin | 2006-07-10 21:49:59 +0200 (Mon, 10 Jul 2006) | 6 lines
+r13 | bertin | 2006-07-10 21:49:59 +0200 (Mon, 10 Jul 2006) | 6 lines
 
 Added support for ICRS in header WCS.
 Changed the way header WCS info is interpreted when EQUINOX is missing.
@@ -118,32 +525,32 @@ Pushed max number of recorded warnings to 100.
 Changed XML meta-data output format to VOTable (not complete yet).
 
 ------------------------------------------------------------------------
-r278 | bertin | 2006-07-09 19:57:00 +0200 (Sun, 09 Jul 2006) | 4 lines
+r12 | bertin | 2006-07-09 19:57:00 +0200 (Sun, 09 Jul 2006) | 4 lines
 
 Added support for warning history in the fits library.
 Added duration to XML error output.
 Added ten most recent warnings to XML output.
 
 ------------------------------------------------------------------------
-r277 | bertin | 2006-07-07 20:30:30 +0200 (Fri, 07 Jul 2006) | 4 lines
+r11 | bertin | 2006-07-07 20:30:30 +0200 (Fri, 07 Jul 2006) | 4 lines
 
 Added catching of error messages and forwarding to XML.
 Added ASCII_VO output catalog format (inspired by G.Tissier's VOTable patch)
 Fixed issue with conflicting CDi_j/CDELTi parameters (report by J.F. Bonnarel).
 
 ------------------------------------------------------------------------
-r276 | bertin | 2006-07-05 20:11:29 +0200 (Wed, 05 Jul 2006) | 2 lines
+r10 | bertin | 2006-07-05 20:11:29 +0200 (Wed, 05 Jul 2006) | 2 lines
 
 Added more configuration parameters to XML output.
 
 ------------------------------------------------------------------------
-r273 | bertin | 2006-07-04 17:39:58 +0200 (Tue, 04 Jul 2006) | 3 lines
+r9 | bertin | 2006-07-04 17:39:58 +0200 (Tue, 04 Jul 2006) | 3 lines
 
 Fixed a bug with the reentrant version of strtok in TNX.
 Added more XML info.
 
 ------------------------------------------------------------------------
-r271 | bertin | 2006-07-03 21:31:15 +0200 (Mon, 03 Jul 2006) | 5 lines
+r8 | bertin | 2006-07-03 21:31:15 +0200 (Mon, 03 Jul 2006) | 5 lines
 
 Updated display to the leatest "Bertin standards".
 Added comments to uncommonly used config parameters in default .sex.
@@ -151,7 +558,7 @@ Changed default output channel for info about extraction to stdout.
 Added XML output.
 
 ------------------------------------------------------------------------
-r269 | bertin | 2006-07-02 21:15:05 +0200 (Sun, 02 Jul 2006) | 5 lines
+r7 | bertin | 2006-07-02 21:15:05 +0200 (Sun, 02 Jul 2006) | 5 lines
 
 Updated WCS lib to the latest SCAMP version.
 Added support for TNX distortions.
@@ -159,29 +566,36 @@ Added support for WCS with more than 2D (NAXIS=3 right now).
 Added -g compilation flag for gcc.
 
 ------------------------------------------------------------------------
-r268 | bertin | 2006-06-29 22:38:02 +0200 (Thu, 29 Jun 2006) | 7 lines
+r6 | bertin | 2006-06-29 22:38:02 +0200 (Thu, 29 Jun 2006) | 7 lines
 
 Self Organizing Map code revived!
 The FITS body writing routine now complies with strict aliasing constraints,
-but:
-Strict-aliasing optimization option dropped in acx_prog_cc_optim.m4 because of
-too many problems with gcc 4.1 (missing X_IMAGE output, etc.): too much "fun"
-with pointers in the SExtractor code.
+but: Strict-aliasing optimization option dropped in acx_prog_cc_optim.m4
+because of too many problems with gcc 4.1 (missing X_IMAGE output, etc.): too
+much "fun" with pointers in the SExtractor code.
 Local background estimates work again after many years of oblivion, thanks to
 an increased top margin in the buffering mechanism (bug found by P.Astier).
 Overwriting of displayed infos fixed.
 
 ------------------------------------------------------------------------
-r115 | bertin | 2006-01-12 20:12:04 +0100 (Thu, 12 Jan 2006) | 2 lines
+r5 | bertin | 2006-01-12 20:12:04 +0100 (Thu, 12 Jan 2006) | 2 lines
 
 Preliminary merging with P.Delorme branch (improved PSF-fitting). 
 
 ------------------------------------------------------------------------
-r54 | bertin | 2005-11-30 07:29:34 +0100 (Wed, 30 Nov 2005) | 3 lines
+r4 | bertin | 2005-11-30 07:29:34 +0100 (Wed, 30 Nov 2005) | 3 lines
 
 Added preliminary support for FLAGS_WEIGHT. Null weights above detections are
 still missed.
 
+------------------------------------------------------------------------
+r3 | bertin | 2005-10-19 20:12:37 +0200 (Wed, 19 Oct 2005) | 1 line
+
+
+------------------------------------------------------------------------
+r2 | bertin | 2005-10-17 16:57:55 +0200 (Mon, 17 Oct 2005) | 1 line
+
+first SExtractor import
 
 -------------------------------- old ChangeLog --------------------------------
 Who     When            Where(mostly)   What

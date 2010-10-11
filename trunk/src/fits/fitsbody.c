@@ -1,18 +1,35 @@
 /*
- 				fitsbody.c
-
-*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+*				fitsbody.c
 *
-*	Part of:	The LDAC Tools
+* Handle memory allocation for FITS bodies.
 *
-*	Author:		E.BERTIN (IAP)
+*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 *
-*	Contents:       Handle memory allocation for FITS bodies.
+*	This file part of:	AstrOmatic FITS/LDAC library
 *
-*	Last modify:	19/11/2009
+*	Copyright:		(C) 1998-2010 IAP/CNRS/UPMC
+*				(C) 1997 European Southern Observatory
+*				(C) 1995,1996 Sterrewacht Leiden
 *
-*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-*/
+*	Author:			Emmanuel Bertin (IAP)
+*
+*	License:		GNU General Public License
+*
+*	AstrOmatic software is free software: you can redistribute it and/or
+*	modify it under the terms of the GNU General Public License as
+*	published by the Free Software Foundation, either version 3 of the
+*	License, or (at your option) any later version.
+*	AstrOmatic software is distributed in the hope that it will be useful,
+*	but WITHOUT ANY WARRANTY; without even the implied warranty of
+*	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*	GNU General Public License for more details.
+*	You should have received a copy of the GNU General Public License
+*	along with AstrOmatic software.
+*	If not, see <http://www.gnu.org/licenses/>.
+*
+*	Last modified:		09/10/2010
+*
+*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
 #ifdef HAVE_CONFIG_H
 #include	"config.h"
@@ -191,7 +208,7 @@ INPUT	A pointer to the tab structure,
 OUTPUT	-.
 NOTES	.
 AUTHOR	E. Bertin (IAP)
-VERSION	19/11/2009
+VERSION	24/08/2010
  ***/
 void	read_body(tabstruct *tab, PIXTYPE *ptr, size_t size)
   {
@@ -202,8 +219,10 @@ void	read_body(tabstruct *tab, PIXTYPE *ptr, size_t size)
 			cval, cblank;
   unsigned short	suval, sublank;
   short			val16, sval, sblank;
+#ifdef HAVE_LONG_LONG_INT
   ULONGLONG		lluval, llublank;
   LONGLONG		llval, llblank;
+#endif
   unsigned int		iuval, iublank;
   int			curval, dval, blankflag, ival, iblank;
   

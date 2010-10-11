@@ -1,10 +1,38 @@
-# Main Makefile for SExtractor
-# Copyright (C) 2002-2009 Emmanuel Bertin.
+#
+#				Makefile.am
+#
+# Main Makefile. Process this file with automake to generate a Makefile
+#
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+#
+#	This file part of:	SExtractor
+#
+#	Copyright:		(C) 2002-2010 IAP/CNRS/UPMC
+#
+#	Author:			Emmanuel Bertin (IAP)
+#
+#	License:		GNU General Public License
+#
+#	SExtractor is free software: you can redistribute it and/or modify
+#	it under the terms of the GNU General Public License as published by
+#	the Free Software Foundation, either version 3 of the License, or
+# 	(at your option) any later version.
+#	SExtractor is distributed in the hope that it will be useful,
+#	but WITHOUT ANY WARRANTY; without even the implied warranty of
+#	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#	GNU General Public License for more details.
+#	You should have received a copy of the GNU General Public License
+#	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
+#
+#	Last modified:		11/10/2010
+#
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 AUTOMAKE_OPTIONS	= foreign no-dependencies
 SUBDIRS			= man src tests
-dist_pkgdata_DATA	= xsl/sextractor.xsl
-EXTRA_DIST		= config doc AUTHORS BUGS ChangeLog COPYRIGHT HISTORY \
-			  INSTALL README THANKS \
+dist_pkgdata_DATA	= config/* xsl/sextractor.xsl
+EXTRA_DIST		= doc AUTHORS BUGS ChangeLog COPYRIGHT HISTORY \
+			  INSTALL LICENSE README THANKS \
 			  acx_atlas.m4 acx_prog_cc_optim.m4 \
 			  acx_urbi_resolve_dir.m4
 RPM_ROOTDIR		= `rpmbuild --nobuild -E %_topdir`

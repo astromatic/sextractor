@@ -1,18 +1,32 @@
 /*
- 				paramprofit.h
-
-*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+*				paramprofit.h
 *
-*	Part of:	SExtractor
+* List model-fitting measurement parameters.
 *
-*	Author:		E.BERTIN (IAP)
+*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 *
-*	Contents:	Model-fitting parameter list for catalog data.
+*	This file part of:	SExtractor
 *
-*	Last modify:	20/08/2010
+*	Copyright:		(C) 2007-2010 IAP/CNRS/UPMC
 *
-*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-*/
+*	Author:			Emmanuel Bertin (IAP)
+*
+*	License:		GNU General Public License
+*
+*	SExtractor is free software: you can redistribute it and/or modify
+*	it under the terms of the GNU General Public License as published by
+*	the Free Software Foundation, either version 3 of the License, or
+*	(at your option) any later version.
+*	SExtractor is distributed in the hope that it will be useful,
+*	but WITHOUT ANY WARRANTY; without even the implied warranty of
+*	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*	GNU General Public License for more details.
+*	You should have received a copy of the GNU General Public License
+*	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
+*
+*	Last modified:		11/10/2010
+*
+*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
   {"VECTOR_MODEL", "Model-fitting coefficients",
 	&outobj2.prof_vector, H_FLOAT, T_FLOAT, "%12.4g", "",
@@ -323,6 +337,19 @@
   {"FLUXERR_BACKOFFSET", "RMS error on fitted background offset",
 	&outobj2.prof_offset_fluxerr, H_FLOAT, T_FLOAT, "%12.7g", "count",
 	"stat.error;instr.skyLevel;arith.diff;stat.fit.param", "ct"},
+
+  {"FLUX_POINTSOURCE", "Point source flux from fitting",
+	&outobj2.prof_dirac_flux, H_FLOAT, T_FLOAT, "%12.7g", "count",
+	"phot.count;stat.fit.param", "ct"},
+  {"FLUXERR_POINTSOURCE", "RMS error on fitted point source total flux",
+	&outobj2.prof_dirac_fluxerr, H_FLOAT, T_FLOAT, "%12.7g", "count",
+	"stat.error;phot.count;stat.fit.param", "ct"},
+  {"MAG_POINTSOURCE", "Point source total magnitude from fitting",
+	&outobj2.prof_dirac_mag, H_FLOAT, T_FLOAT, "%8.4f", "mag",
+	"phot.mag;stat.fit.param", "mag"},
+  {"MAGERR_POINTSOURCE", "RMS error on fitted point source total magnitude",
+	&outobj2.prof_dirac_magerr, H_FLOAT, T_FLOAT, "%8.4f", "mag",
+	"stat.error;phot.mag;stat.fit.param", "mag"},
 
   {"FLUX_SPHEROID", "Spheroid total flux from fitting",
 	&outobj2.prof_spheroid_flux, H_FLOAT, T_FLOAT, "%12.7g", "count",

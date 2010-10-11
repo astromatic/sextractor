@@ -1,5 +1,5 @@
-# Default configuration file for SExtractor 2.5.0
-# EB 2006-07-14
+# Default configuration file for SExtractor 2.12.4
+# EB 2010-10-10
 #
  
 #-------------------------------- Catalog ------------------------------------
@@ -12,7 +12,8 @@ PARAMETERS_NAME  default.param  # name of the file containing catalog contents
 #------------------------------- Extraction ----------------------------------
  
 DETECT_TYPE      CCD            # CCD (linear) or PHOTO (with gamma correction)
-DETECT_MINAREA   5              # minimum number of pixels above threshold
+DETECT_MINAREA   3              # min. # of pixels above threshold
+
 DETECT_THRESH    1.5            # <sigmas> or <threshold>,<ZP> in mag.arcsec-2
 ANALYSIS_THRESH  1.5            # <sigmas> or <threshold>,<ZP> in mag.arcsec-2
  
@@ -25,21 +26,34 @@ DEBLEND_MINCONT  0.005          # Minimum contrast parameter for deblending
 CLEAN            Y              # Clean spurious detections? (Y or N)?
 CLEAN_PARAM      1.0            # Cleaning efficiency
  
-MASK_TYPE        CORRECT        # type of detection MASKing: can be one of
-                                # NONE, BLANK or CORRECT
- 
+#-------------------------------- WEIGHTing ----------------------------------
+
+WEIGHT_TYPE      NONE           # type of WEIGHTing: NONE, BACKGROUND,
+                                # MAP_RMS, MAP_VAR or MAP_WEIGHT
+WEIGHT_IMAGE     weight.fits    # weight-map filename
+
+#-------------------------------- FLAGging -----------------------------------
+
+FLAG_IMAGE       flag.fits      # filename for an input FLAG-image
+FLAG_TYPE        OR             # flag pixel combination: OR, AND, MIN, MAX
+                                # or MOST
+
 #------------------------------ Photometry -----------------------------------
  
 PHOT_APERTURES   5              # MAG_APER aperture diameter(s) in pixels
 PHOT_AUTOPARAMS  2.5, 3.5       # MAG_AUTO parameters: <Kron_fact>,<min_radius>
 PHOT_PETROPARAMS 2.0, 3.5       # MAG_PETRO parameters: <Petrosian_fact>,
                                 # <min_radius>
- 
+PHOT_AUTOAPERS   0.0,0.0        # <estimation>,<measurement> minimum apertures
+                                # for MAG_AUTO and MAG_PETRO
+
 SATUR_LEVEL      50000.0        # level (in ADUs) at which arises saturation
+SATUR_KEY        SATURATE       # keyword for saturation level (in ADUs)
  
 MAG_ZEROPOINT    0.0            # magnitude zero-point
 MAG_GAMMA        4.0            # gamma of emulsion (for photographic scans)
 GAIN             0.0            # detector gain in e-/ADU
+GAIN_KEY         GAIN           # keyword for detector gain in e-/ADU
 PIXEL_SCALE      1.0            # size of pixel in arcsec (0=use FITS WCS info)
  
 #------------------------- Star/Galaxy Separation ----------------------------
@@ -49,10 +63,10 @@ STARNNW_NAME     default.nnw    # Neural-Network_Weight table filename
  
 #------------------------------ Background -----------------------------------
  
+BACK_TYPE        AUTO           # AUTO or MANUAL
+BACK_VALUE       0.0            # Default background value in MANUAL mode
 BACK_SIZE        64             # Background mesh: <size> or <width>,<height>
 BACK_FILTERSIZE  3              # Background filter: <size> or <width>,<height>
- 
-BACKPHOTO_TYPE   GLOBAL         # can be GLOBAL or LOCAL
  
 #------------------------------ Check Image ----------------------------------
  
@@ -68,8 +82,22 @@ MEMORY_OBJSTACK  3000           # number of objects in stack
 MEMORY_PIXSTACK  300000         # number of pixels in stack
 MEMORY_BUFSIZE   1024           # number of lines in buffer
  
+#------------------------------- ASSOCiation ---------------------------------
+
+ASSOC_NAME       sky.list       # name of the ASCII file to ASSOCiate
+ASSOC_DATA       2,3,4          # columns of the data to replicate (0=all)
+ASSOC_PARAMS     2,3,4          # columns of xpos,ypos[,mag]
+ASSOC_RADIUS     2.0            # cross-matching radius (pixels)
+ASSOC_TYPE       NEAREST        # ASSOCiation method: FIRST, NEAREST, MEAN,
+                                # MAG_MEAN, SUM, MAG_SUM, MIN or MAX
+ASSOCSELEC_TYPE  MATCHED        # ASSOC selection type: ALL, MATCHED or -MATCHED
+
 #----------------------------- Miscellaneous ---------------------------------
  
 VERBOSE_TYPE     NORMAL         # can be QUIET, NORMAL or FULL
+HEADER_SUFFIX    .head          # Filename extension for additional headers
 WRITE_XML        N              # Write XML file (Y/N)?
 XML_NAME         sex.xml        # Filename for XML output
+XSL_URL          file:///usr/local/share/sextractor/sextractor.xsl
+                                # Filename for XSL style-sheet
+

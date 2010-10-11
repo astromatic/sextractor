@@ -831,8 +831,8 @@ INPUT	Pointer to the matrix to invert,
 	Pointer to the inverted matrix,
 	Matrix size.
 OUTPUT	Matrix rank.
-NOTES	Loosely adapted from Numerical Recipes in C, 2nd Ed. (p. 671). The a
-	and v matrices are transposed with respect to the N.R. convention.
+NOTES	Based on algorithm described in Numerical Recipes in C, 2nd Ed.(p. 671).
+	The a and v matrices are transposed with respect to the N.R. convention.
 AUTHOR	E. Bertin (IAP)
 VERSION	02/09/2010
  ***/

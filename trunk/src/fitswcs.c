@@ -1,18 +1,35 @@
 /*
- 				fitswcs.c
-
-*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+*				fitswcs.c
 *
-*	Part of:	LDACTools+
+* Manage World Coordinate System data.
 *
-*	Author:		E.BERTIN (IAP)
+*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 *
-*	Contents:       Read and write WCS header info.
+*	This file part of:	AstrOmatic software
 *
-*	Last modify:	30/07/2010
+*	Copyright:		(C) 1993,1998-2010 IAP/CNRS/UPMC
+*				(C) 1994,1997 European Southern Observatory
+*				(C) 1995,1996 Sterrewacht Leiden
 *
-*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-*/
+*	Author:			Emmanuel Bertin (IAP)
+*
+*	License:		GNU General Public License
+*
+*	AstrOmatic software is free software: you can redistribute it and/or
+*	modify it under the terms of the GNU General Public License as
+*	published by the Free Software Foundation, either version 3 of the
+*	License, or (at your option) any later version.
+*	AstrOmatic software is distributed in the hope that it will be useful,
+*	but WITHOUT ANY WARRANTY; without even the implied warranty of
+*	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*	GNU General Public License for more details.
+*	You should have received a copy of the GNU General Public License
+*	along with AstrOmatic software.
+*	If not, see <http://www.gnu.org/licenses/>.
+*
+*	Last modified:		10/10/2010
+*
+*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
 #ifdef HAVE_CONFIG_H
 #include	"config.h"
@@ -600,11 +617,12 @@ INPUT	tab structure,
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	17/07/2006
+VERSION	01/09/2010
  ***/
 void	write_wcs(tabstruct *tab, wcsstruct *wcs)
 
   {
+   double	mjd;
    char		str[MAXCHARS];
    int		j, l, naxis;
 
@@ -621,6 +639,12 @@ void	write_wcs(tabstruct *tab, wcsstruct *wcs)
     }
   addkeywordto_head(tab, "EQUINOX ", "Mean equinox");
   fitswrite(tab->headbuf, "EQUINOX ", &wcs->equinox, H_FLOAT, T_DOUBLE);
+  if (wcs->obsdate!=0.0)
+    {
+    mjd = (wcs->obsdate-2000.0)*365.25 + MJD2000;
+    addkeywordto_head(tab, "MJD-OBS ", "Modified Julian date at start");
+    fitswrite(tab->headbuf, "MJD-OBS ", &mjd, H_EXPO,T_DOUBLE);
+    }
   addkeywordto_head(tab, "RADECSYS", "Astrometric system");
   switch(wcs->radecsys)
     {
@@ -898,7 +922,7 @@ INPUT	WCS structure.
 OUTPUT	-.
 NOTES	.
 AUTHOR	E. Bertin (IAP)
-VERSION	09/08/2006
+VERSION	24/08/2010
  ***/
 void	range_wcs(wcsstruct *wcs)
 
@@ -936,7 +960,7 @@ void	range_wcs(wcsstruct *wcs)
     }
 
   if (lng!=lat)
-    lc = fmod(world[lng]+180.0, 360.0);
+    lc = world[lng];
   else
     {
     lc = 0.0;   /* to avoid gcc -Wall warnings */
@@ -978,20 +1002,26 @@ void	range_wcs(wcsstruct *wcs)
   for (j=npoints; j--;)
     {
     raw_to_wcs(wcs, raw, world);
+/*-- Compute maximum distance to center */
+    if ((rad=wcs_dist(wcs, world, worldc)) > radmax)
+      radmax = rad;
     for (i=0; i<naxis; i++)
       {
 /*---- Handle longitudes around 0 */
-      if (i==lng && world[i]>lc)
-        world[i] -= 359.9999;
+      if (i==lng)
+        {
+        world[i] -= lc;
+        if (world[i]>180.0)
+          world[i] -= 360.0;
+        else if (world[i] <= -180.0)
+          world[i] += 360.0;
+        }
       if (world[i]<worldmin[i])
         worldmin[i] = world[i];
       if (world[i]>worldmax[i])
         worldmax[i] = world[i];
       }
 
-/*-- Compute maximum distance to center */
-    if ((rad=wcs_dist(wcs, world, worldc)) > radmax)
-      radmax = rad;
 
     for (i=0; i<naxis; i++)
       {
@@ -1010,6 +1040,8 @@ void	range_wcs(wcsstruct *wcs)
 
   if (lng!=lat)
     {
+    worldmin[lng] = fmod_0_p360(worldmin[lng]+lc);
+    worldmax[lng] = fmod_0_p360(worldmax[lng]+lc);
     if (worldmax[lat]<-90.0)
       worldmax[lat] = -90.0;
     if (worldmax[lat]>90.0)
@@ -2006,6 +2038,18 @@ Fold input angle in the [-90,+90[ domain.
 double  fmod_m90_p90(double angle)
   {
   return angle>0.0? fmod(angle+90.0,180.0)-90.0 : fmod(angle-90.0,180.0)+90.0;
+  }
+
+
+/********************************* fcmp_0_p360 *******************************/
+/*
+Compare angles in the [0,+360[ domain: return 1 if anglep>anglem, 0 otherwise.
+*/
+int  fcmp_0_p360(double anglep, double anglem)
+  {
+   double dval = anglep - anglem;
+
+  return (int)((dval>0.0 && dval<180.0) || dval<-180.0);
   }
 
 

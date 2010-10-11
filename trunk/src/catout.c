@@ -1,18 +1,35 @@
 /*
- 				catout.c
+*				catout.c
+*
+* Functions related to catalogue output.
+*
+*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+*
+*	This file part of:	SExtractor
+*
+*	Copyright:		(C) 1993,1998-2010 IAP/CNRS/UPMC
+*				(C) 1994,1997 ESO
+*				(C) 1995,1996 Sterrewacht Leiden
+*
+*	Author:			Emmanuel Bertin (IAP)
+*
+*	License:		GNU General Public License
+*
+*	SExtractor is free software: you can redistribute it and/or modify
+*	it under the terms of the GNU General Public License as published by
+*	the Free Software Foundation, either version 3 of the License, or
+*	(at your option) any later version.
+*	SExtractor is distributed in the hope that it will be useful,
+*	but WITHOUT ANY WARRANTY; without even the implied warranty of
+*	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*	GNU General Public License for more details.
+*	You should have received a copy of the GNU General Public License
+*	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
+*
+*	Last modified:		11/10/2010
+*
+*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-*
-*	Part of:	SExtractor
-*
-*	Author:		E.BERTIN (IAP)
-*
-*	Contents:	functions for output of catalog data.
-*
-*	Last modify:	20/08/2010
-*
-*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-*/
 #ifdef HAVE_CONFIG_H
 #include        "config.h"
 #endif
@@ -218,6 +235,7 @@ void	updateparamflags()
   FLAG(obj2.fluxerr_prof) |= FLAG(obj2.magerr_prof)
 			| FLAG(obj2.prof_concentrationerr);
   FLAG(obj2.flux_prof) |= FLAG(obj2.mag_prof) | FLAG(obj2.fluxerr_prof);
+  FLAG(obj2.prof_dirac_mag) |= FLAG(obj2.prof_dirac_magerr);
   FLAG(obj2.prof_spheroid_mag) |= FLAG(obj2.prof_spheroid_magerr);
   FLAG(obj2.prof_spheroid_reff) |= FLAG(obj2.prof_spheroid_refferr);
   FLAG(obj2.prof_spheroid_aspect) |= FLAG(obj2.prof_spheroid_aspecterr);
@@ -384,6 +402,9 @@ void	updateparamflags()
 			| FLAG(obj2.prof_spheroid_theta)
 			| FLAG(obj2.prof_spheroid_sersicn)
 			| FLAG(obj2.prof_spheroid_peak);
+  FLAG(obj2.prof_dirac_flux) |= FLAG(obj2.prof_dirac_fluxerr)
+			| FLAG(obj2.prof_dirac_mag);
+  FLAG(obj2.prof_offset_flux) |= FLAG(obj2.prof_offset_fluxerr);
   prefs.prof_flag |= FLAG(obj2.prof_chi2) | FLAG(obj2.prof_niter)
 			| FLAG(obj2.prof_vector) | FLAG(obj2.prof_errvector)
 			| FLAG(obj2.prof_errmatrix)
@@ -393,12 +414,16 @@ void	updateparamflags()
 			| FLAG(obj2.prof_mx2)
 			| FLAG(obj2.peak_prof)
 			| FLAG(obj2.prof_disk_flux)
-			| FLAG(obj2.prof_spheroid_flux);
+			| FLAG(obj2.prof_spheroid_flux)
+			| FLAG(obj2.prof_dirac_flux)
+			| FLAG(obj2.prof_offset_flux);
 
 
 /* If only global parameters are requested, fit a Sersic model */
   if (prefs.prof_flag && !(FLAG(obj2.prof_spheroid_flux)
-			| FLAG(obj2.prof_disk_flux)))
+			| FLAG(obj2.prof_disk_flux)
+			| FLAG(obj2.prof_dirac_flux)
+			| FLAG(obj2.prof_offset_flux)))
     {
     FLAG(obj2.prof_spheroid_flux) |= prefs.prof_flag;
     FLAG(obj2.prof_spheroid_sersicn) |= prefs.prof_flag;

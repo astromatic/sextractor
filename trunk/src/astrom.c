@@ -1,18 +1,34 @@
- /*
- 				astrom.c
-
-*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+/*
+*				astrom.c
 *
-*	Part of:	SExtractor
+* High level astrometric computations.
 *
-*	Author:		E.BERTIN (IAP)
+*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 *
-*	Contents:	Astrometrical computations.
+*	This file part of:	SExtractor
 *
-*	Last modify:	20/08/2010
+*	Copyright:		(C) 1993,1998-2010 IAP/CNRS/UPMC
+*				(C) 1994,1997 ESO
+*				(C) 1995,1996 Sterrewacht Leiden
 *
-*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-*/
+*	Author:			Emmanuel Bertin (IAP)
+*
+*	License:		GNU General Public License
+*
+*	SExtractor is free software: you can redistribute it and/or modify
+*	it under the terms of the GNU General Public License as published by
+*	the Free Software Foundation, either version 3 of the License, or
+*	(at your option) any later version.
+*	SExtractor is distributed in the hope that it will be useful,
+*	but WITHOUT ANY WARRANTY; without even the implied warranty of
+*	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*	GNU General Public License for more details.
+*	You should have received a copy of the GNU General Public License
+*	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
+*
+*	Last modified:		11/10/2010
+*
+*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
 #ifdef HAVE_CONFIG_H
 #include        "config.h"
@@ -916,7 +932,7 @@ void	astrom_profshapeparam(picstruct *field, objstruct *obj)
 	obj2->prof_spheroid_refferr/obj2->prof_spheroid_reff
 				*obj2->prof_spheroid_reffw
 	: 0.0;
-    obj2->prof_spheroid_aspectw = obj2->prof_spheroid_reffw>0.0?
+    obj2->prof_spheroid_aspectw = (obj2->prof_spheroid_reffw>0.0 && pm2>temp)?
 				  sqrt(pm2-temp) / obj2->prof_spheroid_reffw
 				: obj2->prof_spheroid_aspect;
     obj2->prof_spheroid_aspecterrw = obj2->prof_spheroid_aspect > 0.0?
@@ -968,7 +984,7 @@ void	astrom_profshapeparam(picstruct *field, objstruct *obj)
     obj2->prof_disk_scaleerrw = obj2->prof_disk_scale > 0.0?
 	obj2->prof_disk_scaleerr/obj2->prof_disk_scale*obj2->prof_disk_scalew
 	: 0.0;
-    obj2->prof_disk_aspectw = obj2->prof_disk_scalew>0.0?
+    obj2->prof_disk_aspectw = (obj2->prof_disk_scalew>0.0 && pm2>temp)?
 				  sqrt(pm2-temp) / obj2->prof_disk_scalew
 				: obj2->prof_disk_aspect;
     obj2->prof_disk_aspecterrw = obj2->prof_disk_aspect > 0.0?

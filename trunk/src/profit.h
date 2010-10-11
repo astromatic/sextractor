@@ -1,18 +1,32 @@
- /*
- 				profit.h
-
-*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+/*
+*				profit.h
 *
-*	Part of:	SExtractor
+* Include file for profit.c.
 *
-*	Authors:	E.BERTIN (IAP)
+*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 *
-*	Contents:	Include file for profit.c.
+*	This file part of:	SExtractor
 *
-*	Last modify:	21/07/2010
+*	Copyright:		(C) 2006-2010 IAP/CNRS/UPMC
 *
-*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-*/
+*	Author:			Emmanuel Bertin (IAP)
+*
+*	License:		GNU General Public License
+*
+*	SExtractor is free software: you can redistribute it and/or modify
+*	it under the terms of the GNU General Public License as published by
+*	the Free Software Foundation, either version 3 of the License, or
+*	(at your option) any later version.
+*	SExtractor is distributed in the hope that it will be useful,
+*	but WITHOUT ANY WARRANTY; without even the implied warranty of
+*	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*	GNU General Public License for more details.
+*	You should have received a copy of the GNU General Public License
+*	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
+*
+*	Last modified:		11/10/2010
+*
+*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
 #ifndef _PROFIT_H_
 #define _PROFIT_H_
@@ -36,6 +50,7 @@
 #define	PROFIT_OVERSAMP	5	/* Max. profile oversamp. factor on each axis */
 #define	PROFIT_HIDEFRES	201	/* Hi. def. model resol. (must be <MAXMODSIZE)*/
 #define	PROFIT_REFFFAC	3.0	/* Factor in r_eff for measurement radius*/
+#define	PROFIT_MAXR2MAX	1e6	/* Maximum r2_max for truncating profiles */
 #define	PROFIT_DYNPARAM	10.0	/* Dynamic compression param. in sigma units */
 #define	PROFIT_MAXMODSIZE  512	/* Maximum size allowed for the model raster */
 #define	PROFIT_MAXOBJSIZE  512	/* Maximum size allowed for the object raster */
@@ -51,15 +66,16 @@ One must have:	PROFIT_NITER > 0
 
 /*--------------------------------- typedefs --------------------------------*/
 
-typedef enum		{PROF_BACK, PROF_SERSIC, PROF_DEVAUCOULEURS,
+typedef enum		{PROF_BACK, PROF_DIRAC, PROF_SERSIC, PROF_DEVAUCOULEURS,
 			PROF_EXPONENTIAL, PROF_ARMS, PROF_BAR, PROF_INRING,
-			PROF_OUTRING, PROF_SERSIC_TABEX, PROF_DIRAC, PROF_NPROF}
+			PROF_OUTRING, PROF_SERSIC_TABEX, PROF_NPROF}
 				proftypenum; /* Profile code */
 
 typedef enum	{INTERP_NEARESTNEIGHBOUR, INTERP_BILINEAR, INTERP_LANCZOS2,
 		INTERP_LANCZOS3, INTERP_LANCZOS4}       interpenum;
 
-typedef enum	{PARAM_BACK, PARAM_X, PARAM_Y,
+typedef enum	{PARAM_BACK,
+		PARAM_DIRAC_FLUX, PARAM_X, PARAM_Y,
 		PARAM_SPHEROID_FLUX, PARAM_SPHEROID_REFF, PARAM_SPHEROID_ASPECT,
 		PARAM_SPHEROID_POSANG, PARAM_SPHEROID_SERSICN,
 		PARAM_DISK_FLUX, PARAM_DISK_SCALE, PARAM_DISK_ASPECT,

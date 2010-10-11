@@ -1,18 +1,35 @@
 /*
- 				fitskey.c
-
-*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+*				fitskey.c
 *
-*	Part of:	The LDAC Tools
+* Functions related to the management of FITS table columns ("keys").
 *
-*	Author:		E.BERTIN, DeNIS/LDAC
+*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 *
-*	Contents:	Functions related to the management of keys.
+*	This file part of:	AstrOmatic FITS/LDAC library
 *
-*	Last modify:	02/11/2009
+*	Copyright:		(C) 1998-2010 IAP/CNRS/UPMC
+*				(C) 1997 European Southern Observatory
+*				(C) 1995,1996 Sterrewacht Leiden
 *
-*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-*/
+*	Author:			Emmanuel Bertin (IAP)
+*
+*	License:		GNU General Public License
+*
+*	AstrOmatic software is free software: you can redistribute it and/or
+*	modify it under the terms of the GNU General Public License as
+*	published by the Free Software Foundation, either version 3 of the
+*	License, or (at your option) any later version.
+*	AstrOmatic software is distributed in the hope that it will be useful,
+*	but WITHOUT ANY WARRANTY; without even the implied warranty of
+*	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*	GNU General Public License for more details.
+*	You should have received a copy of the GNU General Public License
+*	along with AstrOmatic software.
+*	If not, see <http://www.gnu.org/licenses/>.
+*
+*	Last modified:		09/10/2010
+*
+*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
 #ifdef HAVE_CONFIG_H
 #include	"config.h"
@@ -575,7 +592,7 @@ NOTES	This is approximately the same code as for read_keys.
 	A NULL keynames pointer means read ALL keys belonging to the table.
 	A NULL mask pointer means NO selection for reading.
 AUTHOR	E. Bertin (IAP & Leiden observatory)
-VERSION	02/11/2009
+VERSION	08/02/2010
  ***/
 void	show_keys(tabstruct *tab, char **keynames, keystruct **keys, int nkeys,
 		BYTE *mask, FILE *stream,
@@ -970,7 +987,7 @@ void	show_keys(tabstruct *tab, char **keynames, keystruct **keys, int nkeys,
   if (kflag)
     free(keys);
   if (o_type == SHOW_SKYCAT) 
-     fprintf(stream, skycattail);
+     fprintf(stream, skycattail, 1.0);
   return;
   }
 
