@@ -1,18 +1,34 @@
- /*
- 				types.h
-
-*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+/*
+*				types.h
 *
-*	Part of:	SExtractor
+* Global type definitions.
 *
-*	Author:		E.BERTIN (IAP)
+*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 *
-*	Contents:	global type definitions.
+*	This file part of:	SExtractor
 *
-*	Last modify:	20/08/2010
+*	Copyright:		(C) 1993,1998-2010 IAP/CNRS/UPMC
+*				(C) 1994,1997 ESO
+*				(C) 1995,1996 Sterrewacht Leiden
 *
-*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-*/
+*	Author:			Emmanuel Bertin (IAP)
+*
+*	License:		GNU General Public License
+*
+*	SExtractor is free software: you can redistribute it and/or modify
+*	it under the terms of the GNU General Public License as published by
+*	the Free Software Foundation, either version 3 of the License, or
+*	(at your option) any later version.
+*	SExtractor is distributed in the hope that it will be useful,
+*	but WITHOUT ANY WARRANTY; without even the implied warranty of
+*	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*	GNU General Public License for more details.
+*	You should have received a copy of the GNU General Public License
+*	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
+*
+*	Last modified:		11/10/2010
+*
+*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
 #include <stdio.h>
 
@@ -381,6 +397,10 @@ typedef struct
   float		prof_concentrationerr;		/* RMS error */
   float		prof_offset_flux;		/* Background offset */
   float		prof_offset_fluxerr;		/* RMS error */
+  float		prof_dirac_flux;		/* Point source total flux */
+  float		prof_dirac_fluxerr;		/* RMS error */
+  float		prof_dirac_mag;			/* Point source "total" mag */
+  float		prof_dirac_magerr;		/* RMS error */
   float		prof_spheroid_flux;		/* Spheroid total flux */
   float		prof_spheroid_fluxerr;		/* RMS error */
   float		prof_spheroid_peak;		/* Spheroid peak flux */

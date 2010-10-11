@@ -1,18 +1,32 @@
- /*
- 				profit.c
-
-*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+/*
+*				profit.c
 *
-*	Part of:	SExtractor
+* Fit a range of galaxy models to an image.
 *
-*	Authors:	E.BERTIN (IAP)
+*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 *
-*	Contents:	Fit an arbitrary profile combination to a detection.
+*	This file part of:	SExtractor
 *
-*	Last modify:	26/08/2010
+*	Copyright:		(C) 2006-2010 IAP/CNRS/UPMC
 *
-*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-*/
+*	Author:			Emmanuel Bertin (IAP)
+*
+*	License:		GNU General Public License
+*
+*	SExtractor is free software: you can redistribute it and/or modify
+*	it under the terms of the GNU General Public License as published by
+*	the Free Software Foundation, either version 3 of the License, or
+*	(at your option) any later version.
+*	SExtractor is distributed in the hope that it will be useful,
+*	but WITHOUT ANY WARRANTY; without even the implied warranty of
+*	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*	GNU General Public License for more details.
+*	You should have received a copy of the GNU General Public License
+*	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
+*
+*	Last modified:		11/10/2010
+*
+*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
 #ifdef HAVE_CONFIG_H
 #include        "config.h"
@@ -50,14 +64,16 @@ static void	make_kernel(float pos, float *kernel, interpenum interptype);
 
 /*------------------------------- variables ---------------------------------*/
 
-const char	profname[][32]={"background offset", "Sersic spheroid",
-		"De Vaucouleurs spheroid", "exponential disk", "spiral arms",
+const char	profname[][32]={"background offset", "point source",
+		"Sersic spheroid", "de Vaucouleurs spheroid",
+		"exponential disk", "spiral arms",
 		"bar", "inner ring", "outer ring", "tabulated model",
 		""};
 
 const int	interp_kernwidth[5]={1,2,4,6,8};
 
-const int	flux_flag[PARAM_NPARAM] = {0,0,0,
+const int	flux_flag[PARAM_NPARAM] = {0,
+					1,0,0,
 					1,0,0,0,0,
 					1,0,0,0,
 					1,0,0,0,0,0,0,0,
@@ -79,13 +95,14 @@ INPUT	Pointer to PSF structure.
 OUTPUT	A pointer to an allocated profit structure.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	02/07/2010
+VERSION	08/10/2010
  ***/
 profitstruct	*profit_init(psfstruct *psf)
   {
    profitstruct		*profit;
    int			p, nprof,
-			backflag, spheroidflag, diskflag, barflag, armsflag;
+			backflag, diracflag, spheroidflag, diskflag,
+			barflag, armsflag;
 
   QCALLOC(profit, profitstruct, 1);
   profit->psf = psf;
@@ -93,13 +110,19 @@ profitstruct	*profit_init(psfstruct *psf)
 
   profit->nparam = 0;
   QMALLOC(profit->prof, profstruct *, PROF_NPROF);
-  backflag = spheroidflag = diskflag = barflag = armsflag = 0;
+  backflag = diracflag = spheroidflag = diskflag = barflag = armsflag = 0;
   nprof = 0;
   for (p=0; p<PROF_NPROF; p++)
     if (!backflag && FLAG(obj2.prof_offset_flux))
       {
       profit->prof[p] = prof_init(profit, PROF_BACK);
       backflag = 1;
+      nprof++;
+      }
+    else if (!diracflag && FLAG(obj2.prof_dirac_flux))
+      {
+      profit->prof[p] = prof_init(profit, PROF_DIRAC);
+      diracflag = 1;
       nprof++;
       }
     else if (!spheroidflag && FLAG(obj2.prof_spheroid_flux))
@@ -194,7 +217,7 @@ OUTPUT	Pointer to an allocated fit structure (containing details about the
 	fit).
 NOTES	It is a modified version of the lm_minimize() of lmfit.
 AUTHOR	E. Bertin (IAP)
-VERSION	26/08/2010
+VERSION	07/10/2010
  ***/
 void	profit_fit(profitstruct *profit,
 		picstruct *field, picstruct *wfield,
@@ -229,9 +252,9 @@ void	profit_fit(profitstruct *profit,
   profit->ix = (int)(obj->mx + 0.49999);/* internal convention: 1st pix = 0 */
   profit->iy = (int)(obj->my + 0.49999);/* internal convention: 1st pix = 0 */
   psf_fwhm = psf->masksize[0]*psf->pixstep;
-  profit->objnaxisn[0] = (((int)(obj2->hl_radius*6.0 + psf_fwhm + 0.499)
+  profit->objnaxisn[0] = (((int)((obj->xmax-obj->xmin+1) + psf_fwhm + 0.499)
 		*1.2)/2)*2 + 1;
-  profit->objnaxisn[1] = (((int)(obj2->hl_radius*6.0 + psf_fwhm + 0.499)
+  profit->objnaxisn[1] = (((int)((obj->ymax-obj->ymin+1) + psf_fwhm + 0.499)
 		*1.2)/2)*2 + 1;
   if (profit->objnaxisn[1]<profit->objnaxisn[0])
     profit->objnaxisn[1] = profit->objnaxisn[0];
@@ -505,6 +528,21 @@ profit->niter = profit_minimize(profit, PROFIT_MAXITER);
   if (FLAG(obj2.peak_prof))
     profit_surface(profit, obj2); 
 
+/* Background offset */
+  if (FLAG(obj2.prof_offset_flux))
+    {
+    obj2->prof_offset_flux = *profit->paramlist[PARAM_BACK];
+    obj2->prof_offset_fluxerr=profit->paramerr[profit->paramindex[PARAM_BACK]];
+    }
+
+/* Point source */
+  if (FLAG(obj2.prof_dirac_flux))
+    {
+    obj2->prof_dirac_flux = *profit->paramlist[PARAM_DIRAC_FLUX];
+    obj2->prof_dirac_fluxerr =
+		profit->paramerr[profit->paramindex[PARAM_DIRAC_FLUX]];
+    }
+
 /* Spheroid */
   if (FLAG(obj2.prof_spheroid_flux))
     {
@@ -709,12 +747,12 @@ profit->niter = profit_minimize(profit, PROFIT_MAXITER);
       pprofit.paraminit[pprofit.paramindex[PARAM_X]] = *profit->paramlist[PARAM_X];
       pprofit.paraminit[pprofit.paramindex[PARAM_Y]] = *profit->paramlist[PARAM_Y];
       }
-    pprofit.paraminit[pprofit.paramindex[PARAM_DISK_FLUX]] = profit->flux;
+    pprofit.paraminit[pprofit.paramindex[PARAM_DIRAC_FLUX]] = profit->flux;
     for (p=0; p<pprofit.nparam; p++)
       pprofit.freeparam_flag[p] = 1;
     pprofit.nfreeparam = pprofit.nparam;
     pprofit.niter = profit_minimize(&pprofit, PROFIT_MAXITER);
-    profit_residuals(&pprofit,field,wfield, 10.0, pprofit.paraminit,
+    profit_residuals(&pprofit,field,wfield, PROFIT_DYNPARAM, pprofit.paraminit,
 			pprofit.resi);
     if (FLAG(obj2.prof_class_star))
       {
@@ -748,13 +786,14 @@ profit->niter = profit_minimize(profit, PROFIT_MAXITER);
 
 /****i* prof_gammainc *********************************************************
 PROTO	double prof_gammainc(double x, double a)
-PURPOSE	Returns the incomplete Gamma function (from Num. Recipes in C, p.216).
+PURPOSE	Returns the incomplete Gamma function (based on algorithm described in
+	Numerical Recipes in C, chap. 6.1).
 INPUT	A double,
 	upper integration limit.
 OUTPUT	Incomplete Gamma function.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	18/09/009
+VERSION	08/10/2010
 */
 static double	prof_gammainc (double x, double a)
 
@@ -805,12 +844,13 @@ static double	prof_gammainc (double x, double a)
 
 /****i* prof_gamma ************************************************************
 PROTO	double prof_gamma(double xx)
-PURPOSE	Returns the Gamma function (from Num. Recipes in C, p.213).
+PURPOSE	Returns the Gamma function (based on algorithm described in Numerical
+	Recipes in C, chap 6.1).
 INPUT	A double.
 OUTPUT	Gamma function.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	11/09/009
+VERSION	11/09/2009
 */
 static double	prof_gamma(double xx)
 
@@ -839,7 +879,7 @@ INPUT	Profit structure pointer,
 OUTPUT	Radius (in pixels).
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	21/09/009
+VERSION	08/10/2010
 */
 float	profit_minradius(profitstruct *profit, float refffac)
 
@@ -852,19 +892,23 @@ float	profit_minradius(profitstruct *profit, float refffac)
     {
     switch (profit->prof[p]->code)
       {
+      case PROF_BACK:
+      case PROF_DIRAC:
+        reff = 0.0;
+      break;
       case PROF_SERSIC:
         reff = *profit->paramlist[PARAM_SPHEROID_REFF];
-      break;
+        break;
       case PROF_DEVAUCOULEURS:
         reff = *profit->paramlist[PARAM_SPHEROID_REFF];
-       break;
+        break;
       case PROF_EXPONENTIAL:
         reff = *profit->paramlist[PARAM_DISK_SCALE]*1.67835;
-      break;
+        break;
       default:
         error(EXIT_FAILURE, "*Internal Error*: Unknown profile parameter in ",
 		"profit_minradius()");
-      break;
+        break;
       }
     r = reff*(double)refffac;
     if (r>rmax)
@@ -946,7 +990,7 @@ INPUT	Pointer to the profit structure involved in the fit,
 OUTPUT	Number of iterations used.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	02/04/2010
+VERSION	11/10/2010
  ***/
 int	profit_minimize(profitstruct *profit, int niter)
   {
@@ -958,11 +1002,11 @@ int	profit_minimize(profitstruct *profit, int niter)
   memset(dcovar, 0, profit->nparam*profit->nparam*sizeof(double));
 
 /* Perform fit */
-  lm_opts[0] = 1.0e-3;
+  lm_opts[0] = 1.0e-2;
   lm_opts[1] = 1.0e-12;
   lm_opts[2] = 1.0e-12;
   lm_opts[3] = 1.0e-12;
-  lm_opts[4] = 1.0e-3;
+  lm_opts[4] = 1.0e-4;
 
   profit_boundtounbound(profit, profit->paraminit, dparam, PARAM_ALLPARAMS);
 
@@ -1037,7 +1081,7 @@ INPUT	Pointer to the vector of parameters,
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	08/07/2010
+VERSION	07/10/2010
  ***/
 void	profit_evaluate(double *dpar, double *fvec, int m, int n, void *adata)
   {
@@ -1073,7 +1117,7 @@ void	profit_evaluate(double *dpar, double *fvec, int m, int n, void *adata)
       jflag = 1;
     }
 
-  if (jflag)
+  if (jflag && !(profit->nprof==1 && profit->prof[0]->code == PROF_DIRAC))
     {
     prof = profit->prof;
     nprof = profit->nprof;
@@ -1084,6 +1128,13 @@ void	profit_evaluate(double *dpar, double *fvec, int m, int n, void *adata)
     sflag = 1;
     switch(profit->paramrevindex[pd])
       {
+      case PARAM_BACK:
+        lmodpixt = profit->lmodpix;
+        lmodpix2t = profit->lmodpix2;
+        val = (profit->param[pd] - tparam);
+        for (i=profit->nobjpix;i--;)
+          *(lmodpix2t++) = val;
+        break;
       case PARAM_X:
       case PARAM_Y:
         profit_resample(profit, profit->cmodpix, profit->lmodpix2, 1.0);
@@ -1092,6 +1143,7 @@ void	profit_evaluate(double *dpar, double *fvec, int m, int n, void *adata)
         for (i=profit->nobjpix;i--;)
           *(lmodpix2t++) -= *(lmodpixt++);
         break;
+      case PARAM_DIRAC_FLUX:
       case PARAM_SPHEROID_FLUX:
       case PARAM_DISK_FLUX:
       case PARAM_ARMS_FLUX:
@@ -2345,7 +2397,7 @@ endcheck(check);
 /*-- Sort model pixel values */
     spix = NULL;			/* to avoid gcc -Wall warnings */
     QMEMCPY(hdprofit.modpix, spix, float, npix);
-    hmedian(spix, npix);
+    fqmedian(spix, npix);
 /*-- Build a cumulative distribution */
     dsum = 0.0;
     spixt = spix;
@@ -2454,7 +2506,7 @@ INPUT	Pointer to the profit structure,
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	26/08/2010
+VERSION	08/10/2010
  ***/
 void	profit_resetparam(profitstruct *profit, paramenum paramtype)
   {
@@ -2489,14 +2541,20 @@ void	profit_resetparam(profitstruct *profit, paramenum paramtype)
       parammin = -range;
       parammax =  range;
       break;
-    case PARAM_SPHEROID_FLUX:
-      param = obj2->flux_auto/2.0;
+    case PARAM_DIRAC_FLUX:
+      param = obj2->flux_auto/profit->nprof;
       parammin = -obj2->flux_auto/1000.0;
       parammax = 2*obj2->flux_auto;
       break;
+    case PARAM_SPHEROID_FLUX:
+      param = obj2->flux_auto/profit->nprof;
+      parammin = -obj2->flux_auto/1000.0;
+      parammax = 4*obj2->flux_auto;
+      break;
     case PARAM_SPHEROID_REFF:
-      param = obj2->hl_radius;
-      parammin = 0.1;
+      param = FLAG(obj2.prof_disk_flux)? obj2->hl_radius
+				: obj2->hl_radius*sqrtf(obj->a/obj->b);
+      parammin = 0.0;
       parammax = param * 4.0;
       break;
     case PARAM_SPHEROID_ASPECT:
@@ -2511,17 +2569,17 @@ void	profit_resetparam(profitstruct *profit, paramenum paramtype)
       break;
     case PARAM_SPHEROID_SERSICN:
       param = 4.0;
-      parammin = 1.0;
+      parammin = FLAG(obj2.prof_disk_flux)? 1.0 : 0.3;
       parammax = 10.0;
       break;
     case PARAM_DISK_FLUX:
-      param = obj2->flux_auto/2.0;
+      param = obj2->flux_auto/profit->nprof;
       parammin = -obj2->flux_auto/1000.0;
       parammax = 2*obj2->flux_auto;
       break;
     case PARAM_DISK_SCALE:	/* From scalelength to Re */
-      param = obj2->hl_radius/1.67835*sqrt(obj->a/obj->b);
-      parammin = param/4.0;
+      param = obj2->hl_radius/1.67835*sqrtf(obj->a/obj->b);
+      parammin = FLAG(obj2.prof_spheroid_flux)? 0.0 : param/4.0;
       parammax = param * 4.0;
       break;
     case PARAM_DISK_ASPECT:
@@ -2867,7 +2925,7 @@ INPUT	Pointer to the profile-fitting structure,
 OUTPUT	A pointer to an allocated prof structure.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	07/04/2010
+VERSION	08/10/2010
  ***/
 profstruct	*prof_init(profitstruct *profit, proftypenum profcode)
   {
@@ -2886,6 +2944,17 @@ profstruct	*prof_init(profitstruct *profit, proftypenum profcode)
       prof->pix = NULL;
       profit_addparam(profit, PARAM_BACK, &prof->flux);
       prof->typscale = 1.0;
+      break;
+    case PROF_DIRAC:
+      prof->naxis = 2;
+      prof->naxisn[0] = PROFIT_MAXMODSIZE;
+      prof->naxisn[1] = PROFIT_MAXMODSIZE;
+      prof->naxisn[2] = 1;
+      prof->npix = prof->naxisn[0]*prof->naxisn[1]*prof->naxisn[2];
+      prof->typscale = 1.0;
+      profit_addparam(profit, PARAM_X, &prof->x[0]);
+      profit_addparam(profit, PARAM_Y, &prof->x[1]);
+      profit_addparam(profit, PARAM_DIRAC_FLUX, &prof->flux);
       break;
     case PROF_SERSIC:
       prof->naxis = 2;
@@ -3008,17 +3077,6 @@ profstruct	*prof_init(profitstruct *profit, proftypenum profcode)
       profit_addparam(profit, PARAM_OUTRING_FLUX, &prof->flux);
       profit_addparam(profit, PARAM_OUTRING_WIDTH, &prof->featwidth);
       break;
-    case PROF_DIRAC:
-      prof->naxis = 2;
-      prof->naxisn[0] = PROFIT_MAXMODSIZE;
-      prof->naxisn[1] = PROFIT_MAXMODSIZE;
-      prof->naxisn[2] = 1;
-      prof->npix = prof->naxisn[0]*prof->naxisn[1]*prof->naxisn[2];
-      prof->typscale = 1.0;
-      profit_addparam(profit, PARAM_X, &prof->x[0]);
-      profit_addparam(profit, PARAM_Y, &prof->x[1]);
-      profit_addparam(profit, PARAM_DISK_FLUX, &prof->flux);
-      break;
     case PROF_SERSIC_TABEX:	/* An example of tabulated profile */
       prof->naxis = 3;
       width =  prof->naxisn[0] = PROFIT_PROFRES;
@@ -3115,7 +3173,7 @@ INPUT	Profile-fitting structure,
 OUTPUT	Total (asymptotic) flux contribution.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	08/07/2010
+VERSION	08/10/2010
  ***/
 float	prof_add(profitstruct *profit, profstruct *prof, int extfluxfac_flag)
   {
@@ -3130,7 +3188,7 @@ float	prof_add(profitstruct *profit, profstruct *prof, int extfluxfac_flag)
 		width, invwidth2,
 		r,r2,rmin, r2minxin,r2minxout, rmax, r2max,
 		r2max1, r2max2, r2min, invr2xdif,
-		val, theta, thresh, ra,rb,rao, num;
+		val, theta, thresh, ra,rb,rao, num,num2,den;
    int		npix, noversamp, threshflag,
 		d,e,i, ix1,ix2, idx1,idx2, nx2, npix2;
 
@@ -3171,15 +3229,27 @@ float	prof_add(profitstruct *profit, profstruct *prof, int extfluxfac_flag)
 
 /*-- Compute the largest r^2 that fits in the frame */
     num = cd11*cd22-cd12*cd21;
+    num *= num;
     x1max = x1cout - 1.0;
     x2max = x2cout - 1.0;
-    r2max1 = x1max*x1max*fabs(num*num / (cd12*cd12+cd22*cd22));
-    r2max2 = x2max*x2max*fabs(num*num / (cd11*cd11+cd21*cd21));
-    r2max = r2max1 < r2max2? r2max1 : r2max2;
+    den = fabs(cd12*cd12+cd22*cd22);
+    num2 = x1max*x1max*num;
+    r2max1 = num2<PROFIT_MAXR2MAX*den? num2 / den : PROFIT_MAXR2MAX;
+    den = fabs(cd11*cd11+cd21*cd21);
+    num2 = x2max*x2max*num;
+    r2max2 = num2<PROFIT_MAXR2MAX*den? num2 / den : PROFIT_MAXR2MAX;
+    r2max = (r2max1 < r2max2? r2max1 : r2max2);
     }
 
   switch(prof->code)
     {
+    case PROF_DIRAC:
+      memset(prof->pix, 0, npix*sizeof(float));
+      prof->pix[profit->modnaxisn[0]/2
+		+ (profit->modnaxisn[1]/2)*profit->modnaxisn[0]] = 1.0;
+      prof->lostfluxfrac = 0.0;
+      threshflag = 0;
+      break;
     case PROF_SERSIC:
       n = fabs(*prof->extra[0]);
       bn = 2.0*n - 1.0/3.0 + 4.0/(405.0*n) + 46.0/(25515.0*n*n)
@@ -3525,13 +3595,6 @@ width = 3.0;
         }
       prof->lostfluxfrac = 0.0;
       threshflag = 1;
-      break;
-    case PROF_DIRAC:
-      memset(prof->pix, 0, npix*sizeof(float));
-      prof->pix[profit->modnaxisn[0]/2
-		+ (profit->modnaxisn[1]/2)*profit->modnaxisn[0]] = 1.0;
-      prof->lostfluxfrac = 0.0;
-      threshflag = 0;
       break;
     default:
 /*---- Tabulated profile: remap each pixel */

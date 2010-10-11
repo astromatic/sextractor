@@ -1,18 +1,34 @@
- /*
- 				photom.c
-
-*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+/*
+*				photom.c
 *
-*	Part of:	SExtractor
+* Compute magnitudes and other photometric parameters.
 *
-*	Author:		E.BERTIN (IAP)
+*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 *
-*	Contents:	Compute magnitudes and other photometrical parameters.
+*	This file part of:	SExtractor
 *
-*	Last modify:	16/09/2009
+*	Copyright:		(C) 1993,1998-2010 IAP/CNRS/UPMC
+*				(C) 1994,1997 ESO
+*				(C) 1995,1996 Sterrewacht Leiden
 *
-*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-*/
+*	Author:			Emmanuel Bertin (IAP)
+*
+*	License:		GNU General Public License
+*
+*	SExtractor is free software: you can redistribute it and/or modify
+*	it under the terms of the GNU General Public License as published by
+*	the Free Software Foundation, either version 3 of the License, or
+*	(at your option) any later version.
+*	SExtractor is distributed in the hope that it will be useful,
+*	but WITHOUT ANY WARRANTY; without even the implied warranty of
+*	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*	GNU General Public License for more details.
+*	You should have received a copy of the GNU General Public License
+*	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
+*
+*	Last modified:		11/10/2010
+*
+*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
 #ifdef HAVE_CONFIG_H
 #include        "config.h"
@@ -898,6 +914,18 @@ void  computemags(picstruct *field, objstruct *obj)
 				: obj2->pixscale2 * 3600.0*3600.0))
 		+ prefs.mag_zeropoint
 		: 99.0;
+
+  if (FLAG(obj2.prof_dirac_mag))
+    obj2->prof_dirac_mag = obj2->prof_dirac_flux>0.0?
+			 -2.5*log10(obj2->prof_dirac_flux)
+			+ prefs.mag_zeropoint
+			:99.0;
+
+  if (FLAG(obj2.prof_dirac_magerr))
+    obj2->prof_dirac_magerr = obj2->prof_dirac_flux>0.0?
+			 1.086*obj2->prof_dirac_fluxerr
+				/ obj2->prof_dirac_flux
+			:99.0;
 
   if (FLAG(obj2.prof_spheroid_mag))
     obj2->prof_spheroid_mag = obj2->prof_spheroid_flux>0.0?

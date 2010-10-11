@@ -1,24 +1,37 @@
 /*
- 				bpro.h
-
-*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+*				bpro.h
 *
-*	Part of:	Any back-propagation-ANN-oriented software
+* Include file for bpro.c.
 *
-*	Author:		E.BERTIN, IAP/LDAC
+*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 *
-*	Contents:	Routines for BP-neural network management ("read-only"
-*			mode).
+*	This file part of:	SExtractor
 *
-*	Requirements:	The LDACTools.
+*	Copyright:		(C) 1993,1998-2010 IAP/CNRS/UPMC
+*				(C) 1994,1997 ESO
+*				(C) 1995,1996 Sterrewacht Leiden
 *
-*	Last modify:	08/10/96
+*	Author:			Emmanuel Bertin (IAP)
 *
-*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-*/
+*	License:		GNU General Public License
+*
+*	SExtractor is free software: you can redistribute it and/or modify
+*	it under the terms of the GNU General Public License as published by
+*	the Free Software Foundation, either version 3 of the License, or
+*	(at your option) any later version.
+*	SExtractor is distributed in the hope that it will be useful,
+*	but WITHOUT ANY WARRANTY; without even the implied warranty of
+*	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*	GNU General Public License for more details.
+*	You should have received a copy of the GNU General Public License
+*	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
+*
+*	Last modified:		11/10/2010
+*
+*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
 /*------------------------------- definitions -------------------------------*/
-#define	SIGMOID(u)	((u)<15.0?((u)>-15.0?1/(1+exp(-(u))):0.0):1.0)
+#define	SIGMOID(u)	((u)<15.0?((u)>-15.0?1/(1+expf(-(u))):0.0):1.0)
 				/* In-line activation function */
 
 /*---------------------------------- types ----------------------------------*/

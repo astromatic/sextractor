@@ -1,18 +1,34 @@
- /*
- 				define.h
-
-*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+/*
+*				define.h
 *
-*	Part of:	SExtractor
+* Global definitions
 *
-*	Author:		E.BERTIN (IAP)
+*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 *
-*	Contents:	global definitions.
+*	This file part of:	SExtractor
 *
-*	Last modify:	12/10/2009
+*	Copyright:		(C) 1993,1998-2010 IAP/CNRS/UPMC
+*				(C) 1994,1997 ESO
+*				(C) 1995,1996 Sterrewacht Leiden
 *
-*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-*/
+*	Author:			Emmanuel Bertin (IAP)
+*
+*	License:		GNU General Public License
+*
+*	SExtractor is free software: you can redistribute it and/or modify
+*	it under the terms of the GNU General Public License as published by
+*	the Free Software Foundation, either version 3 of the License, or
+*	(at your option) any later version.
+*	SExtractor is distributed in the hope that it will be useful,
+*	but WITHOUT ANY WARRANTY; without even the implied warranty of
+*	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*	GNU General Public License for more details.
+*	You should have received a copy of the GNU General Public License
+*	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
+*
+*	Last modified:		11/10/2010
+*
+*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
 /* Check if we are using a configure script here */
 #ifndef HAVE_CONFIG_H
@@ -26,7 +42,11 @@
 #define		BANNER		"SExtractor"
 #define		MYVERSION	VERSION
 #define		EXECUTABLE	"sex"
-#define		COPYRIGHT	"Emmanuel BERTIN <bertin@iap.fr>"
+#define         COPYRIGHT       "1993-2010 IAP/CNRS/UPMC"
+#define		DISCLAIMER	BANNER " comes with ABSOLUTELY NO WARRANTY\n" \
+		"You may redistribute copies of " BANNER "\n" \
+		"under the terms of the GNU General Public License."
+#define		AUTHORS		"Emmanuel BERTIN <bertin@iap.fr>"
 #define		WEBSITE		"http://astromatic.net/software/sextractor"
 #define		INSTITUTE	"IAP  http://www.iap.fr"
 
