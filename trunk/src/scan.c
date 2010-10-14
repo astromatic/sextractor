@@ -647,7 +647,7 @@ void	scanimage(picstruct *field, picstruct *dfield, picstruct **pffield,
 		|| !(thecat.ntotal%400))
             NPRINTF(OUTPUT, "\33[1M> Line:%5d  "
 		"Objects: %8d detected / %8d sextracted\n\33[1A",
-		yl>=h? h:yl+1, thecat.ndetect, thecat.ntotal);
+		yl>h? h:yl, thecat.ndetect, thecat.ntotal);
           ontotal = thecat.ntotal;
           endobject(field, dfield, wfield, cdwfield, i, cleanobjlist);
           subcleanobj(i);
@@ -656,10 +656,10 @@ void	scanimage(picstruct *field, picstruct *dfield, picstruct **pffield,
         }
       }
 
-    if ((prefs.prof_flag && !(thecat.ntotal%10)) || !((yl+1)%25))
+    if ((prefs.prof_flag && !(thecat.ntotal%10)) || !(yl%25))
       NPRINTF(OUTPUT, "\33[1M> Line:%5d  "
 		"Objects: %8d detected / %8d sextracted\n\33[1A",
-	yl+1, thecat.ndetect, thecat.ntotal);
+	yl>h?h:yl, thecat.ndetect, thecat.ntotal);
 /*--------------------- End of the loop over the y's -----------------------*/
     }
 

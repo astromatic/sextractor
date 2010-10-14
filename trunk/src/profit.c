@@ -24,7 +24,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/10/2010
+*	Last modified:		13/10/2010
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -2506,7 +2506,7 @@ INPUT	Pointer to the profit structure,
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	08/10/2010
+VERSION	13/10/2010
  ***/
 void	profit_resetparam(profitstruct *profit, paramenum paramtype)
   {
@@ -2554,7 +2554,7 @@ void	profit_resetparam(profitstruct *profit, paramenum paramtype)
     case PARAM_SPHEROID_REFF:
       param = FLAG(obj2.prof_disk_flux)? obj2->hl_radius
 				: obj2->hl_radius*sqrtf(obj->a/obj->b);
-      parammin = 0.0;
+      parammin = 0.01;
       parammax = param * 4.0;
       break;
     case PARAM_SPHEROID_ASPECT:
@@ -2579,7 +2579,7 @@ void	profit_resetparam(profitstruct *profit, paramenum paramtype)
       break;
     case PARAM_DISK_SCALE:	/* From scalelength to Re */
       param = obj2->hl_radius/1.67835*sqrtf(obj->a/obj->b);
-      parammin = FLAG(obj2.prof_spheroid_flux)? 0.0 : param/4.0;
+      parammin = FLAG(obj2.prof_spheroid_flux)? 0.01/1.67835 : param/4.0;
       parammax = param * 4.0;
       break;
     case PARAM_DISK_ASPECT:

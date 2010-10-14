@@ -26,7 +26,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/10/2010
+*	Last modified:		14/10/2010
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -111,7 +111,7 @@ void	makeit()
   readcatparams(prefs.param_name);
   useprefs();			/* update things accor. to prefs parameters */
 
-  if (prefs.psf_flag || prefs.prof_flag)
+  if (prefs.psf_flag)
     {
     NFPRINTF(OUTPUT, "Reading PSF information");
     thepsf = psf_load(prefs.psf_name[0]); 
@@ -401,7 +401,7 @@ void	makeit()
 	field->backmean, field->backsig, (field->flags & DETECT_FIELD)?
 	field->dthresh: field->thresh);
     if (dfield)
-    {
+      {
       QPRINTF(OUTPUT, "Detection image: ");
       makeback(dfield, dwfield? dwfield
 			: (prefs.weight_type[0] == WEIGHT_NONE?NULL:wfield));
@@ -542,7 +542,7 @@ void	makeit()
     }
 #endif
 
-  if (prefs.psf_flag || prefs.prof_flag)
+  if (prefs.psf_flag)
     psf_end(thepsf,thepsfit); /*?*/
 
   if (prefs.dpsf_flag)

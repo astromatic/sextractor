@@ -26,7 +26,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/10/2010
+*	Last modified:		14/10/2010
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -308,7 +308,7 @@ char *default_prefs[] =
 "*#--------------------------- Experimental Stuff -----------------------------",
 "*",
 "*PSF_NAME         default.psf    # File containing the PSF model",
-"*PSF_NMAX         2              # Max.number of PSFs fitted simultaneously",
+"*PSF_NMAX         1              # Max.number of PSFs fitted simultaneously",
 "*PATTERN_TYPE     RINGS-HARMONIC # can RINGS-QUADPOLE, RINGS-OCTOPOLE,",
 "*                                # RINGS-HARMONICS or GAUSS-LAGUERRE",
 "*SOM_NAME         default.som    # File containing Self-Organizing Map weights",

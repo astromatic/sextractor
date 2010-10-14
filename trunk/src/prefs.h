@@ -26,7 +26,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/10/2010
+*	Last modified:		14/10/2010
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -209,8 +209,10 @@ typedef struct
   double	flux_frac[MAXNAPER];			/* for FLUX_RADIUS */
   int		nflux_frac;       			/* number of elem. */
 /*----- PSF-fitting */
-  int		psf_flag;				/* PSF-fit needed */
-  int		dpsf_flag;				/* dual image PSF-fit */
+  int		psf_flag;				/* PSF needed */
+  int		dpsf_flag;				/* detectiob PSF */
+  int		psffit_flag;				/* PSF-fit needed */
+  int		dpsffit_flag;				/* dual image PSF-fit */
   char		*(psf_name[2]);				/* PSF filename */
   int		npsf_name;				/* nb of params */
   int		psf_npsfmax;				/* Max # of PSFs */

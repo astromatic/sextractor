@@ -322,7 +322,7 @@ void	psf_readcontext(psfstruct *psf, picstruct *field)
 
 
 /******************************** psf_fit ***********************************/
-/*                   standart PSF fit for one component                     */
+/*                   standard PSF fit for one component                     */
 /****************************************************************************/
 
 void	psf_fit(psfstruct *psf, picstruct *field, picstruct *wfield,

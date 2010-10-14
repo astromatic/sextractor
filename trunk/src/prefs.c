@@ -26,7 +26,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/10/2010
+*	Last modified:		14/10/2010
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -582,14 +582,18 @@ void	useprefs()
 /*---------------------------- PSF-fitting ---------------------------------*/
   if (FLAG(obj2.flux_psf) )
     {
-    prefs.psf_flag = 1;
-    prefs.dpsf_flag = (prefs.npsf_name>1);	/*?*/
+    prefs.psffit_flag = 1;
+    prefs.dpsffit_flag = (prefs.npsf_name>1);	/*?*/
     }
   if (prefs.check_flag)
     for (i=0; i<prefs.ncheck_type; i++)
       if (prefs.check_type[i] == CHECK_SUBPSFPROTOS
 		|| prefs.check_type[i] == CHECK_PSFPROTOS)
-        prefs.psf_flag = 1;
+        prefs.psffit_flag = 1;
+  if (prefs.psffit_flag)
+    prefs.psf_flag = 1;
+  if (prefs.dpsffit_flag)
+    prefs.dpsf_flag = 1;
 
 /*---------------------------- PC-fitting ----------------------------------*/
 /* PC-fitting is possible only if a PSF file is loaded */
@@ -614,6 +618,8 @@ void	useprefs()
 	|| prefs.check_type[i] == CHECK_DISKS
 	|| prefs.check_type[i] == CHECK_SUBDISKS)
         prefs.prof_flag = 1;
+  if (prefs.prof_flag)
+    prefs.psf_flag = 1;
 
 /*--------------------------- Adaptive class-star ---------------------------*/
   if (prefs.seeing_fwhm == 0 && FLAG(obj2.sprob))
