@@ -42,7 +42,7 @@
 #define		BANNER		"SExtractor"
 #define		MYVERSION	VERSION
 #define		EXECUTABLE	"sex"
-#define         COPYRIGHT       "1993-2010 IAP/CNRS/UPMC"
+#define         COPYRIGHT       "2010 IAP/CNRS/UPMC"
 #define		DISCLAIMER	BANNER " comes with ABSOLUTELY NO WARRANTY\n" \
 		"You may redistribute copies of " BANNER "\n" \
 		"under the terms of the GNU General Public License."

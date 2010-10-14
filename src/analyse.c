@@ -26,7 +26,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/10/2010
+*	Last modified:		14/10/2010
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -417,7 +417,7 @@ void	endobject(picstruct *field, picstruct *dfield, picstruct *wfield,
 			analtime1;
    int			i,j, ix,iy,selecflag, newnumber,nsub;
 
-   if (prefs.psf_flag || prefs.prof_flag)
+   if (prefs.psf_flag)
      thepsf->build_flag = 0;	/* Reset PSF building flag */
    if (prefs.dpsf_flag)
      ppsf->build_flag = 0;	/* Reset PSF building flag */
@@ -693,9 +693,9 @@ void	endobject(picstruct *field, picstruct *dfield, picstruct *wfield,
 
 /*------------------------------- PSF fitting ------------------------------*/
     nsub = 1;
-    if (prefs.psf_flag)
+    if (prefs.psffit_flag)
       {
-      if (prefs.dpsf_flag)
+      if (prefs.dpsffit_flag)
         double_psf_fit(ppsf, field, wfield, obj, thepsf, dfield, dwfield);
       else
         psf_fit(thepsf, field, wfield, obj);
@@ -735,7 +735,7 @@ void	endobject(picstruct *field, picstruct *dfield, picstruct *wfield,
 /*-- Go through each newly identified component */
     for (j=0; j<nsub; j++)
       {
-      if (prefs.psf_flag)
+      if (prefs.psffit_flag)
         {
         obj2->x_psf = thepsfit->x[j];
         obj2->y_psf = thepsfit->y[j];

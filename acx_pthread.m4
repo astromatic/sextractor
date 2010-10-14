@@ -1,3 +1,37 @@
+dnl
+dnl				acx_pthread.m4
+dnl
+dnl Figure out how to build C programs using POSIX threads
+dnl
+dnl %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+dnl
+dnl	This file part of:	AstrOmatic software
+dnl
+dnl	Copyrights:		(C) 2002-2010 IAP/CNRS/UPMC (this version)
+dnl				(C) 2001 Steven G. Johnson (original version)
+dnl
+dnl	Authors:		Emmanuel Bertin (IAP)
+dnl				Steven G. Johnson (original ACX_PTHREAD)
+dnl
+dnl	Licenses:		GPL (this version)
+dnl				GPLWithACException (original script)
+dnl
+dnl	AstrOmatic software is free software: you can redistribute it and/or
+dnl	modify it under the terms of the GNU General Public License as
+dnl	published by the Free Software Foundation, either version 3 of the
+dnl	License, or (at your option) any later version.
+dnl	AstrOmatic software is distributed in the hope that it will be useful,
+dnl	but WITHOUT ANY WARRANTY; without even the implied warranty of
+dnl	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+dnl	GNU General Public License for more details.
+dnl	You should have received a copy of the GNU General Public License
+dnl	along with AstrOmatic software.
+dnl	If not, see <http://www.gnu.org/licenses/>.
+dnl
+dnl	Last modified:		09/10/2010
+dnl
+dnl %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+dnl
 dnl @synopsis ACX_PTHREAD([ACTION-IF-FOUND[, ACTION-IF-NOT-FOUND]])
 dnl
 dnl This macro figures out how to build C programs using POSIX
@@ -33,11 +67,6 @@ dnl based on work by SGJ on autoconf scripts for FFTW (www.fftw.org)
 dnl (with help from M. Frigo), as well as ac_pthread and hb_pthread
 dnl macros posted by AFC to the autoconf macro repository.  We are also
 dnl grateful for the helpful feedback of numerous users.
-dnl
-dnl @version $Id: acx_pthread.m4,v 1.4 2001/03/16 08:40:17 simons Exp $
-dnl @author Steven G. Johnson <stevenj@alum.mit.edu> and Alejandro Forero Cuervo <bachue@bachue.com>
-dnl modified by E.Bertin <bertin@iap.fr> (ordering of flags and deactivated
-dnl pthread.h check) 2002/04/25
 
 AC_DEFUN([ACX_PTHREAD], [
 AC_REQUIRE([AC_CANONICAL_HOST])
