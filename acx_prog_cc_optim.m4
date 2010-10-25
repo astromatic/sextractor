@@ -7,11 +7,8 @@ dnl %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 dnl
 dnl	This file part of:	AstrOmatic software
 dnl
-dnl	Copyright:		(C) 2002-2010 IAP/CNRS/UPMC (this version)
+dnl	Copyright:		(C) 2002-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
 dnl				(C) 2002 Ville Lauriki (original version)
-dnl
-dnl	Authors:		Emmanuel Bertin (IAP)
-dnl				Ville Lauriki (original VL_PROG_CC_WARNINGS)
 dnl
 dnl	Licenses:		GPL (this version)
 dnl				MIT AllPermissive (original script)

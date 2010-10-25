@@ -7,9 +7,9 @@
 #
 #	This file part of:	AstrOmatic FITS/LDAC library
 #
-#	Copyright:		(C) 2002-2010 IAP/CNRS/UPMC
+#	Copyright:		(C) 2002-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
 #
-#	Author:			Emmanuel Bertin (IAP)
+#	Last modified:		09/10/2010
 #
 #	License:		GNU General Public License
 #
@@ -24,8 +24,6 @@
 #	You should have received a copy of the GNU General Public License
 #	along with AstrOmatic software.
 #	If not, see <http://www.gnu.org/licenses/>.
-#
-#	Last modified:		09/10/2010
 #
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

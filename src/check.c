@@ -7,11 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993,1998-2010 IAP/CNRS/UPMC
-*				(C) 1994,1997 ESO
-*				(C) 1995,1996 Sterrewacht Leiden
-*
-*	Author:			Emmanuel Bertin (IAP)
+*	Copyright:		(C) 1993-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -378,7 +374,7 @@ void	reinitcheck(picstruct *field, checkstruct *check)
       QMALLOC(ptrf, PIXTYPE, check->npix);
       check->pix = (void *)ptrf;
       for (i=check->npix; i--;)
-        *(ptrf++) = -10.0;
+        *(ptrf++) = 0.0;
       QFWRITE(check->fitshead,check->fitsheadsize,check->file,check->filename);
       free(check->fitshead);
       break;

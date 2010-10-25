@@ -7,11 +7,8 @@ dnl %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 dnl
 dnl	This file part of:	AstrOmatic software
 dnl
-dnl	Copyright:		(C) 2007-2010 IAP/CNRS/UPMC (this version)
+dnl	Copyrights:		(C) 2007-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
 dnl				(C) 2007 Akim Demaille (original version)
-dnl
-dnl	Authors:		Emmanuel Bertin (IAP)
-dnl				Akim Demaille (original script)
 dnl
 dnl	License:		GPL
 dnl

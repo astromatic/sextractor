@@ -7,11 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993,1998-2010 IAP/CNRS/UPMC
-*				(C) 1994,1997 ESO
-*				(C) 1995,1996 Sterrewacht Leiden
-*
-*	Author:			Emmanuel Bertin (IAP)
+*	Copyright:		(C) 1993-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -26,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/10/2010
+*	Last modified:		19/10/2010
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -344,6 +340,10 @@ typedef struct
   float		mumax_prof;			/* Model peak surf. bri. */
   float		mueff_prof;			/* Model effective surf. bri. */
   float		mumean_prof;			/* Mean model effective SB */
+  float		fluxcor_prof;			/* Hybrid model-fitting flux */
+  float		fluxcorerr_prof;		/* RMS error on hybrid flux */
+  float		magcor_prof;			/* Hybrid model-fitting mag */
+  float		magcorerr_prof;			/* RMS error on hybrid mag */
   double	x_prof, y_prof;			/* Coords from model-fitting*/
   double	xf_prof, yf_prof;		/* FOCAL coordinates */
   double	xw_prof, yw_prof;		/* WORLD coords */

@@ -7,11 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1998-2010 IAP/CNRS/UPMC
-*				(C) 1997 ESO
-*				(C) 1995,1996 Sterrewacht Leiden
-*
-*	Author:			Emmanuel Bertin (IAP)
+*	Copyright:		(C) 1995-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *

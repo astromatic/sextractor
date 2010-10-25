@@ -7,11 +7,8 @@
 *
 *	This file part of:	AstrOmatic WCS library
 *
-*	Copyright:		(C) 2000-2010 IAP/CNRS/UPMC
-*				(C) 1995-1999 Mark Calabretta
-*
-*	Authors:		Emmanuel Bertin (this version)
-*				Mark Calabretta (original version)
+*	Copyright:		(C) 2000-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*				(C) 1995-1999 Mark Calabretta (original version)
 *
 *	Licenses:		GNU General Public License
 *

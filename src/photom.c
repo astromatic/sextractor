@@ -7,11 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993,1998-2010 IAP/CNRS/UPMC
-*				(C) 1994,1997 ESO
-*				(C) 1995,1996 Sterrewacht Leiden
-*
-*	Author:			Emmanuel Bertin (IAP)
+*	Copyright:		(C) 1993-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -26,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/10/2010
+*	Last modified:		19/10/2010
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -889,6 +885,15 @@ void  computemags(picstruct *field, objstruct *obj)
   if (FLAG(obj2.magerr_prof))
     obj2->magerr_prof = obj2->flux_prof>0.0?
 			 1.086*obj2->fluxerr_prof/obj2->flux_prof
+			:99.0;
+
+  if (FLAG(obj2.magcor_prof))
+    obj2->magcor_prof = obj2->fluxcor_prof>0.0?
+			 -2.5*log10(obj2->fluxcor_prof) + prefs.mag_zeropoint
+			:99.0;
+  if (FLAG(obj2.magcorerr_prof))
+    obj2->magcorerr_prof = obj2->fluxcor_prof>0.0?
+			 1.086*obj2->fluxcorerr_prof/obj2->fluxcor_prof
 			:99.0;
 
   if (FLAG(obj2.mumax_prof))
