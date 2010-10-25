@@ -7,11 +7,8 @@ dnl %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 dnl
 dnl	This file part of:	AstrOmatic software
 dnl
-dnl	Copyrights:		(C) 2002-2010 IAP/CNRS/UPMC (this version)
+dnl	Copyright:		(C) 2002-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
 dnl				(C) 2001 Steven G. Johnson (original version)
-dnl
-dnl	Authors:		Emmanuel Bertin (IAP)
-dnl				Steven G. Johnson (original ACX_PTHREAD)
 dnl
 dnl	Licenses:		GPL (this version)
 dnl				GPLWithACException (original script)

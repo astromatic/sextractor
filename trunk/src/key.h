@@ -7,11 +7,7 @@
 *
 *	This file part of:	AstrOmatic software
 *
-*	Copyright:		(C) 1993,1998-2010 IAP/CNRS/UPMC
-*				(C) 1994,1997 ESO
-*				(C) 1995,1996 Sterrewacht Leiden
-*
-*	Author:			Emmanuel Bertin (IAP)
+*	Copyright:		(C) 1993-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -27,7 +23,7 @@
 *	along with AstrOmatic software.
 *	If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		09/10/2010
+*	Last modified:		10/10/2010
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -45,7 +41,7 @@ typedef struct
 	P_BOOLLIST, P_KEYLIST, P_STRINGLIST} type;
   void		*ptr;			/* Pointer to the keyword value */
   int		imin, imax;		/* Range for int's */
-  double	dmin, dmax;		/* Range for doubles */
+  double	dmin, dmax;		/* Range for floats */
   char		keylist[32][32];	/* List of keywords */
   int           nlistmin;		/* Minimum number of list members */
   int           nlistmax; 		/* Maximum number of list members */

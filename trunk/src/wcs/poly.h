@@ -7,9 +7,7 @@
 *
 *	This file part of:	AstrOmatic WCS library
 *
-*	Copyright:		(C) 1998-2010 IAP/CNRS/UPMC
-*
-*	Author:			Emmanuel Bertin (IAP)
+*	Copyright:		(C) 1998-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *

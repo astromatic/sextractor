@@ -7,9 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 2006-2010 IAP/CNRS/UPMC
-*
-*	Author:			Emmanuel Bertin (IAP)
+*	Copyright:		(C) 2006-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -24,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		13/10/2010
+*	Last modified:		19/10/2010
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -82,9 +80,8 @@ const int	flux_flag[PARAM_NPARAM] = {0,
 					1,0,0
 					};
 
+/* "Local" global variables for debugging purposes */
 int theniter, the_gal;
-/* "Local" global variables; it seems dirty but it simplifies a lot */
-/* interfacing to the LM routines */
 static picstruct	*the_field, *the_wfield;
 profitstruct		*theprofit;
 
@@ -329,8 +326,42 @@ the_gal++;
     profit->freeparam_flag[p] = 1;
   profit->nfreeparam = profit->nparam;
 
+/*
+char str[1024];
+sprintf(str, "obj_%04d.fits", the_gal);
+catstruct *bcat;
+float *bpix, *opix,*lmodpix,*objpix;
+bcat=read_cat("base.fits");
+QMALLOC(bpix, float, field->npix);
+QFSEEK(bcat->file, bcat->tab->bodypos, SEEK_SET, bcat->filename);
+read_body(bcat->tab, bpix, field->npix); 
+free_cat(&bcat,1);
+bcat=read_cat(str);
+QMALLOC(opix, float, profit->nobjpix);
+QFSEEK(bcat->file, bcat->tab->bodypos, SEEK_SET, bcat->filename);
+read_body(bcat->tab, opix, profit->nobjpix); 
+free_cat(&bcat,1);
+addfrombig(bpix, field->width, field->height,
+		profit->objpix, profit->objnaxisn[0],profit->objnaxisn[1],
+		profit->ix,profit->iy, -1.0);
+objpix = profit->objpix;
+lmodpix = opix;
+for (i=profit->nobjpix; i--;)
+*(objpix++) += *(lmodpix++);
+free(bpix);
+free(opix);
+*/
   profit->niter = profit_minimize(profit, PROFIT_MAXITER);
 /*
+profit_residuals(profit,field,wfield, 0.0, profit->paraminit, NULL);
+check=initcheck(str, CHECK_OTHER,1);
+check->width = profit->objnaxisn[0];
+check->height = profit->objnaxisn[1];
+reinitcheck(field,check);
+memcpy(check->pix, profit->lmodpix, profit->nobjpix*sizeof(float));
+reendcheck(field,check);
+endcheck(check);
+
   chi2 = profit->chi2;
   for (p=0; p<nparam; p++)
     param1[p] = profit->paraminit[p];
@@ -362,6 +393,7 @@ profit->niter = profit_minimize(profit, PROFIT_MAXITER);
     addcheck(check, profit->lmodpix, profit->objnaxisn[0],profit->objnaxisn[1],
 		profit->ix,profit->iy, 1.0);
     }
+
   if ((check = prefs.check[CHECK_SUBPROFILES]))
     {
     profit_residuals(profit,field,wfield, 0.0, profit->paraminit, NULL);
@@ -424,7 +456,7 @@ profit->niter = profit_minimize(profit, PROFIT_MAXITER);
     addcheck(check, profit->lmodpix, profit->objnaxisn[0],profit->objnaxisn[1],
 		profit->ix,profit->iy, -1.0);
     }
-
+ 
 /* Compute compressed residuals */
   profit_residuals(profit,field,wfield, 10.0, profit->paraminit,profit->resi);
 
@@ -519,6 +551,12 @@ profit->niter = profit_minimize(profit, PROFIT_MAXITER);
       obj2->poserrcyy_prof = (float)(emx2/temp);
       obj2->poserrcxy_prof = (float)(-2*emxy/temp);
       }
+    }
+
+  if (FLAG(obj2.fluxcor_prof))
+    {
+    profit_residuals(profit,field,wfield, 0.0, profit->paraminit, NULL);
+    profit_fluxcor(profit, obj, obj2);
     }
 
   if (FLAG(obj2.prof_mx2))
@@ -779,6 +817,118 @@ profit->niter = profit_minimize(profit, PROFIT_MAXITER);
 
 /* clean up. */
   fft_reset();
+
+  return;
+  }
+
+
+/****** profit_fluxcor ******************************************************
+PROTO	void profit_fluxcor(profitstruct *profit objstruct *obj,
+			obj2struct *obj2)
+PURPOSE	Integrate the flux within an ellipse and complete it with the wings of
+		the fitted model.
+INPUT		Profile-fitting structure,
+		pointer to the obj structure,
+		pointer to the obj2 structure.
+OUTPUT	Model-corrected flux.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	19/10/2010
+ ***/
+void	profit_fluxcor(profitstruct *profit, objstruct *obj, obj2struct *obj2)
+  {
+   double		mx,my, dx,dy, cx2,cy2,cxy, klim2, tvobj,sigtvobj,
+			tvm,tvmin,tvmout;
+   PIXTYPE		*objpix,*objpixt,*objweight,*objweightt, *lmodpix,
+			pix, weight,var;
+   int			x,y, x2,y2, pos, w,h, area, corrflag;
+
+  corrflag = (prefs.mask_type==MASK_CORRECT);
+  w = profit->objnaxisn[0];
+  h = profit->objnaxisn[1];
+  mx = (float)(w/2);
+  my = (float)(h/2);
+  if (FLAG(obj2.x_prof))
+    {
+    if (profit->paramlist[PARAM_X])
+      mx += *profit->paramlist[PARAM_X];
+    if (profit->paramlist[PARAM_Y])
+      my += *profit->paramlist[PARAM_Y];
+    }
+  if (obj2->kronfactor>0.0)
+    {
+    cx2 = obj->cxx;
+    cy2 = obj->cyy;
+    cxy = obj->cxy;
+    klim2 = 2.0;
+    }
+  else
+/*-- ...if not, use the circular aperture provided by the user */
+    {
+    cx2 = cy2 = 1.0;
+    cxy = 0.0;
+    klim2 = (prefs.autoaper[1]/2.0)*(prefs.autoaper[1]/2.0);
+    }
+
+  area = 0;
+  tvmin = tvmout = tvobj = sigtvobj = 0.0;
+  lmodpix = profit->lmodpix;
+  objpixt = objpix = profit->objpix;
+  objweightt = objweight = profit->objweight;
+  for (y=0; y<h; y++)
+    {
+    for (x=0; x<w; x++, objpixt++,objweightt++)
+      {
+      dx = x - mx;
+      dy = y - my;
+      if ((cx2*dx*dx + cy2*dy*dy + cxy*dx*dy) <= klim2)
+        {
+        area++;
+/*------ Here begin tests for pixel and/or weight overflows. Things are a */
+/*------ bit intricated to have it running as fast as possible in the most */
+/*------ common cases */
+        if ((weight=*objweightt)<=0.0)
+          {
+          if (corrflag
+		&& (x2=(int)(2*mx+0.49999-x))>=0 && x2<w
+		&& (y2=(int)(2*my+0.49999-y))>=0 && y2<h
+		&& (weight=objweight[pos = y2*w + x2])>0.0)
+            {
+            pix = objpix[pos];
+            var = 1.0/(weight*weight);
+            }
+          else
+            pix = var = 0.0;
+          }
+        else
+          {
+          pix = *objpixt;
+          var = 1.0/(weight*weight);
+          }
+        tvobj += pix;
+        sigtvobj += var;
+        tvmin += *lmodpix;
+        *(lmodpix++) = pix;
+        }
+      else
+        tvmout += *(lmodpix++);
+      }
+    }
+
+//  tv -= area*bkg;
+
+  tvm = tvmin + tvmout;
+  if (tvm != 0.0)
+    {
+    obj2->fluxcor_prof = tvobj+obj2->flux_prof*tvmout/tvm;
+    obj2->fluxcorerr_prof = sqrt(sigtvobj
+			+obj2->fluxerr_prof*obj2->fluxerr_prof*tvmout/tvm);
+    }
+  else
+    {
+    obj2->fluxcor_prof = tvobj;
+    obj2->fluxcorerr_prof = sqrt(sigtvobj);
+    }
 
   return;
   }

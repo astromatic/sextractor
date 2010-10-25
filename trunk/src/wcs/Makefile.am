@@ -7,10 +7,8 @@
 #
 #	This file part of:	AstrOmatic WCS library
 #
-#	Copyright:		(C) 2002-2010 IAP/CNRS/UPMC
-#
-#	Authors:		Emmanuel Bertin (this Makefile.am)
-#				Mark Calabretta (WCSlib library)
+#	Copyright:		(C) 2002-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+#				(C) 1995-1999 Mark Calabretta (original WCSlib)
 #
 #	Licenses:		GNU General Public License (this file)
 #				GNU Library General Public License (WCSlib)
@@ -27,7 +25,7 @@
 #	along with AstrOmatic software.
 #	If not, see <http://www.gnu.org/licenses/>.
 #
-#	Last modified:		1010/2010
+#	Last modified:		10/10/2010
 #
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

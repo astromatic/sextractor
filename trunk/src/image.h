@@ -7,11 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993,1998-2010 IAP/CNRS/UPMC
-*				(C) 1994,1997 ESO
-*				(C) 1995,1996 Sterrewacht Leiden
-*
-*	Author:			Emmanuel Bertin (IAP)
+*	Copyright:		(C) 1993-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -26,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/10/2010
+*	Last modified:		19/10/2010
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -48,6 +44,12 @@
 /*------------------------------- functions ---------------------------------*/
 extern void    	addimage(picstruct *field, float *psf,
 			int w,int h, int ix,int iy, float amplitude),
+		addfrombig(float *pixbig, int wbig,int hbig,
+			float *pixsmall, int wsmall, int hsmall,			
+			int ix,int iy, float amplitude),
+		addtobig(float *pixsmall, int wsmall,int hsmall,
+			float *pixbig, int wbig, int hbig,
+			int ix,int iy, float amplitude),
 		addimage_center(picstruct *field, float *psf,
 			int w,int h, float x, float y, float amplitude),
 		blankimage(picstruct *, PIXTYPE *, int,int, int,int, PIXTYPE),

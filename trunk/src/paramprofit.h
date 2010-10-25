@@ -7,9 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 2007-2010 IAP/CNRS/UPMC
-*
-*	Author:			Emmanuel Bertin (IAP)
+*	Copyright:		(C) 2007-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -24,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/10/2010
+*	Last modified:		18/10/2010
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -48,6 +46,7 @@
   {"NITER_MODEL", "Number of iterations for model-fitting",
 	&outobj2.prof_niter, H_INT, T_SHORT, "%3d", "",
 	"meta.number;stat.fit;src.morph", ""},
+
   {"FLUX_MODEL", "Flux from model-fitting",
 	&outobj2.flux_prof, H_FLOAT, T_FLOAT, "%12.7g", "count",
 	"phot.count;stat.fit.param", "ct"},
@@ -60,7 +59,20 @@
   {"MAGERR_MODEL", "RMS error on model-fitting magnitude",
 	&outobj2.magerr_prof, H_FLOAT, T_FLOAT, "%8.4f", "mag",
 	"stat.error;phot.mag;stat.fit.param", "mag"},
-
+/*
+  {"FLUXHYBRID_MODEL", "Hybrid flux from model-fitting",
+	&outobj2.fluxcor_prof, H_FLOAT, T_FLOAT, "%12.7g", "count",
+	"phot.count;stat.fit.param", "ct"},
+  {"FLUXHYBRIDERR_MODEL", "RMS error on hybrid flux",
+	&outobj2.fluxcorerr_prof, H_FLOAT, T_FLOAT, "%12.7g", "count",
+	"stat.error;phot.count;stat.fit.param", "ct"},
+  {"MAGHYBRID_MODEL", "Hybrid magnitude from model-fitting",
+	&outobj2.magcor_prof, H_FLOAT, T_FLOAT, "%8.4f", "mag",
+	"phot.mag;stat.fit.param", "mag"},
+  {"MAGHYBRIDERR_MODEL", "RMS error on hybrid magnitude",
+	&outobj2.magcorerr_prof, H_FLOAT, T_FLOAT, "%8.4f", "mag",
+	"stat.error;phot.mag;stat.fit.param", "mag"},
+*/
   {"FLUX_MAX_MODEL", "Peak model flux above background",
 	&outobj2.peak_prof, H_FLOAT, T_FLOAT, "%12.7g", "count",
 	"phot.flux.sb;stat.max;stat.fit.param", "ct"},

@@ -7,11 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993,1998-2010 IAP/CNRS/UPMC
-*				(C) 1994,1997 ESO
-*				(C) 1995,1996 Sterrewacht Leiden
-*
-*	Author:			Emmanuel Bertin (IAP)
+*	Copyright:		(C) 1993-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -26,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/10/2010
+*	Last modified:		19/10/2010
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -101,7 +97,7 @@ int	copyimage(picstruct *field, PIXTYPE *dest, int w,int h, int ix,int iy)
 /********************************* addimage **********************************/
 /*
 Add a PSF to a part of the image (with a multiplicative factor).
-Outside boundaries are taken into account.
+outside boundaries are taken into account.
 */
 void	addimage(picstruct *field, float *psf,
 			int w,int h, int ix,int iy, float amplitude)
@@ -666,4 +662,102 @@ int	vignet_resample(float *pix1, int w1, int h1,
   return RETURN_OK;
   }
 
+
+/********************************* addtobig *********************************/
+/*
+Add an image to another (with a multiplicative factor).
+outside boundaries are taken into account.
+*/
+void	addtobig(float *pixsmall, int wsmall,int hsmall,
+		float *pixbig, int wbig, int hbig,
+		int ix,int iy, float amplitude)
+  {
+   int		x,y, xmin,xmax,ymin,ymax, w2,dwbig,dwsmall;
+
+/* Don't go further if out of frame!! */
+  if (ix<0 || ix>=wbig || iy<0 || iy>=hbig)
+    return;
+
+/* Set the image boundaries */
+  w2 = wsmall;
+  ymin = iy-hsmall/2;
+  ymax = ymin + hsmall;
+  if (ymin<0)
+    {
+    pixsmall -= ymin*wsmall;
+    ymin = 0;
+    }
+  if (ymax>hbig)
+    ymax = hbig;
+
+  xmin = ix-wsmall/2;
+  xmax = xmin + wsmall;
+  if (xmax>wbig)
+    xmax = wbig;
+  if (xmin<0)
+    {
+    pixsmall -= xmin;
+    xmin = 0;
+    }
+
+/* Copy the right pixels to the destination */
+  w2 = xmax - xmin;
+  dwsmall = wsmall - w2;
+  dwbig = wbig - w2;
+  pixbig += ymin*wbig + xmin;
+  for (y=ymax-ymin; y--; pixsmall += dwsmall, pixbig += dwbig)
+    for (x=w2; x--;)
+      *(pixbig++) += amplitude**(pixsmall++);
+
+  return;
+  }
+
+/******************************** addfrombig *********************************/
+/*
+Copy a small part of an image.
+*/
+void	addfrombig(float *pixbig, int wbig,int hbig,
+			float *pixsmall, int wsmall, int hsmall,
+			int ix,int iy, float amplitude)
+  {
+   int		x,y, xmin,xmax,ymin,ymax, w2,dwbig,dwsmall;
+
+/* Don't go further if out of frame!! */
+  if (ix<0 || ix>=wbig || iy<0 || iy>=hbig)
+    return;
+
+/* Set the image boundaries */
+  ymin = iy-hsmall/2;
+  ymax = ymin + hsmall;
+  if (ymin<0)
+    {
+    pixsmall -= ymin*wsmall;
+    ymin = 0;
+    }
+  if (ymax>hbig)
+    ymax = hbig;
+
+  xmin = ix-wsmall/2;
+  xmax = xmin + wsmall;
+  if (xmax>wbig)
+    xmax = wbig;
+  if (xmin<0)
+    {
+    pixsmall -= xmin;
+    xmin = 0;
+    }
+
+/* Copy the right pixels to the destination */
+  w2 = xmax - xmin;
+  dwsmall = wsmall - w2;
+  dwbig = wbig - w2;
+  pixbig += ymin*wbig + xmin;
+  for (y=ymax-ymin; y--; pixsmall += dwsmall, pixbig += dwbig)
+    for (x=w2; x--;)
+      *(pixsmall++) += amplitude**(pixbig++);
+
+  return;
+  }
+
+ 
 

@@ -7,11 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993,1998-2010 IAP/CNRS/UPMC
-*				(C) 1994,1997 ESO
-*				(C) 1995,1996 Sterrewacht Leiden
-*
-*	Author:			Emmanuel Bertin (IAP)
+*	Copyright:		(C) 1993-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -26,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/10/2010
+*	Last modified:		19/10/2010
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -232,9 +228,15 @@ void	updateparamflags()
 			| FLAG(obj2.prof_concentration)
 			| FLAG(obj2.prof_class_star);
 
+  FLAG(obj2.fluxcorerr_prof) |= FLAG(obj2.magcorerr_prof);
+  FLAG(obj2.fluxcor_prof) |= FLAG(obj2.magcor_prof)
+			| FLAG(obj2.fluxcorerr_prof);
   FLAG(obj2.fluxerr_prof) |= FLAG(obj2.magerr_prof)
-			| FLAG(obj2.prof_concentrationerr);
-  FLAG(obj2.flux_prof) |= FLAG(obj2.mag_prof) | FLAG(obj2.fluxerr_prof);
+			| FLAG(obj2.prof_concentrationerr)
+			| FLAG(obj2.fluxcorerr_prof);
+  FLAG(obj2.flux_prof) |= FLAG(obj2.mag_prof)
+			| FLAG(obj2.fluxerr_prof)
+			| FLAG(obj2.fluxcor_prof);
   FLAG(obj2.prof_dirac_mag) |= FLAG(obj2.prof_dirac_magerr);
   FLAG(obj2.prof_spheroid_mag) |= FLAG(obj2.prof_spheroid_magerr);
   FLAG(obj2.prof_spheroid_reff) |= FLAG(obj2.prof_spheroid_refferr);
@@ -557,7 +559,8 @@ void	updateparamflags()
 			| FLAG(obj2.kronfactor)
 			| FLAG(obj2.flux_best)
 			| FLAG(obj2.flux_radius)
-			| FLAG(obj2.hl_radius);
+			| FLAG(obj2.hl_radius)
+			| FLAG(obj2.fluxcor_prof);
   FLAG(obj2.flux_petro) |= FLAG(obj2.mag_petro) | FLAG(obj2.magerr_petro)
 			| FLAG(obj2.fluxerr_petro)
 			| FLAG(obj2.petrofactor);
