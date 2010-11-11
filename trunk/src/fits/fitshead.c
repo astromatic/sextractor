@@ -23,7 +23,7 @@
 *	along with AstrOmatic software.
 *	If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		09/10/2010
+*	Last modified:		10/11/2010
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -670,8 +670,8 @@ PURPOSE	Return the size of a binary-table field from its ``TFORM''.
 INPUT	TFORM string (see the FITS documentation).
 OUTPUT	size in bytes, or RETURN_ERROR if the TFORM is unknown.
 NOTES	-.
-AUTHOR	E. Bertin (IAP & Leiden observatory)
-VERSION	28/10/2009
+AUTHOR	E. Bertin (IAP)
+VERSION	10/11/2010
  ***/
 int	tsizeof(char *str)
 
@@ -679,8 +679,8 @@ int	tsizeof(char *str)
    int	n;
    char	*str2;
 
-  str2 = str;
-  if (!(n = strtol(str, &str2, 10)))
+  n = strtol(str, &str2, 10);
+  if (str2==str)
     n = 1;
 
   switch ((int)*str2)

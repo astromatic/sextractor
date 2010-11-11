@@ -16,7 +16,7 @@
 #
 #	This file part of:	SExtractor
 #
-#	Copyright:		(C) 2005-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+#	Copyright:		(C) 2005-2010 Emmanuel Bertin - IAP/CNRS/UPMC
 #
 #	License:		GNU General Public License
 #
