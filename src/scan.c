@@ -617,10 +617,10 @@ void	scanimage(picstruct *field, picstruct *dfield, picstruct **pffield,
 /*-- Remove objects close to the ymin limit if ymin is ready to increase */
     if (cfield->stripy==cfield->stripysclim)
       {
-      cleanobj = cleanobjlist->obj+cleanobjlist->nobj-1;
       ontotal = 0;
-      for (i=cleanobjlist->nobj; i--; cleanobj--)
+      for (i=cleanobjlist->nobj; i--;)
         {
+        cleanobj = cleanobjlist->obj+i;
         if (cleanobj->ycmin <= cfield->ymin)
           {
 /*-------- Warn if there is a possibility for any aperture to be truncated */
@@ -647,7 +647,6 @@ void	scanimage(picstruct *field, picstruct *dfield, picstruct **pffield,
           ontotal = thecat.ntotal;
           endobject(field, dfield, wfield, cdwfield, i, cleanobjlist);
           subcleanobj(i);
-          cleanobj = cleanobjlist->obj+i;	/* realloc in subcleanobj() */
           }
         }
       }
@@ -750,7 +749,7 @@ void  sortit(picstruct *field, picstruct *dfield, picstruct *wfield,
 
   {
    picstruct		*cfield;
-   objliststruct	objlistout, *objlist2;
+   objliststruct	objlistd, *objlistout;
    static objstruct	obj;
    objstruct		*cobj;
    pliststruct		*pixel;
@@ -784,13 +783,13 @@ void  sortit(picstruct *field, picstruct *dfield, picstruct *wfield,
 
   if (!(obj.flag & OBJ_OVERFLOW) && (createsubmap(objlist, 0) == RETURN_OK))
     {
-    if (parcelout(objlist, &objlistout) == RETURN_OK)
-      objlist2 = &objlistout;
+    if (parcelout(objlist, &objlistd) == RETURN_OK)
+      objlistout = &objlistd;
     else
       {
-      objlist2 = objlist;
-      for (i=0; i<objlist2->nobj; i++)
-        objlist2->obj[i].flag |= OBJ_DOVERFLOW;
+      objlistout = objlist;
+      for (i=0; i<objlistout->nobj; i++)
+        objlistout->obj[i].flag |= OBJ_DOVERFLOW;
       sprintf(gstr, "%.0f,%.0f", obj.mx+1, obj.my+1);
       warning("Deblending overflow for detection at ", gstr);
       }
@@ -801,14 +800,14 @@ void  sortit(picstruct *field, picstruct *dfield, picstruct *wfield,
 
   for (i=0; i<objlist2->nobj; i++)
     {
-    preanalyse(i, objlist2, ANALYSE_FULL|ANALYSE_ROBUST);
-    if (prefs.ext_maxarea && objlist2->obj[i].fdnpix > prefs.ext_maxarea)
+    preanalyse(i, objlistout, ANALYSE_FULL|ANALYSE_ROBUST);
+    if (prefs.ext_maxarea && objlistout->obj[i].fdnpix > prefs.ext_maxarea)
       continue; 
     analyse(field, dfield, i, objlist2);
-    cobj = objlist2->obj + i;
+    cobj = objlistout->obj + i;
     if (prefs.blank_flag)
       {
-      if (createblank(objlist2,i) != RETURN_OK)
+      if (createblank(objlistout,i) != RETURN_OK)
         {
 /*------ Not enough mem. for the BLANK vignet: flag the object now */
         cobj->flag |= OBJ_OVERFLOW;
@@ -857,12 +856,12 @@ void  sortit(picstruct *field, picstruct *dfield, picstruct *wfield,
       }
 
 /* Only add the object if it is not swallowed by cleaning */
-    if (!prefs.clean_flag || clean(field, dfield, i, objlist2))
+    if (!prefs.clean_flag || clean(field, dfield, i, objlistout))
       addcleanobj(cobj);
     }
 
-  free(objlistout.plist);
-  free(objlistout.obj);
+  free(objlistd.plist);
+  free(objlistd.obj);
 
   return;
   }

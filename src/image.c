@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		19/10/2010
+*	Last modified:		30/11/2010
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -760,4 +760,53 @@ void	addfrombig(float *pixbig, int wbig,int hbig,
   }
 
  
+/****************************** deblankimage ********************************/
+/*
+Unblank some pixels in an image using pixels from another image.
+Outside boundaries are taken into account.
+*/
+void	deblankimage(PIXTYPE *pixblank, int wblank,int hblank,
+		PIXTYPE	*pixima, int wima, int hima,
+		int xmin,int ymin)
+  {
+   int		x,y, xmax,ymax, w2,dwima,dwblank;
+   PIXTYPE	*val;
+
+/* Don't go further if out of frame!! */
+  if (ix<0 || ix>=wima || iy<0 || iy>=hima)
+    return;
+
+/* Set the image boundaries */
+  w2 = wblank;
+  ymax = ymin + hblank;
+  if (ymin<0)
+    {
+    pixblank -= ymin*wblank;
+    ymin = 0;
+    }
+  if (ymax>hima)
+    ymax = hima;
+
+  xmax = xmin + wblank;
+  if (xmax>wima)
+    xmax = wima;
+  if (xmin<0)
+    {
+    pixblank -= xmin;
+    xmin = 0;
+    }
+
+/* Copy the right pixels to the destination */
+  w2 = xmax - xmin;
+  dwblank = wblank - w2;
+  dwima = wima - w2;
+  pixima += ymin*wima + xmin;
+  for (y=ymax-ymin; y--; pixblank += dwblank, pixima += dwima)
+    for (x=w2; x--; pixima++)
+      if ((val = *(pixblank++)) > -ima)
+        *pixima = val;
+
+  return;
+  }
+
 

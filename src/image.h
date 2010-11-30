@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		19/10/2010
+*	Last modified:		30/11/2010
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -45,7 +45,7 @@
 extern void    	addimage(picstruct *field, float *psf,
 			int w,int h, int ix,int iy, float amplitude),
 		addfrombig(float *pixbig, int wbig,int hbig,
-			float *pixsmall, int wsmall, int hsmall,			
+			float *pixsmall, int wsmall, int hsmall,	
 			int ix,int iy, float amplitude),
 		addtobig(float *pixsmall, int wsmall,int hsmall,
 			float *pixbig, int wbig, int hbig,
@@ -53,6 +53,8 @@ extern void    	addimage(picstruct *field, float *psf,
 		addimage_center(picstruct *field, float *psf,
 			int w,int h, float x, float y, float amplitude),
 		blankimage(picstruct *, PIXTYPE *, int,int, int,int, PIXTYPE),
+		deblankimage(PIXTYPE *pixblank, int wblank,int hblank,
+			PIXTYPE	*pixima, int wima, int hima, int xmin,int ymin),
 		pasteimage(picstruct *, PIXTYPE *, int ,int, int, int);
 
 extern int	copyimage(picstruct *, PIXTYPE *, int, int, int, int),

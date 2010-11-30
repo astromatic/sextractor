@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		19/10/2010
+*	Last modified:		30/11/2010
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -136,6 +136,10 @@ typedef struct
 /* II: "BLIND" parameters */
 typedef struct
   {
+  PIXTYPE	*image,*dimage;			/* Copy of local image data */
+  PIXTYPE	*weight, *dweight;		/* Copy of local weight data */
+  int		imsize[2];			/* Local image data size */
+  int		imstart[2];			/* Image data start coords */
 /* ---- photometric data */
   float		flux_iso;			/* ISO integrated flux */
   float		fluxerr_iso;			/* RMS error on ISO flux */
@@ -277,6 +281,7 @@ typedef struct
   float		*flux_radius;			/* f-light-radii */
   float		hl_radius;			/* Scalar half-light radius */
 /* ---- PSF-fitting */
+  int		psf_flag,dpsf_flag;		/* PSF computation flag */
   float		flux_psf;			/* Flux from PSF-fitting */
   float		fluxerr_psf;			/* RMS error on PSF flux */
   float		mag_psf;			/* Mag from PSF-fitting */
@@ -519,6 +524,11 @@ typedef struct
   PIXTYPE	thresh;			/* analysis threshold */
   }	objliststruct;
 
+typedef struct
+  {
+  int		nobj;			/* number of objects in list */
+  obj2struct	*obj2;			/* pointer to the object array */
+  }	obj2liststruct;
 
 /*----------------------------- image parameters ----------------------------*/
 typedef struct pic
