@@ -405,25 +405,28 @@ void  examineiso(picstruct *field, picstruct *dfield, objstruct *obj,
 Final processing of object data, just before saving it to the catalog.
 */
 void	endobject(picstruct *field, picstruct *dfield, picstruct *wfield,
-		picstruct *dwfield, int n, objliststruct *objlist)
+		picstruct *dwfield, int n,
+		objliststruct *objlist, obj2liststruct *obj2list, int n2)
   {
    objstruct		*obj;
+   obj2struct		*obj2;
    checkstruct		*check;
    double		rawpos[NAXIS],
 			analtime1;
    int			i,j, ix,iy,selecflag, newnumber,nsub;
 
-   if (prefs.psf_flag)
-     thepsf->build_flag = 0;	/* Reset PSF building flag */
-   if (prefs.dpsf_flag)
-     ppsf->build_flag = 0;	/* Reset PSF building flag */
+  obj = &objlist->obj[n];
+  obj2 = obj2list->obj2[n2];
 
   if (FLAG(obj2.analtime))
     analtime1 = counter_seconds();
   else
     analtime1 = 0.0;		/* To avoid gcc -Wall warnings */
 
-  obj = &objlist->obj[n];
+   if (prefs.psf_flag)
+     obj2->psf_flag = 0;	/* Reset PSF building flag */
+   if (prefs.dpsf_flag)
+     obj2->dpsf_flag = 0;	/* Reset PSF building flag */
 
 /* Current FITS extension */
   obj2->ext_number = thecat.currext;
@@ -438,76 +441,124 @@ void	endobject(picstruct *field, picstruct *dfield, picstruct *wfield,
 
 /* Association */
   if (prefs.assoc_flag)
+    {
     obj2->assoc_number = do_assoc(field, obj2->sposx, obj2->sposy);
 
-  if (prefs.assoc_flag && prefs.assocselec_type!=ASSOCSELEC_ALL)
-    selecflag = (prefs.assocselec_type==ASSOCSELEC_MATCHED)?
-		obj2->assoc_number:!obj2->assoc_number;
-  else
-    selecflag = 1;
-
-  if (selecflag)
-    {
-/*-- Paste back to the image the object's pixels if BLANKing is on */
-    if (prefs.blank_flag)
+    if (prefs.assocselec_type!=ASSOCSELEC_ALL
+    && ((prefs.assocselec_type==ASSOCSELEC_MATCHED)?
+		obj2->assoc_number:!obj2->assoc_number)
       {
-      pasteimage(field, obj->blank, obj->subw, obj->subh,
-		obj->subx, obj->suby);
-      if (obj->dblank)
-        pasteimage(dfield, obj->dblank, obj->subw, obj->subh,
-		obj->subx, obj->suby);
+/*---- Treatment of discarded detections */
+/*---- update segmentation map  and exit */
+      if ((check=prefs.check[CHECK_SEGMENTATION]))
+        {
+         ULONG	*pix;
+         ULONG	oldsnumber = obj->number;
+         int	dx,dx0,dy,dpix;
+
+        pix = (ULONG *)check->pix + check->width*obj->ymin + obj->xmin;
+        dx0 = obj->xmax-obj->xmin+1;
+        dpix = check->width-dx0;
+        for (dy=obj->ymax-obj->ymin+1; dy--; pix += dpix)
+          for (dx=dx0; dx--; pix++)
+            if (*pix==oldsnumber)
+              *pix = 0;
+        }
       }
+    return;
+    }
+
+/* Copy image data around current object */
+  obj2->imsize[0] = obj->xmax-obj->xmin+1+2*field->stripmargin;
+  obj2->imsize[1] = obj->ymax-obj->ymin+1+2*field->stripmargin;
+  obj2->imstart[0] = ix - obj->imasize[0]/2;
+  obj2->imstart[1] = iy - obj->imasize[1]/2;
+  QMALLOC(obj2->image, obj2->imsize[0]*obj2->imsize[1], PIXTYPE);
+  copyimage(field, obj2->image, obj2->imsize[0],obj2->imsize[1], ix,iy);
+  if (dfield)
+    {
+    QMALLOC(obj2->dimage, obj2->imsize[0]*obj2->imsize[1], PIXTYPE);
+    copyimage(dfield, obj2->dimage, obj2->imsize[0],obj2->imsize[1], ix,iy);
+    }
+  if (wfield)
+    {
+    QMALLOC(obj2->weight, obj2->imsize[0]*obj2->imsize[1], PIXTYPE);
+    copyimage(wfield, obj2->weight, obj2->imsize[0],obj2->imsize[1], ix,iy);
+    }
+  if (dwfield)
+    {
+    QMALLOC(obj2->dweight, obj2->imsize[0]*obj2->imsize[1], PIXTYPE);
+    copyimage(dwfield, obj2->dweight, obj2->imsize[0],obj2->imsize[1], ix,iy);
+    }
+/* if BLANKing is on, paste back the object pixels in the image*/
+  if (prefs.blank_flag)
+    {
+/*-- Compute coordinates of blank start in object image */
+    idx = obj->subx - obj2->imstart[0]
+    idy = obj->suby - obj2->imstart[1];
+    if (obj->blank)
+      {
+      deblankima(obj->blank, obj->subw, obj->subh,
+		obj2->image, obj2->imsize[0],obj2->imsize[1], idx,idy);
+      free(obj->blank);
+      }
+    if (obj->dblank)
+      {
+      deblankimage(obj->dblank, obj->subw, obj->subh,
+		obj2->dimage, obj2->imsize[0],obj2->imsize[1], idx,idy);
+      free(obj->dblank);
+      }
+    }
 
 /*------------------------- Error ellipse parameters ------------------------*/
-    if (FLAG(obj2.poserr_a))
-      {
-       double	pmx2,pmy2,temp,theta;
+  if (FLAG(obj2.poserr_a))
+    {
+     double	pmx2,pmy2,temp,theta;
 
-      if (fabs(temp=obj->poserr_mx2-obj->poserr_my2) > 0.0)
-        theta = atan2(2.0 * obj->poserr_mxy,temp) / 2.0;
-      else
-        theta = PI/4.0;
+    if (fabs(temp=obj->poserr_mx2-obj->poserr_my2) > 0.0)
+      theta = atan2(2.0 * obj->poserr_mxy,temp) / 2.0;
+    else
+      theta = PI/4.0;
 
-      temp = sqrt(0.25*temp*temp+obj->poserr_mxy*obj->poserr_mxy);
-      pmy2 = pmx2 = 0.5*(obj->poserr_mx2+obj->poserr_my2);
-      pmx2+=temp;
-      pmy2-=temp;
+    temp = sqrt(0.25*temp*temp+obj->poserr_mxy*obj->poserr_mxy);
+    pmy2 = pmx2 = 0.5*(obj->poserr_mx2+obj->poserr_my2);
+    pmx2+=temp;
+    pmy2-=temp;
 
-      obj2->poserr_a = (float)sqrt(pmx2);
-      obj2->poserr_b = (float)sqrt(pmy2);
-      obj2->poserr_theta = theta*180.0/PI;
-      }
+    obj2->poserr_a = (float)sqrt(pmx2);
+    obj2->poserr_b = (float)sqrt(pmy2);
+    obj2->poserr_theta = theta*180.0/PI;
+    }
 
-    if (FLAG(obj2.poserr_cxx))
-      {
-       double	xm2,ym2, xym, temp;
+  if (FLAG(obj2.poserr_cxx))
+    {
+     double	xm2,ym2, xym, temp;
 
-      xm2 = obj->poserr_mx2;
-      ym2 = obj->poserr_my2;
-      xym = obj->poserr_mxy;
-      obj2->poserr_cxx = (float)(ym2/(temp=xm2*ym2-xym*xym));
-      obj2->poserr_cyy = (float)(xm2/temp);
-      obj2->poserr_cxy = (float)(-2*xym/temp);
-      }
+    xm2 = obj->poserr_mx2;
+    ym2 = obj->poserr_my2;
+    xym = obj->poserr_mxy;
+    obj2->poserr_cxx = (float)(ym2/(temp=xm2*ym2-xym*xym));
+    obj2->poserr_cyy = (float)(xm2/temp);
+    obj2->poserr_cxy = (float)(-2*xym/temp);
+    }
 
-/* ---- Aspect ratio */
+/* Aspect ratio */
 
-    if (FLAG(obj2.elong))
-      obj2->elong = obj->a/obj->b;
+  if (FLAG(obj2.elong))
+    obj2->elong = obj->a/obj->b;
 
-    if (FLAG(obj2.ellip))
-      obj2->ellip = 1-obj->b/obj->a;
+  if (FLAG(obj2.ellip))
+    obj2->ellip = 1-obj->b/obj->a;
 
-    if (FLAG(obj2.polar))
-      obj2->polar = (obj->a*obj->a - obj->b*obj->b)
-		/ (obj->a*obj->a + obj->b*obj->b);
+  if (FLAG(obj2.polar))
+    obj2->polar = (obj->a*obj->a-obj->b*obj->b) / (obj->a*obj->a+obj->b*obj->b);
 
-/*-- Express positions in FOCAL or WORLD coordinates */
-    if (FLAG(obj2.mxf) || FLAG(obj2.mxw))
-      astrom_pos(field, obj);
+/* Express positions in FOCAL or WORLD coordinates */
+  if (FLAG(obj2.mxf) || FLAG(obj2.mxw))
+    astrom_pos(field, obj);
 
-    obj2->pixscale2 = 0.0;	/* To avoid gcc -Wall warnings */
-    if (FLAG(obj2.mx2w)
+  obj2->pixscale2 = 0.0;	/* To avoid gcc -Wall warnings */
+  if (FLAG(obj2.mx2w)
 	|| FLAG(obj2.win_mx2w)
 	|| FLAG(obj2.poserr_mx2w)
 	|| FLAG(obj2.winposerr_mx2w)
@@ -515,11 +566,11 @@ void	endobject(picstruct *field, picstruct *dfield, picstruct *wfield,
 	|| FLAG(obj2.poserrmx2w_prof)
 	|| FLAG(obj2.prof_flagw)
 	|| ((!prefs.pixel_scale) && FLAG(obj2.area_flagw)))
-      {
-      rawpos[0] = obj2->posx;
-      rawpos[1] = obj2->posy;
-      obj2->pixscale2 = wcs_jacobian(field->wcs, rawpos, obj2->jacob);
-      }
+    {
+    rawpos[0] = obj2->posx;
+    rawpos[1] = obj2->posy;
+    obj2->pixscale2 = wcs_jacobian(field->wcs, rawpos, obj2->jacob);
+    }
 
 /*-- Express shape parameters in the FOCAL or WORLD frame */
     if (FLAG(obj2.mx2w))
@@ -775,47 +826,9 @@ void	endobject(picstruct *field, picstruct *dfield, picstruct *wfield,
       }
     }
   else
-    {
-/*-- Treatment of discarded detections */
-/*-- update segmentation map */
-    if ((check=prefs.check[CHECK_SEGMENTATION]))
-      {
-       ULONG	*pix;
-       ULONG	oldsnumber = obj->number;
-       int	dx,dx0,dy,dpix;
-
-      pix = (ULONG *)check->pix + check->width*obj->ymin + obj->xmin;
-      dx0 = obj->xmax-obj->xmin+1;
-      dpix = check->width-dx0;
-      for (dy=obj->ymax-obj->ymin+1; dy--; pix += dpix)
-        for (dx=dx0; dx--; pix++)
-          if (*pix==oldsnumber)
-            *pix = 0;
-      }
-    }
 
 /* Remove again from the image the object's pixels if BLANKing is on ... */
 /*-- ... and free memory */
-
-  if (prefs.blank_flag && obj->blank)
-    {
-    if (selecflag)
-      {
-      if (prefs.somfit_flag && (check=prefs.check[CHECK_MAPSOM]))
-        blankcheck(check, obj->blank, obj->subw, obj->subh,
-		obj->subx, obj->suby, (PIXTYPE)*(obj2->vector_somfit));
-
-      }
-    blankimage(field, obj->blank, obj->subw, obj->subh,
-		obj->subx, obj->suby, -BIG);
-    free(obj->blank);
-    if (obj->dblank)
-      {
-      blankimage(dfield, obj->dblank, obj->subw, obj->subh,
-		obj->subx, obj->suby, -BIG);
-      free(obj->dblank);
-      }
-    }
 
   return;
   }
