@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		19/10/2010
+*	Last modified:		07/12/2010
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -39,14 +39,22 @@
 #include	"photom.h"
 #include	"plist.h"
 
-static  obj2struct	*obj2 = &outobj2;
-
-/***************************** computeaperflux********************************/
-/*
-Compute the total flux within a circular aperture.
-*/
-void  computeaperflux(picstruct *field, picstruct *wfield,
-	objstruct *obj, int i)
+/****** photom_aper **********************************************************
+PROTO	void photom_aper(picstruct *field, picstruct *wfield,
+		objstruct *obj, obj2struct *obj2, int aper)
+PURPOSE	Measure the flux within a circular aperture.
+INPUT	Pointer to the image structure,
+	pointer to the weight-map structure,
+	pointer to the object structure,
+	pointer to the obj2 structure,
+	aperture number.
+OUTPUT	-.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	07/12/2010
+ ***/
+void  photom_aper(picstruct *field, picstruct *wfield,
+	objstruct *obj, obj2struct *obj2, int aper)
 
   {
    float		r2, raper,raper2, rintlim,rintlim2,rextlim2,
@@ -54,20 +62,18 @@ void  computeaperflux(picstruct *field, picstruct *wfield,
 			offsetx,offsety,scalex,scaley,scale2, ngamma, locarea;
    double		tv, sigtv, area, pix, var, backnoise2, gain;
    int			x,y, x2,y2, xmin,xmax,ymin,ymax, sx,sy, w,h,
-			fymin,fymax, pflag,corrflag, gainflag;
+			pflag,corrflag, gainflag;
    long			pos;
-   PIXTYPE		*strip,*stript, *wstrip,*wstript,
+   PIXTYPE		*image,*imaget, *weight,*weightt,
 			wthresh = 0.0;
 
   if (wfield)
     wthresh = wfield->weight_thresh;
-  wstrip = wstript = NULL;
-  mx = obj->mx;
-  my = obj->my;
-  w = field->width;
-  h = field->stripheight;
-  fymin = field->ymin;
-  fymax = field->ymax;
+  weight = weightt = NULL;
+  mx = obj->mx - obj2->immin[0];
+  my = obj->my - obj2->immin[1];
+  w = obj2->imsize[0];
+  h = obj2->imsize[1];
   ngamma = field->ngamma;
   pflag = (prefs.detect_type==PHOTO)? 1:0;
   corrflag = (prefs.mask_type==MASK_CORRECT);
@@ -75,7 +81,7 @@ void  computeaperflux(picstruct *field, picstruct *wfield,
   var = backnoise2 = field->backsig*field->backsig;
   gain = field->gain;
 /* Integration radius */
-  raper = prefs.apert[i]/2.0;
+  raper = prefs.apert[aper]/2.0;
   raper2 = raper*raper;
 /* Internal radius of the oversampled annulus (<r-sqrt(2)/2) */
   rintlim = raper - 0.75;
@@ -103,26 +109,25 @@ void  computeaperflux(picstruct *field, picstruct *wfield,
     xmax = w;
     obj->flag |= OBJ_APERT_PB;
     }
-  if (ymin < fymin)
+  if (ymin < 0)
     {
-    ymin = fymin;
+    ymin = 0;
     obj->flag |= OBJ_APERT_PB;
     }
-  if (ymax > fymax)
+  if (ymax > h)
     {
-    ymax = fymax;
+    ymax = h;
     obj->flag |= OBJ_APERT_PB;
     }
 
-  strip = field->strip;
-  if (wfield)
-    wstrip = wfield->strip;
+  image = obj2->image;
+  weight = obj2->weight;
   for (y=ymin; y<ymax; y++)
     {
-    stript = strip + (pos = (y%h)*w + xmin);
+    imaget = image + (pos = y*w + xmin);
     if (wfield)
-      wstript = wstrip + pos;
-    for (x=xmin; x<xmax; x++, stript++, wstript++)
+      weightt = weight + pos;
+    for (x=xmin; x<xmax; x++, imaget++, weightt++)
       {
       dx = x - mx;
       dy = y - my;
@@ -148,16 +153,16 @@ void  computeaperflux(picstruct *field, picstruct *wfield,
 /*------ Here begin tests for pixel and/or weight overflows. Things are a */
 /*------ bit intricated to have it running as fast as possible in the most */
 /*------ common cases */
-        if ((pix=*stript)<=-BIG || (wfield && (var=*wstript)>=wthresh))
+        if ((pix=*imaget)<=-BIG || (wfield && (var=*weightt)>=wthresh))
           {
           if (corrflag
 		&& (x2=(int)(2*mx+0.49999-x))>=0 && x2<w
-		&& (y2=(int)(2*my+0.49999-y))>=fymin && y2<fymax
-		&& (pix=*(strip + (pos = (y2%h)*w + x2)))>-BIG)
+		&& (y2=(int)(2*my+0.49999-y))>=0 && y2<h
+		&& (pix=*(image + (pos = y2*w + x2)))>-BIG)
             {
             if (wfield)
               {
-              var = *(wstrip + pos);
+              var = *(weight + pos);
               if (var>=wthresh)
                 pix = var = 0.0;
               }
@@ -208,24 +213,35 @@ void  computeaperflux(picstruct *field, picstruct *wfield,
   }
 
 
-/***************************** computepetroflux ******************************/
-/*
-Compute the total flux within an automatic elliptical aperture.
-*/
-void  computepetroflux(picstruct *field, picstruct *dfield, picstruct *wfield,
-	picstruct *dwfield, objstruct *obj)
-
+/****** photom_petro *********************************************************
+PROTO	void photom_petro(picstruct *field, picstruct *dfield,
+		picstruct *wfield, picstruct *dwfield,
+		objstruct *obj, obj2struct *obj2)
+PURPOSE	Measure the flux within a Petrosian elliptical aperture
+INPUT	Pointer to the image structure,
+	pointer to the detection image structure,
+	pointer to the weight-map structure,
+	pointer to the detection weight-map structure,
+	pointer to the object structure,
+	pointer to the obj2 structure.
+OUTPUT	-.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	07/12/2010
+ ***/
+void  photom_petro(picstruct *field, picstruct *dfield,
+	picstruct *wfield, picstruct *dwfield,
+	objstruct *obj, obj2struct *obj2)
   {
    double		sigtv, tv, r1, v1,var,gain,backnoise2, muden,munum;
    float		bkg, ngamma, mx,my, dx,dy, cx2,cy2,cxy, r2,
 			klim, klim2,kmin,kmin2,kmax,kmax2,kstep,kmea,kmea2,
 			dxlim, dylim;
    int			area,areab, areaden, areanum,
-			x,y, x2,y2, xmin,xmax,ymin,ymax,
-			fymin,fymax, w,h,
+			x,y, x2,y2, xmin,xmax,ymin,ymax, w,h,
 			pflag, corrflag, gainflag, pos;
-   PIXTYPE		*strip,*stript, *dstrip,*dstript, *wstrip,*wstript,
-			*dwstrip,*dwstript,
+   PIXTYPE		*image,*imaget, *dimage,*dimaget, *weight,*weightt,
+			*dweight,*dweightt,
 			pix, wthresh=0.0, dwthresh=0.0;
 
 
@@ -234,18 +250,16 @@ void  computepetroflux(picstruct *field, picstruct *dfield, picstruct *wfield,
     dfield = field;
   if (dwfield)
     dwthresh = dwfield->weight_thresh;
-  wstrip = dwstrip = NULL;
+  weight = dweight = NULL;
   if (wfield)
     wthresh = wfield->weight_thresh;
-  wstript = dwstript = NULL;
-  w = field->width;
-  h = field->stripheight;
-  fymin = field->ymin;
-  fymax = field->ymax;
+  weightt = dweightt = NULL;
+  w = obj2->imsize[0];
+  h = obj2->imsize[1];
   ngamma = field->ngamma;
   bkg = (double)obj->dbkg;
-  mx = obj->mx;
-  my = obj->my;
+  mx = obj->mx - (float)obj2->immin[0];
+  my = obj->my - (float)obj2->immin[1];
   var = backnoise2 = field->backsig*field->backsig;
   gain = field->gain;
   pflag = (prefs.detect_type==PHOTO)? 1:0;
@@ -285,20 +299,20 @@ void  computepetroflux(picstruct *field, picstruct *dfield, picstruct *wfield,
     xmax = w;
     obj->flag |= OBJ_APERT_PB;
     }
-  if ((ymin = RINT(my-dylim)) < field->ymin)
+  if ((ymin = RINT(my-dylim)) < 0)
     {
-    ymin = field->ymin;
+    ymin = 0;
     obj->flag |= OBJ_APERT_PB;
     }
-  if ((ymax = RINT(my+dylim)+1) > field->ymax)
+  if ((ymax = RINT(my+dylim)+1) > h)
     {
-    ymax = field->ymax;
+    ymax = h;
     obj->flag |= OBJ_APERT_PB;
     }
 
-  dstrip = dfield->strip;
+  dimage = obj2->dimage;
   if (dwfield)
-    dwstrip = dwfield->strip;
+    dweight = obj2->dweight;
   klim = sqrt(klim2);
   kstep = klim/20.0;
   area = areab = areanum = areaden = 0;
@@ -315,16 +329,16 @@ void  computepetroflux(picstruct *field, picstruct *dfield, picstruct *wfield,
     munum = muden = 0.0;
     for (y=ymin; y<ymax; y++)
       {
-      dstript = dstrip + (pos = xmin + (y%h)*w);
+      dimaget = dimage + (pos = y*w + xmin);
       if (dwfield)
-        dwstript = dwstrip + pos;
-      for (x=xmin; x<xmax; x++, dstript++, dwstript++)
+        dweightt = dweight + pos;
+      for (x=xmin; x<xmax; x++, dimaget++, dweightt++)
       {
       dx = x - mx;
       dy = y - my;
       if ((r2=cx2*dx*dx + cy2*dy*dy + cxy*dx*dy) <= kmax2)
         {
-        if ((pix=*dstript)>-BIG && (!dwfield || (dwfield&&*dwstript<dwthresh)))
+        if ((pix=*dimaget)>-BIG && (!dwfield || (dwfield&&*dweightt<dwthresh)))
           {
           area++;
           if (r2>=kmin2)
@@ -403,28 +417,28 @@ void  computepetroflux(picstruct *field, picstruct *dfield, picstruct *wfield,
       xmax = w;
       obj->flag |= OBJ_APERT_PB;
       }
-    if ((ymin = RINT(my-dylim)) < field->ymin)
+    if ((ymin = RINT(my-dylim)) < 0)
       {
-      ymin = field->ymin;
+      ymin = 0;
       obj->flag |= OBJ_APERT_PB;
       }
-    if ((ymax = RINT(my+dylim)+1) > field->ymax)
+    if ((ymax = RINT(my+dylim)+1) > w)
       {
-      ymax = field->ymax;
+      ymax = w;
       obj->flag |= OBJ_APERT_PB;
       }
 
     area = areab = 0;
     tv = sigtv = 0.0;
-    strip = field->strip;
+    image = obj2->image;
     if (wfield)
-      wstrip = wfield->strip;
+      weight = obj2->weight;
     for (y=ymin; y<ymax; y++)
       {
-      stript = strip + (pos = xmin + (y%h)*w);
+      imaget = image + (pos = y*w + xmin);
       if (wfield)
-        wstript = wstrip + pos;
-      for (x=xmin; x<xmax; x++, stript++, wstript++)
+        weightt = weight + pos;
+      for (x=xmin; x<xmax; x++, imaget++, weightt++)
         {
         dx = x - mx;
         dy = y - my;
@@ -434,17 +448,17 @@ void  computepetroflux(picstruct *field, picstruct *dfield, picstruct *wfield,
 /*-------- Here begin tests for pixel and/or weight overflows. Things are a */
 /*-------- bit intricated to have it running as fast as possible in the most */
 /*-------- common cases */
-          if ((pix=*stript)<=-BIG || (wfield && (var=*wstript)>=wthresh))
+          if ((pix=*imaget)<=-BIG || (wfield && (var=*weightt)>=wthresh))
             {
             areab++;
             if (corrflag
 		&& (x2=(int)(2*mx+0.49999-x))>=0 && x2<w
-		&& (y2=(int)(2*my+0.49999-y))>=fymin && y2<fymax
-		&& (pix=*(strip + (pos = (y2%h)*w + x2)))>-BIG)
+		&& (y2=(int)(2*my+0.49999-y))>=0 && y2<h
+		&& (pix=*(image + (pos = y2*w + x2)))>-BIG)
               {
               if (wfield)
                 {
-                var = *(wstrip + pos);
+                var = *(weight + pos);
                 if (var>=wthresh)
                   pix = var = 0.0;
                 }
@@ -509,12 +523,25 @@ void  computepetroflux(picstruct *field, picstruct *dfield, picstruct *wfield,
   }
 
 
-/***************************** computeautoflux********************************/
-/*
-Compute the total flux within an automatic elliptical aperture.
-*/
-void  computeautoflux(picstruct *field, picstruct *dfield, picstruct *wfield,
-	picstruct *dwfield, objstruct *obj)
+/****** photom_auto*********************************************************
+PROTO	void photom_auto(picstruct *field, picstruct *dfield,
+		picstruct *wfield, picstruct *dwfield,
+		objstruct *obj, obj2struct *obj2)
+PURPOSE	Measure the flux within a Kron elliptical aperture
+INPUT	Pointer to the image structure,
+	pointer to the detection image structure,
+	pointer to the weight-map structure,
+	pointer to the detection weight-map structure,
+	pointer to the object structure,
+	pointer to the obj2 structure.
+OUTPUT	-.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	07/12/2010
+ ***/
+void  photom_auto(picstruct *field, picstruct *dfield,
+	picstruct *wfield, picstruct *dwfield,
+	objstruct *obj, obj2struct *obj2)
 
   {
    double		sigtv, tv, r1, v1,var,gain,backnoise2;
@@ -523,8 +550,8 @@ void  computeautoflux(picstruct *field, picstruct *dfield, picstruct *wfield,
    int			area,areab, x,y, x2,y2, xmin,xmax,ymin,ymax,
 			fymin,fymax, w,h,
 			pflag, corrflag, gainflag, pos;
-   PIXTYPE		*strip,*stript, *dstrip,*dstript, *wstrip,*wstript,
-			*dwstrip,*dwstript,
+   PIXTYPE		*image,*imaget, *dimage,*dimaget, *weight,*weightt,
+			*dweight,*dweightt,
 			pix, wthresh=0.0, dwthresh=0.0;
 
 
@@ -533,18 +560,16 @@ void  computeautoflux(picstruct *field, picstruct *dfield, picstruct *wfield,
     dfield = field;
   if (dwfield)
     dwthresh = dwfield->weight_thresh;
-  wstrip = dwstrip = NULL;
+  weight = dweight = NULL;
   if (wfield)
     wthresh = wfield->weight_thresh;
-  wstript = dwstript = NULL;
-  w = field->width;
-  h = field->stripheight;
-  fymin = field->ymin;
-  fymax = field->ymax;
+  weightt = dweightt = NULL;
+  w = obj2->imsize[0];
+  h = obj2->imsize[1];
   ngamma = field->ngamma;
   bkg = (double)obj->dbkg;
-  mx = obj->mx;
-  my = obj->my;
+  mx = obj->mx - (float)obj2->immin[0];
+  my = obj->my - (float)obj2->immin[1];
   var = backnoise2 = field->backsig*field->backsig;
   gain = field->gain;
   pflag = (prefs.detect_type==PHOTO)? 1:0;
@@ -584,34 +609,34 @@ void  computeautoflux(picstruct *field, picstruct *dfield, picstruct *wfield,
     xmax = w;
     obj->flag |= OBJ_APERT_PB;
     }
-  if ((ymin = RINT(my-dylim)) < field->ymin)
+  if ((ymin = RINT(my-dylim)) < 0)
     {
-    ymin = field->ymin;
+    ymin = 0;
     obj->flag |= OBJ_APERT_PB;
     }
-  if ((ymax = RINT(my+dylim)+1) > field->ymax)
+  if ((ymax = RINT(my+dylim)+1) > h)
     {
-    ymax = field->ymax;
+    ymax = h;
     obj->flag |= OBJ_APERT_PB;
     }
 
   v1 = r1 = 0.0;
   area = areab = 0;
-  dstrip = dfield->strip;
+  dimage = obj2->dimage;
   if (dwfield)
-    dwstrip = dwfield->strip;
+    dweight = obj2->dweight;
   for (y=ymin; y<ymax; y++)
     {
-    dstript = dstrip + (pos = xmin + (y%h)*w);
+    dimaget = dimage + (pos = y*w + xmin);
     if (dwfield)
-      dwstript = dwstrip + pos;
-    for (x=xmin; x<xmax; x++, dstript++, dwstript++)
+      dweightt = dweight + pos;
+    for (x=xmin; x<xmax; x++, dimaget++, dwweightt++)
       {
       dx = x - mx;
       dy = y - my;
       if ((r2=cx2*dx*dx + cy2*dy*dy + cxy*dx*dy) <= klim2)
         {
-        if ((pix=*dstript)>-BIG && (!dwfield || (dwfield&&*dwstript<dwthresh)))
+        if ((pix=*dimaget)>-BIG && (!dwfield || (dwfield&&*dwweightt<dwthresh)))
           {
           area++;
           r1 += sqrt(r2)*pix;
@@ -674,28 +699,28 @@ void  computeautoflux(picstruct *field, picstruct *dfield, picstruct *wfield,
       xmax = w;
       obj->flag |= OBJ_APERT_PB;
       }
-    if ((ymin = RINT(my-dylim)) < field->ymin)
+    if ((ymin = RINT(my-dylim)) < 0)
       {
-      ymin = field->ymin;
+      ymin = 0;
       obj->flag |= OBJ_APERT_PB;
       }
-    if ((ymax = RINT(my+dylim)+1) > field->ymax)
+    if ((ymax = RINT(my+dylim)+1) > h)
       {
-      ymax = field->ymax;
+      ymax = h;
       obj->flag |= OBJ_APERT_PB;
       }
 
     area = areab = 0;
     tv = sigtv = 0.0;
-    strip = field->strip;
+    image = obj2->image;
     if (wfield)
-      wstrip = wfield->strip;
+      weight = obj2->weight;
     for (y=ymin; y<ymax; y++)
       {
-      stript = strip + (pos = xmin + (y%h)*w);
+      imaget = image + (pos = xmin + (y%h)*w);
       if (wfield)
-        wstript = wstrip + pos;
-      for (x=xmin; x<xmax; x++, stript++, wstript++)
+        weightt = weight + pos;
+      for (x=xmin; x<xmax; x++, imaget++, weightt++)
         {
         dx = x - mx;
         dy = y - my;
@@ -705,17 +730,17 @@ void  computeautoflux(picstruct *field, picstruct *dfield, picstruct *wfield,
 /*-------- Here begin tests for pixel and/or weight overflows. Things are a */
 /*-------- bit intricated to have it running as fast as possible in the most */
 /*-------- common cases */
-          if ((pix=*stript)<=-BIG || (wfield && (var=*wstript)>=wthresh))
+          if ((pix=*imaget)<=-BIG || (wfield && (var=*weightt)>=wthresh))
             {
             areab++;
             if (corrflag
 		&& (x2=(int)(2*mx+0.49999-x))>=0 && x2<w
-		&& (y2=(int)(2*my+0.49999-y))>=fymin && y2<fymax
-		&& (pix=*(strip + (pos = (y2%h)*w + x2)))>-BIG)
+		&& (y2=(int)(2*my+0.49999-y))>=0 && y2<h
+		&& (pix=*(image + (pos = y2*w + x2)))>-BIG)
               {
               if (wfield)
                 {
-                var = *(wstrip + pos);
+                var = *(weight + pos);
                 if (var>=wthresh)
                   pix = var = 0.0;
                 }
@@ -765,6 +790,8 @@ void  computeautoflux(picstruct *field, picstruct *dfield, picstruct *wfield,
   obj2->flux_auto = tv;
   obj2->fluxerr_auto = sqrt(sigtv);
 
+/* MAG_AUTO is computed here for being ready for use in variable PSF models */
+
   if (FLAG(obj2.mag_auto))
     obj2->mag_auto = obj2->flux_auto>0.0?
 			 -2.5*log10(obj2->flux_auto) + prefs.mag_zeropoint
@@ -780,12 +807,18 @@ void  computeautoflux(picstruct *field, picstruct *dfield, picstruct *wfield,
   }
 
 
-/****************************** computeisocorflux ****************************/
-/*
-Compute the (corrected) isophotal flux.
-*/
-void  computeisocorflux(picstruct *field, objstruct *obj)
-
+/****** photom_isocor ********************************************************
+PROTO	void photom_isocor(picstruct *field, objstruct *obj, obj2struct *obj2)
+PURPOSE	Correct isophotal flux as in Maddox et al. 1990.
+INPUT	Pointer to the image structure,
+	pointer to the object structure,
+	pointer to the obj2 structure.
+OUTPUT	-.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	07/12/2010
+ ***/
+void  photom_isocor(picstruct *field, objstruct *obj, obj2struct *obj2)
   {
    double	ati;
 
@@ -814,12 +847,18 @@ void  computeisocorflux(picstruct *field, objstruct *obj)
   }
 
 
-/******************************* computemags *********************************/
-/*
-Compute magnitude parameters.
-*/
-void  computemags(picstruct *field, objstruct *obj)
-
+/****** photom_mags *********************************************************
+PROTO	void photom_mags(picstruct *field, objstruct *obj, obj2struct *obj2)
+PURPOSE	Compute magnitudes from flux measurements.
+INPUT	Pointer to the image structure,
+	pointer to the object structure,
+	pointer to the obj2 structure.
+OUTPUT	-.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	07/12/2010
+ ***/
+void	photom_mags(picstruct *field, objstruct *obj, obj2struct *obj2)
   {
 /* Mag. isophotal */
   if (FLAG(obj2.mag_iso))

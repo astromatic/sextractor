@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		14/10/2010
+*	Last modified:		07/12/2010
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -471,8 +471,10 @@ void	endobject(picstruct *field, picstruct *dfield, picstruct *wfield,
 /* Copy image data around current object */
   obj2->imsize[0] = obj->xmax-obj->xmin+1+2*field->stripmargin;
   obj2->imsize[1] = obj->ymax-obj->ymin+1+2*field->stripmargin;
-  obj2->imstart[0] = ix - obj->imasize[0]/2;
-  obj2->imstart[1] = iy - obj->imasize[1]/2;
+  obj2->immin[0] = ix - obj->imasize[0]/2;
+  obj2->immin[1] = iy - obj->imasize[1]/2;
+  obj2->immax[0] = obj2->immin[0] + obj->imasize[0];
+  obj2->immax[1] = obj2->immin[1] + obj->imasize[1];
   QMALLOC(obj2->image, obj2->imsize[0]*obj2->imsize[1], PIXTYPE);
   copyimage(field, obj2->image, obj2->imsize[0],obj2->imsize[1], ix,iy);
   if (dfield)
@@ -494,8 +496,8 @@ void	endobject(picstruct *field, picstruct *dfield, picstruct *wfield,
   if (prefs.blank_flag)
     {
 /*-- Compute coordinates of blank start in object image */
-    idx = obj->subx - obj2->imstart[0]
-    idy = obj->suby - obj2->imstart[1];
+    idx = obj->subx - obj2->immin[0]
+    idy = obj->suby - obj2->immin[1];
     if (obj->blank)
       {
       deblankima(obj->blank, obj->subw, obj->subh,
@@ -572,46 +574,46 @@ void	endobject(picstruct *field, picstruct *dfield, picstruct *wfield,
     obj2->pixscale2 = wcs_jacobian(field->wcs, rawpos, obj2->jacob);
     }
 
-/*-- Express shape parameters in the FOCAL or WORLD frame */
-    if (FLAG(obj2.mx2w))
-      astrom_shapeparam(field, obj);
-/*-- Express position error parameters in the FOCAL or WORLD frame */
-    if (FLAG(obj2.poserr_mx2w))
-      astrom_errparam(field, obj);
+/* Express shape parameters in the FOCAL or WORLD frame */
+  if (FLAG(obj2.mx2w))
+    astrom_shapeparam(field, obj);
+/* Express position error parameters in the FOCAL or WORLD frame */
+  if (FLAG(obj2.poserr_mx2w))
+    astrom_errparam(field, obj);
 
-    if (FLAG(obj2.npixw))
-      obj2->npixw = obj->npix * (prefs.pixel_scale?
+  if (FLAG(obj2.npixw))
+    obj2->npixw = obj->npix * (prefs.pixel_scale?
 	field->pixscale/3600.0*field->pixscale/3600.0 : obj2->pixscale2);
-    if (FLAG(obj2.fdnpixw))
-      obj2->fdnpixw = obj->fdnpix * (prefs.pixel_scale?
+  if (FLAG(obj2.fdnpixw))
+    obj2->fdnpixw = obj->fdnpix * (prefs.pixel_scale?
 	field->pixscale/3600.0*field->pixscale/3600.0 : obj2->pixscale2);
 
-    if (FLAG(obj2.fwhmw))
-      obj2->fwhmw = obj->fwhm * (prefs.pixel_scale?
+  if (FLAG(obj2.fwhmw))
+    obj2->fwhmw = obj->fwhm * (prefs.pixel_scale?
 	field->pixscale/3600.0 : sqrt(obj2->pixscale2));
 
 /*------------------------------- Photometry -------------------------------*/
 
-/*-- Convert the father of photom. error estimates from variance to RMS */
-    obj2->flux_iso = obj->flux;
-    obj2->fluxerr_iso = sqrt(obj->fluxerr);
+/* Convert the father of photom. error estimates from variance to RMS */
+  obj2->flux_iso = obj->flux;
+  obj2->fluxerr_iso = sqrt(obj->fluxerr);
 
-    if (FLAG(obj2.flux_isocor))
-      computeisocorflux(field, obj);
+  if (FLAG(obj2.flux_isocor))
+    photom_isocor(field, obj, obj2);
 
-    if (FLAG(obj2.flux_aper))
-      for (i=0; i<prefs.naper; i++)
-        computeaperflux(field, wfield, obj, i);
+  if (FLAG(obj2.flux_aper))
+    for (i=0; i<prefs.naper; i++)
+      photom_aper(field, wfield, obj, obj2, i);
 
-    if (FLAG(obj2.flux_auto))
-      computeautoflux(field, dfield, wfield, dwfield, obj);
+  if (FLAG(obj2.flux_auto))
+    photom_auto(field, dfield, wfield, dwfield, obj, obj2);
 
-    if (FLAG(obj2.flux_petro))
-      computepetroflux(field, dfield, wfield, dwfield, obj);
+  if (FLAG(obj2.flux_petro))
+    photom_petro(field, dfield, wfield, dwfield, obj, obj2);
 
 /*-- Growth curve */
     if (prefs.growth_flag)
-      makeavergrowth(field, wfield, obj);
+      growth_aver(field, wfield, obj, obj2);
 
 /*--------------------------- Windowed barycenter --------------------------*/
     if (FLAG(obj2.winpos_x))

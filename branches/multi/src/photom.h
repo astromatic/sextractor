@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/10/2010
+*	Last modified:		07/12/2010
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -45,10 +45,15 @@ One must have:	APER_OVERSAMP >= 1
 */
 
 /*------------------------------- functions ---------------------------------*/
-extern void	computeaperflux(picstruct *, picstruct *, objstruct *, int),
-		computeautoflux(picstruct *, picstruct *, picstruct *,
-			picstruct *, objstruct *),
-		computeisocorflux(picstruct *, objstruct *),
-		computemags(picstruct *, objstruct *),
-		computepetroflux(picstruct *, picstruct *, picstruct *,
-				picstruct *, objstruct *);
+extern void	photom_aper(picstruct *field, picstruct *wfield,
+			objstruct *obj, obj2struct *obj2, int aper),
+		photom_auto(picstruct *field, picstruct *dfield,
+			picstruct *wfield, picstruct *dwfield,
+			objstruct *obj, obj2struct *obj2),
+		photom_isocor(picstruct *field,
+			objstruct *obj, obj2struct *obj2),
+		photom_mags(picstruct *field, objstruct *obj, obj2struct *obj2),
+		photom_petro(picstruct *field, picstruct *dfield,
+			picstruct *wfield, picstruct *dwfield,
+			objstruct *obj, obj2struct *obj2);
+
