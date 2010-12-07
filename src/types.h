@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		30/11/2010
+*	Last modified:		07/12/2010
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -139,7 +139,8 @@ typedef struct
   PIXTYPE	*image,*dimage;			/* Copy of local image data */
   PIXTYPE	*weight, *dweight;		/* Copy of local weight data */
   int		imsize[2];			/* Local image data size */
-  int		imstart[2];			/* Image data start coords */
+  int		immin[2];			/* Image data min coords */
+  int		immax[2];			/* Image data max coords */
 /* ---- photometric data */
   float		flux_iso;			/* ISO integrated flux */
   float		fluxerr_iso;			/* RMS error on ISO flux */

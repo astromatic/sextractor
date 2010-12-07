@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/10/2010
+*	Last modified:		07/12/2010
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -40,49 +40,22 @@
 #include	"prefs.h"
 #include	"growth.h"
 
-/*------------------------------- variables ---------------------------------*/
 
-static double	*growth;
-static int	ngrowth;
-static obj2struct	*obj2 = &outobj2;
-
-/******************************** initgrowth *********************************/
-/*
-Allocate memory for growth curve stuff.
-*/
-void	initgrowth()
-  {
-
-  QMALLOC(growth, double, GROWTH_NSTEP);
-/* Quick (and dirty) fix to allow FLUX_RADIUS support */
-  if (FLAG(obj2.flux_radius) && !prefs.flux_radiussize)
-    {
-    QCALLOC(obj2->flux_radius, float, 1);
-    }
-
-  return;
-  }  
-
-
-/******************************** endgrowth **********************************/
-/*
-Free memory occupied by growth curve stuff.
-*/
-void	endgrowth()
-  {
-  free(growth);	
-  if (FLAG(obj2.flux_radius) && !prefs.flux_radiussize)
-    free(obj2->flux_radius);
-
-  return;
-  }
-
-
-/****************************** makeavergrowth *******************************/
-/*
-Build growth curve based on averages.
-*/
-void	makeavergrowth(picstruct *field, picstruct *wfield, objstruct *obj)
+/****** growth_aver *********************************************************
+PROTO	void growth_aver(picstruct *field, picstruct *wfield,
+		objstruct *obj, obj2struct *obj2)
+PURPOSE	Build an average growth curve.
+INPUT	Pointer to the image structure,
+	pointer to the weight-map structure,
+	pointer to the object structure,
+	pointer to the obj2 structure.
+OUTPUT	-.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	07/12/2010
+ ***/
+void  growth_aver(picstruct *field, picstruct *wfield,
+		objstruct *obj, obj2struct *obj2)
 
   {
    float		*fgrowth;
@@ -103,8 +76,8 @@ void	makeavergrowth(picstruct *field, picstruct *wfield, objstruct *obj)
   else
     wthresh = 0.0;		/* To avoid gcc -Wall warnings */
 
-/* Clear the growth-curve buffer */
-  memset(growth, 0, (size_t)(GROWTH_NSTEP*sizeof(double)));
+/* Allocate the growth-curve buffer */
+  QCALLOC(growth, double, GROWTH_NSTEP);
 
   mx = obj->mx;
   my = obj->my;
