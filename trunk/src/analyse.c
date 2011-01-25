@@ -438,7 +438,7 @@ void	endobject(picstruct *field, picstruct *dfield, picstruct *wfield,
 
 /* Association */
   if (prefs.assoc_flag)
-    obj2->assoc_number = do_assoc(field, obj2->sposx, obj2->sposy);
+    obj2->assoc_number = do_assoc(field, obj2->posx, obj2->posy);
 
   if (prefs.assoc_flag && prefs.assocselec_type!=ASSOCSELEC_ALL)
     selecflag = (prefs.assocselec_type==ASSOCSELEC_MATCHED)?

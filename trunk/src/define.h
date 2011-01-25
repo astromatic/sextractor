@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/10/2010
+*	Last modified:		09/01/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -38,7 +38,7 @@
 #define		BANNER		"SExtractor"
 #define		MYVERSION	VERSION
 #define		EXECUTABLE	"sex"
-#define         COPYRIGHT       "2010 IAP/CNRS/UPMC"
+#define         COPYRIGHT       "2011 IAP/CNRS/UPMC"
 #define		DISCLAIMER	BANNER " comes with ABSOLUTELY NO WARRANTY\n" \
 		"You may redistribute copies of " BANNER "\n" \
 		"under the terms of the GNU General Public License."
@@ -139,7 +139,8 @@
 
 /*------------------------------- Other Macros -----------------------------*/
 
-#define	DEXP(x)	exp(2.30258509299*(x))	/* 10^x */
+#define	DEXP(x)		exp(2.30258509299*(x))		/* 10^x */
+#define	DEXPF(x)	expf(2.30258509299f*(x))	/* 10^x */
 
 #define QFREAD(ptr, size, afile, fname) \
 		if (fread(ptr, (size_t)(size), (size_t)1, afile)!=1) \

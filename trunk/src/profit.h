@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		19/10/2010
+*	Last modified:		24/01/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -45,11 +45,11 @@
 #define	PARAM_ALLPARAMS	(-1)	/* All parameters */
 #define	PROFIT_MAXITER	1000	/* Max. nb of iterations in profile fitting */
 #define	PROFIT_MAXPROF	8	/* Max. nb of profile components */
-#define	PROFIT_OVERSAMP	5	/* Max. profile oversamp. factor on each axis */
 #define	PROFIT_HIDEFRES	201	/* Hi. def. model resol. (must be <MAXMODSIZE)*/
 #define	PROFIT_REFFFAC	3.0	/* Factor in r_eff for measurement radius*/
 #define	PROFIT_MAXR2MAX	1e6	/* Maximum r2_max for truncating profiles */
 #define	PROFIT_DYNPARAM	10.0	/* Dynamic compression param. in sigma units */
+#define	PROFIT_SMOOTHR	4.0	/* Profile smoothing radius (pixels) */
 #define	PROFIT_MAXMODSIZE  512	/* Maximum size allowed for the model raster */
 #define	PROFIT_MAXOBJSIZE  512	/* Maximum size allowed for the object raster */
 #define	PROFIT_BARXFADE	0.1	/* Fract. of bar length crossfaded with arms */
@@ -147,7 +147,6 @@ typedef struct
   float		pixstep;	/* Model/PSF sampling step */
   float		fluxfac;	/* Model flux scaling factor */
   float		subsamp;	/* Subsampling factor */
-  int		oversamp;	/* Oversampling factor */
   float		*psfdft;	/* Compressed Fourier Transform of the PSF */
   float		*psfpix;	/* Full res. pixmap of the PSF */
   float		*modpix;	/* Full res. pixmap of the complete model */

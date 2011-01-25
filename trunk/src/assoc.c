@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1997-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1997-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/10/2010
+*	Last modified:		12/01/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -39,6 +39,7 @@
 #include	"globals.h"
 #include	"prefs.h"
 #include	"assoc.h"
+#include	"fitswcs.h"
 
 /********************************* comp_assoc ********************************/
 /*
@@ -46,10 +47,10 @@ Comparison function for sort_assoc().
 */
 int	comp_assoc(const void *i1, const void *i2)
   {
-   float	*f1,*f2;
+   double	*f1,*f2;
 
-  f1 = (float *)i1 + 1;
-  f2 = (float *)i2 + 1;
+  f1 = (double *)i1 + 1;
+  f2 = (double *)i2 + 1;
   if (*f1<*f2)
     return -1;
   else return (*f1==*f2)?0:1;
@@ -64,13 +65,13 @@ void  sort_assoc(picstruct *field, assocstruct *assoc)
 
   {
    int		comp_assoc(const void *i1, const void *i2);
-   float	*list, rad;
+   double	*list, rad;
    int		i,j, step,nobj, *hash;
 
   step = assoc->ncol;
   nobj = assoc->nobj;
   list = assoc->list;
-  qsort(assoc->list, assoc->nobj, step*sizeof(float), comp_assoc);
+  qsort(assoc->list, assoc->nobj, step*sizeof(double), comp_assoc);
 /* Build the hash table that contains the first object in the sorted list */
 /* which may be in reach from the current scanline */
   QMALLOC(assoc->hash, int, field->height);
@@ -94,13 +95,13 @@ void  sort_assoc(picstruct *field, assocstruct *assoc)
 Read an assoc-list, and returns a pointer to the new assoc struct (or NULL if
 no list was found).
 */
-assocstruct  *load_assoc(char *filename)
+assocstruct  *load_assoc(char *filename, wcsstruct *wcs)
 
   {
    assocstruct	*assoc;
    FILE		*file;
-   float	*list, val;
-   char		str[MAXCHAR], str2[MAXCHAR], *sstr;
+   double	*list, val;
+   char		str[MAXCHARL], str2[MAXCHARL], *sstr;
    int		*data,
 		i,ispoon,j,k,l, ncol, ndata, nlist, size,spoonsize,
 		xindex,yindex,mindex;
@@ -114,7 +115,7 @@ assocstruct  *load_assoc(char *filename)
   ispoon = ncol = ndata = nlist = size = spoonsize = xindex = yindex
 	= mindex = 0;
   NFPRINTF(OUTPUT, "Reading ASSOC input-list...");
-  for (i=0; fgets(str, MAXCHAR, file);)
+  for (i=0; fgets(str, MAXCHARL, file);)
     {
 /*-- Examine current input line (discard empty and comment lines) */
     if (!*str || strchr("#\t\n",*str))
@@ -171,14 +172,14 @@ assocstruct  *load_assoc(char *filename)
 
 /*---- Allocate memory for the ASSOC struct and the filtered list */
       QMALLOC(assoc, assocstruct, 1);
-      ispoon = ASSOC_BUFINC/(nlist*sizeof(float));
+      ispoon = ASSOC_BUFINC/(nlist*sizeof(double));
       spoonsize = ispoon*nlist;
-      QMALLOC(assoc->list, float, size = spoonsize);
+      QMALLOC(assoc->list, double, size = spoonsize);
       list = assoc->list;
       }
     else  if (!(i%ispoon))
       {
-      QREALLOC(assoc->list, float, size += spoonsize);
+      QREALLOC(assoc->list, double, size += spoonsize);
       list = assoc->list + i*nlist;
       }
 
@@ -192,7 +193,7 @@ assocstruct  *load_assoc(char *filename)
     *(list+2) = 0.0;
     for (sstr = str, j=0; j<ncol; j++)
       {
-      val = (float)strtod(sstr, &sstr);
+      val = (double)strtod(sstr, &sstr);
       if (j==xindex)
         *list = val;
       else if (j==yindex)
@@ -202,12 +203,14 @@ assocstruct  *load_assoc(char *filename)
       if ((k=data[j]))
         *(list+2+k) = val;
       }
+    if (wcs)
+      wcs_to_raw(wcs, list, list);
     list += nlist;
     }
 
   fclose(file);
   free(data);
-  QREALLOC(assoc->list, float, i*nlist);
+  QREALLOC(assoc->list, double, i*nlist);
   assoc->nobj = i;
   assoc->radius = prefs.assoc_radius;
   assoc->ndata = ndata;
@@ -227,7 +230,9 @@ void	init_assoc(picstruct *field)
    assocstruct	*assoc;
 
 /* Load the assoc-list */
-  if (!(assoc = field->assoc = load_assoc(prefs.assoc_name)))
+  if (!(assoc = field->assoc = load_assoc(prefs.assoc_name,
+				prefs.assoccoord_type==ASSOCCOORD_WORLD?
+					field->wcs : NULL)))
     error(EXIT_FAILURE, "*Error*: Assoc-list file not found: ",
 	prefs.assoc_name);
 
@@ -264,17 +269,16 @@ void	end_assoc(picstruct *field)
 /*
 Perform the association task for a source and return the number of IDs.
 */
-int	do_assoc(picstruct *field, float x, float y)
+int	do_assoc(picstruct *field, double x, double y)
   {
    assocstruct	*assoc;
-   double	aver;
-   float	dx,dy, dist, rad, rad2, comp, wparam,
+   double	aver, dx,dy, dist, rad, rad2, comp, wparam,
 		*list, *input, *data;
    int		h, step, i, flag, iy, nobj;
 
   assoc = field->assoc;
 /* Need to initialize the array */
-  memset(assoc->data, 0, prefs.assoc_size*sizeof(float));
+  memset(assoc->data, 0, prefs.assoc_size*sizeof(double));
   aver = 0.0;
 
   if (prefs.assoc_type == ASSOC_MIN || prefs.assoc_type == ASSOC_NEAREST)
@@ -304,7 +308,7 @@ int	do_assoc(picstruct *field, float x, float y)
       input = list+3;
       if (prefs.assoc_type == ASSOC_FIRST)
         {
-        memcpy(assoc->data, input, assoc->ndata*sizeof(float));
+        memcpy(assoc->data, input, assoc->ndata*sizeof(double));
         return 1;
         }
       wparam = *(list+2);
@@ -314,7 +318,7 @@ int	do_assoc(picstruct *field, float x, float y)
         case ASSOC_NEAREST:
           if (dist<comp)
             {
-            memcpy(data, input, assoc->ndata*sizeof(float));
+            memcpy(data, input, assoc->ndata*sizeof(double));
             comp = dist;
             }
           break;
@@ -340,14 +344,14 @@ int	do_assoc(picstruct *field, float x, float y)
         case ASSOC_MIN:
           if (wparam<comp)
             {
-            memcpy(data, input, assoc->ndata*sizeof(float));
+            memcpy(data, input, assoc->ndata*sizeof(double));
             comp = wparam;
             }
           break;
         case ASSOC_MAX:
           if (wparam>comp)
             {
-            memcpy(data, input, assoc->ndata*sizeof(float));
+            memcpy(data, input, assoc->ndata*sizeof(double));
             comp = wparam;
             }
           break;

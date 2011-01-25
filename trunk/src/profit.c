@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		19/10/2010
+*	Last modified:		24/01/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -160,7 +160,6 @@ profitstruct	*profit_init(psfstruct *psf)
   QMALLOC16(profit->resi, float, PROFIT_MAXOBJSIZE*PROFIT_MAXOBJSIZE);
   QMALLOC16(profit->covar, float, profit->nparam*profit->nparam);
   profit->nprof = nprof;
-  profit->oversamp = PROFIT_OVERSAMP;
   profit->fluxfac = 1.0;	/* Default */
 
   return profit;
@@ -1140,7 +1139,7 @@ INPUT	Pointer to the profit structure involved in the fit,
 OUTPUT	Number of iterations used.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	11/10/2010
+VERSION	24/01/2010
  ***/
 int	profit_minimize(profitstruct *profit, int niter)
   {
@@ -1152,11 +1151,11 @@ int	profit_minimize(profitstruct *profit, int niter)
   memset(dcovar, 0, profit->nparam*profit->nparam*sizeof(double));
 
 /* Perform fit */
-  lm_opts[0] = 1.0e-2;
-  lm_opts[1] = 1.0e-12;
-  lm_opts[2] = 1.0e-12;
-  lm_opts[3] = 1.0e-12;
-  lm_opts[4] = 1.0e-4;
+  lm_opts[0] = 1.0e-3;		/* Initial mu */
+  lm_opts[1] = 1.0e-8;		/* ||J^T e||_inf stopping factor */
+  lm_opts[2] = 1.0e-8;		/* |Dp||_2 stopping factor */
+  lm_opts[3] = 1.0e-8;		/* ||e||_2 stopping factor */
+  lm_opts[4] = 1.0e-4;		/* Jacobian step */
 
   profit_boundtounbound(profit, profit->paraminit, dparam, PARAM_ALLPARAMS);
 
@@ -1231,7 +1230,7 @@ INPUT	Pointer to the vector of parameters,
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	07/10/2010
+VERSION	24/01/2011
  ***/
 void	profit_evaluate(double *dpar, double *fvec, int m, int n, void *adata)
   {
@@ -1266,7 +1265,7 @@ void	profit_evaluate(double *dpar, double *fvec, int m, int n, void *adata)
     if (f>0 && q==1)
       jflag = 1;
     }
-
+jflag = 0;	/* Temporarily deactivated (until problems are fixed) */
   if (jflag && !(profit->nprof==1 && profit->prof[0]->code == PROF_DIRAC))
     {
     prof = profit->prof;
@@ -2454,7 +2453,7 @@ INPUT	Pointer to the profile-fitting structure,
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	08/07/2010
+VERSION	24/01/2011
  ***/
 void	 profit_surface(profitstruct *profit, obj2struct *obj2)
   {
@@ -2466,7 +2465,6 @@ void	 profit_surface(profitstruct *profit, obj2struct *obj2)
    int		i,p, imax, npix, neff;
 
 /* Allocate "high-definition" raster only to make measurements */
-  hdprofit.oversamp = PROFIT_OVERSAMP;
   hdprofit.modnaxisn[0] = hdprofit.modnaxisn[1] = PROFIT_HIDEFRES;
   npix = hdprofit.nmodpix = hdprofit.modnaxisn[0]*hdprofit.modnaxisn[1];
 /* Find best image size factor from fitting results */
@@ -2603,7 +2601,6 @@ endcheck(check);
     imax = npix-1 - imax;
 /*-- Recompute hi-def model raster without oversampling */
 /*-- and with the same flux correction factor */
-    hdprofit.oversamp = 0;
     memset(hdprofit.modpix,0, npix*sizeof(float));
     for (p=0; p<profit->nprof; p++)
       prof_add(&hdprofit, profit->prof[p], 1);
@@ -3323,11 +3320,12 @@ INPUT	Profile-fitting structure,
 OUTPUT	Total (asymptotic) flux contribution.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	08/10/2010
+VERSION	24/01/2011
  ***/
 float	prof_add(profitstruct *profit, profstruct *prof, int extfluxfac_flag)
   {
-   double	xscale, yscale, saspect, ctheta,stheta, flux, scaling, bn, n;
+   double	xscale, yscale, saspect, ctheta,stheta, flux, scaling, bn, n,
+		dx1cout,dx2cout, ddx1[36],ddx2[36];
    float	posin[PROFIT_MAXEXTRA], posout[2], dnaxisn[2],
 		*pixin, *pixin2, *pixout,
 		fluxfac, amp,cd11,cd12,cd21,cd22, dcd11,dcd21, dx1,dx2,
@@ -3338,9 +3336,13 @@ float	prof_add(profitstruct *profit, profstruct *prof, int extfluxfac_flag)
 		width, invwidth2,
 		r,r2,rmin, r2minxin,r2minxout, rmax, r2max,
 		r2max1, r2max2, r2min, invr2xdif,
-		val, theta, thresh, ra,rb,rao, num,num2,den;
-   int		npix, noversamp, threshflag,
-		d,e,i, ix1,ix2, idx1,idx2, nx2, npix2;
+		val, theta, thresh, ra,rb,rao, num,num2,den, ang,angstep,
+		invn, smoothfac, dr,deltar, krpinvn,dkrpinvn, rs,rs2,
+		a11,a12,a21,a22, invdet, dca,dsa, a0,a2,a3, p1,p2,
+		krspinvn, ekrspinvn, selem;
+   int		npix, threshflag,
+		a,d,e,i, ix1,ix2, ix1max,ix2max, ir,nang, idx1,idx2, nx2,
+		npix2;
 
   npix = profit->nmodpix;
 
@@ -3389,189 +3391,90 @@ float	prof_add(profitstruct *profit, profstruct *prof, int extfluxfac_flag)
     num2 = x2max*x2max*num;
     r2max2 = num2<PROFIT_MAXR2MAX*den? num2 / den : PROFIT_MAXR2MAX;
     r2max = (r2max1 < r2max2? r2max1 : r2max2);
+    rmax = sqrtf(r2max);
     }
 
   switch(prof->code)
     {
     case PROF_DIRAC:
-      memset(prof->pix, 0, npix*sizeof(float));
       prof->pix[profit->modnaxisn[0]/2
 		+ (profit->modnaxisn[1]/2)*profit->modnaxisn[0]] = 1.0;
       prof->lostfluxfrac = 0.0;
       threshflag = 0;
       break;
     case PROF_SERSIC:
-      n = fabs(*prof->extra[0]);
-      bn = 2.0*n - 1.0/3.0 + 4.0/(405.0*n) + 46.0/(25515.0*n*n)
-		+ 131.0/(1148175*n*n*n);	/* Ciotti & Bertin 1999 */
-      k = -bn;
-      hinvn = 0.5/n;
-/*---- The consequence of sampling on flux is compensated by PSF normalisation*/
-      x10 = -x1cout - dx1;
-      x2 = -x2cout - dx2;
-      pixin = prof->pix;
-      for (ix2=nx2; ix2--; x2+=1.0)
-        {
-        x1 = x10;
-        for (ix1=profit->modnaxisn[0]; ix1--; x1+=1.0)
-          {
-          x1in = cd12*x2 + cd11*x1;
-          x2in = cd22*x2 + cd21*x1;
-          ra = x1in*x1in+x2in*x2in;
-          if (ra>r2max)
-            {
-            *(pixin++) = 0.0;
-            continue;
-            }
-          val = expf(k*expf(logf(ra)*hinvn));
-          noversamp  = (int)(val*profit->oversamp+0.1);
-          if (noversamp < 2)
-            *(pixin++) = val;
-          else
-            {
-            ostep = 1.0/noversamp;
-            dcd11 = cd11*ostep;
-            dcd21 = cd21*ostep;
-            odx = 0.5*(ostep-1.0);
-            x1t = x1+odx;
-            val = 0.0;
-            for (idx2=noversamp; idx2--; odx+=ostep)
-              {
-              x1in = cd12*(x2+odx) + cd11*x1t;
-              x2in = cd22*(x2+odx) + cd21*x1t;
-              for (idx1=noversamp; idx1--;)
-                {
-                rao = x1in*x1in+x2in*x2in;
-                val += expf(k*PROFIT_POWF(rao,hinvn));
-                x1in += dcd11;
-                x2in += dcd21;
-                }
-              }
-            *(pixin++) = val*ostep*ostep;
-            }
-          }
-        }
-/*---- Copy the symmetric part */
-      if ((npix2=(profit->modnaxisn[1]-nx2)*profit->modnaxisn[0]) > 0)
-        {
-        pixin2 = pixin - profit->modnaxisn[0] - 1;
-        if (!(profit->modnaxisn[0]&1))
-          {
-          *(pixin++) = 0.0;
-          npix2--;
-          }
-        for (i=npix2; i--;)
-          *(pixin++) = *(pixin2--);
-        }
-      prof->lostfluxfrac = 1.0 - prof_gammainc(2.0*n, bn*pow(r2max, hinvn));
-      threshflag = 0;
-      break;
     case PROF_DEVAUCOULEURS:
-/*---- The consequence of sampling on flux is compensated by PSF normalisation*/
-      x10 = -x1cout - dx1;
-      x2 = -x2cout - dx2;
-      pixin = prof->pix;
-      for (ix2=nx2; ix2--; x2+=1.0)
-        {
-        x1 = x10;
-        for (ix1=profit->modnaxisn[0]; ix1--; x1+=1.0)
-          {
-          x1in = cd12*x2 + cd11*x1;
-          x2in = cd22*x2 + cd21*x1;
-          ra = x1in*x1in+x2in*x2in;
-          if (ra>r2max)
-            {
-            *(pixin++) = 0.0;
-            continue;
-            }
-          val = expf(-7.66924944f*PROFIT_POWF(ra,0.125));
-          noversamp  = (int)(sqrt(val)*profit->oversamp+0.1);
-          if (noversamp < 2)
-            *(pixin++) = val;
-          else
-            {
-            ostep = 1.0/noversamp;
-            dcd11 = cd11*ostep;
-            dcd21 = cd21*ostep;
-            odx = 0.5*(ostep-1.0);
-            x1t = x1+odx;
-            val = 0.0;
-            for (idx2=noversamp; idx2--; odx+=ostep)
-              {
-              x1in = cd12*(x2+odx) + cd11*x1t;
-              x2in = cd22*(x2+odx) + cd21*x1t;
-              for (idx1=noversamp; idx1--;)
-                {
-                ra = x1in*x1in+x2in*x2in;
-                val += expf(-7.66924944f*PROFIT_POWF(ra,0.125));
-                x1in += dcd11;
-                x2in += dcd21;
-                }
-              }
-            *(pixin++) = val*ostep*ostep;
-            }
-          }
-        }
-/*---- Copy the symmetric part */
-      if ((npix2=(profit->modnaxisn[1]-nx2)*profit->modnaxisn[0]) > 0)
-        {
-        pixin2 = pixin - profit->modnaxisn[0] - 1;
-        if (!(profit->modnaxisn[0]&1))
-          {
-          *(pixin++) = 0.0;
-          npix2--;
-          }
-        for (i=npix2; i--;)
-          *(pixin++) = *(pixin2--);
-        }
-      prof->lostfluxfrac = 1.0-prof_gammainc(8.0, 7.66924944*pow(r2max, 0.125));
-      threshflag = 0;
-      break;
     case PROF_EXPONENTIAL:
+/*---- Compute sharp/smooth transition radius */
+      rs = PROFIT_SMOOTHR*(xscale>yscale?xscale:yscale);
+      if (rs<=0)
+        rs = 1.0;
+      rs2 = rs*rs;
+/*---- The consequence of sampling on flux is compensated by PSF normalisation*/
+      if (prof->code==PROF_EXPONENTIAL)
+        bn = n = 1.0;
+      else if (prof->code==PROF_DEVAUCOULEURS)
+        {
+        n = 4.0;
+        bn = 7.66924944;
+        }
+      else
+        {
+        n = fabs(*prof->extra[0]);
+        bn = 2.0*n - 1.0/3.0 + 4.0/(405.0*n) + 46.0/(25515.0*n*n)
+		+ 131.0/(1148175*n*n*n);	/* Ciotti & Bertin 1999 */
+        }
+      invn = 1.0/n;
+      hinvn = 0.5/n;
+      k = -bn;
+/*---- Compute central polynomial terms */
+      krspinvn = prof->code==PROF_EXPONENTIAL? -rs : k*expf(logf(rs)*invn);
+      ekrspinvn = expf(krspinvn);
+      p2 = krspinvn*invn*invn;
+      p1 = krspinvn*p2;
+      a0 = (1+(1.0/6.0)*(p1+(1.0-5.0*n)*p2))*ekrspinvn;
+      a2 = (-1.0/2.0)*(p1+(1.0-3.0*n)*p2)/rs2*ekrspinvn;
+      a3 = (1.0/3.0)*(p1+(1.0-2.0*n)*p2)/(rs2*rs)*ekrspinvn;
+/*---- Compute the smooth part of the profile */
       x10 = -x1cout - dx1;
       x2 = -x2cout - dx2;
       pixin = prof->pix;
-      for (ix2=nx2; ix2--; x2+=1.0)
-        {
-        x1 = x10;
-        for (ix1=profit->modnaxisn[0]; ix1--; x1+=1.0)
+      if (prof->code==PROF_EXPONENTIAL)
+        for (ix2=nx2; ix2--; x2+=1.0)
           {
-          x1in = cd12*x2 + cd11*x1;
-          x2in = cd22*x2 + cd21*x1;
-          ra = x1in*x1in+x2in*x2in;
-          if (ra>r2max)
+          x1 = x10;
+          for (ix1=profit->modnaxisn[0]; ix1--; x1+=1.0)
             {
-            *(pixin++) = 0.0;
-            continue;
-            }
-          val = expf(-sqrtf(ra));
-          noversamp  = (int)(val*sqrt(profit->oversamp)+0.1);
-          if (noversamp < 2)
-            *(pixin++) = val;
-          else
-            {
-            ostep = 1.0/noversamp;
-            dcd11 = cd11*ostep;
-            dcd21 = cd21*ostep;
-            odx = 0.5*(ostep-1.0);
-            x1t = x1+odx;
-            val = 0.0;
-            for (idx2=noversamp; idx2--; odx+=ostep)
+            x1in = cd12*x2 + cd11*x1;
+            x2in = cd22*x2 + cd21*x1;
+            ra = x1in*x1in+x2in*x2in;
+            if (ra>r2max)
               {
-              x1in = cd12*(x2+odx) + cd11*x1t;
-              x2in = cd22*(x2+odx) + cd21*x1t;
-              for (idx1=noversamp; idx1--;)
-                {
-                ra = x1in*x1in+x2in*x2in;
-                val += expf(-sqrtf(ra));
-                x1in += dcd11;
-                x2in += dcd21;
-                }
+              *(pixin++) = 0.0;
+              continue;
               }
-            *(pixin++) = val*ostep*ostep;
+            val = ra<rs2? a0+ra*(a2+a3*sqrtf(ra)) : expf(-sqrtf(ra));
+            *(pixin++) = val;
             }
           }
-        }
+      else
+        for (ix2=nx2; ix2--; x2+=1.0)
+          {
+          x1 = x10;
+          for (ix1=profit->modnaxisn[0]; ix1--; x1+=1.0)
+            {
+            x1in = cd12*x2 + cd11*x1;
+            x2in = cd22*x2 + cd21*x1;
+            ra = x1in*x1in+x2in*x2in;
+            if (ra>r2max)
+              {
+              *(pixin++) = 0.0;
+              continue;
+              }
+            val = ra<rs2? a0+ra*(a2+a3*sqrtf(ra)) : expf(k*expf(logf(ra)*hinvn));
+            *(pixin++) = val;
+            }
+          }
 /*---- Copy the symmetric part */
       if ((npix2=(profit->modnaxisn[1]-nx2)*profit->modnaxisn[0]) > 0)
         {
@@ -3584,8 +3487,54 @@ float	prof_add(profitstruct *profit, profstruct *prof, int extfluxfac_flag)
         for (i=npix2; i--;)
           *(pixin++) = *(pixin2--);
         }
-      rmax = sqrt(r2max);
-      prof->lostfluxfrac = (1.0 + rmax)*exp(-rmax);
+
+/*---- Compute the sharp part of the profile */
+      ix1max = profit->modnaxisn[0];
+      ix2max = profit->modnaxisn[1];
+      dx1cout = x1cout + 0.4999999;
+      dx2cout = x2cout + 0.4999999;
+      invdet = 1.0/fabsf(cd11*cd22 - cd12*cd21);
+      a11 = cd22*invdet;
+      a12 = -cd12*invdet;
+      a21 = -cd21*invdet;
+      a22 = cd11*invdet;
+      nang = 72 / 2;		/* 36 angles; only half of them are computed*/
+      angstep = PI/nang;
+      ang = 0.0;
+      for (a=0; a<nang; a++)
+        {
+        sincosf(ang, &dca, &dsa);
+        ddx1[a] = a11*dca+a12*dsa;
+        ddx2[a] = a21*dca+a22*dsa;
+        ang += angstep;
+        }
+      r = DEXPF(-4.0);
+      dr = DEXPF(0.05);
+      selem = 0.5*angstep*(dr - 1.0/dr)/(xscale*yscale);
+      krpinvn = k*DEXPF(-4.0*invn);
+      dkrpinvn = DEXPF(0.05*invn);
+      pixin = prof->pix;
+      for (; r<rs; r *= dr)
+        {
+        r2 = r*r;
+        val = (expf(krpinvn) - (a0 + r2*(a2+a3*r)))*r2*selem;
+        for (a=0; a<nang; a++)
+          {
+          ix1 = (int)(dx1cout + r*ddx1[a]);
+          ix2 = (int)(dx2cout + r*ddx2[a]);
+          if (ix1>=0 && ix1<ix1max && ix2>=0 && ix2<ix2max)
+            pixin[ix2*ix1max+ix1] += val;
+          ix1 = (int)(dx1cout - r*ddx1[a]);
+          ix2 = (int)(dx2cout - r*ddx2[a]);
+          if (ix1>=0 && ix1<ix1max && ix2>=0 && ix2<ix2max)
+            pixin[ix2*ix1max+ix1] += val;
+          }
+        krpinvn *= dkrpinvn;
+        }
+
+      prof->lostfluxfrac = prof->code==PROF_EXPONENTIAL?
+		(1.0 + rmax)*exp(-rmax)
+		:1.0 - prof_gammainc(2.0*n, bn*pow(r2max, hinvn));
       threshflag = 0;
       break;
     case PROF_ARMS:
@@ -3848,7 +3797,7 @@ width = 3.0;
     if (prof->lostfluxfrac < 1.0)
       flux /= (1.0 - prof->lostfluxfrac);
 
-    prof->fluxfac = fluxfac = fabs(flux)>0.0? profit->fluxfac/flux : 0.0;
+    prof->fluxfac = fluxfac = fabs(flux)>0.0? profit->fluxfac/fabs(flux) : 0.0;
     }
 
   pixin = prof->pix;
