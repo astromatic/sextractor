@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		19/10/2010
+*	Last modified:		12/01/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -215,7 +215,7 @@ typedef struct
   float		polarw;				/* WORLD "polarization" */
   float		sprob;				/* Stellarity index */
   float		fwhmw;				/* WORLD FWHM */
-  float		*assoc;				/* ASSOCiated data */
+  double	*assoc;				/* ASSOCiated data */
   int		assoc_number;			/* nb of ASSOCiated objects */
   float		*vignet;			/* Pixel data */
   float		*vigshift;			/* (Shifted) pixel data */

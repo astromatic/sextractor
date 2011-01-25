@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/10/2010
+*	Last modified:		12/01/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -723,7 +723,7 @@ keystruct	objkey[] = {
 	&outobj2.vigshift, H_FLOAT, T_FLOAT, "%12.7g", "count",
 	"obs.image", "ct", 2, prefs.vigshiftsize},
   {"VECTOR_ASSOC", "ASSOCiated parameter vector",
-	&outobj2.assoc, H_FLOAT, T_FLOAT, "%12.7g", "",
+	&outobj2.assoc, H_FLOAT, T_DOUBLE, "%12.7g", "",
 	"src", "", 1, &prefs.assoc_size},
   {"NUMBER_ASSOC", "Number of ASSOCiated IDs",
 	&outobj2.assoc_number, H_INT, T_LONG, "%10d", "",

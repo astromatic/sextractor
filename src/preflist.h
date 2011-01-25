@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		14/10/2010
+*	Last modified:		12/01/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -54,6 +54,8 @@
   {"ASSOC_TYPE", P_KEY, &prefs.assoc_type, 0,0, 0.0,0.0,
    {"FIRST", "NEAREST", "MEAN", "MAG_MEAN", "SUM", "MAG_SUM",
    "MIN", "MAX", ""}},
+  {"ASSOCCOORD_TYPE", P_KEY, &prefs.assoccoord_type, 0,0, 0.0,0.0,
+   {"PIXEL","WORLD",""}},
   {"ASSOCSELEC_TYPE", P_KEY, &prefs.assocselec_type, 0,0, 0.0,0.0,
    {"ALL","MATCHED","-MATCHED",""}},
   {"BACK_FILTERSIZE", P_INTLIST, prefs.backfsize, 1,11, 0.0,0.0,
@@ -275,6 +277,7 @@ char *default_prefs[] =
 "*ASSOC_NAME       sky.list       # name of the ASCII file to ASSOCiate",
 "*ASSOC_DATA       2,3,4          # columns of the data to replicate (0=all)",
 "*ASSOC_PARAMS     2,3,4          # columns of xpos,ypos[,mag]",
+"*ASSOCCOORD_TYPE  PIXEL          # ASSOC coordinates: PIXEL or WORLD",
 "*ASSOC_RADIUS     2.0            # cross-matching radius (pixels)",
 "*ASSOC_TYPE       NEAREST        # ASSOCiation method: FIRST, NEAREST, MEAN,",
 "*                                # MAG_MEAN, SUM, MAG_SUM, MIN or MAX",
