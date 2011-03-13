@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		12/01/2011
+*	Last modified:		09/03/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -144,6 +144,8 @@
   {"PSF_NAME", P_STRINGLIST, prefs.psf_name, 0,0, 0.0,0.0,
    {""}, 1, 2, &prefs.npsf_name},	/*?*/
   {"PSF_NMAX", P_INT, &prefs.psf_npsfmax, 1, PSF_NPSFMAX},
+  {"RESCALE_WEIGHTS", P_BOOLLIST, prefs.wscale_flag, 0,0, 0.0,0.0,
+   {""}, 1, 2, &prefs.nwscale_flag},
   {"SATUR_KEY", P_STRING, prefs.satur_key},
   {"SATUR_LEVEL", P_FLOAT, &prefs.satur_level, 0,0, -1e+30, 1e+30},
   {"SEEING_FWHM", P_FLOAT, &prefs.seeing_fwhm, 0,0, 0.0, 1e+10},
@@ -212,6 +214,7 @@ char *default_prefs[] =
 "*",
 "*WEIGHT_TYPE      NONE           # type of WEIGHTing: NONE, BACKGROUND,",
 "*                                # MAP_RMS, MAP_VAR or MAP_WEIGHT",
+"*RESCALE_WEIGHTS  Y              # Rescale input weights/variances (Y/N)?",
 "*WEIGHT_IMAGE     weight.fits    # weight-map filename",
 "*WEIGHT_GAIN      Y              # modulate gain (E/ADU) with weights? (Y/N)",
 "*WEIGHT_THRESH                   # weight threshold[s] for bad pixels",

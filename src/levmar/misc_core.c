@@ -5,7 +5,7 @@
 *
 *	This file part of:	AstrOmatic software
 *
-*	Copyright:		(C) 2007-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 2007-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
 *				(C) 2004 Manolis Lourakis (original version)
 *
 *	Licenses:		GNU General Public License
@@ -22,7 +22,7 @@
 *	along with AstrOmatic software.
 *	If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		25/10/2010
+*	Last modified:		11/03/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 /////////////////////////////////////////////////////////////////////////////////
@@ -861,7 +861,7 @@ OUTPUT	Matrix rank.
 NOTES	Based on algorithm described in Numerical Recipes in C, 2nd Ed.(p. 671).
 	The a and v matrices are transposed with respect to the N.R. convention.
 AUTHOR	E. Bertin (IAP)
-VERSION	02/09/2010
+VERSION	11/03/2011
  ***/
 
 static int SVDINV(LM_REAL *a, LM_REAL *b, int m)
@@ -884,7 +884,7 @@ static int SVDINV(LM_REAL *a, LM_REAL *b, int m)
                         thresh, wmax, tol,tanorm;
   anorm = g = scale = 0.0;
 
-  tol = sizeof(anorm)>4? 1.0e-9 : 1.0e-6;
+  tanorm = tol = sizeof(anorm)>4? 1.0e-9 : 1.0e-6;
 
   rv1=(LM_REAL *)malloc(m*sizeof(LM_REAL));
   tmp=(LM_REAL *)malloc(m*sizeof(LM_REAL));

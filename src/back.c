@@ -48,7 +48,7 @@
 Background maps are established from the images themselves; thus we need to
 make at least one first pass through the data.
 */
-void	makeback(picstruct *field, picstruct *wfield)
+void	makeback(picstruct *field, picstruct *wfield, int wscale_flag)
 
   {
    backstruct	*backmesh,*wbackmesh, *bm,*wbm;
@@ -294,7 +294,7 @@ void	makeback(picstruct *field, picstruct *wfield)
     filterback(wfield);
 
 /* Compute normalization for variance- or weight-maps*/
-  if (wfield && wfield->flags&(VAR_FIELD|WEIGHT_FIELD))
+  if (wfield && wscale_flag && wfield->flags&(VAR_FIELD|WEIGHT_FIELD))
     {      
     nr = 0;
     QMALLOC(ratio, float, wfield->nback);

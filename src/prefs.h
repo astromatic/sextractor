@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		12/01/2011
+*	Last modified:		09/03/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -96,6 +96,8 @@ typedef struct
   int		weight_flag;				/* do we weight ? */
   int		dweight_flag;				/* detection weight? */
   int		weightgain_flag;			/* weight gain? */
+  int		wscale_flag[2];		/* Weight rescaling */
+  int		nwscale_flag;				/* nb of params */
 /*----- photometry */
   enum	{CAT_NONE, ASCII, ASCII_HEAD, ASCII_SKYCAT, ASCII_VO,
 	FITS_LDAC, FITS_TPX, FITS_10}

@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		14/10/2010
+*	Last modified:		09/03/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -46,6 +46,7 @@
 
 #include	"define.h"
 #include	"globals.h"
+#include	"back.h"
 #include	"prefs.h"
 #include	"preflist.h"
 #include	"fits/fitscat.h"
@@ -642,6 +643,11 @@ void	useprefs()
       for (i=2; --i >= prefs.nweight_thresh;)
         prefs.weight_thresh[i] = (prefs.weight_type[i]==WEIGHT_FROMWEIGHTMAP)?
 					0.0 : BIG;
+/*-- Weight rescaling flags */
+    if (prefs.nwscale_flag<2)
+       prefs.wscale_flag[1] = (prefs.weight_type[1]==WEIGHT_FROMBACK)?
+					BACK_WSCALE : prefs.wscale_flag[0];
+
 /*-- Check WEIGHT_IMAGE parameter(s) */
     if ((!prefs.nwimage_name
 	&& ((prefs.weight_type[0]!=WEIGHT_FROMBACK
