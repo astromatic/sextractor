@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		24/01/2011
+*	Last modified:		11/03/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -1152,9 +1152,9 @@ int	profit_minimize(profitstruct *profit, int niter)
 
 /* Perform fit */
   lm_opts[0] = 1.0e-3;		/* Initial mu */
-  lm_opts[1] = 1.0e-8;		/* ||J^T e||_inf stopping factor */
-  lm_opts[2] = 1.0e-8;		/* |Dp||_2 stopping factor */
-  lm_opts[3] = 1.0e-8;		/* ||e||_2 stopping factor */
+  lm_opts[1] = 1.0e-6;		/* ||J^T e||_inf stopping factor */
+  lm_opts[2] = 1.0e-6;		/* |Dp||_2 stopping factor */
+  lm_opts[3] = 1.0e-6;		/* ||e||_2 stopping factor */
   lm_opts[4] = 1.0e-4;		/* Jacobian step */
 
   profit_boundtounbound(profit, profit->paraminit, dparam, PARAM_ALLPARAMS);
@@ -3320,7 +3320,7 @@ INPUT	Profile-fitting structure,
 OUTPUT	Total (asymptotic) flux contribution.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	24/01/2011
+VERSION	11/03/2011
  ***/
 float	prof_add(profitstruct *profit, profstruct *prof, int extfluxfac_flag)
   {
@@ -3328,20 +3328,19 @@ float	prof_add(profitstruct *profit, profstruct *prof, int extfluxfac_flag)
 		dx1cout,dx2cout, ddx1[36],ddx2[36];
    float	posin[PROFIT_MAXEXTRA], posout[2], dnaxisn[2],
 		*pixin, *pixin2, *pixout,
-		fluxfac, amp,cd11,cd12,cd21,cd22, dcd11,dcd21, dx1,dx2,
-		x1,x10,x2, x1cin,x2cin, x1cout,x2cout, x1max,x2max,
-		x1in,x2in, odx, ostep,
+		fluxfac, amp,cd11,cd12,cd21,cd22, dx1,dx2,
+		x1,x10,x2, x1cin,x2cin, x1cout,x2cout, x1max,x2max, x1in,x2in,
 		k, hinvn, x1t,x2t, ca,sa, u,umin,
 		armamp,arm2amp, armrdphidr, armrdphidrvar, posang,
 		width, invwidth2,
 		r,r2,rmin, r2minxin,r2minxout, rmax, r2max,
 		r2max1, r2max2, r2min, invr2xdif,
-		val, theta, thresh, ra,rb,rao, num,num2,den, ang,angstep,
-		invn, smoothfac, dr,deltar, krpinvn,dkrpinvn, rs,rs2,
+		val, theta, thresh, ra,rb, num,num2,den, ang,angstep,
+		invn, dr, krpinvn,dkrpinvn, rs,rs2,
 		a11,a12,a21,a22, invdet, dca,dsa, a0,a2,a3, p1,p2,
 		krspinvn, ekrspinvn, selem;
    int		npix, threshflag,
-		a,d,e,i, ix1,ix2, ix1max,ix2max, ir,nang, idx1,idx2, nx2,
+		a,d,e,i, ix1,ix2, ix1max,ix2max, nang, nx2,
 		npix2;
 
   npix = profit->nmodpix;

@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		14/10/2010
+*	Last modified:		09/03/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -389,7 +389,7 @@ void	makeit()
 /*-- Compute background maps for `standard' fields */
     QPRINTF(OUTPUT, dfield? "Measurement image:"
 			: "Detection+Measurement image: ");
-    makeback(field, wfield);
+    makeback(field, wfield, prefs.wscale_flag[1]);
     QPRINTF(OUTPUT, (dfield || (dwfield&&dwfield->flags^INTERP_FIELD))? "(M)   "
 		"Background: %-10g RMS: %-10g / Threshold: %-10g \n"
 		: "(M+D) "
@@ -400,14 +400,15 @@ void	makeit()
       {
       QPRINTF(OUTPUT, "Detection image: ");
       makeback(dfield, dwfield? dwfield
-			: (prefs.weight_type[0] == WEIGHT_NONE?NULL:wfield));
+			: (prefs.weight_type[0] == WEIGHT_NONE?NULL:wfield),
+		prefs.wscale_flag[0]);
       QPRINTF(OUTPUT, "(D)   "
 		"Background: %-10g RMS: %-10g / Threshold: %-10g \n",
 	dfield->backmean, dfield->backsig, dfield->dthresh);
       }
     else if (dwfield && dwfield->flags^INTERP_FIELD)
       {
-      makeback(field, dwfield);
+      makeback(field, dwfield, BACK_WSCALE);
       QPRINTF(OUTPUT, "(D)   "
 		"Background: %-10g RMS: %-10g / Threshold: %-10g \n",
 	field->backmean, field->backsig, field->dthresh);
