@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		12/01/2011
+*	Last modified:		03/05/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -71,8 +71,8 @@ typedef  enum {BACK_RELATIVE, BACK_ABSOLUTE}
 typedef  enum {CHECK_NONE, CHECK_IDENTICAL, CHECK_BACKGROUND,
         CHECK_BACKRMS, CHECK_MINIBACKGROUND, CHECK_MINIBACKRMS,
         CHECK_SUBTRACTED, CHECK_FILTERED, CHECK_OBJECTS, CHECK_APERTURES,
-	CHECK_SEGMENTATION, CHECK_ASSOC, CHECK_SUBOBJECTS,
-	CHECK_PSFPROTOS, CHECK_SUBPSFPROTOS,
+	CHECK_SEGMENTATION, CHECK_MASK, CHECK_SUBMASK, CHECK_ASSOC,
+	CHECK_SUBOBJECTS, CHECK_PSFPROTOS, CHECK_SUBPSFPROTOS,
 	CHECK_PCPROTOS, CHECK_SUBPCPROTOS, CHECK_PCOPROTOS,
 	CHECK_MAPSOM, CHECK_PROFILES, CHECK_SUBPROFILES,
 	CHECK_SPHEROIDS, CHECK_SUBSPHEROIDS, CHECK_DISKS, CHECK_SUBDISKS,
@@ -165,6 +165,7 @@ typedef struct
   float		*magerr_aper;			/* APER mag error vector */
   float		flux_win;			/* WINdowed flux*/
   float		fluxerr_win;			/* WINdowed flux error */
+  float		snr_win;			/* WINdowed SNR */
   float		mag_win;			/* WINdowed magnitude */
   float		magerr_win;			/* WINdowed magnitude error */
 /* ---- astrometric data */
@@ -371,6 +372,12 @@ typedef struct
 		prof_theta;			/* Model-fitting ellip. params*/
   float		prof_cxx, prof_cyy,
 		prof_cxy;			/* Model-fitting ellip. params*/
+  double	prof_convmx2, prof_convmy2,
+		prof_convmxy;			/* Convolved model moments */
+  float		prof_convcxx, prof_convcyy,
+		prof_convcxy;			/* Conv. model ellipse params */
+  float		prof_conva, prof_convb,
+		prof_convtheta;			/* Conv. model ellipse params */
   float		prof_pol1, prof_pol2;		/* Model-fitting pol. vector*/
   float		prof_pol1err, prof_pol2err,
 		prof_pol12corr;			/* Model-fitting pol. errors */
@@ -395,6 +402,7 @@ typedef struct
   float		prof_class_star;		/* Mod.-fitting star/gal class*/
   float		prof_concentration;		/* Model-fitting concentration*/
   float		prof_concentrationerr;		/* RMS error */
+  float		prof_noisearea;			/* Equivalent noise area */
   float		prof_offset_flux;		/* Background offset */
   float		prof_offset_fluxerr;		/* RMS error */
   float		prof_dirac_flux;		/* Point source total flux */

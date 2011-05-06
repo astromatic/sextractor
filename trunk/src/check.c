@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/03/2011
+*	Last modified:		25/03/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -208,7 +208,6 @@ void	reinitcheck(picstruct *field, checkstruct *check)
   check->y = 0;
   fitshead = tab->headbuf;
 /* Neutralize possible scaling factors */
-  tab->bytepix = 4;
   tab->bscale = 1.0;
   tab->bzero = 0.0;
   fitswrite(fitshead, "BSCALE  ", &tab->bscale, H_FLOAT, T_DOUBLE);
@@ -227,7 +226,8 @@ void	reinitcheck(picstruct *field, checkstruct *check)
     case CHECK_BACKGROUND:
     case CHECK_FILTERED:
     case CHECK_SUBTRACTED:
-      tab->bitpix = -32;
+      tab->bitpix = BP_FLOAT;
+      tab->bytepix = 4;
       tab->bitsgn = 0;
       tab->naxisn[0] = check->width = field->width;
       tab->naxisn[1] = check->height = field->height;
@@ -239,7 +239,8 @@ void	reinitcheck(picstruct *field, checkstruct *check)
 
     case CHECK_BACKRMS:
     case CHECK_SUBOBJECTS:
-      tab->bitpix = -32;
+      tab->bitpix = BP_FLOAT;
+      tab->bytepix = 4;
       tab->bitsgn = 0;
       tab->naxisn[0] = check->width = field->width;
       tab->naxisn[1] = check->height = field->height;
@@ -266,6 +267,7 @@ void	reinitcheck(picstruct *field, checkstruct *check)
     case CHECK_SUBDISKS:
     case CHECK_PATTERNS:
       tab->bitpix = -32;
+      tab->bytepix = 4;
       tab->bitsgn = 0;
       tab->naxisn[0] = check->width = field->width;
       tab->naxisn[1] = check->height = field->height;
@@ -276,7 +278,8 @@ void	reinitcheck(picstruct *field, checkstruct *check)
       break;
 
     case CHECK_SEGMENTATION:
-      tab->bitpix = 32;
+      tab->bitpix = BP_LONG;
+      tab->bytepix = 4;
       tab->bitsgn = 1;
       tab->naxisn[0] = check->width = field->width;
       tab->naxisn[1] = check->height = field->height;
@@ -285,8 +288,23 @@ void	reinitcheck(picstruct *field, checkstruct *check)
       save_head(cat, cat->tab);
       break;
 
+    case CHECK_MASK:
+    case CHECK_SUBMASK:
+      tab->bitpix = BP_BYTE;
+      tab->bytepix = 1;
+      tab->bitsgn = 1;
+      tab->naxisn[0] = check->width = field->width;
+      tab->naxisn[1] = check->height = field->height;
+      check->npix = field->npix;
+      save_head(cat, cat->tab);
+/*---- Allocate memory */
+      if (!check->line)
+        QMALLOC(check->line, FLAGTYPE, check->width);
+      break;
+
     case CHECK_ASSOC:
-      tab->bitpix = -32;
+      tab->bitpix = BP_FLOAT;
+      tab->bytepix = 4;
       tab->bitsgn = 0;
       tab->naxisn[0] = check->width = field->width;
       tab->naxisn[1] = check->height = field->height;
@@ -299,7 +317,8 @@ void	reinitcheck(picstruct *field, checkstruct *check)
 
     case CHECK_MINIBACKGROUND:
     case CHECK_MINIBACKRMS:
-      tab->bitpix = -32;
+      tab->bitpix = BP_FLOAT;
+      tab->bytepix = 4;
       tab->bitsgn = 0;
       tab->naxisn[0] = check->width = field->nbackx;
       tab->naxisn[1] = check->height = field->nbacky;
@@ -336,7 +355,8 @@ void	reinitcheck(picstruct *field, checkstruct *check)
       break;
 
     case CHECK_MAPSOM:
-      tab->bitpix = -32;
+      tab->bitpix = BP_FLOAT;
+      tab->bytepix = 4;
       tab->bitsgn = 0;
       tab->naxisn[0] = check->width = field->width;
       tab->naxisn[1] = check->height = field->height;
@@ -349,10 +369,11 @@ void	reinitcheck(picstruct *field, checkstruct *check)
       break;
 
     case CHECK_OTHER:
-      tab->bitpix = -32;
+      tab->bitpix = BP_FLOAT;
+      tab->bytepix = 4;
       tab->bitsgn = 0;
-      tab->naxisn[0] = check->width;
-      tab->naxisn[1] = check->height;
+      tab->naxisn[0] = check->width = field->width;
+      tab->naxisn[1] = check->height = field->height;
       check->npix = check->width*check->height;
       QCALLOC(check->pix, PIXTYPE, check->npix);
       save_head(cat, cat->tab);
@@ -376,7 +397,7 @@ void	writecheck(checkstruct *check, PIXTYPE *data, int w)
   if (check->type == CHECK_APERTURES || check->type == CHECK_SUBPSFPROTOS
 	|| check->type == CHECK_SUBPCPROTOS || check->type == CHECK_PCOPROTOS
 	|| check->type == CHECK_SUBPROFILES || check->type == CHECK_SUBSPHEROIDS
-	|| check->type == CHECK_SUBDISKS)
+	|| check->type == CHECK_SUBDISKS || check->type == CHECK_OTHER)
     {
     memcpy((PIXTYPE *)check->pix + w*(check->y++), data, w*sizeof(PIXTYPE));
     return;
@@ -386,13 +407,33 @@ void	writecheck(checkstruct *check, PIXTYPE *data, int w)
      int	i;
      PIXTYPE	*pixt;
 
-    pixt = check->line;
+    pixt = (PIXTYPE *)check->line;
     for (i=w; i--; data++)
       *(pixt++) = (*data>-BIG)? *data:0.0;
-    data = check->line;
-    }
+    write_body(check->cat->tab, (PIXTYPE *)check->line, w);
+   }
+  else if (check->type == CHECK_MASK)
+    {
+     int		i;
+     FLAGTYPE		*pixt;
 
-  write_body(check->cat->tab, data, w);
+    pixt = (FLAGTYPE *)check->line;
+    for (i=w; i--;)
+      *(pixt++) = (*(data++)>-BIG)?0:1;
+    write_ibody(check->cat->tab, (FLAGTYPE *)check->line, w);
+    }
+  else if (check->type == CHECK_SUBMASK)
+    {
+     int		i;
+     FLAGTYPE		*pixt;
+
+    pixt = (FLAGTYPE *)check->line;
+    for (i=w; i--;)
+      *(pixt++) = (*(data++)>-BIG)?1:0;
+    write_ibody(check->cat->tab, (FLAGTYPE *)check->line, w);
+    }
+  else
+    write_body(check->cat->tab, data, w);
 
   return;
   }
@@ -451,6 +492,19 @@ void	reendcheck(picstruct *field, checkstruct *check)
       free(check->pix);
       pad_tab(cat, check->npix*sizeof(FLAGTYPE));
       break;
+
+    case CHECK_MASK:
+    case CHECK_SUBMASK:
+      {
+       int	y;
+
+      for (y=field->ymin; y<field->ymax; y++)
+        writecheck(check, &PIX(field, 0, y), field->width);
+      free(check->line);
+      check->line = NULL;
+      pad_tab(cat, check->npix*sizeof(unsigned char));
+      break;
+      }
 
     case CHECK_SUBOBJECTS:
       {

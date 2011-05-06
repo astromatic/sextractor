@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		19/10/2010
+*	Last modified:		12/04/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -189,6 +189,17 @@ void	updateparamflags()
   FLAG(obj2.prof_disk_scale) |= prefs.pattern_flag;
 
   FLAG(obj2.prof_concentration) |= FLAG(obj2.prof_concentrationerr);
+  FLAG(obj2.fluxcorerr_prof) |= FLAG(obj2.magcorerr_prof);
+  FLAG(obj2.fluxcor_prof) |= FLAG(obj2.magcor_prof)
+			| FLAG(obj2.fluxcorerr_prof);
+  FLAG(obj2.fluxerr_prof) |= FLAG(obj2.magerr_prof)
+			| FLAG(obj2.prof_concentrationerr)
+			| FLAG(obj2.fluxcorerr_prof);
+  FLAG(obj2.flux_prof) |= FLAG(obj2.mag_prof)
+			| FLAG(obj2.fluxerr_prof)
+			| FLAG(obj2.fluxcor_prof);
+
+
   FLAG(obj2.poserraw_prof) |= FLAG(obj2.poserrbw_prof);
   FLAG(obj2.poserrcxxw_prof) |= FLAG(obj2.poserrcyyw_prof)
 			| FLAG(obj2.poserrcxyw_prof);
@@ -226,17 +237,9 @@ void	updateparamflags()
 			| FLAG(obj2.poserrcxx_prof)
 			| FLAG(obj2.poserrmx2_prof)
 			| FLAG(obj2.prof_concentration)
-			| FLAG(obj2.prof_class_star);
-
-  FLAG(obj2.fluxcorerr_prof) |= FLAG(obj2.magcorerr_prof);
-  FLAG(obj2.fluxcor_prof) |= FLAG(obj2.magcor_prof)
-			| FLAG(obj2.fluxcorerr_prof);
-  FLAG(obj2.fluxerr_prof) |= FLAG(obj2.magerr_prof)
-			| FLAG(obj2.prof_concentrationerr)
-			| FLAG(obj2.fluxcorerr_prof);
-  FLAG(obj2.flux_prof) |= FLAG(obj2.mag_prof)
-			| FLAG(obj2.fluxerr_prof)
+			| FLAG(obj2.prof_class_star)
 			| FLAG(obj2.fluxcor_prof);
+
   FLAG(obj2.prof_dirac_mag) |= FLAG(obj2.prof_dirac_magerr);
   FLAG(obj2.prof_spheroid_mag) |= FLAG(obj2.prof_spheroid_magerr);
   FLAG(obj2.prof_spheroid_reff) |= FLAG(obj2.prof_spheroid_refferr);
@@ -365,6 +368,10 @@ void	updateparamflags()
 			| FLAG(obj2.prof_e1) | FLAG(obj2.prof_pol1)
 			| FLAG(obj2.prof_a) | FLAG(obj2.prof_cxx)
 			| FLAG(obj2.prof_mx2w);
+  FLAG(obj2.prof_conva) |= FLAG(obj2.prof_convb) | FLAG(obj2.prof_convtheta);
+  FLAG(obj2.prof_convcxx) |= FLAG(obj2.prof_convcyy)
+			/*| FLAG(obj2.fluxcor_prof) */;
+  FLAG(obj2.prof_convmx2) |= FLAG(obj2.prof_convcxx) | FLAG(obj2.prof_conva);
   FLAG(obj2.fluxmean_prof) |= FLAG(obj2.mumean_prof);
   FLAG(obj2.fluxeff_prof) |= FLAG(obj2.mueff_prof)
 			| FLAG(obj2.fluxmean_prof);
@@ -471,8 +478,7 @@ void	updateparamflags()
   FLAG(obj2.winposerr_mx2) |= FLAG(obj2.winposerr_my2)
 			| FLAG(obj2.winposerr_mxy)
 			| FLAG(obj2.winposerr_a) | FLAG(obj2.winposerr_cxx)
-			| FLAG(obj2.winposerr_mx2w)
-			| FLAG(obj2.fluxerr_win) | FLAG(obj2.magerr_win);
+			| FLAG(obj2.winposerr_mx2w);
 
   FLAG(obj2.winpos_alpha1950) |= FLAG(obj2.winpos_delta1950)
 			| FLAG(obj2.win_theta1950)
@@ -531,8 +537,9 @@ void	updateparamflags()
   FLAG(obj2.mxw) |= FLAG(obj2.myw) | FLAG(obj2.mx2w) | FLAG(obj2.alphas)
 		| FLAG(obj2.poserr_mx2w);
   FLAG(obj2.mamaposx) |= FLAG(obj2.mamaposy);
+  FLAG(obj2.fluxerr_win) |= FLAG(obj2.snr_win);
   FLAG(obj2.flux_win) |= FLAG(obj2.mag_win)|FLAG(obj2.magerr_win)
-			    | FLAG(obj2.flux_win) | FLAG(obj2.fluxerr_win);
+			| FLAG(obj2.flux_win) | FLAG(obj2.fluxerr_win);
   FLAG(obj2.winpos_x) |= FLAG(obj2.winpos_y)
 			| FLAG(obj2.winposerr_mx2) | FLAG(obj2.win_mx2)
 			| FLAG(obj2.winpos_xw) | FLAG(obj2.winpos_xf)

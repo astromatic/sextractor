@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 2005-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 2005-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/10/2010
+*	Last modified:		03/05/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -50,7 +50,7 @@ INPUT	Picture structure pointer,
 OUTPUT  -.
 NOTES   obj->posx and obj->posy are taken as initial centroid guesses.
 AUTHOR  E. Bertin (IAP)
-VERSION 16/07/2010
+VERSION 03/05/2011
  ***/
 void	compute_winpos(picstruct *field, picstruct *wfield, objstruct *obj)
 
@@ -79,7 +79,7 @@ void	compute_winpos(picstruct *field, picstruct *wfield, objstruct *obj)
   pflag = (prefs.detect_type==PHOTO)? 1:0;
   corrflag = (prefs.mask_type==MASK_CORRECT);
   gainflag = wfield && prefs.weightgain_flag;
-  errflag = FLAG(obj2.winposerr_mx2);
+  errflag = FLAG(obj2.winposerr_mx2) | FLAG(obj2.fluxerr_win);
   momentflag = FLAG(obj2.win_mx2) | FLAG(obj2.winposerr_mx2);
   var = backnoise2 = field->backsig*field->backsig;
   invgain = field->gain>0.0? 1.0/field->gain : 0.0;
@@ -262,13 +262,14 @@ void	compute_winpos(picstruct *field, picstruct *wfield, objstruct *obj)
     {
     obj2->flux_win = tv;
     obj2->fluxerr_win = sqrt(esum);
+    obj2->snr_win = esum>(1.0/BIG)? obj2->flux_win / obj2->fluxerr_win: BIG;
     }
   temp2=mx2*my2-mxy*mxy;
   obj2->win_flag = (tv <= 0.0)*4 + (mx2 < 0.0 || my2 < 0.0)*2 + (temp2<0.0);
   if (obj2->win_flag)
     {
 /*--- Negative values: revert to isophotal estimates */
-    if (errflag)
+    if (FLAG(obj2.winposerr_mx2))
       {
       obj2->winposerr_mx2 = obj->poserr_mx2;
       obj2->winposerr_my2 = obj->poserr_my2;
@@ -308,7 +309,7 @@ void	compute_winpos(picstruct *field, picstruct *wfield, objstruct *obj)
     }
   else
     {
-    if (errflag)
+    if (FLAG(obj2.winposerr_mx2))
       {
       norm = WINPOS_FAC*WINPOS_FAC/(tv*tv);
       emx2 *= norm;

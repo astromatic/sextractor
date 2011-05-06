@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		13/03/2011
+*	Last modified:		07/04/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -60,16 +60,16 @@
 	&outobj2.magerr_prof, H_FLOAT, T_FLOAT, "%8.4f", "mag",
 	"stat.error;phot.mag;stat.fit.param", "mag"},
 
-  {"FLUXHYBRID_MODEL", "Hybrid flux from model-fitting",
+  {"FLUX_HYBRID", "Hybrid flux from model-fitting",
 	&outobj2.fluxcor_prof, H_FLOAT, T_FLOAT, "%12.7g", "count",
 	"phot.count;stat.fit.param", "ct"},
-  {"FLUXHYBRIDERR_MODEL", "RMS error on hybrid flux",
+  {"FLUXERR_HYBRID", "RMS error on hybrid flux",
 	&outobj2.fluxcorerr_prof, H_FLOAT, T_FLOAT, "%12.7g", "count",
 	"stat.error;phot.count;stat.fit.param", "ct"},
-  {"MAGHYBRID_MODEL", "Hybrid magnitude from model-fitting",
+  {"MAG_HYBRID", "Hybrid magnitude from model-fitting",
 	&outobj2.magcor_prof, H_FLOAT, T_FLOAT, "%8.4f", "mag",
 	"phot.mag;stat.fit.param", "mag"},
-  {"MAGHYBRIDERR_MODEL", "RMS error on hybrid magnitude",
+  {"MAGERR_HYBRID", "RMS error on hybrid magnitude",
 	&outobj2.magcorerr_prof, H_FLOAT, T_FLOAT, "%8.4f", "mag",
 	"stat.error;phot.mag;stat.fit.param", "mag"},
 
@@ -338,6 +338,11 @@
   {"SPREADERR_MODEL", "Spread parameter error from model-fitting",
 	&outobj2.prof_concentrationerr, H_FLOAT, T_FLOAT, "%8.5f", "",
 	"src.morph.param", ""},
+
+  {"NOISEAREA_MODEL", "Equivalent noise area of the fitted model",
+	&outobj2.prof_noisearea, H_FLOAT, T_FLOAT, "%12.2f", "pixel**2",
+	"phys.area", "pix2"},
+
 /*
   {"CLASS_STAR_MODEL", "S/G classifier from model-fitting",
 	&outobj2.prof_class_star, H_FLOAT, T_FLOAT, "%7.4f", "",

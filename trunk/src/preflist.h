@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		09/03/2011
+*	Last modified:		25/03/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -81,7 +81,7 @@
    {"NONE", "IDENTICAL",
    "BACKGROUND", "BACKGROUND_RMS", "MINIBACKGROUND",
    "MINIBACK_RMS", "-BACKGROUND",
-   "FILTERED", "OBJECTS", "APERTURES", "SEGMENTATION", "ASSOC",
+   "FILTERED", "OBJECTS", "APERTURES", "SEGMENTATION", "MASK", "-MASK", "ASSOC",
    "-OBJECTS", "PSFS", "-PSFS",
    "PC_CONVPROTOS", "-PC_CONVPROTOS", "PC_PROTOS",  "MAP_SOM",
 #ifdef USE_MODEL

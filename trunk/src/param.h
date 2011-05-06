@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		13/03/2011
+*	Last modified:		03/05/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -127,6 +127,9 @@ keystruct	objkey[] = {
   {"MAGERR_WIN", "RMS error for MAG_WIN",
 	&outobj2.magerr_win, H_FLOAT, T_FLOAT, "%8.4f", "mag",
 	"stat.stdev;phot.mag", "mag"},
+  {"SNR_WIN", "Gaussian-weighted SNR",
+	&outobj2.snr_win, H_FLOAT, T_FLOAT, "%10.4g", "",
+	"stat.snr", ""},
 
   {"FLUX_SOMFIT", "Flux derived from SOM fit",
 	&outobj2.flux_somfit, H_FLOAT, T_FLOAT, "%12.7g", "count",
