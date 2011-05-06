@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		09/03/2011
+*	Last modified:		22/04/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -57,7 +57,7 @@
 
 static int		selectext(char *filename);
 time_t			thetimet, thetimet2;
-extern profitstruct	*theprofit;
+extern profitstruct	*theprofit,*thepprofit,*theqprofit;
 extern char		profname[][32];
 double			dtime;
 
@@ -124,7 +124,15 @@ void	makeit()
     fft_init(prefs.nthreads);
 /* Create profiles at full resolution */
     NFPRINTF(OUTPUT, "Preparing profile models");
-    theprofit = profit_init(thepsf);
+    theprofit = profit_init(thepsf,
+	 (FLAG(obj2.prof_offset_flux)? MODEL_BACK : MODEL_NONE)
+	|(FLAG(obj2.prof_dirac_flux)? MODEL_DIRAC : MODEL_NONE)
+	|(FLAG(obj2.prof_spheroid_flux)?
+		(FLAG(obj2.prof_spheroid_sersicn)?
+			MODEL_SERSIC : MODEL_DEVAUCOULEURS) : MODEL_NONE)
+	|(FLAG(obj2.prof_disk_flux)? MODEL_EXPONENTIAL : MODEL_NONE)
+	|(FLAG(obj2.prof_bar_flux)? MODEL_BAR : MODEL_NONE)
+	|(FLAG(obj2.prof_arms_flux)? MODEL_ARMS : MODEL_NONE));
     changecatparamarrays("VECTOR_MODEL", &theprofit->nparam, 1);
     changecatparamarrays("VECTOR_MODELERR", &theprofit->nparam, 1);
     nparam2[0] = nparam2[1] = theprofit->nparam;
@@ -161,9 +169,12 @@ void	makeit()
       {
       if (i)
         QPRINTF(OUTPUT, "+");
-      QPRINTF(OUTPUT, "%s", profname[theprofit->prof[i]->code]);
+      QPRINTF(OUTPUT, "%s", theprofit->prof[i]->name);
       }
     QPRINTF(OUTPUT, "\n");
+    if (FLAG(obj2.prof_concentration)|FLAG(obj2.prof_concentration))
+      thepprofit = profit_init(thepsf, MODEL_DIRAC);
+      theqprofit = profit_init(thepsf, MODEL_EXPONENTIAL);
 #else
     error(EXIT_FAILURE,
 		"*Error*: model-fitting is not supported in this build.\n",
@@ -535,6 +546,11 @@ void	makeit()
   if (prefs.prof_flag)
     {
     profit_end(theprofit);
+    if (FLAG(obj2.prof_concentration)|FLAG(obj2.prof_concentration))
+      {
+      profit_end(thepprofit);
+      profit_end(theqprofit);
+      }
     fft_end();
     }
 #endif

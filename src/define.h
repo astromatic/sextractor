@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		09/01/2011
+*	Last modified:		12/04/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -65,10 +65,10 @@
 #define	OUTPUT			stderr		/* where all msgs are sent */
 #define PSF_NPSFMAX		9		/* Max number of fitted PSFs */
 
-#define	DEG			(PI/180.0)	/* 1 deg in radians */
 #ifndef PI
 #define	PI			3.1415926535898	/* never met before? */
 #endif
+#define	DEG			(PI/180.0)	/* 1 deg in radians */
 
 /* NOTES:
  *

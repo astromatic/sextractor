@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		12/01/2011
+*	Last modified:		04/05/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -109,7 +109,7 @@ assocstruct  *load_assoc(char *filename, wcsstruct *wcs)
   if (!(file = fopen(filename, "r")))
     return NULL;
 
-  assoc = NULL;				/* To avoid gcc -Wall warnings */
+  QCALLOC(assoc, assocstruct, 1);
   list  = NULL;				/* To avoid gcc -Wall warnings */
   data  = NULL;				/* To avoid gcc -Wall warnings */
   ispoon = ncol = ndata = nlist = size = spoonsize = xindex = yindex
@@ -170,8 +170,7 @@ assocstruct  *load_assoc(char *filename, wcsstruct *wcs)
 
       nlist = ndata+3;
 
-/*---- Allocate memory for the ASSOC struct and the filtered list */
-      QMALLOC(assoc, assocstruct, 1);
+/*---- Allocate memory for the filtered list */
       ispoon = ASSOC_BUFINC/(nlist*sizeof(double));
       spoonsize = ispoon*nlist;
       QMALLOC(assoc->list, double, size = spoonsize);
@@ -210,11 +209,15 @@ assocstruct  *load_assoc(char *filename, wcsstruct *wcs)
 
   fclose(file);
   free(data);
-  QREALLOC(assoc->list, double, i*nlist);
+
   assoc->nobj = i;
-  assoc->radius = prefs.assoc_radius;
-  assoc->ndata = ndata;
-  assoc->ncol = nlist;
+  if (i>0)
+    {
+    QREALLOC(assoc->list, double, i*nlist);
+    assoc->radius = prefs.assoc_radius;
+    assoc->ndata = ndata;
+    assoc->ncol = nlist;
+    }
 
   return assoc;
   }
@@ -235,6 +238,9 @@ void	init_assoc(picstruct *field)
 					field->wcs : NULL)))
     error(EXIT_FAILURE, "*Error*: Assoc-list file not found: ",
 	prefs.assoc_name);
+
+  if (assoc->nobj==0)
+    warning(prefs.assoc_name, " ASSOC input-list is empty");
 
 /* Sort the assoc-list by y coordinates, and build the hash table */
   sort_assoc(field, assoc);

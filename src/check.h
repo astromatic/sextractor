@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		02/12/2010
+*	Last modified:		25/03/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -41,7 +41,7 @@ typedef struct structcheck
   size_t	npix;			/* number of pixels in check-image */
   int		y;			/* current line in check-image */
   PIXTYPE	overlay;		/* intensity of the overlayed plots */
-  PIXTYPE	*line;			/* buffered image line */
+  void		*line;			/* buffered image line */
   checkenum	type;			/* CHECKIMAGE_TYPE */
   }	checkstruct;
 

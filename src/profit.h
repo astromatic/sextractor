@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 2006-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 2006-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,12 +22,27 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		24/01/2011
+*	Last modified:		22/04/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
 #ifndef _PROFIT_H_
 #define _PROFIT_H_
+
+/*-------------------------------- models -----------------------------------*/
+
+#define		MODEL_NONE		0x0000
+#define		MODEL_BACK		0x0001
+#define		MODEL_DIRAC		0x0002
+#define		MODEL_SERSIC		0x0004
+#define		MODEL_DEVAUCOULEURS	0x0008
+#define		MODEL_EXPONENTIAL	0x0010
+#define		MODEL_ARMS		0x0020
+#define		MODEL_BAR		0x0040
+#define		MODEL_INRING		0x0080
+#define		MODEL_OUTRING		0x0100
+#define		MODEL_TABULATED		0x0200
+#define		MODEL_NMAX		11
 
 /*-------------------------------- flags ------------------------------------*/
 
@@ -64,11 +79,6 @@ One must have:	PROFIT_NITER > 0
 
 /*--------------------------------- typedefs --------------------------------*/
 
-typedef enum		{PROF_BACK, PROF_DIRAC, PROF_SERSIC, PROF_DEVAUCOULEURS,
-			PROF_EXPONENTIAL, PROF_ARMS, PROF_BAR, PROF_INRING,
-			PROF_OUTRING, PROF_SERSIC_TABEX, PROF_NPROF}
-				proftypenum; /* Profile code */
-
 typedef enum	{INTERP_NEARESTNEIGHBOUR, INTERP_BILINEAR, INTERP_LANCZOS2,
 		INTERP_LANCZOS3, INTERP_LANCZOS4}       interpenum;
 
@@ -90,7 +100,8 @@ typedef enum	{PARAM_BACK,
 
 typedef struct
   {
-  proftypenum	code;			/* Model code */
+  unsigned int	code;			/* Model code */
+  char		*name;			/* Model name */
   float		*pix;			/* Full pixmap of the model */
   int		naxis;			/* Number of pixmap dimensions */
   int		naxisn[3];		/* Pixmap size for each axis */
@@ -174,9 +185,9 @@ typedef struct
 /*----------------------------- Global variables ----------------------------*/
 /*-------------------------------- functions --------------------------------*/
 
-profitstruct	*profit_init(struct psf *psf);
+profitstruct	*profit_init(struct psf *psf, unsigned int modeltype);
 
-profstruct	*prof_init(profitstruct *profit, proftypenum profcode);
+profstruct	*prof_init(profitstruct *profit, unsigned int modeltype);
 
 float		*profit_compresi(profitstruct *profit, float dynparam,
 				float *resi),
@@ -186,6 +197,7 @@ float		*profit_compresi(profitstruct *profit, float dynparam,
 		prof_add(profitstruct *profit, profstruct *prof,
 			int extfluxfac_flag),
 		profit_minradius(profitstruct *profit, float refffac),
+		profit_noisearea(profitstruct *profit),
 		profit_spiralindex(profitstruct *profit);
 
 int		profit_copyobjpix(profitstruct *profit, picstruct *field,
@@ -206,6 +218,7 @@ void		prof_end(profstruct *prof),
 		profit_fit(profitstruct *profit,
 			picstruct *field, picstruct *wfield,
 			objstruct *obj, obj2struct *obj2),
+		profit_convmoments(profitstruct *profit, obj2struct *obj2),
 		profit_convolve(profitstruct *profit, float *modpix),
 		profit_covarunboundtobound(profitstruct *profit,
 			double *dparam, float *param),
