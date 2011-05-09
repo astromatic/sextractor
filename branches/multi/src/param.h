@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/10/2010
+*	Last modified:		03/05/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -127,6 +127,9 @@ keystruct	objkey[] = {
   {"MAGERR_WIN", "RMS error for MAG_WIN",
 	&outobj2.magerr_win, H_FLOAT, T_FLOAT, "%8.4f", "mag",
 	"stat.stdev;phot.mag", "mag"},
+  {"SNR_WIN", "Gaussian-weighted SNR",
+	&outobj2.snr_win, H_FLOAT, T_FLOAT, "%10.4g", "",
+	"stat.snr", ""},
 
   {"FLUX_SOMFIT", "Flux derived from SOM fit",
 	&outobj2.flux_somfit, H_FLOAT, T_FLOAT, "%12.7g", "count",
@@ -269,16 +272,16 @@ keystruct	objkey[] = {
 	"pos.eq.dec", "deg"},
 
   {"X_IMAGE", "Object position along x",
-	&outobj2.sposx, H_FLOAT, T_FLOAT, "%10.3f", "pixel",
+	&outobj2.sposx, H_FLOAT, T_FLOAT, "%11.4f", "pixel",
 	"pos.cartesian.x;pos.barycenter;instr.det;meta.main", "pix"},
   {"Y_IMAGE", "Object position along y",
-	&outobj2.sposy, H_FLOAT, T_FLOAT, "%10.3f", "pixel",
+	&outobj2.sposy, H_FLOAT, T_FLOAT, "%11.4f", "pixel",
 	"pos.cartesian.y;pos.barycenter;instr.det;meta.main", "pix"},
   {"X_IMAGE_DBL", "Object position along x (double precision)",
-	&outobj2.posx, H_FLOAT, T_DOUBLE, "%10.3f", "pixel",
+	&outobj2.posx, H_FLOAT, T_DOUBLE, "%11.4f", "pixel",
 	"pos.cartesian.x;pos.barycenter;instr.det", "pix"},
   {"Y_IMAGE_DBL", "Object position along y (double precision)",
-	&outobj2.posy, H_FLOAT, T_DOUBLE, "%10.3f", "pixel",
+	&outobj2.posy, H_FLOAT, T_DOUBLE, "%11.4f", "pixel",
 	"pos.cartesian.x;pos.barycenter;instr.det", "pix"},
   {"X_FOCAL", "Barycenter position along focal-plane x axis",
 	&outobj2.mxf, H_FLOAT, T_DOUBLE, "%18.10e", "",
@@ -425,10 +428,10 @@ keystruct	objkey[] = {
 	"src.impactParam;pos.errorEllipse", "deg-2"},
 
   {"ERRA_IMAGE", "RMS position error along major axis",
-	&outobj2.poserr_a, H_FLOAT, T_FLOAT, "%8.4f", "pixel",
+	&outobj2.poserr_a, H_FLOAT, T_FLOAT, "%9.5f", "pixel",
 	"stat.stdev;stat.max;pos.errorEllipse;instr.det;meta.main", "pix"},
   {"ERRB_IMAGE", "RMS position error along minor axis",
-	&outobj2.poserr_b, H_FLOAT, T_FLOAT, "%8.4f", "pixel",
+	&outobj2.poserr_b, H_FLOAT, T_FLOAT, "%9.5f", "pixel",
 	"stat.stdev;stat.min;pos.errorEllipse;instr.det;meta.main", "pix"},
   {"ERRTHETA_IMAGE", "Error ellipse position angle (CCW/x)",
 	&outobj2.poserr_theta, H_FLOAT, T_FLOAT, "%6.2f", "deg",
@@ -453,10 +456,10 @@ keystruct	objkey[] = {
 	"pos.posAng;pos.errorEllipse", "deg"},
 
   {"XWIN_IMAGE", "Windowed position estimate along x",
-	&outobj2.winpos_x, H_FLOAT, T_DOUBLE, "%10.3f", "pixel",
+	&outobj2.winpos_x, H_FLOAT, T_DOUBLE, "%11.4f", "pixel",
 	"pos.cartesian.x;instr.det", "pix"},
   {"YWIN_IMAGE", "Windowed position estimate along y",
-	&outobj2.winpos_y, H_FLOAT, T_DOUBLE, "%10.3f", "pixel",
+	&outobj2.winpos_y, H_FLOAT, T_DOUBLE, "%11.4f", "pixel",
 	"pos.cartesian.y;instr.det", "pix"},
 
   {"XWIN_FOCAL", "Windowed position along focal-plane x axis",
@@ -599,10 +602,10 @@ keystruct	objkey[] = {
 	"src.impactParam;pos.errorEllipse", "deg-2"},
 
   {"ERRAWIN_IMAGE", "RMS windowed pos error along major axis",
-	&outobj2.winposerr_a, H_FLOAT, T_FLOAT, "%8.4f", "pixel",
+	&outobj2.winposerr_a, H_FLOAT, T_FLOAT, "%9.5f", "pixel",
 	"stat.stdev;stat.max;pos.errorEllipse;instr.det", "pix"},
   {"ERRBWIN_IMAGE", "RMS windowed pos error along minor axis",
-	&outobj2.winposerr_b, H_FLOAT, T_FLOAT, "%8.4f", "pixel",
+	&outobj2.winposerr_b, H_FLOAT, T_FLOAT, "%9.5f", "pixel",
 	"stat.stdev;stat.min;pos.errorEllipse;instr.det", "pix"},
   {"ERRTHETAWIN_IMAGE", "Windowed error ellipse pos angle (CCW/x)",
 	&outobj2.winposerr_theta, H_FLOAT, T_FLOAT, "%6.2f", "deg",
@@ -723,7 +726,7 @@ keystruct	objkey[] = {
 	&outobj2.vigshift, H_FLOAT, T_FLOAT, "%12.7g", "count",
 	"obs.image", "ct", 2, prefs.vigshiftsize},
   {"VECTOR_ASSOC", "ASSOCiated parameter vector",
-	&outobj2.assoc, H_FLOAT, T_FLOAT, "%12.7g", "",
+	&outobj2.assoc, H_FLOAT, T_DOUBLE, "%12.7g", "",
 	"src", "", 1, &prefs.assoc_size},
   {"NUMBER_ASSOC", "Number of ASSOCiated IDs",
 	&outobj2.assoc_number, H_INT, T_LONG, "%10d", "",
@@ -750,10 +753,10 @@ keystruct	objkey[] = {
 	"phys.size.radius;instr.det", "pix",  1, &prefs.flux_radiussize},
 
   {"XPSF_IMAGE", "X coordinate from PSF-fitting",
-	&outobj2.x_psf, H_FLOAT, T_DOUBLE, "%10.3f", "pixel",
+	&outobj2.x_psf, H_FLOAT, T_DOUBLE, "%11.4f", "pixel",
 	"pos.cartesian.x;stat.fit.param;instr.det", "pix"},
   {"YPSF_IMAGE", "Y coordinate from PSF-fitting",
-	&outobj2.y_psf, H_FLOAT, T_DOUBLE, "%10.3f", "pixel",
+	&outobj2.y_psf, H_FLOAT, T_DOUBLE, "%11.4f", "pixel",
 	"pos.cartesian.y;stat.fit.param;instr.det", "pix"},
   {"XPSF_WORLD", "PSF position along world x axis",
 	&outobj2.xw_psf, H_FLOAT, T_DOUBLE, "%18.10e", "deg",
@@ -842,10 +845,10 @@ keystruct	objkey[] = {
 	"src.impactParam;pos.errorEllipse", "deg-2"},
 
   {"ERRAPSF_IMAGE", "PSF RMS position error along major axis",
-	&outobj2.poserra_psf, H_FLOAT, T_FLOAT, "%8.4f", "pixel",
+	&outobj2.poserra_psf, H_FLOAT, T_FLOAT, "%9.5f", "pixel",
 	"stat.stdev;stat.max;pos.errorEllipse;instr.det", "pix"},
   {"ERRBPSF_IMAGE", "PSF RMS position error along minor axis",
-	&outobj2.poserrb_psf, H_FLOAT, T_FLOAT, "%8.4f", "pixel",
+	&outobj2.poserrb_psf, H_FLOAT, T_FLOAT, "%9.5f", "pixel",
 	"stat.stdev;stat.min;pos.errorEllipse;instr.det", "pix"},
   {"ERRTHETAPSF_IMAGE", "PSF error ellipse position angle (CCW/x)",
 	&outobj2.poserrtheta_psf, H_FLOAT, T_FLOAT, "%6.2f", "deg",

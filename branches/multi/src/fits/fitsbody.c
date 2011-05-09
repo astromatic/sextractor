@@ -691,11 +691,11 @@ VERSION	02/11/2009
  ***/
 void	write_body(tabstruct *tab, PIXTYPE *ptr, size_t size)
   {
-  static double	bufdata0[DATA_BUFSIZE/sizeof(double)];
-  catstruct	*cat;
-  char		*cbufdata0;
-  size_t	i, bowl, spoonful;
-  PIXTYPE	bs,bz;
+   static double	bufdata0[DATA_BUFSIZE/sizeof(double)];
+   catstruct		*cat;
+   char			*cbufdata0;
+   size_t		i, bowl, spoonful;
+   PIXTYPE		bs,bz;
 
   bs = (PIXTYPE)tab->bscale;
   bz = (PIXTYPE)tab->bzero;
@@ -729,7 +729,7 @@ void	write_body(tabstruct *tab, PIXTYPE *ptr, size_t size)
               {
                unsigned char	*bufdata = (unsigned char *)cbufdata0;
               for (i=spoonful; i--;)
-                *(bufdata++) = (unsigned char)((*(ptr++)-bz)/bs+0.49999);;
+                *(bufdata++) = (unsigned char)((*(ptr++)-bz)/bs+0.49999);
               }
             break;
 
@@ -800,6 +800,158 @@ void	write_body(tabstruct *tab, PIXTYPE *ptr, size_t size)
              double	*bufdata = (double *)cbufdata0;
             for (i=spoonful; i--;)
               *(bufdata++) = (double)(*(ptr++)-bz)/bs;
+            if (bswapflag)
+              swapbytes(cbufdata0, 8, spoonful);
+            }
+            break;
+
+          default:
+            error(EXIT_FAILURE,"*FATAL ERROR*: unknown BITPIX type in ",
+                                "read_body()");
+            break;
+          }
+        QFWRITE(cbufdata0, spoonful*tab->bytepix, cat->file, cat->filename);
+        }
+      break;
+
+/*-- Compressed image */
+    case COMPRESS_BASEBYTE:
+      break;
+
+    case COMPRESS_PREVPIX:
+      break;
+
+    default:
+      error(EXIT_FAILURE,"*Internal Error*: unknown compression mode in ",
+                                "read_body()");
+    }
+
+  return;
+  }
+
+
+/******* write_ibody ***********************************************************
+PROTO	write_ibody(tabstruct *tab, FLAGTYPE *ptr, long size)
+PURPOSE	Write integer values to a FITS body.
+INPUT	A pointer to the tab structure,
+	a pointer to the array in memory,
+	the number of elements to be written.
+OUTPUT	-.
+NOTES	.
+AUTHOR	E. Bertin (IAP)
+VERSION	02/12/2010
+ ***/
+void	write_ibody(tabstruct *tab, FLAGTYPE *ptr, size_t size)
+  {
+   static FLAGTYPE	bufdata0[DATA_BUFSIZE/sizeof(FLAGTYPE)];
+   catstruct		*cat;
+   char			*cbufdata0;
+   size_t		i, bowl, spoonful;
+   double		bs,bz;
+
+  bs = tab->bscale;
+  bz = tab->bzero;
+  cat = tab->cat;
+  if (!cat)
+    error(EXIT_FAILURE, "*Internal Error*: no parent cat structure for table ",
+		tab->extname);
+
+  cbufdata0 = (char *)bufdata0;	/* A trick to remove gcc aliasing warnings */
+ 
+  switch(tab->compress_type)
+    {
+/*-- Uncompressed image */
+    case COMPRESS_NONE:
+      bowl = DATA_BUFSIZE/tab->bytepix;
+      spoonful = size<bowl?size:bowl;
+      for(; size>0; size -= spoonful)
+        {
+        if (spoonful>size)
+          spoonful = size;
+        switch(tab->bitpix)
+          {
+          case BP_BYTE:
+            if (tab->bitsgn)
+              {
+               char	*bufdata = (char *)cbufdata0;
+              for (i=spoonful; i--;)
+                *(bufdata++) = (char)*(ptr++);
+              }
+            else
+              {
+               unsigned char	*bufdata = (unsigned char *)cbufdata0;
+              for (i=spoonful; i--;)
+                *(bufdata++) = (unsigned char)*(ptr++);
+              }
+            break;
+
+          case BP_SHORT:
+            if (tab->bitsgn)
+              {
+               short	*bufdata = (short *)cbufdata0;
+              for (i=spoonful; i--;)
+                *(bufdata++) = (short)*(ptr++);
+              }
+            else
+              {
+               unsigned short	*bufdata = (unsigned short *)cbufdata0;
+              for (i=spoonful; i--;)
+                *(bufdata++) = (unsigned short)*(ptr++);
+              }
+            if (bswapflag)
+              swapbytes(cbufdata0, 2, spoonful);
+            break;
+
+          case BP_LONG:
+           if (tab->bitsgn)
+              {
+               int	*bufdata = (int *)cbufdata0;
+              for (i=spoonful; i--;)
+                *(bufdata++) = (int)*(ptr++);
+              }
+            else
+              {
+               unsigned int	*bufdata = (unsigned int *)cbufdata0;
+              for (i=spoonful; i--;)
+                *(bufdata++) = (unsigned int)*(ptr++);
+              }
+            if (bswapflag)
+              swapbytes(cbufdata0, 4, spoonful);
+            break;
+
+#ifdef HAVE_LONG_LONG_INT
+          case BP_LONGLONG:
+           if (tab->bitsgn)
+              {
+               LONGLONG	*bufdata = (LONGLONG *)cbufdata0;
+              for (i=spoonful; i--;)
+                *(bufdata++) = (LONGLONG)*(ptr++);
+              }
+            else
+              {
+               ULONGLONG	*bufdata = (ULONGLONG *)cbufdata0;
+              for (i=spoonful; i--;)
+                *(bufdata++) = (ULONGLONG)*(ptr++);
+              }
+            if (bswapflag)
+              swapbytes(cbufdata0, 8, spoonful);
+            break;
+#endif
+          case BP_FLOAT:
+            {
+             float	*bufdata = (float *)cbufdata0;
+            for (i=spoonful; i--;)
+              *(bufdata++) = (float)((double)*(ptr++)-bz)/bs;
+            if (bswapflag)
+              swapbytes(cbufdata0, 4, spoonful);
+            }
+            break;
+
+          case BP_DOUBLE:
+            {
+             double	*bufdata = (double *)cbufdata0;
+            for (i=spoonful; i--;)
+              *(bufdata++) = ((double)*(ptr++)-bz)/bs;
             if (bswapflag)
               swapbytes(cbufdata0, 8, spoonful);
             }

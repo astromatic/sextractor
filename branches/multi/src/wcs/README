@@ -1,0 +1,6 @@
+This directory contains a modified version of the WCSlib V2.2 library by
+Mark Calabretta <mcalabre@atnf.csiro.au>, released under the GNU Library General
+Public License.
+The original version was downloaded from ftp://ftp.cv.nrao.edu/fits/src/wcs/.
+See http://www.atnf.csiro.au/people/mcalabre/WCS/wcslib for more details.
+
