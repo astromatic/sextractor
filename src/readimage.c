@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/10/2010
+*	Last modified:		25/03/2010
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -163,6 +163,12 @@ void	*loadstrip(picstruct *field, picstruct *wfield)
 
 /*---- copy to Check-image the "oldest" line before it is replaced */
       if ((flags & MEASURE_FIELD) && (check=prefs.check[CHECK_SUBOBJECTS]))
+        writecheck(check, data, w);
+
+      if ((flags & MEASURE_FIELD) && (check=prefs.check[CHECK_MASK]))
+        writecheck(check, data, w);
+
+      if ((flags & MEASURE_FIELD) && (check=prefs.check[CHECK_SUBMASK]))
         writecheck(check, data, w);
 
       if (flags & BACKRMS_FIELD)

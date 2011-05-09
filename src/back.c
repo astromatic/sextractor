@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/10/2010
+*	Last modified:		23/03/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -48,7 +48,7 @@
 Background maps are established from the images themselves; thus we need to
 make at least one first pass through the data.
 */
-void	makeback(picstruct *field, picstruct *wfield)
+void	makeback(picstruct *field, picstruct *wfield, int wscale_flag)
 
   {
    backstruct	*backmesh,*wbackmesh, *bm,*wbm;
@@ -60,7 +60,7 @@ void	makeback(picstruct *field, picstruct *wfield)
 		w,bw, bh, nx,ny,nb,
 		lflag, nr;
    float	*ratio,*ratiop, *weight, *sigma,
-		sratio;
+		sratio, sigfac;
 
 /* If the weight-map is not an external one, no stats are needed for it */
   if (wfield && wfield->flags&(INTERP_FIELD|BACKRMS_FIELD))
@@ -308,17 +308,26 @@ void	makeback(picstruct *field, picstruct *wfield)
         *(ratiop++) = sratio;
         nr++;
         }
-    wfield->sigfac = fqmedian(ratio, nr);
+    sigfac = fqmedian(ratio, nr);
     for (i=0; i<nr && ratio[i]<=0.0; i++);
     if (i<nr)
-      wfield->sigfac = fqmedian(ratio+i, nr-i);
+      sigfac = fqmedian(ratio+i, nr-i);
     else
       {
       warning("Null or negative global weighting factor:","defaulted to 1");
-      wfield->sigfac = 1.0;
+      sigfac = 1.0;
       } 
     free(ratio);
+
+    if (wscale_flag)
+      wfield->sigfac = sigfac;
+    else
+      {
+      wfield->sigfac = 1.0;
+      field->backsig /= sigfac;
+      }
     }
+
 
 /* Compute 2nd derivatives along the y-direction */
   NFPRINTF(OUTPUT, "Computing background d-map");

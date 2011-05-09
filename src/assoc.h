@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1997-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1997-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,9 +22,13 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/10/2010
+*	Last modified:		12/01/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
+
+#ifndef _FITSWCS_H_
+#include        "fitswcs.h"
+#endif
 
 #define		ASSOC_BUFINC	131072	/* Assoc buffer increment (bytes) */
 
@@ -32,20 +36,20 @@
 
 typedef struct structassoc
   {
-  float		*list;			/* Pointer to the list of data */
+  double	*list;			/* Pointer to the list of data */
   int		nobj;			/* Number of data rows */
   int		ncol;			/* Total number of columns per row */
   int		ndata;			/* Number of retained cols per row */
   int		*hash;			/* Pointer to the hash table */
-  float		*data;			/* Copy of current parameters */
-  float		radius;			/* Radius of search for association */
+  double	*data;			/* Copy of current parameters */
+  double	radius;			/* Radius of search for association */
   }             assocstruct;
 
 /*------------------------------ Prototypes ---------------------------------*/
 
-assocstruct	*load_assoc(char *filename);
+assocstruct	*load_assoc(char *filename, wcsstruct *wcs);
 
-int		do_assoc(picstruct *field, float x, float y);
+int		do_assoc(picstruct *field, double x, double y);
 
 void		init_assoc(picstruct *field),
 		end_assoc(picstruct *field),

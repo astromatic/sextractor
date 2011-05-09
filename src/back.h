@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/10/2010
+*	Last modified:		09/03/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -32,6 +32,9 @@
 #define	QUANTIF_NSIGMA		5		/* histogram limits */
 #define	QUANTIF_NMAXLEVELS	4096		/* max nb of quantif. levels */
 #define	QUANTIF_AMIN		4		/* min nb of "mode pixels" */
+
+#define	BACK_WSCALE		1		/* Activate weight scaling */
+#define	BACK_NOWSCALE		0		/* No weight scaling */
 
 /* NOTES:
 One must have:		BACK_BUFSIZE >= MAXPICSIZE
@@ -61,7 +64,7 @@ void		backhisto(backstruct *, backstruct *, PIXTYPE *, PIXTYPE *,
 		copyback(picstruct *infield, picstruct *outfield),
 		endback(picstruct *),
 		filterback(picstruct *),
-		makeback(picstruct *, picstruct *),
+		makeback(picstruct *, picstruct *, int),
 		subbackline(picstruct *, int, PIXTYPE *);
 
 float		backguess(backstruct *, float *, float *),

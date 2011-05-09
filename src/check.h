@@ -22,24 +22,26 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/10/2010
+*	Last modified:		25/03/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
+
+#ifndef _FITSCAT_H_
+#include "fits/fitscat.h"
+#endif
 
 /*--------------------------------- structures ------------------------------*/
 /* Check-image parameters */
 typedef struct structcheck
   {
-  char		filename[MAXCHAR];	/* ptr to check-image filename */
-  FILE		*file;			/* ptr to check-image file structure */
-  char		*fitshead;		/* ptr to check-image FITS header */
-  int		fitsheadsize;		/* size of check-image FITS header */
+  int		next;			/* Number of extensions */
+  catstruct	*cat;			/* FITS file structure */
   void		*pix;			/* ptr to check-image pixmap */
   int		width, height, depth;	/* size of check-image */
   size_t	npix;			/* number of pixels in check-image */
   int		y;			/* current line in check-image */
   PIXTYPE	overlay;		/* intensity of the overlayed plots */
-  PIXTYPE	*line;			/* buffered image line */
+  void		*line;			/* buffered image line */
   checkenum	type;			/* CHECKIMAGE_TYPE */
   }	checkstruct;
 

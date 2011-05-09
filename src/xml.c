@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/10/2010
+*	Last modified:		24/01/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -231,7 +231,7 @@ INPUT	Pointer to the output file (or stream),
 OUTPUT	RETURN_OK if everything went fine, RETURN_ERROR otherwise.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	03/08/2010
+VERSION	24/01/2011
  ***/
 int	write_xml_meta(FILE *file, char *error)
   {
@@ -754,6 +754,11 @@ int	write_xml_meta(FILE *file, char *error)
         fprintf(file, " %d", prefs.assoc_param[n]);
       fprintf(file, "\"/>\n");
       }
+    fprintf(file,
+	"   <PARAM name=\"AssocCoord_Type\" datatype=\"char\" arraysize=\"*\""
+	" ucd=\"meta.code;obs.param\" value=\"%s\"/>\n",
+    	key[findkeys("ASSOCCOORD_TYPE", keylist,
+			FIND_STRICT)].keylist[prefs.assoccoord_type]);
     fprintf(file, "   <PARAM name=\"Assoc_Radius\" datatype=\"float\""
 	" ucd=\"phys.size.radius;obs.param\" value=\"%g\" unit=\"pix\"/>\n",
     	prefs.assoc_radius);

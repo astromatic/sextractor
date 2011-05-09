@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		14/10/2010
+*	Last modified:		09/03/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -96,6 +96,8 @@ typedef struct
   int		weight_flag;				/* do we weight ? */
   int		dweight_flag;				/* detection weight? */
   int		weightgain_flag;			/* weight gain? */
+  int		wscale_flag[2];		/* Weight rescaling */
+  int		nwscale_flag;				/* nb of params */
 /*----- photometry */
   enum	{CAT_NONE, ASCII, ASCII_HEAD, ASCII_SKYCAT, ASCII_VO,
 	FITS_LDAC, FITS_TPX, FITS_10}
@@ -167,6 +169,8 @@ typedef struct
   enum	{ASSOC_FIRST, ASSOC_NEAREST, ASSOC_MEAN, ASSOC_MAGMEAN,
 	 ASSOC_SUM, ASSOC_MAGSUM, ASSOC_MIN, ASSOC_MAX}
 		assoc_type;				/* type of assoc. */
+  enum	{ASSOCCOORD_PIXEL, ASSOCCOORD_WORLD}
+		assoccoord_type;		       	/* type of coords */
   enum	{ASSOCSELEC_ALL, ASSOCSELEC_MATCHED, ASSOCSELEC_NOMATCHED}
 		assocselec_type;		       	/* type of assoc. */
   double	assoc_radius;				/* ASSOC range */

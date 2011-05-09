@@ -23,7 +23,7 @@
 *	along with AstrOmatic software.
 *	If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		09/10/2010
+*	Last modified:		02/12/2010
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -247,6 +247,7 @@ extern void	add_cleanupfilename(char *filename),
 		voprint_obj(FILE *stream, tabstruct *tab),
 		warning(char *, char *),
 		write_body(tabstruct *tab, PIXTYPE *ptr, size_t size),
+		write_ibody(tabstruct *tab, FLAGTYPE *ptr, size_t size),
 		write_checksum(tabstruct *tab);
 
 extern char	*tdisptoprintf(char *tdisp, char *str),
