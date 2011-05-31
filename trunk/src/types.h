@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		03/05/2011
+*	Last modified:		19/05/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -278,6 +278,8 @@ typedef struct
   float		*flux_radius;			/* f-light-radii */
   float		hl_radius;			/* Scalar half-light radius */
 /* ---- PSF-fitting */
+  float		fwhm_psf;			/* PSF FWHM */
+  float		fwhmw_psf;			/* WORLD PSF FWHM */
   float		flux_psf;			/* Flux from PSF-fitting */
   float		fluxerr_psf;			/* RMS error on PSF flux */
   float		mag_psf;			/* Mag from PSF-fitting */

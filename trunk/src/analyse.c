@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		14/10/2010
+*	Last modified:		19/05/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -514,7 +514,8 @@ void	endobject(picstruct *field, picstruct *dfield, picstruct *wfield,
 	|| FLAG(obj2.poserrmx2w_psf)
 	|| FLAG(obj2.poserrmx2w_prof)
 	|| FLAG(obj2.prof_flagw)
-	|| ((!prefs.pixel_scale) && FLAG(obj2.area_flagw)))
+	|| ((!prefs.pixel_scale) && FLAG(obj2.area_flagw))
+	|| ((!prefs.pixel_scale) && FLAG(obj2.fwhmw_psf)))
       {
       rawpos[0] = obj2->posx;
       rawpos[1] = obj2->posy;
@@ -606,14 +607,22 @@ void	endobject(picstruct *field, picstruct *dfield, picstruct *wfield,
 	check->overlay, obj->flag&OBJ_CROWDED);
       }
 
-/* ---- Star/Galaxy classification */
+/* ---------------------- Star/Galaxy classification -----------------------*/
+    if (FLAG(obj2.fwhm_psf) || (FLAG(obj2.sprob) && prefs.seeing_fwhm==0.0))
+      {
+      obj2->fwhm_psf = (prefs.seeing_fwhm==0.0)?
+				psf_fwhm(thepsf)*field->pixscale
+				: prefs.seeing_fwhm;
+      if (FLAG(obj2.fwhmw_psf))
+        obj2->fwhmw_psf = obj2->fwhm_psf * (prefs.pixel_scale?
+		field->pixscale/3600.0 : sqrt(obj2->pixscale2));
+      }
 
     if (FLAG(obj2.sprob))
       {
        double	fac2, input[10], output, fwhm;
 
-      fwhm = (prefs.seeing_fwhm==0.0)? psf_fwhm(thepsf)*field->pixscale
-				: prefs.seeing_fwhm;
+      fwhm = (prefs.seeing_fwhm==0.0)? obj2->fwhm_psf : prefs.seeing_fwhm;
 
       fac2 = fwhm/field->pixscale;
       fac2 *= fac2;

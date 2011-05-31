@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 2006-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 2006-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		29/04/2011
+*	Last modified:		31/05/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -166,7 +166,7 @@ OUTPUT	Pointer to an allocated fit structure (containing details about the
 	fit).
 NOTES	It is a modified version of the lm_minimize() of lmfit.
 AUTHOR	E. Bertin (IAP)
-VERSION	29/04/2011
+VERSION	31/05/2011
  ***/
 void	profit_fit(profitstruct *profit,
 		picstruct *field, picstruct *wfield,
@@ -270,15 +270,20 @@ void	profit_fit(profitstruct *profit,
 
 /* Set initial guesses and boundaries */
   profit->sigma = obj->sigbkg;
+  if ((profit->guessradius = 0.5*psf->fwhm) < obj2->hl_radius)
+    profit->guessradius = obj2->hl_radius;
+  if ((profit->guessflux = obj2->flux_auto) <= 0.0)
+    profit->guessflux = 0.0;
+  if ((profit->guessfluxmax = 10.0*obj2->fluxerr_auto) <= profit->guessflux)
+    profit->guessfluxmax = profit->guessflux;
+  if (profit->guessfluxmax <= 0.0)
+    profit->guessfluxmax = 1.0;
 
   profit_resetparams(profit);
 
 /* Actual minimisation */
   fft_reset();
 the_gal++;
-  for (p=0; p<profit->nparam; p++)
-    profit->freeparam_flag[p] = 1;
-  profit->nfreeparam = profit->nparam;
 
 /*
 char str[1024];
@@ -334,9 +339,13 @@ index = profit->paramindex;
 for (i=0; i<PARAM_NPARAM; i++)
 if (list[i] && i!= PARAM_SPHEROID_ASPECT && i!=PARAM_SPHEROID_POSANG)
 profit->freeparam_flag[index[i]] = 0;
-profit->nfreeparam = 2;
 profit->niter = profit_minimize(profit, PROFIT_MAXITER);
 */
+  if (profit->nlimmin)
+    obj2->prof_flag |= PROFLAG_MINLIM;
+  if (profit->nlimmax)
+    obj2->prof_flag |= PROFLAG_MAXLIM;
+
   for (p=0; p<nparam; p++)
     profit->paramerr[p]= sqrt(profit->covar[p*(nparam+1)]);
 
@@ -746,6 +755,9 @@ profit->resi);
       }
     psf = pprofit->psf;
     pprofit->pixstep = profit->pixstep;
+    pprofit->guessradius = profit->guessradius;
+    pprofit->guessflux = profit->guessflux;
+    pprofit->guessfluxmax = profit->guessfluxmax;
     pprofit->ix = profit->ix;
     pprofit->iy = profit->iy;
     pprofit->objnaxisn[0] = profit->objnaxisn[0];
@@ -760,9 +772,6 @@ profit->resi);
     pprofit->nmodpix = profit->nmodpix;
     profit_psf(pprofit);
     pprofit->sigma = obj->sigbkg;
-    for (p=0; p<pprofit->nparam; p++)
-      pprofit->freeparam_flag[p] = 1;
-    pprofit->nfreeparam = pprofit->nparam;
     profit_resetparams(pprofit);
     if (profit->paramlist[PARAM_X] && profit->paramlist[PARAM_Y])
       {
@@ -781,6 +790,9 @@ profit->resi);
       QFREE(qprofit->psfdft);
       }
     qprofit->pixstep = profit->pixstep;
+    qprofit->guessradius = profit->guessradius;
+    qprofit->guessflux = profit->guessflux;
+    qprofit->guessfluxmax = profit->guessfluxmax;
     qprofit->ix = profit->ix;
     qprofit->iy = profit->iy;
     qprofit->objnaxisn[0] = profit->objnaxisn[0];
@@ -795,14 +807,14 @@ profit->resi);
     qprofit->nmodpix = profit->nmodpix;
     profit_psf(qprofit);
     qprofit->sigma = obj->sigbkg;
-    for (p=0; p<qprofit->nparam; p++)
-      qprofit->freeparam_flag[p] = 1;
-    qprofit->nfreeparam = qprofit->nparam;
     profit_resetparams(qprofit);
     fft_reset();
-    qprofit->paraminit[qprofit->paramindex[PARAM_X]] = pprofit->paraminit[pprofit->paramindex[PARAM_X]];
-    qprofit->paraminit[qprofit->paramindex[PARAM_Y]] = pprofit->paraminit[pprofit->paramindex[PARAM_Y]];
-    qprofit->paraminit[qprofit->paramindex[PARAM_DISK_FLUX]] = pprofit->paraminit[pprofit->paramindex[PARAM_DIRAC_FLUX]];
+    qprofit->paraminit[qprofit->paramindex[PARAM_X]]
+		= pprofit->paraminit[pprofit->paramindex[PARAM_X]];
+    qprofit->paraminit[qprofit->paramindex[PARAM_Y]]
+		= pprofit->paraminit[pprofit->paramindex[PARAM_Y]];
+    qprofit->paraminit[qprofit->paramindex[PARAM_DISK_FLUX]]
+		= pprofit->paraminit[pprofit->paramindex[PARAM_DIRAC_FLUX]];
     qprofit->paraminit[qprofit->paramindex[PARAM_DISK_SCALE]] = psf->fwhm/16.0;
     qprofit->paraminit[qprofit->paramindex[PARAM_DISK_ASPECT]] = 1.0;
     qprofit->paraminit[qprofit->paramindex[PARAM_DISK_POSANG]] = 0.0;
@@ -1227,13 +1239,13 @@ INPUT	Pointer to the profit structure involved in the fit,
 OUTPUT	Number of iterations used.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	24/01/2010
+VERSION	20/05/2011
  ***/
 int	profit_minimize(profitstruct *profit, int niter)
   {
-   double		lm_opts[5], info[LM_INFO_SZ];
-   double		dcovar[PARAM_NPARAM*PARAM_NPARAM],
-			dparam[PARAM_NPARAM];
+   double	lm_opts[5], info[LM_INFO_SZ],
+		dcovar[PARAM_NPARAM*PARAM_NPARAM], dparam[PARAM_NPARAM];
+   int		nfree;
 
   profit->iter = 0;
   memset(dcovar, 0, profit->nparam*profit->nparam*sizeof(double));
@@ -1245,10 +1257,11 @@ int	profit_minimize(profitstruct *profit, int niter)
   lm_opts[3] = 1.0e-6;		/* ||e||_2 stopping factor */
   lm_opts[4] = 1.0e-4;		/* Jacobian step */
 
-  profit_boundtounbound(profit, profit->paraminit, dparam, PARAM_ALLPARAMS);
+  nfree = profit_boundtounbound(profit, profit->paraminit, dparam,
+				PARAM_ALLPARAMS);
 
-  niter = dlevmar_dif(profit_evaluate, dparam, NULL, profit->nfreeparam,
-		profit->nresi, niter, lm_opts, info, NULL, dcovar, profit);
+  niter = dlevmar_dif(profit_evaluate, dparam, NULL, nfree, profit->nresi,
+			niter, lm_opts, info, NULL, dcovar, profit);
 
   profit_unboundtobound(profit, dparam, profit->paraminit, PARAM_ALLPARAMS);
 
@@ -1318,7 +1331,7 @@ INPUT	Pointer to the vector of parameters,
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	24/01/2011
+VERSION	20/05/2011
  ***/
 void	profit_evaluate(double *dpar, double *fvec, int m, int n, void *adata)
   {
@@ -1347,7 +1360,7 @@ void	profit_evaluate(double *dpar, double *fvec, int m, int n, void *adata)
         fd = f;
         q++;
         }
-      if (profit->freeparam_flag[p])
+      if (profit->parfittype[p]!=PARFIT_FIXED)
         f++;
       }
     if (f>0 && q==1)
@@ -2208,7 +2221,7 @@ INPUT	Profile-fitting structure.
 OUTPUT	Vector of residuals.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	18/09/2008
+VERSION	18/05/2011
  ***/
 float profit_spiralindex(profitstruct *profit)
   {
@@ -2225,7 +2238,7 @@ float profit_spiralindex(profitstruct *profit)
   obj = profit->obj;
   obj2 = profit->obj2;
 /* Compute simple derivative vectors at a fraction of the object scale */
-  fwhm = obj2->hl_radius * 2.0 / 4.0;
+  fwhm = profit->guessradius * 2.0 / 4.0;
   if (fwhm < 2.0)
     fwhm = 2.0;
   sep = 2.0;
@@ -2282,7 +2295,7 @@ float profit_spiralindex(profitstruct *profit)
   fft_conv(gdy, fdy, profit->objnaxisn);
 
 /* Compute estimator */
-  invtwosigma2 = -1.18*1.18 / (2.0*obj2->hl_radius*obj2->hl_radius);
+  invtwosigma2 = -1.18*1.18 / (2.0*profit->guessradius*profit->guessradius);
   xstart = -hw - obj->mx + (int)(obj->mx+0.49999);
   y = -hh -  obj->my + (int)(obj->my+0.49999);;
   spirindex = 0.0;
@@ -2830,13 +2843,14 @@ INPUT	Pointer to the profit structure,
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	13/10/2010
+VERSION	18/05/2011
  ***/
 void	profit_resetparam(profitstruct *profit, paramenum paramtype)
   {
    objstruct	*obj;
    obj2struct	*obj2;
    float	param, parammin,parammax, range;
+   parfitenum	fittype;
 
   obj = profit->obj;
   obj2 = profit->obj2;
@@ -2845,103 +2859,122 @@ void	profit_resetparam(profitstruct *profit, paramenum paramtype)
   switch(paramtype)
     {
     case PARAM_BACK:
+      fittype = PARFIT_LINBOUND;
       param = 0.0;
       parammin = -6.0*obj->sigbkg;
       parammax =  6.0*obj->sigbkg;
       break;
     case PARAM_X:
+      fittype = PARFIT_LINBOUND;
       param = obj->mx - (int)(obj->mx+0.49999);
-      range = obj2->hl_radius*4.0;
+      range = profit->guessradius*4.0;
       if (range>profit->objnaxisn[0]*2.0)
         range = profit->objnaxisn[0]*2.0;
       parammin = -range;
       parammax =  range;
       break;
     case PARAM_Y:
+      fittype = PARFIT_LINBOUND;
       param = obj->my - (int)(obj->my+0.49999);
-      range = obj2->hl_radius*4.0;
+      range = profit->guessradius*4.0;
       if (range>profit->objnaxisn[1]*2)
         range = profit->objnaxisn[1]*2;
       parammin = -range;
       parammax =  range;
       break;
     case PARAM_DIRAC_FLUX:
-      param = obj2->flux_auto/profit->nprof;
-      parammin = -obj2->flux_auto/1000.0;
-      parammax = 2*obj2->flux_auto;
+      fittype = PARFIT_LOGBOUND;
+      param = profit->guessflux/profit->nprof;
+      parammin = 0.00001*profit->guessfluxmax;
+      parammax = 10.0*profit->guessfluxmax;
       break;
     case PARAM_SPHEROID_FLUX:
-      param = obj2->flux_auto/profit->nprof;
-      parammin = -obj2->flux_auto/1000.0;
-      parammax = 4*obj2->flux_auto;
+      fittype = PARFIT_LOGBOUND;
+      param = profit->guessflux/profit->nprof;
+      parammin = 0.00001*profit->guessfluxmax;
+      parammax = 10.0*profit->guessfluxmax;
       break;
     case PARAM_SPHEROID_REFF:
-      param = FLAG(obj2.prof_disk_flux)? obj2->hl_radius
-				: obj2->hl_radius*sqrtf(obj->a/obj->b);
+      fittype = PARFIT_LOGBOUND;
+      param = FLAG(obj2.prof_disk_flux)? profit->guessradius
+				: profit->guessradius*sqrtf(obj->a/obj->b);
       parammin = 0.01;
-      parammax = param * 4.0;
+      parammax = param * 10.0;
       break;
     case PARAM_SPHEROID_ASPECT:
+      fittype = PARFIT_LOGBOUND;
       param = FLAG(obj2.prof_disk_flux)? 1.0 : obj->b/obj->a;
       parammin = FLAG(obj2.prof_disk_flux)? 0.5 : 0.01;
       parammax = FLAG(obj2.prof_disk_flux)? 2.0 : 100.0;
       break;
     case PARAM_SPHEROID_POSANG:
+      fittype = PARFIT_UNBOUND;
       param = obj->theta;
       parammin = 90.0;
       parammax =  90.0;
       break;
     case PARAM_SPHEROID_SERSICN:
+      fittype = PARFIT_LINBOUND;
       param = 4.0;
       parammin = FLAG(obj2.prof_disk_flux)? 1.0 : 0.3;
       parammax = 10.0;
       break;
     case PARAM_DISK_FLUX:
-      param = obj2->flux_auto/profit->nprof;
-      parammin = -obj2->flux_auto/1000.0;
-      parammax = 2*obj2->flux_auto;
+      fittype = PARFIT_LOGBOUND;
+      param = profit->guessflux/profit->nprof;
+      parammin = 0.00001*profit->guessfluxmax;
+      parammax = 10.0*profit->guessfluxmax;
       break;
     case PARAM_DISK_SCALE:	/* From scalelength to Re */
-      param = obj2->hl_radius/1.67835*sqrtf(obj->a/obj->b);
-      parammin = FLAG(obj2.prof_spheroid_flux)? 0.01/1.67835 : param/4.0;
-      parammax = param * 4.0;
+      fittype = PARFIT_LOGBOUND;
+      param = profit->guessradius/1.67835*sqrtf(obj->a/obj->b);
+      parammin = 0.01/1.67835;
+      parammax = param * 10.0;
       break;
     case PARAM_DISK_ASPECT:
+      fittype = PARFIT_LOGBOUND;
       param = obj->b/obj->a;
       parammin = 0.01;
       parammax = 100.0;
       break;
     case PARAM_DISK_POSANG:
+      fittype = PARFIT_UNBOUND;
       param = obj->theta;
       parammin = 90.0;
       parammax =  90.0;
       break;
     case PARAM_ARMS_FLUX:
-      param = obj2->flux_auto/2.0;
-      parammin = 0.0;
-      parammax = obj2->flux_auto*2.0;
+      fittype = PARFIT_LOGBOUND;
+      param = profit->guessflux/profit->nprof;
+      parammin = 0.00001*profit->guessfluxmax;
+      parammax = 10.0*profit->guessfluxmax;
       break;
     case PARAM_ARMS_QUADFRAC:
+      fittype = PARFIT_LINBOUND;
       param = 0.5;
       parammin = 0.0;
       parammax = 1.0;
       break;
     case PARAM_ARMS_SCALE:
+      fittype = PARFIT_LINBOUND;
       param = 1.0;
       parammin = 0.5;
       parammax = 10.0;
       break;
     case PARAM_ARMS_START:
+      fittype = PARFIT_LINBOUND;
       param = 0.5;
       parammin = 0.0;
       parammax = 3.0;
       break;
     case PARAM_ARMS_PITCH:
+      fittype = PARFIT_LINBOUND;
       param = 20.0;
       parammin = 5.0;
       parammax = 50.0;
       break;
     case PARAM_ARMS_PITCHVAR:
+      fittype = PARFIT_LINBOUND;
       param = 0.0;
       parammin = -1.0;
       parammax = 1.0;
@@ -2955,56 +2988,67 @@ void	profit_resetparam(profitstruct *profit, paramenum paramtype)
 //      printf("spiral index: %g  \n", profit->spirindex);
 //      break;
     case PARAM_ARMS_POSANG:
+      fittype = PARFIT_UNBOUND;
       param = 0.0;
       parammin = 0.0;
       parammax = 0.0;
       break;
     case PARAM_ARMS_WIDTH:
+      fittype = PARFIT_LINBOUND;
       param = 3.0;
       parammin = 1.5;
       parammax = 11.0;
       break;
     case PARAM_BAR_FLUX:
-      param = obj2->flux_auto/10.0;
-      parammin = 0.0;
-      parammax = 2.0*obj2->flux_auto;
+      fittype = PARFIT_LOGBOUND;
+      param = profit->guessflux/profit->nprof;
+      parammin = 0.00001*profit->guessfluxmax;
+      parammax = 4.0*profit->guessfluxmax;
       break;
     case PARAM_BAR_ASPECT:
+      fittype = PARFIT_LOGBOUND;
       param = 0.3;
       parammin = 0.2;
       parammax = 0.5;
       break;
     case PARAM_BAR_POSANG:
+      fittype = PARFIT_UNBOUND;
       param = 0.0;
-      parammin = 0.0;
-      parammax = 0.0;
+      parammin = 90.0;
+      parammax = 90.0;
       break;
     case PARAM_INRING_FLUX:
-      param = obj2->flux_auto/10.0;
-      parammin = 0.0;
-      parammax = 2.0*obj2->flux_auto;
+      fittype = PARFIT_LOGBOUND;
+      param = profit->guessflux/profit->nprof;
+      parammin = 0.00001*profit->guessfluxmax;
+      parammax = 4.0*profit->guessfluxmax;
       break;
     case PARAM_INRING_WIDTH:
+      fittype = PARFIT_LINBOUND;
       param = 0.3;
       parammin = 0.0;
       parammax = 0.5;
       break;
     case PARAM_INRING_ASPECT:
+      fittype = PARFIT_LOGBOUND;
       param = 0.8;
       parammin = 0.4;
       parammax = 1.0;
       break;
     case PARAM_OUTRING_FLUX:
-      param = obj2->flux_auto/10.0;
-      parammin = 0.0;
-      parammax = 2.0*obj2->flux_auto;
+      fittype = PARFIT_LOGBOUND;
+      param = profit->guessflux/profit->nprof;
+      parammin = 0.00001*profit->guessfluxmax;
+      parammax = 4.0*profit->guessfluxmax;
       break;
     case PARAM_OUTRING_START:
+      fittype = PARFIT_LINBOUND;
       param = 4.0;
       parammin = 3.5;
       parammax = 6.0;
       break;
     case PARAM_OUTRING_WIDTH:
+      fittype = PARFIT_LINBOUND;
       param = 0.3;
       parammin = 0.0;
       parammax = 0.5;
@@ -3019,7 +3063,7 @@ void	profit_resetparam(profitstruct *profit, paramenum paramtype)
     param = (parammin+parammax)/2.0;
   else if (parammin==0.0 && parammax==0.0)
     parammax = 1.0;
-  profit_setparam(profit, paramtype, param, parammin, parammax);
+  profit_setparam(profit, paramtype, param, parammin, parammax, fittype);
 
   return;
   }
@@ -3048,19 +3092,22 @@ void	profit_resetparams(profitstruct *profit)
 
 /****** profit_setparam ****************************************************
 PROTO	void profit_setparam(profitstruct *profit, paramenum paramtype,
-		float param, float parammin, float parammax)
+		float param, float parammin, float parammax,
+		parfitenum parfittype)
 PURPOSE	Set the actual, lower and upper boundary values of a profile parameter.
 INPUT	Pointer to the profit structure,
-	Parameter index,
-	Actual value,
-	Lower boundary to the parameter,
-	Upper boundary to the parameter.
+	parameter index,
+	actual value,
+	lower boundary to the parameter,
+	upper boundary to the parameter,
+	parameter fitting type.
 OUTPUT	RETURN_OK if the parameter is registered, RETURN_ERROR otherwise.
 AUTHOR	E. Bertin (IAP)
-VERSION	15/03/2009
+VERSION	20/05/2011
  ***/
 int	profit_setparam(profitstruct *profit, paramenum paramtype,
-		float param, float parammin, float parammax)
+		float param, float parammin,float parammax,
+		parfitenum parfittype)
   {
    float	*paramptr;
    int		index;
@@ -3072,6 +3119,7 @@ int	profit_setparam(profitstruct *profit, paramenum paramtype,
     profit->paraminit[index] = param;
     profit->parammin[index] = parammin;
     profit->parammax[index] = parammax;
+    profit->parfittype[index] = parfittype;
     return RETURN_OK;
     }
   else
@@ -3080,23 +3128,22 @@ int	profit_setparam(profitstruct *profit, paramenum paramtype,
 
   
 /****** profit_boundtounbound *************************************************
-PROTO	void profit_boundtounbound(profitstruct *profit,
+PROTO	int profit_boundtounbound(profitstruct *profit,
 				float *param, double *dparam, int index)
 PURPOSE	Convert parameters from bounded to unbounded space.
 INPUT	Pointer to the profit structure,
 	input array of single precision parameters,
 	output (incomplete) array of double precision parameters,
 	parameter selection index (<0 = all parameters)
-OUTPUT	-.
+OUTPUT	Number of free parameters.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	29/03/2010
+VERSION	20/05/2011
  ***/
-void	profit_boundtounbound(profitstruct *profit,
+int	profit_boundtounbound(profitstruct *profit,
 				float *param, double *dparam, int index)
   {
-   double	num,den;
-   float	tparam;
+   double	num,den, tparam;
    int		f,p, pstart,np;
 
   if (index<0)
@@ -3112,39 +3159,53 @@ void	profit_boundtounbound(profitstruct *profit,
 
   f = 0;
   for (p=pstart ; p<np; p++)
-    if (profit->freeparam_flag[p])
+    switch(profit->parfittype[p])
       {
-      tparam = param[p-pstart];
-      if (profit->parammin[p]!=profit->parammax[p])
-        {
+      case PARFIT_FIXED:
+        break;
+      case PARFIT_UNBOUND:
+        if (profit->parammax[p] > 0.0 || profit->parammax[p] < 0.0)
+          dparam[f] = param[p-pstart] / profit->parammax[p];
+        f++;
+        break;
+      case PARFIT_LINBOUND:
+        tparam = param[p-pstart];
         num = tparam - profit->parammin[p];
         den = profit->parammax[p] - tparam;
         dparam[f] = num>1e-50? (den>1e-50? log(num/den): 50.0) : -50.0;
-        }
-      else if (profit->parammax[p] > 0.0 || profit->parammax[p] < 0.0)
-        dparam[f] = param[p-pstart] / profit->parammax[p];
-
-      f++;
+        f++;
+        break;
+      case PARFIT_LOGBOUND:
+        tparam = log(param[p-pstart]);
+        num = tparam - log(profit->parammin[p]);
+        den = log(profit->parammax[p]) - tparam;
+        dparam[f] = num>1e-50? (den>1e-50? log(num/den): 50.0) : -50.0;
+        f++;
+        break;
+      default:
+        error(EXIT_FAILURE,
+		"*Internal Error*: Unknown parameter fitting type in ",
+		"profit_boundtounbound()");
       }
 
-  return;
+  return f;
   }
 
 
 /****** profit_unboundtobound *************************************************
-PROTO	void profit_unboundtobound(profitstruct *profit,
+PROTO	int profit_unboundtobound(profitstruct *profit,
 				double *dparam, float *param, int index)
 PURPOSE	Convert parameters from unbounded to bounded space.
 INPUT	Pointer to the profit structure,
 	input (incomplete) array of double precision parameters,
 	output array of single precision parameters.
 	parameter selection index (<0 = all parameters)
-OUTPUT	-.
+OUTPUT	Number of free parameters.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	08/07/2010
+VERSION	20/05/2011
  ***/
-void	profit_unboundtobound(profitstruct *profit,
+int	profit_unboundtobound(profitstruct *profit,
 				double *dparam, float *param, int index)
   {
    int		f,p, pstart,np;
@@ -3162,71 +3223,114 @@ void	profit_unboundtobound(profitstruct *profit,
 
   f = 0;
   for (p=pstart; p<np; p++)
-    {
-    if (profit->freeparam_flag[p])
+    switch(profit->parfittype[p])
       {
-      param[p-pstart] = (profit->parammin[p]!=profit->parammax[p])?
-		((profit->parammax[p] - profit->parammin[p])
+      case PARFIT_FIXED:
+        param[p-pstart] = profit->paraminit[p];
+        break;
+      case PARFIT_UNBOUND:
+        param[p-pstart] = dparam[f]*profit->parammax[p];
+        f++;
+        break;
+      case PARFIT_LINBOUND:
+        param[p-pstart] = (profit->parammax[p] - profit->parammin[p])
 		/ (1.0 + exp(-(dparam[f]>50.0? 50.0
 				: (dparam[f]<-50.0? -50.0: dparam[f]))))
-		+ profit->parammin[p])
-		:  dparam[f]*profit->parammax[p];
-      f++;
+		+ profit->parammin[p];
+        f++;
+        break;
+      case PARFIT_LOGBOUND:
+        param[p-pstart] = exp(log(profit->parammax[p]/profit->parammin[p])
+		/ (1.0 + exp(-(dparam[f]>50.0? 50.0
+				: (dparam[f]<-50.0? -50.0: dparam[f])))))
+		*profit->parammin[p];
+        f++;
+        break;
+      default:
+        error(EXIT_FAILURE,
+		"*Internal Error*: Unknown parameter fitting type in ",
+		"profit_unboundtobound()");
       }
-    else
-      param[p-pstart] = profit->paraminit[p];
-    }
-
-  return;
+ 
+  return f;
   }
 
 
 /****** profit_covarunboundtobound ********************************************
-PROTO	void profit_covarunboundtobound(profitstruct *profit,
+PROTO	int profit_covarunboundtobound(profitstruct *profit,
 				double *dcovar, float *covar)
 PURPOSE	Convert covariance matrix from unbounded to bounded space.
 INPUT	Pointer to the profit structure,
 	input (incomplete) matrix of double precision covariances,
 	output matrix of single precision covariances.
-OUTPUT	-.
+OUTPUT	Number of parameters that hit a boundary.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	27/07/2010
+VERSION	20/05/2011
  ***/
-void	profit_covarunboundtobound(profitstruct *profit,
+int	profit_covarunboundtobound(profitstruct *profit,
 				double *dcovar, float *covar)
   {
-   double	*dxdy;
+   double	*dxdy,
+		xmmin,maxmx, maxmmin;
    float	*x,*xmin,*xmax;
+   parfitenum	*fittype;
    int		*fflag,
-		f,f1,f2, nfree, p,p1,p2, nparam;
+		f,f1,f2, p,p1,p2, nfree, nparam, nmin,nmax;
 
   nparam = profit->nparam;
-  fflag = profit->freeparam_flag;
-  nfree = profit->nfreeparam;
-  QMALLOC16(dxdy, double, nfree);
+  fittype = profit->parfittype;
+  QMALLOC16(dxdy, double, PARAM_NPARAM);
   x = profit->paraminit;
   xmin = profit->parammin;
   xmax = profit->parammax;
+  nmin = nmax = 0;
   f = 0;
   for (p=0; p<profit->nparam; p++)
-    if (fflag[p])
+    switch(fittype[p])
       {
-      if (xmin[p]!=xmax[p])
-        dxdy[f++] = (x[p] - xmin[p]) * (xmax[p] - x[p]) / (xmax[p] - xmin[p]);
-      else
+      case PARFIT_FIXED:
+        break;
+      case PARFIT_UNBOUND:
         dxdy[f++] = xmax[p];
+        break;
+      case PARFIT_LINBOUND:
+        xmmin   = x[p] - xmin[p];
+        maxmx   = xmax[p] - x[p];
+        maxmmin = xmax[p] - xmin[p];
+        dxdy[f++] = xmmin * maxmx / maxmmin;
+        if (xmmin<0.001*maxmmin)
+          nmin++;
+        else if (maxmx<0.001*maxmmin)
+          nmax++;
+        break;
+      case PARFIT_LOGBOUND:
+        xmmin   = log(x[p]/xmin[p]);
+        maxmx   = log(xmax[p]/x[p]);
+        maxmmin = log(xmax[p]/xmin[p]);
+        dxdy[f++] = x[p] * xmmin * maxmx / maxmmin;
+        if (xmmin<0.001*maxmmin)
+          nmin++;
+        else if (maxmx<0.001*maxmmin)
+          nmax++;
+        break;
+      default:
+        error(EXIT_FAILURE,
+		"*Internal Error*: Unknown parameter fitting type in ",
+		"profit_boundtounbound()");
       }
+
+  nfree = f;
 
   memset(profit->covar, 0, nparam*nparam*sizeof(float));
   f2 = 0;
   for (p2=0; p2<nparam; p2++)
     {
-    if (fflag[p2])
+    if (fittype[p2]!=PARFIT_FIXED)
       {
       f1 = 0;
       for (p1=0; p1<nparam; p1++)
-        if (fflag[p1])
+        if (fittype[p1]!=PARFIT_FIXED)
           {
           covar[p2*nparam+p1] = (float)(dcovar[f2*nfree+f1]*dxdy[f1]*dxdy[f2]);
           f1++;
@@ -3237,7 +3341,10 @@ void	profit_covarunboundtobound(profitstruct *profit,
 
   free(dxdy);
 
-  return;
+  profit->nlimmin = nmin;
+  profit->nlimmax = nmax;
+
+  return nmin+nmax;
   }
 
 
