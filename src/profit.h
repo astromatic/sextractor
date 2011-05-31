@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		22/04/2011
+*	Last modified:		20/05/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -44,11 +44,19 @@
 #define		MODEL_TABULATED		0x0200
 #define		MODEL_NMAX		11
 
-/*-------------------------------- flags ------------------------------------*/
+/*--------------------------- fitting flags ---------------------------------*/
 
 #define		PROFLAG_MODSUB		0x0001
 #define		PROFLAG_OBJSUB		0x0002
 #define		PROFLAG_NOTCONST	0x0004
+#define		PROFLAG_MINLIM		0x0008
+#define		PROFLAG_MAXLIM		0x0010
+
+/*------------------------- parameter type flags ----------------------------*/
+
+#define		PROFPARAM_UNBOUNDED	1
+#define		PROFPARAM_LINBOUNDED	2
+#define		PROFPARAM_LOGBOUNDED	3
 
 /*-------------------------------- macros -----------------------------------*/
 
@@ -96,6 +104,9 @@ typedef enum	{PARAM_BACK,
 		PARAM_OUTRING_FLUX, PARAM_OUTRING_START, PARAM_OUTRING_WIDTH,
 		PARAM_NPARAM}	paramenum;
 
+typedef enum 	{PARFIT_FIXED, PARFIT_UNBOUND, PARFIT_LINBOUND,
+		PARFIT_LOGBOUND}	parfitenum;
+
 /*--------------------------- structure definitions -------------------------*/
 
 typedef struct
@@ -142,12 +153,13 @@ typedef struct
   float		*paramlist[PARAM_NPARAM];	/* flat parameter list */
   int		paramindex[PARAM_NPARAM];/* Vector of parameter indices */
   int		paramrevindex[PARAM_NPARAM];/* Vector of reversed indices */
-  int		freeparam_flag[PARAM_NPARAM]; /* Free parameter flag */
-  int		nfreeparam;		/* Number of free parameters */
+  parfitenum	parfittype[PARAM_NPARAM];/* Parameter fitting: fixed,bounded,.*/
   float		param[PARAM_NPARAM];	/* Vector of parameters to be fitted */
   float		paraminit[PARAM_NPARAM];/* Parameter initial guesses */
   float		parammin[PARAM_NPARAM];	/* Parameter lower limits */
   float		parammax[PARAM_NPARAM];	/* Parameter upper limits */
+  int		nlimmin;	/* # of parameters that hit the min limit */
+  int		nlimmax;	/* # of parameters that hit the max limit */
   float		paramerr[PARAM_NPARAM];	/* Std deviations of parameters */
   float		*covar;		/* Covariance matrix */
   int		iter;		/* Iteration counter */
@@ -178,6 +190,9 @@ typedef struct
   float		sigma;		/* Standard deviation of the pixel values */
   float		flux;		/* Total flux in final convolved model */
   float		spirindex;	/* Spiral index (>0 for CCW) */
+  float		guessradius;	/* Best guess for source half-light radius */
+  float		guessflux;	/* Best guess for typical source flux (>0) */
+  float		guessfluxmax;	/* Best guess for source flux upper limit (>0)*/
 /* Buffers */
   double	dparam[PARAM_NPARAM];
   }	profitstruct;
@@ -200,28 +215,31 @@ float		*profit_compresi(profitstruct *profit, float dynparam,
 		profit_noisearea(profitstruct *profit),
 		profit_spiralindex(profitstruct *profit);
 
-int		profit_copyobjpix(profitstruct *profit, picstruct *field,
+int		profit_boundtounbound(profitstruct *profit,
+			float *param, double *dparam, int index),
+		profit_copyobjpix(profitstruct *profit, picstruct *field,
 			picstruct *wfield),
+		profit_covarunboundtobound(profitstruct *profit,
+			double *dparam, float *param),
 		profit_minimize(profitstruct *profit, int niter),
 		prof_moments(profitstruct *profit, profstruct *prof,
 				double *jac),
 		profit_resample(profitstruct *profit, float *inpix,
 			PIXTYPE *outpix, float factor),
 		profit_setparam(profitstruct *profit, paramenum paramtype,
-			float param, float parammin, float parammax);
+			float param, float parammin, float parammax,
+			parfitenum parfittype),
+		profit_unboundtobound(profitstruct *profit,
+			double *dparam, float *param, int index);
 
 void		prof_end(profstruct *prof),
 		profit_addparam(profitstruct *profit, paramenum paramindex,
 			float **param),
-		profit_boundtounbound(profitstruct *profit,
-			float *param, double *dparam, int index),
 		profit_fit(profitstruct *profit,
 			picstruct *field, picstruct *wfield,
 			objstruct *obj, obj2struct *obj2),
 		profit_convmoments(profitstruct *profit, obj2struct *obj2),
 		profit_convolve(profitstruct *profit, float *modpix),
-		profit_covarunboundtobound(profitstruct *profit,
-			double *dparam, float *param),
 		profit_end(profitstruct *profit),
 		profit_evaluate(double *par, double *fvec, int m, int n,
 			void *adata),
@@ -234,8 +252,6 @@ void		prof_end(profstruct *prof),
 		profit_psf(profitstruct *profit),
 		profit_resetparam(profitstruct *profit, paramenum paramtype),
 		profit_resetparams(profitstruct *profit),
-		profit_surface(profitstruct *profit, obj2struct *obj2),
-		profit_unboundtobound(profitstruct *profit,
-			double *dparam, float *param, int index);
+		profit_surface(profitstruct *profit, obj2struct *obj2);
 
 #endif

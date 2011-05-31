@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		12/04/2011
+*	Last modified:		19/05/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -588,6 +588,7 @@ void	updateparamflags()
   VECFLAG(obj.imaflag) |= VECFLAG(obj.imanflag);
 
 /*------------------------------ PSF-fitting --------------------------------*/
+  FLAG(obj2.fwhm_psf) |= FLAG(obj2.fwhmw_psf);
   FLAG(obj2.poserraw_psf) |= FLAG(obj2.poserrbw_psf);
   FLAG(obj2.poserrcxxw_psf) |= FLAG(obj2.poserrcyyw_psf)
 			| FLAG(obj2.poserrcxyw_psf);
