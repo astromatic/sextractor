@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		03/05/2011
+*	Last modified:		10/05/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -38,11 +38,9 @@
 #include	"prefs.h"
 #include	"winpos.h"
 
-static  obj2struct	*obj2 = &outobj2;
-
 /****** compute_winpos ********************************************************
 PROTO	void compute_winpos(picstruct *field, picstruct *wfield,
-			objstruct *obj)
+			objstruct *obj, obj2struct *obj2)
 PURPOSE	Compute windowed source barycenter.
 INPUT	Picture structure pointer,
 	Weight-map structure pointer,
@@ -50,9 +48,10 @@ INPUT	Picture structure pointer,
 OUTPUT  -.
 NOTES   obj->posx and obj->posy are taken as initial centroid guesses.
 AUTHOR  E. Bertin (IAP)
-VERSION 03/05/2011
+VERSION 10/05/2011
  ***/
-void	compute_winpos(picstruct *field, picstruct *wfield, objstruct *obj)
+void	compute_winpos(picstruct *field, picstruct *wfield, objstruct *obj,
+			objstruct *obj, obj2struct *obj2)
 
   {
    float		r2,invtwosig2, raper,raper2, rintlim,rintlim2,rextlim2,

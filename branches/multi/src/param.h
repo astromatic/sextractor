@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		03/05/2011
+*	Last modified:		17/06/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -751,6 +751,13 @@ keystruct	objkey[] = {
   {"FLUX_RADIUS", "Fraction-of-light radii",
 	&outobj2.flux_radius, H_FLOAT, T_FLOAT, "%10.3f", "pixel",
 	"phys.size.radius;instr.det", "pix",  1, &prefs.flux_radiussize},
+
+  {"FWHMPSF_IMAGE", "FWHM of the local PSF model",
+	&outobj2.fwhm_psf, H_FLOAT, T_FLOAT, "%8.3f", "pixel",
+	"phys.size.diameter;instr.det.psf", "pix"},
+  {"FWHMPSF_WORLD", "FWHM of the local PSF model (world units)",
+	&outobj2.fwhmw_psf, H_FLOAT, T_FLOAT, "%12.7g", "deg",
+	"phys.angSize;instr.det.psf", "deg"},
 
   {"XPSF_IMAGE", "X coordinate from PSF-fitting",
 	&outobj2.x_psf, H_FLOAT, T_DOUBLE, "%11.4f", "pixel",

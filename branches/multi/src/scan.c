@@ -796,9 +796,9 @@ void  sortit(picstruct *field, picstruct *dfield, picstruct *wfield,
     free(obj.submap);
     }
   else
-    objlist2 = objlist;
+    objlistout = objlist;
 
-  for (i=0; i<objlist2->nobj; i++)
+  for (i=0; i<objlistout->nobj; i++)
     {
     preanalyse(i, objlistout, ANALYSE_FULL|ANALYSE_ROBUST);
     if (prefs.ext_maxarea && objlistout->obj[i].fdnpix > prefs.ext_maxarea)

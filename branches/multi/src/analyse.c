@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		07/12/2010
+*	Last modified:		19/05/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -400,13 +400,27 @@ void  examineiso(picstruct *field, picstruct *dfield, objstruct *obj,
   }
 
 
-/******************************* endobject **********************************/
-/*
-Final processing of object data, just before saving it to the catalog.
-*/
+/****** endobject ************************************************************
+PROTO	void	endobject(picstruct *field, picstruct *dfield, picstruct *wfield,
+		picstruct *dwfield, objliststruct *objlist, int n,
+		obj2liststruct *obj2list, int n2)
+PURPOSE Final processing of object data, just before saving it to the catalog.
+INPUT   Measurement field pointer,
+        Detection field pointer,
+        Measurement weight-map field pointer,
+        Detection weight-map field pointer,
+	objstruct pointer,
+	obj array index,
+	obj2struct pointer,
+	obj2 array index.
+OUTPUT  -.
+NOTES   -.
+AUTHOR  E. Bertin (IAP)
+VERSION 19/05/2011
+ ***/
 void	endobject(picstruct *field, picstruct *dfield, picstruct *wfield,
-		picstruct *dwfield, int n,
-		objliststruct *objlist, obj2liststruct *obj2list, int n2)
+		picstruct *dwfield, objliststruct *objlist, int n,
+		obj2liststruct *obj2list, int n2)
   {
    objstruct		*obj;
    obj2struct		*obj2;
@@ -415,8 +429,8 @@ void	endobject(picstruct *field, picstruct *dfield, picstruct *wfield,
 			analtime1;
    int			i,j, ix,iy,selecflag, newnumber,nsub;
 
-  obj = &objlist->obj[n];
   obj2 = obj2list->obj2[n2];
+  obj2->obj = obj = &objlist->obj[n];
 
   if (FLAG(obj2.analtime))
     analtime1 = counter_seconds();
@@ -567,7 +581,8 @@ void	endobject(picstruct *field, picstruct *dfield, picstruct *wfield,
 	|| FLAG(obj2.poserrmx2w_psf)
 	|| FLAG(obj2.poserrmx2w_prof)
 	|| FLAG(obj2.prof_flagw)
-	|| ((!prefs.pixel_scale) && FLAG(obj2.area_flagw)))
+	|| ((!prefs.pixel_scale) && FLAG(obj2.area_flagw))
+	|| ((!prefs.pixel_scale) && FLAG(obj2.fwhmw_psf)))
     {
     rawpos[0] = obj2->posx;
     rawpos[1] = obj2->posy;
@@ -659,14 +674,22 @@ void	endobject(picstruct *field, picstruct *dfield, picstruct *wfield,
 	check->overlay, obj->flag&OBJ_CROWDED);
       }
 
-/* ---- Star/Galaxy classification */
+/* ---------------------- Star/Galaxy classification -----------------------*/
+    if (FLAG(obj2.fwhm_psf) || (FLAG(obj2.sprob) && prefs.seeing_fwhm==0.0))
+      {
+      obj2->fwhm_psf = (prefs.seeing_fwhm==0.0)?
+				psf_fwhm(thepsf)*field->pixscale
+				: prefs.seeing_fwhm;
+      if (FLAG(obj2.fwhmw_psf))
+        obj2->fwhmw_psf = obj2->fwhm_psf * (prefs.pixel_scale?
+		field->pixscale/3600.0 : sqrt(obj2->pixscale2));
+      }
 
     if (FLAG(obj2.sprob))
       {
        double	fac2, input[10], output, fwhm;
 
-      fwhm = (prefs.seeing_fwhm==0.0)? psf_fwhm(thepsf)*field->pixscale
-				: prefs.seeing_fwhm;
+      fwhm = (prefs.seeing_fwhm==0.0)? obj2->psf_fwhm : prefs.seeing_fwhm;
 
       fac2 = fwhm/field->pixscale;
       fac2 *= fac2;
