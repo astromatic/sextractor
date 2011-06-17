@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 2006-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 2006-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		24/01/2011
+*	Last modified:		17/06/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -231,7 +231,7 @@ INPUT	Pointer to the output file (or stream),
 OUTPUT	RETURN_OK if everything went fine, RETURN_ERROR otherwise.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	24/01/2011
+VERSION	17/06/2011
  ***/
 int	write_xml_meta(FILE *file, char *error)
   {
@@ -565,6 +565,15 @@ int	write_xml_meta(FILE *file, char *error)
       fprintf(file, ",%s", key[findkeys("WEIGHT_TYPE", keylist,
 			FIND_STRICT)].keylist[prefs.weight_type[1]]);
     fprintf(file, "\"/>\n");
+
+    fprintf(file,
+	"   <PARAM name=\"Rescale_Weights\" datatype=\"boolean\""
+	" arraysize=\"%d\" ucd=\"meta.code;obs.param\" value=\"%c",
+    	prefs.nwscale_flag, prefs.wscale_flag[0]? 'T':'F');
+    if (prefs.nwscale_flag>1)
+      fprintf(file, " %c", prefs.wscale_flag[1]? 'T':'F');
+    fprintf(file, "\"/>\n");
+
 
     fprintf(file, "   <PARAM name=\"Weight_Thresh\" datatype=\"float\""
 	" arraysize=\"%d\" ucd=\"instr.sensitivity;obs.param\" value=\"%g",

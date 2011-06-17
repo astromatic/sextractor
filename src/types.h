@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		09/05/2011
+*	Last modified:		19/05/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -136,6 +136,7 @@ typedef struct
 /* II: "BLIND" parameters */
 typedef struct
   {
+  objstruct	*obj;				/* Pointer to basic objstruct*/
   PIXTYPE	*image,*dimage;			/* Copy of local image data */
   PIXTYPE	*weight, *dweight;		/* Copy of local weight data */
   int		imsize[2];			/* Local image data size */
@@ -283,6 +284,8 @@ typedef struct
   float		*flux_radius;			/* f-light-radii */
   float		hl_radius;			/* Scalar half-light radius */
 /* ---- PSF-fitting */
+  float		fwhm_psf;			/* PSF FWHM */
+  float		fwhmw_psf;			/* WORLD PSF FWHM */
   int		psf_flag,dpsf_flag;		/* PSF computation flag */
   float		flux_psf;			/* Flux from PSF-fitting */
   float		fluxerr_psf;			/* RMS error on PSF flux */

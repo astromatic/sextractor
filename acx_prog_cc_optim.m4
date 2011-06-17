@@ -60,14 +60,14 @@ EOF
       if $CC -V 2>&1 | grep -i "Intel(R) 64" > /dev/null 2>&1 &&
            $CC -c -O conftest.c > /dev/null 2>&1 &&
            test -f conftest.o; then
-        prog_cc_optim_cv_flags="-O3 -axSSE3,SSE4.1,SSE4.2 -ip -no-prec-div -unroll"
+        prog_cc_optim_cv_flags="-O3 -axSSE3,SSE4.1,SSE4.2,AVX -no-prec-div -unroll"
         prog_ld_optim_cv_flags="-static-intel"
 
       dnl INTEL C 32bits compiler
       elif $CC -V 2>&1 | grep -i "Intel(R)" > /dev/null 2>&1 &&
            $CC -c -O conftest.c > /dev/null 2>&1 &&
            test -f conftest.o; then
-        prog_cc_optim_cv_flags="-O3 -axSSE2,SSE3,SSE4.1,SSE4.2 -ip -no-prec-div -unroll"
+        prog_cc_optim_cv_flags="-O3 -axSSE2,SSE3,SSE4.1,SSE4.2,AVX -no-prec-div -unroll"
         prog_ld_optim_cv_flags="-static-intel"
 
       dnl GCC

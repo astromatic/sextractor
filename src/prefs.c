@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		09/03/2011
+*	Last modified:		19/05/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -490,7 +490,8 @@ void	useprefs()
 		|| FLAG(obj2.mx2w) || FLAG(obj2.win_mx2w)
 		|| FLAG(obj2.xw_prof) || FLAG(obj2.poserrmx2w_prof)
 		|| FLAG(obj2.poserr_mx2w) || FLAG(obj2.winposerr_mx2w)
-		|| FLAG(obj2.area_flagw) || FLAG(obj2.prof_flagw);
+		|| FLAG(obj2.area_flagw) || FLAG(obj2.prof_flagw)
+		|| FLAG(obj2.fwhmw_psf);
 
 /* Default astrometric settings */
   strcpy(prefs.coosys, "ICRS");
@@ -618,8 +619,8 @@ void	useprefs()
   if (prefs.prof_flag)
     prefs.psf_flag = 1;
 
-/*--------------------------- Adaptive class-star ---------------------------*/
-  if (prefs.seeing_fwhm == 0 && FLAG(obj2.sprob))
+/*-------------------------- Tracking the PSF FWHM --------------------------*/
+  if (prefs.seeing_fwhm == 0 && FLAG(obj2.sprob) || FLAG(obj2.fwhm_psf))
     prefs.psf_flag = 1;
 
 /*-------------------------- Pattern-fitting -------------------------------*/
