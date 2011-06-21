@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		07/12/2010
+*	Last modified:		21/06/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -51,7 +51,7 @@ INPUT	Pointer to the image structure,
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	07/12/2010
+VERSION	21/06/2011
  ***/
 void  photom_aper(picstruct *field, picstruct *wfield,
 	objstruct *obj, obj2struct *obj2, int aper)
@@ -200,14 +200,14 @@ void  photom_aper(picstruct *field, picstruct *wfield,
       sigtv += tv/gain;
     }
 
-  if (i<prefs.flux_apersize)
-    obj2->flux_aper[i] = tv;
-  if (i<prefs.fluxerr_apersize)
-    obj2->fluxerr_aper[i] = sqrt(sigtv);
-  if (i<prefs.mag_apersize)
-    obj2->mag_aper[i] = tv>0.0? -2.5*log10(tv) + prefs.mag_zeropoint : 99.0;
-  if (i<prefs.magerr_apersize)
-    obj2->magerr_aper[i] = tv>0.0? 1.086*sqrt(sigtv)/tv:99.0;
+  if (aper<prefs.flux_apersize)
+    obj2->flux_aper[aper] = tv;
+  if (aper<prefs.fluxerr_apersize)
+    obj2->fluxerr_aper[aper] = sqrt(sigtv);
+  if (aper<prefs.mag_apersize)
+    obj2->mag_aper[aper] = tv>0.0? -2.5*log10(tv) + prefs.mag_zeropoint : 99.0;
+  if (aper<prefs.magerr_apersize)
+    obj2->magerr_aper[aper] = tv>0.0? 1.086*sqrt(sigtv)/tv:99.0;
 
   return;
   }
@@ -537,7 +537,7 @@ INPUT	Pointer to the image structure,
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	07/12/2010
+VERSION	21/06/2011
  ***/
 void  photom_auto(picstruct *field, picstruct *dfield,
 	picstruct *wfield, picstruct *dwfield,
@@ -630,7 +630,7 @@ void  photom_auto(picstruct *field, picstruct *dfield,
     dimaget = dimage + (pos = y*w + xmin);
     if (dwfield)
       dweightt = dweight + pos;
-    for (x=xmin; x<xmax; x++, dimaget++, dwweightt++)
+    for (x=xmin; x<xmax; x++, dimaget++, dweightt++)
       {
       dx = x - mx;
       dy = y - my;

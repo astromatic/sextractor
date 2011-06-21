@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		10/05/2011
+*	Last modified:		20/06/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -44,14 +44,15 @@ PROTO	void compute_winpos(picstruct *field, picstruct *wfield,
 PURPOSE	Compute windowed source barycenter.
 INPUT	Picture structure pointer,
 	Weight-map structure pointer,
-	object structure.
+	object structure,
+	obj2 structure.
 OUTPUT  -.
 NOTES   obj->posx and obj->posy are taken as initial centroid guesses.
 AUTHOR  E. Bertin (IAP)
-VERSION 10/05/2011
+VERSION 20/06/2011
  ***/
 void	compute_winpos(picstruct *field, picstruct *wfield, objstruct *obj,
-			objstruct *obj, obj2struct *obj2)
+			obj2struct *obj2)
 
   {
    float		r2,invtwosig2, raper,raper2, rintlim,rintlim2,rextlim2,
@@ -62,19 +63,15 @@ void	compute_winpos(picstruct *field, picstruct *wfield, objstruct *obj,
 			esum, temp,temp2, mx2, my2,mxy,pmx2, theta, mx,my,
 			mx2ph, my2ph;
    int                  i,x,y, x2,y2, xmin,xmax,ymin,ymax, sx,sy, w,h,
-                        fymin,fymax, pflag,corrflag, gainflag, errflag,
-			momentflag;
+                        pflag,corrflag, gainflag, errflag, momentflag;
    long                 pos;
-   PIXTYPE              *strip,*stript, *wstrip,*wstript,
+   PIXTYPE              *image, *imaget, *weight,*weightt,
                         wthresh = 0.0;
 
   if (wfield)
     wthresh = wfield->weight_thresh;
-  wstrip = wstript = NULL;
-  w = field->width;
-  h = field->stripheight;
-  fymin = field->ymin;
-  fymax = field->ymax;
+  w = obj2->imsize[0];
+  h = obj2->imsize[1];
   pflag = (prefs.detect_type==PHOTO)? 1:0;
   corrflag = (prefs.mask_type==MASK_CORRECT);
   gainflag = wfield && prefs.weightgain_flag;
@@ -110,8 +107,8 @@ void	compute_winpos(picstruct *field, picstruct *wfield, objstruct *obj,
   offsetx = 0.5*(scalex-1.0);
   offsety = 0.5*(scaley-1.0);
 /* Use isophotal centroid as a first guess */
-  mx = obj2->posx - 1.0;
-  my = obj2->posy - 1.0;
+  mx = obj->mx - obj2->immin[0];
+  my = obj->my - obj2->immin[1];
 
   for (i=0; i<WINPOS_NITERMAX; i++)
     {
@@ -132,35 +129,35 @@ void	compute_winpos(picstruct *field, picstruct *wfield, objstruct *obj,
       xmax = w;
       obj->flag |= OBJ_APERT_PB;
       }
-    if (ymin < fymin)
+    if (ymin < 0)
       {
-      ymin = fymin;
+      ymin = 0;
       obj->flag |= OBJ_APERT_PB;
       }
-    if (ymax > fymax)
+    if (ymax > h)
       {
-      ymax = fymax;
+      ymax = h;
       obj->flag |= OBJ_APERT_PB;
       }
 
     tv = esum = emxy = emx2 = emy2 = mx2 = my2 = mxy = 0.0;
     dxpos = dypos = 0.0;
-    strip = field->strip;
-    wstrip = wstript = NULL;		/* To avoid gcc -Wall warnings */
+    image = obj2->image;
+    weight = weightt = NULL;		/* To avoid gcc -Wall warnings */
     if (wfield)
-      wstrip = wfield->strip;
+      weight = obj2->weight;
     for (y=ymin; y<ymax; y++)
       {
-      stript = strip + (pos = (y%h)*w + xmin);
+      imaget = image + (pos = y*w + xmin);
       if (wfield)
-        wstript = wstrip + pos;
-      for (x=xmin; x<xmax; x++, stript++, wstript++)
+        weightt = weight + pos;
+      for (x=xmin; x<xmax; x++, imaget++, weightt++)
         {
         dx = x - mx;
         dy = y - my;
         if ((r2=dx*dx+dy*dy)<rextlim2)
           {
-          if (WINPOS_OVERSAMP>1 && r2> rintlim2)
+          if (WINPOS_OVERSAMP>1 && r2>rintlim2)
             {
             dx += offsetx;
             dy += offsety;
@@ -180,16 +177,16 @@ void	compute_winpos(picstruct *field, picstruct *wfield, objstruct *obj,
 /*-------- Here begin tests for pixel and/or weight overflows. Things are a */
 /*-------- bit intricated to have it running as fast as possible in the most */
 /*-------- common cases */
-          if ((pix=*stript)<=-BIG || (wfield && (var=*wstript)>=wthresh))
+          if ((pix=*imaget)<=-BIG || (wfield && (var=*weightt)>=wthresh))
             {
             if (corrflag
 		&& (x2=(int)(mx2ph-x))>=0 && x2<w
-		&& (y2=(int)(my2ph-y))>=fymin && y2<fymax
-		&& (pix=*(strip + (pos = (y2%h)*w + x2)))>-BIG)
+		&& (y2=(int)(my2ph-y))>=0 && y2<h
+		&& (pix=*(image + (pos = y2*w + x2)))>-BIG)
               {
               if (wfield)
                 {
-                var = *(wstrip + pos);
+                var = *(weight + pos);
                 if (var>=wthresh)
                   pix = var = 0.0;
                 }

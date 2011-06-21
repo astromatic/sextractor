@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		19/05/2011
+*	Last modified:		21/06/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -416,7 +416,7 @@ INPUT   Measurement field pointer,
 OUTPUT  -.
 NOTES   -.
 AUTHOR  E. Bertin (IAP)
-VERSION 19/05/2011
+VERSION 21/06/2011
  ***/
 void	endobject(picstruct *field, picstruct *dfield, picstruct *wfield,
 		picstruct *dwfield, objliststruct *objlist, int n,
@@ -427,9 +427,9 @@ void	endobject(picstruct *field, picstruct *dfield, picstruct *wfield,
    checkstruct		*check;
    double		rawpos[NAXIS],
 			analtime1;
-   int			i,j, ix,iy,selecflag, newnumber,nsub;
+   int			i,j, ix,iy, idx,idy, selecflag, newnumber,nsub;
 
-  obj2 = obj2list->obj2[n2];
+  obj2 = &obj2list->obj2[n2];
   obj2->obj = obj = &objlist->obj[n];
 
   if (FLAG(obj2.analtime))
@@ -460,7 +460,7 @@ void	endobject(picstruct *field, picstruct *dfield, picstruct *wfield,
 
     if (prefs.assocselec_type!=ASSOCSELEC_ALL
     && ((prefs.assocselec_type==ASSOCSELEC_MATCHED)?
-		obj2->assoc_number:!obj2->assoc_number)
+		obj2->assoc_number:!obj2->assoc_number))
       {
 /*---- Treatment of discarded detections */
 /*---- update segmentation map  and exit */
@@ -485,36 +485,36 @@ void	endobject(picstruct *field, picstruct *dfield, picstruct *wfield,
 /* Copy image data around current object */
   obj2->imsize[0] = obj->xmax-obj->xmin+1+2*field->stripmargin;
   obj2->imsize[1] = obj->ymax-obj->ymin+1+2*field->stripmargin;
-  obj2->immin[0] = ix - obj->imasize[0]/2;
-  obj2->immin[1] = iy - obj->imasize[1]/2;
-  obj2->immax[0] = obj2->immin[0] + obj->imasize[0];
-  obj2->immax[1] = obj2->immin[1] + obj->imasize[1];
-  QMALLOC(obj2->image, obj2->imsize[0]*obj2->imsize[1], PIXTYPE);
+  obj2->immin[0] = ix - obj2->imsize[0]/2;
+  obj2->immin[1] = iy - obj2->imsize[1]/2;
+  obj2->immax[0] = obj2->immin[0] + obj2->imsize[0];
+  obj2->immax[1] = obj2->immin[1] + obj2->imsize[1];
+  QMALLOC(obj2->image, PIXTYPE, obj2->imsize[0]*obj2->imsize[1]);
   copyimage(field, obj2->image, obj2->imsize[0],obj2->imsize[1], ix,iy);
   if (dfield)
     {
-    QMALLOC(obj2->dimage, obj2->imsize[0]*obj2->imsize[1], PIXTYPE);
+    QMALLOC(obj2->dimage, PIXTYPE, obj2->imsize[0]*obj2->imsize[1]);
     copyimage(dfield, obj2->dimage, obj2->imsize[0],obj2->imsize[1], ix,iy);
     }
   if (wfield)
     {
-    QMALLOC(obj2->weight, obj2->imsize[0]*obj2->imsize[1], PIXTYPE);
+    QMALLOC(obj2->weight, PIXTYPE, obj2->imsize[0]*obj2->imsize[1]);
     copyimage(wfield, obj2->weight, obj2->imsize[0],obj2->imsize[1], ix,iy);
     }
   if (dwfield)
     {
-    QMALLOC(obj2->dweight, obj2->imsize[0]*obj2->imsize[1], PIXTYPE);
+    QMALLOC(obj2->dweight, PIXTYPE, obj2->imsize[0]*obj2->imsize[1]);
     copyimage(dwfield, obj2->dweight, obj2->imsize[0],obj2->imsize[1], ix,iy);
     }
 /* if BLANKing is on, paste back the object pixels in the image*/
   if (prefs.blank_flag)
     {
 /*-- Compute coordinates of blank start in object image */
-    idx = obj->subx - obj2->immin[0]
+    idx = obj->subx - obj2->immin[0];
     idy = obj->suby - obj2->immin[1];
     if (obj->blank)
       {
-      deblankima(obj->blank, obj->subw, obj->subh,
+      deblankimage(obj->blank, obj->subw, obj->subh,
 		obj2->image, obj2->imsize[0],obj2->imsize[1], idx,idy);
       free(obj->blank);
       }
@@ -559,7 +559,6 @@ void	endobject(picstruct *field, picstruct *dfield, picstruct *wfield,
     }
 
 /* Aspect ratio */
-
   if (FLAG(obj2.elong))
     obj2->elong = obj->a/obj->b;
 
@@ -571,7 +570,7 @@ void	endobject(picstruct *field, picstruct *dfield, picstruct *wfield,
 
 /* Express positions in FOCAL or WORLD coordinates */
   if (FLAG(obj2.mxf) || FLAG(obj2.mxw))
-    astrom_pos(field, obj);
+    astrom_pos(field, obj2);
 
   obj2->pixscale2 = 0.0;	/* To avoid gcc -Wall warnings */
   if (FLAG(obj2.mx2w)
@@ -591,10 +590,10 @@ void	endobject(picstruct *field, picstruct *dfield, picstruct *wfield,
 
 /* Express shape parameters in the FOCAL or WORLD frame */
   if (FLAG(obj2.mx2w))
-    astrom_shapeparam(field, obj);
+    astrom_shapeparam(field, obj, obj2);
 /* Express position error parameters in the FOCAL or WORLD frame */
   if (FLAG(obj2.poserr_mx2w))
-    astrom_errparam(field, obj);
+    astrom_errparam(field, obj, obj2);
 
   if (FLAG(obj2.npixw))
     obj2->npixw = obj->npix * (prefs.pixel_scale?
@@ -627,82 +626,80 @@ void	endobject(picstruct *field, picstruct *dfield, picstruct *wfield,
     photom_petro(field, dfield, wfield, dwfield, obj, obj2);
 
 /*-- Growth curve */
-    if (prefs.growth_flag)
-      growth_aver(field, wfield, obj, obj2);
+  if (prefs.growth_flag)
+    growth_aver(field, wfield, obj, obj2);
 
 /*--------------------------- Windowed barycenter --------------------------*/
-    if (FLAG(obj2.winpos_x))
-      {
-      compute_winpos(field, wfield, obj);
-/*---- Express positions in FOCAL or WORLD coordinates */
-      if (FLAG(obj2.winpos_xf) || FLAG(obj2.winpos_xw))
-        astrom_winpos(field, obj);
-/*---- Express shape parameters in the FOCAL or WORLD frame */
-      if (FLAG(obj2.win_mx2w))
-        astrom_winshapeparam(field, obj);
-/*---- Express position error parameters in the FOCAL or WORLD frame */
-      if (FLAG(obj2.winposerr_mx2w))
-        astrom_winerrparam(field, obj);
-      }
+  if (FLAG(obj2.winpos_x))
+    {
+    compute_winpos(field, wfield, obj, obj2);
+/*-- Express positions in FOCAL or WORLD coordinates */
+    if (FLAG(obj2.winpos_xf) || FLAG(obj2.winpos_xw))
+      astrom_winpos(field, obj2);
+/*-- Express shape parameters in the FOCAL or WORLD frame */
+    if (FLAG(obj2.win_mx2w))
+      astrom_winshapeparam(field, obj2);
+/*-- Express position error parameters in the FOCAL or WORLD frame */
+    if (FLAG(obj2.winposerr_mx2w))
+      astrom_winerrparam(field, obj2);
+    }
 
 /*---------------------------- Peak information ----------------------------*/
-    if (obj->peak+obj->bkg >= field->satur_level)
-      obj->flag |= OBJ_SATUR;
-/*-- Express positions in FOCAL or WORLD coordinates */
-    if (FLAG(obj2.peakxf) || FLAG(obj2.peakxw))
-      astrom_peakpos(field, obj);
+  if (obj->peak+obj->bkg >= field->satur_level)
+    obj->flag |= OBJ_SATUR;
+/* Express positions in FOCAL or WORLD coordinates */
+  if (FLAG(obj2.peakxf) || FLAG(obj2.peakxw))
+    astrom_peakpos(field, obj, obj2);
 
-/*-- Check-image CHECK_APERTURES option */
-
-    if ((check = prefs.check[CHECK_APERTURES]))
-      {
-      if (FLAG(obj2.flux_aper))
-        for (i=0; i<prefs.naper; i++)
-          sexcircle(check->pix, check->width, check->height,
+/* Check-image CHECK_APERTURES option */
+  if ((check = prefs.check[CHECK_APERTURES]))
+    {
+    if (FLAG(obj2.flux_aper))
+      for (i=0; i<prefs.naper; i++)
+        sexcircle(check->pix, check->width, check->height,
 		obj->mx, obj->my, prefs.apert[i]/2.0, check->overlay);
 
-      if (FLAG(obj2.flux_auto))
-        sexellips(check->pix, check->width, check->height,
+    if (FLAG(obj2.flux_auto))
+      sexellips(check->pix, check->width, check->height,
 	obj->mx, obj->my, obj->a*obj2->kronfactor,
 	obj->b*obj2->kronfactor, obj->theta,
 	check->overlay, obj->flag&OBJ_CROWDED);
 
-      if (FLAG(obj2.flux_petro))
-        sexellips(check->pix, check->width, check->height,
+    if (FLAG(obj2.flux_petro))
+      sexellips(check->pix, check->width, check->height,
 	obj->mx, obj->my, obj->a*obj2->petrofactor,
 	obj->b*obj2->petrofactor, obj->theta,
 	check->overlay, obj->flag&OBJ_CROWDED);
-      }
+    }
 
-/* ---------------------- Star/Galaxy classification -----------------------*/
-    if (FLAG(obj2.fwhm_psf) || (FLAG(obj2.sprob) && prefs.seeing_fwhm==0.0))
-      {
-      obj2->fwhm_psf = (prefs.seeing_fwhm==0.0)?
-				psf_fwhm(thepsf)*field->pixscale
-				: prefs.seeing_fwhm;
-      if (FLAG(obj2.fwhmw_psf))
-        obj2->fwhmw_psf = obj2->fwhm_psf * (prefs.pixel_scale?
+/*---------------------- Star/Galaxy classification -----------------------*/
+  if (FLAG(obj2.fwhm_psf) || (FLAG(obj2.sprob) && prefs.seeing_fwhm==0.0))
+    {
+    obj2->fwhm_psf = (prefs.seeing_fwhm==0.0)? psf_fwhm(thepsf)*field->pixscale
+						: prefs.seeing_fwhm;
+    if (FLAG(obj2.fwhmw_psf))
+      obj2->fwhmw_psf = obj2->fwhm_psf * (prefs.pixel_scale?
 		field->pixscale/3600.0 : sqrt(obj2->pixscale2));
-      }
+    }
 
-    if (FLAG(obj2.sprob))
-      {
-       double	fac2, input[10], output, fwhm;
+  if (FLAG(obj2.sprob))
+    {
+     double	fac2, input[10], output, fwhm;
 
-      fwhm = (prefs.seeing_fwhm==0.0)? obj2->psf_fwhm : prefs.seeing_fwhm;
+    fwhm = (prefs.seeing_fwhm==0.0)? obj2->fwhm_psf : prefs.seeing_fwhm;
 
-      fac2 = fwhm/field->pixscale;
-      fac2 *= fac2;
-      input[j=0] = log10(obj->iso[0]? obj->iso[0]/fac2: 0.01);
-      input[++j] = field->thresh>0.0?
+    fac2 = fwhm/field->pixscale;
+    fac2 *= fac2;
+    input[j=0] = log10(obj->iso[0]? obj->iso[0]/fac2: 0.01);
+    input[++j] = field->thresh>0.0?
 		  log10(obj->peak>0.0? obj->peak/field->thresh: 0.1)
 		 :-1.0;
-      for (i=1; i<NISO; i++)
-        input[++j] = log10(obj->iso[i]? obj->iso[i]/fac2: 0.01);
-      input[++j] = log10(fwhm);
-      neurresp(input, &output);
-      obj2->sprob = (float)output;
-      }
+    for (i=1; i<NISO; i++)
+      input[++j] = log10(obj->iso[i]? obj->iso[i]/fac2: 0.01);
+    input[++j] = log10(fwhm);
+    neurresp(input, &output);
+    obj2->sprob = (float)output;
+    }
 
 /*&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&*/
 /*-- Put here your calls to "BLIND" custom functions. Ex:
@@ -713,88 +710,88 @@ void	endobject(picstruct *field, picstruct *dfield, picstruct *wfield,
 
 /*&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&*/
 
-    newnumber = ++thecat.ntotal;
-/*-- update segmentation map */
-    if ((check=prefs.check[CHECK_SEGMENTATION]))
-      {
-       ULONG	*pix;
-       ULONG	newsnumber = newnumber,
+  newnumber = ++thecat.ntotal;
+/* update segmentation map */
+  if ((check=prefs.check[CHECK_SEGMENTATION]))
+    {
+     ULONG	*pix;
+     ULONG	newsnumber = newnumber,
 		oldsnumber = obj->number;
-       int	dx,dx0,dy,dpix;
+     int	dx,dx0,dy,dpix;
 
-      pix = (ULONG *)check->pix + check->width*obj->ymin + obj->xmin;
-      dx0 = obj->xmax-obj->xmin+1;
-      dpix = check->width-dx0;
-      for (dy=obj->ymax-obj->ymin+1; dy--; pix += dpix)
-        for (dx=dx0; dx--; pix++)
-          if (*pix==oldsnumber)
-            *pix = newsnumber;
-      }
-    obj->number = newnumber;
+    pix = (ULONG *)check->pix + check->width*obj->ymin + obj->xmin;
+    dx0 = obj->xmax-obj->xmin+1;
+    dpix = check->width-dx0;
+    for (dy=obj->ymax-obj->ymin+1; dy--; pix += dpix)
+      for (dx=dx0; dx--; pix++)
+        if (*pix==oldsnumber)
+          *pix = newsnumber;
+    }
+  obj->number = newnumber;
 
-/*-- SOM fitting */
-    if (prefs.somfit_flag)
+/* SOM fitting */
+  if (prefs.somfit_flag)
+    {
+     float    *input;
+
+    input = thesom->input;
+    copyimage(field,input,thesom->inputsize[0],thesom->inputsize[1],ix,iy);
+
+    if (thesom->nextrainput)
       {
-       float    *input;
-
-      input = thesom->input;
-      copyimage(field,input,thesom->inputsize[0],thesom->inputsize[1],ix,iy);
-
-      if (thesom->nextrainput)
-        {
-        input += thesom->ninput-thesom->nextrainput;
-        *(input) = (obj->mx+1)/field->width;
-        *(input+1) = (obj->my+1)/field->height;
-        }
-
-      som_phot(thesom, obj->bkg, field->backsig,
-        (float)field->gain, obj->mx-ix, obj->my-iy,
-        FLAG(obj2.vector_somfit)?outobj2.vector_somfit:NULL, -1.0);
-      obj2->stderr_somfit = thesom->stderror;
-      obj2->flux_somfit = thesom->amp;
-      outobj2.fluxerr_somfit = thesom->sigamp;
+      input += thesom->ninput-thesom->nextrainput;
+      *(input) = (obj->mx+1)/field->width;
+      *(input+1) = (obj->my+1)/field->height;
       }
 
-    if (FLAG(obj2.vignet))
-      copyimage(field,outobj2.vignet,prefs.vignetsize[0],prefs.vignetsize[1],
+    som_phot(thesom, obj->bkg, field->backsig,
+	(float)field->gain, obj->mx-ix, obj->my-iy,
+	FLAG(obj2.vector_somfit)?outobj2.vector_somfit:NULL, -1.0);
+    obj2->stderr_somfit = thesom->stderror;
+    obj2->flux_somfit = thesom->amp;
+    outobj2.fluxerr_somfit = thesom->sigamp;
+    }
+
+  if (FLAG(obj2.vignet))
+    copyimage(field,outobj2.vignet,prefs.vignetsize[0],prefs.vignetsize[1],
 	ix,iy);
 
-    if (FLAG(obj2.vigshift))
-      copyimage_center(field, outobj2.vigshift, prefs.vigshiftsize[0],
+  if (FLAG(obj2.vigshift))
+    copyimage_center(field, outobj2.vigshift, prefs.vigshiftsize[0],
 		prefs.vigshiftsize[1], obj->mx, obj->my);
 
 /*------------------------------- PSF fitting ------------------------------*/
-    nsub = 1;
-    if (prefs.psffit_flag)
-      {
-      if (prefs.dpsffit_flag)
-        double_psf_fit(ppsf, field, wfield, obj, thepsf, dfield, dwfield);
-      else
-        psf_fit(thepsf, field, wfield, obj);
-      obj2->npsf = thepsfit->npsf;
-      nsub = thepsfit->npsf;
-      if (nsub<1)
-        nsub = 1;
-      }
+  nsub = 1;
+  if (prefs.psffit_flag)
+    {
+    if (prefs.dpsffit_flag)
+      double_psf_fit(ppsf, field, wfield, obj,obj2, thepsf, dfield, dwfield);
+    else
+      psf_fit(thepsf, field, wfield, obj, obj2);
+    obj2->npsf = thepsfit->npsf;
+    nsub = thepsfit->npsf;
+    if (nsub<1)
+      nsub = 1;
+    }
 
 /*----------------------------- Profile fitting -----------------------------*/
 #ifdef USE_MODEL
-    if (prefs.prof_flag)
-      {
-      profit_fit(theprofit, field, wfield, obj, obj2);
-/*---- Express positions in FOCAL or WORLD coordinates */
-      if (FLAG(obj2.xf_prof) || FLAG(obj2.xw_prof))
-        astrom_profpos(field, obj);
-/*---- Express shape parameters in the FOCAL or WORLD frame */
-      if (FLAG(obj2.prof_flagw))
-        astrom_profshapeparam(field, obj);
-/*---- Express position error parameters in the FOCAL or WORLD frame */
-      if (FLAG(obj2.poserrmx2w_prof))
-        astrom_proferrparam(field, obj);
-      }
+  if (prefs.prof_flag)
+    {
+    profit_fit(theprofit, field, wfield, obj, obj2);
+/*-- Express positions in FOCAL or WORLD coordinates */
+    if (FLAG(obj2.xf_prof) || FLAG(obj2.xw_prof))
+      astrom_profpos(field, obj2);
+/*-- Express shape parameters in the FOCAL or WORLD frame */
+    if (FLAG(obj2.prof_flagw))
+      astrom_profshapeparam(field, obj2);
+/*-- Express position error parameters in the FOCAL or WORLD frame */
+    if (FLAG(obj2.poserrmx2w_prof))
+      astrom_proferrparam(field, obj2);
+    }
 #endif
-/*--- Express everything in magnitude units */
-    computemags(field, obj);
+/* Express everything in magnitude units */
+  photom_mags(field, obj, obj2);
 
 /*-------------------------------- Astrometry ------------------------------*/
 
@@ -812,10 +809,10 @@ void	endobject(picstruct *field, picstruct *dfield, picstruct *wfield,
         obj2->x_psf = thepsfit->x[j];
         obj2->y_psf = thepsfit->y[j];
         if (FLAG(obj2.xf_psf) || FLAG(obj2.xw_psf))
-          astrom_psfpos(field, obj);
+          astrom_psfpos(field, obj2);
 /*------ Express position error parameters in the FOCAL or WORLD frame */
         if (FLAG(obj2.poserrmx2w_psf))
-          astrom_psferrparam(field, obj);
+          astrom_psferrparam(field, obj2);
         if (FLAG(obj2.flux_psf))
           obj2->flux_psf = thepsfit->flux[j]>0.0? thepsfit->flux[j]:0.0; /*?*/
         if (FLAG(obj2.mag_psf))
@@ -851,6 +848,8 @@ void	endobject(picstruct *field, picstruct *dfield, picstruct *wfield,
       }
     }
   else
+    {
+    }
 
 /* Remove again from the image the object's pixels if BLANKing is on ... */
 /*-- ... and free memory */

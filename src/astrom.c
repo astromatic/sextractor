@@ -523,7 +523,7 @@ NOTES   -.
 AUTHOR  E. Bertin (IAP)
 VERSION 17/06/2011
  ***/
-void	astrom_winshapeparam(picstruct *field, objstruct *obj)
+void	astrom_winshapeparam(picstruct *field, obj2struct *obj2)
   {
    wcsstruct	*wcs;
    double	dx2,dy2,dxy, xm2,ym2,xym, temp,pm2, lm0,lm1,lm2,lm3;

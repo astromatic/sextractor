@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		31/05/2011
+*	Last modified:		18/06/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -228,7 +228,7 @@ void	profit_fit(profitstruct *profit,
   profit->obj = obj;
   profit->obj2 = obj2;
 
-  profit->nresi = profit_copyobjpix(profit, field, wfield);
+  profit->nresi = profit_copyobjpix(profit, field, wfield, obj2);
 /* Check if the number of constraints exceeds the number of free parameters */
   if (profit->nresi < nparam)
     {
@@ -766,7 +766,7 @@ profit->resi);
     pprofit->nobjpix = profit->nobjpix;
     pprofit->obj = obj;
     pprofit->obj2 = obj2;
-    pprofit->nresi = profit_copyobjpix(pprofit, field, wfield);
+    pprofit->nresi = profit_copyobjpix(pprofit, field, wfield, obj2);
     pprofit->modnaxisn[0] = profit->modnaxisn[0];
     pprofit->modnaxisn[1] = profit->modnaxisn[1];
     pprofit->nmodpix = profit->nmodpix;
@@ -801,7 +801,7 @@ profit->resi);
     qprofit->nobjpix = profit->nobjpix;
     qprofit->obj = obj;
     qprofit->obj2 = obj2;
-    qprofit->nresi = profit_copyobjpix(qprofit, field, wfield);
+    qprofit->nresi = profit_copyobjpix(qprofit, field, wfield, obj2);
     qprofit->modnaxisn[0] = profit->modnaxisn[0];
     qprofit->modnaxisn[1] = profit->modnaxisn[1];
     qprofit->nmodpix = profit->nmodpix;
@@ -1971,24 +1971,25 @@ void	profit_makedft(profitstruct *profit)
 
 /****** profit_copyobjpix *****************************************************
 PROTO	int profit_copyobjpix(profitstruct *profit, picstruct *field,
-			picstruct *wfield)
-PURPOSE	Copy a piece of the input field image to a profit structure.
+			picstruct *wfield, obj2struct *obj2)
+PURPOSE	Copy a piece of the input object image to a profit structure.
 INPUT	Pointer to the profit structure,
-	Pointer to the field structure,
-	Pointer to the field weight structure.
+	pointer to the field structure,
+	pointer to the field weight structure,
+	pointer to the obj2 structure.
 OUTPUT	The number of valid pixels copied.
 NOTES	Global preferences are used.
 AUTHOR	E. Bertin (IAP)
-VERSION	01/12/2009
+VERSION	20/06/2011
  ***/
 int	profit_copyobjpix(profitstruct *profit, picstruct *field,
-			picstruct *wfield)
+			picstruct *wfield, obj2struct *obj2)
   {
    float	dx, dy2, dr2, rad2;
    PIXTYPE	*pixin,*spixin, *wpixin,*swpixin, *pixout,*wpixout,
 		backnoise2, invgain, satlevel, wthresh, pix,spix, wpix,swpix;
    int		i,x,y, xmin,xmax,ymin,ymax, w,h,dw, npix, off, gainflag,
-		badflag, sflag, sx,sy,sn,sw, ix,iy;
+		badflag, sflag, sx,sy,sn,sw, ix,iy, win,hin;
 
 /* First put the image background to -BIG */
   pixout = profit->objpix;
@@ -2000,9 +2001,11 @@ int	profit_copyobjpix(profitstruct *profit, picstruct *field,
     }
 
 /* Don't go further if out of frame!! */
-  ix = profit->ix;
-  iy = profit->iy;
-  if (ix<0 || ix>=field->width || iy<field->ymin || iy>=field->ymax)
+  ix = profit->ix - obj2->immin[0];
+  iy = profit->iy - obj2->immin[1];
+  win = obj2->imsize[0];
+  hin = obj2->imsize[1];
+  if (ix<0 || ix>=win] || iy<0 || iy>=hin)
     return 0;
 
   backnoise2 = field->backsig*field->backsig;
@@ -2024,22 +2027,22 @@ int	profit_copyobjpix(profitstruct *profit, picstruct *field,
   wpixout = profit->objweight;
   ymin = iy-h/2;
   ymax = ymin + h;
-  if (ymin<field->ymin)
+  if (ymin<0)
     {
-    off = (field->ymin-ymin-1)/sn + 1;
+    off = (-ymin-1)/sn + 1;
     pixout += off*profit->objnaxisn[0];
     wpixout += off*profit->objnaxisn[0];
     ymin += off*sn;
     }
-  if (ymax>field->ymax)
-    ymax -= ((ymax-field->ymax-1)/sn + 1)*sn;
+  if (ymax>hin)
+    ymax -= ((ymax-hin-1)/sn + 1)*sn;
 
   xmin = ix-w/2;
   xmax = xmin + w;
   dw = 0;
-  if (xmax>field->width)
+  if (xmax>win)
     {
-    off = (xmax-field->width-1)/sn + 1;
+    off = (xmax-win-1)/sn + 1;
     dw += off;
     xmax -= off*sn;
     }
@@ -2092,8 +2095,9 @@ int	profit_copyobjpix(profitstruct *profit, picstruct *field,
             dy2 = (y+sy-iy);
             dy2 *= dy2;
             dx = (x-ix);
-            spixin = &PIX(field, x, y+sy);
-            swpixin = &PIX(wfield, x, y+sy);
+            off = x + (y+sy)*win;
+            spixin = obj2->image + off;
+            swpixin = obj2->weight + off;
             for (sx=sn; sx--;)
               {
               dr2 = dy2 + dx*dx;
@@ -2110,7 +2114,7 @@ int	profit_copyobjpix(profitstruct *profit, picstruct *field,
               }
             }
           *(pixout++) = pix;
-          if (!badflag)	/* A single bad pixel ruins is all (saturation, etc.)*/
+          if (!badflag) /* A single bad pixel ruins is all (saturation, etc.)*/
             {
             *(wpixout++) = 1.0 / sqrt(wpix+(pix>0.0?
 		(gainflag? pix*wpix/backnoise2:pix)*invgain : 0.0));
@@ -2126,8 +2130,8 @@ int	profit_copyobjpix(profitstruct *profit, picstruct *field,
         {
         dy2 = y-iy;
         dy2 *= dy2;
-        pixin = &PIX(field, xmin, y);
-        wpixin = &PIX(wfield, xmin, y);
+        pixin = obj2->image + xmin + y*win;
+        wpixin = obj2->weight + xmin + y*win;
         for (x=xmin; x<xmax; x++)
           {
           dx = x-ix;
@@ -2162,7 +2166,7 @@ int	profit_copyobjpix(profitstruct *profit, picstruct *field,
             dy2 = y+sy-iy;
             dy2 *= dy2;
             dx = x-ix;
-            spixin = &PIX(field, x, y+sy);
+            spixin = obj2->image + x + (y+sy)*win;
             for (sx=sn; sx--;)
               {
               dr2 = dy2 + dx*dx;
@@ -2175,7 +2179,7 @@ int	profit_copyobjpix(profitstruct *profit, picstruct *field,
               }
             }
           *(pixout++) = pix;
-          if (!badflag)	/* A single bad pixel ruins is all (saturation, etc.)*/
+          if (!badflag) /* A single bad pixel ruins is all (saturation, etc.)*/
             {
             *(wpixout++) = 1.0 / sqrt(backnoise2 + (pix>0.0?pix*invgain:0.0));
             npix++;
@@ -2190,7 +2194,7 @@ int	profit_copyobjpix(profitstruct *profit, picstruct *field,
         {
         dy2 = y-iy;
         dy2 *= dy2;
-        pixin = &PIX(field, xmin, y);
+        pixin = obj2->image + xmin + y*win;
         for (x=xmin; x<xmax; x++)
           {
           dx = x-ix;
