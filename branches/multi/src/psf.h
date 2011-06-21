@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1998-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1998-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/10/2010
+*	Last modified:		21/06/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -107,6 +107,9 @@ psfitstruct	*thepsfit,*ppsfit,*psfit;
 PIXTYPE		*checkmask;
 
 /*-------------------------------- functions --------------------------------*/
+extern int	psf_copyobjpix(PIXTYPE *data, PIXTYPE *weight,
+			int wout, int hout, int ix, int iy,
+			obj2struct *obj2, int detect_flag);
 extern void	compute_pos(int *pnpsf,int *pconvflag,int *pnpsfflag,
 			double radmin2, double radmax2,double r2, double *sol,
 			double *flux , double *deltax,double *deltay,
@@ -135,10 +138,10 @@ extern void	pc_end(pcstruct *pc),
 		int width, int height, int ix, int iy, float dx, float dy,
 		int npc, float backrms),
 		double_psf_fit(psfstruct *psf, picstruct *field,
-			picstruct *wfield, objstruct *obj,
+			picstruct *wfield, objstruct *obj, obj2struct *obj2,
 			psfstruct *dpsf, picstruct *dfield, picstruct *dwfield),
 		psf_fit(psfstruct *psf, picstruct *field, picstruct *wfield,
-		objstruct *obj),
+		objstruct *obj, obj2struct *obj2),
 		psf_readcontext(psfstruct *psf, picstruct *field);
 
 extern pcstruct	*pc_load(catstruct *cat);

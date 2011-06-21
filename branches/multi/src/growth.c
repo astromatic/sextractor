@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1995-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1995-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		07/12/2010
+*	Last modified:		20/06/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -52,22 +52,22 @@ INPUT	Pointer to the image structure,
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	07/12/2010
+VERSION	20/06/2011
  ***/
 void  growth_aver(picstruct *field, picstruct *wfield,
 		objstruct *obj, obj2struct *obj2)
 
   {
    float		*fgrowth;
-   double		*growtht,
+   double		*growth, *growtht,
 			dx,dx1,dy,dy2,mx,my, r2,r,rlim, d, rextlim2, raper,
 			offsetx,offsety,scalex,scaley,scale2, ngamma, locarea,
 			tv, sigtv, area, pix, var, gain, dpos,step,step2, dg,
 			stepdens, backnoise2, prevbinmargin, nextbinmargin;
    int			i,j,n, x,y, x2,y2, xmin,xmax,ymin,ymax, sx,sy, w,h,
-			fymin,fymax, pflag,corrflag, ipos;
+			pflag,corrflag, ipos, ngrowth;
    LONG			pos;
-   PIXTYPE		*strip,*stript, *wstrip,*wstript,
+   PIXTYPE		*image,*imaget, *weight,*weightt,
 			pdbkg, wthresh;
   
 
@@ -79,12 +79,10 @@ void  growth_aver(picstruct *field, picstruct *wfield,
 /* Allocate the growth-curve buffer */
   QCALLOC(growth, double, GROWTH_NSTEP);
 
-  mx = obj->mx;
-  my = obj->my;
-  w = field->width;
-  h = field->stripheight;
-  fymin = field->ymin;
-  fymax = field->ymax;
+  mx = obj->mx - obj2->immin[0];
+  my = obj->my - obj2->immin[1];
+  w = obj2->imsize[0];
+  h = obj2->imsize[1];
   pflag = (prefs.detect_type==PHOTO)? 1:0;
   corrflag = (prefs.mask_type==MASK_CORRECT);
   var = backnoise2 = field->backsig*field->backsig;
@@ -143,27 +141,27 @@ void  growth_aver(picstruct *field, picstruct *wfield,
     xmax = w;
     obj->flag |= OBJ_APERT_PB;
     }
-  if (ymin < fymin)
+  if (ymin < 0)
     {
-    ymin = fymin;
+    ymin = 0;
     obj->flag |= OBJ_APERT_PB;
     }
-  if (ymax > fymax)
+  if (ymax > h)
     {
-    ymax = fymax;
+    ymax = h;
     obj->flag |= OBJ_APERT_PB;
     }
 
-  strip = field->strip;
-  wstrip = wstript = NULL;		/* To avoid gcc -Wall warnings */
+  image = obj2->image;
+  weight = weightt = NULL;		/* To avoid gcc -Wall warnings */
   if (wfield)
-    wstrip = wfield->strip;
+    weight = obj2->weight;
   for (y=ymin; y<ymax; y++)
     {
-    stript = strip + (pos = (y%h)*w + xmin);
+    imaget = image + (pos = y*w + xmin);
     if (wfield)
-      wstript = wstrip + pos;
-    for (x=xmin; x<xmax; x++, stript++, wstript++)
+      weightt = weight + pos;
+    for (x=xmin; x<xmax; x++, imaget++, weightt++)
       {
       dx = x - mx;
       dy = y - my;
@@ -172,16 +170,16 @@ void  growth_aver(picstruct *field, picstruct *wfield,
 /*------ Here begin tests for pixel and/or weight overflows. Things are a */
 /*------ bit intricated to have it running as fast as possible in the most */
 /*------ common cases */
-        if ((pix=*stript)<=-BIG || (wfield && (var=*wstript)>=wthresh))
+        if ((pix=*imaget)<=-BIG || (wfield && (var=*weightt)>=wthresh))
           {
           if (corrflag
 		&& (x2=(int)(2*mx+0.49999-x))>=0 && x2<w
-		&& (y2=(int)(2*my+0.49999-y))>=fymin && y2<fymax
-		&& (pix=*(strip + (pos = (y2%h)*w + x2)))>-BIG)
+		&& (y2=(int)(2*my+0.49999-y))>=0 && y2<h
+		&& (pix=*(image + (pos = y2*w + x2)))>-BIG)
             {
             if (wfield)
               {
-              var = *(wstrip + pos);
+              var = *(weight + pos);
               if (var>=wthresh)
                 pix = var = 0.0;
               }
@@ -342,6 +340,8 @@ void  growth_aver(picstruct *field, picstruct *wfield,
     if (obj2->hl_radius < GROWTH_MINHLRAD)
       obj2->hl_radius = GROWTH_MINHLRAD;
     }
+
+  free(growth);
 
   return;
   }

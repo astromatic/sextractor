@@ -36,7 +36,6 @@
 
 /*------------------------------- structures --------------------------------*/
 /*------------------------------- functions ---------------------------------*/
-extern void
 extern void		astrom_errparam(picstruct *field, objstruct *obj,
 					obj2struct *obj2),
 			astrom_peakpos(picstruct *field, objstruct *obj,

@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1998-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1998-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/10/2010
+*	Last modified:		21/06/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -40,6 +40,7 @@
 #include	"prefs.h"
 #include	"fits/fitscat.h"
 #include	"check.h"
+#include	"field.h"
 #include	"filter.h"
 #include	"image.h"
 #include	"wcs/poly.h"
@@ -324,11 +325,10 @@ void	psf_readcontext(psfstruct *psf, picstruct *field)
 /****************************************************************************/
 
 void	psf_fit(psfstruct *psf, picstruct *field, picstruct *wfield,
-		objstruct *obj)
+		objstruct *obj, obj2struct *obj2)
 {
   checkstruct		*check;
-  static obj2struct     *obj2 = &outobj2;
-  static double		x2[PSF_NPSFMAX],y2[PSF_NPSFMAX],xy[PSF_NPSFMAX],
+  static double	x2[PSF_NPSFMAX],y2[PSF_NPSFMAX],xy[PSF_NPSFMAX],
 			deltax[PSF_NPSFMAX],
 			deltay[PSF_NPSFMAX],
 			flux[PSF_NPSFMAX],fluxerr[PSF_NPSFMAX],
@@ -416,27 +416,29 @@ void	psf_fit(psfstruct *psf, picstruct *field, picstruct *wfield,
       QMALLOC(psfmasky[i], float, npix);
     }
 
-  copyimage(field, datah, width, height, ix, iy);
-
   /* Compute weights */
   wbad = 0;
   if (wfield)
     {
-      copyimage(wfield, weighth, width, height, ix, iy);
-      for (wh=weighth, w=weight, dh=datah,p=npix; p--;)
-        if ((pix=*(wh++)) < wthresh && pix>0
-            && (pix2=*(dh++))>-BIG
-            && pix2<satlevel)
-          *(w++) = 1/sqrt(pix+(pix2>0.0?
-                               (gainflag? pix2*pix/backnoise2:pix2)/gain
-                               :0.0));
+    psf_copyobpix(datah, weighth, width, height, ix,iy, obj2,
+		!(field->flags&MEASURE_FIELD));
+    for (wh=weighth, w=weight, dh=datah,p=npix; p--;)
+      if ((pix=*(wh++)) < wthresh && pix>0
+	&& (pix2=*(dh++))>-BIG
+	&& pix2<satlevel)
+        *(w++) = 1/sqrt(pix+(pix2>0.0?
+			(gainflag? pix2*pix/backnoise2:pix2)/gain
+			:0.0));
         else
           {
-            *(w++) = 0.0;
-            wbad++;
+          *(w++) = 0.0;
+          wbad++;
           }
     }
   else
+    {
+    psf_copyobpix(datah, NULL, width, height, ix,iy, obj2,
+		!(field->flags&MEASURE_FIELD));
     for (w=weight, dh=datah, p=npix; p--;)
       if ((pix=*(dh++))>-BIG && pix<satlevel)
         *(w++) = 1.0/sqrt(backnoise2+(pix>0.0?pix/gain:0.0));
@@ -445,6 +447,7 @@ void	psf_fit(psfstruct *psf, picstruct *field, picstruct *wfield,
           *(w++) = 0.0;
           wbad++;
         }
+    }
 
   /* Special action if most of the weights are zero!! */
   if (wbad>=npix-3)
@@ -671,20 +674,24 @@ void	psf_fit(psfstruct *psf, picstruct *field, picstruct *wfield,
       width = pwidth-1;
       height = pheight-1;
       npix = width*height;
-      copyimage(field, datah, width, height, ix, iy);
 
       /*-- Re-compute weights */
       if (wfield)
         {
-          copyimage(wfield, weighth, width, height, ix, iy);
-          for (wh=weighth ,w=weight, p=npix; p--;)
-            *(w++) = (pix=*(wh++))<wthresh? sqrt(pix): 0.0;
+        psf_copyobpix(datah, weighth, width, height, ix,iy, obj2,
+		!(field->flags&MEASURE_FIELD));
+        for (wh=weighth ,w=weight, p=npix; p--;)
+          *(w++) = (pix=*(wh++))<wthresh? sqrt(pix): 0.0;
         }
       else
+        {
+        psf_copyobpix(datah, NULL, width, height, ix,iy, obj2,
+		!(field->flags&MEASURE_FIELD));
         for (w=weight, dh=datah, p=npix; p--;)
           *(w++) = ((pix = *(dh++))>-BIG && pix<satlevel)?
             1.0/sqrt(backnoise2+(pix>0.0?pix/gain:0.0))
             :0.0;
+        }
 
       /*-- Weight the data */
       dh = datah;
@@ -728,16 +735,13 @@ void	psf_fit(psfstruct *psf, picstruct *field, picstruct *wfield,
 }
 
 
-/******************************** double_psf_fit *******************************
-****/
-/* double fit to make the psf detection on one image and the photometry on anoth
-er */
-/*******************************************************************************
-****/
+/****************************** double_psf_fit ******************************/
+/* double fit to make psf detection on one image and photometry on another  */
+/****************************************************************************/
 
 void    double_psf_fit(psfstruct *ppsf, picstruct *pfield, picstruct *pwfield,
-                       objstruct *obj, psfstruct *psf, picstruct *field, 
-                       picstruct *wfield)
+                       objstruct *obj, obj2struct *obj2,
+			psfstruct *psf, picstruct *field, picstruct *wfield)
 {
   static double      /* sum[PSF_NPSFMAX]*/ pdeltax[PSF_NPSFMAX],
     pdeltay[PSF_NPSFMAX],psol[PSF_NPSFMAX], pcovmat[PSF_NPSFMAX*PSF_NPSFMAX], 
@@ -762,8 +766,6 @@ void    double_psf_fit(psfstruct *ppsf, picstruct *pfield, picstruct *pwfield,
     ival,npsfmax;
   double *pvar;
   
-    static obj2struct   *obj2 = &outobj2;
-
   pdx = pdy =dx = dy = 0.0;
   ppixstep = 1.0/ppsf->pixstep;
   pixstep = 1.0/psf->pixstep;
@@ -831,38 +833,37 @@ void    double_psf_fit(psfstruct *ppsf, picstruct *pfield, picstruct *pwfield,
     }
 
 /*-------------------  Now the photometry fit ---------------------*/
-  copyimage(pfield, pdatah, width, height, ix, iy);
    /* Compute photometry weights */
   wbad = 0;
   if (pwfield)
     {
-       copyimage(pwfield, pweighth, width, height, ix, iy);
-      for (pwh=pweighth, pw=pweight, pdh=pdatah,p=npix; p--;)
-        {
-        if ((ppix=*(pwh++)) < pwthresh && ppix>0
-            && (ppix2=*(pdh++))>-BIG  && ppix2<satlevel)
-          {
-            *(pw++) = 1/sqrt(ppix+(ppix2>0.0?
+    psf_copyobpix(pdatah, pweighth, width, height, ix,iy, obj2, 0);
+    for (pwh=pweighth, pw=pweight, pdh=pdatah,p=npix; p--;)
+      {
+      if ((ppix=*(pwh++)) < pwthresh && ppix>0
+		&& (ppix2=*(pdh++))>-BIG  && ppix2<satlevel)
+        *(pw++) = 1/sqrt(ppix+(ppix2>0.0?
 			(gainflag? ppix2*ppix/pbacknoise2:ppix2)/gain : 0.0));
-          }
       else
-          {
-            *(pw++) = 0.0;          
-            wbad++;
-          }
+        {
+        *(pw++) = 0.0;          
+        wbad++;
         }
+      }
     }
   else
+    {
+    psf_copyobpix(pdatah, NULL, width, height, ix,iy, obj2, 0);
     for (pw=pweight, pdh=pdatah, p=npix; p--;)
       if ((ppix=*(pdh++))>-BIG && ppix<satlevel)
-          {
-            *(pw++) = 1.0/sqrt(pbacknoise2+(ppix>0.0?ppix/gain:0.0));
-          }
+        *(pw++) = 1.0/sqrt(pbacknoise2+(ppix>0.0?ppix/gain:0.0));
       else
         {
-          *(pw++) = 0.0;
-          wbad++;
+        *(pw++) = 0.0;
+        wbad++;
         }
+    }
+
   /* Special action if most of the weights are zero!! */
   if (wbad>=npix-3)
     return;
@@ -1016,6 +1017,95 @@ void    double_psf_fit(psfstruct *ppsf, picstruct *pfield, picstruct *pwfield,
     }
   return;
 }
+
+
+/****** psf_copyobjpix ******************************************************
+PROTO	int psf_copyobjpix(PIXTYPE *data, PIXTYPE *weight,
+			int wout, int hout, int ix, int iy,
+			obj2struct *obj2, int detect_flag);
+PURPOSE	Copy a piece of the input object image/weights to local arrays.
+INPUT	Pointer to the output data array,
+	pointer to the output weight array,
+	output frame width,
+	output frame height,
+	integer x coordinate,
+	integer y coordinate,
+	pointer to the obj2 structure,
+	detection field flag (non 0 only for pure detection images).
+OUTPUT	RETURN_ERROR if the coordinates are outside object image,
+	RETURN_OK otherwise.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	20/06/2011
+ ***/
+int	psf_copyobjpix(PIXTYPE *data, PIXTYPE *weight,
+			int wout, int hout, int ix, int iy,
+			obj2struct *obj2, int detect_flag);
+  {
+   PIXTYPE	*datat,*weightt, *imagein,*weightin;
+   int		i,y, win,hin, w2, xmin,xmax,ymin,ymax
+/* Set output to -BIG */
+  datatt = data;
+  for (i=wout*hout; i--;)
+    *(datatt++) = -BIG;
+  if (weight)
+    memset(weight, 0, wout*hout*sizeof(PIXTYPE));
+
+  ix -= obj2->immin[0];
+  iy -= obj2->immin[1];
+  win = obj2->imsize[0];
+  hin = obj2->imsize[1];
+
+/* Don't go further if out of frame!! */
+  if (ix<0 || ix>=win || iy<0 || iy>=hin)
+    return RETURN_ERROR;
+
+/* Set the image boundaries */
+  w2 = wout;
+  ymin = iy-hout/2;
+  ymax = ymin + hout;
+  if (ymin<0)
+    {
+    data -= ymin*wout;
+    if (weight)
+      weight -= ymin*wout;
+    ymin = 0;
+    }
+  if (ymax>hin)
+    ymax = hin;
+
+  xmin = ix-wout/2;
+  xmax = xmin + wout;
+  if (xmax>win)
+    {
+    w2 -= xmax-win;
+    xmax = win;
+    }
+  if (xmin<0)
+    {
+    data -= xmin;
+    if (weight)
+      weight -= xmin;
+    w2 += xmin;
+    xmin = 0;
+    }
+
+/* Copy the right pixels to the destination */
+  imagein = detect_flag? ob2j->dimage:obj2->image;
+  for (y=ymin; y<ymax; y++, data += wout)
+    memcpy(data, imagein + xmin+y*win, w2*sizeof(PIXTYPE));
+  if (weight)
+    {
+    weightin = detect_flag? ob2j->dweight:obj2->weight;
+    for (y=ymin; y<ymax; y++, data += wout)
+      memcpy(weight, weightin + xmin+y*win, w2*sizeof(PIXTYPE));
+    }
+
+
+  return RETURN_OK;
+  }
+
+
 
 /******************************* psf_build **********************************/
 /*

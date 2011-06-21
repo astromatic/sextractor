@@ -645,7 +645,7 @@ void	scanimage(picstruct *field, picstruct *dfield, picstruct **pffield,
 		"Objects: %8d detected / %8d sextracted\n\33[1A",
 		yl>h? h:yl, thecat.ndetect, thecat.ntotal);
           ontotal = thecat.ntotal;
-          endobject(field, dfield, wfield, cdwfield, i, cleanobjlist);
+          endobject(field, dfield, wfield, cdwfield, i, cleanobjlist, NULL, 0);
           subcleanobj(i);
           }
         }
@@ -690,7 +690,7 @@ void	scanimage(picstruct *field, picstruct *dfield, picstruct **pffield,
 		"Objects: %8d detected / %8d sextracted\n\33[1A",
 	h, thecat.ndetect, thecat.ntotal);
     ontotal = thecat.ntotal;
-    endobject(field, dfield, wfield, cdwfield, 0, cleanobjlist);
+    endobject(field, dfield, wfield, cdwfield, cleanobjlist, 0, NULL, 0);
     subcleanobj(0);
     }
 
@@ -851,7 +851,7 @@ void  sortit(picstruct *field, picstruct *dfield, picstruct *wfield,
           }
         }
 
-      endobject(field, dfield, wfield, dwfield, victim, cleanobjlist);
+      endobject(field, dfield, wfield, dwfield, cleanobjlist, victim, 0);
       subcleanobj(victim);
       }
 
