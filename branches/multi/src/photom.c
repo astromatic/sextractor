@@ -636,7 +636,7 @@ void  photom_auto(picstruct *field, picstruct *dfield,
       dy = y - my;
       if ((r2=cx2*dx*dx + cy2*dy*dy + cxy*dx*dy) <= klim2)
         {
-        if ((pix=*dimaget)>-BIG && (!dwfield || (dwfield&&*dwweightt<dwthresh)))
+        if ((pix=*dimaget)>-BIG && (!dwfield || (dwfield&&*dweightt<dwthresh)))
           {
           area++;
           r1 += sqrt(r2)*pix;

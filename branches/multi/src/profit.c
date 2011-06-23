@@ -2005,7 +2005,7 @@ int	profit_copyobjpix(profitstruct *profit, picstruct *field,
   iy = profit->iy - obj2->immin[1];
   win = obj2->imsize[0];
   hin = obj2->imsize[1];
-  if (ix<0 || ix>=win] || iy<0 || iy>=hin)
+  if (ix<0 || ix>=win || iy<0 || iy>=hin)
     return 0;
 
   backnoise2 = field->backsig*field->backsig;

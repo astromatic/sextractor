@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		21/06/2011
+*	Last modified:		23/06/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -420,7 +420,7 @@ void	psf_fit(psfstruct *psf, picstruct *field, picstruct *wfield,
   wbad = 0;
   if (wfield)
     {
-    psf_copyobpix(datah, weighth, width, height, ix,iy, obj2,
+    psf_copyobjpix(datah, weighth, width, height, ix,iy, obj2,
 		!(field->flags&MEASURE_FIELD));
     for (wh=weighth, w=weight, dh=datah,p=npix; p--;)
       if ((pix=*(wh++)) < wthresh && pix>0
@@ -437,7 +437,7 @@ void	psf_fit(psfstruct *psf, picstruct *field, picstruct *wfield,
     }
   else
     {
-    psf_copyobpix(datah, NULL, width, height, ix,iy, obj2,
+    psf_copyobjpix(datah, NULL, width, height, ix,iy, obj2,
 		!(field->flags&MEASURE_FIELD));
     for (w=weight, dh=datah, p=npix; p--;)
       if ((pix=*(dh++))>-BIG && pix<satlevel)
@@ -678,14 +678,14 @@ void	psf_fit(psfstruct *psf, picstruct *field, picstruct *wfield,
       /*-- Re-compute weights */
       if (wfield)
         {
-        psf_copyobpix(datah, weighth, width, height, ix,iy, obj2,
+        psf_copyobjpix(datah, weighth, width, height, ix,iy, obj2,
 		!(field->flags&MEASURE_FIELD));
         for (wh=weighth ,w=weight, p=npix; p--;)
           *(w++) = (pix=*(wh++))<wthresh? sqrt(pix): 0.0;
         }
       else
         {
-        psf_copyobpix(datah, NULL, width, height, ix,iy, obj2,
+        psf_copyobjpix(datah, NULL, width, height, ix,iy, obj2,
 		!(field->flags&MEASURE_FIELD));
         for (w=weight, dh=datah, p=npix; p--;)
           *(w++) = ((pix = *(dh++))>-BIG && pix<satlevel)?
@@ -802,7 +802,7 @@ void    double_psf_fit(psfstruct *ppsf, picstruct *pfield, picstruct *pwfield,
   npix = width*height;
   radmin2 = PSF_MINSHIFT*PSF_MINSHIFT;
   radmax2 = npix/2.0;
-  psf_fit(psf,field, wfield,obj);
+  psf_fit(psf, field, wfield, obj, obj2);
   npsf=thepsfit->npsf;
   
   QMALLOC(ppsfmasks,float *,npsfmax);
@@ -837,7 +837,7 @@ void    double_psf_fit(psfstruct *ppsf, picstruct *pfield, picstruct *pwfield,
   wbad = 0;
   if (pwfield)
     {
-    psf_copyobpix(pdatah, pweighth, width, height, ix,iy, obj2, 0);
+    psf_copyobjpix(pdatah, pweighth, width, height, ix,iy, obj2, 0);
     for (pwh=pweighth, pw=pweight, pdh=pdatah,p=npix; p--;)
       {
       if ((ppix=*(pwh++)) < pwthresh && ppix>0
@@ -853,7 +853,7 @@ void    double_psf_fit(psfstruct *ppsf, picstruct *pfield, picstruct *pwfield,
     }
   else
     {
-    psf_copyobpix(pdatah, NULL, width, height, ix,iy, obj2, 0);
+    psf_copyobjpix(pdatah, NULL, width, height, ix,iy, obj2, 0);
     for (pw=pweight, pdh=pdatah, p=npix; p--;)
       if ((ppix=*(pdh++))>-BIG && ppix<satlevel)
         *(pw++) = 1.0/sqrt(pbacknoise2+(ppix>0.0?ppix/gain:0.0));
@@ -1016,7 +1016,7 @@ void    double_psf_fit(psfstruct *ppsf, picstruct *pfield, picstruct *pwfield,
       QFREE(checkmask);
     }
   return;
-}
+  }
 
 
 /****** psf_copyobjpix ******************************************************
@@ -1036,18 +1036,19 @@ OUTPUT	RETURN_ERROR if the coordinates are outside object image,
 	RETURN_OK otherwise.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	20/06/2011
+VERSION	23/06/2011
  ***/
 int	psf_copyobjpix(PIXTYPE *data, PIXTYPE *weight,
 			int wout, int hout, int ix, int iy,
-			obj2struct *obj2, int detect_flag);
+			obj2struct *obj2, int detect_flag)
   {
    PIXTYPE	*datat,*weightt, *imagein,*weightin;
-   int		i,y, win,hin, w2, xmin,xmax,ymin,ymax
+   int		i,y, win,hin, w2, xmin,xmax,ymin,ymax;
+
 /* Set output to -BIG */
-  datatt = data;
+  datat = data;
   for (i=wout*hout; i--;)
-    *(datatt++) = -BIG;
+    *(datat++) = -BIG;
   if (weight)
     memset(weight, 0, wout*hout*sizeof(PIXTYPE));
 
@@ -1091,12 +1092,12 @@ int	psf_copyobjpix(PIXTYPE *data, PIXTYPE *weight,
     }
 
 /* Copy the right pixels to the destination */
-  imagein = detect_flag? ob2j->dimage:obj2->image;
+  imagein = detect_flag? obj2->dimage:obj2->image;
   for (y=ymin; y<ymax; y++, data += wout)
     memcpy(data, imagein + xmin+y*win, w2*sizeof(PIXTYPE));
   if (weight)
     {
-    weightin = detect_flag? ob2j->dweight:obj2->weight;
+    weightin = detect_flag? obj2->dweight:obj2->weight;
     for (y=ymin; y<ymax; y++, data += wout)
       memcpy(weight, weightin + xmin+y*win, w2*sizeof(PIXTYPE));
     }

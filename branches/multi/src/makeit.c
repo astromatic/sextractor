@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		22/04/2011
+*	Last modified:		23/06/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -210,10 +210,6 @@ void	makeit()
       warning("Dimensionality of the SOM-fit vector limited to ", gstr);
       }
     }
-
-/* Prepare growth-curve buffer */
-  if (prefs.growth_flag)
-    initgrowth();
 
 /* Allocate memory for multidimensional catalog parameter arrays */
   alloccatparams();
@@ -538,9 +534,6 @@ void	makeit()
 
   if (prefs.somfit_flag)
     som_end(thesom);
-
-  if (prefs.growth_flag)
-    endgrowth();
 
 #ifdef USE_MODEL
   if (prefs.prof_flag)
