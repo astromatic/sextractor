@@ -795,43 +795,43 @@ void	endobject(picstruct *field, picstruct *dfield, picstruct *wfield,
 
 /*-------------------------------- Astrometry ------------------------------*/
 
-/*-- Edit min and max coordinates to follow the FITS conventions */
-    obj->xmin += 1;
-    obj->ymin += 1;
-    obj->xmax += 1;
-    obj->ymax += 1;
+/* Edit min and max coordinates to follow the FITS conventions */
+  obj->xmin += 1;
+  obj->ymin += 1;
+  obj->xmax += 1;
+  obj->ymax += 1;
 
-/*-- Go through each newly identified component */
-    for (j=0; j<nsub; j++)
+/* Go through each newly identified component */
+  for (j=0; j<nsub; j++)
+    {
+    if (prefs.psffit_flag)
       {
-      if (prefs.psffit_flag)
-        {
-        obj2->x_psf = thepsfit->x[j];
-        obj2->y_psf = thepsfit->y[j];
-        if (FLAG(obj2.xf_psf) || FLAG(obj2.xw_psf))
-          astrom_psfpos(field, obj2);
-/*------ Express position error parameters in the FOCAL or WORLD frame */
-        if (FLAG(obj2.poserrmx2w_psf))
-          astrom_psferrparam(field, obj2);
-        if (FLAG(obj2.flux_psf))
-          obj2->flux_psf = thepsfit->flux[j]>0.0? thepsfit->flux[j]:0.0; /*?*/
-        if (FLAG(obj2.mag_psf))
-          obj2->mag_psf = thepsfit->flux[j]>0.0?
+      obj2->x_psf = thepsfit->x[j];
+      obj2->y_psf = thepsfit->y[j];
+      if (FLAG(obj2.xf_psf) || FLAG(obj2.xw_psf))
+        astrom_psfpos(field, obj2);
+/*---- Express position error parameters in the FOCAL or WORLD frame */
+      if (FLAG(obj2.poserrmx2w_psf))
+        astrom_psferrparam(field, obj2);
+      if (FLAG(obj2.flux_psf))
+        obj2->flux_psf = thepsfit->flux[j]>0.0? thepsfit->flux[j]:0.0; /*?*/
+      if (FLAG(obj2.mag_psf))
+        obj2->mag_psf = thepsfit->flux[j]>0.0?
 		prefs.mag_zeropoint -2.5*log10(thepsfit->flux[j]) : 99.0;
-        if (FLAG(obj2.fluxerr_psf))
-          obj2->fluxerr_psf= thepsfit->fluxerr[j];
-        if (FLAG(obj2.magerr_psf))
-          obj2->magerr_psf =
+      if (FLAG(obj2.fluxerr_psf))
+        obj2->fluxerr_psf= thepsfit->fluxerr[j];
+      if (FLAG(obj2.magerr_psf))
+        obj2->magerr_psf =
 		(thepsfit->flux[j]>0.0 && thepsfit->fluxerr[j]>0.0) ? /*?*/
 			1.086*thepsfit->fluxerr[j]/thepsfit->flux[j] : 99.0;
-        if (j)
-          obj->number = ++thecat.ntotal;
-        }
+      if (j)
+        obj->number = ++thecat.ntotal;
+      }
 
-      if (FLAG(obj2.analtime) && !j)
-        obj2->analtime = (float)(counter_seconds() - analtime1);
+    if (FLAG(obj2.analtime) && !j)
+      obj2->analtime = (float)(counter_seconds() - analtime1);
 
-      FPRINTF(OUTPUT, "%8d %6.1f %6.1f %5.1f %5.1f %12g "
+    FPRINTF(OUTPUT, "%8d %6.1f %6.1f %5.1f %5.1f %12g "
 			"%c%c%c%c%c%c%c%c\n",
 	obj->number, obj->mx+1.0, obj->my+1.0,
 	obj->a, obj->b,
@@ -844,11 +844,7 @@ void	endobject(picstruct *field, picstruct *dfield, picstruct *wfield,
 	obj->flag&OBJ_ISO_PB?'I':'_',
 	obj->flag&OBJ_DOVERFLOW?'D':'_',
 	obj->flag&OBJ_OVERFLOW?'O':'_');
-      writecat(n, objlist);
-      }
-    }
-  else
-    {
+    writecat(n, objlist);
     }
 
 /* Remove again from the image the object's pixels if BLANKing is on ... */

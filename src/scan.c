@@ -645,7 +645,7 @@ void	scanimage(picstruct *field, picstruct *dfield, picstruct **pffield,
 		"Objects: %8d detected / %8d sextracted\n\33[1A",
 		yl>h? h:yl, thecat.ndetect, thecat.ntotal);
           ontotal = thecat.ntotal;
-          endobject(field, dfield, wfield, cdwfield, i, cleanobjlist, NULL, 0);
+          endobject(field, dfield, wfield, cdwfield, cleanobjlist, i, NULL, 0);
           subcleanobj(i);
           }
         }
@@ -750,6 +750,7 @@ void  sortit(picstruct *field, picstruct *dfield, picstruct *wfield,
   {
    picstruct		*cfield;
    objliststruct	objlistd, *objlistout;
+   obj2liststruct	*obj2list;
    static objstruct	obj;
    objstruct		*cobj;
    pliststruct		*pixel;
@@ -758,9 +759,9 @@ void  sortit(picstruct *field, picstruct *dfield, picstruct *wfield,
   cfield = dfield? dfield: field;
 
   pixel = objlist->plist;
-  objlistout.obj = NULL;
-  objlistout.plist = NULL;
-  objlistout.nobj = objlistout.npix = 0;
+  objlistd.obj = NULL;
+  objlistd.plist = NULL;
+  objlistd.nobj = objlistd.npix = 0;
 
 /*----- Allocate memory to store object data */
 
@@ -803,7 +804,7 @@ void  sortit(picstruct *field, picstruct *dfield, picstruct *wfield,
     preanalyse(i, objlistout, ANALYSE_FULL|ANALYSE_ROBUST);
     if (prefs.ext_maxarea && objlistout->obj[i].fdnpix > prefs.ext_maxarea)
       continue; 
-    analyse(field, dfield, i, objlist2);
+    analyse(field, dfield, i, objlistout);
     cobj = objlistout->obj + i;
     if (prefs.blank_flag)
       {
@@ -851,7 +852,8 @@ void  sortit(picstruct *field, picstruct *dfield, picstruct *wfield,
           }
         }
 
-      endobject(field, dfield, wfield, dwfield, cleanobjlist, victim, 0);
+      endobject(field, dfield, wfield, dwfield, cleanobjlist, victim,
+		obj2list, 0);
       subcleanobj(victim);
       }
 
