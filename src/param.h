@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		19/05/2011
+*	Last modified:		08/06/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -756,7 +756,7 @@ keystruct	objkey[] = {
 	&outobj2.fwhm_psf, H_FLOAT, T_FLOAT, "%8.3f", "pixel",
 	"phys.size.diameter;instr.det.psf", "pix"},
   {"FWHMPSF_WORLD", "FWHM of the local PSF model (world units)",
-	&outobj2.fwhmw, H_FLOAT, T_FLOAT, "%12.7g", "deg",
+	&outobj2.fwhmw_psf, H_FLOAT, T_FLOAT, "%12.7g", "deg",
 	"phys.angSize;instr.det.psf", "deg"},
 
   {"XPSF_IMAGE", "X coordinate from PSF-fitting",
