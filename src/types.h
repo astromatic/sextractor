@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		19/05/2011
+*	Last modified:		15/07/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -538,8 +538,10 @@ typedef struct
 
 typedef struct
   {
-  int		nobj;			/* number of objects in list */
   obj2struct	*obj2;			/* pointer to the object array */
+  keystruct	*keys;			/* pointer to the array of keys */
+  int		nobj;			/* number of objects in list */
+  int		nkeys			/* number of keys per obj2 */
   }	obj2liststruct;
 
 /*----------------------------- image parameters ----------------------------*/
@@ -621,6 +623,7 @@ typedef struct
   int		ndetect;				/* nb of detections */
   int		ntotal;					/* Total object nb */
   int		nparam;					/* Nb of parameters */
+  int		nobj2;					/* Nb of obj2's */
 /*----- Misc. strings defining the extraction */
   char		prefs_name[MAXCHAR];			/* Prefs filename*/
   char		image_name[MAXCHAR];			/* image filename*/

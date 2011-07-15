@@ -7,7 +7,7 @@
 *
 *	This file part of:	AstrOmatic FITS/LDAC library
 *
-*	Copyright:		(C) 1995-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1995-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -23,7 +23,7 @@
 *	along with AstrOmatic software.
 *	If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		10/11/2010
+*	Last modified:		15/07/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -101,7 +101,7 @@ INPUT	pointer to catstruct.
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	25/09/2004
+VERSION	15/07/2011
  ***/
 void	readbasic_head(tabstruct *tab)
 
@@ -127,8 +127,6 @@ void	readbasic_head(tabstruct *tab)
   tabsize = 0;
   if (tab->naxis>0)
     {
-    QFREE(tab->naxisn);
-    QMALLOC(tab->naxisn, int, tab->naxis);
 /*--get the size of the array*/
     tabsize = 1;
     for (i=0; i<tab->naxis && i<999; i++)
@@ -200,7 +198,7 @@ OUTPUT	RETURN_OK if a binary table was found and mapped, RETURN_ERROR
 	otherwise.
 NOTES	-.
 AUTHOR	E. Bertin (IAP & Leiden observatory)
-VERSION	20/07/2010
+VERSION	15/07/2011
  ***/
 int	readbintabparam_head(tabstruct *tab)
 
@@ -209,7 +207,6 @@ int	readbintabparam_head(tabstruct *tab)
    keystruct	*key, *prevkey;
    char		strf[88], strk[16];
    char		*str;
-   int		naxisn[32];
    int		i,j, larray, nfields,narray, pos;
 
   if (!(cat = tab->cat))
@@ -288,20 +285,17 @@ int	readbintabparam_head(tabstruct *tab)
       }
 
 /*--handle the special case of multimensional arrays*/
-    if ((naxisn[0] = key->nbytes/t_size[key->ttype]) > 1)
+    if ((key->naxisn[0] = key->nbytes/t_size[key->ttype]) > 1)
       {
       sprintf(strk, "TDIM%-3d", i+1);
       if (fitsread(tab->headbuf, strk, strf, H_STRING, T_STRING) == RETURN_OK)
         {
         str = strf;
-        for (j=0; (naxisn[j]=(int)strtol(str+1, &str, 10)); j++);
+        for (j=0; (key->naxisn[j]=(int)strtol(str+1, &str, 10)); j++);
         key->naxis = j;
         }
       else
         key->naxis = 1;
-      QMALLOC(key->naxisn, int, key->naxis);
-      for (j=0; j<key->naxis; j++)
-        key->naxisn[j] = naxisn[j];
       }
     else
       key->naxis = 0;

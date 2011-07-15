@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/10/2010
+*	Last modified:		15/07/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -32,9 +32,8 @@
 
 sexcatstruct		thecat;
 picstruct		thefield1,thefield2, thewfield1,thewfield2;
-objstruct		flagobj;
-obj2struct		flagobj2;
-extern obj2struct	outobj2;
+extern objstruct	flagobj;
+extern obj2struct	flagobj2;
 float			ctg[37], stg[37];
 char			gstr[MAXCHAR];
 

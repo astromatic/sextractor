@@ -7,7 +7,7 @@
 *
 *	This file part of:	AstrOmatic FITS/LDAC library
 *
-*	Copyright:		(C) 1995-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1995-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -23,7 +23,7 @@
 *	along with AstrOmatic software.
 *	If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		09/10/2010
+*	Last modified:		15/07/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -116,7 +116,7 @@ OUTPUT	RETURN_OK if everything went as expected, and RETURN_ERROR otherwise.
 NOTES	A preexisting key in the destination table yields a RETURN_ERROR,
 	the ptr member is NOT COPIED.
 AUTHOR	E. Bertin (IAP & Leiden observatory)
-VERSION	19/08/96
+VERSION	15/07/2011
  ***/
 int	copy_key(tabstruct *tabin, char *keyname, tabstruct *tabout, int pos)
 
@@ -137,8 +137,6 @@ int	copy_key(tabstruct *tabin, char *keyname, tabstruct *tabout, int pos)
   QCALLOC(keyout, keystruct, 1);
   *keyout = *keyin;
   keyout->ptr = NULL;
-  if (keyin->naxis)
-    QMEMCPY(keyin->naxisn, keyout->naxisn, int, keyin->naxis);
 
 /*Then, update the links */
   if ((keyout->nextkey = pos_to_key(tabout, pos)))
@@ -163,13 +161,12 @@ PURPOSE	Free memory associated to a key ptr.
 INPUT	Pointer to the key.
 OUTPUT	-.
 NOTES	-.
-AUTHOR	E. Bertin (IAP & Leiden observatory)
-VERSION	19/08/96
+AUTHOR	E. Bertin (IAP)
+VERSION	15/07/2011
  ***/
 void	free_key(keystruct *key)
 
   {
-  free(key->naxisn);
   free(key->ptr);
   free(key);
 
