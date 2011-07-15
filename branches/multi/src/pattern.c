@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 2007-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 2007-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/10/2010
+*	Last modified:		15/07/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -152,7 +152,7 @@ INPUT	Pointer to pattern structure.
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	18/11/2009
+VERSION	15/07/2011
  ***/
 void	pattern_fit(patternstruct *pattern, profitstruct *profit)
   {
@@ -267,7 +267,6 @@ else if (!(p%2))
 cat=new_cat(1);
 init_cat(cat);
 cat->tab->naxis=3;
-QMALLOC(cat->tab->naxisn, int, 3);
 cat->tab->naxisn[0]=profit->modnaxisn[0];
 cat->tab->naxisn[1]=profit->modnaxisn[1];
 cat->tab->naxisn[2]=nout;

@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		19/05/2011
+*	Last modified:		15/07/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -55,12 +55,13 @@ int		catopen_flag = 0;
 /*
 Read the catalog config file
 */
-void	readcatparams(char *filename)
+obj2liststruct	*readcatparams(char *filename, int nobj2)
   {
-   keystruct	*key;
-   FILE		*infile;
-   char		str[MAXCHAR], *keyword, *sstr;
-   int		i, size;
+   obj2liststruct	*obj2list;
+   keystruct		*key, *tabkey;
+   FILE			*infile;
+   char			str[MAXCHAR], *keyword, *sstr;
+   int			i,k,o, size, nkeys;
 
 /* Prepare the OBJECTS tables*/
   objtab = new_tab("OBJECTS");
@@ -69,7 +70,7 @@ void	readcatparams(char *filename)
     error(EXIT_FAILURE, "*ERROR*: can't read ", filename);
 
 /* Scan the catalog config file*/
-  thecat.nparam = 0;
+  nkeys = 0;
   while (fgets(str, MAXCHAR, infile))
     {
     sstr = str + strspn(str," \t");
@@ -77,12 +78,12 @@ void	readcatparams(char *filename)
       {
       keyword = strtok(sstr, " \t{[(\n\r");
       if (keyword &&
-	(i = findkey(keyword,(char *)objkey,sizeof(keystruct)))!=RETURN_ERROR)
+	(k = findkey(keyword,(char *)objkey,sizeof(keystruct)))!=RETURN_ERROR)
         {
-        key = objkey+i;
+        key = objkey+k;
         add_key(key, objtab, 0);
         *((char *)key->ptr) = (char)'\1';
-        thecat.nparam++;
+        nkeys++;
         if (key->naxis)
           {
           for (i=0; i<key->naxis; i++)
@@ -99,6 +100,7 @@ void	readcatparams(char *filename)
 		keyword);
             }
           key->nbytes = size;
+          key->allocflag = 1;
           }
         }
       else
@@ -108,13 +110,60 @@ void	readcatparams(char *filename)
 
   fclose(infile);
 
-/* Now we copy the flags to the proper structures */
+/* Allocate memory for the obj2list */
+  QMALLOC(obj2list, obj2liststruct, 1);
+  obj2list->nobj = nobj2;
+  obj2list->nkeys = nkeys;
+  QMALLOC(obj2list->obj2, obj2struct, nobj2);
+  QMALLOC(obj2list->keys, keystruct *, nobj2);
 
-  flagobj = outobj;
-  flagobj2 = outobj2;
-/* Differentiate between outobj and outobj2 vectors */
-  memset(&outobj2, 0, sizeof(outobj2));
+/* Create key arrays for the catalog buffer, with the right pointers */
+  if (nkeys)
+    for (o=0; o<nobj2; o++)
+      {
+      QMALLOC(obj2list->keys[o], keystruct, nkeys);
+      obj2 = obj2list->obj2[o];
+      key = obj2list->keys[o];
+      tabkey = objtab->key;
+      for (k=nkeys; k--; key++)
+        {
+        *key = *tabkey;
+        key->prevkey = key-1;
+        key->nextkey = key+1;
+        key->ptr = (void *)&obj2 + (tabkey->ptr - (void *)&flagobj2);
+        tabkey = tabkey->nextkey;
+        }
+      obj2list->keys[o][0].prevkey = obj2list->keys[o] + nkeys-1;
+      obj2list->keys[o][nkeys-1].nextkey = obj2list->keys[o];
+      }
+
+
   updateparamflags();
+
+  return obj2list;
+  }
+
+
+/*************************** changecatparamarrays ****************************/
+/*
+Change parameter array dimensions
+*/
+void	changecatparamarrays(char *keyword, int *axisn, int naxis)
+  {
+   keystruct	*key;
+   int		i,k, size;
+
+  if ((k = findkey(keyword,(char *)objkey,sizeof(keystruct)))!=RETURN_ERROR)
+    {
+    key = objkey+k;
+    if (key->naxis)
+      {
+      size = t_size[key->ttype];
+      key->naxis = naxis;
+      for (i=0; i<naxis; i++)
+        size *= (key->naxisn[i]=axisn[i]);
+      key->nbytes = size;
+      }
 
   return;
   }
@@ -124,52 +173,65 @@ void	readcatparams(char *filename)
 /*
 Allocate memory for parameter arrays
 */
-void	alloccatparams(void)
+void	alloccatparams(obj2liststruct *obj2list)
   {
    keystruct	*key;
    int		i;
 
-/* Go back to multi-dimensional arrays for memory allocation */
-  if (thecat.nparam)
-    for (i=objtab->nkey, key=objtab->key; i--; key = key->nextkey) 
-      if (key->naxis)
+  nobj2 = obj2list->nobj;
+
+/* Allocate arrays for multidimensional measurement parameters */
+  for (key=objkey; *key->name; key++)
+    if (key->naxis && (*((char *)key->ptr))
+      {
+      for (o=0; o<nobj2; o++)
         {
-/*------ Only outobj2 vectors are dynamic */
-        if (!*((char **)key->ptr))
-          {
-          QMALLOC(*((char **)key->ptr), char, key->nbytes);
-          key->ptr = *((char **)key->ptr);
-          key->allocflag = 1;
-          }
+        ptr = (char **)&obj2list->obj2[o]+(char **)(key->ptr-(void *)&flagobj2);
+        QMALLOC(*((char **)ptr, char, key->nbytes);
         }
+      }
+
+/* Set the data pointers in keys */
+  for (o=0; o<nobj2; o++)
+    {
+    keys = obj2list->keys[o];
+    for (k=0; k<nkeys; k++)
+      {
+      key = keys[k];
+      if (key.allocflag)
+        key.ptr = *((char **)key.ptr);
+      }
+    }
 
   return;
   }
 
-/*************************** changecatparamarrays ****************************/
+
+/******************************* freecatparams ******************************/
 /*
-Change parameter array dimensions
+Free memory allocated for parameter arrays
 */
-void	changecatparamarrays(char *keyword, int *axisn, int naxis)
+void	freecatparams(obj2liststruct *obj2list)
   {
    keystruct	*key;
-   int		d,i, size;
+   int		i;
 
-  if (thecat.nparam)
-    for (i=objtab->nkey, key=objtab->key; i--; key = key->nextkey) 
-      if (key->naxis && !strcmp(keyword, key->name))
+  nobj2 = obj2list->nobj;
+
+/* Allocate arrays for multidimensional measurement parameters */
+  for (key=objkey; *key->name; key++)
+    if (key->naxis && (*((char *)key->ptr))
+      {
+      for (o=0; o<nobj2; o++)
         {
-        size = t_size[key->ttype];
-        if (key->naxis != naxis)
-          key->naxis = naxis;
-        for (d=0; d<naxis; d++)
-          size *= (key->naxisn[d]=axisn[d]);
-        key->nbytes = size;
-        break;
+        ptr = (char **)&obj2list->obj2[o]+(char **)(key->ptr-(void *)&flagobj2);
+        free(*((char **)ptr);
         }
+      }
 
   return;
   }
+
 
 /***************************** updateparamflags ******************************/
 /*
@@ -853,7 +915,6 @@ void	reinitcat(picstruct *field)
         key->nobj = 1;
         key->nbytes = 80*(fitsfind(key->ptr, "END     ")+1);
         key->naxis = 2;
-        QMALLOC(key->naxisn, int, key->naxis);
         key->naxisn[0] = 80;
         key->naxisn[1] = key->nbytes/80;
         add_key(key, tab, 0);
@@ -881,7 +942,6 @@ void	reinitcat(picstruct *field)
         key->nobj = fitsfind(key->ptr, "END     ")+1;
         key->nbytes = 80;
         key->naxis = 1;
-        QMALLOC(key->naxisn, int, key->naxis);
         key->naxisn[0] = 80;
         add_key(key, tab, 0);
         save_tab(fitscat, tab);
@@ -915,10 +975,10 @@ void	reinitcat(picstruct *field)
 /*
 Write out in the catalog each one object.
 */
-void	writecat(int n, objliststruct *objlist)
+void	writecat(objstruct *obj, obj2struct *obj2)
   {
-  outobj = objlist->obj[n];
-
+  outobj = *obj;
+  outobj2 = *obj2;
   switch(prefs.cat_type)
     {
     case FITS_10:
@@ -1002,11 +1062,7 @@ void	endcat(char *error)
     }
 
 /* Free allocated memory for arrays */
-  key = objtab->key;
-  for (i=objtab->nkey; i--; key=key->nextkey)
-    if (key->naxis && key->allocflag)
-      free(key->ptr);
-
+  freecatparams(obj2list);
   objtab->key = NULL;
   objtab->nkey = 0;
   free_tab(objtab);
