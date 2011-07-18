@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		23/06/2011
+*	Last modified:		18/07/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -42,6 +42,7 @@
 #include	"fits/fitscat.h"
 #include	"assoc.h"
 #include	"back.h"
+#include	"catout.h"
 #include	"check.h"
 #include	"fft.h"
 #include	"field.h"
@@ -104,7 +105,7 @@ void	makeit()
   initglob();
 
   NFPRINTF(OUTPUT, "Setting catalog parameters");
-  readcatparams(prefs.param_name);
+  catout_readparams(prefs.param);
   useprefs();			/* update things accor. to prefs parameters */
 
   if (prefs.psf_flag)
@@ -114,7 +115,7 @@ void	makeit()
     if (prefs.dpsf_flag)
       ppsf = psf_load(prefs.psf_name[1]);
  /*-- Need to check things up because of PSF context parameters */
-    updateparamflags();
+    catout_updateparamflags();
     useprefs();
     }
 
@@ -133,10 +134,10 @@ void	makeit()
 	|(FLAG(obj2.prof_disk_flux)? MODEL_EXPONENTIAL : MODEL_NONE)
 	|(FLAG(obj2.prof_bar_flux)? MODEL_BAR : MODEL_NONE)
 	|(FLAG(obj2.prof_arms_flux)? MODEL_ARMS : MODEL_NONE));
-    changecatparamarrays("VECTOR_MODEL", &theprofit->nparam, 1);
-    changecatparamarrays("VECTOR_MODELERR", &theprofit->nparam, 1);
+    catout_changeparamsize("VECTOR_MODEL", &theprofit->nparam, 1);
+    catout_changeparamsize("VECTOR_MODELERR", &theprofit->nparam, 1);
     nparam2[0] = nparam2[1] = theprofit->nparam;
-    changecatparamarrays("MATRIX_MODELERR", nparam2, 2);
+    catout_changeparamsize("MATRIX_MODELERR", nparam2, 2);
     if (prefs.pattern_flag)
       {
       npat = prefs.prof_disk_patternvectorsize;
@@ -150,17 +151,17 @@ void	makeit()
       if (FLAG(obj2.prof_disk_patternvector))
         {
         npat = pattern->size[2];
-        changecatparamarrays("DISK_PATTERN_VECTOR", &npat, 1);
+        catout_changeparamsize("DISK_PATTERN_VECTOR", &npat, 1);
         }
       if (FLAG(obj2.prof_disk_patternmodvector))
         {
         npat = pattern->ncomp*pattern->nfreq;
-        changecatparamarrays("DISK_PATTERNMOD_VECTOR", &npat, 1);
+        catout_changeparamsize("DISK_PATTERNMOD_VECTOR", &npat, 1);
         }
       if (FLAG(obj2.prof_disk_patternargvector))
         {
         npat = pattern->ncomp*pattern->nfreq;
-        changecatparamarrays("DISK_PATTERNARG_VECTOR", &npat, 1);
+        catout_changeparamsize("DISK_PATTERNARG_VECTOR", &npat, 1);
         }
       pattern_end(pattern);
       }
@@ -212,7 +213,7 @@ void	makeit()
     }
 
 /* Allocate memory for multidimensional catalog parameter arrays */
-  alloccatparams();
+  catout_allocparams();
   useprefs();
 
 /* Check if a specific extension should be loaded */
@@ -272,7 +273,7 @@ void	makeit()
     }
 
   NFPRINTF(OUTPUT, "Initializing catalog");
-  initcat();
+  catout_init();
 
 /* Initialize XML data */
   if (prefs.xml_flag || prefs.cat_type==ASCII_VO)
@@ -466,7 +467,7 @@ void	makeit()
     else if (dwfield)
       thewfield2 = *dwfield;
 
-    reinitcat(field);
+    catout_initext(field);
 
 /*-- Start the extraction pipeline */
     NFPRINTF(OUTPUT, "Scanning image");
@@ -488,7 +489,7 @@ void	makeit()
       thecat.ext_elapsed = difftime(thetime2, thetime1);
       }
 
-    reendcat();
+    catout_endext();
 
 /* Update XML data */
   if (prefs.xml_flag || prefs.cat_type==ASCII_VO)
@@ -570,7 +571,7 @@ void	makeit()
   if (prefs.xml_flag)
     write_xml(prefs.xml_name);
 
-  endcat((char *)NULL);
+  catout_end((char *)NULL);
 
   if (prefs.xml_flag || prefs.cat_type==ASCII_VO)
     end_xml();
@@ -634,7 +635,7 @@ INPUT	a character string,
 OUTPUT	RETURN_OK if everything went fine, RETURN_ERROR otherwise.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	14/07/2006
+VERSION	18/07/2011
  ***/
 void	write_error(char *msg1, char *msg2)
   {
@@ -645,7 +646,7 @@ void	write_error(char *msg1, char *msg2)
     write_xmlerror(prefs.xml_name, error);
 
 /* Also close existing catalog */
-  endcat(error);
+  catout_end(error);
 
   end_xml();
 

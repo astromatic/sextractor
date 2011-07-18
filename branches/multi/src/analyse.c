@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		21/06/2011
+*	Last modified:		18/07/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -39,7 +39,9 @@
 #include	"globals.h"
 #include	"prefs.h"
 #include	"fits/fitscat.h"
+#include	"analyse.h"
 #include	"back.h"
+#include	"catout.h"
 #include	"check.h"
 #include	"assoc.h"
 #include	"astrom.h"
@@ -58,61 +60,41 @@
 static obj2struct	*obj2 = &outobj2;
 extern profitstruct	*theprofit;
 
-/********************************* analyse ***********************************/
-void  analyse(picstruct *field, picstruct *dfield, int objnb,
-		objliststruct *objlist)
-
-  {
-   objstruct	*obj = objlist->obj+objnb;
-
-/* Do photometry on the detection image if no other image available */
-  obj->number = ++thecat.ndetect;
-  obj->bkg = (float)back(field, (int)(obj->mx+0.5), (int)(obj->my+0.5));
-  obj->dbkg = 0.0;
-  if (prefs.pback_type == LOCAL)
-    localback(field, obj);
-  else
-    obj->sigbkg = field->backsig;
-
-  examineiso(field, dfield, obj, objlist->plist);
-
-/*&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&*/
-/* Put here your calls to custom functions related to isophotal measurements.
-Ex:
-
-compute_myparams(obj); 
-
-*/
-
-/*&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&*/
-
-
-  return;
-  }
-
-
-/***************************** examineiso ********************************/
-/*
-compute some isophotal parameters IN THE MEASUREMENT image.
-*/
-void  examineiso(picstruct *field, picstruct *dfield, objstruct *obj,
-		pliststruct *pixel)
+/****** analyse_iso *********************************************************
+PROTO	void analyse_iso(picstruct *field, picstruct *dfield,
+			objliststruct *objlist, int n)
+PURPOSE	Do (isophotal) on pixel lists in the MEASUREMENT image.
+INPUT	Pointer to the measurement image,
+	pointer to the detection image (if different from measurement),
+	pointer to the objlist,
+	object index in the objlist.
+OUTPUT	-.
+NOTES	Requires access to the global preferences.
+AUTHOR	E. Bertin (IAP)
+VERSION	18/07/2011
+ ***/
+void  analyse_iso(picstruct *field, picstruct *dfield,
+			objliststruct *objlist, int n)
 
   {
    checkstruct		*check;
-   pliststruct		*pixt;
-   int			i,j,k,h, photoflag,area,errflag, cleanflag,
-			pospeakflag, minarea, gainflag;
+   objstruct		*obj;
+   pliststruct		*pixel, *pixt;
+   PIXTYPE		threshs[NISO],
+			pix, cdpix, tpix, peak,cdpeak, thresh,dthresh,minthresh;
    double		tv,sigtv, ngamma,
 			esum, emx2,emy2,emxy, err,gain,backnoise2,dbacknoise2,
 			xm,ym, x,y,var,var2, threshfac;
    float		*heap,*heapt,*heapj,*heapk, swap;
-   PIXTYPE		pix, cdpix, tpix, peak,cdpeak, thresh,dthresh,minthresh;
-   static PIXTYPE	threshs[NISO];
+   int			i,j,k,h, photoflag,area,errflag, cleanflag,
+			pospeakflag, minarea, gainflag;
 
 
   if (!dfield)
     dfield = field;
+
+  obj = objlist+n;
+  pixel = objlist->plist;
 
 /* Prepare computation of positional error */
   esum = emx2 = emy2 = emxy = 0.0;
@@ -400,11 +382,12 @@ void  examineiso(picstruct *field, picstruct *dfield, objstruct *obj,
   }
 
 
-/****** endobject ************************************************************
-PROTO	void	endobject(picstruct *field, picstruct *dfield, picstruct *wfield,
-		picstruct *dwfield, objliststruct *objlist, int n,
+/****** analyse_full *********************************************************
+PROTO	void analyse_full(picstruct *field, picstruct *dfield,
+		picstruct *wfield, picstruct *dwfield,
+		objliststruct *objlist, int n,
 		obj2liststruct *obj2list, int n2)
-PURPOSE Final processing of object data, just before saving it to the catalog.
+PURPOSE Final analysis of object data.
 INPUT   Measurement field pointer,
         Detection field pointer,
         Measurement weight-map field pointer,
@@ -416,10 +399,11 @@ INPUT   Measurement field pointer,
 OUTPUT  -.
 NOTES   -.
 AUTHOR  E. Bertin (IAP)
-VERSION 21/06/2011
+VERSION 18/07/2011
  ***/
-void	endobject(picstruct *field, picstruct *dfield, picstruct *wfield,
-		picstruct *dwfield, objliststruct *objlist, int n,
+void	analyse_full(picstruct *field, picstruct *dfield,
+		picstruct *wfield, picstruct *dwfield,
+		objliststruct *objlist, int n,
 		obj2liststruct *obj2list, int n2)
   {
    objstruct		*obj;
@@ -844,7 +828,7 @@ void	endobject(picstruct *field, picstruct *dfield, picstruct *wfield,
 	obj->flag&OBJ_ISO_PB?'I':'_',
 	obj->flag&OBJ_DOVERFLOW?'D':'_',
 	obj->flag&OBJ_OVERFLOW?'O':'_');
-    writecat(n, objlist);
+    catout_writeobj(obj2list, );
     }
 
 /* Remove again from the image the object's pixels if BLANKing is on ... */

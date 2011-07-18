@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		25/03/2011
+*	Last modified:		18/07/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -125,8 +125,9 @@
   {"MEMORY_BUFSIZE", P_INT, &prefs.mem_bufsize, 8, 65534},
   {"MEMORY_OBJSTACK", P_INT, &prefs.clean_stacksize, 16,65536},
   {"MEMORY_PIXSTACK", P_INT, &prefs.mem_pixstack, 1000, 10000000},
-  {"NTHREADS", P_INT, &prefs.nthreads, 0, THREADS_PREFMAX},
-  {"PARAMETERS_NAME", P_STRING, prefs.param_name},
+  {"NTHREADS", P_INT, &prefs.nthreads, -THREADS_PREFMAX, THREADS_PREFMAX},
+  {"PARAMETERS", P_STRINGLIST, prefs.param, 0,0,0.0,0.0,
+    {""}, 0, MAXIMAGE, &prefs.nparam,
   {"PATTERN_TYPE", P_KEY, &prefs.pattern_type, 0,0, 0.0,0.0,
    {"RINGS-QUADPOLE", "RINGS-OCTOPOLE", "RINGS-HARMONIC", "GAUSS-LAGUERRE",
    ""}},
@@ -184,7 +185,7 @@ char *default_prefs[] =
 "CATALOG_NAME     test.cat       # name of the output catalog",
 "CATALOG_TYPE     ASCII_HEAD     # NONE,ASCII,ASCII_HEAD, ASCII_SKYCAT,",
 "                                # ASCII_VOTABLE, FITS_1.0 or FITS_LDAC",
-"PARAMETERS_NAME  default.param  # name of the file containing catalog contents",
+"PARAMETERS       NUMBER,XWIN_IMAGE,YWIN_IMAGE,MAG_AUTO  # list of parameters",
 " ",
 "#------------------------------- Extraction ----------------------------------",
 " ",
