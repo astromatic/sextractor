@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/10/2010
+*	Last modified:		18/07/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -38,6 +38,7 @@
 #include	"define.h"
 #include	"globals.h"
 #include	"prefs.h"
+#include	"analyse.h"
 #include	"back.h"
 #include	"check.h"
 #include	"clean.h"
@@ -645,7 +646,8 @@ void	scanimage(picstruct *field, picstruct *dfield, picstruct **pffield,
 		"Objects: %8d detected / %8d sextracted\n\33[1A",
 		yl>h? h:yl, thecat.ndetect, thecat.ntotal);
           ontotal = thecat.ntotal;
-          endobject(field, dfield, wfield, cdwfield, cleanobjlist, i, NULL, 0);
+          analyse_full(field, dfield, wfield, cdwfield, cleanobjlist, i,
+			NULL, 0);
           subcleanobj(i);
           }
         }
@@ -690,7 +692,7 @@ void	scanimage(picstruct *field, picstruct *dfield, picstruct **pffield,
 		"Objects: %8d detected / %8d sextracted\n\33[1A",
 	h, thecat.ndetect, thecat.ntotal);
     ontotal = thecat.ntotal;
-    endobject(field, dfield, wfield, cdwfield, cleanobjlist, 0, NULL, 0);
+    analyse_full(field, dfield, wfield, cdwfield, cleanobjlist, 0, NULL, 0);
     subcleanobj(0);
     }
 
@@ -801,11 +803,21 @@ void  sortit(picstruct *field, picstruct *dfield, picstruct *wfield,
 
   for (i=0; i<objlistout->nobj; i++)
     {
+/*-- Basic measurements */
     preanalyse(i, objlistout, ANALYSE_FULL|ANALYSE_ROBUST);
     if (prefs.ext_maxarea && objlistout->obj[i].fdnpix > prefs.ext_maxarea)
       continue; 
-    analyse(field, dfield, i, objlistout);
     cobj = objlistout->obj + i;
+    cobj->number = ++thecat.ndetect;
+/*-- Local background */
+    cobj->bkg = (float)back(field, (int)(cobj->mx+0.5), (int)(cobj->my+0.5));
+    cobj->dbkg = 0.0;
+    if (prefs.pback_type == LOCAL)
+      localback(field, cobj);
+    else
+      cobj->sigbkg = field->backsig;
+/*--- Isophotal measurements */
+     analyse_iso(field, dfield, objlistout, i);
     if (prefs.blank_flag)
       {
       if (createblank(objlistout,i) != RETURN_OK)
@@ -852,7 +864,7 @@ void  sortit(picstruct *field, picstruct *dfield, picstruct *wfield,
           }
         }
 
-      endobject(field, dfield, wfield, dwfield, cleanobjlist, victim,
+      analyse_full(field, dfield, wfield, dwfield, cleanobjlist, victim,
 		obj2list, 0);
       subcleanobj(victim);
       }

@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		15/07/2011
+*	Last modified:		18/07/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -37,6 +37,7 @@
 
 #include	"define.h"
 #include	"globals.h"
+#include	"catout.h"
 #include	"prefs.h"
 #include	"fits/fitscat.h"
 #include	"param.h"
@@ -51,16 +52,23 @@ FILE		*ascfile;
 char		*buf;
 int		catopen_flag = 0;
 
-/******************************* readcatparams *******************************/
-/*
-Read the catalog config file
-*/
-obj2liststruct	*readcatparams(char *filename, int nobj2)
+/****** catout_readparams ****************************************************
+PROTO	obj2liststruct	*catout_readparams(char **paramlist, int nparam,
+						int nobj2)
+PURPOSE	Read user's choice of catalog parameters and initialize obj2 list.
+INPUT	Array of pointers to strings containing the measurement parameters,
+	number of parameters,
+	number of obj2list members.
+OUTPUT	Pointer to the allocated obj2list.
+NOTES	Requires access to the objtab and objkey static pointers.
+AUTHOR	E. Bertin (IAP)
+VERSION	18/07/2011
+ ***/
+obj2liststruct	*catout_readparams(char **paramlist, int nparam, int nobj2)
   {
    obj2liststruct	*obj2list;
    keystruct		*key, *tabkey;
-   FILE			*infile;
-   char			str[MAXCHAR], *keyword, *sstr;
+   char			*keyword, *str;
    int			i,k,o, size, nkeys;
 
 /* Prepare the OBJECTS tables*/
@@ -71,12 +79,12 @@ obj2liststruct	*readcatparams(char *filename, int nobj2)
 
 /* Scan the catalog config file*/
   nkeys = 0;
-  while (fgets(str, MAXCHAR, infile))
+  for (p=0; p<nparam; p++)
     {
-    sstr = str + strspn(str," \t");
-    if (*sstr!=(char)'#' && *sstr!=(char)'\n')
+    str = paramlist[p];
+    if (*str!=(char)'#' && *str!=(char)'\n')
       {
-      keyword = strtok(sstr, " \t{[(\n\r");
+      keyword = strtok(str, " \t{[(\n\r");
       if (keyword &&
 	(k = findkey(keyword,(char *)objkey,sizeof(keystruct)))!=RETURN_ERROR)
         {
@@ -89,8 +97,8 @@ obj2liststruct	*readcatparams(char *filename, int nobj2)
           for (i=0; i<key->naxis; i++)
             key->naxisn[i] = 1;
           size=t_size[key->ttype];
-          for (i=0; (sstr = strtok(NULL, " \t,;.)]}\r")) && *sstr!=(char)'#'
-		&& *sstr!=(char)'\n'; i++)
+          for (i=0; (str = strtok(NULL, " \t,;.)]}\r")) && *str!=(char)'#'
+		&& *str!=(char)'\n'; i++)
             {
             if (i>=key->naxis)
               error(EXIT_FAILURE, "*Error*: too many dimensions for keyword ",
@@ -107,8 +115,6 @@ obj2liststruct	*readcatparams(char *filename, int nobj2)
         warning(keyword, " catalog parameter unknown");
       }
     }
-
-  fclose(infile);
 
 /* Allocate memory for the obj2list */
   QMALLOC(obj2list, obj2liststruct, 1);
@@ -138,17 +144,24 @@ obj2liststruct	*readcatparams(char *filename, int nobj2)
       }
 
 
-  updateparamflags();
+  catout_updateparamflags();
 
   return obj2list;
   }
 
 
-/*************************** changecatparamarrays ****************************/
-/*
-Change parameter array dimensions
-*/
-void	changecatparamarrays(char *keyword, int *axisn, int naxis)
+/****** catout_changeparamsize *********************************************
+PROTO	void	catout_changeparamsize(char *keyword, int *axisn, int naxis)
+PURPOSE	Change the size of a multidimensional measurement parameter.
+INPUT	keyword string,
+	array of sizes,
+	number of dimensions.
+OUTPUT	-.
+NOTES	Requires access to the objkey static pointer.
+AUTHOR	E. Bertin (IAP)
+VERSION	18/07/2011
+ ***/
+void	catout_changeparamsize(char *keyword, int *axisn, int naxis)
   {
    keystruct	*key;
    int		i,k, size;
@@ -169,11 +182,16 @@ void	changecatparamarrays(char *keyword, int *axisn, int naxis)
   }
 
 
-/******************************* alloccatparams ******************************/
-/*
-Allocate memory for parameter arrays
-*/
-void	alloccatparams(obj2liststruct *obj2list)
+/****** catout_allocparams *************************************************
+PROTO	void	catout_allocparams(obj2liststruct *obj2list)
+PURPOSE	Allocate arrays for all multidimensional measurement parameters.
+INPUT	Pointer to the obj2list.
+OUTPUT	-.
+NOTES	Requires access to the objkey static pointer.
+AUTHOR	E. Bertin (IAP)
+VERSION	18/07/2011
+ ***/
+void	catout_allocparams(obj2liststruct *obj2list)
   {
    keystruct	*key;
    int		i;
@@ -207,11 +225,16 @@ void	alloccatparams(obj2liststruct *obj2list)
   }
 
 
-/******************************* freecatparams ******************************/
-/*
-Free memory allocated for parameter arrays
-*/
-void	freecatparams(obj2liststruct *obj2list)
+/****** catout_freeparams *************************************************
+PROTO	void	catout_freeparams(obj2liststruct *obj2list)
+PURPOSE	Free memory for all multidimensional measurement parameters.
+INPUT	Pointer to the obj2list.
+OUTPUT	-.
+NOTES	Requires access to the objkey static pointer.
+AUTHOR	E. Bertin (IAP)
+VERSION	18/07/2011
+ ***/
+void	catout_freeparams(obj2liststruct *obj2list)
   {
    keystruct	*key;
    int		i;
@@ -233,11 +256,16 @@ void	freecatparams(obj2liststruct *obj2list)
   }
 
 
-/***************************** updateparamflags ******************************/
-/*
-Update parameter flags according to their mutual dependencies.
-*/
-void	updateparamflags()
+/****** catout_updateparamflags **********************************************
+PROTO	void	catout_updateparamflags(void)
+PURPOSE	Update parameter flags according to their mutual dependencies.
+INPUT	Pointer to the obj2list.
+OUTPUT	-.
+NOTES	Requires access to the flagobj2 static pointer.
+AUTHOR	E. Bertin (IAP)
+VERSION	18/07/2011
+ ***/
+void	catout_updateparamflags(void)
 
   {
    int	i;
@@ -713,11 +741,16 @@ void	updateparamflags()
   }
 
 
-/********************************** dumpparams *******************************/
-/*
-Initialize the catalog header
-*/
-void	dumpparams(void)
+/****** catout_dumpparams ****************************************************
+PROTO	void	catout_dumpparams(void)
+PURPOSE	Dump the complete list of catalog parameters to standard output.
+INPUT	-.
+OUTPUT	-.
+NOTES	Requires access to the objkey static pointer.
+AUTHOR	E. Bertin (IAP)
+VERSION	18/07/2011
+ ***/
+void	catout_dumpparams(void)
   {
    int		i;
 
@@ -733,11 +766,16 @@ void	dumpparams(void)
   }
 
 
-/********************************** initcat **********************************/
-/*
-Initialize the catalog header
-*/
-void	initcat(void)
+/****** catout_init *********************************************************
+PROTO	void	catout_init(void)
+PURPOSE	Initialize the catalog output.
+INPUT	-.
+OUTPUT	-.
+NOTES	Requires access to global prefs and the objkey static pointer.
+AUTHOR	E. Bertin (IAP)
+VERSION	18/07/2011
+ ***/
+void	catout_init(void)
   {
    keystruct	*key;
    int		i, n;
@@ -813,7 +851,7 @@ void	initcat(void)
         break;
       default:
         error (EXIT_FAILURE, "*Internal Error*: Unknown FITS type in ",
-		"initcat()");
+		"catout_init()");
       }
     }
 
@@ -823,16 +861,16 @@ void	initcat(void)
   }
 
 
-/****** write_vo_fields *******************************************************
-PROTO	int	write_vo_fields(FILE *file)
+/****** catout_writevofields *************************************************
+PROTO	int	catout_writevofields(FILE *file)
 PURPOSE	Write the list of columns to an XML-VOTable file or stream
 INPUT	Pointer to the output file (or stream).
 OUTPUT	-.
-NOTES	-.
+NOTES	Requires access to global prefs and the objtab static pointer.
 AUTHOR	E. Bertin (IAP)
-VERSION	14/07/2006
+VERSION	18/07/2011
  ***/
-void	write_vo_fields(FILE *file)
+void	catout_writevofields(FILE *file)
   {
    keystruct	*key;
    char		datatype[40], arraysize[40], str[40];
@@ -877,11 +915,16 @@ void	write_vo_fields(FILE *file)
   }
 
 
-/********************************* reinitcat *********************************/
-/*
-Initialize the catalog header
-*/
-void	reinitcat(picstruct *field)
+/****** catout_initext ********************************************************
+PROTO	void	catout_initext(void)
+PURPOSE	Initialize the catalog header for the current extension.
+INPUT	-.
+OUTPUT	-.
+NOTES	Requires access to global prefs and the objtab static pointer.
+AUTHOR	E. Bertin (IAP)
+VERSION	18/07/2011
+ ***/
+void	catout_initext(picstruct *field)
   {
    tabstruct	*tab, *asctab;
    keystruct	*key;
@@ -960,7 +1003,7 @@ void	reinitcat(picstruct *field)
 
       default:
         error (EXIT_FAILURE, "*Internal Error*: Unknown FITS type in ",
-		"reinitcat()");
+		"catout_initext()");
       }
 
     objtab->cat = fitscat;
@@ -971,14 +1014,22 @@ void	reinitcat(picstruct *field)
   }
 
 
-/********************************* writecat **********************************/
-/*
-Write out in the catalog each one object.
-*/
-void	writecat(objstruct *obj, obj2struct *obj2)
+/****** catout_writeobj ******************************************************
+PROTO	void	catout_writeobj(objstruct *obj, obj2struct *obj2)
+PURPOSE	Write one object in the output catalog.
+INPUT	Pointer to the current obj2 structure.
+OUTPUT	-.
+NOTES	Requires access to global prefs and the objtab static pointer.
+AUTHOR	E. Bertin (IAP)
+VERSION	18/07/2011
+ ***/
+void	catout_writeobj(obj2liststruct *obj2list, int o)
   {
-  outobj = *obj;
-  outobj2 = *obj2;
+   keystruct	*keystore;
+
+/* We temporarily replace the objtab key sequence with that from the list */
+  keystore = objtab->key;
+  objtab->key = obj2list->keys[o];
   switch(prefs.cat_type)
     {
     case FITS_10:
@@ -1003,15 +1054,87 @@ void	writecat(objstruct *obj, obj2struct *obj2)
       error (EXIT_FAILURE, "*Internal Error*: Unknown catalog type", "");
     }
 
+/* Put the "legacy" key structure back in place */
+  objtab->key = keystore;
+
   return;
   }
 
 
-/********************************** endcat ***********************************/
-/*
-Terminate the catalog output.
-*/
-void	endcat(char *error)
+/****** catout_endext ********************************************************
+PROTO	void	catout_endext(void)
+PURPOSE	End catalog output for the current extension.
+INPUT	-.
+OUTPUT	-.
+NOTES	Requires access to global prefs and the objtab static pointer.
+AUTHOR	E. Bertin (IAP)
+VERSION	18/07/2011
+ ***/
+void	catout_endext(void)
+  {
+   keystruct	*key;
+   tabstruct	*tab;
+   OFF_T	pos;
+   char		*head;
+
+  switch(prefs.cat_type)
+    {
+    case ASCII:
+    case ASCII_HEAD:
+    case ASCII_SKYCAT:
+    case ASCII_VO:
+      break;
+
+    case FITS_LDAC:
+    case FITS_TPX:
+      end_writeobj(fitscat, objtab, buf);
+      key = NULL;
+      if (!(tab=fitscat->tab->prevtab)
+	|| !(key=name_to_key(tab, "Field Header Card")))
+        error(EXIT_FAILURE,"*Error*: cannot update table ", "ASCFIELD");
+      head = key->ptr;
+      fitswrite(head, "SEXNDET ", &thecat.ndetect,H_INT,T_LONG);
+      fitswrite(head, "SEXNFIN ", &thecat.ntotal, H_INT,T_LONG);
+      fitswrite(head, "SEXDATE ", thecat.ext_date, H_STRING, T_STRING);
+      fitswrite(head, "SEXTIME ", thecat.ext_time, H_STRING, T_STRING);
+      fitswrite(head, "SEXELAPS", &thecat.ext_elapsed, H_FLOAT, T_DOUBLE);
+      QFTELL(fitscat->file, pos, fitscat->filename);
+      QFSEEK(fitscat->file, tab->headpos, SEEK_SET, fitscat->filename);
+      save_tab(fitscat, tab);
+      QFSEEK(fitscat->file, pos, SEEK_SET, fitscat->filename);
+      break;
+
+    case FITS_10:
+      end_writeobj(fitscat, objtab, buf);
+      fitswrite(fitscat->tab->headbuf,"SEXNDET ",&thecat.ndetect,H_INT,T_LONG);
+      fitswrite(fitscat->tab->headbuf,"SEXNFIN ",&thecat.ntotal, H_INT,T_LONG);
+      QFTELL(fitscat->file, pos, fitscat->filename);
+      QFSEEK(fitscat->file, fitscat->tab->headpos, SEEK_SET,fitscat->filename);
+      save_tab(fitscat, fitscat->tab);
+      QFSEEK(fitscat->file, pos, SEEK_SET, fitscat->filename);
+      break;
+
+    case CAT_NONE:
+      break;
+
+    default:
+      break;
+    }
+
+  return;
+  }
+
+
+/****** catout_end **********************************************************
+PROTO	void	catout_end(char *error)
+PURPOSE	End catalog output.
+INPUT	Error message character string (or NULL if no error).
+OUTPUT	-.
+NOTES	Requires access to global prefs and the objtab static pointer.
+AUTHOR	E. Bertin (IAP)
+VERSION	18/07/2011
+ ***/
+void	catout_end(char *error)
   {
    keystruct	*key;
    int		i;
@@ -1062,70 +1185,11 @@ void	endcat(char *error)
     }
 
 /* Free allocated memory for arrays */
-  freecatparams(obj2list);
+  catout_freeparams(obj2list);
   objtab->key = NULL;
   objtab->nkey = 0;
   free_tab(objtab);
   objtab = NULL;
-
-  return;
-  }
-
-
-/******************************** reendcat ***********************************/
-/*
-Terminate the catalog output.
-*/
-void	reendcat()
-  {
-   keystruct	*key;
-   tabstruct	*tab;
-   OFF_T	pos;
-   char		*head;
-
-  switch(prefs.cat_type)
-    {
-    case ASCII:
-    case ASCII_HEAD:
-    case ASCII_SKYCAT:
-    case ASCII_VO:
-      break;
-
-    case FITS_LDAC:
-    case FITS_TPX:
-      end_writeobj(fitscat, objtab, buf);
-      key = NULL;
-      if (!(tab=fitscat->tab->prevtab)
-	|| !(key=name_to_key(tab, "Field Header Card")))
-        error(EXIT_FAILURE,"*Error*: cannot update table ", "ASCFIELD");
-      head = key->ptr;
-      fitswrite(head, "SEXNDET ", &thecat.ndetect,H_INT,T_LONG);
-      fitswrite(head, "SEXNFIN ", &thecat.ntotal, H_INT,T_LONG);
-      fitswrite(head, "SEXDATE ", thecat.ext_date, H_STRING, T_STRING);
-      fitswrite(head, "SEXTIME ", thecat.ext_time, H_STRING, T_STRING);
-      fitswrite(head, "SEXELAPS", &thecat.ext_elapsed, H_FLOAT, T_DOUBLE);
-      QFTELL(fitscat->file, pos, fitscat->filename);
-      QFSEEK(fitscat->file, tab->headpos, SEEK_SET, fitscat->filename);
-      save_tab(fitscat, tab);
-      QFSEEK(fitscat->file, pos, SEEK_SET, fitscat->filename);
-      break;
-
-    case FITS_10:
-      end_writeobj(fitscat, objtab, buf);
-      fitswrite(fitscat->tab->headbuf,"SEXNDET ",&thecat.ndetect,H_INT,T_LONG);
-      fitswrite(fitscat->tab->headbuf,"SEXNFIN ",&thecat.ntotal, H_INT,T_LONG);
-      QFTELL(fitscat->file, pos, fitscat->filename);
-      QFSEEK(fitscat->file, fitscat->tab->headpos, SEEK_SET,fitscat->filename);
-      save_tab(fitscat, fitscat->tab);
-      QFSEEK(fitscat->file, pos, SEEK_SET, fitscat->filename);
-      break;
-
-    case CAT_NONE:
-      break;
-
-    default:
-      break;
-    }
 
   return;
   }

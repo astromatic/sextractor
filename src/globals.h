@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		15/07/2011
+*	Last modified:		18/07/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -38,26 +38,14 @@ float			ctg[37], stg[37];
 char			gstr[MAXCHAR];
 
 /*------------------------------- functions ---------------------------------*/
-extern void	alloccatparams(void),
-		allocparcelout(void),
-		analyse(picstruct *, picstruct *, int, objliststruct *),
+extern void	allocparcelout(void),
 		blankit(char *, int),
-                endcat(char *error),
-                reendcat(void),
-		changecatparamarrays(char *keyword, int *axisn, int naxis),
                 closecheck(void),
 		copydata(picstruct *, int, int),
-		dumpparams(void),
 		endfield(picstruct *),
-		endobject(picstruct *, picstruct *, picstruct *, picstruct *,
-			objliststruct *, int, obj2liststruct *, int),
-		examineiso(picstruct *, picstruct *, objstruct *,
-			pliststruct *),
 		flagcleancrowded(int, objliststruct *),
 		freeparcelout(void),
 		getnnw(void),
-		initcat(void),
-		reinitcat(picstruct *),
 		initglob(void),
 		makeit(void),
 		mergeobject(objstruct *, objstruct *),
@@ -67,7 +55,6 @@ extern void	alloccatparams(void),
 		preanalyse(int, objliststruct *, int),
 		propagate_covar(double *vi, double *d, double *vo,
 				int ni, int no,	double *temp),
-		readcatparams(char *),
 		readdata(picstruct *, PIXTYPE *, int),
 		readidata(picstruct *, FLAGTYPE *, int),
 		readimagehead(picstruct *),
@@ -80,11 +67,8 @@ extern void	alloccatparams(void),
 		sexellips(PIXTYPE *bmp, int, int, double, double, double,
 			double, double, PIXTYPE, int),
 		sexmove(double, double),
-		updateparamflags(void),
 		useprefs(void),
-		writecat(int, objliststruct *),
 		write_error(char *msg1, char *msg2),
-		write_vo_fields(FILE *file);
 
 extern double	counter_seconds(void);
 

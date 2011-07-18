@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		17/06/2011
+*	Last modified:		18/07/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -39,6 +39,7 @@
 #include "define.h"
 #include "globals.h"
 #include "fits/fitscat.h"
+#include "catout.h"
 #include "field.h"
 #include "key.h"
 #include "prefs.h"
@@ -143,7 +144,7 @@ INPUT	XML file name.
 OUTPUT	RETURN_OK if everything went fine, RETURN_ERROR otherwise.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	14/07/2006
+VERSION	18/07/2011
  ***/
 int	write_xml(char *filename)
   {
@@ -153,7 +154,7 @@ int	write_xml(char *filename)
     return RETURN_ERROR;
 
   write_xml_header(file);
-  write_vo_fields(file);
+  catout_writevofields(file);
 
   fprintf(file, "   <DATA>\n");
   if (prefs.cat_type == FITS_LDAC || prefs.cat_type == FITS_TPX
@@ -231,7 +232,7 @@ INPUT	Pointer to the output file (or stream),
 OUTPUT	RETURN_OK if everything went fine, RETURN_ERROR otherwise.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	17/06/2011
+VERSION	18/07/2011
  ***/
 int	write_xml_meta(FILE *file, char *error)
   {
@@ -478,9 +479,15 @@ int	write_xml_meta(FILE *file, char *error)
 	" ucd=\"meta.dataset;meta.file\" value=\"%s\"/>\n",
 	prefs.cat_name);
     fprintf(file,
-	"   <PARAM name=\"Parameters_Name\" datatype=\"char\" arraysize=\"*\""
+	"   <PARAM name=\"Parameters\" datatype=\"char\" arraysize=\"*\""
 	" ucd=\"obs.param;meta.file\" value=\"%s\"/>\n",
-	prefs.param_name);
+	prefs.param_nparam? prefs.param_name[0] : "");
+
+    for (n=1; n<prefs.nparam; n++)
+      fprintf(file, ",%s", prefs.param[n]);
+    fprintf(file, "\"/>\n");
+
+
     fprintf(file,
 	"   <PARAM name=\"Detect_Type\" datatype=\"char\" arraysize=\"*\""
 	" ucd=\"meta.code;instr.det;obs.param\" value=\"%s\"/>\n",

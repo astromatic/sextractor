@@ -39,7 +39,9 @@
 
 /*----------------------------- Internal constants --------------------------*/
 
-#define	MAXLIST		32		/* max. nb of list members */
+#define	MAXCHARL	16384		/* max. nb of chars in a string list */
+#define	MAXLIST		64		/* max. nb of list members */
+#define	MAXLISTSIZE	2000000		/* max size of list */
 
 /* NOTES:
 One must have:	MAXLIST >= 1 (preferably >= 16!)
@@ -251,6 +253,8 @@ typedef struct
   prefstruct		prefs;
 
 /*-------------------------------- protos -----------------------------------*/
+extern char	*list_to_str(char *listname);
+
 extern int	cistrcmp(char *cs, char *ct, int mode);
 
 extern void	dumpprefs(int state),

@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/10/2010
+*	Last modified:		18/07/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -37,6 +37,7 @@
 
 #include	"define.h"
 #include	"globals.h"
+#include	"catout.h"
 #include	"prefs.h"
 #include "pattern.h"
 #define		SYNTAX \
@@ -101,7 +102,7 @@ setlinebuf(stdout);
             if (opt2=='d')
               dumpprefs(1);
             else if (opt2=='p')
-              dumpparams();
+              catout_dumpparams();
             else
               dumpprefs(0);
             exit(EXIT_SUCCESS);
