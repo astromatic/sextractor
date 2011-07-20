@@ -1136,8 +1136,8 @@ VERSION	18/07/2011
  ***/
 void	catout_end(char *error)
   {
-   keystruct	*key;
-   int		i;
+   obj2liststruct	*obj2list;
+   int			o;
 
   if (!catopen_flag)
     {
@@ -1184,8 +1184,15 @@ void	catout_end(char *error)
       break;
     }
 
-/* Free allocated memory for arrays */
+/* Free allocated memory for arrays and structures */
+  obj2list = thecat.obj2list;
   catout_freeparams(obj2list);
+  if (obj2list->nkeys)
+    for (o=0; o<obj2list->nobj2; o++)
+      free(obj2list->keys[o]);
+  free(obj2list->keys);
+  free(obj2list->obj2);
+  free(obj2list);
   objtab->key = NULL;
   objtab->nkey = 0;
   free_tab(objtab);

@@ -623,6 +623,7 @@ typedef struct
   int		ndetect;				/* nb of detections */
   int		ntotal;					/* Total object nb */
   int		nparam;					/* Nb of parameters */
+  obj2liststruct	*obj2list;			/* List of objects */
   int		nobj2;					/* Nb of obj2's */
 /*----- Misc. strings defining the extraction */
   char		prefs_name[MAXCHAR];			/* Prefs filename*/

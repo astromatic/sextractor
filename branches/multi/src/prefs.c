@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		18/07/2011
+*	Last modified:		19/07/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -801,6 +801,8 @@ void	endprefs(void)
   {
     int i;
 
+  for (i=0; i<prefs.nparam; i++)
+      free(prefs.param[i]);
   for (i=0; i<prefs.nfimage_name; i++)
       free(prefs.fimage_name[i]);
   for (i=0; i<prefs.nwimage_name; i++)

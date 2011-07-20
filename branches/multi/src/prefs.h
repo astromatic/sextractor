@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		09/03/2011
+*	Last modified:		19/07/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -56,6 +56,9 @@ typedef struct
   int		nimage_name;				/* nb of params */
   char		cat_name[MAXCHAR];			/* catalog filename*/
   char		head_suffix[MAXCHAR];			/* ext. header suffix */
+/*----- catalog output */
+  char		*(param_name[nparam_max]);		/* catalog parameters */
+  int		nparam;					/* nb of params */
 /*----- thresholding */
   double	dthresh[2];				/* detect. threshold */
   int		ndthresh;				/* (1 or 2 entries) */
@@ -141,8 +144,6 @@ typedef struct
   int		clean_stacksize;			/* size of buffer */
   int		mem_pixstack;				/* pixel stack size */
   int		mem_bufsize;				/* strip height */
-/*----- catalog output */
-  char		param_name[MAXCHAR];			/* param. filename */
 /*----- miscellaneous */
   int		pipe_flag;				/* allow piping ? */
   enum	{QUIET, NORM, WARN, FULL}      	verbose_type;	/* display type */
@@ -250,7 +251,8 @@ typedef struct
   int		nthreads;			/* Number of active threads */
   }	prefstruct;
 
-  prefstruct		prefs;
+prefstruct	prefs;
+extern int	nparam_max;
 
 /*-------------------------------- protos -----------------------------------*/
 extern char	*list_to_str(char *listname);

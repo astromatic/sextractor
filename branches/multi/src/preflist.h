@@ -171,7 +171,8 @@
   {""}
  };
 
-char		keylist[sizeof(key)/sizeof(pkeystruct)][32];
+const int	nparam_max = sizeof(key)/sizeof(pkeystruct);
+char		keylist[nparam_max][32];
 const char	notokstr[] = {" \t=,;\n\r\""};
 
 char *default_prefs[] =
