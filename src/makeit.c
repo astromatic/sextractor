@@ -105,7 +105,7 @@ void	makeit()
   initglob();
 
   NFPRINTF(OUTPUT, "Setting catalog parameters");
-  catout_readparams(prefs.param);
+  thecat.outobj2list = catout_readparams(prefs.param);
   useprefs();			/* update things accor. to prefs parameters */
 
   if (prefs.psf_flag)
@@ -213,7 +213,7 @@ void	makeit()
     }
 
 /* Allocate memory for multidimensional catalog parameter arrays */
-  catout_allocparams();
+  catout_allocparams(thecat.obj2list);
   useprefs();
 
 /* Check if a specific extension should be loaded */

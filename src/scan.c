@@ -817,7 +817,7 @@ void  sortit(picstruct *field, picstruct *dfield, picstruct *wfield,
     else
       cobj->sigbkg = field->backsig;
 /*--- Isophotal measurements */
-     analyse_iso(field, dfield, objlistout, i);
+    analyse_iso(field, dfield, objlistout, i);
     if (prefs.blank_flag)
       {
       if (createblank(objlistout,i) != RETURN_OK)
@@ -864,6 +864,7 @@ void  sortit(picstruct *field, picstruct *dfield, picstruct *wfield,
           }
         }
 
+      obj2listov = analyse_overlapness(cleanobjlist, victim);
       analyse_full(field, dfield, wfield, dwfield, cleanobjlist, victim,
 		obj2list, 0);
       subcleanobj(victim);

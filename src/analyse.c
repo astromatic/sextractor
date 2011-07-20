@@ -382,6 +382,120 @@ void  analyse_iso(picstruct *field, picstruct *dfield,
   }
 
 
+/****** analyse_overlapness ******************************************************
+PROTO	obj2liststruct analyse_overlapness(picstruct *field, picstruct *dfield,
+		picstruct *wfield, picstruct *dwfield,
+		objliststruct *objlist, int n)
+PURPOSE Move object data from obj to obj2 structure.
+INPUT   Measurement field pointer,
+        Detection field pointer,
+        Measurement weight-map field pointer,
+        Detection weight-map field pointer,
+	objstruct pointer,
+	obj array index,
+	obj2struct pointer,
+	obj2 array index.
+OUTPUT  -.
+NOTES   -.
+AUTHOR  E. Bertin (IAP)
+VERSION 18/07/2011
+ ***/
+obj2liststruct analyse_overlapness(picstruct *field, picstruct *dfield,
+		picstruct *wfield, picstruct *dwfield,
+		objliststruct *objlist, int n)
+  {
+
+  nobj = objlist->nobj;
+  for (o=0; o<nobj; o++)
+    if ()
+
+  return obj2listov;
+  }
+
+/****** analyse_obj2obj2 ******************************************************
+PROTO	void analyse_obj2obj2(picstruct *field, picstruct *dfield,
+		picstruct *wfield, picstruct *dwfield,
+		objliststruct *objlist, int n,
+		obj2liststruct *obj2list, int n2)
+PURPOSE Move object data from obj to obj2 structure.
+INPUT   Measurement field pointer,
+        Detection field pointer,
+        Measurement weight-map field pointer,
+        Detection weight-map field pointer,
+	objstruct pointer,
+	obj array index,
+	obj2struct pointer,
+	obj2 array index.
+OUTPUT  -.
+NOTES   -.
+AUTHOR  E. Bertin (IAP)
+VERSION 18/07/2011
+ ***/
+void	analyse_obj2obj2(picstruct *field, picstruct *dfield,
+		picstruct *wfield, picstruct *dwfield,
+		objliststruct *objlist, int n,
+		obj2liststruct *obj2list, int n2)
+  {
+  obj2 = &obj2list->obj2[n2];
+  obj2->obj = obj = &objlist->obj[n];
+
+/* Integer coordinates */
+  ix=(int)(obj->mx+0.49999);
+  iy=(int)(obj->my+0.49999);
+
+/* Copy image data around current object */
+  obj2->imsize[0] = obj->xmax-obj->xmin+1+2*field->stripmargin;
+  obj2->imsize[1] = obj->ymax-obj->ymin+1+2*field->stripmargin;
+  obj2->immin[0] = ix - obj2->imsize[0]/2;
+  obj2->immin[1] = iy - obj2->imsize[1]/2;
+  obj2->immax[0] = obj2->immin[0] + obj2->imsize[0];
+  obj2->immax[1] = obj2->immin[1] + obj2->imsize[1];
+  free(obj2->image);
+  QMALLOC(obj2->image, PIXTYPE, obj2->imsize[0]*obj2->imsize[1]);
+  copyimage(field, obj2->image, obj2->imsize[0],obj2->imsize[1], ix,iy);
+  if (dfield)
+    {
+    free(obj2->dimage);
+    QMALLOC(obj2->dimage, PIXTYPE, obj2->imsize[0]*obj2->imsize[1]);
+    copyimage(dfield, obj2->dimage, obj2->imsize[0],obj2->imsize[1], ix,iy);
+    }
+  if (wfield)
+    {
+    free(obj2->weight);
+    QMALLOC(obj2->weight, PIXTYPE, obj2->imsize[0]*obj2->imsize[1]);
+    copyimage(wfield, obj2->weight, obj2->imsize[0],obj2->imsize[1], ix,iy);
+    }
+  if (dwfield)
+    {
+    free(obj2->dweight);
+    QMALLOC(obj2->dweight, PIXTYPE, obj2->imsize[0]*obj2->imsize[1]);
+    copyimage(dwfield, obj2->dweight, obj2->imsize[0],obj2->imsize[1], ix,iy);
+    }
+/* if BLANKing is on, paste back the object pixels in the image*/
+  if (prefs.blank_flag)
+    {
+/*-- Compute coordinates of blank start in object image */
+    idx = obj->subx - obj2->immin[0];
+    idy = obj->suby - obj2->immin[1];
+    if (obj->blank)
+      {
+      deblankimage(obj->blank, obj->subw, obj->subh,
+		obj2->image, obj2->imsize[0],obj2->imsize[1], idx,idy);
+      free(obj->blank);
+      }
+    if (obj->dblank)
+      {
+      deblankimage(obj->dblank, obj->subw, obj->subh,
+		obj2->dimage, obj2->imsize[0],obj2->imsize[1], idx,idy);
+      free(obj->dblank);
+      }
+    }
+
+
+  return;
+  }
+
+
 /****** analyse_full *********************************************************
 PROTO	void analyse_full(picstruct *field, picstruct *dfield,
 		picstruct *wfield, picstruct *dwfield,
@@ -464,50 +578,6 @@ void	analyse_full(picstruct *field, picstruct *dfield,
         }
       }
     return;
-    }
-
-/* Copy image data around current object */
-  obj2->imsize[0] = obj->xmax-obj->xmin+1+2*field->stripmargin;
-  obj2->imsize[1] = obj->ymax-obj->ymin+1+2*field->stripmargin;
-  obj2->immin[0] = ix - obj2->imsize[0]/2;
-  obj2->immin[1] = iy - obj2->imsize[1]/2;
-  obj2->immax[0] = obj2->immin[0] + obj2->imsize[0];
-  obj2->immax[1] = obj2->immin[1] + obj2->imsize[1];
-  QMALLOC(obj2->image, PIXTYPE, obj2->imsize[0]*obj2->imsize[1]);
-  copyimage(field, obj2->image, obj2->imsize[0],obj2->imsize[1], ix,iy);
-  if (dfield)
-    {
-    QMALLOC(obj2->dimage, PIXTYPE, obj2->imsize[0]*obj2->imsize[1]);
-    copyimage(dfield, obj2->dimage, obj2->imsize[0],obj2->imsize[1], ix,iy);
-    }
-  if (wfield)
-    {
-    QMALLOC(obj2->weight, PIXTYPE, obj2->imsize[0]*obj2->imsize[1]);
-    copyimage(wfield, obj2->weight, obj2->imsize[0],obj2->imsize[1], ix,iy);
-    }
-  if (dwfield)
-    {
-    QMALLOC(obj2->dweight, PIXTYPE, obj2->imsize[0]*obj2->imsize[1]);
-    copyimage(dwfield, obj2->dweight, obj2->imsize[0],obj2->imsize[1], ix,iy);
-    }
-/* if BLANKing is on, paste back the object pixels in the image*/
-  if (prefs.blank_flag)
-    {
-/*-- Compute coordinates of blank start in object image */
-    idx = obj->subx - obj2->immin[0];
-    idy = obj->suby - obj2->immin[1];
-    if (obj->blank)
-      {
-      deblankimage(obj->blank, obj->subw, obj->subh,
-		obj2->image, obj2->imsize[0],obj2->imsize[1], idx,idy);
-      free(obj->blank);
-      }
-    if (obj->dblank)
-      {
-      deblankimage(obj->dblank, obj->subw, obj->subh,
-		obj2->dimage, obj2->imsize[0],obj2->imsize[1], idx,idy);
-      free(obj->dblank);
-      }
     }
 
 /*------------------------- Error ellipse parameters ------------------------*/
