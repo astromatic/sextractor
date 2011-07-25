@@ -4511,7 +4511,7 @@ void	make_kernel(float pos, float *kernel, interpenum interptype)
     else
       {
       x = -PI/3.0*(pos+2.0);
-#ifdef HAVE_SINCOS
+#ifdef HAVE_SINCOSF
       sincosf(x, &sinx1, &cosx1);
 #else
       sinx1 = sinf(x);
