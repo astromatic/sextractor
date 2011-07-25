@@ -3796,7 +3796,7 @@ float	prof_add(profitstruct *profit, profstruct *prof, int extfluxfac_flag)
       ang = 0.0;
       for (a=0; a<nang; a++)
         {
-#ifdef HAVE_SINCOS
+#ifdef HAVE_SINCOSF
         sincosf(ang, &dsa, &dca);
 #else
         dsa = sinf(ang);
