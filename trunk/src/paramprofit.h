@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		07/04/2011
+*	Last modified:		09/07/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -333,10 +333,10 @@
 	"pos.posAng;stat.fit", "deg"},
 
   {"SPREAD_MODEL", "Spread parameter from model-fitting",
-	&outobj2.prof_concentration, H_FLOAT, T_FLOAT, "%8.5f", "",
+	&outobj2.prof_concentration, H_FLOAT, T_FLOAT, "%11.5g", "",
 	"src.morph.param", ""},
   {"SPREADERR_MODEL", "Spread parameter error from model-fitting",
-	&outobj2.prof_concentrationerr, H_FLOAT, T_FLOAT, "%8.5f", "",
+	&outobj2.prof_concentrationerr, H_FLOAT, T_FLOAT, "%11.5g", "",
 	"src.morph.param", ""},
 
   {"NOISEAREA_MODEL", "Equivalent noise area of the fitted model",

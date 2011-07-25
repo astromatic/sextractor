@@ -7,7 +7,7 @@
 *
 *	This file part of:	AstrOmatic software
 *
-*	Copyright:		(C) 1993-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -23,7 +23,7 @@
 *	along with AstrOmatic software.
 *	If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		10/10/2010
+*	Last modified:		22/07/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -328,7 +328,7 @@ INPUT	tab structure.
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	30/07/2010
+VERSION	22/07/2011
  ***/
 wcsstruct	*read_wcs(tabstruct *tab)
 
@@ -479,7 +479,8 @@ wcsstruct	*read_wcs(tabstruct *tab)
 
     FITSREADF(buf, "EPOCH", wcs->epoch, 2000.0);
     FITSREADF(buf, "EQUINOX", wcs->equinox, wcs->epoch);
-    FITSREADS(buf, "RADECSYS", str,
+    if (fitsread(buf, "RADESYS", str, H_STRING,T_STRING) != RETURN_OK)
+      FITSREADS(buf, "RADECSYS", str,
 	wcs->equinox >= 2000.0? "ICRS" : (wcs->equinox<1984.0? "FK4" : "FK5"));
     if (!strcmp(str, "ICRS"))
       wcs->radecsys = RDSYS_ICRS;

@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		31/05/2011
+*	Last modified:		25/07/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -3614,7 +3614,7 @@ INPUT	Profile-fitting structure,
 OUTPUT	Total (asymptotic) flux contribution.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	11/03/2011
+VERSION	25/07/2011
  ***/
 float	prof_add(profitstruct *profit, profstruct *prof, int extfluxfac_flag)
   {
@@ -3796,9 +3796,14 @@ float	prof_add(profitstruct *profit, profstruct *prof, int extfluxfac_flag)
       ang = 0.0;
       for (a=0; a<nang; a++)
         {
-        sincosf(ang, &dca, &dsa);
-        ddx1[a] = a11*dca+a12*dsa;
-        ddx2[a] = a21*dca+a22*dsa;
+#ifdef HAVE_SINCOS
+        sincosf(ang, &dsa, &dca);
+#else
+        dsa = sinf(ang);
+        dca = cosf(ang);
+#endif
+        ddx1[a] = a11*dsa+a12*dca;
+        ddx2[a] = a21*dsa+a22*dca;
         ang += angstep;
         }
       r = DEXPF(-4.0);
