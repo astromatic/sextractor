@@ -4452,7 +4452,7 @@ INPUT	Position,
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	07/09/2009
+VERSION	25/07/2011
  ***/
 void	make_kernel(float pos, float *kernel, interpenum interptype)
   {
@@ -4555,7 +4555,7 @@ void	make_kernel(float pos, float *kernel, interpenum interptype)
     else
       {
       x = -PI/4.0*(pos+3.0);
-#ifdef HAVE_SINCOS
+#ifdef HAVE_SINCOSF
       sincosf(x, &sinx1, &cosx1);
 #else
       sinx1 = sinf(x);
