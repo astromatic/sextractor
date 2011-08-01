@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		20/06/2011
+*	Last modified:		26/07/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -42,4 +42,4 @@ One must have:
 
 /*------------------------------- functions ---------------------------------*/
 extern void	compute_winpos(picstruct *field, picstruct *wfield,
-			       objstruct *obj, obj2struct *obj2);
+			       obj2struct *obj2);

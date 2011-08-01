@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		20/06/2011
+*	Last modified:		26/07/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -42,20 +42,17 @@
 
 
 /****** growth_aver *********************************************************
-PROTO	void growth_aver(picstruct *field, picstruct *wfield,
-		objstruct *obj, obj2struct *obj2)
+PROTO	void growth_aver(picstruct *field, picstruct *wfield, obj2struct *obj2)
 PURPOSE	Build an average growth curve.
 INPUT	Pointer to the image structure,
 	pointer to the weight-map structure,
-	pointer to the object structure,
 	pointer to the obj2 structure.
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	20/06/2011
+VERSION	26/07/2011
  ***/
-void  growth_aver(picstruct *field, picstruct *wfield,
-		objstruct *obj, obj2struct *obj2)
+void  growth_aver(picstruct *field, picstruct *wfield, obj2struct *obj2)
 
   {
    float		*fgrowth;
@@ -79,8 +76,8 @@ void  growth_aver(picstruct *field, picstruct *wfield,
 /* Allocate the growth-curve buffer */
   QCALLOC(growth, double, GROWTH_NSTEP);
 
-  mx = obj->mx - obj2->immin[0];
-  my = obj->my - obj2->immin[1];
+  mx = obj2->mx - obj2->immin[0];
+  my = obj2->my - obj2->immin[1];
   w = obj2->imsize[0];
   h = obj2->imsize[1];
   pflag = (prefs.detect_type==PHOTO)? 1:0;
@@ -89,7 +86,7 @@ void  growth_aver(picstruct *field, picstruct *wfield,
   gain = field->gain;
 
 /* Integration radius */
-  rlim = GROWTH_NSIG*obj->a;
+  rlim = GROWTH_NSIG*obj2->a;
   if (rlim<prefs.autoaper[0])
     rlim = prefs.autoaper[0];
   raper = rlim+1.5;		/* margin for interpolation */
@@ -114,7 +111,7 @@ void  growth_aver(picstruct *field, picstruct *wfield,
   if (pflag)
     {
     ngamma = field->ngamma;
-    pdbkg = exp(obj->dbkg/ngamma);
+    pdbkg = exp(obj2->dbkg/ngamma);
     }
   else
     {
@@ -134,22 +131,22 @@ void  growth_aver(picstruct *field, picstruct *wfield,
   if (xmin < 0)
     {
     xmin = 0;
-    obj->flag |= OBJ_APERT_PB;
+    obj2->flag |= OBJ_APERT_PB;
     }
   if (xmax > w)
     {
     xmax = w;
-    obj->flag |= OBJ_APERT_PB;
+    obj2->flag |= OBJ_APERT_PB;
     }
   if (ymin < 0)
     {
     ymin = 0;
-    obj->flag |= OBJ_APERT_PB;
+    obj2->flag |= OBJ_APERT_PB;
     }
   if (ymax > h)
     {
     ymax = h;
-    obj->flag |= OBJ_APERT_PB;
+    obj2->flag |= OBJ_APERT_PB;
     }
 
   image = obj2->image;
@@ -242,12 +239,12 @@ void  growth_aver(picstruct *field, picstruct *wfield,
 /*
   if (pflag)
     {
-    tv = ngamma*(tv-area*exp(obj->dbkg/ngamma));
+    tv = ngamma*(tv-area*exp(obj2->dbkg/ngamma));
     sigtv /= ngamma*ngamma;
     }
   else
     {
-    tv -= area*obj->dbkg;
+    tv -= area*obj2->dbkg;
     if (!wfield && gain > 0.0 && tv>0.0)
       sigtv += tv/gain;
     }
