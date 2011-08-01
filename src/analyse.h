@@ -22,10 +22,13 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		18/07/2011
+*	Last modified:		26/07/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
+/*----------------------------- Internal constants --------------------------*/
+
+#define	ANALYSE_NMULTITER	4	/* number of multi-model iterations */
 /*--------------------------------- typedefs --------------------------------*/
 
 /*------------------------------ Prototypes ---------------------------------*/

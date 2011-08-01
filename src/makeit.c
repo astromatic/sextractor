@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		18/07/2011
+*	Last modified:		27/07/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -125,7 +125,7 @@ void	makeit()
     fft_init(prefs.nthreads);
 /* Create profiles at full resolution */
     NFPRINTF(OUTPUT, "Preparing profile models");
-    theprofit = profit_init(thepsf,
+    prefs.prof_modelflags = 
 	 (FLAG(obj2.prof_offset_flux)? MODEL_BACK : MODEL_NONE)
 	|(FLAG(obj2.prof_dirac_flux)? MODEL_DIRAC : MODEL_NONE)
 	|(FLAG(obj2.prof_spheroid_flux)?
@@ -133,7 +133,7 @@ void	makeit()
 			MODEL_SERSIC : MODEL_DEVAUCOULEURS) : MODEL_NONE)
 	|(FLAG(obj2.prof_disk_flux)? MODEL_EXPONENTIAL : MODEL_NONE)
 	|(FLAG(obj2.prof_bar_flux)? MODEL_BAR : MODEL_NONE)
-	|(FLAG(obj2.prof_arms_flux)? MODEL_ARMS : MODEL_NONE));
+	|(FLAG(obj2.prof_arms_flux)? MODEL_ARMS : MODEL_NONE);
     catout_changeparamsize("VECTOR_MODEL", &theprofit->nparam, 1);
     catout_changeparamsize("VECTOR_MODELERR", &theprofit->nparam, 1);
     nparam2[0] = nparam2[1] = theprofit->nparam;

@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		19/07/2011
+*	Last modified:		27/07/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -233,6 +233,7 @@ typedef struct
   int		prof_flag;				/* Profile-fitting */
   int		pattern_flag;				/* Pattern-fitting */
 /*----- Profile-fitting */
+  int		prof_modelflags;			/* model flags */
   int		prof_vectorsize;			/* nb of params */
   int		prof_errvectorsize;			/* nb of params */
   int		prof_errmatrixsize[2];			/* nb of params */

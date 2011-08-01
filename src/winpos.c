@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		20/06/2011
+*	Last modified:		26/07/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -40,16 +40,15 @@
 
 /****** compute_winpos ********************************************************
 PROTO	void compute_winpos(picstruct *field, picstruct *wfield,
-			objstruct *obj, obj2struct *obj2)
+			 obj2struct *obj2)
 PURPOSE	Compute windowed source barycenter.
 INPUT	Picture structure pointer,
 	Weight-map structure pointer,
-	object structure,
 	obj2 structure.
 OUTPUT  -.
-NOTES   obj->posx and obj->posy are taken as initial centroid guesses.
+NOTES   obj2->mx and obj2->my are taken as initial centroid guesses.
 AUTHOR  E. Bertin (IAP)
-VERSION 20/06/2011
+VERSION 26/07/2011
  ***/
 void	compute_winpos(picstruct *field, picstruct *wfield, objstruct *obj,
 			obj2struct *obj2)
@@ -89,7 +88,7 @@ void	compute_winpos(picstruct *field, picstruct *wfield, objstruct *obj,
   if (pflag)
     {
     invngamma = 1.0/field->ngamma;
-    pdbkg = expf(obj->dbkg*invngamma);
+    pdbkg = expf(obj2->dbkg*invngamma);
     }
   else
     {
@@ -107,8 +106,8 @@ void	compute_winpos(picstruct *field, picstruct *wfield, objstruct *obj,
   offsetx = 0.5*(scalex-1.0);
   offsety = 0.5*(scaley-1.0);
 /* Use isophotal centroid as a first guess */
-  mx = obj->mx - obj2->immin[0];
-  my = obj->my - obj2->immin[1];
+  mx = obj2->mx - obj2->immin[0];
+  my = obj2->my - obj2->immin[1];
 
   for (i=0; i<WINPOS_NITERMAX; i++)
     {
@@ -122,22 +121,22 @@ void	compute_winpos(picstruct *field, picstruct *wfield, objstruct *obj,
     if (xmin < 0)
       {
       xmin = 0;
-      obj->flag |= OBJ_APERT_PB;
+      obj2->flag |= OBJ_APERT_PB;
       }
     if (xmax > w)
       {
       xmax = w;
-      obj->flag |= OBJ_APERT_PB;
+      obj2->flag |= OBJ_APERT_PB;
       }
     if (ymin < 0)
       {
       ymin = 0;
-      obj->flag |= OBJ_APERT_PB;
+      obj2->flag |= OBJ_APERT_PB;
       }
     if (ymax > h)
       {
       ymax = h;
-      obj->flag |= OBJ_APERT_PB;
+      obj2->flag |= OBJ_APERT_PB;
       }
 
     tv = esum = emxy = emx2 = emy2 = mx2 = my2 = mxy = 0.0;
@@ -313,7 +312,7 @@ void	compute_winpos(picstruct *field, picstruct *wfield, objstruct *obj,
       emxy *= norm;
 /*-- Handle fully correlated profiles (which cause a singularity...) */
       esum *= 0.08333*norm;
-      if (obj->singuflag && (emx2*emy2-emxy*emxy) < esum*esum)
+      if (obj2->singuflag && (emx2*emy2-emxy*emxy) < esum*esum)
         {
         emx2 += esum;
         emy2 += esum;

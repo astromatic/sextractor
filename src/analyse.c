@@ -673,15 +673,12 @@ void	analyse_full(picstruct *field, picstruct *dfield,
     for (i=0; i<prefs.naper; i++)
       photom_aper(field, wfield, obj, obj2, i);
 
-  if (FLAG(obj2.flux_auto))
-    photom_auto(field, dfield, wfield, dwfield, obj, obj2);
-
   if (FLAG(obj2.flux_petro))
     photom_petro(field, dfield, wfield, dwfield, obj, obj2);
 
 /*-- Growth curve */
   if (prefs.growth_flag)
-    growth_aver(field, wfield, obj, obj2);
+    growth_aver(field, wfield, obj2);
 
 /*--------------------------- Windowed barycenter --------------------------*/
   if (FLAG(obj2.winpos_x))
@@ -698,9 +695,6 @@ void	analyse_full(picstruct *field, picstruct *dfield,
       astrom_winerrparam(field, obj2);
     }
 
-/*---------------------------- Peak information ----------------------------*/
-  if (obj->peak+obj->bkg >= field->satur_level)
-    obj->flag |= OBJ_SATUR;
 /* Express positions in FOCAL or WORLD coordinates */
   if (FLAG(obj2.peakxf) || FLAG(obj2.peakxw))
     astrom_peakpos(field, obj, obj2);
@@ -905,5 +899,70 @@ void	analyse_full(picstruct *field, picstruct *dfield,
 /*-- ... and free memory */
 
   return;
+  }
+
+
+/****** analyse_group ********************************************************
+PROTO	void analyse_group(picstruct *field, picstruct *dfield,
+		picstruct *wfield, picstruct *dwfield,
+		obj2struct *obj2)
+PURPOSE Perform measurements on a group of detections.
+INPUT   Measurement field pointer,
+        Detection field pointer,
+        Measurement weight-map field pointer,
+        Detection weight-map field pointer,
+	obj2struct pointer.
+OUTPUT  -.
+NOTES   -.
+AUTHOR  E. Bertin (IAP)
+VERSION 26/07/2011
+ ***/
+void	analyse_group(picstruct *field, picstruct *dfield,
+		picstruct *wfield, picstruct *dwfield,
+		obj2struct *fobj2)
+  {
+  for (obj2=fobj2; (obj2=fobj2->nextobj2;)
+    {
+/*---------------------------- Peak information ----------------------------*/
+    if (obj2->peak+obj2->bkg >= field->satur_level)
+      obj2->flag |= OBJ_SATUR;
+/*-- Estimate of shape */
+    growth_aver(field, wfield, obj2);
+/*-- Get a good estimate of position and flux */
+    compute_winpos(field, wfield, obj2);
+/*-- Express positions in FOCAL or WORLD coordinates */
+    if (FLAG(obj2.winpos_xf) || FLAG(obj2.winpos_xw))
+      astrom_winpos(field, obj2);
+/*-- Express shape parameters in the FOCAL or WORLD frame */
+    if (FLAG(obj2.win_mx2w))
+      astrom_winshapeparam(field, obj2);
+/*-- Express position error parameters in the FOCAL or WORLD frame */
+    if (FLAG(obj2.winposerr_mx2w))
+      astrom_winerrparam(field, obj2);
+    }
+
+/*-- Setup model fitting for this group */
+  if (prefs.prof_flag)
+    for (obj2=fobj2; (obj2=fobj2->nextobj2;)
+      obj2->profit = profit_init(psf, prefs.prof_modelflags);
+
+/*-- Iterative multiple fit */
+  for (i=0 i<ANALYSE_NMULTITER; i++)
+    {
+    for (obj2=fobj2; (obj2=fobj2->nextobj2;)
+      if (prefs.prof_flag)
+        profit_fit(theprofit, field, wfield, obj2);
+    for (obj2=fobj2; (obj2=fobj2->nextobj2;)
+      profit_subtractgroup(theprofit, field, wfield, obj2);
+    }
+
+/* PSF- and model-guided star/galaxy separation */
+  if (FLAG(obj2.prof_class_star) || FLAG(obj2.prof_concentration))
+    for (obj2=fobj2; (obj2=fobj2->nextobj2;)
+      profit_spread(profit, field, wfield, obj2);
+
+  if (prefs.prof_flag)
+    for (obj2=fobj2; (obj2=fobj2->nextobj2;)
+      profit_end(obj2->profit);
   }
 

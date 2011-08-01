@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		20/05/2011
+*	Last modified:		26/07/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -147,7 +147,6 @@ typedef struct
 
 typedef struct
   {
-  objstruct	*obj;		/* Current object */
   obj2struct	*obj2;		/* Current object */
   int		nparam;		/* Number of parameters to be fitted */
   float		*paramlist[PARAM_NPARAM];	/* flat parameter list */
@@ -206,8 +205,7 @@ profstruct	*prof_init(profitstruct *profit, unsigned int modeltype);
 
 float		*profit_compresi(profitstruct *profit, float dynparam,
 				float *resi),
-		*profit_residuals(profitstruct *profit, picstruct *field,
-			picstruct *wfield, float dynparam,
+		*profit_residuals(profitstruct *profit, float dynparam,
 			float *param, float *resi),
 		prof_add(profitstruct *profit, profstruct *prof,
 			int extfluxfac_flag),
@@ -237,14 +235,13 @@ void		prof_end(profstruct *prof),
 			float **param),
 		profit_fit(profitstruct *profit,
 			picstruct *field, picstruct *wfield,
-			objstruct *obj, obj2struct *obj2),
+			obj2struct *obj2),
 		profit_convmoments(profitstruct *profit, obj2struct *obj2),
 		profit_convolve(profitstruct *profit, float *modpix),
 		profit_end(profitstruct *profit),
 		profit_evaluate(double *par, double *fvec, int m, int n,
 			void *adata),
-		profit_fluxcor(profitstruct *profit, objstruct *obj,
-				obj2struct *obj2),
+		profit_fluxcor(profitstruct *profit, obj2struct *obj2),
 		profit_makedft(profitstruct *profit),
 		profit_moments(profitstruct *profit, obj2struct *obj2),
 		profit_printout(int n_par, float* par, int m_dat, float* fvec,

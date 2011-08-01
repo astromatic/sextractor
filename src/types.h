@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		15/07/2011
+*	Last modified:		27/07/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -333,6 +333,9 @@ typedef struct
   float		mag_galfit;			/* Galaxy tot. mag from fit */
   float		magerr_galfit;			/* RMS error on galfit mag */
 /* ---- Profile-fitting */
+  profitstruct	*profit;			/* Model-fitting structure */
+  profitstruct	*pprofit;			/* S/G separation structure 1 */
+  profitstruct	*qprofit;			/* S/G separation structure 2 */
   float		*prof_vector;			/* Model parameters */
   float		*prof_errvector;		/* Model parameter errors */
   float		*prof_errmatrix;		/* Model parameter covariances*/

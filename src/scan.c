@@ -754,7 +754,7 @@ void  sortit(picstruct *field, picstruct *dfield, picstruct *wfield,
    objliststruct	objlistd, *objlistout;
    obj2liststruct	*obj2list;
    static objstruct	obj;
-   objstruct		*cobj;
+   objstruct		*cobj, *vobj;
    pliststruct		*pixel;
    int 			i,j,n;
 
@@ -864,10 +864,28 @@ void  sortit(picstruct *field, picstruct *dfield, picstruct *wfield,
           }
         }
 
-      obj2listov = analyse_overlapness(cleanobjlist, victim);
-      analyse_full(field, dfield, wfield, dwfield, cleanobjlist, victim,
-		obj2list, 0);
-      subcleanobj(victim);
+      noverlap = analyse_overlap(cleanobjlist, victim);
+      prevobj2 = NULL;
+      for (j=noverlap; j--)
+        {
+        vobj2 = obj2obj2(vobj, obj2list);
+        vobj2->nextobj2 = NULL;
+        if (prevobj2)
+          {
+          prevobj2->nextobj2 = vobj2;
+          vobj2->prevobj2 = prevobj2;
+          }
+        else
+          {
+          vobj2->prevobj2 = NULL;
+          firstobj2 = vobj2;
+          }
+        prevobj2 = vobj2;
+        nextvictim = vobj->nextobj;
+        subcleanobj(victim);
+        victim = nextvictim;
+        }
+      analyse_group(field, dfield, wfield, dwfield, firstobj2);
       }
 
 /* Only add the object if it is not swallowed by cleaning */
