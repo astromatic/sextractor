@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		25/07/2011
+*	Last modified:		02/08/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -74,26 +74,22 @@ const int	flux_flag[PARAM_NPARAM] = {0,
 					1,0,0
 					};
 
-/* "Local" global variables for debugging purposes */
-int theniter, the_gal;
-profitstruct		*thepprofit, *theqprofit;
-
 /****** profit_init ***********************************************************
-PROTO	profitstruct profit_init(psfstruct *psf,
-		picstruct *field, picstruct *wfield, unsigned int modeltype)
+PROTO	profitstruct profit_init(picstruct *field, picstruct *wfield,
+		obj2struct *obj2, psfstruct *psf, unsigned int modeltype)
 PURPOSE	Allocate and initialize a new profile-fitting structure.
-INPUT	Pointer to PSF structure,
-	pointer to the field,
+INPUT	Pointer to the field,
 	pointer to the field weight,
+	pointer to the obj2,
+	pointer to the PSF,
 	model type.
 OUTPUT	A pointer to an allocated profit structure.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	01/08/2011
+VERSION	02/08/2011
  ***/
-profitstruct	*profit_init(psfstruct *psf,
-			picstruct *field, picstruct *wfield, obj2struct *obj2,
-			unsigned int modeltype)
+profitstruct	*profit_init(picstruct *field, picstruct *wfield,
+		obj2struct *obj2, psfstruct *psf, unsigned int modeltype)
   {
    profitstruct		*profit;
    int			t, nmodels;
@@ -115,13 +111,12 @@ profitstruct	*profit_init(psfstruct *psf,
     profit->objnaxisn[1] = profit->objnaxisn[0];
   else
     profit->objnaxisn[0] = profit->objnaxisn[1];
-  obj2->prof_flag = 0;
 
   if (profit->objnaxisn[0]>PROFIT_MAXOBJSIZE)
     {
     profit->subsamp = ceil((float)profit->objnaxisn[0]/PROFIT_MAXOBJSIZE);
     profit->objnaxisn[1] = (profit->objnaxisn[0] /= (int)profit->subsamp);
-    obj2->prof_flag |= PROFLAG_OBJSUB;
+    profit->flag |= PROFLAG_OBJSUB;
     }
   else
     profit->subsamp = 1.0;
@@ -151,7 +146,7 @@ profitstruct	*profit_init(psfstruct *psf,
     {
     profit->pixstep = (double)profit->modnaxisn[0] / PROFIT_MAXMODSIZE;
     profit->modnaxisn[0] = profit->modnaxisn[1] = PROFIT_MAXMODSIZE;
-    obj2->prof_flag |= PROFLAG_MODSUB;
+    profit->flag |= PROFLAG_MODSUB;
     }
   profit->nmodpix = profit->modnaxisn[0]*profit->modnaxisn[1];
 
@@ -225,40 +220,24 @@ void	profit_end(profitstruct *profit)
 
 
 /****** profit_fit ************************************************************
-PROTO	void profit_fit(profitstruct *profit, obj2struct *obj2, int prepareflag)
+PROTO	int profit_fit(profitstruct *profit, obj2struct *obj2)
 PURPOSE	Fit profile(s) convolved with the PSF to a detected object.
-INPUT	Array of profile structures,
-	Number of profiles,
-	Pointer to the profile-fitting structure,
-	Pointer to the obj2.
-OUTPUT	Pointer to an allocated fit structure (containing details about the
-	fit).
-NOTES	It is a modified version of the lm_minimize() of lmfit.
+INPUT	Pointer to the model structure,
+	pointer to the obj2.
+OUTPUT	Number of minimization iterations (0 in case of error).
+NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	26/07/2011
+VERSION	02/08/2011
  ***/
-void	profit_fit(profitstruct *profit, obj2struct *obj2)
+int	profit_fit(profitstruct *profit, obj2struct *obj2)
   {
-    profitstruct	*pprofit, *qprofit;
-    patternstruct	*pattern;
-    psfstruct		*psf;
-    checkstruct		*check;
-    double		emx2,emy2,emxy, a , cp,sp, cn, bn, n,
-			sump,sumq, sumpw2,sumqw2,sumpqw, sump0,sumq0;
-    PIXTYPE		valp,valq,sig2;
-    float		param0[PARAM_NPARAM], param1[PARAM_NPARAM],
-			param[PARAM_NPARAM],
-			**list,
-			*cov,
-			psf_fwhm, dchi2, err, aspect, chi2;
-    int			*index,
-			i,j,p, nparam, nparam2, ncomp;
+   int			p, nparam, nparam2;
 
   nparam = profit->nparam;
   nparam2 = nparam*nparam;
 
 /* reset all flags except those set in profit_init() */
-  obj2->prof_flag &= PROFLAG_OBJSUB|PROFLAG_MODSUB;
+  profit->flag &= PROFLAG_OBJSUB|PROFLAG_MODSUB;
 
 /* Check if the number of constraints exceeds the number of free parameters */
   if (profit->nresi < nparam)
@@ -273,20 +252,45 @@ void	profit_fit(profitstruct *profit, obj2struct *obj2)
       for (p=0; p<nparam2; p++)
         obj2->prof_errmatrix[p] = 0.0;
     obj2->prof_niter = 0;
-    obj2->prof_flag |= PROFLAG_NOTCONST;
-    return;
+    profit->flag |= PROFLAG_NOTCONST;
+    return 0;
     }
 
 /* Actual minimisation */
   fft_reset();
-the_gal++;
 
-  profit->niter = profit_minimize(profit, PROFIT_MAXITER);
+  return (profit->niter = profit_minimize(profit, PROFIT_MAXITER));
+  }
 
+
+/****** profit_measure ********************************************************
+PROTO	void profit_measure(profitstruct *profit, obj2struct *obj2)
+PURPOSE	Perform measurements on the fitted model.
+INPUT	Pointer to the model structure,
+	pointer to the obj2.
+OUTPUT	-.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	02/08/2011
+ ***/
+void	profit_fit(profitstruct *profit, obj2struct *obj2)
+  {
+    profitstruct	*pprofit, *qprofit;
+    patternstruct	*pattern;
+    psfstruct		*psf;
+    checkstruct		*check;
+    double		emx2,emy2,emxy, a , cp,sp, cn, bn, n;
+    float		param0[PARAM_NPARAM], param1[PARAM_NPARAM],
+			param[PARAM_NPARAM],
+			**list,
+			*cov,
+			psf_fwhm, err, aspect, chi2;
+    int			*index,
+			i,j,p, nparam, nparam2, ncomp;
   if (profit->nlimmin)
-    obj2->prof_flag |= PROFLAG_MINLIM;
+    profit->flag |= PROFLAG_MINLIM;
   if (profit->nlimmax)
-    obj2->prof_flag |= PROFLAG_MAXLIM;
+    profit->flag |= PROFLAG_MAXLIM;
 
   for (p=0; p<nparam; p++)
     profit->paramerr[p]= sqrt(profit->covar[p*(nparam+1)]);
@@ -683,6 +687,8 @@ the_gal++;
       }
     }
 
+  obj2->prof_flag = profit->flag;
+
 /* clean up. */
   fft_reset();
 
@@ -703,14 +709,19 @@ INPUT	Pointer to the profile-fitting structure,
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	01/08/2011
+VERSION	02/08/2011
  ***/
 void	profit_spread(profitstruct *profit,  picstruct *field,
 		picstruct *wfield, obj2struct *obj2)
   {
+   profitstruct	*pprofit,*qprofit;
+   PIXTYPE	valp,valq, sig2;
+   double	sump,sumq, sumpw2,sumqw2,sumpqw, sump0,sumq0;
+   float	dchi2;
+   int		p;
 
-  pprofit = profit_init(obj2->psf, field, wfield, MODEL_DIRAC);
-  qprofit = profit_init(obj2->psf, field, wfield, MODEL_EXPONENTIAL);
+  pprofit = profit_init(field, wfield, obj2, obj2->psf, MODEL_DIRAC);
+  qprofit = profit_init(field, wfield, obj2, obj2->psf, MODEL_EXPONENTIAL);
 
   fft_reset();
   profit_residuals(profit, PROFIT_DYNPARAM, profit->paraminit, profit->resi);
@@ -1474,8 +1485,7 @@ float	*profit_residuals(profitstruct *profit, float dynparam, float *param,
 
 
 /****** profit_compresi ******************************************************
-PROTO	float *prof_compresi(profitstruct *profit, float dynparam,
-			float *resi)
+PROTO	float *prof_compresi(profitstruct *profit, float dynparam, float *resi)
 PURPOSE	Compute the vector of residuals between the data and the galaxy
 	profile model.
 INPUT	Profile-fitting structure,
@@ -1896,7 +1906,7 @@ INPUT	Pointer to the profit structure,
 OUTPUT	The number of valid pixels copied.
 NOTES	Global preferences are used.
 AUTHOR	E. Bertin (IAP)
-VERSION	26/07/2011
+VERSION	02/08/2011
  ***/
 int	profit_copyobjpix(profitstruct *profit, picstruct *field,
 			picstruct *wfield, obj2struct *obj2)
@@ -1905,7 +1915,7 @@ int	profit_copyobjpix(profitstruct *profit, picstruct *field,
    PIXTYPE	*pixin,*spixin, *wpixin,*swpixin, *pixout,*wpixout,
 		backnoise2, invgain, satlevel, wthresh, pix,spix, wpix,swpix;
    int		i,x,y, xmin,xmax,ymin,ymax, w,h,dw, npix, off, gainflag,
-		badflag, sflag, sx,sy,sn,sw, ix,iy, win,hin;
+		badflag, sflag, sx,sy,sn, ix,iy, win,hin;
 
 /* First put the image background to -BIG */
   pixout = profit->objpix;
@@ -1916,13 +1926,10 @@ int	profit_copyobjpix(profitstruct *profit, picstruct *field,
     *(wpixout++) = 0.0;
     }
 
-/* Don't go further if out of frame!! */
   ix = profit->ix - obj2->immin[0];
   iy = profit->iy - obj2->immin[1];
   win = obj2->imsize[0];
   hin = obj2->imsize[1];
-  if (ix<0 || ix>=win || iy<0 || iy>=hin)
-    return 0;
 
   backnoise2 = field->backsig*field->backsig;
   sn = (int)profit->subsamp;
@@ -1969,26 +1976,6 @@ int	profit_copyobjpix(profitstruct *profit, picstruct *field,
     wpixout += off;
     dw += off;
     xmin += off*sn;
-    }
-/* Make sure the input frame size is a multiple of the subsampling step */
-  if (sflag)
-    {
-/*
-    if (((rem=ymax-ymin)%sn))
-      {
-      ymin += rem/2;
-      ymax -= (rem-rem/2);
-      }
-    if (((rem=xmax-xmin)%sn))
-      {
-      xmin += rem/2;
-      pixout += rem/2;
-      wpixout += rem/2;
-      dw += rem;
-      xmax -= (rem-rem/2);
-      }
-*/
-    sw = field->width;
     }
 
 /* Copy the right pixels to the destination */
@@ -2129,6 +2116,122 @@ int	profit_copyobjpix(profitstruct *profit, picstruct *field,
     }
  
   return npix;
+  }
+
+
+/****** profit_submodpix *****************************************************
+PROTO	void	profit_submodpix(profitstruct *profitobj,
+			profitstruct *profitmod, float *fac)
+PURPOSE	Subtract a rasterized model from the objpix of another model structure.
+INPUT	Pointer to the model structure containing the object pixels,
+	Pointer to the model structure containing the model raster,
+	multiplicative factor to apply to the model pixels.
+OUTPUT	-.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	02/08/2011
+ ***/
+void	profit_submodpix(profitstruct *profitobj, profitstruct *profitmod,
+			float *fac)
+  {
+   float	dx, dy2, dr2, rad2;
+   PIXTYPE	*pixin,*spixin, *pixout,
+		pix,spix;
+   int		i,x,y, xmin,xmax,ymin,ymax, w,h,dw, npix, off, gainflag,
+		badflag, sflag, sx,sy,sn, ix,iy, win,hin;
+
+/* First put the image background to -BIG */
+  pixout = profit->objpix;
+
+/* Don't go further if out of frame!! */
+  win = profitmod->objnaxisn[0];
+  hin = profitmod->objnaxisn[1];
+  ix = profitmod->ix - win/2;
+  iy = profitmod->iy - hin/2;
+
+  sn = (int)profitobj->subsamp;
+  sflag = (sn>1);
+  w = profitobj->objnaxisn[0]*sn;
+  h = profitobj->objnaxisn[1]*sn;
+  rad2 = h/2.0;
+  if (rad2 > w/2.0)
+    rad2 = w/2.0;
+  rad2 *= rad2;
+
+/* Set the image boundaries */
+  pixout = profitobj->objpix;
+  ymin = iy-h/2;
+  ymax = ymin + h;
+  if (ymin<0)
+    {
+    off = (-ymin-1)/sn + 1;
+    pixout += off*profit->objnaxisn[0];
+    ymin += off*sn;
+    }
+  if (ymax>hin)
+    ymax -= ((ymax-hin-1)/sn + 1)*sn;
+
+  xmin = ix-w/2;
+  xmax = xmin + w;
+  dw = 0;
+  if (xmax>win)
+    {
+    off = (xmax-win-1)/sn + 1;
+    dw += off;
+    xmax -= off*sn;
+    }
+  if (xmin<0)
+    {
+    off = (-xmin-1)/sn + 1;
+    pixout += off;
+    wpixout += off;
+    dw += off;
+    xmin += off*sn;
+    }
+
+/* Copy the right pixels to the destination */
+  npix = 0;
+  if (sflag)
+    {
+/*-- Sub-sampling case */
+    for (y=ymin; y<ymax; y+=sn, pixout+=dw)
+      {
+      for (x=xmin; x<xmax; x+=sn)
+        {
+        pix = 0.0;
+        badflag = 0;
+        for (sy=0; sy<sn; sy++)
+          {
+          dy2 = y+sy-iy;
+          dy2 *= dy2;
+          dx = x-ix;
+          spixin = profitmod->lmodpix + x + (y+sy)*win;
+          for (sx=sn; sx--;)
+            {
+            dr2 = dy2 + dx*dx;
+            dx++;
+            spix = *(spixin++);
+            pix += spix;
+            }
+          }
+        *(pixout++) -= fac*pix;
+        }
+      }
+    else
+      for (y=ymin; y<ymax; y++, pixout+=dw)
+        {
+        dy2 = y-iy;
+        dy2 *= dy2;
+        pixin = profitmod->lmodpix + xmin + y*win;
+        for (x=xmin; x<xmax; x++)
+          {
+          dx = x-ix;
+          dr2 = dy2 + dx*dx;
+          *(pixout++) -= fac**(pixin++);
+          }
+        }
+ 
+  return;
   }
 
 

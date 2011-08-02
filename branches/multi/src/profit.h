@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		26/07/2011
+*	Last modified:		02/08/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -194,12 +194,15 @@ typedef struct
   float		guessfluxmax;	/* Best guess for source flux upper limit (>0)*/
 /* Buffers */
   double	dparam[PARAM_NPARAM];
+  int		flag;		/* Model fitting flag */
   }	profitstruct;
 
 /*----------------------------- Global variables ----------------------------*/
 /*-------------------------------- functions --------------------------------*/
 
-profitstruct	*profit_init(struct psf *psf, unsigned int modeltype);
+profitstruct	profit_init(picstruct *field, picstruct *wfield,
+			obj2struct *obj2, psfstruct *psf,
+			unsigned int modeltype);
 
 profstruct	*prof_init(profitstruct *profit, unsigned int modeltype);
 
@@ -233,9 +236,7 @@ int		profit_boundtounbound(profitstruct *profit,
 void		prof_end(profstruct *prof),
 		profit_addparam(profitstruct *profit, paramenum paramindex,
 			float **param),
-		profit_fit(profitstruct *profit,
-			picstruct *field, picstruct *wfield,
-			obj2struct *obj2),
+		profit_fit(profitstruct *profit, obj2struct *obj2),
 		profit_convmoments(profitstruct *profit, obj2struct *obj2),
 		profit_convolve(profitstruct *profit, float *modpix),
 		profit_end(profitstruct *profit),
@@ -243,12 +244,17 @@ void		prof_end(profstruct *prof),
 			void *adata),
 		profit_fluxcor(profitstruct *profit, obj2struct *obj2),
 		profit_makedft(profitstruct *profit),
+		profit_measure(profitstruct *profit, obj2struct *obj2),
 		profit_moments(profitstruct *profit, obj2struct *obj2),
 		profit_printout(int n_par, float* par, int m_dat, float* fvec,
 			void *data, int iflag, int iter, int nfev ),
 		profit_psf(profitstruct *profit),
 		profit_resetparam(profitstruct *profit, paramenum paramtype),
 		profit_resetparams(profitstruct *profit),
+		profit_spread(profitstruct *profit,  picstruct *field,
+			picstruct *wfield, obj2struct *obj2);
+		profit_submodpix(profitstruct *profitobj,
+			profitstruct *profitmod, float *fac),
 		profit_surface(profitstruct *profit, obj2struct *obj2);
 
 #endif

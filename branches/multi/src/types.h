@@ -334,8 +334,6 @@ typedef struct
   float		magerr_galfit;			/* RMS error on galfit mag */
 /* ---- Profile-fitting */
   profitstruct	*profit;			/* Model-fitting structure */
-  profitstruct	*pprofit;			/* S/G separation structure 1 */
-  profitstruct	*qprofit;			/* S/G separation structure 2 */
   float		*prof_vector;			/* Model parameters */
   float		*prof_errvector;		/* Model parameter errors */
   float		*prof_errmatrix;		/* Model parameter covariances*/
