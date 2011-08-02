@@ -941,28 +941,40 @@ void	analyse_group(picstruct *field, picstruct *dfield,
       astrom_winerrparam(field, obj2);
     }
 
-/*-- Setup model fitting for this group */
   if (prefs.prof_flag)
-    for (obj2=fobj2; (obj2=fobj2->nextobj2;)
-      obj2->profit = profit_init(psf, prefs.prof_modelflags);
+/*-- Setup model fitting for this group */
+    for (obj2=fobj2; (obj2=fobj2->nextobj2);)
+      obj2->profit = profit_init(field, wfield, obj2, psf,
+			prefs.prof_modelflags);
 
 /*-- Iterative multiple fit */
-  for (i=0 i<ANALYSE_NMULTITER; i++)
-    {
-    for (obj2=fobj2; (obj2=fobj2->nextobj2;)
-      if (prefs.prof_flag)
-        profit_fit(theprofit, field, wfield, obj2);
-    for (obj2=fobj2; (obj2=fobj2->nextobj2;)
-      profit_subtractgroup(theprofit, field, wfield, obj2);
-    }
+  if (prefs.prof_flag)
+    for (i=0 i<ANALYSE_NMULTITER; i++)
+      {
+      for (obj2=fobj2; (obj2=fobj2->nextobj2);)
+        profit_fit(obj2->profit, obj2);
+      for (obj2=fobj2; (obj2=fobj2->nextobj2;)
+        {
+        if (i)
+          profit_copyobjpix(obj2->profit, field, wfield, obj2);
+        for (modobj2=fobj2; (modobj2=fobj2->nextobj2;)
+          if (modobj2 != obj2)
+            profit_submodpix(obj2->profit, modobj2->profit, 0.9);
+        }
+
+  if (prefs.prof_flag)
+/*-- Perform measurements on the fitted models */
+    for (obj2=fobj2; (obj2=fobj2->nextobj2);)
+      profit_measure(obj2->profit, obj2);
+ 
 
 /* PSF- and model-guided star/galaxy separation */
   if (FLAG(obj2.prof_class_star) || FLAG(obj2.prof_concentration))
-    for (obj2=fobj2; (obj2=fobj2->nextobj2;)
+    for (obj2=fobj2; (obj2=fobj2->nextobj2_;)
       profit_spread(profit, field, wfield, obj2);
 
   if (prefs.prof_flag)
-    for (obj2=fobj2; (obj2=fobj2->nextobj2;)
+    for (obj2=fobj2; (obj2=fobj2->nextobj2);)
       profit_end(obj2->profit);
   }
 
