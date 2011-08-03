@@ -62,7 +62,7 @@ INPUT	Array of pointers to strings containing the measurement parameters,
 OUTPUT	Pointer to the allocated obj2list.
 NOTES	Requires access to the objtab and objkey static pointers.
 AUTHOR	E. Bertin (IAP)
-VERSION	18/07/2011
+VERSION	03/08/2011
  ***/
 obj2liststruct	*catout_readparams(char **paramlist, int nparam, int nobj2)
   {
@@ -121,15 +121,14 @@ obj2liststruct	*catout_readparams(char **paramlist, int nparam, int nobj2)
   obj2list->nobj = nobj2;
   obj2list->nkeys = nkeys;
   QMALLOC(obj2list->obj2, obj2struct, nobj2);
-  QMALLOC(obj2list->keys, keystruct *, nobj2);
 
 /* Create key arrays for the catalog buffer, with the right pointers */
   if (nkeys)
     for (o=0; o<nobj2; o++)
       {
-      QMALLOC(obj2list->keys[o], keystruct, nkeys);
       obj2 = obj2list->obj2[o];
-      key = obj2list->keys[o];
+      QMALLOC(obj2->keys, keystruct, nkeys);
+      key = obj2->keys;
       tabkey = objtab->key;
       for (k=nkeys; k--; key++)
         {
@@ -139,8 +138,8 @@ obj2liststruct	*catout_readparams(char **paramlist, int nparam, int nobj2)
         key->ptr = (void *)&obj2 + (tabkey->ptr - (void *)&flagobj2);
         tabkey = tabkey->nextkey;
         }
-      obj2list->keys[o][0].prevkey = obj2list->keys[o] + nkeys-1;
-      obj2list->keys[o][nkeys-1].nextkey = obj2list->keys[o];
+      obj2->keys[0].prevkey = obj2->keys + nkeys-1;
+      obj2->keys[nkeys-1].nextkey = obj2->keys;
       }
 
 
@@ -189,7 +188,7 @@ INPUT	Pointer to the obj2list.
 OUTPUT	-.
 NOTES	Requires access to the objkey static pointer.
 AUTHOR	E. Bertin (IAP)
-VERSION	18/07/2011
+VERSION	03/08/2011
  ***/
 void	catout_allocparams(obj2liststruct *obj2list)
   {
@@ -199,6 +198,7 @@ void	catout_allocparams(obj2liststruct *obj2list)
   nobj2 = obj2list->nobj;
 
 /* Allocate arrays for multidimensional measurement parameters */
+/* Note that they do not need to be selected for catalog output */
   for (key=objkey; *key->name; key++)
     if (key->naxis && (*((char *)key->ptr))
       {
@@ -212,7 +212,7 @@ void	catout_allocparams(obj2liststruct *obj2list)
 /* Set the data pointers in keys */
   for (o=0; o<nobj2; o++)
     {
-    keys = obj2list->keys[o];
+    keys = obj2list->obj2[o]->keys;
     for (k=0; k<nkeys; k++)
       {
       key = keys[k];
@@ -1023,13 +1023,13 @@ NOTES	Requires access to global prefs and the objtab static pointer.
 AUTHOR	E. Bertin (IAP)
 VERSION	18/07/2011
  ***/
-void	catout_writeobj(obj2liststruct *obj2list, int o)
+void	catout_writeobj(obj2struct *obj2)
   {
    keystruct	*keystore;
 
 /* We temporarily replace the objtab key sequence with that from the list */
   keystore = objtab->key;
-  objtab->key = obj2list->keys[o];
+  objtab->key = obj2->keys;
   switch(prefs.cat_type)
     {
     case FITS_10:

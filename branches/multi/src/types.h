@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		27/07/2011
+*	Last modified:		03/08/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -130,13 +130,46 @@ typedef struct
   float		mthresh;		       	/* max. threshold (ADU) */
   int		iso[NISO];			/* isophotal areas */
   float		fwhm;				/* IMAGE FWHM */
-  
   }	objstruct;
 
 /* II: "BLIND" parameters */
 typedef struct
   {
-  objstruct	*obj;				/* Pointer to basic objstruct*/
+/* ---- basic parameters */
+  int		number;				/* ID */
+  int		fdnpix;				/* nb of extracted pix */
+  int		dnpix;				/* nb of pix above thresh  */
+  int		npix;				/* "" in measured frame */
+  int		nzdwpix;			/* nb of zero-dweights around */
+  int		nzwpix;				/* nb of zero-weights inside */
+  float		fdflux;				/* integrated ext. flux */
+  float		dflux;				/* integrated det. flux */
+  float		flux;				/* integrated mes. flux */
+  float		fluxerr;			/* integrated variance */
+  PIXTYPE	fdpeak;				/* peak intensity (ADU) */
+  PIXTYPE	dpeak;				/* peak intensity (ADU) */
+  PIXTYPE	peak;				/* peak intensity (ADU) */
+/* ---- astrometric data */
+  int		peakx,peaky;			/* pos of brightest pix */
+  double       	mx, my;				/* barycenter */
+  double	poserr_mx2, poserr_my2,
+		poserr_mxy;			/* Error ellips moments */
+/* ---- morphological data */			
+  int		xmin,xmax,ymin,ymax,ycmin,ycmax;/* x,y limits */
+  short		flag;				/* extraction flags */
+  BYTE		wflag;				/* weighted extraction flags */
+  FLAGTYPE	imaflag[MAXFLAG];		/* flags from FLAG-images */
+  BYTE		singuflag;			/* flags for singularities */
+  int		imanflag[MAXFLAG];     		/* number of MOST flags */
+  double	mx2,my2,mxy;			/* variances and covariance */
+  float		a, b, theta, abcor;		/* moments and angle */
+  float		cxx,cyy,cxy;			/* ellipse parameters */
+  float		bkg, dbkg, sigbkg;		/* Background stats (ADU) */
+  float		thresh;				/* measur. threshold (ADU) */
+  float		dthresh;		       	/* detect. threshold (ADU) */
+  float		mthresh;		       	/* max. threshold (ADU) */
+  int		iso[NISO];			/* isophotal areas */
+  float		fwhm;				/* IMAGE FWHM */
   PIXTYPE	*image,*dimage;			/* Copy of local image data */
   PIXTYPE	*weight, *dweight;		/* Copy of local weight data */
   int		imsize[2];			/* Local image data size */
@@ -524,6 +557,7 @@ typedef struct
   short		ext_number;			/* FITS extension number */
 /* ---- Time ---- */
   float		analtime;			/* Analysis time (s) */
+  float		*keys;				/* Pointer to catalog keys */
   }	obj2struct;
 
 /*----------------------------- lists of objects ----------------------------*/

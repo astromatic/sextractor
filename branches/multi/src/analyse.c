@@ -422,26 +422,78 @@ INPUT   Measurement field pointer,
         Detection field pointer,
         Measurement weight-map field pointer,
         Detection weight-map field pointer,
-	objstruct pointer,
+	objlist pointer,
 	obj array index,
-	obj2struct pointer,
+	obj2list pointer,
 	obj2 array index.
 OUTPUT  -.
 NOTES   -.
 AUTHOR  E. Bertin (IAP)
-VERSION 18/07/2011
+VERSION 03/08/2011
  ***/
 void	analyse_obj2obj2(picstruct *field, picstruct *dfield,
 		picstruct *wfield, picstruct *dwfield,
 		objliststruct *objlist, int n,
 		obj2liststruct *obj2list, int n2)
   {
+   objstruct	*obj;
+   obj2struct	*obj2;
+
   obj2 = &obj2list->obj2[n2];
-  obj2->obj = obj = &objlist->obj[n];
+  obj = &objlist->obj[n];
 
 /* Integer coordinates */
   ix=(int)(obj->mx+0.49999);
   iy=(int)(obj->my+0.49999);
+
+/* Copy main data */
+  obj2->number = obj->number;
+  obj2->fdnpix = obj->fdnpix;
+  obj2->dnpix = obj->dnpix;
+  obj2->npix = obj->npix;
+  obj2->nzdwpix = obj->nzdwpix;
+  obj2->nzwpix = obj->nzwpix;
+  obj2->fdflux = obj->fdflux;
+  obj2->dflux = obj->dflux;
+  obj2->flux = obj->flux;
+  obj2->fluxerr = obj->fluxerr;
+  obj2->fdpeak = obj->fdpeak;
+  obj2->dpeak = obj->dpeak;
+  obj2->peak = obj->peak;
+  obj2->peakx = obj->peakx;
+  obj2->peaky = obj->peaky;
+  obj2->mx = obj->mx;
+  obj2->my = obj->my;
+  obj2->poserr_mx2 = obj->poserr_mx2;
+  obj2->poserr_my2 = obj->poserr_my2;
+  obj2->poserr_mxy = obj->poserr_mxy;
+  obj2->xmin = obj->xmin;
+  obj2->xmax = obj->xmax;
+  obj2->ymin = obj->ymin;
+  obj2->ymax = obj->ymax;
+  obj2->flag = obj->flag;
+  obj2->wflag = obj->wflag;
+  obj2->imaflag[] = obj->imaflag[];
+  obj2->singuflag = obj->singuflag;
+  obj2->imanflag[] = obj->imanflag[];
+  obj2->mx2 = obj->mx2;
+  obj2->my2 = obj->my2;
+  obj2->mxy = obj->mxy;
+  obj2->a = obj->a;
+  obj2->b = obj->b;
+  obj2->theta = obj->theta;
+  obj2->abcor = obj->abcor;
+  obj2->cxx = obj->cxx;
+  obj2->cyy = obj->cyy;
+  obj2->cxy = obj->cxy;
+  obj2->bkg = obj->bkg;
+  obj2->dbkg = obj->dbkg;
+  obj2->sigbkg = obj->sigbkg;
+  obj2->thresh = obj->thresh;
+  obj2->dthresh = obj->dthresh;
+  obj2->mthresh = obj->mthresh;
+  obj2->iso[] = obj->iso[];
+  obj2->fwhm = obj->fwhm;
 
 /* Copy image data around current object */
   obj2->imsize[0] = obj->xmax-obj->xmin+1+2*field->stripmargin;
@@ -976,5 +1028,10 @@ void	analyse_group(picstruct *field, picstruct *dfield,
   if (prefs.prof_flag)
     for (obj2=fobj2; (obj2=fobj2->nextobj2);)
       profit_end(obj2->profit);
+
+  for (obj2=fobj2; (obj2=fobj2->nextobj2_;)
+    profit_spread(profit, field, wfield, obj2);
+
   }
+
 
