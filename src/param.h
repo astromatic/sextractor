@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		17/06/2011
+*	Last modified:		03/08/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -32,7 +32,7 @@ obj2struct	flagobj2;
 /*--------------------------------- initialization --------------------------*/
 keystruct	objkey[] = {
   {"NUMBER", "Running object number",
-	&flagobj.number, H_INT, T_LONG, "%10d", "",
+	&flagobj2.number, H_INT, T_LONG, "%10d", "",
 	"meta.record", ""},
   {"EXT_NUMBER", "FITS extension number",
 	&flagobj2.ext_number, H_INT, T_SHORT, "%3d", "",
@@ -149,52 +149,6 @@ keystruct	objkey[] = {
   {"VECTOR_SOMFIT", "Position vector of the winning SOM node",
 	&flagobj2.vector_somfit, H_FLOAT, T_FLOAT, "%5.2f", "",
 	"src.morph.param", "", 1, &prefs.somfit_vectorsize},
-
-/* The following would use Principal Component fitting.
-   This has been obsoleted by bona fide model fitting.
-
-  {"FLUX_GALFIT", "Flux derived from the galaxy fit",
-	&flagobj2.flux_galfit, H_FLOAT, T_FLOAT, "%12.7g", "count",
-	"phot.flux;stat.fit.param", "ct"},
-  {"FLUXERR_GALFIT", "RMS error for GALFIT flux",
-	&flagobj2.fluxerr_galfit, H_FLOAT, T_FLOAT, "%12.7g", "count"},
-  {"MAG_GALFIT", "Magnitude derived from galaxy fit",
-	&flagobj2.mag_galfit, H_FLOAT, T_FLOAT, "%8.4f", "mag",
-	"phot.mag;stat.fit.param", "mag"},
-
-  {"MAGERR_GALFIT", "Magnitude error derived from galaxy fit",
-	&flagobj2.magerr_galfit, H_FLOAT, T_FLOAT, "%8.4f", "mag"},
-  {"ERROR_GALFIT", "Reduced Chi-square error of the galaxy fit",
-	&flagobj2.stderr_galfit, H_FLOAT, T_FLOAT, "%10g", ""},
-
-  {"GALDANG_IMAGE", "Galaxy disk position angle  from the galaxy fit",
-	&flagobj2.gdposang, H_FLOAT, T_FLOAT, "%6.2f", "deg",
-	"pos.posAng;stat.fit.param", "deg"},
-  {"GALDSCALE_IMAGE", "Galaxy disk-scale from the galaxy fit",
-	&flagobj2.gdscale, H_FLOAT, T_FLOAT, "%9.3f", "pixel",
-	"src.morph.scLength;stat.fit.param", "pix"},
-  {"GALDASPEC_IMAGE", "Galaxy disk aspect ratio from the galaxy fit",
-	&flagobj2.gdaspect, H_FLOAT, T_FLOAT, "%5.3f", "",
-	"phys.size.axisRatio;stat.fit.param", ""},
-  {"GALDE1_IMAGE", "Galaxy disk ellipticity #1 from the galaxy fit",
-	&flagobj2.gde1, H_FLOAT, T_FLOAT, "%6.4f", "",
-	"src.ellipticity", ""},
-  {"GALDE2_IMAGE", "Galaxy disk ellipticity #2 from the galaxy fit",
-	&flagobj2.gde2, H_FLOAT, T_FLOAT, "%6.4f", "",
-	"src.ellipticity", ""},
-  {"GALBRATIO_IMAGE", "Galaxy bulge ratio from the galaxy fit",
-	&flagobj2.gbratio, H_FLOAT, T_FLOAT, "%5.3f", "",
-	"src.morph.param;stat.fit.param", ""},
-  {"GALBANG_IMAGE", "Galaxy bulge position angle  from the galaxy fit",
-	&flagobj2.gbposang, H_FLOAT, T_FLOAT, "%6.2f", "deg",
-	"pos.posAng;stat.fit.param", "deg"},
-  {"GALBSCALE_IMAGE", "Galaxy bulge-scale from the galaxy fit",
-	&flagobj2.gbscale, H_FLOAT, T_FLOAT, "%9.3f", "pixel",
-	"src.morph.scLength;stat.fit.param", "pix"},
-  {"GALBASPEC_IMAGE", "Galaxy bulge aspect ratio from the galaxy fit",
-	&flagobj2.gbaspect, H_FLOAT, T_FLOAT, "%5.3f", "",
-	"phys.size.axisRatio;stat.fit.param", ""},
-*/
 
   {"KRON_RADIUS", "Kron apertures in units of A or B",
 	&flagobj2.kronfactor, H_FLOAT, T_FLOAT, "%5.2f", "",
@@ -885,31 +839,6 @@ keystruct	objkey[] = {
   {"DURATION_ANALYSIS", "Duration of analysis for this source",
 	&flagobj2.analtime, H_FLOAT, T_FLOAT, "%9.4g", "s",
 	"time.duration;time.processing", "s"},
-
-/* Temporarily (at least) deactivated not to confuse users with model-fitting
-  {"X2PC_IMAGE", "PC variance along x",
-	&flagobj2.mx2_pc, H_EXPO, T_DOUBLE, "%18.10e", "pixel**2",
-	"src.impactParam;instr.det", "pix2"},
-  {"Y2PC_IMAGE", "PC variance along y",
-	&flagobj2.my2_pc, H_EXPO, T_DOUBLE, "%18.10e", "pixel**2",
-	"src.impactParam;instr.det", "pix2"},
-  {"XYPC_IMAGE", "PC covariance between x and y",
-	&flagobj2.mxy_pc, H_EXPO, T_DOUBLE, "%18.10e", "pixel**2",
-	"src.impactParam;instr.det", "pix2"},
-
-  {"APC_IMAGE", "PC profile RMS along major axis",
-	&flagobj2.a_pc, H_FLOAT, T_FLOAT, "%8.2f", "pixel",
-	"phys.size.smajAxis;instr.det", "pix"},
-  {"BPC_IMAGE", "PC profile RMS along minor axis",
-	&flagobj2.b_pc, H_FLOAT, T_FLOAT, "%8.2f", "pixel",
-	"phys.size.sminAxis;instr.det", "pix"},
-  {"THETAPC_IMAGE", "PC position angle (CCW/x)",
-	&flagobj2.theta_pc, H_FLOAT, T_FLOAT, "%6.2f", "deg",
-	"pos.posAng;instr.det", "deg"},
-  {"PC", "Principal components",
-	&flagobj2.vector_pc, H_FLOAT, T_FLOAT, "%18.10e", "",
-	"src.morph.param", "", 1, &prefs.pc_vectorsize},
-*/
 
 #ifdef USE_MODEL
 #include "paramprofit.h"
