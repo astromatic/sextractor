@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1996-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1996-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/10/2010
+*	Last modified:		22/08/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -36,22 +36,6 @@ keystruct	headkey1[] = {
 	thefield1.ident, H_STRING, T_STRING, "%18s"},
   {"ORIGIN  ", "",
 	"SExtractor", H_STRING, T_STRING, "%18s"},
-  {"CRVAL1", "WORLD X COORD. OF REFERENCE PIXEL",
-	&ddummy, H_EXPO, T_DOUBLE, "%15G"},
-  {"CRVAL2", "WORLD Y COORD. OF REFERENCE PIXEL",
-	&ddummy, H_EXPO, T_DOUBLE, "%15G"},
-  {"CRPIX1", "IMAGE X COORD. OF REFERENCE PIXEL",
-	&idummy, H_INT, T_LONG, "%5d"},
-  {"CRPIX2", "IMAGE Y COORD. OF REFERENCE PIXEL",
-	&idummy, H_INT, T_LONG, "%5d"},
-  {"CDELT1", "WORLD PIXEL STEP ALONG X",
-	&ddummy, H_EXPO, T_DOUBLE, "%15G"},
-  {"CDELT2", "WORLD PIXEL STEP ALONG Y",
-	&ddummy, H_EXPO, T_DOUBLE, "%15G"},
-  {"CROTA1", "CCW ANGLE FROM X-IMAGE TO X-WORLD",
-	&ddummy, H_EXPO, T_DOUBLE, "%15G"},
-  {"CROTA2", "CCW ANGLE FROM Y-IMAGE TO Y-WORLD",
-	&ddummy, H_EXPO, T_DOUBLE, "%15G"},
   {"FITSFILE", "File name of the analysed image",
 	thecat.image_name, H_STRING, T_STRING, "%-18s"},
   {"FITSEXT ", "FITS Extension number",
