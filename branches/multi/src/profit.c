@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		02/08/2011
+*	Last modified:		06/09/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -271,7 +271,7 @@ INPUT	Pointer to the model structure,
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	02/08/2011
+VERSION	06/09/2011
  ***/
 void	profit_fit(profitstruct *profit, obj2struct *obj2)
   {
@@ -483,7 +483,7 @@ void	profit_fit(profitstruct *profit, obj2struct *obj2)
     }
 
 /* Do measurements on the rasterised model (surface brightnesses) */
-  if (FLAG(obj2.peak_prof))
+  if (FLAG(obj2.fluxeff_prof))
     profit_surface(profit, obj2); 
 
 /* Background offset */
@@ -541,7 +541,7 @@ void	profit_fit(profitstruct *profit, obj2struct *obj2)
 		+ 131.0/(1148175*n*n*n);	/* Ciotti & Bertin 1999 */
       cn = n * prof_gamma(2.0*n) * pow(bn, -2.0*n);
       obj2->prof_spheroid_peak = obj2->prof_spheroid_reff>0.0?
-	obj2->prof_spheroid_flux * profit->pixstep*profit->pixstep
+	obj2->prof_spheroid_flux
 		/ (2.0 * PI * cn
 		* obj2->prof_spheroid_reff*obj2->prof_spheroid_reff
 		* obj2->prof_spheroid_aspect)
@@ -591,7 +591,7 @@ void	profit_fit(profitstruct *profit, obj2struct *obj2)
     if (FLAG(obj2.prof_disk_peak))
       {
       obj2->prof_disk_peak = obj2->prof_disk_scale>0.0?
-	obj2->prof_disk_flux * profit->pixstep*profit->pixstep
+	obj2->prof_disk_flux
 	/ (2.0 * PI * obj2->prof_disk_scale*obj2->prof_disk_scale
 		* obj2->prof_disk_aspect)
 	: 0.0;
@@ -2664,7 +2664,7 @@ INPUT	Pointer to the profile-fitting structure,
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	24/01/2011
+VERSION	06/09/2011
  ***/
 void	 profit_surface(profitstruct *profit, obj2struct *obj2)
   {
@@ -2688,7 +2688,7 @@ void	 profit_surface(profitstruct *profit, obj2struct *obj2)
   scalefac = (float)hdprofit.modnaxisn[0] / (float)profit->modnaxisn[0]
 	/ imsizefac;
   hdprofit.pixstep = profit->pixstep / scalefac;
-  hdprofit.fluxfac = scalefac*scalefac;
+  hdprofit.fluxfac = 1.0/(hdprofit.pixstep*hdprofit.pixstep);
   QCALLOC(hdprofit.modpix, float,npix*sizeof(float));
 
   for (p=0; p<profit->nparam; p++)
@@ -2701,56 +2701,18 @@ void	 profit_surface(profitstruct *profit, obj2struct *obj2)
     lost += flux*profit->prof[p]->lostfluxfrac;
     }
   lostfluxfrac = sum > 0.0? lost / sum : 0.0;
-
 /*
 char filename[256];
+checkstruct *check;
 sprintf(filename, "raster_%02d.fits", the_gal);
 check=initcheck(filename, CHECK_OTHER, 0);
 check->width = hdprofit.modnaxisn[0];
 check->height = hdprofit.modnaxisn[1];
 reinitcheck(the_field, check);
 memcpy(check->pix,hdprofit.modpix,check->npix*sizeof(float));
-
-
-int r,t;
-double ratio,ratio0,ang,ang0, x,x0,y,y0;
-list = profit->paramlist;
-index = profit->paramindex;
-for (p=0; p<nparam; p++)
-param[p] = profit->paraminit[p];
-
-ratio0 = profit->paraminit[index[PARAM_SPHEROID_ASPECT]];
-ang0 = profit->paraminit[index[PARAM_SPHEROID_POSANG]];
-x0 = profit->paraminit[index[PARAM_X]];
-y0 = profit->paraminit[index[PARAM_Y]];
-for (r=0;r<check->height;r++)
-for (t=0; t<check->width;t++)
-{
-//x = (r-10.0)/100.0 + x0;
-//y = (t-10.0)/100.0 + y0;
-ratio = ratio0*exp((r-10.0)/400.0);
-ang = ang0+(t-10.0)/3.0;
-
-for (i=0; i<PARAM_NPARAM; i++)
-{
-//if (list[i] && i==PARAM_X)
-//param[index[i]] = x;
-//if (list[i] && i==PARAM_Y)
-//param[index[i]] = y;
-if (list[i] && i==PARAM_SPHEROID_ASPECT)
-param[index[i]] = ratio;
-if (list[i] && i==PARAM_SPHEROID_POSANG)
-param[index[i]] = ang;
-//if (list[i] && i==PARAM_SPHEROID_REFF)
-//param[index[i]] = profit->paraminit[index[i]]*sqrt(ratio0/ratio);
-}
-profit_residuals(profit, PROFIT_DYNPARAM, param,profit->resi);
-*((float *)check->pix + t + r*check->width) = profit->chi2;
-}
 reendcheck(the_field, check);
 endcheck(check);
 */
-
   if (FLAG(obj2.fluxeff_prof))
     {
 /*-- Sort model pixel values */
@@ -2796,7 +2758,7 @@ endcheck(check);
     free(spix);
     }
 
-/* Compute model peak (overwrites oversampled model!!) */
+/* Compute model peak */
   if (FLAG(obj2.peak_prof))
     {
 /*-- Find position of maximum pixel in current hi-def raster */
@@ -2810,11 +2772,6 @@ endcheck(check);
         imax = i;
         }
     imax = npix-1 - imax;
-/*-- Recompute hi-def model raster without oversampling */
-/*-- and with the same flux correction factor */
-    memset(hdprofit.modpix,0, npix*sizeof(float));
-    for (p=0; p<profit->nprof; p++)
-      prof_add(&hdprofit, profit->prof[p], 1);
     obj2->peak_prof = hdprofit.modpix[imax];
     }
 

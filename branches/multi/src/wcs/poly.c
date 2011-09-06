@@ -7,7 +7,7 @@
 *
 *	This file part of:	AstrOmatic WCS library
 *
-*	Copyright:		(C) 1998-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1998-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -23,7 +23,7 @@
 *	along with AstrOmatic software.
 *	If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		26/10/2010
+*	Last modified:		30/08/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -72,7 +72,7 @@ INPUT   1D array containing the group for each parameter,
 OUTPUT  polystruct pointer.
 NOTES   -.
 AUTHOR  E. Bertin (IAP)
-VERSION 08/03/2003
+VERSION 30/08/2011
  ***/
 polystruct	*poly_init(int *group, int ndim, int *degree, int ngroup)
   {
@@ -81,7 +81,7 @@ polystruct	*poly_init(int *group, int ndim, int *degree, int ngroup)
    char		str[512];
    int		nd[POLY_MAXDIM];
    int		*groupt,
-		d,g,n,num,den;
+		d,g,n, num,den, dmax;
 
   QCALLOC(poly, polystruct, 1);
   if ((poly->ndim=ndim) > POLY_MAXDIM)
@@ -117,15 +117,17 @@ polystruct	*poly_init(int *group, int ndim, int *degree, int ngroup)
   poly->ncoeff = 1;
   for (g=0; g<ngroup; g++)
     {
-    if ((d=poly->degree[g]=*(degree++))>POLY_MAXDEGREE)
+    if ((dmax=poly->degree[g]=*(degree++))>POLY_MAXDEGREE)
       {
       sprintf(str, "The degree of the polynom (%d) exceeds the maximum\n"
 		"allowed one (%d)", poly->degree[g], POLY_MAXDEGREE);
       qerror("*Error*: ", str);
       }
 
-/*-- There are (n+d)!/(n!d!) coeffs per group, that is Prod_(i<=d) (n+i)/i */
-    for (num=den=1, n=nd[g]; d; num*=(n+d), den*=d--);
+/*-- There are (n+d)!/(n!d!) coeffs per group = Prod_(i<=d)(n+i)/Prod_(i<=d)i */
+    n = nd[g];
+    d = dmax>n? n: dmax;
+    for (num=den=1; d; num*=(n+dmax--), den*=d--);
     poly->ncoeff *= num/den;
     }
 
