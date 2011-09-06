@@ -23,7 +23,7 @@
 *	along with AstrOmatic software.
 *	If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		15/07/2011
+*	Last modified:		30/08/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -473,8 +473,8 @@ PURPOSE	Update a FITS header to make it "primary" (not extension)
 INPUT	Table structure.
 OUTPUT	RETURN_OK if tab header was already primary, or RETURN_ERROR otherwise.
 NOTES	-.
-AUTHOR	E. Bertin (IAP & Leiden observatory) C. Marmo (IAP)
-VERSION	11/06/2007
+AUTHOR	E. Bertin (IAP) C. Marmo (IAP)
+VERSION	30/08/2011
  ***/
 int	prim_head(tabstruct *tab)
 
@@ -483,12 +483,13 @@ int	prim_head(tabstruct *tab)
     return RETURN_ERROR;
   if (!strncmp(tab->headbuf, "XTENSION",8))
       {
-      strncpy(tab->headbuf, "SIMPLE  =                    T  "
+      strncpy(tab->headbuf, "SIMPLE  =                    T "
 	"/ This is a FITS file                            ", 80);
-/* fitsverify 4.13 (CFITSIO V3.002) return an error
-   if PCOUNT and GCOUNT are in a primary header (23/05/2007)*/
       removekeywordfrom_head(tab, "PCOUNT");      
       removekeywordfrom_head(tab, "GCOUNT");      
+      removekeywordfrom_head(tab, "TFIELDS");      
+      removekeywordfrom_head(tab, "EXTNAME");      
+      *tab->extname = '\0';
       return RETURN_ERROR;
       }
 
@@ -673,6 +674,7 @@ int	tsizeof(char *str)
    int	n;
    char	*str2;
 
+  str2 = str;
   n = strtol(str, &str2, 10);
   if (str2==str)
     n = 1;

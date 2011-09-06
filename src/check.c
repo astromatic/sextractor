@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		25/03/2011
+*	Last modified:		06/09/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -372,8 +372,8 @@ void	reinitcheck(picstruct *field, checkstruct *check)
       tab->bitpix = BP_FLOAT;
       tab->bytepix = 4;
       tab->bitsgn = 0;
-      tab->naxisn[0] = check->width = field->width;
-      tab->naxisn[1] = check->height = field->height;
+      tab->naxisn[0] = check->width;
+      tab->naxisn[1] = check->height;
       check->npix = check->width*check->height;
       QCALLOC(check->pix, PIXTYPE, check->npix);
       save_head(cat, cat->tab);
