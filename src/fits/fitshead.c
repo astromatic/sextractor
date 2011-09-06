@@ -479,7 +479,7 @@ PURPOSE	Update a FITS header to make it "primary" (not extension)
 INPUT	Table structure.
 OUTPUT	RETURN_OK if tab header was already primary, or RETURN_ERROR otherwise.
 NOTES	-.
-AUTHOR	E. Bertin (IAP & Leiden observatory) C. Marmo (IAP)
+AUTHOR	E. Bertin (IAP) C. Marmo (IAP)
 VERSION	30/08/2011
  ***/
 int	prim_head(tabstruct *tab)
@@ -671,8 +671,8 @@ PURPOSE	Return the size of a binary-table field from its ``TFORM''.
 INPUT	TFORM string (see the FITS documentation).
 OUTPUT	size in bytes, or RETURN_ERROR if the TFORM is unknown.
 NOTES	-.
-AUTHOR	E. Bertin (IAP & Leiden observatory)
-VERSION	28/10/2009
+AUTHOR	E. Bertin (IAP)
+VERSION	10/11/2010
  ***/
 int	tsizeof(char *str)
 
@@ -681,7 +681,8 @@ int	tsizeof(char *str)
    char	*str2;
 
   str2 = str;
-  if (!(n = strtol(str, &str2, 10)))
+  n = strtol(str, &str2, 10);
+  if (str2==str)
     n = 1;
 
   switch ((int)*str2)
