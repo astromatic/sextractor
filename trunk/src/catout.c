@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		19/05/2011
+*	Last modified:		06/09/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -373,9 +373,9 @@ void	updateparamflags()
 			/*| FLAG(obj2.fluxcor_prof) */;
   FLAG(obj2.prof_convmx2) |= FLAG(obj2.prof_convcxx) | FLAG(obj2.prof_conva);
   FLAG(obj2.fluxmean_prof) |= FLAG(obj2.mumean_prof);
-  FLAG(obj2.fluxeff_prof) |= FLAG(obj2.mueff_prof)
-			| FLAG(obj2.fluxmean_prof);
   FLAG(obj2.peak_prof) |= FLAG(obj2.mumax_prof);
+  FLAG(obj2.fluxeff_prof) |= FLAG(obj2.mueff_prof)
+			| FLAG(obj2.fluxmean_prof) | FLAG(obj2.peak_prof);
 
   FLAG(obj2.prof_arms_flux) |= FLAG(obj2.prof_arms_fluxerr)
 			| FLAG(obj2.prof_arms_mag)
