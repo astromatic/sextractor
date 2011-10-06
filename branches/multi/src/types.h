@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		03/08/2011
+*	Last modified:		06/10/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -90,8 +90,10 @@ typedef  enum {WEIGHT_NONE, WEIGHT_FROMBACK, WEIGHT_FROMRMSMAP,
 
 typedef struct
   {
+  int		next;				/* Next obj index */
 /* ---- basic parameters */
   int		number;				/* ID */
+  int		blend;				/* Blend ID */
   int		fdnpix;				/* nb of extracted pix */
   int		dnpix;				/* nb of pix above thresh  */
   int		npix;				/* "" in measured frame */
@@ -133,8 +135,10 @@ typedef struct
   }	objstruct;
 
 /* II: "BLIND" parameters */
-typedef struct
+typedef struct obj2
   {
+  struct obj2	*prevobj2;			/* Previous obj2 in the chain */
+  struct obj2	*nextobj2;			/* Next obj2 in the chain */
 /* ---- basic parameters */
   int		number;				/* ID */
   int		fdnpix;				/* nb of extracted pix */
@@ -152,15 +156,16 @@ typedef struct
 /* ---- astrometric data */
   int		peakx,peaky;			/* pos of brightest pix */
   double       	mx, my;				/* barycenter */
+  int		ix, iy;				/* integer version */
   double	poserr_mx2, poserr_my2,
 		poserr_mxy;			/* Error ellips moments */
 /* ---- morphological data */			
   int		xmin,xmax,ymin,ymax,ycmin,ycmax;/* x,y limits */
   short		flag;				/* extraction flags */
   BYTE		wflag;				/* weighted extraction flags */
-  FLAGTYPE	imaflag[MAXFLAG];		/* flags from FLAG-images */
+  FLAGTYPE	*imaflag;			/* flags from FLAG-images */
   BYTE		singuflag;			/* flags for singularities */
-  int		imanflag[MAXFLAG];     		/* number of MOST flags */
+  int		*imanflag;     			/* number of MOST flags */
   double	mx2,my2,mxy;			/* variances and covariance */
   float		a, b, theta, abcor;		/* moments and angle */
   float		cxx,cyy,cxy;			/* ellipse parameters */
@@ -348,25 +353,8 @@ typedef struct
   float		poserrtheta1950_psf;		/* B1950 error pos. angle */
   float		poserrcxxw_psf, poserrcyyw_psf,
 		poserrcxyw_psf;			/* WORLD error ellipse */
-/* ---- PC-fitting */
-  double	mx2_pc,my2_pc,mxy_pc;		/* PC 2nd-order parameters */
-  float		a_pc,b_pc,theta_pc;		/* PC shape parameters */
-  float		*vector_pc;			/* Principal components */
-  float		gdposang;			/* Gal. disk position angle */
-  float		gdscale;			/* Gal. disk scalelength */
-  float		gdaspect;			/* Gal. disk aspect-ratio */
-  float		gde1,gde2;			/* Gal. disk ellipticities */
-  float		gbratio;			/* Galaxy B/T */
-  float		gbposang;			/* Gal. bulge position angle */
-  float		gbscale;			/* Gal. bulge scalelength */
-  float		gbaspect;			/* Gal. bulge aspect-ratio */
-  float		gbe1,gbe2;			/* Gal. bulge ellipticities */
-  float		flux_galfit;			/* Galaxy tot. flux from fit */
-  float		fluxerr_galfit;			/* RMS error on galfit flux */
-  float		mag_galfit;			/* Galaxy tot. mag from fit */
-  float		magerr_galfit;			/* RMS error on galfit mag */
 /* ---- Profile-fitting */
-  profitstruct	*profit;			/* Model-fitting structure */
+  struct profit	*profit;			/* Model-fitting structure */
   float		*prof_vector;			/* Model parameters */
   float		*prof_errvector;		/* Model parameter errors */
   float		*prof_errmatrix;		/* Model parameter covariances*/
@@ -541,10 +529,12 @@ typedef struct
   float		prof_arms_scaleerrw;		/* RMS error */
   float		prof_arms_posang;		/* Arms true position angle */
   float		prof_arms_posangerr;		/* RMS error */
-//  float		prof_arms_thetaw;		/* WORLD arms position angle */
-//  float		prof_arms_thetas;		/* Sky arms position angle */
-//  float		prof_arms_theta2000;		/* J2000 arms position angle */
-//  float		prof_arms_theta1950;		/* B1950 arms position angle */
+/*
+  float		prof_arms_thetaw;		* WORLD arms position angle *
+  float		prof_arms_thetas;		* Sky arms position angle *
+  float		prof_arms_theta2000;		* J2000 arms position angle *
+  float		prof_arms_theta1950;		* B1950 arms position angle *
+*/
   float		prof_arms_pitch;		/* Arms pitch angle */
   float		prof_arms_pitcherr;		/* RMS error */
   float		prof_arms_start;		/* Arms starting radius */
@@ -557,7 +547,7 @@ typedef struct
   short		ext_number;			/* FITS extension number */
 /* ---- Time ---- */
   float		analtime;			/* Analysis time (s) */
-  float		*keys;				/* Pointer to catalog keys */
+  keystruct	*keys;				/* Pointer to catalog keys */
   }	obj2struct;
 
 /*----------------------------- lists of objects ----------------------------*/
@@ -574,9 +564,9 @@ typedef struct
 typedef struct
   {
   obj2struct	*obj2;			/* pointer to the object array */
-  keystruct	*keys;			/* pointer to the array of keys */
-  int		nobj;			/* number of objects in list */
-  int		nkeys			/* number of keys per obj2 */
+  obj2struct	*freeobj2;		/* pointer to the first free obj2 */
+  int		nobj2;			/* number of objects in list */
+  int		nkeys;			/* number of keys per obj2 */
   }	obj2liststruct;
 
 /*----------------------------- image parameters ----------------------------*/
@@ -657,6 +647,7 @@ typedef struct
   {
   int		ndetect;				/* nb of detections */
   int		ntotal;					/* Total object nb */
+  int		nblend;					/* Number of blends */
   int		nparam;					/* Nb of parameters */
   obj2liststruct	*obj2list;			/* List of objects */
   int		nobj2;					/* Nb of obj2's */

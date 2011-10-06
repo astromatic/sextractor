@@ -22,12 +22,15 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		02/08/2011
+*	Last modified:		06/10/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
 #ifndef _PROFIT_H_
 #define _PROFIT_H_
+#ifndef _PSF_H_
+#include "psf.h"
+#endif
 
 /*-------------------------------- models -----------------------------------*/
 
@@ -145,7 +148,7 @@ typedef struct
   int		kernelnlines;		/* Number of interp kernel lines */
   }	profstruct;
 
-typedef struct
+typedef struct profit
   {
   obj2struct	*obj2;		/* Current object */
   int		nparam;		/* Number of parameters to be fitted */
@@ -200,7 +203,7 @@ typedef struct
 /*----------------------------- Global variables ----------------------------*/
 /*-------------------------------- functions --------------------------------*/
 
-profitstruct	profit_init(picstruct *field, picstruct *wfield,
+profitstruct	*profit_init(picstruct *field, picstruct *wfield,
 			obj2struct *obj2, psfstruct *psf,
 			unsigned int modeltype);
 
@@ -222,6 +225,7 @@ int		profit_boundtounbound(profitstruct *profit,
 			picstruct *wfield, obj2struct *obj2),
 		profit_covarunboundtobound(profitstruct *profit,
 			double *dparam, float *param),
+		profit_fit(profitstruct *profit, obj2struct *obj2),
 		profit_minimize(profitstruct *profit, int niter),
 		prof_moments(profitstruct *profit, profstruct *prof,
 				double *jac),
@@ -236,7 +240,6 @@ int		profit_boundtounbound(profitstruct *profit,
 void		prof_end(profstruct *prof),
 		profit_addparam(profitstruct *profit, paramenum paramindex,
 			float **param),
-		profit_fit(profitstruct *profit, obj2struct *obj2),
 		profit_convmoments(profitstruct *profit, obj2struct *obj2),
 		profit_convolve(profitstruct *profit, float *modpix),
 		profit_end(profitstruct *profit),
@@ -252,9 +255,9 @@ void		prof_end(profstruct *prof),
 		profit_resetparam(profitstruct *profit, paramenum paramtype),
 		profit_resetparams(profitstruct *profit),
 		profit_spread(profitstruct *profit,  picstruct *field,
-			picstruct *wfield, obj2struct *obj2);
+			picstruct *wfield, obj2struct *obj2),
 		profit_submodpix(profitstruct *profitobj,
-			profitstruct *profitmod, float *fac),
+			profitstruct *profitmod, float fac),
 		profit_surface(profitstruct *profit, obj2struct *obj2);
 
 #endif

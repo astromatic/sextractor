@@ -22,11 +22,13 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		18/07/2011
+*	Last modified:		06/10/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
+#ifndef _KEY_H_
 #include "key.h"
+#endif
 
 #ifndef _XML_H_
 #include "xml.h"
@@ -82,8 +84,7 @@
    "BACKGROUND", "BACKGROUND_RMS", "MINIBACKGROUND",
    "MINIBACK_RMS", "-BACKGROUND",
    "FILTERED", "OBJECTS", "APERTURES", "SEGMENTATION", "MASK", "-MASK", "ASSOC",
-   "-OBJECTS", "PSFS", "-PSFS",
-   "PC_CONVPROTOS", "-PC_CONVPROTOS", "PC_PROTOS",  "MAP_SOM",
+   "-OBJECTS", "PSFS", "-PSFS", "MAP_SOM",
 #ifdef USE_MODEL
    "MODELS", "-MODELS", "SPHEROIDS", "-SPHEROIDS",
    "DISKS", "-DISKS", "PATTERNS",
@@ -124,10 +125,11 @@
    {"NONE","BLANK","CORRECT",""}},
   {"MEMORY_BUFSIZE", P_INT, &prefs.mem_bufsize, 8, 65534},
   {"MEMORY_OBJSTACK", P_INT, &prefs.clean_stacksize, 16,65536},
+  {"MEMORY_OBJ2STACK", P_INT, &prefs.obj2_stacksize, 16,65536},
   {"MEMORY_PIXSTACK", P_INT, &prefs.mem_pixstack, 1000, 10000000},
   {"NTHREADS", P_INT, &prefs.nthreads, -THREADS_PREFMAX, THREADS_PREFMAX},
   {"PARAMETERS", P_STRINGLIST, prefs.param, 0,0,0.0,0.0,
-    {""}, 0, MAXIMAGE, &prefs.nparam,
+    {""}, 0, MAXLIST, &prefs.nparam},
   {"PATTERN_TYPE", P_KEY, &prefs.pattern_type, 0,0, 0.0,0.0,
    {"RINGS-QUADPOLE", "RINGS-OCTOPOLE", "RINGS-HARMONIC", "GAUSS-LAGUERRE",
    ""}},
@@ -171,8 +173,7 @@
   {""}
  };
 
-const int	nparam_max = sizeof(key)/sizeof(pkeystruct);
-char		keylist[nparam_max][32];
+char		keylist[sizeof(key)/sizeof(pkeystruct)][32];
 const char	notokstr[] = {" \t=,;\n\r\""};
 
 char *default_prefs[] =
@@ -273,7 +274,8 @@ char *default_prefs[] =
 " ",
 "#--------------------- Memory (change with caution!) -------------------------",
 " ",
-"MEMORY_OBJSTACK  3000           # number of objects in stack",
+"MEMORY_OBJSTACK  3000           # number of objects in 1st object stack",
+"MEMORY_OBJ2STACK  3000           # number of objects in 2nd object stack",
 "MEMORY_PIXSTACK  300000         # number of pixels in stack",
 "MEMORY_BUFSIZE   1024           # number of lines in buffer",
 " ",

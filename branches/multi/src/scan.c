@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		03/08/2011
+*	Last modified:		06/10/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -619,26 +619,14 @@ void	scanimage(picstruct *field, picstruct *dfield, picstruct **pffield,
     if (cfield->stripy==cfield->stripysclim)
       {
       ontotal = 0;
-      for (i=cleanobjlist->nobj; i--;)
+      i = cleanobjlist->nobj;
+      while (i--)
         {
+        if (i>=cleanobjlist->nobj)
+          i = cleanobjlist->nobj - 1;
         cleanobj = cleanobjlist->obj+i;
         if (cleanobj->ycmin <= cfield->ymin)
           {
-/*-------- Warn if there is a possibility for any aperture to be truncated */
-          if ((ymax=cleanobj->ycmax) > cfield->ymax)
-            {
-            sprintf(gstr, "Object at position %.0f,%.0f ",
-		cleanobj->mx+1, cleanobj->my+1);
-            QWARNING(gstr, "may have some apertures truncated:\n"
-		"          You might want to increase MEMORY_BUFSIZE");
-            }
-          else if (ymax>cfield->yblank && prefs.blank_flag)
-            {
-            sprintf(gstr, "Object at position %.0f,%.0f ",
-		cleanobj->mx+1, cleanobj->my+1);
-            QWARNING(gstr, "may have some unBLANKed neighbours:\n"
-		"          You might want to increase MEMORY_PIXSTACK");
-            }
           if ((prefs.prof_flag && !(thecat.ntotal%10)
 		&& thecat.ntotal != ontotal)
 		|| !(thecat.ntotal%400))
@@ -646,9 +634,7 @@ void	scanimage(picstruct *field, picstruct *dfield, picstruct **pffield,
 		"Objects: %8d detected / %8d sextracted\n\33[1A",
 		yl>h? h:yl, thecat.ndetect, thecat.ntotal);
           ontotal = thecat.ntotal;
-          analyse_full(field, dfield, wfield, cdwfield, cleanobjlist, i,
-			NULL, 0);
-          subcleanobj(i);
+          analyse_final(field, dfield, wfield, cdwfield, cleanobjlist, i);
           }
         }
       }
@@ -684,7 +670,7 @@ void	scanimage(picstruct *field, picstruct *dfield, picstruct **pffield,
 
 /* Now that all "detected" pixels have been removed, analyse detections */
   ontotal = 0;
-  for (j=cleanobjlist->nobj; j--;)
+  while (cleanobjlist->nobj)
     {
     if ((prefs.prof_flag && !(thecat.ntotal%10) && thecat.ntotal != ontotal)
 		|| !(thecat.ntotal%400))
@@ -692,8 +678,8 @@ void	scanimage(picstruct *field, picstruct *dfield, picstruct **pffield,
 		"Objects: %8d detected / %8d sextracted\n\33[1A",
 	h, thecat.ndetect, thecat.ntotal);
     ontotal = thecat.ntotal;
-    analyse_full(field, dfield, wfield, cdwfield, cleanobjlist, 0, NULL, 0);
-    subcleanobj(0);
+    analyse_final(field,dfield, wfield,dwfield, cleanobjlist,
+	cleanobjlist->nobj-1);
     }
 
   endclean();
@@ -755,6 +741,7 @@ void  sortit(picstruct *field, picstruct *dfield, picstruct *wfield,
    obj2liststruct	*obj2list;
    static objstruct	obj;
    objstruct		*cobj, *vobj;
+   obj2struct		*obj2, *firstobj2, *prevobj2;
    pliststruct		*pixel;
    int 			i,j,n;
 
@@ -809,6 +796,7 @@ void  sortit(picstruct *field, picstruct *dfield, picstruct *wfield,
       continue; 
     cobj = objlistout->obj + i;
     cobj->number = ++thecat.ndetect;
+    cobj->blend = ++thecat.nblend;
 /*-- Local background */
     cobj->bkg = (float)back(field, (int)(cobj->mx+0.5), (int)(cobj->my+0.5));
     cobj->dbkg = 0.0;
@@ -844,10 +832,10 @@ void  sortit(picstruct *field, picstruct *dfield, picstruct *wfield,
           ymin = cleanobj->ycmax;
           }
 
+      cleanobj = &cleanobjlist->obj[victim];
 /*---- Warn if there is a possibility for any aperture to be truncated */
       if (field->ymax < field->height)
         {
-        cleanobj = &cleanobjlist->obj[victim];
         if ((ymax=cleanobj->ycmax) > field->ymax)
           {
           sprintf(gstr, "Object at position %.0f,%.0f ",
@@ -864,28 +852,7 @@ void  sortit(picstruct *field, picstruct *dfield, picstruct *wfield,
           }
         }
 
-      noverlap = analyse_overlap(cleanobjlist, victim);
-      prevobj2 = NULL;
-      for (j=noverlap; j--)
-        {
-        vobj2 = obj2obj2(vobj, obj2list);
-        vobj2->nextobj2 = NULL;
-        if (prevobj2)
-          {
-          prevobj2->nextobj2 = vobj2;
-          vobj2->prevobj2 = prevobj2;
-          }
-        else
-          {
-          vobj2->prevobj2 = NULL;
-          firstobj2 = vobj2;
-          }
-        prevobj2 = vobj2;
-        nextvictim = vobj->nextobj;
-        subcleanobj(victim);
-        victim = nextvictim;
-        }
-      analyse_group(field, dfield, wfield, dwfield, firstobj2);
+      analyse_final(field,dfield, wfield,dwfield, cleanobjlist, victim);
       }
 
 /* Only add the object if it is not swallowed by cleaning */

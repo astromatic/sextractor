@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		21/06/2011
+*	Last modified:		06/10/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -40,21 +40,20 @@
 #include	"plist.h"
 
 /****** photom_aper **********************************************************
-PROTO	void photom_aper(picstruct *field, picstruct *wfield,
-		objstruct *obj, obj2struct *obj2, int aper)
+PROTO	void photom_aper(picstruct *field, picstruct *wfield, obj2struct *obj2,
+			int aper)
 PURPOSE	Measure the flux within a circular aperture.
 INPUT	Pointer to the image structure,
 	pointer to the weight-map structure,
-	pointer to the object structure,
 	pointer to the obj2 structure,
 	aperture number.
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	21/06/2011
+VERSION	06/10/2011
  ***/
-void  photom_aper(picstruct *field, picstruct *wfield,
-	objstruct *obj, obj2struct *obj2, int aper)
+void  photom_aper(picstruct *field, picstruct *wfield, obj2struct *obj2,
+		int aper)
 
   {
    float		r2, raper,raper2, rintlim,rintlim2,rextlim2,
@@ -70,8 +69,8 @@ void  photom_aper(picstruct *field, picstruct *wfield,
   if (wfield)
     wthresh = wfield->weight_thresh;
   weight = weightt = NULL;
-  mx = obj->mx - obj2->immin[0];
-  my = obj->my - obj2->immin[1];
+  mx = obj2->mx - obj2->immin[0];
+  my = obj2->my - obj2->immin[1];
   w = obj2->imsize[0];
   h = obj2->imsize[1];
   ngamma = field->ngamma;
@@ -102,22 +101,22 @@ void  photom_aper(picstruct *field, picstruct *wfield,
   if (xmin < 0)
     {
     xmin = 0;
-    obj->flag |= OBJ_APERT_PB;
+    obj2->flag |= OBJ_APERT_PB;
     }
   if (xmax > w)
     {
     xmax = w;
-    obj->flag |= OBJ_APERT_PB;
+    obj2->flag |= OBJ_APERT_PB;
     }
   if (ymin < 0)
     {
     ymin = 0;
-    obj->flag |= OBJ_APERT_PB;
+    obj2->flag |= OBJ_APERT_PB;
     }
   if (ymax > h)
     {
     ymax = h;
-    obj->flag |= OBJ_APERT_PB;
+    obj2->flag |= OBJ_APERT_PB;
     }
 
   image = obj2->image;
@@ -190,12 +189,12 @@ void  photom_aper(picstruct *field, picstruct *wfield,
 
   if (pflag)
     {
-    tv = ngamma*(tv-area*exp(obj->dbkg/ngamma));
+    tv = ngamma*(tv-area*exp(obj2->dbkg/ngamma));
     sigtv /= ngamma*ngamma;
     }
   else
     {
-    tv -= area*obj->dbkg;
+    tv -= area*obj2->dbkg;
     if (!gainflag && gain > 0.0 && tv>0.0)
       sigtv += tv/gain;
     }
@@ -215,23 +214,20 @@ void  photom_aper(picstruct *field, picstruct *wfield,
 
 /****** photom_petro *********************************************************
 PROTO	void photom_petro(picstruct *field, picstruct *dfield,
-		picstruct *wfield, picstruct *dwfield,
-		objstruct *obj, obj2struct *obj2)
+		picstruct *wfield, picstruct *dwfield, obj2struct *obj2)
 PURPOSE	Measure the flux within a Petrosian elliptical aperture
 INPUT	Pointer to the image structure,
 	pointer to the detection image structure,
 	pointer to the weight-map structure,
 	pointer to the detection weight-map structure,
-	pointer to the object structure,
 	pointer to the obj2 structure.
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	07/12/2010
+VERSION	06/10/2010
  ***/
 void  photom_petro(picstruct *field, picstruct *dfield,
-	picstruct *wfield, picstruct *dwfield,
-	objstruct *obj, obj2struct *obj2)
+	picstruct *wfield, picstruct *dwfield, obj2struct *obj2)
   {
    double		sigtv, tv, r1, v1,var,gain,backnoise2, muden,munum;
    float		bkg, ngamma, mx,my, dx,dy, cx2,cy2,cxy, r2,
@@ -257,9 +253,9 @@ void  photom_petro(picstruct *field, picstruct *dfield,
   w = obj2->imsize[0];
   h = obj2->imsize[1];
   ngamma = field->ngamma;
-  bkg = (double)obj->dbkg;
-  mx = obj->mx - (float)obj2->immin[0];
-  my = obj->my - (float)obj2->immin[1];
+  bkg = (double)obj2->dbkg;
+  mx = obj2->mx - (float)obj2->immin[0];
+  my = obj2->my - (float)obj2->immin[1];
   var = backnoise2 = field->backsig*field->backsig;
   gain = field->gain;
   pflag = (prefs.detect_type==PHOTO)? 1:0;
@@ -269,11 +265,11 @@ void  photom_petro(picstruct *field, picstruct *dfield,
 /* First step: find the extent of the ellipse (the Petrosian factor) */
 /* Clip boundaries in x and y */
 /* We first check that the search ellipse is large enough... */
-  if (PETRO_NSIG*sqrt(obj->a*obj->b)>prefs.autoaper[0]/2.0)
+  if (PETRO_NSIG*sqrt(obj2->a*obj2->b)>prefs.autoaper[0]/2.0)
     {
-    cx2 = obj->cxx;
-    cy2 = obj->cyy;
-    cxy = obj->cxy;
+    cx2 = obj2->cxx;
+    cy2 = obj2->cyy;
+    cxy = obj2->cxy;
     dxlim = cx2 - cxy*cxy/(4.0*cy2);
     dxlim = dxlim>0.0 ? PETRO_NSIG/sqrt(dxlim) : 0.0;
     dylim = cy2 - cxy*cxy/(4.0*cx2);
@@ -292,22 +288,22 @@ void  photom_petro(picstruct *field, picstruct *dfield,
   if ((xmin = RINT(mx-dxlim)) < 0)
     {
     xmin = 0;
-    obj->flag |= OBJ_APERT_PB;
+    obj2->flag |= OBJ_APERT_PB;
     }
   if ((xmax = RINT(mx+dxlim)+1) > w)
     {
     xmax = w;
-    obj->flag |= OBJ_APERT_PB;
+    obj2->flag |= OBJ_APERT_PB;
     }
   if ((ymin = RINT(my-dylim)) < 0)
     {
     ymin = 0;
-    obj->flag |= OBJ_APERT_PB;
+    obj2->flag |= OBJ_APERT_PB;
     }
   if ((ymax = RINT(my+dylim)+1) > h)
     {
     ymax = h;
-    obj->flag |= OBJ_APERT_PB;
+    obj2->flag |= OBJ_APERT_PB;
     }
 
   dimage = obj2->dimage;
@@ -381,16 +377,16 @@ void  photom_petro(picstruct *field, picstruct *dfield,
 
 /*-- Flag if the Petrosian photometry can be strongly affected by neighhours */
     if ((float)areab/area > CROWD_THRESHOLD)
-      obj->flag |= OBJ_CROWDED;
+      obj2->flag |= OBJ_CROWDED;
 
 /*-- Second step: integrate within the ellipse */
 /*-- Clip boundaries in x and y (bis) */
 /*-- We first check that the derived ellipse is large enough... */
-    if (obj2->petrofactor*sqrt(obj->a*obj->b)>prefs.autoaper[1]/2.0)
+    if (obj2->petrofactor*sqrt(obj2->a*obj2->b)>prefs.autoaper[1]/2.0)
       {
-      cx2 = obj->cxx;
-      cy2 = obj->cyy;
-      cxy = obj->cxy;
+      cx2 = obj2->cxx;
+      cy2 = obj2->cyy;
+      cxy = obj2->cxy;
       dxlim = cx2 - cxy*cxy/(4.0*cy2);
       dxlim = dxlim>0.0 ? obj2->petrofactor/sqrt(dxlim) : 0.0;
       dylim = cy2 - cxy*cxy/(4.0*cx2);
@@ -410,22 +406,22 @@ void  photom_petro(picstruct *field, picstruct *dfield,
     if ((xmin = RINT(mx-dxlim)) < 0)
       {
       xmin = 0;
-      obj->flag |= OBJ_APERT_PB;
+      obj2->flag |= OBJ_APERT_PB;
       }
     if ((xmax = RINT(mx+dxlim)+1) > w)
       {
       xmax = w;
-      obj->flag |= OBJ_APERT_PB;
+      obj2->flag |= OBJ_APERT_PB;
       }
     if ((ymin = RINT(my-dylim)) < 0)
       {
       ymin = 0;
-      obj->flag |= OBJ_APERT_PB;
+      obj2->flag |= OBJ_APERT_PB;
       }
     if ((ymax = RINT(my+dylim)+1) > w)
       {
       ymax = w;
-      obj->flag |= OBJ_APERT_PB;
+      obj2->flag |= OBJ_APERT_PB;
       }
 
     area = areab = 0;
@@ -486,7 +482,7 @@ void  photom_petro(picstruct *field, picstruct *dfield,
 
 /*-- Flag if the Petrosian photometry can be strongly affected by neighhours */
     if ((float)areab > CROWD_THRESHOLD*area)
-      obj->flag |= OBJ_CROWDED;
+      obj2->flag |= OBJ_CROWDED;
 
     if (pflag)
       {
@@ -525,23 +521,20 @@ void  photom_petro(picstruct *field, picstruct *dfield,
 
 /****** photom_auto*********************************************************
 PROTO	void photom_auto(picstruct *field, picstruct *dfield,
-		picstruct *wfield, picstruct *dwfield,
-		objstruct *obj, obj2struct *obj2)
+		picstruct *wfield, picstruct *dwfield, obj2struct *obj2)
 PURPOSE	Measure the flux within a Kron elliptical aperture
 INPUT	Pointer to the image structure,
 	pointer to the detection image structure,
 	pointer to the weight-map structure,
 	pointer to the detection weight-map structure,
-	pointer to the object structure,
 	pointer to the obj2 structure.
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	21/06/2011
+VERSION	06/10/2011
  ***/
 void  photom_auto(picstruct *field, picstruct *dfield,
-	picstruct *wfield, picstruct *dwfield,
-	objstruct *obj, obj2struct *obj2)
+	picstruct *wfield, picstruct *dwfield, obj2struct *obj2)
 
   {
    double		sigtv, tv, r1, v1,var,gain,backnoise2;
@@ -567,9 +560,9 @@ void  photom_auto(picstruct *field, picstruct *dfield,
   w = obj2->imsize[0];
   h = obj2->imsize[1];
   ngamma = field->ngamma;
-  bkg = (double)obj->dbkg;
-  mx = obj->mx - (float)obj2->immin[0];
-  my = obj->my - (float)obj2->immin[1];
+  bkg = (double)obj2->dbkg;
+  mx = obj2->mx - (float)obj2->immin[0];
+  my = obj2->my - (float)obj2->immin[1];
   var = backnoise2 = field->backsig*field->backsig;
   gain = field->gain;
   pflag = (prefs.detect_type==PHOTO)? 1:0;
@@ -579,11 +572,11 @@ void  photom_auto(picstruct *field, picstruct *dfield,
 /* First step: find the extent of the ellipse (the kron factor r1) */
 /* Clip boundaries in x and y */
 /* We first check that the search ellipse is large enough... */
-  if (KRON_NSIG*sqrt(obj->a*obj->b)>prefs.autoaper[0]/2.0)
+  if (KRON_NSIG*sqrt(obj2->a*obj2->b)>prefs.autoaper[0]/2.0)
     {
-    cx2 = obj->cxx;
-    cy2 = obj->cyy;
-    cxy = obj->cxy;
+    cx2 = obj2->cxx;
+    cy2 = obj2->cyy;
+    cxy = obj2->cxy;
     dxlim = cx2 - cxy*cxy/(4.0*cy2);
     dxlim = dxlim>0.0 ? KRON_NSIG/sqrt(dxlim) : 0.0;
     dylim = cy2 - cxy*cxy/(4.0*cx2);
@@ -602,22 +595,22 @@ void  photom_auto(picstruct *field, picstruct *dfield,
   if ((xmin = RINT(mx-dxlim)) < 0)
     {
     xmin = 0;
-    obj->flag |= OBJ_APERT_PB;
+    obj2->flag |= OBJ_APERT_PB;
     }
   if ((xmax = RINT(mx+dxlim)+1) > w)
     {
     xmax = w;
-    obj->flag |= OBJ_APERT_PB;
+    obj2->flag |= OBJ_APERT_PB;
     }
   if ((ymin = RINT(my-dylim)) < 0)
     {
     ymin = 0;
-    obj->flag |= OBJ_APERT_PB;
+    obj2->flag |= OBJ_APERT_PB;
     }
   if ((ymax = RINT(my+dylim)+1) > h)
     {
     ymax = h;
-    obj->flag |= OBJ_APERT_PB;
+    obj2->flag |= OBJ_APERT_PB;
     }
 
   v1 = r1 = 0.0;
@@ -663,16 +656,16 @@ void  photom_auto(picstruct *field, picstruct *dfield,
 
 /*-- Flag if the Kron photometry can be strongly affected by neighhours */
     if ((float)areab/area > CROWD_THRESHOLD)
-      obj->flag |= OBJ_CROWDED;
+      obj2->flag |= OBJ_CROWDED;
 
 /*-- Second step: integrate within the ellipse */
 /*-- Clip boundaries in x and y (bis) */
 /*-- We first check that the derived ellipse is large enough... */
-    if (obj2->kronfactor*sqrt(obj->a*obj->b)>prefs.autoaper[1]/2.0)
+    if (obj2->kronfactor*sqrt(obj2->a*obj2->b)>prefs.autoaper[1]/2.0)
       {
-      cx2 = obj->cxx;
-      cy2 = obj->cyy;
-      cxy = obj->cxy;
+      cx2 = obj2->cxx;
+      cy2 = obj2->cyy;
+      cxy = obj2->cxy;
       dxlim = cx2 - cxy*cxy/(4.0*cy2);
       dxlim = dxlim>0.0 ? obj2->kronfactor/sqrt(dxlim) : 0.0;
       dylim = cy2 - cxy*cxy/(4.0*cx2);
@@ -692,22 +685,22 @@ void  photom_auto(picstruct *field, picstruct *dfield,
     if ((xmin = RINT(mx-dxlim)) < 0)
       {
       xmin = 0;
-      obj->flag |= OBJ_APERT_PB;
+      obj2->flag |= OBJ_APERT_PB;
       }
     if ((xmax = RINT(mx+dxlim)+1) > w)
       {
       xmax = w;
-      obj->flag |= OBJ_APERT_PB;
+      obj2->flag |= OBJ_APERT_PB;
       }
     if ((ymin = RINT(my-dylim)) < 0)
       {
       ymin = 0;
-      obj->flag |= OBJ_APERT_PB;
+      obj2->flag |= OBJ_APERT_PB;
       }
     if ((ymax = RINT(my+dylim)+1) > h)
       {
       ymax = h;
-      obj->flag |= OBJ_APERT_PB;
+      obj2->flag |= OBJ_APERT_PB;
       }
 
     area = areab = 0;
@@ -768,7 +761,7 @@ void  photom_auto(picstruct *field, picstruct *dfield,
 
 /*-- Flag if the Kron photometry can be strongly affected by neighhours */
     if ((float)areab > CROWD_THRESHOLD*area)
-      obj->flag |= OBJ_CROWDED;
+      obj2->flag |= OBJ_CROWDED;
 
     if (pflag)
       {
@@ -808,39 +801,38 @@ void  photom_auto(picstruct *field, picstruct *dfield,
 
 
 /****** photom_isocor ********************************************************
-PROTO	void photom_isocor(picstruct *field, objstruct *obj, obj2struct *obj2)
+PROTO	void photom_isocor(picstruct *field, obj2struct *obj2)
 PURPOSE	Correct isophotal flux as in Maddox et al. 1990.
 INPUT	Pointer to the image structure,
-	pointer to the object structure,
 	pointer to the obj2 structure.
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	07/12/2010
+VERSION	06/10/2011
  ***/
-void  photom_isocor(picstruct *field, objstruct *obj, obj2struct *obj2)
+void  photom_isocor(picstruct *field, obj2struct *obj2)
   {
    double	ati;
 
-  ati = (obj->flux>0.0)? (obj->fdnpix*obj->dthresh/obj->flux) : 0.0;
+  ati = (obj2->flux>0.0)? (obj2->fdnpix*obj2->dthresh/obj2->flux) : 0.0;
   if (ati>1.0)
     ati = 1.0;
   else if (ati<0.0)
     ati = 0.0;
-  obj2->flux_isocor = obj->flux/(1.0-0.196099*ati-0.751208*ati*ati);
+  obj2->flux_isocor = obj2->flux/(1.0-0.196099*ati-0.751208*ati*ati);
   if (FLAG(obj2.fluxerr_isocor))
     {
-    if (obj->flux>0.0)
+    if (obj2->flux>0.0)
       {
        double	dati, sigtv;
 
-      sigtv = obj->fluxerr/(obj->flux*obj->flux);
-      dati = obj->fdnpix?ati*sqrt(sigtv+1.0/obj->fdnpix): 0.0;
+      sigtv = obj2->fluxerr/(obj2->flux*obj2->flux);
+      dati = obj2->fdnpix?ati*sqrt(sigtv+1.0/obj2->fdnpix): 0.0;
       dati = 0.196099*dati + 0.751208*2*ati*dati;
-      obj2->fluxerr_isocor = sqrt(sigtv+dati*dati)*obj->flux;
+      obj2->fluxerr_isocor = sqrt(sigtv+dati*dati)*obj2->flux;
       }
     else
-      obj2->fluxerr_isocor = sqrt(obj->fluxerr);
+      obj2->fluxerr_isocor = sqrt(obj2->fluxerr);
     }
 
   return;
@@ -848,17 +840,16 @@ void  photom_isocor(picstruct *field, objstruct *obj, obj2struct *obj2)
 
 
 /****** photom_mags *********************************************************
-PROTO	void photom_mags(picstruct *field, objstruct *obj, obj2struct *obj2)
+PROTO	void photom_mags(picstruct *field, obj2struct *obj2)
 PURPOSE	Compute magnitudes from flux measurements.
 INPUT	Pointer to the image structure,
-	pointer to the object structure,
 	pointer to the obj2 structure.
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	07/12/2010
+VERSION	06/10/2011
  ***/
-void	photom_mags(picstruct *field, objstruct *obj, obj2struct *obj2)
+void	photom_mags(picstruct *field, obj2struct *obj2)
   {
 /* Mag. isophotal */
   if (FLAG(obj2.mag_iso))
@@ -884,7 +875,7 @@ void	photom_mags(picstruct *field, objstruct *obj, obj2struct *obj2)
 
   if (FLAG(obj2.flux_best))
     {
-    if (obj->flag&OBJ_CROWDED)
+    if (obj2->flag&OBJ_CROWDED)
       {
       obj2->flux_best = obj2->flux_isocor;
       obj2->fluxerr_best = obj2->fluxerr_isocor;
@@ -1073,28 +1064,19 @@ void	photom_mags(picstruct *field, objstruct *obj, obj2struct *obj2)
     obj2->magerr_win = obj2->flux_win>0.0?
 			 1.086*obj2->fluxerr_win/obj2->flux_win
 			:99.0;
-/* Mag. GALFIT */
-  if (FLAG(obj2.mag_galfit))
-    obj2->mag_galfit = obj2->flux_galfit>0.0?
-			 -2.5*log10(obj2->flux_galfit) + prefs.mag_zeropoint
-			:99.0;
-  if (FLAG(obj2.magerr_galfit))
-    obj2->magerr_galfit = obj2->flux_galfit>0.0?
-			 1.086*obj2->fluxerr_galfit/obj2->flux_galfit
-			:99.0;
 
 /* Other surface brightnesses */
   if (FLAG(obj2.maxmu))
-    outobj2.maxmu = obj->peak > 0.0 ?
-		-2.5*log10((obj->peak)
+    obj2->maxmu = obj2->peak > 0.0 ?
+		-2.5*log10((obj2->peak)
 		 / (prefs.pixel_scale? field->pixscale*field->pixscale
 				: obj2->pixscale2 * 3600.0*3600.0))
 		+ prefs.mag_zeropoint
 		: 99.0;
 
   if (FLAG(obj2.threshmu))
-    obj2->threshmu = obj->thresh > 0.0 ?
-		-2.5*log10((obj->thresh)
+    obj2->threshmu = obj2->thresh > 0.0 ?
+		-2.5*log10((obj2->thresh)
 		 / (prefs.pixel_scale? field->pixscale*field->pixscale
 				: obj2->pixscale2 * 3600.0*3600.0))
 		+ prefs.mag_zeropoint

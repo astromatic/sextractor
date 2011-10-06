@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		03/08/2011
+*	Last modified:		06/10/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -62,7 +62,6 @@ keystruct	objkey[] = {
   {"MAGERR_ISOCOR", "RMS error for corrected isophotal magnitude",
 	&flagobj2.magerr_isocor, H_FLOAT, T_FLOAT, "%8.4f", "mag",
 	"stat.stdev;phot.mag", "mag"},
-
   {"FLUX_APER", "Flux vector within fixed circular aperture(s)",
 	&flagobj2.flux_aper, H_FLOAT, T_FLOAT, "%12.7g", "count",
 	"phot.flux", "ct", 1, &prefs.flux_apersize},
@@ -637,10 +636,10 @@ keystruct	objkey[] = {
 	&flagobj2.win_flag, H_INT, T_SHORT, "%3d", "",
 	"meta.code.qual", ""},
    {"IMAFLAGS_ISO", "FLAG-image flags OR'ed over the iso. profile",
-	flagobj.imaflag, H_INT, T_LONG, "%9u", "",
+	&flagobj.imaflag, H_INT, T_LONG, "%9u", "",
 	"meta.code.qual", "", 1, &prefs.imaflag_size},
   {"NIMAFLAGS_ISO", "Number of flagged pixels entering IMAFLAGS_ISO",
-	flagobj.imanflag, H_INT, T_LONG, "%9d", "",
+	&flagobj.imanflag, H_INT, T_LONG, "%9d", "",
 	"meta.number", "", 1, &prefs.imanflag_size},
   {"NLOWWEIGHT_ISO", "Nb of pixels with low weight over the iso. profile",
 	&flagobj.nzwpix, H_INT, T_LONG, "%9d", "",

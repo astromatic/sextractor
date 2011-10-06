@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		07/12/2010
+*	Last modified:		06/10/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -46,14 +46,13 @@ One must have:	APER_OVERSAMP >= 1
 
 /*------------------------------- functions ---------------------------------*/
 extern void	photom_aper(picstruct *field, picstruct *wfield,
-			objstruct *obj, obj2struct *obj2, int aper),
+			obj2struct *obj2, int aper),
 		photom_auto(picstruct *field, picstruct *dfield,
 			picstruct *wfield, picstruct *dwfield,
-			objstruct *obj, obj2struct *obj2),
-		photom_isocor(picstruct *field,
-			objstruct *obj, obj2struct *obj2),
-		photom_mags(picstruct *field, objstruct *obj, obj2struct *obj2),
+			obj2struct *obj2),
+		photom_isocor(picstruct *field, obj2struct *obj2),
+		photom_mags(picstruct *field, obj2struct *obj2),
 		photom_petro(picstruct *field, picstruct *dfield,
 			picstruct *wfield, picstruct *dwfield,
-			objstruct *obj, obj2struct *obj2);
+			obj2struct *obj2);
 

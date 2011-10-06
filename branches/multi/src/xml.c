@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		18/07/2011
+*	Last modified:		06/10/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -232,7 +232,7 @@ INPUT	Pointer to the output file (or stream),
 OUTPUT	RETURN_OK if everything went fine, RETURN_ERROR otherwise.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	18/07/2011
+VERSION	06/10/2011
  ***/
 int	write_xml_meta(FILE *file, char *error)
   {
@@ -481,7 +481,7 @@ int	write_xml_meta(FILE *file, char *error)
     fprintf(file,
 	"   <PARAM name=\"Parameters\" datatype=\"char\" arraysize=\"*\""
 	" ucd=\"obs.param;meta.file\" value=\"%s\"/>\n",
-	prefs.param_nparam? prefs.param_name[0] : "");
+	prefs.nparam? prefs.param[0] : "");
 
     for (n=1; n<prefs.nparam; n++)
       fprintf(file, ",%s", prefs.param[n]);

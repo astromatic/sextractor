@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		27/07/2011
+*	Last modified:		06/10/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -40,12 +40,13 @@
 /*----------------------------- Internal constants --------------------------*/
 
 #define	MAXCHARL	16384		/* max. nb of chars in a string list */
-#define	MAXLIST		64		/* max. nb of list members */
+#define	MAXLIST		2048		/* max. nb of list members */
 #define	MAXLISTSIZE	2000000		/* max size of list */
 
 /* NOTES:
 One must have:	MAXLIST >= 1 (preferably >= 16!)
 */
+
 /*------------------------------- preferences -------------------------------*/
 typedef struct
   {
@@ -57,7 +58,7 @@ typedef struct
   char		cat_name[MAXCHAR];			/* catalog filename*/
   char		head_suffix[MAXCHAR];			/* ext. header suffix */
 /*----- catalog output */
-  char		*(param_name[nparam_max]);		/* catalog parameters */
+  char		*(param[MAXLIST]);			/* catalog parameters*/
   int		nparam;					/* nb of params */
 /*----- thresholding */
   double	dthresh[2];				/* detect. threshold */
@@ -141,7 +142,8 @@ typedef struct
   enum	{GLOBAL, LOCAL}			pback_type;	/* phot. bkgnd type */
   int		pback_size;				/* rect. ann. width */
 /*----- memory */
-  int		clean_stacksize;			/* size of buffer */
+  int		clean_stacksize;			/* obj buffer size*/
+  int		obj2_stacksize;				/* obj2 buffer size*/
   int		mem_pixstack;				/* pixel stack size */
   int		mem_bufsize;				/* strip height */
 /*----- miscellaneous */
@@ -228,8 +230,6 @@ typedef struct
   int		psf_fluxerrsize;			/* nb of params */
   int		psf_magsize;				/* nb of params */
   int		psf_magerrsize;				/* nb of params */
-  int		pc_flag;				/* PC-fit needed */
-  int		pc_vectorsize;				/* nb of params */
   int		prof_flag;				/* Profile-fitting */
   int		pattern_flag;				/* Pattern-fitting */
 /*----- Profile-fitting */
@@ -253,7 +253,6 @@ typedef struct
   }	prefstruct;
 
 prefstruct	prefs;
-extern int	nparam_max;
 
 /*-------------------------------- protos -----------------------------------*/
 extern char	*list_to_str(char *listname);

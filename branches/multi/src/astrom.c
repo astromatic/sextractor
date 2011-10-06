@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		17/06/2011
+*	Last modified:		06/10/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -183,17 +183,16 @@ void	astrom_pos(picstruct *field, obj2struct *obj2)
 
 
 /******* astrom_peakpos ******************************************************
-PROTO	void astrom_pos(picstruct *field, objstruct *obj, obj2struct *obj2)
+PROTO	void astrom_pos(picstruct *field, obj2struct *obj2)
 PURPOSE Compute FOCAL and WORLD coordinates from peak measurements.
 INPUT   Measurement field pointer,
-	objstruct pointer,
 	obj2struct pointer.
 OUTPUT  -.
 NOTES   -.
 AUTHOR  E. Bertin (IAP)
-VERSION 17/06/2011
+VERSION 06/10/2011
  ***/
-void	astrom_peakpos(picstruct *field, objstruct *obj, obj2struct *obj2)
+void	astrom_peakpos(picstruct *field, obj2struct *obj2)
 
   {
    wcsstruct	*wcs;
@@ -206,16 +205,16 @@ void	astrom_peakpos(picstruct *field, objstruct *obj, obj2struct *obj2)
 
   if (FLAG(obj2.peakxf))
     {
-    rawpos[0] = obj->peakx;
-    rawpos[1] = obj->peaky;
+    rawpos[0] = obj2->peakx;
+    rawpos[1] = obj2->peaky;
     raw_to_red(wcs, rawpos, wcspos);
     obj2->peakxf = wcspos[0];
     obj2->peakyf = wcspos[1];
     }
   if (FLAG(obj2.peakxw))
     {
-    rawpos[0] = obj->peakx;
-    rawpos[1] = obj->peaky;
+    rawpos[0] = obj2->peakx;
+    rawpos[1] = obj2->peaky;
     raw_to_wcs(wcs, rawpos, wcspos);
     obj2->peakxw = wcspos[0];
     obj2->peakyw = wcspos[1];
@@ -428,18 +427,16 @@ void	astrom_profpos(picstruct *field, obj2struct *obj2)
 
 
 /******* astrom_shapeparam ***************************************************
-PROTO	void astrom_shapeparam(picstruct *field, objstruct *obj,
-			obj2struct *obj2)
+PROTO	void astrom_shapeparam(picstruct *field, obj2struct *obj2)
 PURPOSE Compute basic shape parameters in WORLD and SKY coordinates.
 INPUT   Measurement field pointer,
-	objstruct pointer,
 	obj2struct pointer.
 OUTPUT  -.
 NOTES   -.
 AUTHOR  E. Bertin (IAP)
-VERSION 17/06/2011
+VERSION 06/10/2011
  ***/
-void	astrom_shapeparam(picstruct *field, objstruct *obj, obj2struct *obj2)
+void	astrom_shapeparam(picstruct *field, obj2struct *obj2)
   {
    wcsstruct	*wcs;
    double	dx2,dy2,dxy, xm2,ym2,xym, temp,pm2, lm0,lm1,lm2,lm3;
@@ -461,9 +458,9 @@ void	astrom_shapeparam(picstruct *field, objstruct *obj, obj2struct *obj2)
 
 
 /* All WORLD params based on 2nd order moments have to pass through here */
-  dx2 = obj->mx2;
-  dy2 = obj->my2;
-  dxy = obj->mxy;
+  dx2 = obj2->mx2;
+  dy2 = obj2->my2;
+  dxy = obj2->mxy;
   obj2->mx2w = xm2 = lm0*lm0*dx2 + lm1*lm1*dy2 + lm0*lm1*dxy;
   obj2->my2w = ym2 = lm2*lm2*dx2 + lm3*lm3*dy2 + lm2*lm3*dxy;
   obj2->mxyw = xym = lm0*lm2*dx2 + lm1*lm3*dy2 + (lm0*lm3+lm1*lm2)*dxy;
@@ -597,18 +594,16 @@ void	astrom_winshapeparam(picstruct *field, obj2struct *obj2)
 
 
 /******* astrom_errparam *****************************************************
-PROTO	void astrom_errparam(picstruct *field, objstruct *obj,
-			obj2struct *obj2)
+PROTO	void astrom_errparam(picstruct *field, obj2struct *obj2)
 PURPOSE Compute error ellipse parameters in WORLD and SKY coordinates.
 INPUT   Measurement field pointer,
-	objstruct pointer,
 	obj2struct pointer.
 OUTPUT  -.
 NOTES   -.
 AUTHOR  E. Bertin (IAP)
-VERSION 17/06/2011
+VERSION 06/10/2011
  ***/
-void	astrom_errparam(picstruct *field, objstruct *obj, obj2struct *obj2)
+void	astrom_errparam(picstruct *field, obj2struct *obj2)
   {
    wcsstruct	*wcs;
    double	dx2,dy2,dxy, xm2,ym2,xym, temp,pm2, lm0,lm1,lm2,lm3;
@@ -629,9 +624,9 @@ void	astrom_errparam(picstruct *field, objstruct *obj, obj2struct *obj2)
   lm3 = obj2->jacob[lat+naxis*lat];
 
 /* All WORLD params based on 2nd order moments have to pass through here */
-  dx2 = obj->poserr_mx2;
-  dy2 = obj->poserr_my2;
-  dxy = obj->poserr_mxy;
+  dx2 = obj2->poserr_mx2;
+  dy2 = obj2->poserr_my2;
+  dxy = obj2->poserr_mxy;
   obj2->poserr_mx2w = xm2 = lm0*lm0*dx2 + lm1*lm1*dy2 + lm0*lm1*dxy;
   obj2->poserr_my2w = ym2 = lm2*lm2*dx2 + lm3*lm3*dy2 + lm2*lm3*dxy;
   obj2->poserr_mxyw = xym = lm0*lm2*dx2 + lm1*lm3*dy2 + (lm0*lm3+lm1*lm2)*dxy;

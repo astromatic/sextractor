@@ -7,7 +7,7 @@
 *
 *	This file part of:	AstrOmatic FITS/LDAC library
 *
-*	Copyright:		(C) 1995-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1995-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -23,7 +23,7 @@
 *	along with AstrOmatic software.
 *	If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		15/07/2011
+*	Last modified:		09/10/2010
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -397,12 +397,13 @@ INPUT	Pointer to the table.
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP & Leiden observatory)
-VERSION	15/07/2011
+VERSION	28/02/2000
  ***/
 void	free_tab(tabstruct *tab)
 
   {
   free_body(tab);
+  free(tab->naxisn);
   free(tab->headbuf);
   free(tab->compress_buf);
   remove_keys(tab);
@@ -420,7 +421,7 @@ OUTPUT	A pointer to the new table.
 NOTES	A defaut header is also created.
 	No links are initialized.
 AUTHOR	E. Bertin (IAP & Leiden observatory)
-VERSION	15/07/2011
+VERSION	25/04/97
  ***/
 tabstruct	*new_tab(char *tabname)
 
@@ -444,6 +445,7 @@ tabstruct	*new_tab(char *tabname)
   strcpy(tab->xtension, "BINTABLE");
   strcpy(tab->extname, tabname);
   tab->naxis = 2;
+  QCALLOC(tab->naxisn, int, tab->naxis);
   tab->bitpix = 8;
   tab->bytepix = 1;
   tab->pcount = 0;

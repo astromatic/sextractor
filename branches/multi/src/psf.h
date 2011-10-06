@@ -22,10 +22,12 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		21/06/2011
+*	Last modified:		06/10/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
+#ifndef _PSF_H_
+#define _PSF_H_
 /*----------------------------- Internal constants --------------------------*/
 
 #define	PSF_MAXSHIFT	20.0	/* Max shift from initial guess (pixels)*/
@@ -34,7 +36,6 @@
 #define PSF_NA		3	/* Number of fitted parameters per component */
 #define PSF_NTOT	(PSF_NA*PSF_NPSFMAX)	/* Number of fitted parameters*/
 #define PSF_DOUBLETOT   ((PSF_NA+1)*PSF_NPSFMAX)/* Nb of fitted parameters */
-#define	PC_NITER	1	/* Maximum number of iterations in PC fit */
 
 /* NOTES:
 One must have:	PSF_MAXSHIFT > 0.0
@@ -43,34 +44,6 @@ One must have:	PSF_MAXSHIFT > 0.0
 */
 
 /*--------------------------- structure definitions -------------------------*/
-
-typedef struct code
-  {
-  float		*pc;
-  float		**param;
-  int		*parammod;
-  int		ncode;
-  int		nparam;
-  }		codestruct;
-
-typedef struct pc
-  {
-  char		name[MAXCHAR];	/* PC filename */
-  int		npc;		/* Number of Principal Components */
-  int		maskdim;	/* Dimensionality of the tabulated data */
-  int		*masksize;	/* PC mask dimensions */
-  int		masknpix;	/* Total number of involved PC pixels */
-  float		*maskcomp; 	/* Convolved pix data (principal components) */
-  int		omaskdim;	/* Dimensionality of the tabulated data */
-  int		*omasksize;	/* PC mask dimensions */
-  int		omasknpix;	/* Total number of involved PC pixels */
-  float		*omaskcomp; 	/* Original pix data (principal components) */
-  float		*maskcurr;	/* Current model */
-  float		*mx2,*my2,*mxy;	/* 2nd order moments for each component */
-  float		*flux;		/* Flux of each component */
-  float		*bt;		/* B/T for each component */
-  codestruct	*code;
-  }	pcstruct;
 
 typedef struct psf
   {
@@ -86,7 +59,6 @@ typedef struct psf
   double	*contextoffset;	/* Offset to apply to context data */
   double	*contextscale;	/* Scaling to apply to context data */
   struct poly	*poly;		/* Polynom describing the PSF variations */
-  pcstruct	*pc;		/* PC components */
   double	fwhm;		/* Typical PSF FWHM */
   float		pixstep;	/* PSF sampling step */
   int		build_flag;	/* Set if the current PSF has been computed */
@@ -117,7 +89,7 @@ extern void	compute_pos(int *pnpsf,int *pconvflag,int *pnpsfflag,
 		compute_pos_phot(int *pnpsf,double *sol,double *flux),
 		compute_poserr(int j,double *var,double *sol,obj2struct *obj2,
 			double *x2, double *y2,double *xy, int npsf),
-		psf_build(psfstruct *psf),
+		psf_build(psfstruct *psf, obj2struct *obj2),
 		psf_end(psfstruct *psf, psfitstruct *psfit),
 		psf_init(psfstruct *psf),
 		svdfit(double *a, float *b, int m, int n, double *sol,
@@ -129,20 +101,15 @@ extern double	*compute_gradient (float *weight,int width, int height,
 			double *mat),
 		*compute_gradient_phot(float *weight,int width, int height,
 			float *masks, double *pm),
-		psf_fwhm(psfstruct *psf);
+		psf_fwhm(psfstruct *psf, obj2struct *obj2);
 
 extern psfstruct	*psf_load(char *filename);
 
-extern void	pc_end(pcstruct *pc),
-		pc_fit(psfstruct *psf, float *data, float *weight,
-		int width, int height, int ix, int iy, float dx, float dy,
-		int npc, float backrms),
-		double_psf_fit(psfstruct *psf, picstruct *field,
-			picstruct *wfield, objstruct *obj, obj2struct *obj2,
+extern void	double_psf_fit(psfstruct *psf, picstruct *field,
+			picstruct *wfield, obj2struct *obj2,
 			psfstruct *dpsf, picstruct *dfield, picstruct *dwfield),
 		psf_fit(psfstruct *psf, picstruct *field, picstruct *wfield,
-		objstruct *obj, obj2struct *obj2),
+		obj2struct *obj2),
 		psf_readcontext(psfstruct *psf, picstruct *field);
 
-extern pcstruct	*pc_load(catstruct *cat);
-
+#endif

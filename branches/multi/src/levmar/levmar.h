@@ -62,7 +62,7 @@
  * Bellow, this option is turned on only when not compiling with OpenMP.
  */
 #if !defined(_OPENMP) 
-#define LINSOLVERS_RETAIN_MEMORY /* comment this if you don't want routines in Axb.c retain working memory between calls */
+/* #define LINSOLVERS_RETAIN_MEMORY comment this if you don't want routines in Axb.c retain working memory between calls */
 #endif
 
 /* determine the precision variants to be build. Default settings build

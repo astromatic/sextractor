@@ -7,7 +7,7 @@
 *
 *	This file part of:	AstrOmatic FITS/LDAC library
 *
-*	Copyright:		(C) 1995-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1995-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -23,7 +23,7 @@
 *	along with AstrOmatic software.
 *	If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		15/07/2011
+*	Last modified:		02/12/2010
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -36,8 +36,6 @@
 
 #define	MAXCHARS	256	/* max. number of characters */
 #define WARNING_NMAX	1000	/* max. number of recorded warnings */
-#define	KEY_NAXIS	6	/* max. number of dimensions for key data */
-#define	TAB_NAXIS	6	/* max. number of dimensions for key data */
 
 /*---------------------------- return messages ------------------------------*/
 
@@ -133,7 +131,7 @@ typedef struct structkey
   char		voucd[80];		/* VO ucd */
   char		vounit[80];		/* VO unit */
   int		naxis;			/* number of dimensions */
-  int		naxisn[KEY_NAXIS];	/* array of sizes per dimension */
+  int		*naxisn;		/* pointer to an array of dim. */
   int		nobj;			/* number of objects */
   int		nbytes;			/* number of bytes per element */
   long		pos;			/* position within file */
