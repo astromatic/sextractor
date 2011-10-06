@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		12/01/2011
+*	Last modified:		03/10/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -41,7 +41,6 @@ typedef struct structassoc
   int		ncol;			/* Total number of columns per row */
   int		ndata;			/* Number of retained cols per row */
   int		*hash;			/* Pointer to the hash table */
-  double	*data;			/* Copy of current parameters */
   double	radius;			/* Radius of search for association */
   }             assocstruct;
 
@@ -49,7 +48,7 @@ typedef struct structassoc
 
 assocstruct	*load_assoc(char *filename, wcsstruct *wcs);
 
-int		do_assoc(picstruct *field, double x, double y);
+int		do_assoc(picstruct *field, double x, double y, double *data);
 
 void		init_assoc(picstruct *field),
 		end_assoc(picstruct *field),

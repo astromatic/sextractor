@@ -22,21 +22,30 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		26/07/2011
+*	Last modified:		06/10/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
 /*----------------------------- Internal constants --------------------------*/
 
 #define	ANALYSE_NMULTITER	4	/* number of multi-model iterations */
+
 /*--------------------------------- typedefs --------------------------------*/
 
 /*------------------------------ Prototypes ---------------------------------*/
 
+obj2struct	*analyse_obj2obj2(picstruct *field, picstruct *dfield,
+			picstruct *wfield, picstruct *dwfield,
+			objstruct *obj, obj2liststruct *obj2list);
+int		analyse_overlapness(objliststruct *objlist, objstruct *fobj);
+
 void		analyse_full(picstruct *field, picstruct *dfield,
 			picstruct *wfield, picstruct *dwfield,
-			objliststruct *objlist, int n,
-			obj2liststruct *obj2list, int n2),
+			obj2struct *obj2),
+		analyse_group(picstruct *field, picstruct *dfield,
+			picstruct *wfield, picstruct *dwfield,
+			obj2struct *obj2),
 		analyse_iso(picstruct *field, picstruct *dfield,
 			objliststruct *objlist, int n);
+		
 

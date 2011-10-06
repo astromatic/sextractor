@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		26/07/2011
+*	Last modified:		06/10/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -48,9 +48,9 @@ INPUT	Picture structure pointer,
 OUTPUT  -.
 NOTES   obj2->mx and obj2->my are taken as initial centroid guesses.
 AUTHOR  E. Bertin (IAP)
-VERSION 26/07/2011
+VERSION 06/10/2011
  ***/
-void	compute_winpos(picstruct *field, picstruct *wfield, objstruct *obj,
+void	compute_winpos(picstruct *field, picstruct *wfield,
 			obj2struct *obj2)
 
   {
@@ -266,9 +266,9 @@ void	compute_winpos(picstruct *field, picstruct *wfield, objstruct *obj,
 /*--- Negative values: revert to isophotal estimates */
     if (FLAG(obj2.winposerr_mx2))
       {
-      obj2->winposerr_mx2 = obj->poserr_mx2;
-      obj2->winposerr_my2 = obj->poserr_my2;
-      obj2->winposerr_mxy = obj->poserr_mxy;
+      obj2->winposerr_mx2 = obj2->poserr_mx2;
+      obj2->winposerr_my2 = obj2->poserr_my2;
+      obj2->winposerr_mxy = obj2->poserr_mxy;
       if (FLAG(obj2.winposerr_a))
         {
         obj2->winposerr_a = obj2->poserr_a;
@@ -284,21 +284,21 @@ void	compute_winpos(picstruct *field, picstruct *wfield, objstruct *obj,
       }
     if (momentflag)
       {
-      obj2->win_mx2 = obj->mx2;
-      obj2->win_my2 = obj->my2;
-      obj2->win_mxy = obj->mxy;
+      obj2->win_mx2 = obj2->mx2;
+      obj2->win_my2 = obj2->my2;
+      obj2->win_mxy = obj2->mxy;
       if (FLAG(obj2.win_cxx))
         {
-        obj2->win_cxx = obj->cxx;
-        obj2->win_cyy = obj->cyy;
-        obj2->win_cxy = obj->cxy;
+        obj2->win_cxx = obj2->cxx;
+        obj2->win_cyy = obj2->cyy;
+        obj2->win_cxy = obj2->cxy;
         }
       if (FLAG(obj2.win_a))
         {
-        obj2->win_a = obj->a;
-        obj2->win_b = obj->b;
+        obj2->win_a = obj2->a;
+        obj2->win_b = obj2->b;
         obj2->win_polar = obj2->polar;
-        obj2->win_theta = obj->theta;
+        obj2->win_theta = obj2->theta;
         }
       }
     }

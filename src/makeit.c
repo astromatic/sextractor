@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		27/07/2011
+*	Last modified:		06/10/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -58,7 +58,6 @@
 
 static int		selectext(char *filename);
 time_t			thetimet, thetimet2;
-extern profitstruct	*theprofit,*thepprofit,*theqprofit;
 extern char		profname[][32];
 double			dtime;
 
@@ -69,6 +68,7 @@ Manage the whole stuff.
 void	makeit()
 
   {
+   profitstruct		*profit;
    checkstruct		*check;
    picstruct		*dfield, *field,*pffield[MAXFLAG], *wfield,*dwfield;
    catstruct		*imacat;
@@ -77,8 +77,8 @@ void	makeit()
    static time_t        thetime1, thetime2;
    struct tm		*tm;
    int			nflag[MAXFLAG], nparam2[2],
-			i, nok, ntab, next, ntabmax, forcextflag,
-			nima0,nima1, nweight0,nweight1, npat;
+			i,t, nok, ntab, next, ntabmax, forcextflag,
+			nima0,nima1, nweight0,nweight1, npat, nmodels;
 
 /* Install error logging */
   error_installfunc(write_error);
@@ -105,7 +105,8 @@ void	makeit()
   initglob();
 
   NFPRINTF(OUTPUT, "Setting catalog parameters");
-  thecat.outobj2list = catout_readparams(prefs.param);
+  thecat.obj2list = catout_readparams(prefs.param, prefs.nparam,
+					prefs.obj2_stacksize);
   useprefs();			/* update things accor. to prefs parameters */
 
   if (prefs.psf_flag)
@@ -134,9 +135,17 @@ void	makeit()
 	|(FLAG(obj2.prof_disk_flux)? MODEL_EXPONENTIAL : MODEL_NONE)
 	|(FLAG(obj2.prof_bar_flux)? MODEL_BAR : MODEL_NONE)
 	|(FLAG(obj2.prof_arms_flux)? MODEL_ARMS : MODEL_NONE);
-    catout_changeparamsize("VECTOR_MODEL", &theprofit->nparam, 1);
-    catout_changeparamsize("VECTOR_MODELERR", &theprofit->nparam, 1);
-    nparam2[0] = nparam2[1] = theprofit->nparam;
+
+/*-- Setup a minimum profit structure for component names and number of params*/
+    QCALLOC(profit, profitstruct, 1);
+    QMALLOC(profit->prof, profstruct *, MODEL_NMAX);
+    nmodels = 0;
+    for (t=1; t<(1<<MODEL_NMAX); t<<=1)
+      if (prefs.prof_modelflags&t)
+        profit->prof[nmodels++] = prof_init(profit, t);
+    catout_changeparamsize("VECTOR_MODEL", &profit->nparam, 1);
+    catout_changeparamsize("VECTOR_MODELERR", &profit->nparam, 1);
+    nparam2[0] = nparam2[1] = profit->nparam;
     catout_changeparamsize("MATRIX_MODELERR", nparam2, 2);
     if (prefs.pattern_flag)
       {
@@ -147,7 +156,7 @@ void	makeit()
         npat = prefs.prof_disk_patternargvectorsize;
 /*---- Do a copy of the original number of pattern components */
       prefs.prof_disk_patternncomp = npat;
-      pattern = pattern_init(theprofit, prefs.pattern_type, npat);
+      pattern = pattern_init(profit, prefs.pattern_type, npat);
       if (FLAG(obj2.prof_disk_patternvector))
         {
         npat = pattern->size[2];
@@ -166,16 +175,14 @@ void	makeit()
       pattern_end(pattern);
       }
     QPRINTF(OUTPUT, "Fitting model: ");
-    for (i=0; i<theprofit->nprof; i++)
+    for (i=0; i<profit->nprof; i++)
       {
       if (i)
         QPRINTF(OUTPUT, "+");
-      QPRINTF(OUTPUT, "%s", theprofit->prof[i]->name);
+      QPRINTF(OUTPUT, "%s", profit->prof[i]->name);
       }
     QPRINTF(OUTPUT, "\n");
-    if (FLAG(obj2.prof_concentration)|FLAG(obj2.prof_concentration))
-      thepprofit = profit_init(thepsf, MODEL_DIRAC);
-      theqprofit = profit_init(thepsf, MODEL_EXPONENTIAL);
+    profit_end(profit);
 #else
     error(EXIT_FAILURE,
 		"*Error*: model-fitting is not supported in this build.\n",
@@ -538,15 +545,7 @@ void	makeit()
 
 #ifdef USE_MODEL
   if (prefs.prof_flag)
-    {
-    profit_end(theprofit);
-    if (FLAG(obj2.prof_concentration)|FLAG(obj2.prof_concentration))
-      {
-      profit_end(thepprofit);
-      profit_end(theqprofit);
-      }
     fft_end();
-    }
 #endif
 
   if (prefs.psf_flag)

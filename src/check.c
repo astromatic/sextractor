@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		06/09/2011
+*	Last modified:		06/10/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -256,9 +256,6 @@ void	reinitcheck(picstruct *field, checkstruct *check)
     case CHECK_APERTURES:
     case CHECK_PSFPROTOS:
     case CHECK_SUBPSFPROTOS:
-    case CHECK_PCPROTOS:
-    case CHECK_SUBPCPROTOS:
-    case CHECK_PCOPROTOS:
     case CHECK_PROFILES:
     case CHECK_SUBPROFILES:
     case CHECK_SPHEROIDS:
@@ -395,7 +392,6 @@ void	writecheck(checkstruct *check, PIXTYPE *data, int w)
 
   {
   if (check->type == CHECK_APERTURES || check->type == CHECK_SUBPSFPROTOS
-	|| check->type == CHECK_SUBPCPROTOS || check->type == CHECK_PCOPROTOS
 	|| check->type == CHECK_SUBPROFILES || check->type == CHECK_SUBSPHEROIDS
 	|| check->type == CHECK_SUBDISKS || check->type == CHECK_OTHER)
     {
@@ -469,9 +465,6 @@ void	reendcheck(picstruct *field, checkstruct *check)
     case CHECK_APERTURES:
     case CHECK_PSFPROTOS:
     case CHECK_SUBPSFPROTOS:
-    case CHECK_PCPROTOS:
-    case CHECK_SUBPCPROTOS:
-    case CHECK_PCOPROTOS:
     case CHECK_PROFILES:
     case CHECK_SUBPROFILES:
     case CHECK_SPHEROIDS:

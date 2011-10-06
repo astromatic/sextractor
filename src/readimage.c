@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		25/03/2010
+*	Last modified:		06/10/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -121,8 +121,6 @@ void	*loadstrip(picstruct *field, picstruct *wfield)
               writecheck(check, data, w);
             if ((check = prefs.check[CHECK_SUBPSFPROTOS]))
               writecheck(check, data, w);
-            if ((check = prefs.check[CHECK_SUBPCPROTOS]))
-              writecheck(check, data, w);
             if ((check = prefs.check[CHECK_SUBPROFILES]))
               writecheck(check, data, w);
             if ((check = prefs.check[CHECK_SUBSPHEROIDS]))
@@ -199,8 +197,6 @@ void	*loadstrip(picstruct *field, picstruct *wfield)
           if ((check = prefs.check[CHECK_APERTURES]))
             writecheck(check, data, w);
           if ((check = prefs.check[CHECK_SUBPSFPROTOS]))
-            writecheck(check, data, w);
-          if ((check = prefs.check[CHECK_SUBPCPROTOS]))
             writecheck(check, data, w);
           if ((check = prefs.check[CHECK_SUBPROFILES]))
             writecheck(check, data, w);

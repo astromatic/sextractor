@@ -137,7 +137,7 @@ int AX_EQ_B_QR(LM_REAL *A, LM_REAL *B, LM_REAL *x, int m)
 __STATIC__ LM_REAL *buf=NULL;
 __STATIC__ int buf_sz=0;
 
-static int nb=0; /* no __STATIC__ decl. here! */
+__STATIC__ int nb=0;
 
 LM_REAL *a, *tau, *r, *work;
 int a_sz, tau_sz, r_sz, tot_sz;
@@ -297,7 +297,7 @@ int AX_EQ_B_QRLS(LM_REAL *A, LM_REAL *B, LM_REAL *x, int m, int n)
 __STATIC__ LM_REAL *buf=NULL;
 __STATIC__ int buf_sz=0;
 
-static int nb=0; /* no __STATIC__ decl. here! */
+__STATIC__ int nb=0;
 
 LM_REAL *a, *tau, *r, *work;
 int a_sz, tau_sz, r_sz, tot_sz;

@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		06/09/2011
+*	Last modified:		06/10/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -62,20 +62,18 @@ INPUT	Array of pointers to strings containing the measurement parameters,
 OUTPUT	Pointer to the allocated obj2list.
 NOTES	Requires access to the objtab and objkey static pointers.
 AUTHOR	E. Bertin (IAP)
-VERSION	03/08/2011
+VERSION	06/10/2011
  ***/
 obj2liststruct	*catout_readparams(char **paramlist, int nparam, int nobj2)
   {
    obj2liststruct	*obj2list;
+   obj2struct		*obj2, *prevobj2;
    keystruct		*key, *tabkey;
    char			*keyword, *str;
-   int			i,k,o, size, nkeys;
+   int			i,k,o,p, size, nkeys;
 
 /* Prepare the OBJECTS tables*/
   objtab = new_tab("OBJECTS");
-
-  if ((infile = fopen(filename,"r")) == NULL)
-    error(EXIT_FAILURE, "*ERROR*: can't read ", filename);
 
 /* Scan the catalog config file*/
   nkeys = 0;
@@ -103,7 +101,7 @@ obj2liststruct	*catout_readparams(char **paramlist, int nparam, int nobj2)
             if (i>=key->naxis)
               error(EXIT_FAILURE, "*Error*: too many dimensions for keyword ",
 		keyword);
-            if (!(size*=(key->naxisn[i]=atoi(sstr))))
+            if (!(size*=(key->naxisn[i]=atoi(str))))
               error(EXIT_FAILURE, "*Error*: wrong array syntax for keyword ",
 		keyword);
             }
@@ -118,15 +116,22 @@ obj2liststruct	*catout_readparams(char **paramlist, int nparam, int nobj2)
 
 /* Allocate memory for the obj2list */
   QMALLOC(obj2list, obj2liststruct, 1);
-  obj2list->nobj = nobj2;
+  obj2list->nobj2 = nobj2;
   obj2list->nkeys = nkeys;
-  QMALLOC(obj2list->obj2, obj2struct, nobj2);
+  QCALLOC(obj2list->obj2, obj2struct, nobj2);
 
 /* Create key arrays for the catalog buffer, with the right pointers */
-  if (nkeys)
-    for (o=0; o<nobj2; o++)
+/* And initialize the free obj2 linked list */
+  obj2list->freeobj2 = obj2list->obj2;
+  prevobj2 = NULL;
+  for (o=0; o<nobj2; o++)
+    {
+    obj2 = &obj2list->obj2[o];
+    obj2->prevobj2 = prevobj2;
+    if (prevobj2)
+      prevobj2->nextobj2 = obj2;
+    if (nkeys)
       {
-      obj2 = obj2list->obj2[o];
       QMALLOC(obj2->keys, keystruct, nkeys);
       key = obj2->keys;
       tabkey = objtab->key;
@@ -135,13 +140,14 @@ obj2liststruct	*catout_readparams(char **paramlist, int nparam, int nobj2)
         *key = *tabkey;
         key->prevkey = key-1;
         key->nextkey = key+1;
-        key->ptr = (void *)&obj2 + (tabkey->ptr - (void *)&flagobj2);
+        key->ptr = (void *)obj2 + (tabkey->ptr - (void *)&flagobj2);
         tabkey = tabkey->nextkey;
         }
       obj2->keys[0].prevkey = obj2->keys + nkeys-1;
       obj2->keys[nkeys-1].nextkey = obj2->keys;
       }
-
+    prevobj2 = obj2;
+    }
 
   catout_updateparamflags();
 
@@ -158,7 +164,7 @@ INPUT	keyword string,
 OUTPUT	-.
 NOTES	Requires access to the objkey static pointer.
 AUTHOR	E. Bertin (IAP)
-VERSION	18/07/2011
+VERSION	06/10/2011
  ***/
 void	catout_changeparamsize(char *keyword, int *axisn, int naxis)
   {
@@ -176,6 +182,7 @@ void	catout_changeparamsize(char *keyword, int *axisn, int naxis)
         size *= (key->naxisn[i]=axisn[i]);
       key->nbytes = size;
       }
+    }
 
   return;
   }
@@ -188,37 +195,35 @@ INPUT	Pointer to the obj2list.
 OUTPUT	-.
 NOTES	Requires access to the objkey static pointer.
 AUTHOR	E. Bertin (IAP)
-VERSION	03/08/2011
+VERSION	06/10/2011
  ***/
 void	catout_allocparams(obj2liststruct *obj2list)
   {
    keystruct	*key;
-   int		i;
+   char		**ptr;
+   int		k,o, nobj2;
 
-  nobj2 = obj2list->nobj;
+  nobj2 = obj2list->nobj2;
 
 /* Allocate arrays for multidimensional measurement parameters */
 /* Note that they do not need to be selected for catalog output */
   for (key=objkey; *key->name; key++)
-    if (key->naxis && (*((char *)key->ptr))
+    if (key->naxis && *((char *)key->ptr))
       {
       for (o=0; o<nobj2; o++)
         {
-        ptr = (char **)&obj2list->obj2[o]+(char **)(key->ptr-(void *)&flagobj2);
-        QMALLOC(*((char **)ptr, char, key->nbytes);
+        ptr = (char **)(&obj2list->obj2[o]) + (key->ptr-(void *)&flagobj2);
+        QMALLOC(*((char **)ptr), char, key->nbytes);
         }
       }
 
 /* Set the data pointers in keys */
   for (o=0; o<nobj2; o++)
     {
-    keys = obj2list->obj2[o]->keys;
-    for (k=0; k<nkeys; k++)
-      {
-      key = keys[k];
-      if (key.allocflag)
-        key.ptr = *((char **)key.ptr);
-      }
+    key = obj2list->obj2[o].keys;
+    for (k=obj2list->nkeys; k--; key++)
+      if (key->allocflag)
+        key->ptr = *((char **)key->ptr);
     }
 
   return;
@@ -237,18 +242,19 @@ VERSION	18/07/2011
 void	catout_freeparams(obj2liststruct *obj2list)
   {
    keystruct	*key;
-   int		i;
+   char		**ptr;
+   int		k,o, nobj2;
 
-  nobj2 = obj2list->nobj;
+  nobj2 = obj2list->nobj2;
 
 /* Allocate arrays for multidimensional measurement parameters */
   for (key=objkey; *key->name; key++)
-    if (key->naxis && (*((char *)key->ptr))
+    if (key->naxis && *((char *)key->ptr))
       {
       for (o=0; o<nobj2; o++)
         {
-        ptr = (char **)&obj2list->obj2[o]+(char **)(key->ptr-(void *)&flagobj2);
-        free(*((char **)ptr);
+        ptr = (char **)&obj2list->obj2[o] + (key->ptr-(void *)&flagobj2);
+        free(*((char **)ptr));
         }
       }
 
@@ -263,7 +269,7 @@ INPUT	Pointer to the obj2list.
 OUTPUT	-.
 NOTES	Requires access to the flagobj2 static pointer.
 AUTHOR	E. Bertin (IAP)
-VERSION	06/09/2011
+VERSION	06/10/2011
  ***/
 void	catout_updateparamflags(void)
 
@@ -671,9 +677,6 @@ void	catout_updateparamflags(void)
   FLAG(obj2.flux_aper) |= FLAG(obj2.mag_aper)|FLAG(obj2.magerr_aper)
 			    | FLAG(obj2.fluxerr_aper);
 
-  FLAG(obj2.flux_galfit) |= FLAG(obj2.mag_galfit) | FLAG(obj2.magerr_galfit)
-			    | FLAG(obj2.fluxerr_galfit);
-
 /*---------------------------- External flags -------------------------------*/
   VECFLAG(obj.imaflag) |= VECFLAG(obj.imanflag);
 
@@ -712,21 +715,11 @@ void	catout_updateparamflags(void)
 
   FLAG(obj2.fluxerr_psf) |= FLAG(obj2.poserrmx2_psf) | FLAG(obj2.magerr_psf);
 
-  FLAG(obj2.mx2_pc) |= FLAG(obj2.my2_pc) | FLAG(obj2.mxy_pc)
-			| FLAG(obj2.a_pc) | FLAG(obj2.b_pc)
-			| FLAG(obj2.theta_pc) | FLAG(obj2.vector_pc)
-			| FLAG(obj2.gdposang) | FLAG(obj2.gdscale)
-			| FLAG(obj2.gdaspect) | FLAG(obj2.flux_galfit)
-			| FLAG(obj2.gde1) | FLAG(obj2.gde2)
-			| FLAG(obj2.gbposang) | FLAG(obj2.gbscale)
-			| FLAG(obj2.gbaspect) | FLAG(obj2.gbratio);
-
   FLAG(obj2.flux_psf) |= FLAG(obj2.mag_psf) | FLAG(obj2.x_psf)
 			| FLAG(obj2.y_psf) | FLAG(obj2.xw_psf)
 			| FLAG(obj2.fluxerr_psf)
 			| FLAG(obj2.niter_psf)
-			| FLAG(obj2.chi2_psf)
-			| FLAG(obj2.mx2_pc);
+			| FLAG(obj2.chi2_psf);
 
 /*-------------------------------- Others -----------------------------------*/
   FLAG(obj.fwhm) |= FLAG(obj2.fwhmw);
@@ -773,7 +766,7 @@ INPUT	-.
 OUTPUT	-.
 NOTES	Requires access to global prefs and the objkey static pointer.
 AUTHOR	E. Bertin (IAP)
-VERSION	18/07/2011
+VERSION	06/10/2011
  ***/
 void	catout_init(void)
   {
@@ -823,7 +816,7 @@ void	catout_init(void)
     else if (prefs.cat_type == ASCII_VO && objtab->key) 
       {
       write_xml_header(ascfile);
-      write_vo_fields(ascfile);
+      catout_writevofields(ascfile);
       fprintf(ascfile, "   <DATA><TABLEDATA>\n");
       }
     }
@@ -958,6 +951,7 @@ void	catout_initext(picstruct *field)
         key->nobj = 1;
         key->nbytes = 80*(fitsfind(key->ptr, "END     ")+1);
         key->naxis = 2;
+        QMALLOC(key->naxisn, int, key->naxis);
         key->naxisn[0] = 80;
         key->naxisn[1] = key->nbytes/80;
         add_key(key, tab, 0);
@@ -985,6 +979,7 @@ void	catout_initext(picstruct *field)
         key->nobj = fitsfind(key->ptr, "END     ")+1;
         key->nbytes = 80;
         key->naxis = 1;
+        QMALLOC(key->naxisn, int, key->naxis);
         key->naxisn[0] = 80;
         add_key(key, tab, 0);
         save_tab(fitscat, tab);
@@ -1015,13 +1010,13 @@ void	catout_initext(picstruct *field)
 
 
 /****** catout_writeobj ******************************************************
-PROTO	void	catout_writeobj(objstruct *obj, obj2struct *obj2)
+PROTO	void	catout_writeobj(obj2struct *obj2)
 PURPOSE	Write one object in the output catalog.
 INPUT	Pointer to the current obj2 structure.
 OUTPUT	-.
 NOTES	Requires access to global prefs and the objtab static pointer.
 AUTHOR	E. Bertin (IAP)
-VERSION	18/07/2011
+VERSION	03/10/2011
  ***/
 void	catout_writeobj(obj2struct *obj2)
   {
@@ -1132,7 +1127,7 @@ INPUT	Error message character string (or NULL if no error).
 OUTPUT	-.
 NOTES	Requires access to global prefs and the objtab static pointer.
 AUTHOR	E. Bertin (IAP)
-VERSION	18/07/2011
+VERSION	06/10/2011
  ***/
 void	catout_end(char *error)
   {
@@ -1189,8 +1184,7 @@ void	catout_end(char *error)
   catout_freeparams(obj2list);
   if (obj2list->nkeys)
     for (o=0; o<obj2list->nobj2; o++)
-      free(obj2list->keys[o]);
-  free(obj2list->keys);
+      free(obj2list->obj2[o].keys);
   free(obj2list->obj2);
   free(obj2list);
   objtab->key = NULL;

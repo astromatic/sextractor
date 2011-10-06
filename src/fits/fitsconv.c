@@ -7,7 +7,7 @@
 *
 *	This file part of:	AstrOmatic FITS/LDAC library
 *
-*	Copyright:		(C) 1995-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1995-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -23,7 +23,7 @@
 *	along with AstrOmatic software.
 *	If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		15/07/2011
+*	Last modified:		09/10/2010
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -51,8 +51,8 @@ OUTPUT	RETURN_OK if the ASCII table was transformed, and RETURN_ERROR
 	otherwise.
 NOTES	This function can be used to stick the binary translation of
         similar ASCII tables.
-AUTHOR	E. Bertin (IAP)
-VERSION	15/07/2011
+AUTHOR	E. Bertin (IAP & Leiden observatory)
+VERSION	25/09/2004
  ***/
 tabstruct *asc2bin_tab(catstruct *catin, char *tabinname, catstruct *catout,
 		char *taboutname)
@@ -111,6 +111,7 @@ tabstruct *asc2bin_tab(catstruct *catin, char *tabinname, catstruct *catout,
       if (htype==H_STRING)
         {
         key->naxis = 1;
+        QMALLOC(key->naxisn, int, 1);
         key->naxisn[0] = 32;
         key->nbytes *= key->naxisn[0];
         }

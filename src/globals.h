@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		18/07/2011
+*	Last modified:		03/10/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -68,7 +68,7 @@ extern void	allocparcelout(void),
 			double, double, PIXTYPE, int),
 		sexmove(double, double),
 		useprefs(void),
-		write_error(char *msg1, char *msg2),
+		write_error(char *msg1, char *msg2);
 
 extern double	counter_seconds(void);
 

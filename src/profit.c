@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		06/09/2011
+*	Last modified:		06/10/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -74,6 +74,8 @@ const int	flux_flag[PARAM_NPARAM] = {0,
 					1,0,0
 					};
 
+int	the_gal;
+
 /****** profit_init ***********************************************************
 PROTO	profitstruct profit_init(picstruct *field, picstruct *wfield,
 		obj2struct *obj2, psfstruct *psf, unsigned int modeltype)
@@ -86,12 +88,13 @@ INPUT	Pointer to the field,
 OUTPUT	A pointer to an allocated profit structure.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	02/08/2011
+VERSION	06/10/2011
  ***/
 profitstruct	*profit_init(picstruct *field, picstruct *wfield,
 		obj2struct *obj2, psfstruct *psf, unsigned int modeltype)
   {
    profitstruct		*profit;
+   double		psf_fwhm;
    int			t, nmodels;
 
   QCALLOC(profit, profitstruct, 1);
@@ -227,7 +230,7 @@ INPUT	Pointer to the model structure,
 OUTPUT	Number of minimization iterations (0 in case of error).
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	02/08/2011
+VERSION	06/10/2011
  ***/
 int	profit_fit(profitstruct *profit, obj2struct *obj2)
   {
@@ -271,9 +274,9 @@ INPUT	Pointer to the model structure,
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	06/09/2011
+VERSION	06/10/2011
  ***/
-void	profit_fit(profitstruct *profit, obj2struct *obj2)
+void	profit_measure(profitstruct *profit, obj2struct *obj2)
   {
     profitstruct	*pprofit, *qprofit;
     patternstruct	*pattern;
@@ -720,8 +723,8 @@ void	profit_spread(profitstruct *profit,  picstruct *field,
    float	dchi2;
    int		p;
 
-  pprofit = profit_init(field, wfield, obj2, obj2->psf, MODEL_DIRAC);
-  qprofit = profit_init(field, wfield, obj2, obj2->psf, MODEL_EXPONENTIAL);
+  pprofit = profit_init(field, wfield, obj2, profit->psf, MODEL_DIRAC);
+  qprofit = profit_init(field, wfield, obj2, profit->psf, MODEL_EXPONENTIAL);
 
   fft_reset();
   profit_residuals(profit, PROFIT_DYNPARAM, profit->paraminit, profit->resi);
@@ -1103,7 +1106,7 @@ INPUT	Profile-fitting structure.
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	07/07/2010
+VERSION	06/10/2010
  ***/
 void	profit_psf(profitstruct *profit)
   {
@@ -1114,7 +1117,7 @@ void	profit_psf(profitstruct *profit)
    int		d,i;
 
   psf = profit->psf;
-  psf_build(psf);
+  psf_build(psf, profit->obj2);
 
   xcout = (float)(profit->modnaxisn[0]/2) + 1.0;	/* FITS convention */
   ycout = (float)(profit->modnaxisn[1]/2) + 1.0;	/* FITS convention */
@@ -1215,12 +1218,12 @@ INPUT	Number of fitted parameters,
 OUTPUT	-.
 NOTES	Input arguments are there only for compatibility purposes (unused)
 AUTHOR	E. Bertin (IAP)
-VERSION	26/07/2011
+VERSION	06/10/2011
  ***/
 void	profit_printout(int n_par, float* par, int m_dat, float* fvec,
 		void *data, int iflag, int iter, int nfev )
   {
-   fieldstruct	*field;
+   picstruct	*field;
    checkstruct	*check;
    profitstruct	*profit;
    char		filename[256];
@@ -2121,7 +2124,7 @@ int	profit_copyobjpix(profitstruct *profit, picstruct *field,
 
 /****** profit_submodpix *****************************************************
 PROTO	void	profit_submodpix(profitstruct *profitobj,
-			profitstruct *profitmod, float *fac)
+			profitstruct *profitmod, float fac)
 PURPOSE	Subtract a rasterized model from the objpix of another model structure.
 INPUT	Pointer to the model structure containing the object pixels,
 	Pointer to the model structure containing the model raster,
@@ -2129,19 +2132,16 @@ INPUT	Pointer to the model structure containing the object pixels,
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	02/08/2011
+VERSION	06/10/2011
  ***/
 void	profit_submodpix(profitstruct *profitobj, profitstruct *profitmod,
-			float *fac)
+			float fac)
   {
    float	dx, dy2, dr2, rad2;
    PIXTYPE	*pixin,*spixin, *pixout,
 		pix,spix;
    int		i,x,y, xmin,xmax,ymin,ymax, w,h,dw, npix, off, gainflag,
 		badflag, sflag, sx,sy,sn, ix,iy, win,hin;
-
-/* First put the image background to -BIG */
-  pixout = profit->objpix;
 
 /* Don't go further if out of frame!! */
   win = profitmod->objnaxisn[0];
@@ -2165,7 +2165,7 @@ void	profit_submodpix(profitstruct *profitobj, profitstruct *profitmod,
   if (ymin<0)
     {
     off = (-ymin-1)/sn + 1;
-    pixout += off*profit->objnaxisn[0];
+    pixout += off*profitobj->objnaxisn[0];
     ymin += off*sn;
     }
   if (ymax>hin)
@@ -2184,7 +2184,6 @@ void	profit_submodpix(profitstruct *profitobj, profitstruct *profitmod,
     {
     off = (-xmin-1)/sn + 1;
     pixout += off;
-    wpixout += off;
     dw += off;
     xmin += off*sn;
     }
@@ -2217,20 +2216,21 @@ void	profit_submodpix(profitstruct *profitobj, profitstruct *profitmod,
         *(pixout++) -= fac*pix;
         }
       }
-    else
-      for (y=ymin; y<ymax; y++, pixout+=dw)
+    }
+  else
+    for (y=ymin; y<ymax; y++, pixout+=dw)
+      {
+      dy2 = y-iy;
+      dy2 *= dy2;
+      pixin = profitmod->lmodpix + xmin + y*win;
+      for (x=xmin; x<xmax; x++)
         {
-        dy2 = y-iy;
-        dy2 *= dy2;
-        pixin = profitmod->lmodpix + xmin + y*win;
-        for (x=xmin; x<xmax; x++)
-          {
-          dx = x-ix;
-          dr2 = dy2 + dx*dx;
-          *(pixout++) -= fac**(pixin++);
-          }
+        dx = x-ix;
+        dr2 = dy2 + dx*dx;
+        *(pixout++) -= fac**(pixin++);
         }
- 
+      }
+
   return;
   }
 

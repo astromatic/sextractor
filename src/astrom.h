@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		17/06/2011
+*	Last modified:		06/10/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -36,10 +36,8 @@
 
 /*------------------------------- structures --------------------------------*/
 /*------------------------------- functions ---------------------------------*/
-extern void		astrom_errparam(picstruct *field, objstruct *obj,
-					obj2struct *obj2),
-			astrom_peakpos(picstruct *field, objstruct *obj,
-					obj2struct *obj2),
+extern void		astrom_errparam(picstruct *field, obj2struct *obj2),
+			astrom_peakpos(picstruct *field, obj2struct *obj2),
 			astrom_pos(picstruct *field, obj2struct *obj2),
 			astrom_proferrparam(picstruct *field, obj2struct *obj2),
 			astrom_profpos(picstruct *field, obj2struct *obj2),
@@ -47,8 +45,7 @@ extern void		astrom_errparam(picstruct *field, objstruct *obj,
 					obj2struct *obj2),
 			astrom_psferrparam(picstruct *field, obj2struct *obj2),
 			astrom_psfpos(picstruct *field, obj2struct *obj2),
-			astrom_shapeparam(picstruct *field, objstruct *obj,
-					obj2struct *obj2),
+			astrom_shapeparam(picstruct *field, obj2struct *obj2),
 			astrom_winerrparam(picstruct *field, obj2struct *obj2),
 			astrom_winpos(picstruct *field, obj2struct *obj2),
 			astrom_winshapeparam(picstruct *field, obj2struct *obj2),

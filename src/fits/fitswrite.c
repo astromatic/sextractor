@@ -7,7 +7,7 @@
 *
 *	This file part of:	AstrOmatic FITS/LDAC library
 *
-*	Copyright:		(C) 1995-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1995-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -23,7 +23,7 @@
 *	along with AstrOmatic software.
 *	If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		15/07/2011
+*	Last modified:		09/10/2010
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -314,8 +314,8 @@ INPUT	Table structure,
 	pointer to the temporary buffer.
 OUTPUT	-.
 NOTES	-.
-AUTHOR	E. Bertin (IAP)
-VERSION	15/07/2011
+AUTHOR	E. Bertin (IAP & Leiden observatory)
+VERSION	28/12/2004
  ***/
 int	write_obj(tabstruct *tab, char *buf)
 
@@ -340,7 +340,7 @@ int	write_obj(tabstruct *tab, char *buf)
       }
     }
 
-  QFWRITE(buf, tab->naxisn[0], tab->cat->file, tab->cat->filename);
+  QFWRITE(buf, *tab->naxisn, tab->cat->file, tab->cat->filename);
 
   return ++tab->naxisn[1];
   }

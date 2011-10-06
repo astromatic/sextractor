@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		19/07/2011
+*	Last modified:		06/10/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -665,19 +665,6 @@ void	useprefs()
     prefs.psf_flag = 1;
   if (prefs.dpsffit_flag)
     prefs.dpsf_flag = 1;
-
-/*---------------------------- PC-fitting ----------------------------------*/
-/* PC-fitting is possible only if a PSF file is loaded */
-  if (prefs.psf_flag)
-    {
-    prefs.pc_flag = FLAG(obj2.mx2_pc);
-    if (prefs.check_flag)
-      for (i=0; i<prefs.ncheck_type; i++)
-        if (prefs.check_type[i] == CHECK_SUBPCPROTOS
-		|| prefs.check_type[i] == CHECK_PCPROTOS
-		|| prefs.check_type[i] == CHECK_PCOPROTOS)
-          prefs.pc_flag = 1;
-    }
 
 /*----------------------------- Model-fitting -------------------------------*/
   if (prefs.check_flag)
