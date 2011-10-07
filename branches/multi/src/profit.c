@@ -289,6 +289,10 @@ void	profit_measure(profitstruct *profit, obj2struct *obj2)
 			psf_fwhm, err, aspect, chi2;
     int			*index,
 			i,j,p, nparam, nparam2, ncomp;
+
+  nparam = profit->nparam;
+  nparam2 = nparam*nparam;
+
   if (profit->nlimmin)
     profit->flag |= PROFLAG_MINLIM;
   if (profit->nlimmax)
@@ -1181,9 +1185,9 @@ int	profit_minimize(profitstruct *profit, int niter)
 
 /* Perform fit */
   lm_opts[0] = 1.0e-3;		/* Initial mu */
-  lm_opts[1] = 1.0e-6;		/* ||J^T e||_inf stopping factor */
-  lm_opts[2] = 1.0e-6;		/* |Dp||_2 stopping factor */
-  lm_opts[3] = 1.0e-6;		/* ||e||_2 stopping factor */
+  lm_opts[1] = 1.0e-8;		/* ||J^T e||_inf stopping factor */
+  lm_opts[2] = 1.0e-8;		/* |Dp||_2 stopping factor */
+  lm_opts[3] = 1.0e-8;		/* ||e||_2 stopping factor */
   lm_opts[4] = 1.0e-4;		/* Jacobian step */
 
   nfree = profit_boundtounbound(profit, profit->paraminit, dparam,
@@ -2130,7 +2134,7 @@ INPUT	Pointer to the model structure containing the object pixels,
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	06/10/2011
+VERSION	07/10/2011
  ***/
 void	profit_submodpix(profitstruct *profitobj, profitstruct *profitmod,
 			float fac)
@@ -2144,8 +2148,8 @@ void	profit_submodpix(profitstruct *profitobj, profitstruct *profitmod,
 /* Don't go further if out of frame!! */
   win = profitmod->objnaxisn[0];
   hin = profitmod->objnaxisn[1];
-  ix = profitmod->ix - win/2;
-  iy = profitmod->iy - hin/2;
+  ix = profitobj->ix - (profitmod->ix - win/2);
+  iy = profitobj->iy - (profitmod->iy - hin/2);
 
   sn = (int)profitobj->subsamp;
   sflag = (sn>1);

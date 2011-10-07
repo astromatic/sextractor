@@ -602,8 +602,8 @@ obj2struct	*analyse_obj2obj2(picstruct *field, picstruct *dfield,
   obj2->fwhm = obj->fwhm;
 
 /* Copy image data around current object */
-  obj2->imsize[0] = obj->xmax-obj->xmin+1+2*field->stripmargin;
-  obj2->imsize[1] = obj->ymax-obj->ymin+1+2*field->stripmargin;
+  obj2->imsize[0] = 2.0*(obj2->xmax-obj2->xmin)+1+2*field->stripmargin;
+  obj2->imsize[1] = 2.0*(obj2->ymax-obj2->ymin)+1+2*field->stripmargin;
   obj2->immin[0] = obj2->ix - obj2->imsize[0]/2;
   obj2->immin[1] = obj2->iy - obj2->imsize[1]/2;
   obj2->immax[0] = obj2->immin[0] + obj2->imsize[0];
@@ -981,13 +981,15 @@ void	analyse_group(picstruct *field, picstruct *dfield,
    int			i;
 
   if (prefs.prof_flag)
+    {
 /*-- Setup model fitting for this group */
     for (obj2=fobj2; obj2; obj2=obj2->nextobj2)
+      {
+      photom_auto(field, dfield, wfield, dwfield, obj2);
+      growth_aver(field, wfield, obj2);
       obj2->profit = profit_init(field, wfield,
 		obj2, thepsf, prefs.prof_modelflags);
-
-  if (prefs.prof_flag)
-    {
+      }
     for (obj2=fobj2; obj2; obj2=obj2->nextobj2)
       {
       photom_auto(field, dfield, wfield, dwfield, obj2);
@@ -995,11 +997,10 @@ void	analyse_group(picstruct *field, picstruct *dfield,
       }
     if (fobj2->nextobj2)
 /*---- Iterative multiple fit if several sources overlap */
-      for (i=0; i<1; i++)
+      for (i=0; i<ANALYSE_NMULTITER; i++)
         {
         for (obj2=fobj2; obj2; obj2=obj2->nextobj2)
           profit_fit(obj2->profit, obj2);
-/*
         for (obj2=fobj2; obj2; obj2=obj2->nextobj2)
           {
           if (i)
@@ -1008,7 +1009,6 @@ void	analyse_group(picstruct *field, picstruct *dfield,
             if (modobj2 != obj2)
               profit_submodpix(obj2->profit, modobj2->profit, 0.9);
           }
-*/
         }
     else
 /*---- One single source */
