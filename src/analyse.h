@@ -28,7 +28,7 @@
 
 /*----------------------------- Internal constants --------------------------*/
 
-#define	ANALYSE_NMULTITER	4	/* number of multi-model iterations */
+#define	ANALYSE_NMULTITER	5	/* number of multi-model iterations */
 
 /*--------------------------------- typedefs --------------------------------*/
 
