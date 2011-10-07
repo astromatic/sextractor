@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		06/10/2011
+*	Last modified:		07/10/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -62,7 +62,7 @@ INPUT	Array of pointers to strings containing the measurement parameters,
 OUTPUT	Pointer to the allocated obj2list.
 NOTES	Requires access to the objtab and objkey static pointers.
 AUTHOR	E. Bertin (IAP)
-VERSION	06/10/2011
+VERSION	07/10/2011
  ***/
 obj2liststruct	*catout_readparams(char **paramlist, int nparam, int nobj2)
   {
@@ -89,12 +89,12 @@ obj2liststruct	*catout_readparams(char **paramlist, int nparam, int nobj2)
         key = objkey+k;
         add_key(key, objtab, 0);
         *((char *)key->ptr) = (char)'\1';
+        size=t_size[key->ttype];
         nkeys++;
         if (key->naxis)
           {
           for (i=0; i<key->naxis; i++)
             key->naxisn[i] = 1;
-          size=t_size[key->ttype];
           for (i=0; (str = strtok(NULL, " \t,;.)]}\r")) && *str!=(char)'#'
 		&& *str!=(char)'\n'; i++)
             {
@@ -105,9 +105,9 @@ obj2liststruct	*catout_readparams(char **paramlist, int nparam, int nobj2)
               error(EXIT_FAILURE, "*Error*: wrong array syntax for keyword ",
 		keyword);
             }
-          key->nbytes = size;
           key->allocflag = 1;
           }
+        key->nbytes = size;
         }
       else
         warning(keyword, " catalog parameter unknown");
@@ -1025,6 +1025,7 @@ void	catout_writeobj(obj2struct *obj2)
 /* We temporarily replace the objtab key sequence with that from the list */
   keystore = objtab->key;
   objtab->key = obj2->keys;
+
   switch(prefs.cat_type)
     {
     case FITS_10:

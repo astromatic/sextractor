@@ -394,7 +394,7 @@ INPUT   Measurement field pointer,
 OUTPUT  -.
 NOTES   Global preferences are used.
 AUTHOR  E. Bertin (IAP)
-VERSION 06/10/2011
+VERSION 07/10/2011
  ***/
 void analyse_final(picstruct *field, picstruct *dfield,
 		picstruct *wfield, picstruct *dwfield,
@@ -404,14 +404,14 @@ void analyse_final(picstruct *field, picstruct *dfield,
    obj2liststruct	*obj2list;
    objstruct		*obj;
    obj2struct		*obj2, *prevobj2, *firstobj2;
-   int			i, ymax, nextiobj, noverlap;
+   int			i, ymax, nextiobj, noverlap, iobj2;
 
   obj2list = thecat.obj2list;
 
 /* cfield is the detection field in any case */
   cfield = dfield? dfield:field;
 /* Find overlapping detections and link them */
-  noverlap = analyse_overlapness(cleanobjlist, &objlist->obj[iobj]);
+  noverlap = analyse_overlapness(cleanobjlist, iobj);
 /* Convert every linked detection to a linked obj2 */
   prevobj2 = NULL;
   for (i=noverlap; i--;)
@@ -446,6 +446,9 @@ void analyse_final(picstruct *field, picstruct *dfield,
       }
     prevobj2 = obj2;
     nextiobj = obj->next;
+/*-- Take care of next obj that might be swapped by subcleanobj! */
+    if (nextiobj == objlist->nobj-1)
+      nextiobj = iobj;
     subcleanobj(iobj);
     iobj = nextiobj;
     }
@@ -454,6 +457,17 @@ void analyse_final(picstruct *field, picstruct *dfield,
   analyse_group(field, dfield, wfield, dwfield, firstobj2);
 
 /* Free the group of obj2s */
+  for (obj2=firstobj2; obj2; obj2=obj2->nextobj2)
+    {
+    QFREE(obj2->image);
+    if (dfield)
+      QFREE(obj2->dimage);
+    if (wfield)
+      QFREE(obj2->weight);
+    if (dwfield)
+      QFREE(obj2->dweight);
+    }
+
   for (obj2=firstobj2; obj2->nextobj2; obj2=obj2->nextobj2);
   obj2->nextobj2 = obj2list->freeobj2;
   obj2list->freeobj2->prevobj2 = obj2->nextobj2;
@@ -464,30 +478,34 @@ void analyse_final(picstruct *field, picstruct *dfield,
 
 
 /****** analyse_overlapness ******************************************************
-PROTO	obj2struct analyse_overlapness(objliststruct *objlist, int n)
+PROTO	obj2struct analyse_overlapness(objliststruct *objlist, int iobj)
 PURPOSE Link together overlapping detections.
 INPUT   objliststruct pointer,
-	obj pointer.
+	obj index.
 OUTPUT  -.
 NOTES   -.
 AUTHOR  E. Bertin (IAP)
-VERSION 06/10/2011
+VERSION 07/10/2011
  ***/
-int analyse_overlapness(objliststruct *objlist, objstruct *fobj)
+int analyse_overlapness(objliststruct *objlist, int iobj)
   {
-   objstruct	*obj,*cobj;
+   objstruct	*obj,*cobj,*fobj;
    int		i, blend, nblend,nobj;
 
   nblend = 1;
   nobj = objlist->nobj;
-  blend = fobj->blend;
   obj = objlist->obj;
+  fobj = &obj[iobj];
+  fobj->prev = -1;
+  blend = fobj->blend;
   cobj = fobj;
   for (i=0; i<nobj; i++, obj++)
     if (obj->blend == blend && obj!=fobj)
       {
       cobj->next = i;
+      obj->prev = iobj;
       cobj = obj;
+      iobj = i;
       nblend++;
       }
 
@@ -590,27 +608,23 @@ obj2struct	*analyse_obj2obj2(picstruct *field, picstruct *dfield,
   obj2->immin[1] = obj2->iy - obj2->imsize[1]/2;
   obj2->immax[0] = obj2->immin[0] + obj2->imsize[0];
   obj2->immax[1] = obj2->immin[1] + obj2->imsize[1];
-  free(obj2->image);
   QMALLOC(obj2->image, PIXTYPE, obj2->imsize[0]*obj2->imsize[1]);
   copyimage(field, obj2->image, obj2->imsize[0],obj2->imsize[1],
 	obj2->ix,obj2->iy);
   if (dfield)
     {
-    free(obj2->dimage);
     QMALLOC(obj2->dimage, PIXTYPE, obj2->imsize[0]*obj2->imsize[1]);
     copyimage(dfield, obj2->dimage, obj2->imsize[0],obj2->imsize[1],
 	obj2->ix,obj2->iy);
     }
   if (wfield)
     {
-    free(obj2->weight);
     QMALLOC(obj2->weight, PIXTYPE, obj2->imsize[0]*obj2->imsize[1]);
     copyimage(wfield, obj2->weight, obj2->imsize[0],obj2->imsize[1],
 	obj2->ix,obj2->iy);
     }
   if (dwfield)
     {
-    free(obj2->dweight);
     QMALLOC(obj2->dweight, PIXTYPE, obj2->imsize[0]*obj2->imsize[1]);
     copyimage(dwfield, obj2->dweight, obj2->imsize[0],obj2->imsize[1],
 	obj2->ix,obj2->iy);
@@ -794,27 +808,11 @@ void	analyse_full(picstruct *field, picstruct *dfield,
     for (i=0; i<prefs.naper; i++)
       photom_aper(field, wfield, obj2, i);
 
+  if (FLAG(obj2.flux_auto))
+    photom_auto(field, dfield, wfield, dwfield, obj2);
+
   if (FLAG(obj2.flux_petro))
     photom_petro(field, dfield, wfield, dwfield, obj2);
-
-/*-- Growth curve */
-  if (prefs.growth_flag)
-    growth_aver(field, wfield, obj2);
-
-/*--------------------------- Windowed barycenter --------------------------*/
-  if (FLAG(obj2.winpos_x))
-    {
-    compute_winpos(field, wfield, obj2);
-/*-- Express positions in FOCAL or WORLD coordinates */
-    if (FLAG(obj2.winpos_xf) || FLAG(obj2.winpos_xw))
-      astrom_winpos(field, obj2);
-/*-- Express shape parameters in the FOCAL or WORLD frame */
-    if (FLAG(obj2.win_mx2w))
-      astrom_winshapeparam(field, obj2);
-/*-- Express position error parameters in the FOCAL or WORLD frame */
-    if (FLAG(obj2.winposerr_mx2w))
-      astrom_winerrparam(field, obj2);
-    }
 
 /*------------------------------ Astrometry -------------------------------*/
 /* Express positions in FOCAL or WORLD coordinates */
@@ -974,7 +972,7 @@ INPUT   Measurement field pointer,
 OUTPUT  -.
 NOTES   -.
 AUTHOR  E. Bertin (IAP)
-VERSION 06/10/2011
+VERSION 07/10/2011
  ***/
 void	analyse_group(picstruct *field, picstruct *dfield,
 		picstruct *wfield, picstruct *dwfield, obj2struct *fobj2)
@@ -984,26 +982,41 @@ void	analyse_group(picstruct *field, picstruct *dfield,
 
   if (prefs.prof_flag)
 /*-- Setup model fitting for this group */
-    for (obj2=fobj2; (obj2=obj2->nextobj2);)
-      obj2->profit = profit_init(field,wfield, obj2,thepsf,prefs.prof_modelflags);
+    for (obj2=fobj2; obj2; obj2=obj2->nextobj2)
+      obj2->profit = profit_init(field, wfield,
+		obj2, thepsf, prefs.prof_modelflags);
 
   if (prefs.prof_flag)
-/*-- Iterative multiple fit */
-    for (i=0; i<ANALYSE_NMULTITER; i++)
+    {
+    for (obj2=fobj2; obj2; obj2=obj2->nextobj2)
       {
-      for (obj2=fobj2; (obj2=obj2->nextobj2);)
-        profit_fit(obj2->profit, obj2);
-      for (obj2=fobj2; (obj2=obj2->nextobj2);)
-        {
-        if (i)
-          profit_copyobjpix(obj2->profit, field, wfield, obj2);
-        for (modobj2=fobj2; (modobj2=modobj2->nextobj2);)
-          if (modobj2 != obj2)
-            profit_submodpix(obj2->profit, modobj2->profit, 0.9);
-        }
+      photom_auto(field, dfield, wfield, dwfield, obj2);
+      growth_aver(field, wfield, obj2);
       }
+    if (fobj2->nextobj2)
+/*---- Iterative multiple fit if several sources overlap */
+      for (i=0; i<1; i++)
+        {
+        for (obj2=fobj2; obj2; obj2=obj2->nextobj2)
+          profit_fit(obj2->profit, obj2);
+/*
+        for (obj2=fobj2; obj2; obj2=obj2->nextobj2)
+          {
+          if (i)
+            profit_copyobjpix(obj2->profit, field, wfield, obj2);
+          for (modobj2=fobj2; modobj2; modobj2=modobj2->nextobj2)
+            if (modobj2 != obj2)
+              profit_submodpix(obj2->profit, modobj2->profit, 0.9);
+          }
+*/
+        }
+    else
+/*---- One single source */
+      profit_fit(fobj2->profit, fobj2);
+    }
+
 /* Full source analysis and catalogue output */
-  for (obj2=fobj2; (obj2=obj2->nextobj2);)
+  for (obj2=fobj2; obj2; obj2=obj2->nextobj2)
     {
     analyse_full(field, dfield, wfield, dwfield, obj2);
 /*-- Catalogue output */
@@ -1025,7 +1038,7 @@ void	analyse_group(picstruct *field, picstruct *dfield,
 
 /* Deallocate memory used for model-fitting */
   if (prefs.prof_flag)
-    for (obj2=fobj2; (obj2=obj2->nextobj2);)
+    for (obj2=fobj2; obj2; obj2=obj2->nextobj2)
       profit_end(obj2->profit);
 
   return;
