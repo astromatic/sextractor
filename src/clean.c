@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/10/2010
+*	Last modified:		07/10/2010
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -198,6 +198,7 @@ Add an object to the "cleanobjlist".
 void	addcleanobj(objstruct *objin)
 
   {
+   objstruct	*cobj;
    int		margin, y;
    float	hh1,hh2;
 
@@ -230,7 +231,9 @@ void	addcleanobj(objstruct *objin)
   if ((y=(int)(objin->my+0.49999)-prefs.cleanmargin)<objin->ycmin)
     objin->ycmin = y;
 
-  cleanobjlist->obj[cleanobjlist->nobj-1] = *objin;
+  cobj = &cleanobjlist->obj[cleanobjlist->nobj-1];
+  *cobj = *objin;
+  cobj->prev = cobj->next = -1;
 
   return;
   }
@@ -303,6 +306,8 @@ remove an object from a "cleanobjlist".
 void	subcleanobj(int objnb)
 
   {
+   int prev, next;
+
 /* Update the object list */
   if (objnb>=cleanobjlist->nobj)
     error(EXIT_FAILURE, "*Internal Error*: no CLEAN object to remove ",
@@ -311,7 +316,13 @@ void	subcleanobj(int objnb)
   if (--cleanobjlist->nobj)
     {
     if (cleanobjlist->nobj != objnb)
+      {
       cleanobjlist->obj[objnb] = cleanobjlist->obj[cleanobjlist->nobj];
+      if ((prev=cleanobjlist->obj[objnb].prev)>=0 && prev!=objnb)
+        cleanobjlist->obj[prev].next = objnb;
+      if ((next=cleanobjlist->obj[objnb].next)>=0 && next<cleanobjlist->nobj)
+        cleanobjlist->obj[next].prev = objnb;
+      }
     if (!(cleanobjlist->obj = (objstruct *)realloc(cleanobjlist->obj,
 		    cleanobjlist->nobj * sizeof(objstruct))))
       error(EXIT_FAILURE, "Not enough memory for ", "CLEANing");

@@ -615,7 +615,7 @@ void  photom_auto(picstruct *field, picstruct *dfield,
 
   v1 = r1 = 0.0;
   area = areab = 0;
-  dimage = obj2->dimage;
+  dimage = obj2->dimage? obj2->dimage : obj2->image;
   if (dwfield)
     dweight = obj2->dweight;
   for (y=ymin; y<ymax; y++)

@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		06/10/2011
+*	Last modified:		07/10/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -73,7 +73,6 @@ typedef  enum {CHECK_NONE, CHECK_IDENTICAL, CHECK_BACKGROUND,
         CHECK_SUBTRACTED, CHECK_FILTERED, CHECK_OBJECTS, CHECK_APERTURES,
 	CHECK_SEGMENTATION, CHECK_MASK, CHECK_SUBMASK, CHECK_ASSOC,
 	CHECK_SUBOBJECTS, CHECK_PSFPROTOS, CHECK_SUBPSFPROTOS,
-	CHECK_PCPROTOS, CHECK_SUBPCPROTOS, CHECK_PCOPROTOS,
 	CHECK_MAPSOM, CHECK_PROFILES, CHECK_SUBPROFILES,
 	CHECK_SPHEROIDS, CHECK_SUBSPHEROIDS, CHECK_DISKS, CHECK_SUBDISKS,
 	CHECK_PATTERNS,CHECK_OTHER,
@@ -90,6 +89,7 @@ typedef  enum {WEIGHT_NONE, WEIGHT_FROMBACK, WEIGHT_FROMRMSMAP,
 
 typedef struct
   {
+  int		prev;				/* Previous obj index */
   int		next;				/* Next obj index */
 /* ---- basic parameters */
   int		number;				/* ID */

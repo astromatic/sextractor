@@ -261,7 +261,6 @@ int	profit_fit(profitstruct *profit, obj2struct *obj2)
 
 /* Actual minimisation */
   fft_reset();
-
   return (profit->niter = profit_minimize(profit, PROFIT_MAXITER));
   }
 
@@ -274,7 +273,7 @@ INPUT	Pointer to the model structure,
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	06/10/2011
+VERSION	07/10/2011
  ***/
 void	profit_measure(profitstruct *profit, obj2struct *obj2)
   {
@@ -297,6 +296,9 @@ void	profit_measure(profitstruct *profit, obj2struct *obj2)
 
   for (p=0; p<nparam; p++)
     profit->paramerr[p]= sqrt(profit->covar[p*(nparam+1)]);
+
+/* Clean up FFTW plans */
+  fft_reset();
 
 /* CHECK-Images */
   if ((check = prefs.check[CHECK_PROFILES]))
@@ -692,9 +694,6 @@ void	profit_measure(profitstruct *profit, obj2struct *obj2)
 
   obj2->prof_flag = profit->flag;
 
-/* clean up. */
-  fft_reset();
-
   return;
   }
 
@@ -726,7 +725,6 @@ void	profit_spread(profitstruct *profit,  picstruct *field,
   pprofit = profit_init(field, wfield, obj2, profit->psf, MODEL_DIRAC);
   qprofit = profit_init(field, wfield, obj2, profit->psf, MODEL_EXPONENTIAL);
 
-  fft_reset();
   profit_residuals(profit, PROFIT_DYNPARAM, profit->paraminit, profit->resi);
   profit_resetparams(pprofit);
   if (profit->paramlist[PARAM_X] && profit->paramlist[PARAM_Y])

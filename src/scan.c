@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		06/10/2011
+*	Last modified:		07/10/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -788,6 +788,7 @@ void  sortit(picstruct *field, picstruct *dfield, picstruct *wfield,
   else
     objlistout = objlist;
 
+  ++thecat.nblend;			/* Parent blend index */
   for (i=0; i<objlistout->nobj; i++)
     {
 /*-- Basic measurements */
@@ -796,7 +797,7 @@ void  sortit(picstruct *field, picstruct *dfield, picstruct *wfield,
       continue; 
     cobj = objlistout->obj + i;
     cobj->number = ++thecat.ndetect;
-    cobj->blend = ++thecat.nblend;
+    cobj->blend = thecat.nblend;
 /*-- Local background */
     cobj->bkg = (float)back(field, (int)(cobj->mx+0.5), (int)(cobj->my+0.5));
     cobj->dbkg = 0.0;
