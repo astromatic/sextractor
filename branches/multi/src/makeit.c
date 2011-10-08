@@ -140,9 +140,17 @@ void	makeit()
     QCALLOC(profit, profitstruct, 1);
     QMALLOC(profit->prof, profstruct *, MODEL_NMAX);
     nmodels = 0;
+    QPRINTF(OUTPUT, "Fitting model: ");
     for (t=1; t<(1<<MODEL_NMAX); t<<=1)
       if (prefs.prof_modelflags&t)
-        profit->prof[nmodels++] = prof_init(profit, t);
+        {
+        profit->prof[nmodels] = prof_init(profit, t);
+        if (nmodels)
+          QPRINTF(OUTPUT, " + ");
+        QPRINTF(OUTPUT, "%s", profit->prof[nmodels]->name);
+        nmodels++;
+        }
+    QPRINTF(OUTPUT, "\n");
     catout_changeparamsize("VECTOR_MODEL", &profit->nparam, 1);
     catout_changeparamsize("VECTOR_MODELERR", &profit->nparam, 1);
     nparam2[0] = nparam2[1] = profit->nparam;
@@ -174,14 +182,6 @@ void	makeit()
         }
       pattern_end(pattern);
       }
-    QPRINTF(OUTPUT, "Fitting model: ");
-    for (i=0; i<profit->nprof; i++)
-      {
-      if (i)
-        QPRINTF(OUTPUT, "+");
-      QPRINTF(OUTPUT, "%s", profit->prof[i]->name);
-      }
-    QPRINTF(OUTPUT, "\n");
     profit_end(profit);
 #else
     error(EXIT_FAILURE,

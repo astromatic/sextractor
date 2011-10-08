@@ -204,6 +204,7 @@ void	profit_end(profitstruct *profit)
 
   for (p=0; p<profit->nprof; p++)
     prof_end(profit->prof[p]);
+  free(profit->prof);
   free(profit->modpix);
   free(profit->modpix2);
   free(profit->cmodpix);
@@ -213,7 +214,6 @@ void	profit_end(profitstruct *profit)
   free(profit->objpix);
   free(profit->objweight);
   free(profit->resi);
-  free(profit->prof);
   free(profit->covar);
   free(profit->psfdft);
   free(profit);
@@ -3540,8 +3540,6 @@ profstruct	*prof_init(profitstruct *profit, unsigned int modeltype)
 		"prof_init()");
       break;
     }
-
-  QMALLOC(prof->pix, float, prof->npix);
 
   if (prof->naxis>2)
     {
