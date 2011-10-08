@@ -140,7 +140,7 @@ obj2liststruct	*catout_readparams(char **paramlist, int nparam, int nobj2)
         *key = *tabkey;
         key->prevkey = key-1;
         key->nextkey = key+1;
-        key->ptr = (void *)obj2 + (tabkey->ptr - (void *)&flagobj2);
+        key->ptr = (void *)obj2 + ((void *)tabkey->ptr - (void *)&flagobj2);
         tabkey = tabkey->nextkey;
         }
       obj2->keys[0].prevkey = obj2->keys + nkeys-1;
@@ -195,36 +195,28 @@ INPUT	Pointer to the obj2list.
 OUTPUT	-.
 NOTES	Requires access to the objkey static pointer.
 AUTHOR	E. Bertin (IAP)
-VERSION	06/10/2011
+VERSION	08/10/2011
  ***/
 void	catout_allocparams(obj2liststruct *obj2list)
   {
+   obj2struct	*obj2;
    keystruct	*key;
    char		**ptr;
-   int		k,o, nobj2;
-
-  nobj2 = obj2list->nobj2;
+   int		o, ptroffset;
 
 /* Allocate arrays for multidimensional measurement parameters */
 /* Note that they do not need to be selected for catalog output */
   for (key=objkey; *key->name; key++)
     if (key->naxis && *((char *)key->ptr))
       {
-      for (o=0; o<nobj2; o++)
+      ptroffset = (void *)key->ptr-(void *)&flagobj2;
+      obj2 = obj2list->obj2;
+      for (o=obj2list->nobj2; o--; obj2++)
         {
-        ptr = (char **)(&obj2list->obj2[o]) + (key->ptr-(void *)&flagobj2);
-        QMALLOC(*((char **)ptr), char, key->nbytes);
+        ptr = (char **)((void *)obj2 + ptroffset);
+        QCALLOC(*ptr, char, key->nbytes);
         }
       }
-
-/* Set the data pointers in keys */
-  for (o=0; o<nobj2; o++)
-    {
-    key = obj2list->obj2[o].keys;
-    for (k=obj2list->nkeys; k--; key++)
-      if (key->allocflag)
-        key->ptr = *((char **)key->ptr);
-    }
 
   return;
   }
@@ -237,24 +229,25 @@ INPUT	Pointer to the obj2list.
 OUTPUT	-.
 NOTES	Requires access to the objkey static pointer.
 AUTHOR	E. Bertin (IAP)
-VERSION	18/07/2011
+VERSION	08/10/2011
  ***/
 void	catout_freeparams(obj2liststruct *obj2list)
   {
+   obj2struct	*obj2;
    keystruct	*key;
    char		**ptr;
-   int		k,o, nobj2;
+   int		o, ptroffset;
 
-  nobj2 = obj2list->nobj2;
-
-/* Allocate arrays for multidimensional measurement parameters */
+/* Free arrays allocated for multidimensional measurement parameters */
   for (key=objkey; *key->name; key++)
     if (key->naxis && *((char *)key->ptr))
       {
-      for (o=0; o<nobj2; o++)
+      ptroffset = (void *)key->ptr-(void *)&flagobj2;
+      obj2 = obj2list->obj2;
+      for (o=obj2list->nobj2; o--; obj2++)
         {
-        ptr = (char **)&obj2list->obj2[o] + (key->ptr-(void *)&flagobj2);
-        free(*((char **)ptr));
+        ptr = (char **)((void *)obj2 + ptroffset);
+        free(*ptr);
         }
       }
 

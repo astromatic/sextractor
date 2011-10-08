@@ -996,6 +996,7 @@ void	analyse_group(picstruct *field, picstruct *dfield,
       growth_aver(field, wfield, obj2);
       }
     if (fobj2->nextobj2)
+      {
 /*---- Iterative multiple fit if several sources overlap */
       for (i=0; i<ANALYSE_NMULTITER; i++)
         {
@@ -1010,6 +1011,16 @@ void	analyse_group(picstruct *field, picstruct *dfield,
               profit_submodpix(obj2->profit, modobj2->profit, 0.9);
           }
         }
+      for (obj2=fobj2; obj2; obj2=obj2->nextobj2)
+        for (modobj2=fobj2; modobj2; modobj2=modobj2->nextobj2)
+          if (modobj2 != obj2)
+            addtobig(modobj2->profit->lmodpix,
+		modobj2->profit->objnaxisn[0],modobj2->profit->objnaxisn[1],
+		obj2->image, obj2->imsize[0], obj2->imsize[1],
+		modobj2->profit->ix-obj2->ix, modobj2->profit->iy-obj2->iy,
+		-1.0);
+
+      }
     else
 /*---- One single source */
       profit_fit(fobj2->profit, fobj2);
