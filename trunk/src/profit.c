@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		06/09/2011
+*	Last modified:		08/10/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -3313,7 +3313,7 @@ INPUT	Pointer to the profile-fitting structure,
 OUTPUT	A pointer to an allocated prof structure.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	22/04/2011
+VERSION	08/10/2011
  ***/
 profstruct	*prof_init(profitstruct *profit, unsigned int modeltype)
   {
@@ -3519,8 +3519,6 @@ profstruct	*prof_init(profitstruct *profit, unsigned int modeltype)
 		"prof_init()");
       break;
     }
-
-  QMALLOC(prof->pix, float, prof->npix);
 
   if (prof->naxis>2)
     {
