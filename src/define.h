@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		12/04/2011
+*	Last modified:		09/10/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -214,4 +214,3 @@
 
 #define FLAG(x)		(*((char *)&flag##x))
 
-#define VECFLAG(x)	(*((char *)flag##x))

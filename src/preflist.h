@@ -187,7 +187,7 @@ char *default_prefs[] =
 "CATALOG_NAME     test.cat       # name of the output catalog",
 "CATALOG_TYPE     ASCII_HEAD     # NONE,ASCII,ASCII_HEAD, ASCII_SKYCAT,",
 "                                # ASCII_VOTABLE, FITS_1.0 or FITS_LDAC",
-"PARAMETERS       NUMBER,XWIN_IMAGE,YWIN_IMAGE,MAG_AUTO  # list of parameters",
+"PARAMETERS       NUMBER,XWIN_IMAGE,YWIN_IMAGE,MAG_AUTO  # list of measurements",
 " ",
 "#------------------------------- Extraction ----------------------------------",
 " ",

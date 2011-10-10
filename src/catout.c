@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		07/10/2011
+*	Last modified:		09/10/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -60,9 +60,9 @@ INPUT	Array of pointers to strings containing the measurement parameters,
 	number of parameters,
 	number of obj2list members.
 OUTPUT	Pointer to the allocated obj2list.
-NOTES	Requires access to the objtab and objkey static pointers.
+NOTES	Requires access to the objtab and obj2key static pointers.
 AUTHOR	E. Bertin (IAP)
-VERSION	07/10/2011
+VERSION	09/10/2011
  ***/
 obj2liststruct	*catout_readparams(char **paramlist, int nparam, int nobj2)
   {
@@ -84,9 +84,9 @@ obj2liststruct	*catout_readparams(char **paramlist, int nparam, int nobj2)
       {
       keyword = strtok(str, " \t{[(\n\r");
       if (keyword &&
-	(k = findkey(keyword,(char *)objkey,sizeof(keystruct)))!=RETURN_ERROR)
+	(k = findkey(keyword,(char *)obj2key,sizeof(keystruct)))!=RETURN_ERROR)
         {
-        key = objkey+k;
+        key = obj2key+k;
         add_key(key, objtab, 0);
         *((char *)key->ptr) = (char)'\1';
         size=t_size[key->ttype];
@@ -105,7 +105,6 @@ obj2liststruct	*catout_readparams(char **paramlist, int nparam, int nobj2)
               error(EXIT_FAILURE, "*Error*: wrong array syntax for keyword ",
 		keyword);
             }
-          key->allocflag = 1;
           }
         key->nbytes = size;
         }
@@ -140,7 +139,7 @@ obj2liststruct	*catout_readparams(char **paramlist, int nparam, int nobj2)
         *key = *tabkey;
         key->prevkey = key-1;
         key->nextkey = key+1;
-        key->ptr = (void *)obj2 + ((void *)tabkey->ptr - (void *)&flagobj2);
+        key->ptr = (char *)obj2 + ((char *)tabkey->ptr - (char *)&flagobj2);
         tabkey = tabkey->nextkey;
         }
       obj2->keys[0].prevkey = obj2->keys + nkeys-1;
@@ -162,18 +161,18 @@ INPUT	keyword string,
 	array of sizes,
 	number of dimensions.
 OUTPUT	-.
-NOTES	Requires access to the objkey static pointer.
+NOTES	Requires access to the obj2key static pointer.
 AUTHOR	E. Bertin (IAP)
-VERSION	06/10/2011
+VERSION	09/10/2011
  ***/
 void	catout_changeparamsize(char *keyword, int *axisn, int naxis)
   {
    keystruct	*key;
    int		i,k, size;
 
-  if ((k = findkey(keyword,(char *)objkey,sizeof(keystruct)))!=RETURN_ERROR)
+  if ((k = findkey(keyword,(char *)obj2key,sizeof(keystruct)))!=RETURN_ERROR)
     {
-    key = objkey+k;
+    key = obj2key+k;
     if (key->naxis)
       {
       size = t_size[key->ttype];
@@ -193,28 +192,35 @@ PROTO	void	catout_allocparams(obj2liststruct *obj2list)
 PURPOSE	Allocate arrays for all multidimensional measurement parameters.
 INPUT	Pointer to the obj2list.
 OUTPUT	-.
-NOTES	Requires access to the objkey static pointer.
+NOTES	Requires access to the obj2key static pointer.
 AUTHOR	E. Bertin (IAP)
-VERSION	08/10/2011
+VERSION	09/10/2011
  ***/
 void	catout_allocparams(obj2liststruct *obj2list)
   {
    obj2struct	*obj2;
-   keystruct	*key;
+   keystruct	*key, *key2;
    char		**ptr;
-   int		o, ptroffset;
+   int		k,o, nkeys, ptroffset;
 
 /* Allocate arrays for multidimensional measurement parameters */
 /* Note that they do not need to be selected for catalog output */
-  for (key=objkey; *key->name; key++)
+  nkeys = obj2list->nkeys;
+  for (key=obj2key; *key->name; key++)
     if (key->naxis && *((char *)key->ptr))
       {
-      ptroffset = (void *)key->ptr-(void *)&flagobj2;
+      ptroffset = (char *)key->ptr-(char *)&flagobj2;
       obj2 = obj2list->obj2;
       for (o=obj2list->nobj2; o--; obj2++)
         {
-        ptr = (char **)((void *)obj2 + ptroffset);
+        ptr = (char **)((char *)obj2 + ptroffset);
         QCALLOC(*ptr, char, key->nbytes);
+/*------ Now the tricky part: we replace the pointer to the array pointer */
+/*------ with the array pointer itself */
+        key2=obj2->keys;
+        for (k=nkeys; k--; key2++)
+          if (key2->ptr == ptr)
+            key2->ptr = *ptr;
         }
       }
 
@@ -227,9 +233,9 @@ PROTO	void	catout_freeparams(obj2liststruct *obj2list)
 PURPOSE	Free memory for all multidimensional measurement parameters.
 INPUT	Pointer to the obj2list.
 OUTPUT	-.
-NOTES	Requires access to the objkey static pointer.
+NOTES	Requires access to the obj2key static pointer.
 AUTHOR	E. Bertin (IAP)
-VERSION	08/10/2011
+VERSION	09/10/2011
  ***/
 void	catout_freeparams(obj2liststruct *obj2list)
   {
@@ -239,14 +245,14 @@ void	catout_freeparams(obj2liststruct *obj2list)
    int		o, ptroffset;
 
 /* Free arrays allocated for multidimensional measurement parameters */
-  for (key=objkey; *key->name; key++)
+  for (key=obj2key; *key->name; key++)
     if (key->naxis && *((char *)key->ptr))
       {
-      ptroffset = (void *)key->ptr-(void *)&flagobj2;
+      ptroffset = (char *)key->ptr-(char *)&flagobj2;
       obj2 = obj2list->obj2;
       for (o=obj2list->nobj2; o--; obj2++)
         {
-        ptr = (char **)((void *)obj2 + ptroffset);
+        ptr = (char **)obj2 + ptroffset;
         free(*ptr);
         }
       }
@@ -595,7 +601,7 @@ void	catout_updateparamflags(void)
   FLAG(obj2.poserr_a) |= FLAG(obj2.poserr_b) | FLAG(obj2.poserr_theta)
 			| FLAG(obj2.winposerr_a);
   FLAG(obj2.poserr_cxx) |= FLAG(obj2.poserr_cyy) | FLAG(obj2.poserr_cxy);
-  FLAG(obj.poserr_mx2) |= FLAG(obj.poserr_my2) | FLAG(obj.poserr_mxy)
+  FLAG(obj2.poserr_mx2) |= FLAG(obj2.poserr_my2) | FLAG(obj2.poserr_mxy)
 			| FLAG(obj2.poserr_a) | FLAG(obj2.poserr_cxx)
 			| FLAG(obj2.poserr_mx2w) | FLAG(obj2.winposerr_mx2);
 
@@ -619,7 +625,7 @@ void	catout_updateparamflags(void)
   
   FLAG(obj2.peakxw) |= FLAG(obj2.peakyf);
   FLAG(obj2.peakxw) |= FLAG(obj2.peakyw) | FLAG(obj2.peakalphas);
-  FLAG(obj.peakx) |= FLAG(obj.peaky) | FLAG(obj2.peakxw) | FLAG(obj2.peakxf);
+  FLAG(obj2.peakx) |= FLAG(obj2.peaky) | FLAG(obj2.peakxw) | FLAG(obj2.peakxf);
 
   FLAG(obj2.mxf) |= FLAG(obj2.myf);
 
@@ -671,7 +677,7 @@ void	catout_updateparamflags(void)
 			    | FLAG(obj2.fluxerr_aper);
 
 /*---------------------------- External flags -------------------------------*/
-  VECFLAG(obj.imaflag) |= VECFLAG(obj.imanflag);
+  FLAG(obj2.imaflag) |= FLAG(obj2.imanflag);
 
 /*------------------------------ PSF-fitting --------------------------------*/
   FLAG(obj2.fwhm_psf) |= FLAG(obj2.fwhmw_psf);
@@ -715,13 +721,13 @@ void	catout_updateparamflags(void)
 			| FLAG(obj2.chi2_psf);
 
 /*-------------------------------- Others -----------------------------------*/
-  FLAG(obj.fwhm) |= FLAG(obj2.fwhmw);
+  FLAG(obj2.fwhm) |= FLAG(obj2.fwhmw);
 
-  FLAG(obj.iso[0]) |= FLAG(obj2.sprob);
+  FLAG(obj2.iso[0]) |= FLAG(obj2.sprob);
   for (i=0; i<NISO; i++)
-    FLAG(obj.iso[0]) |= FLAG(obj.iso[i]);
+    FLAG(obj2.iso[0]) |= FLAG(obj2.iso[i]);
 
-  FLAG(obj.wflag) |= FLAG(obj.nzwpix) | FLAG(obj.nzdwpix);
+  FLAG(obj2.wflag) |= FLAG(obj2.nzwpix) | FLAG(obj2.nzdwpix);
 
   return; 
   }
@@ -732,7 +738,7 @@ PROTO	void	catout_dumpparams(void)
 PURPOSE	Dump the complete list of catalog parameters to standard output.
 INPUT	-.
 OUTPUT	-.
-NOTES	Requires access to the objkey static pointer.
+NOTES	Requires access to the obj2key static pointer.
 AUTHOR	E. Bertin (IAP)
 VERSION	18/07/2011
  ***/
@@ -740,13 +746,13 @@ void	catout_dumpparams(void)
   {
    int		i;
 
-  for (i=0; *objkey[i].name ; i++)
-    if (*objkey[i].unit)
+  for (i=0; *obj2key[i].name ; i++)
+    if (*obj2key[i].unit)
       printf("#%-24.24s %-57.57s [%s]\n",
-		objkey[i].name, objkey[i].comment, objkey[i].unit);
+		obj2key[i].name, obj2key[i].comment, obj2key[i].unit);
     else
       printf("#%-24.24s %-57.57s\n",
-		objkey[i].name, objkey[i].comment);
+		obj2key[i].name, obj2key[i].comment);
 
   return;
   }
@@ -757,7 +763,7 @@ PROTO	void	catout_init(void)
 PURPOSE	Initialize the catalog output.
 INPUT	-.
 OUTPUT	-.
-NOTES	Requires access to global prefs and the objkey static pointer.
+NOTES	Requires access to global prefs and the obj2key static pointer.
 AUTHOR	E. Bertin (IAP)
 VERSION	06/10/2011
  ***/
