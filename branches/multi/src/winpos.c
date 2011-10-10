@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		06/10/2011
+*	Last modified:		09/10/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -48,7 +48,7 @@ INPUT	Picture structure pointer,
 OUTPUT  -.
 NOTES   obj2->mx and obj2->my are taken as initial centroid guesses.
 AUTHOR  E. Bertin (IAP)
-VERSION 06/10/2011
+VERSION 09/10/2011
  ***/
 void	compute_winpos(picstruct *field, picstruct *wfield,
 			obj2struct *obj2)
@@ -248,8 +248,8 @@ void	compute_winpos(picstruct *field, picstruct *wfield,
   mx2 = mx2/tv - dxpos*dxpos;
   my2 = my2/tv - dypos*dypos;
   mxy = mxy/tv - dxpos*dypos;
-  obj2->winpos_x = mx + 1.0;	/* The dreaded 1.0 FITS offset */
-  obj2->winpos_y = my + 1.0; 	/* The dreaded 1.0 FITS offset */
+  obj2->winpos_x = mx + obj2->immin[0] + 1.0;/* The dreaded 1.0 FITS offset */
+  obj2->winpos_y = my + obj2->immin[1] + 1.0;/* The dreaded 1.0 FITS offset */
   obj2->winpos_niter = i+1;
 
 /* WINdowed flux */

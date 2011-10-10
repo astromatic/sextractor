@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		07/10/2011
+*	Last modified:		09/10/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -37,11 +37,14 @@
 obj2struct	*analyse_obj2obj2(picstruct *field, picstruct *dfield,
 			picstruct *wfield, picstruct *dwfield,
 			objstruct *obj, obj2liststruct *obj2list);
-int		analyse_overlapness(objliststruct *objlist, int iobj);
-
-void		analyse_full(picstruct *field, picstruct *dfield,
+int		analyse_full(picstruct *field, picstruct *dfield,
 			picstruct *wfield, picstruct *dwfield,
 			obj2struct *obj2),
+		analyse_overlapness(objliststruct *objlist, int iobj);
+
+void		analyse_final(picstruct *field, picstruct *dfield,
+		picstruct *wfield, picstruct *dwfield,
+		objliststruct *objlist, int iobj),
 		analyse_group(picstruct *field, picstruct *dfield,
 			picstruct *wfield, picstruct *dwfield,
 			obj2struct *obj2),

@@ -69,7 +69,7 @@ INPUT	Pointer to the measurement image,
 OUTPUT	-.
 NOTES	Requires access to the global preferences.
 AUTHOR	E. Bertin (IAP)
-VERSION	18/07/2011
+VERSION	09/10/2011
  ***/
 void  analyse_iso(picstruct *field, picstruct *dfield,
 			objliststruct *objlist, int n)
@@ -95,7 +95,7 @@ void  analyse_iso(picstruct *field, picstruct *dfield,
 
 /* Prepare computation of positional error */
   esum = emx2 = emy2 = emxy = 0.0;
-  if ((errflag=FLAG(obj.poserr_mx2)))
+  if ((errflag=FLAG(obj2.poserr_mx2)))
     {
     dbacknoise2 = dfield->backsig*dfield->backsig;
     xm = obj->mx;
@@ -104,7 +104,7 @@ void  analyse_iso(picstruct *field, picstruct *dfield,
   else
     xm = ym = dbacknoise2 = 0.0;	/* to avoid gcc -Wall warnings */
 
-  pospeakflag = FLAG(obj.peakx);
+  pospeakflag = FLAG(obj2.peakx);
   gain = field->gain;
   ngamma = field->ngamma;
   photoflag = (prefs.detect_type==PHOTO);
@@ -286,7 +286,7 @@ void  analyse_iso(picstruct *field, picstruct *dfield,
 
 /* Initialize isophotal thresholds so as to sample optimally the full profile*/
 
-  if (FLAG(obj.iso[0]))
+  if (FLAG(obj2.iso[0]))
     {
      int	*iso;
      PIXTYPE	*thresht;
@@ -323,7 +323,7 @@ void  analyse_iso(picstruct *field, picstruct *dfield,
 		= PLIST(pixt,value);
 
 /* Compute the FWHM of the object */
-  if (FLAG(obj.fwhm))
+  if (FLAG(obj2.fwhm))
     {
      PIXTYPE	thresh0;
 
@@ -654,7 +654,7 @@ obj2struct	*analyse_obj2obj2(picstruct *field, picstruct *dfield,
 
 
 /****** analyse_full *********************************************************
-PROTO	void analyse_full(picstruct *field, picstruct *dfield,
+PROTO	int analyse_full(picstruct *field, picstruct *dfield,
 		picstruct *wfield, picstruct *dwfield, obj2struct *obj2)
 PURPOSE Final analysis of object data.
 INPUT   Measurement field pointer,
@@ -662,12 +662,12 @@ INPUT   Measurement field pointer,
         Measurement weight-map field pointer,
         Detection weight-map field pointer,
 	obj2struct pointer.
-OUTPUT  -.
+OUTPUT  RETURN_OK if the object has been processed, RETURN_ERROR otherwise.
 NOTES   -.
 AUTHOR  E. Bertin (IAP)
-VERSION 06/10/2011
+VERSION 09/10/2011
  ***/
-void	analyse_full(picstruct *field, picstruct *dfield,
+int	analyse_full(picstruct *field, picstruct *dfield,
 		picstruct *wfield, picstruct *dwfield, obj2struct *obj2)
   {
    checkstruct		*check;
@@ -689,10 +689,9 @@ void	analyse_full(picstruct *field, picstruct *dfield,
   if (prefs.assoc_flag)
     {
     obj2->assoc_number = do_assoc(field, obj2->posx, obj2->posy, obj2->assoc);
-
-    if (prefs.assocselec_type!=ASSOCSELEC_ALL
-		&& ((prefs.assocselec_type==ASSOCSELEC_MATCHED)?
-		obj2->assoc_number:!obj2->assoc_number))
+    if ((prefs.assocselec_type==ASSOCSELEC_MATCHED && !(obj2->assoc_number))
+	||
+	(prefs.assocselec_type==ASSOCSELEC_NOMATCHED && (obj2->assoc_number)))
       {
 /*---- Treatment of discarded detections */
 /*---- update segmentation map  and exit */
@@ -710,7 +709,7 @@ void	analyse_full(picstruct *field, picstruct *dfield,
             if (*pix==oldsnumber)
               *pix = 0;
         }
-      return;
+      return RETURN_ERROR;
       }
     }
 
@@ -956,7 +955,7 @@ void	analyse_full(picstruct *field, picstruct *dfield,
 /* Processing time */
   obj2->analtime = (float)(counter_seconds() - analtime1);
 
-  return;
+  return RETURN_OK;
   }
 
 
@@ -972,7 +971,7 @@ INPUT   Measurement field pointer,
 OUTPUT  -.
 NOTES   -.
 AUTHOR  E. Bertin (IAP)
-VERSION 07/10/2011
+VERSION 09/10/2011
  ***/
 void	analyse_group(picstruct *field, picstruct *dfield,
 		picstruct *wfield, picstruct *dwfield, obj2struct *fobj2)
@@ -1011,6 +1010,7 @@ void	analyse_group(picstruct *field, picstruct *dfield,
               profit_submodpix(obj2->profit, modobj2->profit, 0.9);
           }
         }
+/*
       for (obj2=fobj2; obj2; obj2=obj2->nextobj2)
         for (modobj2=fobj2; modobj2; modobj2=modobj2->nextobj2)
           if (modobj2 != obj2)
@@ -1019,7 +1019,7 @@ void	analyse_group(picstruct *field, picstruct *dfield,
 		obj2->image, obj2->imsize[0], obj2->imsize[1],
 		modobj2->profit->ix-obj2->ix, modobj2->profit->iy-obj2->iy,
 		-1.0);
-
+*/
       }
     else
 /*---- One single source */
@@ -1028,10 +1028,10 @@ void	analyse_group(picstruct *field, picstruct *dfield,
 
 /* Full source analysis and catalogue output */
   for (obj2=fobj2; obj2; obj2=obj2->nextobj2)
-    {
-    analyse_full(field, dfield, wfield, dwfield, obj2);
-/*-- Catalogue output */
-    FPRINTF(OUTPUT, "%8d %6.1f %6.1f %5.1f %5.1f %12g "
+    if (analyse_full(field, dfield, wfield, dwfield, obj2) == RETURN_OK)
+      {
+/*---- Catalogue output */
+      FPRINTF(OUTPUT, "%8d %6.1f %6.1f %5.1f %5.1f %12g "
 			"%c%c%c%c%c%c%c%c\n",
 	obj2->number, obj2->mx+1.0, obj2->my+1.0,
 	obj2->a, obj2->b,
@@ -1044,8 +1044,8 @@ void	analyse_group(picstruct *field, picstruct *dfield,
 	obj2->flag&OBJ_ISO_PB?'I':'_',
 	obj2->flag&OBJ_DOVERFLOW?'D':'_',
 	obj2->flag&OBJ_OVERFLOW?'O':'_');
-    catout_writeobj(obj2);
-    }
+      catout_writeobj(obj2);
+      }
 
 /* Deallocate memory used for model-fitting */
   if (prefs.prof_flag)

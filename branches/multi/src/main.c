@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		18/07/2011
+*	Last modified:		09/10/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -47,7 +47,6 @@ EXECUTABLE " <image> [<image2>][-c <configuration_file>][-<keyword> <value>]\n" 
 "> to dump a full list of measurement parameters: " EXECUTABLE " -dp \n"
 
 extern const char       notokstr[];
-extern keystruct	objkey[];
 
 /********************************** main ************************************/
 int	main(int argc, char *argv[])

@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		06/10/2011
+*	Last modified:		09/10/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -49,7 +49,7 @@
 /*------------------------------- variables ---------------------------------*/
 
 
-extern keystruct	objkey[];
+extern keystruct	obj2key[];
 extern objstruct	outobj;
 
 /********************************* psf_init **********************************/
@@ -183,14 +183,14 @@ psfstruct	*psf_load(char *filename)
       else
 /*------ The context element is a dynamic object parameter */
         {
-        if ((k = findkey(psf->contextname[i], (char *)objkey,
+        if ((k = findkey(psf->contextname[i], (char *)obj2key,
 		sizeof(keystruct)))==RETURN_ERROR)
           {
           sprintf(gstr, "*Error*: %s CONTEXT parameter in %s unknown",
 		psf->contextname[i], psf->name);
           error(EXIT_FAILURE, gstr, "");
           }
-        key = objkey+k;
+        key = obj2key+k;
         psf->context[i] = key->ptr;
         psf->contexttyp[i] = key->ttype;
 /*------ Declare the parameter "active" to trigger computation by SExtractor */

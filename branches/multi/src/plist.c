@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/10/2010
+*	Last modified:		09/10/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -149,7 +149,7 @@ INPUT	-.
 OUTPUT  -.
 NOTES   The preparation of components relies on the preferences.
 AUTHOR  E. Bertin (IAP, Leiden observatory & ESO)
-VERSION 29/11/2005
+VERSION 09/10/2011
  ***/
 void	init_plist(void)
 
@@ -184,7 +184,7 @@ void	init_plist(void)
     plistoff_cdvalue = plistoff_dvalue;
     }
 
-  if (VECFLAG(obj.imaflag))
+  if (FLAG(obj2.imaflag))
     {
     plistexist_flag = 1;
     for (i=0; i<prefs.nimaisoflag; i++)
@@ -196,7 +196,7 @@ void	init_plist(void)
   else
     plistexist_flag = 0;
 
-  if (prefs.weight_flag && prefs.dweight_flag && FLAG(obj.wflag))
+  if (prefs.weight_flag && prefs.dweight_flag && FLAG(obj2.wflag))
     {
     plistexist_wflag = 1;
     plistoff_wflag = plistsize;
