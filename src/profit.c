@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		06/10/2011
+*	Last modified:		23/11/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -47,7 +47,9 @@
 #include	"fft.h"
 #include	"fitswcs.h"
 #include	"check.h"
+#include	"graph.h"
 #include	"image.h"
+#include	"misc.h"
 #include	"pattern.h"
 #include	"psf.h"
 #include	"profit.h"
@@ -893,7 +895,7 @@ void	profit_fluxcor(profitstruct *profit, obj2struct *obj2)
   klim2 = klim*klim;
 
 if ((check = prefs.check[CHECK_APERTURES]))
-sexellips(check->pix, check->width, check->height,
+sexellipse(check->pix, check->width, check->height,
 obj2->x_prof-1.0, obj2->y_prof-1.0, klim*obj2->prof_conva,klim*obj2->prof_convb,
 obj2->prof_convtheta, check->overlay, 0);
 */

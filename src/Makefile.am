@@ -22,7 +22,7 @@
 #	You should have received a copy of the GNU General Public License
 #	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 #
-#	Last modified:		06/10/2011
+#	Last modified:		23/11/2011
 #
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -45,8 +45,8 @@ sex_SOURCES		= analyse.c assoc.c astrom.c back.c bpro.c catout.c \
 			  retina.c scan.c som.c weight.c winpos.c xml.c \
 			  analyse.h assoc.h astrom.h back.h bpro.h catout.h \
 			  check.h clean.h define.h extract.h fft.h field.h \
-			  filter.h fitswcs.h flag.h globals.h growth.h \
-			  header.h image.h interpolate.h key.h neurro.h \
+			  filter.h fitswcs.h flag.h globals.h graph.h growth.h \
+			  header.h image.h interpolate.h key.h misc.h neurro.h \
 			  param.h paramprofit.h pattern.h photom.h plist.h \
 			  prefs.h preflist.h profit.h psf.h retina.h \
 			  sexhead1.h sexhead.h sexheadsc.h som.h threads.h \

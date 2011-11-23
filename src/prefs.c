@@ -573,9 +573,6 @@ void	useprefs()
 /*-------------------------------- Images ----------------------------------*/
   prefs.dimage_flag = (prefs.nimage_name>1);
 
-/*--------------------------------- ASSOC ----------------------------------*/
-  prefs.assoc_flag = FLAG(obj2.assoc) || FLAG(obj2.assoc_number);
-
 /*-------------------------------- Extracting ------------------------------*/
   if (prefs.nthresh_type<2)
     prefs.thresh_type[1] = prefs.thresh_type[0];
@@ -634,24 +631,12 @@ void	useprefs()
       if ((margin=(int)((prefs.apert[i]+1)/2)+1) > prefs.cleanmargin)
         prefs.cleanmargin = margin;
 
-/* Growth-curve flag */
-  if (FLAG(obj2.flux_growth)
-	|| FLAG(obj2.mag_growth)
-	|| FLAG(obj2.flux_radius)
-	|| FLAG(obj2.hl_radius)
-	|| FLAG(obj2.flux_growthstep)
-	|| FLAG(obj2.mag_growthstep))
-    prefs.growth_flag = 1;
-
   if (FLAG(obj2.flux_radius) && prefs.flux_radiussize)
     if (prefs.nflux_frac>prefs.flux_radiussize)
       prefs.nflux_frac = prefs.flux_radiussize;
 
 /*------------------------------- MASKing ----------------------------------*/
   prefs.blank_flag = (prefs.mask_type!=MASK_NONE);
-
-/*--------------------------- SOM-fitting ----------------------------------*/
-  prefs.somfit_flag = FLAG(obj2.flux_somfit);
 
 /*------------------------------ Background --------------------------------*/
   if (prefs.nbacksize<2)
@@ -678,11 +663,6 @@ void	useprefs()
 		" are not in equal number");
 
 /*---------------------------- PSF-fitting ---------------------------------*/
-  if (FLAG(obj2.flux_psf) )
-    {
-    prefs.psffit_flag = 1;
-    prefs.dpsffit_flag = (prefs.npsf_name>1);	/*?*/
-    }
   if (prefs.check_flag)
     for (i=0; i<prefs.ncheck_type; i++)
       if (prefs.check_type[i] == CHECK_SUBPSFPROTOS
@@ -690,8 +670,6 @@ void	useprefs()
         prefs.psffit_flag = 1;
   if (prefs.psffit_flag)
     prefs.psf_flag = 1;
-  if (prefs.dpsffit_flag)
-    prefs.dpsf_flag = 1;
 
 /*----------------------------- Model-fitting -------------------------------*/
   if (prefs.check_flag)

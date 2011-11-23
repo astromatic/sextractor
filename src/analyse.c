@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		22/11/2011
+*	Last modified:		23/11/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -48,8 +48,10 @@
 #include	"astrom.h"
 #include	"plist.h"
 #include	"flag.h"
+#include	"graph.h"
 #include	"growth.h"
 #include	"image.h"
+#include	"misc.h"
 #include	"photom.h"
 #include	"psf.h"
 #include	"profit.h"
@@ -665,7 +667,7 @@ INPUT   Measurement field pointer,
 OUTPUT  RETURN_OK if the object has been processed, RETURN_ERROR otherwise.
 NOTES   -.
 AUTHOR  E. Bertin (IAP)
-VERSION 09/10/2011
+VERSION 23/11/2011
  ***/
 int	analyse_full(picstruct *field, picstruct *dfield,
 		picstruct *wfield, picstruct *dwfield, obj2struct *obj2)
@@ -842,13 +844,13 @@ int	analyse_full(picstruct *field, picstruct *dfield,
 		obj2->mx, obj2->my, prefs.apert[i]/2.0, check->overlay);
 
     if (FLAG(obj2.flux_auto))
-      sexellips(check->pix, check->width, check->height,
+      sexellipse(check->pix, check->width, check->height,
 		obj2->mx, obj2->my, obj2->a*obj2->kronfactor,
 		obj2->b*obj2->kronfactor, obj2->theta,
 		check->overlay, obj2->flag&OBJ_CROWDED);
 
     if (FLAG(obj2.flux_petro))
-      sexellips(check->pix, check->width, check->height,
+      sexellipse(check->pix, check->width, check->height,
 		obj2->mx, obj2->my, obj2->a*obj2->petrofactor,
 		obj2->b*obj2->petrofactor, obj2->theta,
 		check->overlay, obj2->flag&OBJ_CROWDED);

@@ -61,12 +61,16 @@ time_t			thetimet, thetimet2;
 extern char		profname[][32];
 double			dtime;
 
-/******************************** makeit *************************************/
-/*
-Manage the whole stuff.
-*/
-void	makeit()
-
+/****** makeit ***************************************************************
+PROTO	void main(void)
+PURPOSE	Manage the whole processing.
+INPUT	-.
+OUTPUT	-.
+NOTES	Global preferences are used.
+AUTHOR	E. Bertin (IAP)
+VERSION	23/11/2011
+ ***/
+void	makeit(void)
   {
    profitstruct		*profit;
    checkstruct		*check;
@@ -101,9 +105,6 @@ void	makeit()
 		prefs.nthreads,
 		prefs.nthreads>1? "s":"");
 
-/* Initialize global variables */
-  initglob();
-
   NFPRINTF(OUTPUT, "Setting catalog parameters");
   thecat.obj2list = catout_readparams(prefs.param, prefs.nparam,
 					prefs.obj2_stacksize);
@@ -115,8 +116,6 @@ void	makeit()
     QMALLOC(psf, psfstruct, prefs.nband);
     for (i=0; i<prefs.nband; i++)
       psf[i] = psf_load(prefs.psf_name[i]); 
-    if (prefs.dpsf_flag)
-      ppsf = psf_load(prefs.psf_name[1]);
  /*-- Need to check things up because of PSF context parameters */
     catout_updateparamflags();
     useprefs();
@@ -579,54 +578,6 @@ void	makeit()
 
   return;
   }
-
-
-/******************************** initglob ***********************************/
-/*
-Initialize a few global variables
-*/
-void	initglob()
-  {
-   int	i;
-
-  for (i=0; i<37; i++)
-    {
-    ctg[i] = cos(i*PI/18);
-    stg[i] = sin(i*PI/18);
-    }
-
-
-  return;
-  }
-
-
-/****** selectext ************************************************************
-PROTO	int selectext(char *filename)
-PURPOSE	Return the user-selected extension number [%d] from the file name.
-INPUT	Filename character string.
-OUTPUT	Extension number, or RETURN_ERROR if nos extension specified.
-NOTES	The bracket and its extension number are removed from the filename if
-	found.
-AUTHOR  E. Bertin (IAP)
-VERSION 08/10/2007
- ***/
-static int	selectext(char *filename)
-  {
-   char	*bracl,*bracr;
-   int	next;
-
-  if (filename && (bracl=strrchr(filename, '[')))
-    {
-    *bracl = '\0';
-    if ((bracr=strrchr(bracl+1, ']')))
-      *bracr = '\0';
-    next = strtol(bracl+1, NULL, 0);
-    return next;
-    }
-
-  return RETURN_ERROR;
-  }
-
 
 /****** write_error ********************************************************
 PROTO	int	write_error(char *msg1, char *msg2)

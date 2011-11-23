@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		23/03/2011
+*	Last modified:		23/11/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -41,6 +41,7 @@
 #include	"fits/fitscat.h"
 #include	"back.h"
 #include	"field.h"
+#include	"misc.h"
 #include	"weight.h"
 
 /******************************** makeback ***********************************/
