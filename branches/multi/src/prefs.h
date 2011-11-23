@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		06/10/2011
+*	Last modified:		22/11/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -42,6 +42,7 @@
 #define	MAXCHARL	16384		/* max. nb of chars in a string list */
 #define	MAXLIST		2048		/* max. nb of list members */
 #define	MAXLISTSIZE	2000000		/* max size of list */
+#define	MAXPARAMNAXIS	4		/* max parameter dimensionality */
 
 /* NOTES:
 One must have:	MAXLIST >= 1 (preferably >= 16!)
@@ -87,8 +88,8 @@ typedef struct
   int		nfimage_name;				/* nb of params */
   enum	{FLAG_OR, FLAG_AND, FLAG_MIN, FLAG_MAX, FLAG_MOST}
 				flag_type[MAXFLAG];	/* flag combination */
-  int		imaflag_size;				/* requested iso nb1 */
-  int		imanflag_size;				/* requested iso nb2 */
+  int		imaflag_size[2];			/* requested iso nb1 */
+  int		imanflag_size[2];			/* requested iso nb2 */
   int		nimaisoflag;				/* effective iso nb */
   int		nimaflag;				/* effective ima nb */
 /*----- cleaning */
@@ -111,8 +112,7 @@ typedef struct
   enum	{PNONE, FIXED, AUTO}		apert_type;	/* type of aperture */
   double	apert[MAXNAPER];			/* apert size (pix) */
   int		naper;					/* effective apert. */
-  int		flux_apersize, fluxerr_apersize;	/* requested apert. */
-  int		mag_apersize, magerr_apersize;		/* requested apert. */
+  int		aper_size[2];				/* requested apert. */
   double	autoparam[2];				/* Kron parameters */
   int		nautoparam;				/* nb of Kron params */
   double	petroparam[2];				/* Kron parameters */
@@ -181,12 +181,12 @@ typedef struct
   double	assoc_radius;				/* ASSOC range */
   int		assoc_size;				/* nb of parameters */
   char		retina_name[MAXCHAR];			/* retina filename */
-  int		vignetsize[2];				/* vignet size */
-  int		vigshiftsize[2];			/* shift-vignet size */
+  int		vignet_size[3];				/* vignet size */
+  int		vigshift_size[3];			/* shift-vignet size */
   int		cleanmargin;				/* CLEANing margin */
   char		som_name[MAXCHAR];			/* SOM filename */
   int		somfit_flag;				/* ASSOCiation flag */
-  int		somfit_vectorsize;			/* SOMfit vec. size */
+  int		somfit_vectorsize[2];			/* SOMfit vec. size */
 /*----- masking */
   enum {MASK_NONE, MASK_BLANK, MASK_CORRECT}
 		mask_type;				/* type of masking */
@@ -207,9 +207,9 @@ typedef struct
   double	epoch;					/* VOTable epoch */
 /*----- growth curve */
   int		growth_flag;				/* gr. curve needed */
-  int		flux_growthsize;       			/* number of elem. */
-  int		mag_growthsize;       			/* number of elem. */
-  int		flux_radiussize;       			/* number of elem. */
+  int		flux_growth_size[2];			/* number of elem. */
+  int		mag_growth_size[2];			/* number of elem. */
+  int		flux_radius_size[2];			/* number of elem. */
   double	growth_step;				/* step size (pix) */
   double	flux_frac[MAXNAPER];			/* for FLUX_RADIUS */
   int		nflux_frac;       			/* number of elem. */

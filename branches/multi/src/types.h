@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		07/10/2011
+*	Last modified:		22/11/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -218,7 +218,6 @@ typedef struct obj2
   double	jacob[NAXIS*NAXIS];		/* Local deproject. Jacobian */
   double	pixscale2;			/* Local pixel area */
   double	mamaposx,mamaposy;		/* "MAMA" pos. in pixels */
-  float		sposx,sposy;			/* single precision pos. */
   float		poserr_a, poserr_b,
 		poserr_theta;			/* Error ellips parameters */
   float		poserr_cxx, poserr_cyy,

@@ -145,7 +145,7 @@
    {""}, 2,2, &prefs.npetroparam},
   {"PIXEL_SCALE", P_FLOAT, &prefs.pixel_scale, 0,0, 0.0, 1e+10},
   {"PSF_NAME", P_STRINGLIST, prefs.psf_name, 0,0, 0.0,0.0,
-   {""}, 1, 2, &prefs.npsf_name},	/*?*/
+   {""}, 1, MAXIMAGE, &prefs.npsf_name},
   {"PSF_NMAX", P_INT, &prefs.psf_npsfmax, 1, PSF_NPSFMAX},
   {"RESCALE_WEIGHTS", P_BOOLLIST, prefs.wscale_flag, 0,0, 0.0,0.0,
    {""}, 1, 2, &prefs.nwscale_flag},
