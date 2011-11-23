@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		03/10/2011
+*	Last modified:		23/11/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -34,7 +34,6 @@ sexcatstruct		thecat;
 picstruct		thefield1,thefield2, thewfield1,thewfield2;
 extern objstruct	flagobj;
 extern obj2struct	flagobj2;
-float			ctg[37], stg[37];
 char			gstr[MAXCHAR];
 
 /*------------------------------- functions ---------------------------------*/
@@ -46,33 +45,20 @@ extern void	allocparcelout(void),
 		flagcleancrowded(int, objliststruct *),
 		freeparcelout(void),
 		getnnw(void),
-		initglob(void),
 		makeit(void),
 		mergeobject(objstruct *, objstruct *),
 		neurinit(void),
 		neurclose(void),
 		neurresp(double *, double *),
 		preanalyse(int, objliststruct *, int),
-		propagate_covar(double *vi, double *d, double *vo,
-				int ni, int no,	double *temp),
 		readdata(picstruct *, PIXTYPE *, int),
 		readidata(picstruct *, FLAGTYPE *, int),
 		readimagehead(picstruct *),
 		readprefs(char *, char **, char **, int),
 		scanimage(picstruct *, picstruct *, picstruct **, int,
 			picstruct *, picstruct *),
-		sexcircle(PIXTYPE *bmp, int, int, double, double, double,
-			PIXTYPE),
-		sexdraw(PIXTYPE *bmp, int, int, double, double, PIXTYPE),
-		sexellips(PIXTYPE *bmp, int, int, double, double, double,
-			double, double, PIXTYPE, int),
-		sexmove(double, double),
 		useprefs(void),
 		write_error(char *msg1, char *msg2);
-
-extern double	counter_seconds(void);
-
-extern float	fqmedian(float *, int);
 
 extern int	addobj(int, objliststruct *, objliststruct *),
 		belong(int, objliststruct *, int, objliststruct *),

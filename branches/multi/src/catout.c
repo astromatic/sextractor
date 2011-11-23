@@ -545,7 +545,6 @@ void	catout_updateparamflags(void)
     FLAG(obj2.prof_spheroid_sersicn) |= prefs.prof_flag;
     }
 
-
 /*------------------------------ Astrometry ---------------------------------*/
   FLAG(obj2.win_aw) |= FLAG(obj2.win_bw) | FLAG(obj2.win_polarw);
   FLAG(obj2.win_cxxw) |= FLAG(obj2.win_cyyw) | FLAG(obj2.win_cxyw);
@@ -660,8 +659,15 @@ void	catout_updateparamflags(void)
 			| FLAG(obj2.prof_disk_mumax)
 			| FLAG(obj2.mumax_prof);
 
-/*------------------------------ Photometry ---------------------------------*/
+  prefs.world_flag = FLAG(obj2.mxw) || FLAG(obj2.mamaposx)
+		|| FLAG(obj2.peakxw) || FLAG(obj2.winpos_xw)
+		|| FLAG(obj2.mx2w) || FLAG(obj2.win_mx2w)
+		|| FLAG(obj2.xw_prof) || FLAG(obj2.poserrmx2w_prof)
+		|| FLAG(obj2.poserr_mx2w) || FLAG(obj2.winposerr_mx2w)
+		|| FLAG(obj2.area_flagw) || FLAG(obj2.prof_flagw)
+		|| FLAG(obj2.fwhmw_psf);
 
+/*------------------------------ Photometry ---------------------------------*/
   FLAG(obj2.fluxerr_best) |= FLAG(obj2.magerr_best);
 
   FLAG(obj2.flux_best) |= FLAG(obj2.mag_best) | FLAG(obj2.fluxerr_best);
@@ -687,6 +693,15 @@ void	catout_updateparamflags(void)
 
   FLAG(obj2.flux_aper) |= FLAG(obj2.mag_aper)|FLAG(obj2.magerr_aper)
 			    | FLAG(obj2.fluxerr_aper);
+
+/*------------------------------ Growth-curves ----------------------------- */
+  if (FLAG(obj2.flux_growth)
+	|| FLAG(obj2.mag_growth)
+	|| FLAG(obj2.flux_radius)
+	|| FLAG(obj2.hl_radius)
+	|| FLAG(obj2.flux_growthstep)
+	|| FLAG(obj2.mag_growthstep))
+    prefs.growth_flag = 1;
 
 /*---------------------------- External flags -------------------------------*/
   FLAG(obj2.imaflag) |= FLAG(obj2.imanflag);
@@ -731,6 +746,15 @@ void	catout_updateparamflags(void)
 			| FLAG(obj2.fluxerr_psf)
 			| FLAG(obj2.niter_psf)
 			| FLAG(obj2.chi2_psf);
+
+  if (FLAG(obj2.flux_psf))
+    prefs.psffit_flag = 1;
+
+/*--------------------------------- ASSOC ----------------------------------*/
+  prefs.assoc_flag = FLAG(obj2.assoc) || FLAG(obj2.assoc_number);
+
+/*----------------------------- SOM-fitting --------------------------------*/
+  prefs.somfit_flag = FLAG(obj2.flux_somfit);
 
 /*-------------------------------- Others -----------------------------------*/
   FLAG(obj2.fwhm) |= FLAG(obj2.fwhmw);
