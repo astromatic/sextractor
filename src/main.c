@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		09/10/2011
+*	Last modified:		23/11/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -136,15 +136,24 @@ setlinebuf(stdout);
       }
     }
 
+  prefs.nband = prefs.nimage_name;
+
+/* Read configuration keywords */
   readprefs(prefs.prefs_name, argkey, argval, narg);
+
+/* Apply low level preferences/settings (threads, architecture, endianity) */
   preprefs();
 
   free(argkey);
   free(argval);
 
+/* Main processing */
   makeit();
 
+/* Free memory associated with preferences/settings */
   endprefs();
+
+/* Display computing time / statistics */
   NFPRINTF(OUTPUT, "");
   tdiff = prefs.time_diff>0.0? prefs.time_diff : 0.001;
   lines = (double)thefield1.height/tdiff;

@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		05/10/2011
+*	Last modified:		22/11/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -529,7 +529,7 @@ INPUT   Measurement field pointer,
 OUTPUT  New obj2 pointer.
 NOTES   -.
 AUTHOR  E. Bertin (IAP)
-VERSION 06/10/2011
+VERSION 22/11/2011
  ***/
 obj2struct	*analyse_obj2obj2(picstruct *field, picstruct *dfield,
 		picstruct *wfield, picstruct *dwfield,
@@ -566,10 +566,10 @@ obj2struct	*analyse_obj2obj2(picstruct *field, picstruct *dfield,
   obj2->mx = obj->mx;
   obj2->my = obj->my;
 /* Integer coordinates */
-  obj2->ix=(int)(obj2->mx+0.49999);		    /* Integer coordinates */
+  obj2->ix=(int)(obj2->mx+0.49999);		/* Integer coordinates */
   obj2->iy=(int)(obj2->my+0.49999);
-  obj2->sposx = (float)(obj2->posx = obj2->mx+1.0); /* That's standard FITS */
-  obj2->sposy = (float)(obj2->posy = obj2->my+1.0);
+  obj2->posx = obj2->mx+1.0;			/* That's standard FITS */
+  obj2->posy = obj2->my+1.0;
   obj2->poserr_mx2 = obj->poserr_mx2;
   obj2->poserr_my2 = obj->poserr_my2;
   obj2->poserr_mxy = obj->poserr_mxy;

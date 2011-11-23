@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		09/10/2011
+*	Last modified:		22/11/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -62,7 +62,7 @@ INPUT	Array of pointers to strings containing the measurement parameters,
 OUTPUT	Pointer to the allocated obj2list.
 NOTES	Requires access to the objtab and obj2key static pointers.
 AUTHOR	E. Bertin (IAP)
-VERSION	09/10/2011
+VERSION	22/11/2011
  ***/
 obj2liststruct	*catout_readparams(char **paramlist, int nparam, int nobj2)
   {
@@ -70,7 +70,8 @@ obj2liststruct	*catout_readparams(char **paramlist, int nparam, int nobj2)
    obj2struct		*obj2, *prevobj2;
    keystruct		*key, *tabkey;
    char			*keyword, *str;
-   int			i,k,o,p, size, nkeys;
+   int			naxisn[MAX_PARAMNAXIS],
+			i,k,o,p, size, nkeys, ntaxis;
 
 /* Prepare the OBJECTS tables*/
   objtab = new_tab("OBJECTS");
@@ -93,18 +94,29 @@ obj2liststruct	*catout_readparams(char **paramlist, int nparam, int nobj2)
         nkeys++;
         if (key->naxis)
           {
+          ntaxis = 0;
           for (i=0; i<key->naxis; i++)
-            key->naxisn[i] = 1;
-          for (i=0; (str = strtok(NULL, " \t,;.)]}\r")) && *str!=(char)'#'
-		&& *str!=(char)'\n'; i++)
             {
-            if (i>=key->naxis)
-              error(EXIT_FAILURE, "*Error*: too many dimensions for keyword ",
-		keyword);
-            if (!(size*=(key->naxisn[i]=atoi(str))))
-              error(EXIT_FAILURE, "*Error*: wrong array syntax for keyword ",
-		keyword);
+            naxisn[i] = 0;
+            if (!key->naxisn[i])
+              ntaxis++;
             }
+          if (ntaxis)
+/*---------- Read only axis sizes that are not already set */
+            for (i=0; (str = strtok(NULL, " \t,;.)]}\r")) && *str!=(char)'#'
+		&& *str!=(char)'\n'; i++)
+              {
+              naxisn[i] = 1;
+              if (i>=ntaxis)
+                error(EXIT_FAILURE,
+			"*Error*: too many dimensions for keyword ", keyword);
+              if (!(size*=(naxisn[i]=atoi(str))))
+          	    error(EXIT_FAILURE,
+			"*Error*: wrong array syntax for keyword ", keyword);
+              }
+          for (i=0; i<key->naxis; i++)
+            if (!key->naxisn[i])
+              size *= (key->naxisn[i] = naxisn[j]? naxisn[j] : 1);
           }
         key->nbytes = size;
         }

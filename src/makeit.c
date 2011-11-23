@@ -101,7 +101,7 @@ void	makeit()
 		prefs.nthreads,
 		prefs.nthreads>1? "s":"");
 
-/* Initialize globals variables */
+/* Initialize global variables */
   initglob();
 
   NFPRINTF(OUTPUT, "Setting catalog parameters");
@@ -112,7 +112,9 @@ void	makeit()
   if (prefs.psf_flag)
     {
     NFPRINTF(OUTPUT, "Reading PSF information");
-    thepsf = psf_load(prefs.psf_name[0]); 
+    QMALLOC(psf, psfstruct, prefs.nband);
+    for (i=0; i<prefs.nband; i++)
+      psf[i] = psf_load(prefs.psf_name[i]); 
     if (prefs.dpsf_flag)
       ppsf = psf_load(prefs.psf_name[1]);
  /*-- Need to check things up because of PSF context parameters */
