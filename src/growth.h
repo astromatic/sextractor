@@ -41,7 +41,7 @@ One must have:	GROWTH_SAMP >= 1
 */
 
 /*------------------------------- functions ---------------------------------*/
-extern void	growth_aver(picstruct *field, picstruct *wfield,
+extern void	growth_aver(fieldstruct *field, fieldstruct *wfield,
 		obj2struct *obj2);
 ;
 

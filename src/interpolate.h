@@ -28,9 +28,9 @@
 
 /*---------------------------------- protos --------------------------------*/
 
-extern void		end_interpolate(picstruct *field),
-			init_interpolate(picstruct *field,
+extern void		end_interpolate(fieldstruct *field),
+			init_interpolate(fieldstruct *field,
 				int xtimeout, int ytimeout),
-			interpolate(picstruct *field, picstruct *wfield,
+			interpolate(fieldstruct *field, fieldstruct *wfield,
 				PIXTYPE *data, PIXTYPE *wdata);
 

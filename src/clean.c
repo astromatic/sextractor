@@ -97,7 +97,7 @@ NOTES   -.
 AUTHOR  E. Bertin (IAP, Leiden & ESO)
 VERSION 08/02/2001
  ***/
-int	clean(picstruct *field, picstruct *dfield, int objnb,
+int	clean(fieldstruct *field, fieldstruct *dfield, int objnb,
 		objliststruct *objlistin)
   {
    objstruct		*objin, *obj;

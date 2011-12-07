@@ -43,7 +43,7 @@
 #include	"wcs/tnx.h"
 
 /******* initastrom **********************************************************
-PROTO	void initastrom(picstruct *field)
+PROTO	void initastrom(fieldstruct *field)
 PURPOSE Preset some global astrometric info.
 INPUT   Measurement field pointer,
 	obj2struct pointer.
@@ -52,7 +52,7 @@ NOTES   Global preferences are used.
 AUTHOR  E. Bertin (IAP)
 VERSION 17/06/2011
  ***/
-void	initastrom(picstruct *field)
+void	initastrom(fieldstruct *field)
 
   {
    wcsstruct	*wcs;
@@ -88,7 +88,7 @@ void	initastrom(picstruct *field)
 
 
 /******* astrom_pos **********************************************************
-PROTO	void astrom_pos(picstruct *field, obj2struct *obj2)
+PROTO	void astrom_pos(fieldstruct *field, obj2struct *obj2)
 PURPOSE Compute FOCAL and WORLD coordinates from basic measurements.
 INPUT   Measurement field pointer,
 	obj2struct pointer.
@@ -97,7 +97,7 @@ NOTES   -.
 AUTHOR  E. Bertin (IAP)
 VERSION 17/06/2011
  ***/
-void	astrom_pos(picstruct *field, obj2struct *obj2)
+void	astrom_pos(fieldstruct *field, obj2struct *obj2)
 
   {
    wcsstruct	*wcs;
@@ -183,7 +183,7 @@ void	astrom_pos(picstruct *field, obj2struct *obj2)
 
 
 /******* astrom_peakpos ******************************************************
-PROTO	void astrom_pos(picstruct *field, obj2struct *obj2)
+PROTO	void astrom_pos(fieldstruct *field, obj2struct *obj2)
 PURPOSE Compute FOCAL and WORLD coordinates from peak measurements.
 INPUT   Measurement field pointer,
 	obj2struct pointer.
@@ -192,7 +192,7 @@ NOTES   -.
 AUTHOR  E. Bertin (IAP)
 VERSION 06/10/2011
  ***/
-void	astrom_peakpos(picstruct *field, obj2struct *obj2)
+void	astrom_peakpos(fieldstruct *field, obj2struct *obj2)
 
   {
    wcsstruct	*wcs;
@@ -244,7 +244,7 @@ void	astrom_peakpos(picstruct *field, obj2struct *obj2)
 
 
 /******* astrom_winpos *******************************************************
-PROTO	void astrom_winpos(picstruct *field, obj2struct *obj2)
+PROTO	void astrom_winpos(fieldstruct *field, obj2struct *obj2)
 PURPOSE Compute FOCAL and WORLD coordinates from windowed measurements.
 INPUT   Measurement field pointer,
 	obj2struct pointer.
@@ -253,7 +253,7 @@ NOTES   -.
 AUTHOR  E. Bertin (IAP)
 VERSION 17/06/2011
  ***/
-void	astrom_winpos(picstruct *field, obj2struct *obj2)
+void	astrom_winpos(fieldstruct *field, obj2struct *obj2)
 
   {
    wcsstruct	*wcs;
@@ -305,7 +305,7 @@ void	astrom_winpos(picstruct *field, obj2struct *obj2)
 
 
 /******* astrom_psfpos *******************************************************
-PROTO	void astrom_psfpos(picstruct *field, obj2struct *obj2)
+PROTO	void astrom_psfpos(fieldstruct *field, obj2struct *obj2)
 PURPOSE Compute FOCAL and WORLD coordinates from windowed measurements.
 INPUT   Measurement field pointer,
 	obj2struct pointer.
@@ -314,7 +314,7 @@ NOTES   -.
 AUTHOR  E. Bertin (IAP)
 VERSION 17/06/2011
  ***/
-void	astrom_psfpos(picstruct *field, obj2struct *obj2)
+void	astrom_psfpos(fieldstruct *field, obj2struct *obj2)
 
   {
    wcsstruct	*wcs;
@@ -366,7 +366,7 @@ void	astrom_psfpos(picstruct *field, obj2struct *obj2)
 
 
 /******* astrom_profpos ******************************************************
-PROTO	void astrom_psfpos(picstruct *field, obj2struct *obj2)
+PROTO	void astrom_psfpos(fieldstruct *field, obj2struct *obj2)
 PURPOSE Compute FOCAL and WORLD coordinates from model fitting measurements.
 INPUT   Measurement field pointer,
 	obj2struct pointer.
@@ -375,7 +375,7 @@ NOTES   -.
 AUTHOR  E. Bertin (IAP)
 VERSION 17/06/2011
  ***/
-void	astrom_profpos(picstruct *field, obj2struct *obj2)
+void	astrom_profpos(fieldstruct *field, obj2struct *obj2)
 
   {
    wcsstruct	*wcs;
@@ -427,7 +427,7 @@ void	astrom_profpos(picstruct *field, obj2struct *obj2)
 
 
 /******* astrom_shapeparam ***************************************************
-PROTO	void astrom_shapeparam(picstruct *field, obj2struct *obj2)
+PROTO	void astrom_shapeparam(fieldstruct *field, obj2struct *obj2)
 PURPOSE Compute basic shape parameters in WORLD and SKY coordinates.
 INPUT   Measurement field pointer,
 	obj2struct pointer.
@@ -436,7 +436,7 @@ NOTES   -.
 AUTHOR  E. Bertin (IAP)
 VERSION 06/10/2011
  ***/
-void	astrom_shapeparam(picstruct *field, obj2struct *obj2)
+void	astrom_shapeparam(fieldstruct *field, obj2struct *obj2)
   {
    wcsstruct	*wcs;
    double	dx2,dy2,dxy, xm2,ym2,xym, temp,pm2, lm0,lm1,lm2,lm3;
@@ -511,7 +511,7 @@ void	astrom_shapeparam(picstruct *field, obj2struct *obj2)
 
 
 /******* astrom_winshapeparam ************************************************
-PROTO	void astrom_winshapeparam(picstruct *field, obj2struct *obj2)
+PROTO	void astrom_winshapeparam(fieldstruct *field, obj2struct *obj2)
 PURPOSE Compute windowed shape parameters in WORLD and SKY coordinates.
 INPUT   Measurement field pointer,
 	obj2struct pointer.
@@ -520,7 +520,7 @@ NOTES   -.
 AUTHOR  E. Bertin (IAP)
 VERSION 17/06/2011
  ***/
-void	astrom_winshapeparam(picstruct *field, obj2struct *obj2)
+void	astrom_winshapeparam(fieldstruct *field, obj2struct *obj2)
   {
    wcsstruct	*wcs;
    double	dx2,dy2,dxy, xm2,ym2,xym, temp,pm2, lm0,lm1,lm2,lm3;
@@ -594,7 +594,7 @@ void	astrom_winshapeparam(picstruct *field, obj2struct *obj2)
 
 
 /******* astrom_errparam *****************************************************
-PROTO	void astrom_errparam(picstruct *field, obj2struct *obj2)
+PROTO	void astrom_errparam(fieldstruct *field, obj2struct *obj2)
 PURPOSE Compute error ellipse parameters in WORLD and SKY coordinates.
 INPUT   Measurement field pointer,
 	obj2struct pointer.
@@ -603,7 +603,7 @@ NOTES   -.
 AUTHOR  E. Bertin (IAP)
 VERSION 06/10/2011
  ***/
-void	astrom_errparam(picstruct *field, obj2struct *obj2)
+void	astrom_errparam(fieldstruct *field, obj2struct *obj2)
   {
    wcsstruct	*wcs;
    double	dx2,dy2,dxy, xm2,ym2,xym, temp,pm2, lm0,lm1,lm2,lm3;
@@ -678,7 +678,7 @@ void	astrom_errparam(picstruct *field, obj2struct *obj2)
 
 
 /******* astrom_winerrparam **************************************************
-PROTO	void astrom_errparam(picstruct *field, obj2struct *obj2)
+PROTO	void astrom_errparam(fieldstruct *field, obj2struct *obj2)
 PURPOSE Compute windowed error ellipse parameters in WORLD and SKY coordinates.
 INPUT   Measurement field pointer,
 	obj2struct pointer.
@@ -687,7 +687,7 @@ NOTES   -.
 AUTHOR  E. Bertin (IAP)
 VERSION 17/06/2011
  ***/
-void	astrom_winerrparam(picstruct *field, obj2struct *obj2)
+void	astrom_winerrparam(fieldstruct *field, obj2struct *obj2)
   {
    wcsstruct	*wcs;
    double	dx2,dy2,dxy, xm2,ym2,xym, temp,pm2, lm0,lm1,lm2,lm3;
@@ -762,7 +762,7 @@ void	astrom_winerrparam(picstruct *field, obj2struct *obj2)
 
 
 /******* astrom_psferrparam **************************************************
-PROTO	void astrom_psferrparam(picstruct *field, obj2struct *obj2)
+PROTO	void astrom_psferrparam(fieldstruct *field, obj2struct *obj2)
 PURPOSE Compute PSF error ellipse parameters in WORLD and SKY coordinates.
 INPUT   Measurement field pointer,
 	obj2struct pointer.
@@ -771,7 +771,7 @@ NOTES   -.
 AUTHOR  E. Bertin (IAP)
 VERSION 17/06/2011
  ***/
-void	astrom_psferrparam(picstruct *field, obj2struct *obj2)
+void	astrom_psferrparam(fieldstruct *field, obj2struct *obj2)
   {
    wcsstruct	*wcs;
    double	dx2,dy2,dxy, xm2,ym2,xym, temp,pm2, lm0,lm1,lm2,lm3;
@@ -846,7 +846,7 @@ void	astrom_psferrparam(picstruct *field, obj2struct *obj2)
 
 
 /******* astrom_proferrparam *************************************************
-PROTO	void astrom_errparam(picstruct *field, obj2struct *obj2)
+PROTO	void astrom_errparam(fieldstruct *field, obj2struct *obj2)
 PURPOSE Compute model-fitting error ellipse parameters in WORLD and SKY
 	coordinates.
 INPUT   Measurement field pointer,
@@ -856,7 +856,7 @@ NOTES   -.
 AUTHOR  E. Bertin (IAP)
 VERSION 17/06/2011
  ***/
-void	astrom_proferrparam(picstruct *field, obj2struct *obj2)
+void	astrom_proferrparam(fieldstruct *field, obj2struct *obj2)
   {
    wcsstruct	*wcs;
    double	dx2,dy2,dxy, xm2,ym2,xym, temp,pm2, lm0,lm1,lm2,lm3;
@@ -931,7 +931,7 @@ void	astrom_proferrparam(picstruct *field, obj2struct *obj2)
 
 
 /******* astrom_profshapeparam ***********************************************
-PROTO	void astrom_errparam(picstruct *field, obj2struct *obj2)
+PROTO	void astrom_errparam(fieldstruct *field, obj2struct *obj2)
 PURPOSE Compute model-fitting shape parameters in WORLD and SKY coordinates.
 INPUT   Measurement field pointer,
 	obj2struct pointer.
@@ -940,7 +940,7 @@ NOTES   -.
 AUTHOR  E. Bertin (IAP)
 VERSION 17/06/2011
  ***/
-void	astrom_profshapeparam(picstruct *field, obj2struct *obj2)
+void	astrom_profshapeparam(fieldstruct *field, obj2struct *obj2)
   {
    wcsstruct	*wcs;
    double	mat[9], tempmat[9], mx2wcov[9], dpdmx2[6], cov[4],

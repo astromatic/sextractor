@@ -33,10 +33,10 @@
 
 /*---------------------------------- protos --------------------------------*/
 
-extern picstruct	*newweight(char *filename, picstruct *reffield,
+extern fieldstruct	*newweight(char *filename, fieldstruct *reffield,
 				weightenum wtype, int nok);
 
 void			weight_count(objstruct *obj, pliststruct *pixel),
-			weight_to_var(picstruct *wfield, PIXTYPE *data,
+			weight_to_var(fieldstruct *wfield, PIXTYPE *data,
 				int npix);
 

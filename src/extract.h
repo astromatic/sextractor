@@ -54,7 +54,7 @@ typedef struct structinfo
 void		lutzalloc(int, int),
 		lutzfree(void),
 		lutzsort(infostruct *, objliststruct *),
-		sortit(picstruct *, picstruct *, picstruct *, picstruct *,
+		sortit(fieldstruct *, fieldstruct *, fieldstruct *, fieldstruct *,
 			infostruct *, objliststruct *, PIXTYPE *, PIXTYPE *),
 		update(infostruct *, infostruct *, pliststruct *);
 

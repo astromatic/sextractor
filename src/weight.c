@@ -45,11 +45,11 @@
 /*
 Load a weight map and initialize relevant parameters.
 */
-picstruct	*newweight(char *filename, picstruct *reffield,
+fieldstruct	*newweight(char *filename, fieldstruct *reffield,
 			weightenum wtype, int nok)
 
   {
-   picstruct	*wfield;
+   fieldstruct	*wfield;
 
   switch(wtype)
     {
@@ -101,7 +101,7 @@ picstruct	*newweight(char *filename, picstruct *reffield,
 Transform an array of possibily unnormalized weights into a calibrated
 variance map.
 */
-void	weight_to_var(picstruct *wfield, PIXTYPE *data, int npix)
+void	weight_to_var(fieldstruct *wfield, PIXTYPE *data, int npix)
 
   {
    float	sigfac2;

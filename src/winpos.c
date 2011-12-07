@@ -39,7 +39,7 @@
 #include	"winpos.h"
 
 /****** compute_winpos ********************************************************
-PROTO	void compute_winpos(picstruct *field, picstruct *wfield,
+PROTO	void compute_winpos(fieldstruct *field, fieldstruct *wfield,
 			 obj2struct *obj2)
 PURPOSE	Compute windowed source barycenter.
 INPUT	Picture structure pointer,
@@ -50,7 +50,7 @@ NOTES   obj2->mx and obj2->my are taken as initial centroid guesses.
 AUTHOR  E. Bertin (IAP)
 VERSION 09/10/2011
  ***/
-void	compute_winpos(picstruct *field, picstruct *wfield,
+void	compute_winpos(fieldstruct *field, fieldstruct *wfield,
 			obj2struct *obj2)
 
   {

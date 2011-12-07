@@ -45,14 +45,14 @@ One must have:	APER_OVERSAMP >= 1
 */
 
 /*------------------------------- functions ---------------------------------*/
-extern void	photom_aper(picstruct *field, picstruct *wfield,
+extern void	photom_aper(fieldstruct *field, fieldstruct *wfield,
 			obj2struct *obj2, int aper),
-		photom_auto(picstruct *field, picstruct *dfield,
-			picstruct *wfield, picstruct *dwfield,
+		photom_auto(fieldstruct *field, fieldstruct *dfield,
+			fieldstruct *wfield, fieldstruct *dwfield,
 			obj2struct *obj2),
-		photom_isocor(picstruct *field, obj2struct *obj2),
-		photom_mags(picstruct *field, obj2struct *obj2),
-		photom_petro(picstruct *field, picstruct *dfield,
-			picstruct *wfield, picstruct *dwfield,
+		photom_isocor(fieldstruct *field, obj2struct *obj2),
+		photom_mags(fieldstruct *field, obj2struct *obj2),
+		photom_petro(fieldstruct *field, fieldstruct *dfield,
+			fieldstruct *wfield, fieldstruct *dwfield,
 			obj2struct *obj2);
 

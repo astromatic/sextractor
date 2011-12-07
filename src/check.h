@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		25/03/2011
+*	Last modified:		07/12/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -47,11 +47,14 @@ typedef struct structcheck
 
 /*------------------------------- functions ---------------------------------*/
 
-checkstruct	*initcheck(char *, checkenum, int next);
+checkstruct	*check_init(char *filename, checkenum check_type, int next,
+			int depth);
 
-void		addcheck(checkstruct *, float *, int,int, int,int, float),
-		blankcheck(checkstruct *, PIXTYPE *, int,int,int,int,PIXTYPE),
-		endcheck(checkstruct *),
-		reendcheck(picstruct *field, checkstruct *),
-		reinitcheck(picstruct *, checkstruct *),
-		writecheck(checkstruct *, PIXTYPE *, int);
+void		check_add(checkstruct *check, float *thumb, int w, int h,
+			int ix,int iy, float amplitude),
+		check_blank(checkstruct *check, PIXTYPE *mask, int w, int h,
+			int xmin,int ymin, float val),
+		check_reend(fieldstruct *field, checkstruct *check),
+		check_end(checkstruct *check),
+		check_reinit(fieldstruct *field, checkstruct *check),
+		check_write(checkstruct *check, PIXTYPE *data, int w);

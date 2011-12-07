@@ -48,7 +48,7 @@
 /*
 Convolve a scan line with an array.
 */
-void	convolve(picstruct *field, PIXTYPE *mscan, int y)
+void	convolve(fieldstruct *field, PIXTYPE *mscan, int y)
 
   {
    int		mw,mw2,m0,me,m,mx,dmx, y0, dy, sw,sh;
@@ -277,7 +277,7 @@ void	endfilter()
 /*
 Switch to the appropriate filtering routine.
 */
-void	filter(picstruct *field, PIXTYPE *mscan, int y)
+void	filter(fieldstruct *field, PIXTYPE *mscan, int y)
 
   {
   if (thefilter->bpann)
@@ -293,7 +293,7 @@ void	filter(picstruct *field, PIXTYPE *mscan, int y)
 /*
 Filter a scan line using an artificial retina.
 */
-void	neurfilter(picstruct *field, PIXTYPE *mscan, int y)
+void	neurfilter(fieldstruct *field, PIXTYPE *mscan, int y)
 
   {
    PIXTYPE	cval;
@@ -345,7 +345,7 @@ void	neurfilter(picstruct *field, PIXTYPE *mscan, int y)
 /*
 Convolve a vignet with an array.
 */
-void	convolve_image(picstruct *field, float *vig1,
+void	convolve_image(fieldstruct *field, float *vig1,
 		float *vig2, int width, int height)
 
   {

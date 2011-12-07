@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		23/11/2011
+*	Last modified:		06/12/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -57,7 +57,7 @@
 #define	MAXCHARL		16384		/* max.nb of chars in strlist*/
 #define	MAXDEBAREA		3		/* max. area for deblending */
 #define	MAXFLAG			4		/* max. # of FLAG-images */
-#define	MAXIMAGE		16384		/* max. # of input images */
+#define	MAXIMAGE		1024		/* max. # of input images */
 #define	MAXNAPER		32		/* max. number of apertures */
 #define	MAXNASSOC		32		/* max. number of assoc. */
 #define	MAXPICSIZE		1048576		/* max. image size */

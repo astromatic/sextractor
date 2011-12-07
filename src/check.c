@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		06/10/2011
+*	Last modified:		07/12/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -41,16 +41,27 @@
 #include	"fitswcs.h"
 #include	"check.h"
 
-/********************************* addcheck **********************************/
-/*
-Add a PSF to a CHECK-image (with a multiplicative factor).
-Outside boundaries are taken into account.
-*/
-void	addcheck(checkstruct *check, float *psf,
-			int w,int h, int ix,int iy, float amplitude)
+/****** check_add ************************************************************
+PROTO	void check_add(checkstruct *check, float *thumb, int w, int h,
+			int ix,int iy, float amplitude)
+PURPOSE	Add a small thumbnail to a check image (with a multiplicative factor).
+INPUT	Pointer to the check-image,
+	pointer to the thumbnail,
+	thumbnail width,
+	thumbnail height,
+	thumbnail center x coordinate,
+	thumbnail center y coordinate,
+	flux scaling factor.
+OUTPUT	-.
+NOTES	Outside boundaries are taken into account.
+AUTHOR	E. Bertin (IAP)
+VERSION	07/12/2011
+ ***/
+void	check_add(checkstruct *check, float *thumb, int w, int h,
+			int ix,int iy, float amplitude)
   {
    PIXTYPE	*pix;
-   int		x,y, xmin,xmax,ymin,ymax,w2, dwpsf;
+   int		x,y, xmin,xmax,ymin,ymax,w2, dwthumb;
 
 /* Set the image boundaries */
   w2 = w;
@@ -58,7 +69,7 @@ void	addcheck(checkstruct *check, float *psf,
   ymax = ymin + h;
   if (ymin<0)
     {
-    psf -= ymin*w;
+    thumb -= ymin*w;
     ymin = 0;
     }
   if (ymax>check->height)
@@ -73,30 +84,42 @@ void	addcheck(checkstruct *check, float *psf,
     }
   if (xmin<0)
     {
-    psf -= xmin;
+    thumb -= xmin;
     w2 += xmin;
     xmin = 0;
     }
 
-  dwpsf = w-w2;
+  dwthumb = w-w2;
 /* Subtract the right pixels to the destination */
-  for (y=ymin; y<ymax; y++, psf += dwpsf)
+  for (y=ymin; y<ymax; y++, thumb += dwthumb)
     {
     pix = (float *)check->pix+y*check->width+xmin;
     for (x=w2; x--;)
-      *(pix++) += amplitude**(psf++);
+      *(pix++) += amplitude**(thumb++);
     }
 
   return;
   }
 
 
-/********************************* blankcheck *******************************/
-/*
-Blank a part of the CHECK-image according to a mask.
-*/
-void	blankcheck(checkstruct *check, PIXTYPE *mask, int w,int h,
-		int xmin,int ymin, PIXTYPE val)
+/****** check_blank **********************************************************
+PROTO	void check_blank(checkstruct *check, PIXTYPE *mask, int w, int h,
+			int ix,int iy, float val)
+PURPOSE	Blank a part of a check image according to a mask.
+INPUT	Pointer to the check-image,
+	pointer to the blanking mask,
+	mask width,
+	mask height,
+	mask minimum x coordinate,
+	mask minimum y coordinate,
+	blanking value.
+OUTPUT	-.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	07/12/2011
+ ***/
+void	check_blank(checkstruct *check, PIXTYPE *mask, int w, int h,
+			int xmin,int ymin, float val)
   {
    PIXTYPE	*pixt;
    int		x,y, xmax,ymax,w2,wc;
@@ -148,12 +171,21 @@ void	blankcheck(checkstruct *check, PIXTYPE *mask, int w,int h,
   }
 
 
-/******************************** initcheck **********************************/
-/*
-initialize check-image.
-*/
-checkstruct	*initcheck(char *filename, checkenum check_type, int next)
-
+/****** check_init **********************************************************
+PROTO	checkstruct *check_init(char *filename, checkenum check_type, int next,
+			int depth)
+PURPOSE	Initialize a new check image.
+INPUT	Check image filename,
+	check image type,
+	number of extension,
+	depth (number of image planes).
+OUTPUT	Pointer to an allocated check image structure.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	29/11/2011
+ ***/
+checkstruct	*check_init(char *filename, checkenum check_type, int next,
+			int depth)
   {
    catstruct	*cat;
    checkstruct	*check;
@@ -161,6 +193,7 @@ checkstruct	*initcheck(char *filename, checkenum check_type, int next)
   QCALLOC(check, checkstruct, 1);
   check->type = check_type;
   check->next = next;
+  check->depth = depth;
   cat = check->cat = new_cat(1);
   strcpy(cat->filename, filename);
 
@@ -182,12 +215,16 @@ checkstruct	*initcheck(char *filename, checkenum check_type, int next)
   }
 
 
-/******************************** reinitcheck ********************************/
-/*
-initialize check-image (for subsequent writing).
-*/
-void	reinitcheck(picstruct *field, checkstruct *check)
-
+/****** check_reinit *********************************************************
+PROTO	void check_reinit(fieldstruct *field, checkstruct *check)
+PURPOSE	Initialize an existing check image or subsequent writing.
+INPUT	Pointer to the image structure,
+	pointer to the check image.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	29/11/2011
+ ***/
+void	check_reinit(fieldstruct *field, checkstruct *check)
   {
    catstruct	*cat;
    tabstruct	*tab;
@@ -377,19 +414,24 @@ void	reinitcheck(picstruct *field, checkstruct *check)
       break;
 
     default:
-      error(EXIT_FAILURE, "*Internal Error* in ", "reinitcheck()!");
+      error(EXIT_FAILURE, "*Internal Error* in ", "check_reinit()!");
     }
 
   return;
   }
 
 
-/******************************** writecheck *********************************/
-/*
-Write ONE line of npix pixels of a check-image.
-*/
-void	writecheck(checkstruct *check, PIXTYPE *data, int w)
-
+/****** check_write *********************************************************
+PROTO	void check_write(checkstruct *check, PIXTYPE *data, int w)
+PURPOSE	Write ONE line of npix pixels of a check-image.
+INPUT	Pointer to the check image,
+	pointer to the image line,
+	line width (in pixels).
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	29/11/2011
+ ***/
+void	check_write(checkstruct *check, PIXTYPE *data, int w)
   {
   if (check->type == CHECK_APERTURES || check->type == CHECK_SUBPSFPROTOS
 	|| check->type == CHECK_SUBPROFILES || check->type == CHECK_SUBSPHEROIDS
@@ -435,11 +477,16 @@ void	writecheck(checkstruct *check, PIXTYPE *data, int w)
   }
 
 
-/********************************* reendcheck ********************************/
-/*
-Finish current check-image.
-*/
-void	reendcheck(picstruct *field, checkstruct *check)
+/****** check_reend *********************************************************
+PROTO	void check_reend(fieldstruct *field, checkstruct *check)
+PURPOSE	Complete current check-image extension.
+INPUT	Pointer to the image structure,
+	pointer to the check image.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	29/11/2011
+ ***/
+void	check_reend(fieldstruct *field, checkstruct *check)
   {
    catstruct	*cat;
 
@@ -492,7 +539,7 @@ void	reendcheck(picstruct *field, checkstruct *check)
        int	y;
 
       for (y=field->ymin; y<field->ymax; y++)
-        writecheck(check, &PIX(field, 0, y), field->width);
+        check_write(check, &PIX(field, 0, y), field->width);
       free(check->line);
       check->line = NULL;
       pad_tab(cat, check->npix*sizeof(unsigned char));
@@ -504,7 +551,7 @@ void	reendcheck(picstruct *field, checkstruct *check)
        int	y;
 
       for (y=field->ymin; y<field->ymax; y++)
-        writecheck(check, &PIX(field, 0, y), field->width);
+        check_write(check, &PIX(field, 0, y), field->width);
       free(check->pix);
       free(check->line);
       check->line = NULL;
@@ -513,21 +560,27 @@ void	reendcheck(picstruct *field, checkstruct *check)
       }
 
     default:
-      error(EXIT_FAILURE, "*Internal Error* in ", "endcheck()!");
+      error(EXIT_FAILURE, "*Internal Error* in ", "check_reend()!");
     }
 
   return;
   }
 
-/********************************* endcheck **********************************/
-/*
-close check-image.
-*/
-void	endcheck(checkstruct *check)
+
+/****** check_end ***********************************************************
+PROTO	void check_end(checkstruct *check)
+PURPOSE	Close check image and free allocated memory.
+INPUT	Pointer to the check image.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	29/11/2011
+ ***/
+void	check_end(checkstruct *check)
   {
   free_cat(&check->cat,1);
   free(check);
 
   return;
   }
+
 

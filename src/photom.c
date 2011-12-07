@@ -40,7 +40,7 @@
 #include	"plist.h"
 
 /****** photom_aper **********************************************************
-PROTO	void photom_aper(picstruct *field, picstruct *wfield, obj2struct *obj2,
+PROTO	void photom_aper(fieldstruct *field, fieldstruct *wfield, obj2struct *obj2,
 			int aper)
 PURPOSE	Measure the flux within a circular aperture.
 INPUT	Pointer to the image structure,
@@ -52,7 +52,7 @@ NOTES	-.
 AUTHOR	E. Bertin (IAP)
 VERSION	06/10/2011
  ***/
-void  photom_aper(picstruct *field, picstruct *wfield, obj2struct *obj2,
+void  photom_aper(fieldstruct *field, fieldstruct *wfield, obj2struct *obj2,
 		int aper)
 
   {
@@ -213,8 +213,8 @@ void  photom_aper(picstruct *field, picstruct *wfield, obj2struct *obj2,
 
 
 /****** photom_petro *********************************************************
-PROTO	void photom_petro(picstruct *field, picstruct *dfield,
-		picstruct *wfield, picstruct *dwfield, obj2struct *obj2)
+PROTO	void photom_petro(fieldstruct *field, fieldstruct *dfield,
+		fieldstruct *wfield, fieldstruct *dwfield, obj2struct *obj2)
 PURPOSE	Measure the flux within a Petrosian elliptical aperture
 INPUT	Pointer to the image structure,
 	pointer to the detection image structure,
@@ -226,8 +226,8 @@ NOTES	-.
 AUTHOR	E. Bertin (IAP)
 VERSION	06/10/2010
  ***/
-void  photom_petro(picstruct *field, picstruct *dfield,
-	picstruct *wfield, picstruct *dwfield, obj2struct *obj2)
+void  photom_petro(fieldstruct *field, fieldstruct *dfield,
+	fieldstruct *wfield, fieldstruct *dwfield, obj2struct *obj2)
   {
    double		sigtv, tv, r1, v1,var,gain,backnoise2, muden,munum;
    float		bkg, ngamma, mx,my, dx,dy, cx2,cy2,cxy, r2,
@@ -520,8 +520,8 @@ void  photom_petro(picstruct *field, picstruct *dfield,
 
 
 /****** photom_auto*********************************************************
-PROTO	void photom_auto(picstruct *field, picstruct *dfield,
-		picstruct *wfield, picstruct *dwfield, obj2struct *obj2)
+PROTO	void photom_auto(fieldstruct *field, fieldstruct *dfield,
+		fieldstruct *wfield, fieldstruct *dwfield, obj2struct *obj2)
 PURPOSE	Measure the flux within a Kron elliptical aperture
 INPUT	Pointer to the image structure,
 	pointer to the detection image structure,
@@ -533,8 +533,8 @@ NOTES	-.
 AUTHOR	E. Bertin (IAP)
 VERSION	06/10/2011
  ***/
-void  photom_auto(picstruct *field, picstruct *dfield,
-	picstruct *wfield, picstruct *dwfield, obj2struct *obj2)
+void  photom_auto(fieldstruct *field, fieldstruct *dfield,
+	fieldstruct *wfield, fieldstruct *dwfield, obj2struct *obj2)
 
   {
    double		sigtv, tv, r1, v1,var,gain,backnoise2;
@@ -801,7 +801,7 @@ void  photom_auto(picstruct *field, picstruct *dfield,
 
 
 /****** photom_isocor ********************************************************
-PROTO	void photom_isocor(picstruct *field, obj2struct *obj2)
+PROTO	void photom_isocor(fieldstruct *field, obj2struct *obj2)
 PURPOSE	Correct isophotal flux as in Maddox et al. 1990.
 INPUT	Pointer to the image structure,
 	pointer to the obj2 structure.
@@ -810,7 +810,7 @@ NOTES	-.
 AUTHOR	E. Bertin (IAP)
 VERSION	06/10/2011
  ***/
-void  photom_isocor(picstruct *field, obj2struct *obj2)
+void  photom_isocor(fieldstruct *field, obj2struct *obj2)
   {
    double	ati;
 
@@ -840,7 +840,7 @@ void  photom_isocor(picstruct *field, obj2struct *obj2)
 
 
 /****** photom_mags *********************************************************
-PROTO	void photom_mags(picstruct *field, obj2struct *obj2)
+PROTO	void photom_mags(fieldstruct *field, obj2struct *obj2)
 PURPOSE	Compute magnitudes from flux measurements.
 INPUT	Pointer to the image structure,
 	pointer to the obj2 structure.
@@ -849,7 +849,7 @@ NOTES	-.
 AUTHOR	E. Bertin (IAP)
 VERSION	06/10/2011
  ***/
-void	photom_mags(picstruct *field, obj2struct *obj2)
+void	photom_mags(fieldstruct *field, obj2struct *obj2)
   {
 /* Mag. isophotal */
   if (FLAG(obj2.mag_iso))

@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		26/07/2011
+*	Last modified:		07/12/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -42,7 +42,7 @@
 
 
 /****** growth_aver *********************************************************
-PROTO	void growth_aver(picstruct *field, picstruct *wfield, obj2struct *obj2)
+PROTO	void growth_aver(fieldstruct *field, fieldstruct *wfield, obj2struct *obj2)
 PURPOSE	Build an average growth curve.
 INPUT	Pointer to the image structure,
 	pointer to the weight-map structure,
@@ -50,9 +50,9 @@ INPUT	Pointer to the image structure,
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	26/07/2011
+VERSION	07/12/2011
  ***/
-void  growth_aver(picstruct *field, picstruct *wfield, obj2struct *obj2)
+void  growth_aver(fieldstruct *field, fieldstruct *wfield, obj2struct *obj2)
 
   {
    float		*fgrowth;
@@ -262,9 +262,9 @@ void  growth_aver(picstruct *field, picstruct *wfield, obj2struct *obj2)
 /* Now let's remap the growth-curve to match user's choice */
   if (FLAG(obj2.flux_growth))
     {
-    n = prefs.flux_growthsize;
-    if (FLAG(obj2.flux_growthstep))
-      obj2->flux_growthstep = rlim/n;
+    n = prefs.flux_growth_size;
+    if (FLAG(obj2.flux_growth_step))
+      obj2->flux_growth_step = rlim/n;
     fgrowth = obj2->flux_growth;
     step2 = (double)GROWTH_NSTEP/n;
     j = 1;
@@ -283,9 +283,9 @@ void  growth_aver(picstruct *field, picstruct *wfield, obj2struct *obj2)
 
   if (FLAG(obj2.mag_growth))
     {
-    n = prefs.mag_growthsize;
-    if (FLAG(obj2.mag_growthstep))
-      obj2->mag_growthstep = rlim/n;
+    n = prefs.mag_growth_size;
+    if (FLAG(obj2.mag_growth_step))
+      obj2->mag_growth_step = rlim/n;
     fgrowth = obj2->mag_growth;
     step2 = (double)GROWTH_NSTEP/n;
     j = 1;

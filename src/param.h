@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		09/10/2011
+*	Last modified:		07/12/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -63,7 +63,7 @@ keystruct	obj2key[] = {
 	"stat.stdev;phot.mag", "mag", 1, &prefs.nband},
   {"FLUX_APER", "Flux vector within fixed circular aperture(s)",
 	&flagobj2.flux_aper, H_FLOAT, T_FLOAT, "%12.7g", "count",
-	"phot.flux", "ct", 2, prefs.nband_aper},
+	"phot.flux", "ct", 2, prefs.aper_size},
   {"FLUXERR_APER", "RMS error vector for aperture flux(es)",
 	&flagobj2.fluxerr_aper, H_FLOAT, T_FLOAT, "%12.7g", "count",
 	"stat.stdev;phot.flux", "ct", 2, prefs.aper_size},
@@ -146,7 +146,7 @@ keystruct	obj2key[] = {
 	"stat.fit.chi2", "", 1, &prefs.nband},
   {"VECTOR_SOMFIT", "Position vector of the winning SOM node",
 	&flagobj2.vector_somfit, H_FLOAT, T_FLOAT, "%5.2f", "",
-	"src.morph.param", "", 2, prefs.somfit_vectorsize},
+	"src.morph.param", "", 2, prefs.somfit_vector_size},
 
   {"KRON_RADIUS", "Kron apertures in units of A or B",
 	&flagobj2.kronfactor, H_FLOAT, T_FLOAT, "%5.2f", "",
@@ -639,10 +639,10 @@ keystruct	obj2key[] = {
 	"meta.code.qual", "", 1, &prefs.nband},
    {"IMAFLAGS_ISO", "FLAG-image flags OR'ed over the iso. profile",
 	&flagobj2.imaflag, H_INT, T_LONG, "%9u", "",
-	"meta.code.qual", "", 2, prefs.imaflag_size},
+	"meta.code.qual", "", 1, &prefs.imaflag_size},
   {"NIMAFLAGS_ISO", "Number of flagged pixels entering IMAFLAGS_ISO",
 	&flagobj2.imanflag, H_INT, T_LONG, "%9d", "",
-	"meta.number", "", 2, prefs.imanflag_size},
+	"meta.number", "", 1, &prefs.imanflag_size},
   {"NLOWWEIGHT_ISO", "Nb of pixels with low weight over the iso. profile",
 	&flagobj2.nzwpix, H_INT, T_LONG, "%9d", "",
 	"meta.number", "", 1, &prefs.nband},
@@ -698,13 +698,13 @@ keystruct	obj2key[] = {
 	&flagobj2.flux_growth, H_FLOAT, T_FLOAT, "%12.7g", "count",
 	"phot.count", "ct", 2, prefs.flux_growth_size},
   {"FLUX_GROWTHSTEP", "Step for growth-curves",
-	&flagobj2.flux_growthstep, H_FLOAT, T_FLOAT, "%10.3f", "pixel",
+	&flagobj2.flux_growth_step, H_FLOAT, T_FLOAT, "%10.3f", "pixel",
 	"pos.distance", "pix"},
   {"MAG_GROWTH", "Cumulated magnitude growth-curve",
 	&flagobj2.mag_growth, H_FLOAT, T_FLOAT, "%8.4f", "mag",
 	"phot.mag", "mag", 2, prefs.mag_growth_size},
   {"MAG_GROWTHSTEP", "Step for growth-curves",
-	&flagobj2.mag_growthstep, H_FLOAT, T_FLOAT, "%10.3f", "pixel",
+	&flagobj2.mag_growth_step, H_FLOAT, T_FLOAT, "%10.3f", "pixel",
 	"pos.distance", "pix"},
   {"FLUX_RADIUS", "Fraction-of-light radii",
 	&flagobj2.flux_radius, H_FLOAT, T_FLOAT, "%10.3f", "pixel",

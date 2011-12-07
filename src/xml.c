@@ -97,8 +97,8 @@ NOTES	-.
 AUTHOR	E. Bertin (IAP)
 VERSION	05/02/2010
  ***/
-int	update_xml(sexcatstruct *sexcat, picstruct *dfield, picstruct *field,
-		picstruct *dwfield, picstruct *wfield)
+int	update_xml(sexcatstruct *sexcat, fieldstruct *dfield, fieldstruct *field,
+		fieldstruct *dwfield, fieldstruct *wfield)
   {
    xmlstruct	*x;
 

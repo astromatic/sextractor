@@ -43,7 +43,7 @@
 /*
 Init resources required for data interpolation.
 */
-void    init_interpolate(picstruct *field, int xtimeout, int ytimeout)
+void    init_interpolate(fieldstruct *field, int xtimeout, int ytimeout)
 
   {
   QMALLOC(field->interp_backup, PIXTYPE, field->width);
@@ -67,7 +67,7 @@ void    init_interpolate(picstruct *field, int xtimeout, int ytimeout)
 /*
 Interpolate (crudely) input data.
 */
-void    interpolate(picstruct *field, picstruct *wfield,
+void    interpolate(fieldstruct *field, fieldstruct *wfield,
 		PIXTYPE *data, PIXTYPE *wdata)
 
   {
@@ -126,7 +126,7 @@ void    interpolate(picstruct *field, picstruct *wfield,
 /*
 Free memory allocated for data interpolation.
 */
-void    end_interpolate(picstruct *field)
+void    end_interpolate(fieldstruct *field)
 
   {
   free(field->interp_backup);

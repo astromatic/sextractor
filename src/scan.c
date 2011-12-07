@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		07/10/2011
+*	Last modified:		07/12/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -49,8 +49,8 @@
 #include	"weight.h"
 
 /****************************** scanimage ************************************
-PROTO   void scanimage(picstruct *field, picstruct *dfield, picstruct *ffield,
-        picstruct *wfield, picstruct *dwfield)
+PROTO   void scanimage(fieldstruct *field, fieldstruct *dfield, fieldstruct *ffield,
+        fieldstruct *wfield, fieldstruct *dwfield)
 PURPOSE Scan of the large pixmap(s). Main loop and heart of the program.
 INPUT   Measurement field pointer,
         Detection field pointer,
@@ -62,18 +62,18 @@ NOTES   -.
 AUTHOR  E. Bertin (IAP)
 VERSION 28/09/2010
  ***/
-void	scanimage(picstruct *field, picstruct *dfield, picstruct **pffield,
-		int nffield, picstruct *wfield, picstruct *dwfield)
+void	scanimage(fieldstruct *field, fieldstruct *dfield, fieldstruct **pffield,
+		int nffield, fieldstruct *wfield, fieldstruct *dwfield)
 
   {
    static infostruct	curpixinfo, *info, *store,
 			initinfo, freeinfo, *victim;
-   picstruct		*ffield;
+   fieldstruct		*ffield;
    checkstruct		*check;
    objliststruct       	objlist;
    objstruct		*cleanobj;
    pliststruct		*pixel, *pixt;
-   picstruct		*cfield, *cdwfield;
+   fieldstruct		*cfield, *cdwfield;
 
    char			*marker, newmarker, *blankpad, *bpt,*bpt0;
    int			co, i,j, flag, luflag,pstop, xl,xl2,yl, cn,
@@ -250,14 +250,14 @@ void	scanimage(picstruct *field, picstruct *dfield, picstruct **pffield,
           {
           ffield = pffield[i];
           pfscan[i] = (ffield->stripy==ffield->stripysclim)?
-		  (FLAGTYPE *)loadstrip(ffield, (picstruct *)NULL)
+		  (FLAGTYPE *)loadstrip(ffield, (fieldstruct *)NULL)
 		: &ffield->fstrip[ffield->stripy*ffield->width];
           }
       if (wfield)
         {
 /*------ Copy the previous weight line to track bad pixel limits */
         wscan = (wfield->stripy==wfield->stripysclim)?
-		  (PIXTYPE *)loadstrip(wfield, (picstruct *)NULL)
+		  (PIXTYPE *)loadstrip(wfield, (fieldstruct *)NULL)
 		: &wfield->strip[wfield->stripy*wfield->width];
         if (PLISTEXIST(wflag))
           {
@@ -274,7 +274,7 @@ void	scanimage(picstruct *field, picstruct *dfield, picstruct **pffield,
         {
         dwscan = (dwfield->stripy==dwfield->stripysclim)?
 		  (PIXTYPE *)loadstrip(dwfield,
-				dfield?(picstruct *)NULL:dwfield)
+				dfield?(fieldstruct *)NULL:dwfield)
 		: &dwfield->strip[dwfield->stripy*dwfield->width];
         if (PLISTEXIST(wflag))
           {
@@ -334,7 +334,7 @@ void	scanimage(picstruct *field, picstruct *dfield, picstruct **pffield,
         }
 
       if ((check=prefs.check[CHECK_FILTERED]))
-        writecheck(check, cdscan, w);
+        check_write(check, cdscan, w);
       }
 
     trunflag = (yl==0 || yl==h-1)? OBJ_TRUNC:0;
@@ -731,12 +731,12 @@ void  update(infostruct *infoptr1, infostruct *infoptr2, pliststruct *pixel)
 /*
 build the object structure.
 */
-void  sortit(picstruct *field, picstruct *dfield, picstruct *wfield,
-	picstruct *dwfield, infostruct *info, objliststruct *objlist,
+void  sortit(fieldstruct *field, fieldstruct *dfield, fieldstruct *wfield,
+	fieldstruct *dwfield, infostruct *info, objliststruct *objlist,
 	     PIXTYPE *cdwscan, PIXTYPE *wscan)
 
   {
-   picstruct		*cfield;
+   fieldstruct		*cfield;
    objliststruct	objlistd, *objlistout;
    obj2liststruct	*obj2list;
    static objstruct	obj;
@@ -799,10 +799,10 @@ void  sortit(picstruct *field, picstruct *dfield, picstruct *wfield,
     cobj->number = ++thecat.ndetect;
     cobj->blend = thecat.nblend;
 /*-- Local background */
-    cobj->bkg = (float)back(field, (int)(cobj->mx+0.5), (int)(cobj->my+0.5));
+    cobj->bkg = (float)back(field, cobj->mx, cobj->my);
     cobj->dbkg = 0.0;
     if (prefs.pback_type == LOCAL)
-      localback(field, cobj);
+      back_local(field, cobj);
     else
       cobj->sigbkg = field->backsig;
 /*--- Isophotal measurements */

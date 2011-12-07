@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		22/11/2011
+*	Last modified:		07/12/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -42,7 +42,7 @@
 #define	MAXCHARL	16384		/* max. nb of chars in a string list */
 #define	MAXLIST		2048		/* max. nb of list members */
 #define	MAXLISTSIZE	2000000		/* max size of list */
-#define	MAXPARAMNAXIS	4		/* max parameter dimensionality */
+#define	MAXNPARAMAXIS	4		/* max parameter dimensionality */
 
 /* NOTES:
 One must have:	MAXLIST >= 1 (preferably >= 16!)
@@ -58,6 +58,7 @@ typedef struct
   int		nimage_name;				/* nb of params */
   char		cat_name[MAXCHAR];			/* catalog filename*/
   char		head_suffix[MAXCHAR];			/* ext. header suffix */
+  int		nband;					/* Number of channels*/
 /*----- catalog output */
   char		*(param[MAXLIST]);			/* catalog parameters*/
   int		nparam;					/* nb of params */
@@ -88,8 +89,8 @@ typedef struct
   int		nfimage_name;				/* nb of params */
   enum	{FLAG_OR, FLAG_AND, FLAG_MIN, FLAG_MAX, FLAG_MOST}
 				flag_type[MAXFLAG];	/* flag combination */
-  int		imaflag_size[2];			/* requested iso nb1 */
-  int		imanflag_size[2];			/* requested iso nb2 */
+  int		imaflag_size;				/* requested iso nb1 */
+  int		imanflag_size;				/* requested iso nb2 */
   int		nimaisoflag;				/* effective iso nb */
   int		nimaflag;				/* effective ima nb */
 /*----- cleaning */
@@ -98,10 +99,9 @@ typedef struct
 /*----- Weighting */
   char		*(wimage_name[2]);       		/* weight filenames */
   int		nwimage_name;				/* nb of params */
-  weightenum	weight_type[2];				/* weighting scheme */
+  weightenum	weight_type[MAXIMAGE];			/* weighting scheme */
   int		nweight_type;				/* nb of params */
-  int		weight_flag;				/* do we weight ? */
-  int		dweight_flag;				/* detection weight? */
+  int		weight_flag[MAXIMAGE];			/* do we weight ? */
   int		weightgain_flag;			/* weight gain? */
   int		wscale_flag[2];		/* Weight rescaling */
   int		nwscale_flag;				/* nb of params */
@@ -184,22 +184,23 @@ typedef struct
   int		vignet_size[3];				/* vignet size */
   int		vigshift_size[3];			/* shift-vignet size */
   int		cleanmargin;				/* CLEANing margin */
+/*----- SOM-fitting */
   char		som_name[MAXCHAR];			/* SOM filename */
   int		somfit_flag;				/* ASSOCiation flag */
-  int		somfit_vectorsize[2];			/* SOMfit vec. size */
+  int		somfit_vector_size[2];			/* SOMfit vec. size */
 /*----- masking */
   enum {MASK_NONE, MASK_BLANK, MASK_CORRECT}
 		mask_type;				/* type of masking */
   int		blank_flag;				/* BLANKing flag */
-  double	weight_thresh[2];      			/* weight threshlds */
+  double	weight_thresh[MAXIMAGE];		/* weight thresholds */
   int		nweight_thresh;				/* nb of params */
 /*----- interpolation */
   enum	{INTERP_NONE, INTERP_VARONLY, INTERP_ALL}
-		interp_type[2];				/* interpolat. type */
+		interp_type[MAXIMAGE];			/* interpolat. type */
   int		ninterp_type;				/* nb of params */
-  int		interp_xtimeout[2];   			/* interp. x timeout */
-  int		ninterp_xtimeout;       	        /* nb of params */
-  int		interp_ytimeout[2];   			/* interp. y timeout */
+  int		interp_xtimeout[MAXIMAGE]; 		/* interp. x timeout */
+  int		ninterp_xtimeout;		        /* nb of params */
+  int		interp_ytimeout[MAXIMAGE];		/* interp. y timeout */
   int		ninterp_ytimeout;       		/* nb of params */
 /*----- astrometry */
   int		world_flag;				/* WORLD required */
@@ -232,7 +233,7 @@ typedef struct
   int		psf_magerrsize;				/* nb of params */
   int		prof_flag;				/* Profile-fitting */
   int		pattern_flag;				/* Pattern-fitting */
-/*----- Profile-fitting */
+/*----- model-fitting */
   int		prof_modelflags;			/* model flags */
   int		prof_vectorsize;			/* nb of params */
   int		prof_errvectorsize;			/* nb of params */

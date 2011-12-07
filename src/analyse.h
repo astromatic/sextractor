@@ -34,21 +34,21 @@
 
 /*------------------------------ Prototypes ---------------------------------*/
 
-obj2struct	*analyse_obj2obj2(picstruct *field, picstruct *dfield,
-			picstruct *wfield, picstruct *dwfield,
+obj2struct	*analyse_obj2obj2(fieldstruct *field, fieldstruct *dfield,
+			fieldstruct *wfield, fieldstruct *dwfield,
 			objstruct *obj, obj2liststruct *obj2list);
-int		analyse_full(picstruct *field, picstruct *dfield,
-			picstruct *wfield, picstruct *dwfield,
+int		analyse_full(fieldstruct *field, fieldstruct *dfield,
+			fieldstruct *wfield, fieldstruct *dwfield,
 			obj2struct *obj2),
 		analyse_overlapness(objliststruct *objlist, int iobj);
 
-void		analyse_final(picstruct *field, picstruct *dfield,
-		picstruct *wfield, picstruct *dwfield,
+void		analyse_final(fieldstruct *field, fieldstruct *dfield,
+		fieldstruct *wfield, fieldstruct *dwfield,
 		objliststruct *objlist, int iobj),
-		analyse_group(picstruct *field, picstruct *dfield,
-			picstruct *wfield, picstruct *dwfield,
+		analyse_group(fieldstruct *field, fieldstruct *dfield,
+			fieldstruct *wfield, fieldstruct *dwfield,
 			obj2struct *obj2),
-		analyse_iso(picstruct *field, picstruct *dfield,
+		analyse_iso(fieldstruct *field, fieldstruct *dfield,
 			objliststruct *objlist, int n);
 		
 

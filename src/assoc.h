@@ -48,8 +48,8 @@ typedef struct structassoc
 
 assocstruct	*load_assoc(char *filename, wcsstruct *wcs);
 
-int		do_assoc(picstruct *field, double x, double y, double *data);
+int		do_assoc(fieldstruct *field, double x, double y, double *data);
 
-void		init_assoc(picstruct *field),
-		end_assoc(picstruct *field),
-		sort_assoc(picstruct *field, assocstruct *assoc);
+void		init_assoc(fieldstruct *field),
+		end_assoc(fieldstruct *field),
+		sort_assoc(fieldstruct *field, assocstruct *assoc);

@@ -233,7 +233,7 @@ void	pattern_fit(patternstruct *pattern, profitstruct *profit)
       for (n=noutpix; n--;)
         *(outpix1++) += dval**(outpix2++);
       }
-    addcheck(check, outpix, profit->objnaxisn[0],profit->objnaxisn[1],
+    check_add(check, outpix, profit->objnaxisn[0],profit->objnaxisn[1],
 		profit->ix, profit->iy, 1.0);
     free(outpix);
     }

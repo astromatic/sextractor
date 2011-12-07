@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		22/11/2011
+*	Last modified:		07/12/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -62,7 +62,7 @@ INPUT	Array of pointers to strings containing the measurement parameters,
 OUTPUT	Pointer to the allocated obj2list.
 NOTES	Requires access to the objtab and obj2key static pointers.
 AUTHOR	E. Bertin (IAP)
-VERSION	22/11/2011
+VERSION	07/12/2011
  ***/
 obj2liststruct	*catout_readparams(char **paramlist, int nparam, int nobj2)
   {
@@ -70,7 +70,7 @@ obj2liststruct	*catout_readparams(char **paramlist, int nparam, int nobj2)
    obj2struct		*obj2, *prevobj2;
    keystruct		*key, *tabkey;
    char			*keyword, *str;
-   int			naxisn[MAX_PARAMNAXIS],
+   int			naxisn[MAXNPARAMAXIS],
 			i,k,o,p, size, nkeys, ntaxis;
 
 /* Prepare the OBJECTS tables*/
@@ -116,7 +116,7 @@ obj2liststruct	*catout_readparams(char **paramlist, int nparam, int nobj2)
               }
           for (i=0; i<key->naxis; i++)
             if (!key->naxisn[i])
-              size *= (key->naxisn[i] = naxisn[j]? naxisn[j] : 1);
+              size *= (key->naxisn[i] = naxisn[i]? naxisn[i] : 1);
           }
         key->nbytes = size;
         }
@@ -280,7 +280,7 @@ INPUT	Pointer to the obj2list.
 OUTPUT	-.
 NOTES	Requires access to the flagobj2 static pointer.
 AUTHOR	E. Bertin (IAP)
-VERSION	06/10/2011
+VERSION	07/12/2011
  ***/
 void	catout_updateparamflags(void)
 
@@ -699,8 +699,8 @@ void	catout_updateparamflags(void)
 	|| FLAG(obj2.mag_growth)
 	|| FLAG(obj2.flux_radius)
 	|| FLAG(obj2.hl_radius)
-	|| FLAG(obj2.flux_growthstep)
-	|| FLAG(obj2.mag_growthstep))
+	|| FLAG(obj2.flux_growth_step)
+	|| FLAG(obj2.mag_growth_step))
     prefs.growth_flag = 1;
 
 /*---------------------------- External flags -------------------------------*/
@@ -952,7 +952,7 @@ NOTES	Requires access to global prefs and the objtab static pointer.
 AUTHOR	E. Bertin (IAP)
 VERSION	18/07/2011
  ***/
-void	catout_initext(picstruct *field)
+void	catout_initext(fieldstruct *field)
   {
    tabstruct	*tab, *asctab;
    keystruct	*key;

@@ -63,9 +63,9 @@ typedef struct
 
 extern int		end_xml(void),
 			init_xml(int next),
-			update_xml(sexcatstruct *sexcat, picstruct *dfield, 
-				picstruct *field, picstruct *dwfield,
-				picstruct *wfield),
+			update_xml(sexcatstruct *sexcat, fieldstruct *dfield, 
+				fieldstruct *field, fieldstruct *dwfield,
+				fieldstruct *wfield),
 			write_xml(char *filename),
 			write_xml_header(FILE *file),
 			write_xml_meta(FILE *file, char *error);

@@ -281,7 +281,7 @@ headerror:
 /*
 Read the PSF context parameters in the FITS header.
 */
-void	psf_readcontext(psfstruct *psf, picstruct *field)
+void	psf_readcontext(psfstruct *psf, fieldstruct *field)
   {
    static double	contextval[POLY_MAXDIM];
    int			i, ndim;
@@ -309,7 +309,7 @@ void	psf_readcontext(psfstruct *psf, picstruct *field)
 /*                   standard PSF fit for one component                     */
 /****************************************************************************/
 
-void	psf_fit(psfstruct *psf, picstruct *field, picstruct *wfield,
+void	psf_fit(psfstruct *psf, fieldstruct *field, fieldstruct *wfield,
 		obj2struct *obj2)
 {
   checkstruct		*check;
@@ -633,9 +633,9 @@ void	psf_fit(psfstruct *psf, picstruct *field, picstruct *wfield,
                         checkmask, pwidth, pheight,
                         -deltax[j]*pixstep, -deltay[j]*pixstep, pixstep);
         if ((check = prefs.check[CHECK_SUBPSFPROTOS]))
-          addcheck(check, checkmask, pwidth,pheight, ix,iy,-flux[j]);
+          check_add(check, checkmask, pwidth,pheight, ix,iy,-flux[j]);
         if ((check = prefs.check[CHECK_PSFPROTOS]))
-          addcheck(check, checkmask, pwidth,pheight, ix,iy,flux[j]);
+          check_add(check, checkmask, pwidth,pheight, ix,iy,flux[j]);
       }
 
   thepsfit->niter = niter;
@@ -678,9 +678,9 @@ void	psf_fit(psfstruct *psf, picstruct *field, picstruct *wfield,
 /* double fit to make psf detection on one image and photometry on another  */
 /****************************************************************************/
 
-void    double_psf_fit(psfstruct *ppsf, picstruct *pfield, picstruct *pwfield,
+void    double_psf_fit(psfstruct *ppsf, fieldstruct *pfield, fieldstruct *pwfield,
                        obj2struct *obj2,
-			psfstruct *psf, picstruct *field, picstruct *wfield)
+			psfstruct *psf, fieldstruct *field, fieldstruct *wfield)
 {
   static double      /* sum[PSF_NPSFMAX]*/ pdeltax[PSF_NPSFMAX],
     pdeltay[PSF_NPSFMAX],psol[PSF_NPSFMAX], pcovmat[PSF_NPSFMAX*PSF_NPSFMAX], 

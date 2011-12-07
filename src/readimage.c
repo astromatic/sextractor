@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		06/10/2011
+*	Last modified:		07/12/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -53,7 +53,7 @@
 /*
 Load a new strip of pixel data into the buffer.
 */
-void	*loadstrip(picstruct *field, picstruct *wfield)
+void	*loadstrip(fieldstruct *field, fieldstruct *wfield)
 
   {
    tabstruct	*tab;
@@ -88,7 +88,7 @@ void	*loadstrip(picstruct *field, picstruct *wfield)
         wdata = wfield->strip;
       if (flags & BACKRMS_FIELD)
         for (y=0, rmsdata=data; y<field->stripheight; y++, rmsdata += w)
-          backrmsline(field, y, rmsdata);
+          back_rmsline(field, y, rmsdata);
       else if (flags & INTERP_FIELD)
         copydata(field, 0, nbpix);
       else
@@ -96,12 +96,12 @@ void	*loadstrip(picstruct *field, picstruct *wfield)
       if (flags & (WEIGHT_FIELD|RMS_FIELD|BACKRMS_FIELD|VAR_FIELD))
         weight_to_var(field, data, nbpix);
       if ((flags & MEASURE_FIELD) && (check=prefs.check[CHECK_IDENTICAL]))
-        writecheck(check, data, nbpix);
+        check_write(check, data, nbpix);
       for (y=0; y<field->stripheight; y++, data += w)
         {
 /*------ This is the only place where one can pick-up safely the current bkg */
         if (flags & (MEASURE_FIELD|DETECT_FIELD))
-          subbackline(field, y, data);
+          back_subline(field, y, data);
 /*------ Go to interpolation process */
         if (interpflag)
           {
@@ -114,24 +114,24 @@ void	*loadstrip(picstruct *field, picstruct *wfield)
           if (flags & MEASURE_FIELD)
             {
             if ((check = prefs.check[CHECK_BACKGROUND]))
-              writecheck(check, field->backline, w);
+              check_write(check, field->backline, w);
             if ((check = prefs.check[CHECK_SUBTRACTED]))
-              writecheck(check, data, w);
+              check_write(check, data, w);
             if ((check = prefs.check[CHECK_APERTURES]))
-              writecheck(check, data, w);
+              check_write(check, data, w);
             if ((check = prefs.check[CHECK_SUBPSFPROTOS]))
-              writecheck(check, data, w);
+              check_write(check, data, w);
             if ((check = prefs.check[CHECK_SUBPROFILES]))
-              writecheck(check, data, w);
+              check_write(check, data, w);
             if ((check = prefs.check[CHECK_SUBSPHEROIDS]))
-              writecheck(check, data, w);
+              check_write(check, data, w);
             if ((check = prefs.check[CHECK_SUBDISKS]))
-              writecheck(check, data, w);
+              check_write(check, data, w);
             }
           if ((flags&DETECT_FIELD) && (check=prefs.check[CHECK_BACKRMS]))
             {
-            backrmsline(field, y, (PIXTYPE *)check->pix);
-            writecheck(check, check->pix, w);
+            back_rmsline(field, y, (PIXTYPE *)check->pix);
+            check_write(check, check->pix, w);
             }
           }
         }
@@ -161,16 +161,16 @@ void	*loadstrip(picstruct *field, picstruct *wfield)
 
 /*---- copy to Check-image the "oldest" line before it is replaced */
       if ((flags & MEASURE_FIELD) && (check=prefs.check[CHECK_SUBOBJECTS]))
-        writecheck(check, data, w);
+        check_write(check, data, w);
 
       if ((flags & MEASURE_FIELD) && (check=prefs.check[CHECK_MASK]))
-        writecheck(check, data, w);
+        check_write(check, data, w);
 
       if ((flags & MEASURE_FIELD) && (check=prefs.check[CHECK_SUBMASK]))
-        writecheck(check, data, w);
+        check_write(check, data, w);
 
       if (flags & BACKRMS_FIELD)
-        backrmsline(field, field->ymax, data);
+        back_rmsline(field, field->ymax, data);
       else if (flags & INTERP_FIELD)
         copydata(field, field->stripylim*w, w);
       else
@@ -179,10 +179,10 @@ void	*loadstrip(picstruct *field, picstruct *wfield)
         weight_to_var(field, data, w);
 
       if ((flags & MEASURE_FIELD) && (check=prefs.check[CHECK_IDENTICAL]))
-        writecheck(check, data, w);
+        check_write(check, data, w);
 /*---- Interpolate and subtract the background at current line */
       if (flags & (MEASURE_FIELD|DETECT_FIELD))
-        subbackline(field, field->ymax, data);
+        back_subline(field, field->ymax, data);
       if (interpflag)
         interpolate(field,wfield, data, wdata);
 /*---- Check-image stuff */
@@ -191,24 +191,24 @@ void	*loadstrip(picstruct *field, picstruct *wfield)
         if (flags & MEASURE_FIELD)
           {
           if ((check = prefs.check[CHECK_BACKGROUND]))
-            writecheck(check, field->backline, w);
+            check_write(check, field->backline, w);
           if ((check = prefs.check[CHECK_SUBTRACTED]))
-            writecheck(check, data, w);
+            check_write(check, data, w);
           if ((check = prefs.check[CHECK_APERTURES]))
-            writecheck(check, data, w);
+            check_write(check, data, w);
           if ((check = prefs.check[CHECK_SUBPSFPROTOS]))
-            writecheck(check, data, w);
+            check_write(check, data, w);
           if ((check = prefs.check[CHECK_SUBPROFILES]))
-            writecheck(check, data, w);
+            check_write(check, data, w);
           if ((check = prefs.check[CHECK_SUBSPHEROIDS]))
-            writecheck(check, data, w);
+            check_write(check, data, w);
           if ((check = prefs.check[CHECK_SUBDISKS]))
-            writecheck(check, data, w);
+            check_write(check, data, w);
           }
         if ((flags&DETECT_FIELD) && (check=prefs.check[CHECK_BACKRMS]))
           {
-          backrmsline(field, field->ymax, (PIXTYPE *)check->pix);
-          writecheck(check, check->pix, w);
+          back_rmsline(field, field->ymax, (PIXTYPE *)check->pix);
+          check_write(check, check->pix, w);
           }
         }
       }
@@ -230,7 +230,7 @@ void	*loadstrip(picstruct *field, picstruct *wfield)
 /*
 Copy image data from one field to the other.
 */
-void	copydata(picstruct *field, int offset, int size)
+void	copydata(fieldstruct *field, int offset, int size)
   {
   memcpy(field->strip+offset, field->reffield->strip+offset,
 		size*sizeof(PIXTYPE));
@@ -242,7 +242,7 @@ void	copydata(picstruct *field, int offset, int size)
 /*
 extract some data from the FITS-file header
 */
-void	readimagehead(picstruct *field)
+void	readimagehead(fieldstruct *field)
   {
 #define FITSREADS(buf, k, str, def) \
                 {if (fitsread(buf,k,str, H_STRING,T_STRING) != RETURN_OK) \
@@ -267,8 +267,6 @@ void	readimagehead(picstruct *field)
   field->width = tab->naxisn[0];
   field->height = tab->naxisn[1];
   field->npix = (KINGSIZE_T)field->width*field->height;
-  field->bitpix = tab->bitpix;
-  field->bytepix = tab->bytepix;
   if (tab->bitsgn && prefs.fitsunsigned_flag)
     tab->bitsgn = 0;
 

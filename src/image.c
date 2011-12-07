@@ -46,7 +46,7 @@ static float	interpm[INTERPW*INTERPW];
 Copy a small part of the image. Image parts which lie outside boundaries are
 set to -BIG.
 */
-int	copyimage(picstruct *field, PIXTYPE *dest, int w,int h, int ix,int iy)
+int	copyimage(fieldstruct *field, PIXTYPE *dest, int w,int h, int ix,int iy)
   {
    PIXTYPE	*destt;
    int		i,y, xmin,xmax,ymin,ymax,w2;
@@ -99,7 +99,7 @@ int	copyimage(picstruct *field, PIXTYPE *dest, int w,int h, int ix,int iy)
 Add a PSF to a part of the image (with a multiplicative factor).
 outside boundaries are taken into account.
 */
-void	addimage(picstruct *field, float *psf,
+void	addimage(fieldstruct *field, float *psf,
 			int w,int h, int ix,int iy, float amplitude)
   {
    PIXTYPE	*pix;
@@ -149,7 +149,7 @@ void	addimage(picstruct *field, float *psf,
 Copy a small part of the image and recenter it through sinc interpolation.
 Image parts which lie outside boundaries are set to 0.
 */
-int	copyimage_center(picstruct *field, PIXTYPE *dest, int w,int h,
+int	copyimage_center(fieldstruct *field, PIXTYPE *dest, int w,int h,
 			float x,float y)
   {
    PIXTYPE	*s,*s0, *dt,*dt0,*dt2;
@@ -254,7 +254,7 @@ int	copyimage_center(picstruct *field, PIXTYPE *dest, int w,int h,
 Add a vignet to an image (with a multiplicative factor), recentered through
 sinc interpolation.
 */
-void	addimage_center(picstruct *field, float *psf, int w,int h,
+void	addimage_center(fieldstruct *field, float *psf, int w,int h,
 			float x,float y, float amplitude)
   {
    PIXTYPE	*s,*s0, *dt,*dt0,*dt2;
@@ -364,7 +364,7 @@ free(psf2);
 /*
 Blank a small part of the image according to a mask.
 */
-void	blankimage(picstruct *field, PIXTYPE *mask, int w,int h,
+void	blankimage(fieldstruct *field, PIXTYPE *mask, int w,int h,
 		int xmin,int ymin, PIXTYPE val)
   {
    PIXTYPE	*pixt;
@@ -469,7 +469,7 @@ void	deblankimage(PIXTYPE *pixblank, int wblank,int hblank,
 /*
 Paste a mask onto an image.
 */
-void	pasteimage(picstruct *field, PIXTYPE *mask, int w,int h,
+void	pasteimage(fieldstruct *field, PIXTYPE *mask, int w,int h,
 		int xmin,int ymin)
   {
    PIXTYPE	*pixt, val;
