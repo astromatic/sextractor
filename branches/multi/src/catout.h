@@ -40,7 +40,7 @@ void		catout_allocparams(obj2liststruct *obj2list),
 		catout_endext(void),
 		catout_freeparams(obj2liststruct *obj2list),
 		catout_init(void),
-		catout_initext(picstruct *field),
+		catout_initext(fieldstruct *field),
 		catout_updateparamflags(void),
 		catout_writeobj(obj2struct *obj2),
 		catout_writevofields(FILE *file);

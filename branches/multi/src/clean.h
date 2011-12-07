@@ -42,6 +42,6 @@ extern void	addcleanobj(objstruct *),
 		initclean(void),
 		subcleanobj(int);
 
-extern int	clean(picstruct *field, picstruct *dfield,
+extern int	clean(fieldstruct *field, fieldstruct *dfield,
 			int, objliststruct *);
 

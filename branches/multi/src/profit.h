@@ -203,7 +203,7 @@ typedef struct profit
 /*----------------------------- Global variables ----------------------------*/
 /*-------------------------------- functions --------------------------------*/
 
-profitstruct	*profit_init(picstruct *field, picstruct *wfield,
+profitstruct	*profit_init(fieldstruct *field, fieldstruct *wfield,
 			obj2struct *obj2, psfstruct *psf,
 			unsigned int modeltype);
 
@@ -221,8 +221,8 @@ float		*profit_compresi(profitstruct *profit, float dynparam,
 
 int		profit_boundtounbound(profitstruct *profit,
 			float *param, double *dparam, int index),
-		profit_copyobjpix(profitstruct *profit, picstruct *field,
-			picstruct *wfield, obj2struct *obj2),
+		profit_copyobjpix(profitstruct *profit, fieldstruct *field,
+			fieldstruct *wfield, obj2struct *obj2),
 		profit_covarunboundtobound(profitstruct *profit,
 			double *dparam, float *param),
 		profit_fit(profitstruct *profit, obj2struct *obj2),
@@ -254,8 +254,8 @@ void		prof_end(profstruct *prof),
 		profit_psf(profitstruct *profit),
 		profit_resetparam(profitstruct *profit, paramenum paramtype),
 		profit_resetparams(profitstruct *profit),
-		profit_spread(profitstruct *profit,  picstruct *field,
-			picstruct *wfield, obj2struct *obj2),
+		profit_spread(profitstruct *profit,  fieldstruct *field,
+			fieldstruct *wfield, obj2struct *obj2),
 		profit_submodpix(profitstruct *profitobj,
 			profitstruct *profitmod, float fac),
 		profit_surface(profitstruct *profit, obj2struct *obj2);

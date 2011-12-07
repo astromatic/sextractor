@@ -42,7 +42,7 @@
 /*----------------------------- Global variables ----------------------------*/
 
 /*------------------------------- functions ---------------------------------*/
-extern void    	addimage(picstruct *field, float *psf,
+extern void    	addimage(fieldstruct *field, float *psf,
 			int w,int h, int ix,int iy, float amplitude),
 		addfrombig(float *pixbig, int wbig,int hbig,
 			float *pixsmall, int wsmall, int hsmall,	
@@ -50,15 +50,15 @@ extern void    	addimage(picstruct *field, float *psf,
 		addtobig(float *pixsmall, int wsmall,int hsmall,
 			float *pixbig, int wbig, int hbig,
 			int ix,int iy, float amplitude),
-		addimage_center(picstruct *field, float *psf,
+		addimage_center(fieldstruct *field, float *psf,
 			int w,int h, float x, float y, float amplitude),
-		blankimage(picstruct *, PIXTYPE *, int,int, int,int, PIXTYPE),
+		blankimage(fieldstruct *, PIXTYPE *, int,int, int,int, PIXTYPE),
 		deblankimage(PIXTYPE *pixblank, int wblank,int hblank,
 			PIXTYPE	*pixima, int wima, int hima, int xmin,int ymin),
-		pasteimage(picstruct *, PIXTYPE *, int ,int, int, int);
+		pasteimage(fieldstruct *, PIXTYPE *, int ,int, int, int);
 
-extern int	copyimage(picstruct *, PIXTYPE *, int, int, int, int),
-		copyimage_center(picstruct *, PIXTYPE *, int,int, float,float),
+extern int	copyimage(fieldstruct *, PIXTYPE *, int, int, int, int),
+		copyimage_center(fieldstruct *, PIXTYPE *, int,int, float,float),
 		vignet_resample(float *pix1, int w1, int h1, float *pix2,
 			int w2, int h2, float dx, float dy, float step2);
 

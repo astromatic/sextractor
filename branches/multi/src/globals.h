@@ -31,7 +31,7 @@
 /*----------------------- miscellaneous variables ---------------------------*/
 
 sexcatstruct		thecat;
-picstruct		thefield1,thefield2, thewfield1,thewfield2;
+fieldstruct		thefield1,thefield2, thewfield1,thewfield2;
 extern objstruct	flagobj;
 extern obj2struct	flagobj2;
 char			gstr[MAXCHAR];
@@ -40,8 +40,8 @@ char			gstr[MAXCHAR];
 extern void	allocparcelout(void),
 		blankit(char *, int),
                 closecheck(void),
-		copydata(picstruct *, int, int),
-		endfield(picstruct *),
+		copydata(fieldstruct *, int, int),
+		endfield(fieldstruct *),
 		flagcleancrowded(int, objliststruct *),
 		freeparcelout(void),
 		getnnw(void),
@@ -51,12 +51,12 @@ extern void	allocparcelout(void),
 		neurclose(void),
 		neurresp(double *, double *),
 		preanalyse(int, objliststruct *, int),
-		readdata(picstruct *, PIXTYPE *, int),
-		readidata(picstruct *, FLAGTYPE *, int),
-		readimagehead(picstruct *),
+		readdata(fieldstruct *, PIXTYPE *, int),
+		readidata(fieldstruct *, FLAGTYPE *, int),
+		readimagehead(fieldstruct *),
 		readprefs(char *, char **, char **, int),
-		scanimage(picstruct *, picstruct *, picstruct **, int,
-			picstruct *, picstruct *),
+		scanimage(fieldstruct *, fieldstruct *, fieldstruct **, int,
+			fieldstruct *, fieldstruct *),
 		useprefs(void),
 		write_error(char *msg1, char *msg2);
 
@@ -65,10 +65,10 @@ extern int	addobj(int, objliststruct *, objliststruct *),
 		gatherup(objliststruct *, objliststruct *),
 		parcelout(objliststruct *, objliststruct *);
 
-extern void	*loadstrip(picstruct *, picstruct *);
+extern void	*loadstrip(fieldstruct *, fieldstruct *);
 
 extern char	*readfitshead(FILE *, char *, int *);
 
-extern picstruct	*inheritfield(picstruct *infield, int flags),
+extern fieldstruct	*inheritfield(fieldstruct *infield, int flags),
 			*newfield(char *, int , int);
 

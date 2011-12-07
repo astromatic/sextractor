@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		23/11/2011
+*	Last modified:		07/12/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -33,5 +33,5 @@ double	counter_seconds(void);
 float	fqmedian(float *, int);
 
 void	propagate_covar(double *vi, double *d, double *vo,
-				int ni, int no,	double *temp),
+				int ni, int no,	double *temp);
 

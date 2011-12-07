@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/10/2010
+*	Last modified:		07/12/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -52,10 +52,10 @@
 /*
 Returns a pointer to a new field, ready to go!
 */
-picstruct	*newfield(char *filename, int flags, int nok)
+fieldstruct	*newfield(char *filename, int flags, int nok)
 
   {
-   picstruct	*field;
+   fieldstruct	*field;
    catstruct	*cat;
    tabstruct	*tab;
    char		*pstr;
@@ -66,7 +66,7 @@ picstruct	*newfield(char *filename, int flags, int nok)
     error(EXIT_FAILURE, "*Error*: cannot open ", filename);
 
 /* First allocate memory for the new field (and nullify pointers) */
-  QCALLOC(field, picstruct, 1);
+  QCALLOC(field, fieldstruct, 1);
   field->flags = flags;
   field->cat = cat;
   tab = cat->tab;
@@ -100,8 +100,6 @@ picstruct	*newfield(char *filename, int flags, int nok)
   sprintf(gstr, "Looking for %s", field->rfilename);
   NFPRINTF(OUTPUT, gstr);
 /* Check the image exists and read important info (image size, etc...) */
-  field->file = cat->file;
-
   field->headflag = !read_aschead(field->hfilename, nok2 - 1, field->tab);
   readimagehead(field);
 
@@ -192,13 +190,13 @@ picstruct	*newfield(char *filename, int flags, int nok)
 /*
 Make a copy of a field structure, e.g. for interpolation purposes.
 */
-picstruct	*inheritfield(picstruct *infield, int flags)
+fieldstruct	*inheritfield(fieldstruct *infield, int flags)
 
   {
-   picstruct	*field;
+   fieldstruct	*field;
 
 /* First allocate memory for the new field (and nullify pointers) */
-  QCALLOC(field, picstruct, 1);
+  QCALLOC(field, fieldstruct, 1);
 
 /* Copy what is important and reset the remaining */
   *field = *infield;
@@ -220,7 +218,7 @@ picstruct	*inheritfield(picstruct *infield, int flags)
 /*
 Free and close everything related to a field structure.
 */
-void	endfield(picstruct *field)
+void	endfield(fieldstruct *field)
 
   {
 
@@ -233,7 +231,7 @@ void	endfield(picstruct *field)
     end_wcs(field->wcs);
   if (field->interp_flag)
     end_interpolate(field);
-  endback(field);
+  back_end(field);
   free(field);
 
   return;

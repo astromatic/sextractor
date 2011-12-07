@@ -79,7 +79,7 @@ const int	flux_flag[PARAM_NPARAM] = {0,
 int	the_gal;
 
 /****** profit_init ***********************************************************
-PROTO	profitstruct profit_init(picstruct *field, picstruct *wfield,
+PROTO	profitstruct profit_init(fieldstruct *field, fieldstruct *wfield,
 		obj2struct *obj2, psfstruct *psf, unsigned int modeltype)
 PURPOSE	Allocate and initialize a new profile-fitting structure.
 INPUT	Pointer to the field,
@@ -92,7 +92,7 @@ NOTES	-.
 AUTHOR	E. Bertin (IAP)
 VERSION	06/10/2011
  ***/
-profitstruct	*profit_init(picstruct *field, picstruct *wfield,
+profitstruct	*profit_init(fieldstruct *field, fieldstruct *wfield,
 		obj2struct *obj2, psfstruct *psf, unsigned int modeltype)
   {
    profitstruct		*profit;
@@ -310,14 +310,14 @@ void	profit_measure(profitstruct *profit, obj2struct *obj2)
   if ((check = prefs.check[CHECK_PROFILES]))
     {
     profit_residuals(profit, 0.0, profit->paraminit, NULL);
-    addcheck(check, profit->lmodpix, profit->objnaxisn[0],profit->objnaxisn[1],
+    check_add(check, profit->lmodpix, profit->objnaxisn[0],profit->objnaxisn[1],
 		profit->ix,profit->iy, 1.0);
     }
 
   if ((check = prefs.check[CHECK_SUBPROFILES]))
     {
     profit_residuals(profit, 0.0, profit->paraminit, NULL);
-    addcheck(check, profit->lmodpix, profit->objnaxisn[0],profit->objnaxisn[1],
+    check_add(check, profit->lmodpix, profit->objnaxisn[0],profit->objnaxisn[1],
 		profit->ix,profit->iy, -1.0);
     }
   if ((check = prefs.check[CHECK_SPHEROIDS]))
@@ -331,7 +331,7 @@ void	profit_measure(profitstruct *profit, obj2struct *obj2)
       if (list[i] && flux_flag[i] && i!= PARAM_SPHEROID_FLUX)
         param[index[i]] = 0.0;
     profit_residuals(profit, 0.0, param, NULL);
-    addcheck(check, profit->lmodpix, profit->objnaxisn[0],profit->objnaxisn[1],
+    check_add(check, profit->lmodpix, profit->objnaxisn[0],profit->objnaxisn[1],
 		profit->ix,profit->iy, 1.0);
     }
   if ((check = prefs.check[CHECK_SUBSPHEROIDS]))
@@ -345,7 +345,7 @@ void	profit_measure(profitstruct *profit, obj2struct *obj2)
       if (list[i] && flux_flag[i] && i!= PARAM_SPHEROID_FLUX)
         param[index[i]] = 0.0;
     profit_residuals(profit, 0.0, param, NULL);
-    addcheck(check, profit->lmodpix, profit->objnaxisn[0],profit->objnaxisn[1],
+    check_add(check, profit->lmodpix, profit->objnaxisn[0],profit->objnaxisn[1],
 		profit->ix,profit->iy, -1.0);
     }
   if ((check = prefs.check[CHECK_DISKS]))
@@ -359,7 +359,7 @@ void	profit_measure(profitstruct *profit, obj2struct *obj2)
       if (list[i] && flux_flag[i] && i!= PARAM_DISK_FLUX)
         param[index[i]] = 0.0;
     profit_residuals(profit, 0.0, param, NULL);
-    addcheck(check, profit->lmodpix, profit->objnaxisn[0],profit->objnaxisn[1],
+    check_add(check, profit->lmodpix, profit->objnaxisn[0],profit->objnaxisn[1],
 		profit->ix,profit->iy, 1.0);
     }
   if ((check = prefs.check[CHECK_SUBDISKS]))
@@ -373,7 +373,7 @@ void	profit_measure(profitstruct *profit, obj2struct *obj2)
       if (list[i] && flux_flag[i] && i!= PARAM_DISK_FLUX)
         param[index[i]] = 0.0;
     profit_residuals(profit, 0.0, param, NULL);
-    addcheck(check, profit->lmodpix, profit->objnaxisn[0],profit->objnaxisn[1],
+    check_add(check, profit->lmodpix, profit->objnaxisn[0],profit->objnaxisn[1],
 		profit->ix,profit->iy, -1.0);
     }
  
@@ -705,8 +705,8 @@ void	profit_measure(profitstruct *profit, obj2struct *obj2)
 
 
 /****** profit_spread ********************************************************
-PROTO	void profit_spread(profitstruct *profit, picstruct *field,
-		picstruct *wfield, obj2struct *obj2)
+PROTO	void profit_spread(profitstruct *profit, fieldstruct *field,
+		fieldstruct *wfield, obj2struct *obj2)
 PURPOSE	Perform star/galaxy separation by comparing the best-fitting local PSF
 	and a compact exponential profile to the actual data using linear
 	discriminant analysis.
@@ -719,8 +719,8 @@ NOTES	-.
 AUTHOR	E. Bertin (IAP)
 VERSION	02/08/2011
  ***/
-void	profit_spread(profitstruct *profit,  picstruct *field,
-		picstruct *wfield, obj2struct *obj2)
+void	profit_spread(profitstruct *profit,  fieldstruct *field,
+		fieldstruct *wfield, obj2struct *obj2)
   {
    profitstruct	*pprofit,*qprofit;
    PIXTYPE	valp,valq, sig2;
@@ -962,7 +962,7 @@ obj2->prof_convtheta, check->overlay, 0);
 
 /*
   if ((check = prefs.check[CHECK_OTHER]))
-    addcheck(check, profit->lmodpix, w, h, profit->ix,profit->iy, 1.0);
+    check_add(check, profit->lmodpix, w, h, profit->ix,profit->iy, 1.0);
 */
   return;
   }
@@ -1227,7 +1227,7 @@ VERSION	06/10/2011
 void	profit_printout(int n_par, float* par, int m_dat, float* fvec,
 		void *data, int iflag, int iter, int nfev )
   {
-   picstruct	*field;
+   fieldstruct	*field;
    checkstruct	*check;
    profitstruct	*profit;
    char		filename[256];
@@ -1243,13 +1243,13 @@ void	profit_printout(int n_par, float* par, int m_dat, float* fvec,
       itero = iter;
     field = NULL;	/*! Should be replaced with a global variable to work!*/
     sprintf(filename, "check_%d_%04d.fits", the_gal, itero);
-    check=initcheck(filename, CHECK_PROFILES, 0);
-    reinitcheck(field, check);
-    addcheck(check, profit->lmodpix, profit->objnaxisn[0],profit->objnaxisn[1],
+    check=check_init(filename, CHECK_PROFILES, 0);
+    check_reinit(field, check);
+    check_add(check, profit->lmodpix, profit->objnaxisn[0],profit->objnaxisn[1],
 		profit->ix,profit->iy, 1.0);
 
-    reendcheck(field, check);
-    endcheck(check);
+    check_reend(field, check);
+    check_end(check);
     }
 
   return;
@@ -1903,8 +1903,8 @@ void	profit_makedft(profitstruct *profit)
 
 
 /****** profit_copyobjpix *****************************************************
-PROTO	int profit_copyobjpix(profitstruct *profit, picstruct *field,
-			picstruct *wfield, obj2struct *obj2)
+PROTO	int profit_copyobjpix(profitstruct *profit, fieldstruct *field,
+			fieldstruct *wfield, obj2struct *obj2)
 PURPOSE	Copy a piece of the input object image to a profit structure.
 INPUT	Pointer to the profit structure,
 	pointer to the field structure,
@@ -1915,8 +1915,8 @@ NOTES	Global preferences are used.
 AUTHOR	E. Bertin (IAP)
 VERSION	02/08/2011
  ***/
-int	profit_copyobjpix(profitstruct *profit, picstruct *field,
-			picstruct *wfield, obj2struct *obj2)
+int	profit_copyobjpix(profitstruct *profit, fieldstruct *field,
+			fieldstruct *wfield, obj2struct *obj2)
   {
    float	dx, dy2, dr2, rad2;
    PIXTYPE	*pixin,*spixin, *wpixin,*swpixin, *pixout,*wpixout,
@@ -2709,13 +2709,13 @@ void	 profit_surface(profitstruct *profit, obj2struct *obj2)
 char filename[256];
 checkstruct *check;
 sprintf(filename, "raster_%02d.fits", the_gal);
-check=initcheck(filename, CHECK_OTHER, 0);
+check=check_init(filename, CHECK_OTHER, 0);
 check->width = hdprofit.modnaxisn[0];
 check->height = hdprofit.modnaxisn[1];
-reinitcheck(the_field, check);
+check_reinit(the_field, check);
 memcpy(check->pix,hdprofit.modpix,check->npix*sizeof(float));
-reendcheck(the_field, check);
-endcheck(check);
+check_reend(the_field, check);
+check_end(check);
 */
   if (FLAG(obj2.fluxeff_prof))
     {

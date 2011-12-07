@@ -41,5 +41,5 @@ One must have:
 */
 
 /*------------------------------- functions ---------------------------------*/
-extern void	compute_winpos(picstruct *field, picstruct *wfield,
+extern void	compute_winpos(fieldstruct *field, fieldstruct *wfield,
 			       obj2struct *obj2);

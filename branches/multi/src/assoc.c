@@ -61,7 +61,7 @@ int	comp_assoc(const void *i1, const void *i2)
 /*
 Make the presentation histogram, order the assoc-list and build the hash-table.
 */
-void  sort_assoc(picstruct *field, assocstruct *assoc)
+void  sort_assoc(fieldstruct *field, assocstruct *assoc)
 
   {
    int		comp_assoc(const void *i1, const void *i2);
@@ -227,7 +227,7 @@ assocstruct  *load_assoc(char *filename, wcsstruct *wcs)
 /*
 Initialize the association procedure.
 */
-void	init_assoc(picstruct *field)
+void	init_assoc(fieldstruct *field)
 
   {
    assocstruct	*assoc;
@@ -253,7 +253,7 @@ void	init_assoc(picstruct *field)
 /*
 Free memory related to the assoc operations.
 */
-void	end_assoc(picstruct *field)
+void	end_assoc(fieldstruct *field)
 
   {
 /* Free the assoc-list */
@@ -272,7 +272,7 @@ void	end_assoc(picstruct *field)
 /*
 Perform the association task for a source and return the number of IDs.
 */
-int	do_assoc(picstruct *field, double x, double y, double *data)
+int	do_assoc(fieldstruct *field, double x, double y, double *data)
   {
    assocstruct	*assoc;
    double	aver, dx,dy, dist, rad, rad2, comp, wparam,

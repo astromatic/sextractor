@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		22/11/2011
+*	Last modified:		07/12/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -315,9 +315,9 @@ typedef struct obj2
   float		*vector_somfit;			/* SOM fit vector position */
 /* ---- Growth curves and stuff */
   float		*flux_growth;			/* Cumulated growth_curve */
-  float		flux_growthstep;		/* Growth-curve step */
+  float		flux_growth_step;		/* Growth-curve step */
   float		*mag_growth;			/* Cumulated growth_curve */
-  float		mag_growthstep;			/* Growth-curve step */
+  float		mag_growth_step;		/* Growth-curve step */
   float		*flux_radius;			/* f-light-radii */
   float		hl_radius;			/* Scalar half-light radius */
 /* ---- PSF-fitting */
@@ -569,7 +569,7 @@ typedef struct
   }	obj2liststruct;
 
 /*----------------------------- image parameters ----------------------------*/
-typedef struct pic
+typedef struct field
   {
   char		filename[MAXCHAR];	/* pointer to the image filename */
   char		*rfilename;		/* pointer to the reduced image name */
@@ -579,13 +579,9 @@ typedef struct pic
   char		rident[MAXCHAR];	/* field identifier (relative) */
   catstruct	*cat;			/* FITS structure */
   tabstruct	*tab;			/* FITS extension structure */
-  FILE		*file;			/* pointer the image file structure */
 /* ---- main image parameters */
-  int		bitpix, bytepix;	/* nb of bits and bytes per pixel */
-  int		bitsgn;			/* non-zero if signed integer data */
   int		width, height;		/* x,y size of the field */
   KINGSIZE_T	npix;			/* total number of pixels */
-  double	bscale, bzero;		/* FITS scale and offset */
   double	ngamma;			/* normalized photo gamma */
   int		nlevels;		/* nb of quantification levels */
   float		pixmin, pixmax;		/* min and max values in frame */
@@ -635,9 +631,8 @@ typedef struct pic
   int		*interp_ytimeoutbuf;	/* interpolation timeout line buffer */
   int		interp_xtimeout;	/* interpolation timeout value in x */
   int		interp_ytimeout;	/* interpolation timeout value in y */
-  struct pic	*reffield;	       	/* pointer to a reference field */
-  OFF_T		mefpos;			/* Position in a MEF file */
-  }	picstruct;
+  struct field	*reffield;	       	/* pointer to a reference field */
+  }	fieldstruct;
 
 
 /*-------------------------------- catalog  ---------------------------------*/

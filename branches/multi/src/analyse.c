@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		23/11/2011
+*	Last modified:		07/12/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -61,7 +61,7 @@
 #include	"winpos.h"
 
 /****** analyse_iso *********************************************************
-PROTO	void analyse_iso(picstruct *field, picstruct *dfield,
+PROTO	void analyse_iso(fieldstruct *field, fieldstruct *dfield,
 			objliststruct *objlist, int n)
 PURPOSE	Do (isophotal) on pixel lists in the MEASUREMENT image.
 INPUT	Pointer to the measurement image,
@@ -73,7 +73,7 @@ NOTES	Requires access to the global preferences.
 AUTHOR	E. Bertin (IAP)
 VERSION	09/10/2011
  ***/
-void  analyse_iso(picstruct *field, picstruct *dfield,
+void  analyse_iso(fieldstruct *field, fieldstruct *dfield,
 			objliststruct *objlist, int n)
   {
    checkstruct		*check;
@@ -382,8 +382,8 @@ void  analyse_iso(picstruct *field, picstruct *dfield,
 
 
 /****** analyse_final *******************************************************
-PROTO	void analyse_final(picstruct *field, picstruct *dfield,
-		picstruct *wfield, picstruct *dwfield,
+PROTO	void analyse_final(fieldstruct *field, fieldstruct *dfield,
+		fieldstruct *wfield, fieldstruct *dwfield,
 		objliststruct *objlist, int iobj)
 PURPOSE Do the final analysis based on a list of detections and a detection
 	index.
@@ -398,11 +398,11 @@ NOTES   Global preferences are used.
 AUTHOR  E. Bertin (IAP)
 VERSION 07/10/2011
  ***/
-void analyse_final(picstruct *field, picstruct *dfield,
-		picstruct *wfield, picstruct *dwfield,
+void analyse_final(fieldstruct *field, fieldstruct *dfield,
+		fieldstruct *wfield, fieldstruct *dwfield,
 		objliststruct *objlist, int iobj)
   {
-   picstruct		*cfield;
+   fieldstruct		*cfield;
    obj2liststruct	*obj2list;
    objstruct		*obj;
    obj2struct		*obj2, *prevobj2, *firstobj2;
@@ -518,8 +518,8 @@ int analyse_overlapness(objliststruct *objlist, int iobj)
 
 
 /****** analyse_obj2obj2 ******************************************************
-PROTO	void analyse_obj2obj2(picstruct *field, picstruct *dfield,
-		picstruct *wfield, picstruct *dwfield,
+PROTO	void analyse_obj2obj2(fieldstruct *field, fieldstruct *dfield,
+		fieldstruct *wfield, fieldstruct *dwfield,
 		objstruct *obj, obj2liststruct *obj2list)
 PURPOSE Move object data from obj to obj2 structure.
 INPUT   Measurement field pointer,
@@ -533,8 +533,8 @@ NOTES   -.
 AUTHOR  E. Bertin (IAP)
 VERSION 22/11/2011
  ***/
-obj2struct	*analyse_obj2obj2(picstruct *field, picstruct *dfield,
-		picstruct *wfield, picstruct *dwfield,
+obj2struct	*analyse_obj2obj2(fieldstruct *field, fieldstruct *dfield,
+		fieldstruct *wfield, fieldstruct *dwfield,
 		objstruct *obj, obj2liststruct *obj2list)
   {
    obj2struct	*obj2;
@@ -656,8 +656,8 @@ obj2struct	*analyse_obj2obj2(picstruct *field, picstruct *dfield,
 
 
 /****** analyse_full *********************************************************
-PROTO	int analyse_full(picstruct *field, picstruct *dfield,
-		picstruct *wfield, picstruct *dwfield, obj2struct *obj2)
+PROTO	int analyse_full(fieldstruct *field, fieldstruct *dfield,
+		fieldstruct *wfield, fieldstruct *dwfield, obj2struct *obj2)
 PURPOSE Final analysis of object data.
 INPUT   Measurement field pointer,
         Detection field pointer,
@@ -669,8 +669,8 @@ NOTES   -.
 AUTHOR  E. Bertin (IAP)
 VERSION 23/11/2011
  ***/
-int	analyse_full(picstruct *field, picstruct *dfield,
-		picstruct *wfield, picstruct *dwfield, obj2struct *obj2)
+int	analyse_full(fieldstruct *field, fieldstruct *dfield,
+		fieldstruct *wfield, fieldstruct *dwfield, obj2struct *obj2)
   {
    checkstruct		*check;
    double		rawpos[NAXIS],
@@ -920,12 +920,12 @@ int	analyse_full(picstruct *field, picstruct *dfield,
 
 /*--------------------------------- "Vignets" ------------------------------*/
   if (FLAG(obj2.vignet))
-    copyimage(field,obj2->vignet,prefs.vignetsize[0],prefs.vignetsize[1],
+    copyimage(field,obj2->vignet,prefs.vignet_size[0],prefs.vignet_size[1],
 	obj2->ix, obj2->iy);
 
   if (FLAG(obj2.vigshift))
-    copyimage_center(field, obj2->vigshift, prefs.vigshiftsize[0],
-		prefs.vigshiftsize[1], obj2->mx, obj2->my);
+    copyimage_center(field, obj2->vigshift, prefs.vigshift_size[0],
+		prefs.vigshift_size[1], obj2->mx, obj2->my);
 
 
 /*------------------------------- Source index -----------------------------*/
@@ -962,8 +962,8 @@ int	analyse_full(picstruct *field, picstruct *dfield,
 
 
 /****** analyse_group ********************************************************
-PROTO	void analyse_group(picstruct *field, picstruct *dfield,
-		picstruct *wfield, picstruct *dwfield, obj2struct *fobj2)
+PROTO	void analyse_group(fieldstruct *field, fieldstruct *dfield,
+		fieldstruct *wfield, fieldstruct *dwfield, obj2struct *fobj2)
 PURPOSE Perform measurements on a group of detections.
 INPUT   Measurement field pointer,
         Detection field pointer,
@@ -975,8 +975,8 @@ NOTES   -.
 AUTHOR  E. Bertin (IAP)
 VERSION 09/10/2011
  ***/
-void	analyse_group(picstruct *field, picstruct *dfield,
-		picstruct *wfield, picstruct *dwfield, obj2struct *fobj2)
+void	analyse_group(fieldstruct *field, fieldstruct *dfield,
+		fieldstruct *wfield, fieldstruct *dwfield, obj2struct *fobj2)
   {
    obj2struct		*obj2, *modobj2;
    int			i;

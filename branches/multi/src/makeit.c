@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		06/10/2011
+*	Last modified:		07/12/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -68,21 +68,25 @@ INPUT	-.
 OUTPUT	-.
 NOTES	Global preferences are used.
 AUTHOR	E. Bertin (IAP)
-VERSION	23/11/2011
+VERSION	06/12/2011
  ***/
 void	makeit(void)
   {
    profitstruct		*profit;
    checkstruct		*check;
-   picstruct		*dfield, *field,*pffield[MAXFLAG], *wfield,*dwfield;
+   fieldstruct		**fields,**wfields,**ffields;
    catstruct		*imacat;
    tabstruct		*imatab;
    patternstruct	*pattern;
+   psfstruct		**psfs;
+   somstruct		*som;
    static time_t        thetime1, thetime2;
    struct tm		*tm;
-   int			nflag[MAXFLAG], nparam2[2],
+   PIXTYPE		interpthresh;
+   int			ext_flag[MAXFLAG],ext_image[MAXIMAGE],
+			ext_wimage[MAXIMAGE], nparam2[2],
 			i,t, nok, ntab, next, ntabmax, forcextflag,
-			nima0,nima1, nweight0,nweight1, npat, nmodels;
+			npat, nmodels;
 
 /* Install error logging */
   error_installfunc(write_error);
@@ -113,9 +117,9 @@ void	makeit(void)
   if (prefs.psf_flag)
     {
     NFPRINTF(OUTPUT, "Reading PSF information");
-    QMALLOC(psf, psfstruct, prefs.nband);
+    QCALLOC(psfs, psfstruct *, prefs.nband);
     for (i=0; i<prefs.nband; i++)
-      psf[i] = psf_load(prefs.psf_name[i]); 
+      psfs[i] = psf_load(prefs.psf_name[i]); 
  /*-- Need to check things up because of PSF context parameters */
     catout_updateparamflags();
     useprefs();
@@ -209,13 +213,13 @@ void	makeit(void)
     {
      int	margin;
 
-    thesom = som_load(prefs.som_name);
-    if ((margin=(thesom->inputsize[1]+1)/2) > prefs.cleanmargin)
+    som = som_load(prefs.som_name);
+    if ((margin=(som->inputsize[1]+1)/2) > prefs.cleanmargin)
       prefs.cleanmargin = margin;
-    if (prefs.somfit_vectorsize>thesom->neurdim)
+    if (prefs.somfit_vector_size[0]>som->neurdim)
       {
-      prefs.somfit_vectorsize = thesom->neurdim;
-      sprintf(gstr,"%d", prefs.somfit_vectorsize);
+      prefs.somfit_vector_size[0] = som->neurdim;
+      sprintf(gstr,"%d", prefs.somfit_vector_size[0]);
       warning("Dimensionality of the SOM-fit vector limited to ", gstr);
       }
     }
@@ -224,8 +228,16 @@ void	makeit(void)
   catout_allocparams(thecat.obj2list);
   useprefs();
 
-/* Check if a specific extension should be loaded */
-  if ((nima0=selectext(prefs.image_name[0])) != RETURN_ERROR)
+/* Read extension numbers and remove them from the filenames if present */
+ for (i=0; i<prefs.nimage_name; i++)
+   ext_image[i] = selectext(prefs.image_name[i]);
+ for (i=0; i<prefs.nwimage_name; i++)
+   ext_wimage[i] = selectext(prefs.wimage_name[i]);
+ for (i=0; i<prefs.nfimage_name; i++)
+   ext_flag[i] = selectext(prefs.fimage_name[i]);
+
+/* Use the first image to probe the number of extensions to analyse */
+  if (ext_image[0] != RETURN_ERROR)
     {
     forcextflag = 1;
     ntabmax = next = 1;
@@ -237,7 +249,6 @@ void	makeit(void)
     error(EXIT_FAILURE, "*Error*: cannot open ", prefs.image_name[0]);
   close_cat(imacat);
   imatab = imacat->tab;
-
   if (!forcextflag)
     {
     ntabmax = imacat->ntab;
@@ -254,16 +265,9 @@ void	makeit(void)
       }
     }
 
-/* Do the same for other data (but do not force single extension mode) */
-  nima1 = selectext(prefs.image_name[1]);
-  nweight0 = selectext(prefs.wimage_name[0]);
-  nweight1 = selectext(prefs.wimage_name[1]);
-  for (i=0; i<prefs.nfimage_name; i++)
-    nflag[i] = selectext(prefs.fimage_name[i]);
-
   thecat.next = next;
 
-/*-- Init the CHECK-images */
+/* Initialize the CHECK-images */
   if (prefs.check_flag)
     {
      checkenum	c;
@@ -275,11 +279,12 @@ void	makeit(void)
         if (prefs.check[c])
            error(EXIT_FAILURE,"*Error*: 2 CHECK_IMAGEs cannot have the same ",
 			" CHECK_IMAGE_TYPE");
-        prefs.check[c] = initcheck(prefs.check_name[i], prefs.check_type[i],
-			next);
+        prefs.check[c] = check_init(prefs.check_name[i], prefs.check_type[i],
+			next, prefs.nband);
         }
     }
 
+/* Initialize catalog output */
   NFPRINTF(OUTPUT, "Initializing catalog");
   catout_init();
 
@@ -302,190 +307,108 @@ void	makeit(void)
     time(&thetime1);
     thecat.currext = nok+1;
 
-    dfield = field = wfield = dwfield = NULL;
+/*-- Allocate memory to store field (image) information */
+    QCALLOC(fields, fieldstruct *, prefs.nband);
+    QCALLOC(wfields, fieldstruct *, prefs.nband);
 
-    if (prefs.dimage_flag)
+    for (i=0; i<prefs.nband; i++)
       {
-/*---- Init the Detection and Measurement-images */
-      dfield = newfield(prefs.image_name[0], DETECT_FIELD,
-	nima0<0? nok:nima0);
-      field = newfield(prefs.image_name[1], MEASURE_FIELD,
-	nima1<0? nok:nima1);
-      if ((field->width!=dfield->width) || (field->height!=dfield->height))
-        error(EXIT_FAILURE, "*Error*: Frames have different sizes","");
-/*---- Prepare interpolation */
-      if (prefs.dweight_flag && prefs.interp_type[0] == INTERP_ALL)
-        init_interpolate(dfield, -1, -1);
-      if (prefs.interp_type[1] == INTERP_ALL)
-        init_interpolate(field, -1, -1);
-      }
-    else
-      {
-      field = newfield(prefs.image_name[0], DETECT_FIELD | MEASURE_FIELD,
-		nima0<0? nok:nima0);
-
-/*-- Prepare interpolation */
-      if ((prefs.dweight_flag || prefs.weight_flag)
-	&& prefs.interp_type[0] == INTERP_ALL)
-      init_interpolate(field, -1, -1);       /* 0.0 or anything else */
-      }
-
-/*-- Init the WEIGHT-images */
-    if (prefs.dweight_flag || prefs.weight_flag) 
-      {
-       weightenum	wtype;
-       PIXTYPE	interpthresh;
-
-      if (prefs.nweight_type>1)
-        {
-/*------ Double-weight-map mode */
-        if (prefs.weight_type[1] != WEIGHT_NONE)
-          {
-/*-------- First: the "measurement" weights */
-          wfield = newweight(prefs.wimage_name[1],field,prefs.weight_type[1],
-		nweight1<0? nok:nweight1);
-          wtype = prefs.weight_type[1];
-          interpthresh = prefs.weight_thresh[1];
-/*-------- Convert the interpolation threshold to variance units */
-          weight_to_var(wfield, &interpthresh, 1);
-          wfield->weight_thresh = interpthresh;
-          if (prefs.interp_type[1] != INTERP_NONE)
-            init_interpolate(wfield,
-		prefs.interp_xtimeout[1], prefs.interp_ytimeout[1]);
-          }
-/*------ The "detection" weights */
-        if (prefs.weight_type[0] != WEIGHT_NONE)
-          {
-          interpthresh = prefs.weight_thresh[0];
-          if (prefs.weight_type[0] == WEIGHT_FROMINTERP)
-            {
-            dwfield=newweight(prefs.wimage_name[0],wfield,prefs.weight_type[0],
-		nweight0<0? nok:nweight0);
-            weight_to_var(wfield, &interpthresh, 1);
-            }
-          else
-            {
-            dwfield = newweight(prefs.wimage_name[0], dfield?dfield:field,
-		prefs.weight_type[0], nweight0<0? nok:nweight0);
-            weight_to_var(dwfield, &interpthresh, 1);
-            }
-          dwfield->weight_thresh = interpthresh;
-          if (prefs.interp_type[0] != INTERP_NONE)
-            init_interpolate(dwfield,
-		prefs.interp_xtimeout[0], prefs.interp_ytimeout[0]);
-          }
-        }
+      if (!i)
+/*------ Load detection field (image) information */
+        fields[i] = newfield(prefs.image_name[i], DETECT_FIELD | MEASURE_FIELD,
+			ext_image[i]<0? nok:ext_image[0]);
       else
         {
-/*------ Single-weight-map mode */
-        wfield = newweight(prefs.wimage_name[0], dfield?dfield:field,
-			prefs.weight_type[0], nweight0<0? nok:nweight0);
-        wtype = prefs.weight_type[0];
-        interpthresh = prefs.weight_thresh[0];
+/*------ Load measurement field (image) information */
+        fields[i] = newfield(prefs.image_name[i], MEASURE_FIELD,
+			ext_image[i]<0? nok:ext_image[i]);
+        if ((fields[i]->width!=fields[0]->width)
+		|| (fields[i]->height!=fields[i]->height))
+          error(EXIT_FAILURE, "*Error*: Frames have different sizes","");
+        }
+/*---- Prepare image interpolation */
+      if (prefs.weight_flag[i] && prefs.interp_type[i] == INTERP_ALL)
+        init_interpolate(fields[i], -1, -1);
+      if (prefs.weight_flag[i]) 
+        {
+/*------ Load weight image information */
+        wfields[i] = newweight(prefs.wimage_name[i], fields[i],
+			prefs.weight_type[i],
+			ext_wimage[i]<0? nok:ext_wimage[i]);
+        interpthresh = prefs.weight_thresh[i];
 /*------ Convert the interpolation threshold to variance units */
-        weight_to_var(wfield, &interpthresh, 1);
-        wfield->weight_thresh = interpthresh;
-        if (prefs.interp_type[0] != INTERP_NONE)
-          init_interpolate(wfield,
-		prefs.interp_xtimeout[0], prefs.interp_ytimeout[0]);
+        weight_to_var(wfields[i], &interpthresh, 1);
+        wfields[i]->weight_thresh = interpthresh;
+          if (prefs.interp_type[i] != INTERP_NONE)
+            init_interpolate(wfields[i],
+			prefs.interp_xtimeout[i], prefs.interp_ytimeout[i]);
         }
       }
 
 /*-- Init the FLAG-images */
+    QCALLOC(ffields, fieldstruct *, prefs.nimaflag);
     for (i=0; i<prefs.nimaflag; i++)
       {
-      pffield[i] = newfield(prefs.fimage_name[i], FLAG_FIELD,
-		nflag[i]<0? nok:nflag[i]);
-      if ((pffield[i]->width!=field->width)
-	|| (pffield[i]->height!=field->height))
+      ffields[i] = newfield(prefs.fimage_name[i], FLAG_FIELD,
+		ext_flag[i]<0? nok:ext_flag[i]);
+      if ((ffields[i]->width!=fields[0]->width)
+	|| (ffields[i]->height!=fields[0]->height))
         error(EXIT_FAILURE,
 	"*Error*: Incompatible FLAG-map size in ", prefs.fimage_name[i]);
       }
 
 /*-- Compute background maps for `standard' fields */
-    QPRINTF(OUTPUT, dfield? "Measurement image:"
-			: "Detection+Measurement image: ");
-    makeback(field, wfield, prefs.wscale_flag[1]);
-    QPRINTF(OUTPUT, (dfield || (dwfield&&dwfield->flags^INTERP_FIELD))? "(M)   "
-		"Background: %-10g RMS: %-10g / Threshold: %-10g \n"
-		: "(M+D) "
-		"Background: %-10g RMS: %-10g / Threshold: %-10g \n",
-	field->backmean, field->backsig, (field->flags & DETECT_FIELD)?
-	field->dthresh: field->thresh);
-    if (dfield)
+    for (i=0; i<prefs.nband; i++)
       {
-      QPRINTF(OUTPUT, "Detection image: ");
-      makeback(dfield, dwfield? dwfield
-			: (prefs.weight_type[0] == WEIGHT_NONE?NULL:wfield),
-		prefs.wscale_flag[0]);
-      QPRINTF(OUTPUT, "(D)   "
-		"Background: %-10g RMS: %-10g / Threshold: %-10g \n",
-	dfield->backmean, dfield->backsig, dfield->dthresh);
-      }
-    else if (dwfield && dwfield->flags^INTERP_FIELD)
-      {
-      makeback(field, dwfield, BACK_WSCALE);
-      QPRINTF(OUTPUT, "(D)   "
-		"Background: %-10g RMS: %-10g / Threshold: %-10g \n",
-	field->backmean, field->backsig, field->dthresh);
-      }
+      QPRINTF(OUTPUT, i? "Measurement image:":"Detection+Measurement image: ");
+      back_map(fields[i], wfields[i], prefs.wscale_flag[i]);
+      if (i)
+        QPRINTF(OUTPUT,
+		"Background: %-10g RMS: %-10g / Analysis threshold: %-10g \n",
+		fields[i]->backmean, fields[i]->backsig, fields[i]->thresh);
+      else
+        QPRINTF(OUTPUT,
+		"Background: %-10g RMS: %-10g / Detection threshold: %-10g"
+		" / Analysis threshold: %-10g \n",
+		fields[i]->backmean, fields[i]->backsig,
+		fields[i]->dthresh, fields[i]->thresh);
 
-/*-- For interpolated weight-maps, copy the background structure */
-    if (dwfield && dwfield->flags&(INTERP_FIELD|BACKRMS_FIELD))
-      copyback(dwfield->reffield, dwfield);
-    if (wfield && wfield->flags&(INTERP_FIELD|BACKRMS_FIELD))
-      copyback(wfield->reffield, wfield);
+/*---- For interpolated weight-maps, copy the background structure */
+      if (wfields[i] && wfields[i]->flags&(INTERP_FIELD|BACKRMS_FIELD))
+        back_copy(wfields[i]->reffield, wfields[i]);
+      }
 
 /*-- Prepare learn and/or associations */
     if (prefs.assoc_flag)
-      init_assoc(field);                  /* initialize assoc tasks */
+      init_assoc(fields[0]);
 
-/*-- Update the CHECK-images */
+/*-- Update CHECK-images */
     if (prefs.check_flag)
       for (i=0; i<MAXCHECK; i++)
         if ((check=prefs.check[i]))
-          reinitcheck(field, check);
+          check_reinit(fields[0], check);	/* FIX */
 
 /*-- Initialize PSF contexts and workspace */
     if (prefs.psf_flag)
-      {
-      psf_readcontext(thepsf, field);
-      psf_init(thepsf);
-      if (prefs.dpsf_flag)
-        {
-        psf_readcontext(thepsf, dfield);
-        psf_init(thepsf); /*?*/
-        }
-      }
+      for (i=0; i<prefs.nband; i++)
+        if (psfs[i])
+          {
+          psf_readcontext(psfs[i], fields[i]);
+          psf_init(psfs[i]);
+          fields[i]->psf = psf[i];
+          }
 
-/*-- Copy field structures to static ones (for catalog info) */
-    if (dfield)
-      {
-      thefield1 = *field;
-      thefield2 = *dfield;
-      }
-    else
-      thefield1 = thefield2 = *field;
-
-    if (wfield)
-      {
-      thewfield1 = *wfield;
-      thewfield2 = dwfield? *dwfield: *wfield;
-      }
-    else if (dwfield)
-      thewfield2 = *dwfield;
-
-    catout_initext(field);
+    catout_initext(fields);
 
 /*-- Start the extraction pipeline */
     NFPRINTF(OUTPUT, "Scanning image");
-    scanimage(field, dfield, pffield, prefs.nimaflag, wfield, dwfield);
+    scanimage(fields, wfields, prefs.nband, ffields, prefs.nimaflag);
 
 /*-- Finish the current CHECK-image processing */
     if (prefs.check_flag)
       for (i=0; i<MAXCHECK; i++)
         if ((check=prefs.check[i]))
-          reendcheck(field, check);
+          check_reend(fields, check);
 
 /*-- Final time measurements*/
     if (time(&thetime2)!=-1)
@@ -499,26 +422,25 @@ void	makeit(void)
 
     catout_endext();
 
-/* Update XML data */
-  if (prefs.xml_flag || prefs.cat_type==ASCII_VO)
-    update_xml(&thecat, dfield? dfield:field, field,
-	dwfield? dwfield:wfield, wfield);
+/* --Update XML data */
+    if (prefs.xml_flag || prefs.cat_type==ASCII_VO)
+      update_xml(&thecat, fields, wfields);
 
 
 /*-- Close ASSOC routines */
-    end_assoc(field);
+    end_assoc(fields[0]);
 
+/*-- End flag-images */
     for (i=0; i<prefs.nimaflag; i++)
-      endfield(pffield[i]);
-    endfield(field);
-    if (dfield)
-      endfield(dfield);
-    if (wfield)
-      endfield(wfield);
-    if (dwfield)
-      endfield(dwfield);
-
-    QPRINTF(OUTPUT, "      Objects: detected %-8d / sextracted %-8d        \n\n",
+      endfield(ffields[i]);
+/*-- End science images and weight maps */
+    for (i=0; i<prefs.nband; i++)
+      {
+      endfield(fields[i]);
+      if (wfields[i])
+        endfield(wfields[i]);
+      }
+    QPRINTF(OUTPUT,"      Objects: detected %-8d / sextracted %-8d        \n\n",
 	thecat.ndetect, thecat.ntotal);
     }
 
@@ -534,27 +456,31 @@ void	makeit(void)
     for (i=0; i<MAXCHECK; i++)
       {
       if ((check=prefs.check[i]))
-        endcheck(check);
+        check_end(check);
       prefs.check[i] = NULL;
       }
 
+/* End detection filter */
   if (prefs.filter_flag)
     endfilter();
 
+/* End som-fitting */
   if (prefs.somfit_flag)
-    som_end(thesom);
+    som_end(som);
 
 #ifdef USE_MODEL
   if (prefs.prof_flag)
     fft_end();
 #endif
 
+/* End PSFs */
   if (prefs.psf_flag)
-    psf_end(thepsf,thepsfit); /*?*/
+    for (i=0; i<prefs.nband; i++)
+      if (psfs[i])
+        psf_end(psfs[i]);
+  free(psfs);
 
-  if (prefs.dpsf_flag)
-    psf_end(ppsf,ppsfit);
-
+/* End classification neural network */
   if (FLAG(obj2.sprob))
     neurclose();
 
@@ -571,6 +497,7 @@ void	makeit(void)
   if (prefs.xml_flag)
     write_xml(prefs.xml_name);
 
+/* End catalog */
   catout_end((char *)NULL);
 
   if (prefs.xml_flag || prefs.cat_type==ASCII_VO)
@@ -578,6 +505,7 @@ void	makeit(void)
 
   return;
   }
+
 
 /****** write_error ********************************************************
 PROTO	int	write_error(char *msg1, char *msg2)

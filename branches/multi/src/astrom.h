@@ -36,18 +36,18 @@
 
 /*------------------------------- structures --------------------------------*/
 /*------------------------------- functions ---------------------------------*/
-extern void		astrom_errparam(picstruct *field, obj2struct *obj2),
-			astrom_peakpos(picstruct *field, obj2struct *obj2),
-			astrom_pos(picstruct *field, obj2struct *obj2),
-			astrom_proferrparam(picstruct *field, obj2struct *obj2),
-			astrom_profpos(picstruct *field, obj2struct *obj2),
-			astrom_profshapeparam(picstruct *field,
+extern void		astrom_errparam(fieldstruct *field, obj2struct *obj2),
+			astrom_peakpos(fieldstruct *field, obj2struct *obj2),
+			astrom_pos(fieldstruct *field, obj2struct *obj2),
+			astrom_proferrparam(fieldstruct *field, obj2struct *obj2),
+			astrom_profpos(fieldstruct *field, obj2struct *obj2),
+			astrom_profshapeparam(fieldstruct *field,
 					obj2struct *obj2),
-			astrom_psferrparam(picstruct *field, obj2struct *obj2),
-			astrom_psfpos(picstruct *field, obj2struct *obj2),
-			astrom_shapeparam(picstruct *field, obj2struct *obj2),
-			astrom_winerrparam(picstruct *field, obj2struct *obj2),
-			astrom_winpos(picstruct *field, obj2struct *obj2),
-			astrom_winshapeparam(picstruct *field, obj2struct *obj2),
-			initastrom(picstruct *field);
+			astrom_psferrparam(fieldstruct *field, obj2struct *obj2),
+			astrom_psfpos(fieldstruct *field, obj2struct *obj2),
+			astrom_shapeparam(fieldstruct *field, obj2struct *obj2),
+			astrom_winerrparam(fieldstruct *field, obj2struct *obj2),
+			astrom_winpos(fieldstruct *field, obj2struct *obj2),
+			astrom_winshapeparam(fieldstruct *field, obj2struct *obj2),
+			initastrom(fieldstruct *field);
 
