@@ -199,30 +199,30 @@ void	back_map(fieldstruct *field, fieldstruct *wfield, int wscale_flag)
         }
 
 /*---- Read and skip, read and skip, etc... */
-      QFSEEK(field->cat->file, bufshift*(OFF_T)field->bytepix, SEEK_CUR,
-		field->cat->filename);
+      QFSEEK(field->cat->file, bufshift*(OFF_T)field->tab->bytepix,
+		SEEK_CUR, field->cat->filename);
       buft = buf;
       for (i=nlines; i--; buft += w)
         {
         read_body(field->tab, buft, w);
         if (i)
-          QFSEEK(field->cat->file, jumpsize*(OFF_T)field->bytepix, SEEK_CUR,
-		field->cat->filename);
+          QFSEEK(field->cat->file, jumpsize*(OFF_T)field->tab->bytepix,
+		SEEK_CUR, field->cat->filename);
         }
 
       if (wfield)
         {
 /*------ Read and skip, read and skip, etc... now on the weight-map */
-        QFSEEK(wfield->cat->file, bufshift*(OFF_T)wfield->bytepix, SEEK_CUR,
-		wfield->cat->filename);
+        QFSEEK(wfield->cat->file, bufshift*(OFF_T)wfield->tab->bytepix,
+		SEEK_CUR, wfield->cat->filename);
         wbuft = wbuf;
         for (i=nlines; i--; wbuft += w)
           {
           read_body(wfield->tab, wbuft, w);
           weight_to_var(wfield, wbuft, w);
           if (i)
-            QFSEEK(wfield->cat->file, jumpsize*(OFF_T)wfield->bytepix, SEEK_CUR,
-		wfield->cat->filename);
+            QFSEEK(wfield->cat->file, jumpsize*(OFF_T)wfield->tab->bytepix,
+		SEEK_CUR, wfield->cat->filename);
           }
         }
       back_stat(backmesh, wbackmesh, buf, wbuf, bufsize, nx, w, bw,
@@ -730,7 +730,7 @@ float	back_guess(backstruct *bkg, float *mean, float *sigma)
   }
 
 /****** back_filter **********************************************************
-PROTO	float back_filter(fieldstruct *field)
+PROTO	void back_filter(fieldstruct *field)
 PURPOSE	Median filter a background map to remove the contribution from bright
 	sources.
 INPUT	Pointer to image field structure.
@@ -994,7 +994,7 @@ INPUT	Pointer to image field structure,
 OUTPUT	Local background level estimate.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	07/12/2011
+VERSION	08/12/2011
  ***/
 PIXTYPE	back_interpolate(fieldstruct *field, double x, double y)
 
@@ -1008,7 +1008,7 @@ PIXTYPE	back_interpolate(fieldstruct *field, double x, double y)
   ny = field->nbacky;
 
   dx = x/field->backw - 0.5;
-  dy = (y/field->backh - 0.5;
+  dy = y/field->backh - 0.5;
   dx -= (xl = (int)dx);
   dy -= (yl = (int)dy);
 

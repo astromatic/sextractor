@@ -267,6 +267,7 @@ void	readimagehead(fieldstruct *field)
   field->width = tab->naxisn[0];
   field->height = tab->naxisn[1];
   field->npix = (KINGSIZE_T)field->width*field->height;
+  field->bitpix = tab->bitpix;
   if (tab->bitsgn && prefs.fitsunsigned_flag)
     tab->bitsgn = 0;
 

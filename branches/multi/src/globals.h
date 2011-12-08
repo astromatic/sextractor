@@ -22,11 +22,14 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		23/11/2011
+*	Last modified:		08/12/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
 #include	"types.h"
+#ifndef _FIELD_H_
+#include        "field.h"
+#endif
 
 /*----------------------- miscellaneous variables ---------------------------*/
 
@@ -41,7 +44,6 @@ extern void	allocparcelout(void),
 		blankit(char *, int),
                 closecheck(void),
 		copydata(fieldstruct *, int, int),
-		endfield(fieldstruct *),
 		flagcleancrowded(int, objliststruct *),
 		freeparcelout(void),
 		getnnw(void),
@@ -69,6 +71,4 @@ extern void	*loadstrip(fieldstruct *, fieldstruct *);
 
 extern char	*readfitshead(FILE *, char *, int *);
 
-extern fieldstruct	*inheritfield(fieldstruct *infield, int flags),
-			*newfield(char *, int , int);
 

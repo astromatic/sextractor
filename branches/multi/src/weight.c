@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1997-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1997-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/10/2010
+*	Last modified:		08/12/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -41,11 +41,20 @@
 #include	"plist.h"
 #include	"weight.h"
 
-/******************************* newweight **********************************/
-/*
-Load a weight map and initialize relevant parameters.
-*/
-fieldstruct	*newweight(char *filename, fieldstruct *reffield,
+/****** weight_init **********************************************************
+PROTO	fieldstruct *weight_init(char *filename, fieldstruct *reffield,
+			weightenum wtype, int ext)
+PURPOSE	Create and initialize a new weight map.
+INPUT	Image filename,
+	pointer to reference image field,
+	weight map type,
+	position among valid extensions in FITS file.
+OUTPUT	Pointer to a new malloc'ed field structure.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	08/12/2011
+ ***/
+fieldstruct	*weight_init(char *filename, fieldstruct *reffield,
 			weightenum wtype, int nok)
 
   {
@@ -54,15 +63,15 @@ fieldstruct	*newweight(char *filename, fieldstruct *reffield,
   switch(wtype)
     {
     case WEIGHT_FROMINTERP:
-      wfield = inheritfield(reffield, INTERP_FIELD);
+      wfield = field_inherit(reffield, INTERP_FIELD);
       break;
 
     case WEIGHT_FROMBACK:
-      wfield = inheritfield(reffield, BACKRMS_FIELD);
+      wfield = field_inherit(reffield, BACKRMS_FIELD);
       break;
 
     case WEIGHT_FROMRMSMAP:
-      wfield = newfield(filename, RMS_FIELD, nok);
+      wfield = field_init(filename, RMS_FIELD, nok);
       if ((wfield->width!=reffield->width)||(wfield->height!=reffield->height))
         error(EXIT_FAILURE,
 	"*Error*: measured frame and weight map have different sizes","");
@@ -70,14 +79,14 @@ fieldstruct	*newweight(char *filename, fieldstruct *reffield,
       break;
 
     case WEIGHT_FROMVARMAP:
-      wfield = newfield(filename, VAR_FIELD, nok);
+      wfield = field_init(filename, VAR_FIELD, nok);
       if ((wfield->width!=reffield->width)||(wfield->height!=reffield->height))
         error(EXIT_FAILURE,
 	"*Error*: measured frame and weight map have different sizes","");
       break;
 
     case WEIGHT_FROMWEIGHTMAP:
-      wfield = newfield(filename, WEIGHT_FIELD, nok);
+      wfield = field_init(filename, WEIGHT_FIELD, nok);
       if ((wfield->width!=reffield->width)||(wfield->height!=reffield->height))
         error(EXIT_FAILURE,
 	"*Error*: measured frame and weight map have different sizes","");
@@ -96,11 +105,18 @@ fieldstruct	*newweight(char *filename, fieldstruct *reffield,
   }
 
 
-/******************************* weight_to_var *******************************/
-/*
-Transform an array of possibily unnormalized weights into a calibrated
-variance map.
-*/
+/****** weight_to_var ********************************************************
+PROTO	fieldstruct *weight_to_var(fieldstruct *wfield, PIXTYPE *data, int npix)
+PURPOSE	Transform an array of possibly unnormalized weights into a calibrated
+	variance map.
+INPUT	pointer to the weight map field,
+	pointer to weight data,
+	weight map size (total number of pixels).
+OUTPUT	-.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	08/12/2011
+ ***/
 void	weight_to_var(fieldstruct *wfield, PIXTYPE *data, int npix)
 
   {

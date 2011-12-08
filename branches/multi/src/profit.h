@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		06/10/2011
+*	Last modified:		08/12/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -77,11 +77,10 @@
 #define	PROFIT_DYNPARAM	30.0	/* Dynamic compression param. in sigma units */
 #define	PROFIT_SMOOTHR	4.0	/* Profile smoothing radius (pixels) */
 #define	PROFIT_MAXMODSIZE  512	/* Maximum size allowed for the model raster */
+#define PROFIT_MAXSMODSIZE 64	/* Number of model planes */
 #define	PROFIT_MAXOBJSIZE  512	/* Maximum size allowed for the object raster */
 #define	PROFIT_BARXFADE	0.1	/* Fract. of bar length crossfaded with arms */
 #define	PROFIT_MAXEXTRA	2	/* Max. nb of extra free params of profiles */
-#define PROFIT_PROFRES	256	/* Pixmap size of model components */
-#define PROFIT_PROFSRES	64	/* Number of model subcomponents */
 #define INTERP_MAXKERNELWIDTH	8	/* Max. range of kernel (pixels) */
 /* NOTES:
 One must have:	PROFIT_NITER > 0
