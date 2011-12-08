@@ -3336,7 +3336,7 @@ INPUT	Pointer to the profile-fitting structure,
 OUTPUT	A pointer to an allocated prof structure.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	22/04/2011
+VERSION	08/12/2011
  ***/
 profstruct	*prof_init(profitstruct *profit, unsigned int modeltype)
   {
@@ -3360,10 +3360,11 @@ profstruct	*prof_init(profitstruct *profit, unsigned int modeltype)
     case MODEL_DIRAC:
       prof->name = "point source";
       prof->naxis = 2;
-      prof->naxisn[0] = PROFIT_MAXMODSIZE;
-      prof->naxisn[1] = PROFIT_MAXMODSIZE;
+      prof->naxisn[0] = profit->modnaxisn[0];
+      prof->naxisn[1] = profit->modnaxisn[1];
       prof->naxisn[2] = 1;
       prof->npix = prof->naxisn[0]*prof->naxisn[1]*prof->naxisn[2];
+      QMALLOC(prof->pix, float, prof->npix);
       prof->typscale = 1.0;
       profit_addparam(profit, PARAM_X, &prof->x[0]);
       profit_addparam(profit, PARAM_Y, &prof->x[1]);
@@ -3372,8 +3373,8 @@ profstruct	*prof_init(profitstruct *profit, unsigned int modeltype)
     case MODEL_SERSIC:
       prof->name = "Sersic spheroid";
       prof->naxis = 2;
-      prof->naxisn[0] = PROFIT_MAXMODSIZE;
-      prof->naxisn[1] = PROFIT_MAXMODSIZE;
+      prof->naxisn[0] = profit->modnaxisn[0];
+      prof->naxisn[1] = profit->modnaxisn[1];
       prof->naxisn[2] = 1;
       prof->npix = prof->naxisn[0]*prof->naxisn[1]*prof->naxisn[2];
       QMALLOC(prof->pix, float, prof->npix);
@@ -3389,11 +3390,11 @@ profstruct	*prof_init(profitstruct *profit, unsigned int modeltype)
     case MODEL_DEVAUCOULEURS:
       prof->name = "de Vaucouleurs spheroid";
       prof->naxis = 2;
-      prof->naxisn[0] = PROFIT_MAXMODSIZE;
-      prof->naxisn[1] = PROFIT_MAXMODSIZE;
+      prof->naxisn[0] = profit->modnaxisn[0];
+      prof->naxisn[1] = profit->modnaxisn[1];
       prof->naxisn[2] = 1;
       prof->npix = prof->naxisn[0]*prof->naxisn[1]*prof->naxisn[2];
-      QMALLOC(prof->pix, float, profit->nmodpix);
+      QMALLOC(prof->pix, float, prof->npix);
       prof->typscale = 1.0;
       profit_addparam(profit, PARAM_X, &prof->x[0]);
       profit_addparam(profit, PARAM_Y, &prof->x[1]);
@@ -3405,11 +3406,11 @@ profstruct	*prof_init(profitstruct *profit, unsigned int modeltype)
     case MODEL_EXPONENTIAL:
       prof->name = "exponential disk";
       prof->naxis = 2;
-      prof->naxisn[0] = PROFIT_MAXMODSIZE;
-      prof->naxisn[1] = PROFIT_MAXMODSIZE;
+      prof->naxisn[0] = profit->modnaxisn[0];
+      prof->naxisn[1] = profit->modnaxisn[1];
       prof->naxisn[2] = 1;
       prof->npix = prof->naxisn[0]*prof->naxisn[1]*prof->naxisn[2];
-      QMALLOC(prof->pix, float, profit->nmodpix);
+      QMALLOC(prof->pix, float, prof->npix);
       prof->typscale = 1.0;
       profit_addparam(profit, PARAM_X, &prof->x[0]);
       profit_addparam(profit, PARAM_Y, &prof->x[1]);
@@ -3421,11 +3422,11 @@ profstruct	*prof_init(profitstruct *profit, unsigned int modeltype)
     case MODEL_ARMS:
       prof->name = "spiral arms";
       prof->naxis = 2;
-      prof->naxisn[0] = PROFIT_MAXMODSIZE;
-      prof->naxisn[1] = PROFIT_MAXMODSIZE;
+      prof->naxisn[0] = profit->modnaxisn[0];
+      prof->naxisn[1] = profit->modnaxisn[1];
       prof->naxisn[2] = 1;
       prof->npix = prof->naxisn[0]*prof->naxisn[1]*prof->naxisn[2];
-      QMALLOC(prof->pix, float, profit->nmodpix);
+      QMALLOC(prof->pix, float, prof->npix);
       prof->typscale = 1.0;
       profit_addparam(profit, PARAM_X, &prof->x[0]);
       profit_addparam(profit, PARAM_Y, &prof->x[1]);
@@ -3444,11 +3445,11 @@ profstruct	*prof_init(profitstruct *profit, unsigned int modeltype)
     case MODEL_BAR:
       prof->name = "bar";
       prof->naxis = 2;
-      prof->naxisn[0] = PROFIT_MAXMODSIZE;
-      prof->naxisn[1] = PROFIT_MAXMODSIZE;
+      prof->naxisn[0] = profit->modnaxisn[0];
+      prof->naxisn[1] = profit->modnaxisn[1];
       prof->naxisn[2] = 1;
       prof->npix = prof->naxisn[0]*prof->naxisn[1]*prof->naxisn[2];
-      QMALLOC(prof->pix, float, profit->nmodpix);
+      QMALLOC(prof->pix, float, prof->npix);
       prof->typscale = 1.0;
       profit_addparam(profit, PARAM_X, &prof->x[0]);
       profit_addparam(profit, PARAM_Y, &prof->x[1]);
@@ -3463,11 +3464,11 @@ profstruct	*prof_init(profitstruct *profit, unsigned int modeltype)
     case MODEL_INRING:
       prof->name = "inner ring";
       prof->naxis = 2;
-      prof->naxisn[0] = PROFIT_MAXMODSIZE;
-      prof->naxisn[1] = PROFIT_MAXMODSIZE;
+      prof->naxisn[0] = profit->modnaxisn[0];
+      prof->naxisn[1] = profit->modnaxisn[1];
       prof->naxisn[2] = 1;
       prof->npix = prof->naxisn[0]*prof->naxisn[1]*prof->naxisn[2];
-      QMALLOC(prof->pix, float, profit->nmodpix);
+      QMALLOC(prof->pix, float, prof->npix);
       prof->typscale = 1.0;
       profit_addparam(profit, PARAM_X, &prof->x[0]);
       profit_addparam(profit, PARAM_Y, &prof->x[1]);
@@ -3482,11 +3483,11 @@ profstruct	*prof_init(profitstruct *profit, unsigned int modeltype)
     case MODEL_OUTRING:
       prof->name = "outer ring";
       prof->naxis = 2;
-      prof->naxisn[0] = PROFIT_MAXMODSIZE;
-      prof->naxisn[1] = PROFIT_MAXMODSIZE;
+      prof->naxisn[0] = profit->modnaxisn[0];
+      prof->naxisn[1] = profit->modnaxisn[1];
       prof->naxisn[2] = 1;
       prof->npix = prof->naxisn[0]*prof->naxisn[1]*prof->naxisn[2];
-      QMALLOC(prof->pix, float, profit->nmodpix);
+      QMALLOC(prof->pix, float, prof->npix);
       prof->typscale = 1.0;
       profit_addparam(profit, PARAM_X, &prof->x[0]);
       profit_addparam(profit, PARAM_Y, &prof->x[1]);
@@ -3500,10 +3501,11 @@ profstruct	*prof_init(profitstruct *profit, unsigned int modeltype)
     case MODEL_TABULATED:	/* An example of tabulated profile */
       prof->name = "tabulated model";
       prof->naxis = 3;
-      width =  prof->naxisn[0] = PROFIT_PROFRES;
-      height = prof->naxisn[1] = PROFIT_PROFRES;
-      nsub = prof->naxisn[2] = PROFIT_PROFSRES;
-      QCALLOC(prof->pix, float, width*height*nsub);
+      width =  prof->naxisn[0] = profit->modnaxisn[0];
+      height = prof->naxisn[1] = profit->modnaxisn[1];
+      nsub = prof->naxisn[2] = PROFIT_MAXSMODSIZE;
+      prof->npix = prof->naxisn[0]*prof->naxisn[1]*prof->naxisn[2];
+      QMALLOC(prof->pix, float, prof->npix);
       ixc = width/2;
       iyc = height/2;
       rmax2 = (ixc - 1.0)*(ixc - 1.0);
@@ -3511,7 +3513,7 @@ profstruct	*prof_init(profitstruct *profit, unsigned int modeltype)
       prof->typscale = re2;
       re2 *= re2;
       zero = prof->extrazero[0] = 0.2;
-      scale = prof->extrascale[0]= 8.0/PROFIT_PROFSRES;
+      scale = prof->extrascale[0]= 8.0/PROFIT_MAXSMODSIZE;
       pix = prof->pix;
       for (s=0; s<nsub; s++)
         {
@@ -3592,7 +3594,7 @@ INPUT	Profile-fitting structure,
 OUTPUT	Total (asymptotic) flux contribution.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	25/07/2011
+VERSION	08/12/2011
  ***/
 float	prof_add(profitstruct *profit, profstruct *prof, int extfluxfac_flag)
   {

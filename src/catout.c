@@ -944,13 +944,13 @@ void	catout_writevofields(FILE *file)
 
 
 /****** catout_initext ********************************************************
-PROTO	void	catout_initext(void)
+PROTO	void	catout_initext(fieldstruct *field)
 PURPOSE	Initialize the catalog header for the current extension.
-INPUT	-.
+INPUT	Pointer to image field.
 OUTPUT	-.
 NOTES	Requires access to global prefs and the objtab static pointer.
 AUTHOR	E. Bertin (IAP)
-VERSION	18/07/2011
+VERSION	08/12/2011
  ***/
 void	catout_initext(fieldstruct *field)
   {

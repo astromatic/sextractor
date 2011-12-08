@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		07/12/2011
+*	Last modified:		08/12/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -119,7 +119,7 @@ void	makeit(void)
     NFPRINTF(OUTPUT, "Reading PSF information");
     QCALLOC(psfs, psfstruct *, prefs.nband);
     for (i=0; i<prefs.nband; i++)
-      psfs[i] = psf_load(prefs.psf_name[i]); 
+      psfs[i] = psf_load(prefs.psf_name[i]);
  /*-- Need to check things up because of PSF context parameters */
     catout_updateparamflags();
     useprefs();
@@ -315,12 +315,12 @@ void	makeit(void)
       {
       if (!i)
 /*------ Load detection field (image) information */
-        fields[i] = newfield(prefs.image_name[i], DETECT_FIELD | MEASURE_FIELD,
+        fields[i] = field_init(prefs.image_name[i], DETECT_FIELD | MEASURE_FIELD,
 			ext_image[i]<0? nok:ext_image[0]);
       else
         {
 /*------ Load measurement field (image) information */
-        fields[i] = newfield(prefs.image_name[i], MEASURE_FIELD,
+        fields[i] = field_init(prefs.image_name[i], MEASURE_FIELD,
 			ext_image[i]<0? nok:ext_image[i]);
         if ((fields[i]->width!=fields[0]->width)
 		|| (fields[i]->height!=fields[i]->height))
@@ -332,7 +332,7 @@ void	makeit(void)
       if (prefs.weight_flag[i]) 
         {
 /*------ Load weight image information */
-        wfields[i] = newweight(prefs.wimage_name[i], fields[i],
+        wfields[i] = weight_init(prefs.wimage_name[i], fields[i],
 			prefs.weight_type[i],
 			ext_wimage[i]<0? nok:ext_wimage[i]);
         interpthresh = prefs.weight_thresh[i];
@@ -349,7 +349,7 @@ void	makeit(void)
     QCALLOC(ffields, fieldstruct *, prefs.nimaflag);
     for (i=0; i<prefs.nimaflag; i++)
       {
-      ffields[i] = newfield(prefs.fimage_name[i], FLAG_FIELD,
+      ffields[i] = field_init(prefs.fimage_name[i], FLAG_FIELD,
 		ext_flag[i]<0? nok:ext_flag[i]);
       if ((ffields[i]->width!=fields[0]->width)
 	|| (ffields[i]->height!=fields[0]->height))
@@ -395,10 +395,10 @@ void	makeit(void)
           {
           psf_readcontext(psfs[i], fields[i]);
           psf_init(psfs[i]);
-          fields[i]->psf = psf[i];
+          fields[i]->psf = &psf[i];
           }
 
-    catout_initext(fields);
+    catout_initext(fields[0]);
 
 /*-- Start the extraction pipeline */
     NFPRINTF(OUTPUT, "Scanning image");
@@ -432,13 +432,13 @@ void	makeit(void)
 
 /*-- End flag-images */
     for (i=0; i<prefs.nimaflag; i++)
-      endfield(ffields[i]);
+      field_end(ffields[i]);
 /*-- End science images and weight maps */
     for (i=0; i<prefs.nband; i++)
       {
-      endfield(fields[i]);
+      field_end(fields[i]);
       if (wfields[i])
-        endfield(wfields[i]);
+        field_end(wfields[i]);
       }
     QPRINTF(OUTPUT,"      Objects: detected %-8d / sextracted %-8d        \n\n",
 	thecat.ndetect, thecat.ntotal);

@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		07/12/2011
+*	Last modified:		08/12/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -67,6 +67,7 @@ void		back_histo(backstruct *backmesh, backstruct *wbackmesh,
 		back_copy(fieldstruct *infield, fieldstruct *outfield),
 		back_end(fieldstruct *field),
 		back_field(fieldstruct *field),
+		back_filter(fieldstruct *field),
 		back_map(fieldstruct *field, fieldstruct *wfield,
 			int wscale_flag),
 		back_subline(fieldstruct *field, int y, PIXTYPE *line);

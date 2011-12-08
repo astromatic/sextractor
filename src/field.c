@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		07/12/2011
+*	Last modified:		08/12/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -48,20 +48,27 @@
 #include	"header.h"
 #include	"interpolate.h"
 
-/********************************* newfield **********************************/
-/*
-Returns a pointer to a new field, ready to go!
-*/
-fieldstruct	*newfield(char *filename, int flags, int nok)
+/****** field_init ***********************************************************
+PROTO	fieldstruct *field_init(char *filename, int flags, int ext)
+PURPOSE	Create and initialize a new field (image structure).
+INPUT	Image filename,
+	image flags (e.g. DETECT_FIELD, MEASURE_FIELD...),
+	position among valid extensions in FITS file.
+OUTPUT	Pointer to a new malloc'ed field structure.
+NOTES	Global preferences are used.
+AUTHOR	E. Bertin (IAP)
+VERSION	08/12/2011
+ ***/
+fieldstruct	*field_init(char *filename, int flags, int ext)
 
   {
    fieldstruct	*field;
    catstruct	*cat;
    tabstruct	*tab;
    char		*pstr;
-   int		nok2, ntab, margin;
+   int		nok, ntab, margin;
 
-/* Move to nok'th valid FITS image extension */
+/* Move to ext'th valid FITS image extension */
   if (!(cat = read_cat(filename)))
     error(EXIT_FAILURE, "*Error*: cannot open ", filename);
 
@@ -70,16 +77,16 @@ fieldstruct	*newfield(char *filename, int flags, int nok)
   field->flags = flags;
   field->cat = cat;
   tab = cat->tab;
-  nok++;	/* At least one pass through the loop */
-  nok2 = nok;
-  for (ntab=cat->ntab; nok && ntab--; tab=tab->nexttab)
+  ext++;	/* At least one pass through the loop */
+  nok = ext;
+  for (ntab=cat->ntab; ext && ntab--; tab=tab->nexttab)
     {
     if ((tab->naxis < 2)
 	|| !strncmp(tab->xtension, "BINTABLE", 8)
 	|| !strncmp(tab->xtension, "ASCTABLE", 8))
       continue;
     field->tab = tab;
-    nok--;
+    ext--;
     }
   if (ntab<0)
     error(EXIT_FAILURE, "Not enough valid FITS image extensions in ",filename);
@@ -100,11 +107,11 @@ fieldstruct	*newfield(char *filename, int flags, int nok)
   sprintf(gstr, "Looking for %s", field->rfilename);
   NFPRINTF(OUTPUT, gstr);
 /* Check the image exists and read important info (image size, etc...) */
-  field->headflag = !read_aschead(field->hfilename, nok2 - 1, field->tab);
+  field->headflag = !read_aschead(field->hfilename, nok - 1, field->tab);
   readimagehead(field);
 
   if (cat->ntab>1)
-    sprintf(gstr, " [%d/%d]", nok2, cat->tab->naxis<2? cat->ntab-1 : cat->ntab);
+    sprintf(gstr, " [%d/%d]", nok, cat->tab->naxis<2? cat->ntab-1 : cat->ntab);
   QPRINTF(OUTPUT, "----- %s %s%s\n",
 	flags&FLAG_FIELD?   "Flagging  from:" :
        (flags&(RMS_FIELD|VAR_FIELD|WEIGHT_FIELD)?
@@ -116,8 +123,8 @@ fieldstruct	*newfield(char *filename, int flags, int nok)
   QPRINTF(OUTPUT, "      \"%.20s\" / %s / %dx%d / %d bits %s\n",
 	field->ident,
 	field->headflag? "EXT. HEADER" : "no ext. header",
-	field->width, field->height, field->bytepix*8,
-	field->bitpix>0?
+	field->width, field->height, field->tab->bytepix*8,
+	field->tab->bitpix>0?
 	(field->tab->compress_type!=COMPRESS_NONE?"(compressed)":"(integers)")
 	:"(floats)");
 
@@ -186,11 +193,17 @@ fieldstruct	*newfield(char *filename, int flags, int nok)
   }
 
 
-/******************************* inheritfield *******************************/
-/*
-Make a copy of a field structure, e.g. for interpolation purposes.
-*/
-fieldstruct	*inheritfield(fieldstruct *infield, int flags)
+/****** field_inherit ********************************************************
+PROTO	fieldstruct *field_inherit(fieldstruct *infield, int flags)
+PURPOSE	Make a copy of a field structure, e.g. for interpolation purposes.
+INPUT	Pointer to input field structure,
+	new field image flags (e.g. DETECT_FIELD, MEASURE_FIELD...).
+OUTPUT	Pointer to a new malloc'ed field structure.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	08/12/2011
+ ***/
+fieldstruct	*field_inherit(fieldstruct *infield, int flags)
 
   {
    fieldstruct	*field;
@@ -208,22 +221,24 @@ fieldstruct	*inheritfield(fieldstruct *infield, int flags)
   field->strip = NULL;
   field->fstrip = NULL;
   field->reffield = infield;
-  field->file = NULL;
 
   return field;
   }
 
 
-/********************************* endfield **********************************/
-/*
-Free and close everything related to a field structure.
-*/
-void	endfield(fieldstruct *field)
+/****** field_end ************************************************************
+PROTO	void field_end(fieldstruct *field)
+PURPOSE	Free and close everything related to an image field structure.
+INPUT	Pointer to field structure.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	08/12/2011
+ ***/
+void	field_end(fieldstruct *field)
 
   {
-
 /* Free cat only if associated with an open file */
-  if (field->file)
+  if (field->cat &&  field->cat->file)
     free_cat(&field->cat, 1);
   free(field->strip);
   free(field->fstrip);
