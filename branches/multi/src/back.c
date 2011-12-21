@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		07/12/2011
+*	Last modified:		21/12/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -864,23 +864,24 @@ void	back_filter(fieldstruct *field)
 
 
 /****** back_local ***********************************************************
-PROTO	float back_local(fieldstruct *field, objstruct *obj)
+PROTO	float back_local(fieldstruct *field, objstruct *obj, float *sigma)
 PURPOSE	Compute local background if possible.
 INPUT	Pointer to image field structure,
-	pointer to the source obj structure.
+	pointer to the source obj structure,
+	pointer to local background variance estimate (output).
 OUTPUT	Local background level estimate.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	07/12/2011
+VERSION	21/12/2011
  ***/
-float	back_local(fieldstruct *field, objstruct *obj)
+float	back_local(fieldstruct *field, objstruct *obj, float *sigma)
 
   {
    static backstruct	backmesh;
    int			bxmin,bxmax, bymin,bymax, ixmin,ixmax, iymin,iymax,
 			bxnml,bynml, oxsize,oysize, npix,
 			i, x,y, bin, w,sh, bmn, pbs;
-   float		bkg, bqs,cste;
+   float		dbkg, bqs,cste;
    LONG			*bmh;
    PIXTYPE		*backpix, *bp, *strip, *st,
 			pix;
@@ -963,24 +964,23 @@ float	back_local(fieldstruct *field, objstruct *obj)
         if (bin>=0 && bin<bmn)
           (*(bmh+bin))++;
         }
-      back_guess(&backmesh, &bkg, &obj->sigbkg);
-      obj->bkg += (obj->dbkg = bkg);
+      back_guess(&backmesh, &dbkg, sigma);
       free(backmesh.histo);
       }
     else
       {
-      obj->dbkg = 0.0;
-      obj->sigbkg = field->backsig;
+      dbkg = 0.0;
+      *sigma = -1.0;
       }
     free(backpix);
     }
   else
     {
-    obj->dbkg = bkg = 0.0;
-    obj->sigbkg = field->backsig;
+    dbkg = 0.0;
+    *sigma = -1.0;
     }
 
-  return bkg;
+  return dbkg;
   }
 
 

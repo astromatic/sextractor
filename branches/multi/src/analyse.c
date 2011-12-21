@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		07/12/2011
+*	Last modified:		21/12/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -396,7 +396,7 @@ INPUT   Measurement field pointer,
 OUTPUT  -.
 NOTES   Global preferences are used.
 AUTHOR  E. Bertin (IAP)
-VERSION 07/10/2011
+VERSION 21/12/2011
  ***/
 void analyse_final(fieldstruct *field, fieldstruct *dfield,
 		fieldstruct *wfield, fieldstruct *dwfield,
@@ -448,10 +448,10 @@ void analyse_final(fieldstruct *field, fieldstruct *dfield,
       }
     prevobj2 = obj2;
     nextiobj = obj->next;
-/*-- Take care of next obj that might be swapped by subcleanobj! */
+/*-- Take care of next obj that might be swapped by clean_sub! */
     if (nextiobj == objlist->nobj-1)
       nextiobj = iobj;
-    subcleanobj(iobj);
+    clean_sub(iobj);
     iobj = nextiobj;
     }
 
