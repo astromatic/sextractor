@@ -1,7 +1,7 @@
 /*
-*				extract.h
+*				lutz.h
 *
-* Include file for extract.c.
+* Include file for lutz.c.
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/10/2010
+*	Last modified:		21/12/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -51,11 +51,15 @@ typedef struct structinfo
 
 
 /*------------------------------- functions ---------------------------------*/
-void		lutzalloc(int, int),
-		lutzfree(void),
-		lutzsort(infostruct *, objliststruct *),
-		sortit(fieldstruct *, fieldstruct *, fieldstruct *, fieldstruct *,
-			infostruct *, objliststruct *, PIXTYPE *, PIXTYPE *),
-		update(infostruct *, infostruct *, pliststruct *);
+void		lutz_alloc(int width, int height),
+		lutz_free(void),
+		lutz_output(infostruct *info, objliststruct *objlist),
+		lutz_update(infostruct *infoptr1, infostruct *infoptr2,
+			pliststruct *pixel),
 
-int		lutz(objliststruct *, int, objstruct *, objliststruct *); 
+
+
+
+int		lutz_subextract(objliststruct *objlistroot, int nroot,
+			objstruct *objparent, objliststruct *objlist);
+

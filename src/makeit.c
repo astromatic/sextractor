@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		08/12/2011
+*	Last modified:		21/12/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -52,6 +52,7 @@
 #include	"pattern.h"
 #include	"psf.h"
 #include	"profit.h"
+#include	"scan.h"
 #include	"som.h"
 #include	"weight.h"
 #include	"xml.h"
@@ -402,7 +403,7 @@ void	makeit(void)
 
 /*-- Start the extraction pipeline */
     NFPRINTF(OUTPUT, "Scanning image");
-    scanimage(fields, wfields, prefs.nband, ffields, prefs.nimaflag);
+    scan_extract(fields, wfields, prefs.nband, ffields, prefs.nimaflag);
 
 /*-- Finish the current CHECK-image processing */
     if (prefs.check_flag)

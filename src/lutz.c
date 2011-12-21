@@ -1,13 +1,13 @@
 /*
-*				extract.c
+*				lutz.c
 *
-* Extract connected pixels from an image raster.
+* Lutz (1980) algorithm to extract connected pixels from an image raster.
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/10/2010
+*	Last modified:		21/12/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -37,7 +37,7 @@
 #include	"define.h"
 #include	"globals.h"
 #include	"prefs.h"
-#include	"extract.h"
+#include	"lutz.h"
 #include	"plist.h"
 
 /*------------------------- Static buffers for lutz() -----------------------*/
@@ -48,11 +48,17 @@ static status		*psstack;
 static int		*start, *end, *discan, xmin,ymin,xmax,ymax;
 
 
-/******************************* lutzalloc ***********************************/
-/*
-Allocate once for all memory space for buffers used by lutz().
-*/
-void	lutzalloc(int width, int height)
+/****** lutz_alloc ***********************************************************
+PROTO	void lutz_alloc(int width, int height)
+PURPOSE	Allocate memory for buffers used by Lutz' extraction algorithm.
+INPUT	Frame width,
+	frame height.
+OUTPUT	-.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	21/12/2011
+ ***/
+void	lutz_alloc(int width, int height)
   {
    int	*discant,
 	stacksize, i;
@@ -76,11 +82,16 @@ void	lutzalloc(int width, int height)
   }
 
 
-/******************************* lutzfree ************************************/
-/*
-Free once for all memory space for buffers used by lutz().
-*/
-void	lutzfree()
+/****** lutz_free ************************************************************
+PROTO   void lutz_free(void)
+PURPOSE Free memory for buffers used by Lutz' extraction algorithms.
+INPUT	-.
+OUTPUT	-.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	21/12/2011
+ ***/
+void	lutz_free(void)
   {
   free(discan);
   free(info);
@@ -94,13 +105,20 @@ void	lutzfree()
   }
 
 
-/********************************** lutz *************************************/
-/*
-C implementation of R.K LUTZ' algorithm for the extraction of 8-connected pi-
-xels in an image
-*/
-int	lutz(objliststruct *objlistroot, int nroot, objstruct *objparent,
-	objliststruct *objlist)
+/****** lutz_subextract ******************************************************
+PROTO	void lutz_subextract(objliststruct *objlistroot, int nroot,
+		objstruct *objparent, objliststruct *objlist)
+PURPOSE	C implementation of R.K LUTZ' algorithm for the extraction of
+	8-connected pixels in a sub-image
+INPUT	-.
+OUTPUT	RETURN_OK if no memory allocation problem occured, RETURN_FATAL_ERROR
+	otherwise.
+NOTES	Global preferences are used.
+AUTHOR	E. Bertin (IAP)
+VERSION	21/12/2011
+ ***/
+int	lutz_subextract(objliststruct *objlistroot, int nroot,
+		objstruct *objparent, objliststruct *objlist)
 
   {
    static infostruct	curpixinfo,initinfo;
@@ -235,7 +253,7 @@ int	lutz(objliststruct *objlistroot, int nroot, objstruct *objparent,
             start[co] = UNKNOWN;
           }
           else
-            update (&info[co],&store[xl], plist);
+            lutz_update(&info[co],&store[xl], plist);
           ps = OBJECT;
           }
         else if (newmarker == 's')
@@ -244,7 +262,7 @@ int	lutz(objliststruct *objlistroot, int nroot, objstruct *objparent,
             {
             pstop--;
             xl2 = start[co];
-            update (&info[co-1],&info[co], plist);
+            lutz_update(&info[co-1],&info[co], plist);
           if (start[--co] == UNKNOWN)
               start[co] = xl2;
             else
@@ -270,7 +288,7 @@ int	lutz(objliststruct *objlistroot, int nroot, objstruct *objparent,
                     out = RETURN_FATAL_ERROR;
                     goto exit_lutz;
                     }
-                lutzsort(&info[co], objlist);
+                lutz_output(&info[co], objlist);
                 }
               }
             else
@@ -287,7 +305,7 @@ int	lutz(objliststruct *objlistroot, int nroot, objstruct *objparent,
 /*---------------------------------------------------------------------------*/
 
       if (luflag)
-        update (&info[co],&curpixinfo, plist);
+        lutz_update(&info[co],&curpixinfo, plist);
     else
         {
         if (cs == OBJECT)
@@ -341,11 +359,53 @@ exit_lutz:
   }
 
 
-/********************************* lutzsort ***********************************/
+/****** lutz_update **********************************************************
+PROTO	void lutz_update(infostruct *infoptr1, infostruct *infoptr2,
+		pliststruct *pixel)
+PURPOSE	Update the properties of a detection each time one of its pixels is
+	scanned.
+INPUT	Pointer to detection info,
+	pointer to pointer to new object info,
+	pointer to pixel list.
+OUTPUT	-.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	21/12/2011
+ ***/
+void	lutz_update(infostruct *infoptr1, infostruct *infoptr2,
+		pliststruct *pixel)
+
+  {
+  infoptr1->pixnb += infoptr2->pixnb;
+  infoptr1->flag |= infoptr2->flag;
+  if (infoptr1->firstpix == -1)
+    {
+    infoptr1->firstpix = infoptr2->firstpix;
+    infoptr1->lastpix = infoptr2->lastpix;
+    }
+  else if (infoptr2->lastpix != -1)
+    {
+    PLIST(pixel+infoptr1->lastpix, nextpix) = infoptr2->firstpix;
+    infoptr1->lastpix = infoptr2->lastpix;
+    }
+
+  return;
+  }
+
+
+/****** lutz_output **********************************************************
+PROTO	void lutz_output(infostruct *info, objliststruct *objlist)
+PURPOSE	Convert an output detection to a new (sub-)object.
+INPUT	-.
+OUTPUT	-.
+NOTES	Global preferences are used.
+AUTHOR	E. Bertin (IAP)
+VERSION	21/12/2011
+ ***/
 /*
 Build the object structure.
 */
-void  lutzsort(infostruct *info, objliststruct *objlist)
+void  lutz_output(infostruct *info, objliststruct *objlist)
 
   {
   objstruct  *obj = objlist->obj+objlist->nobj;

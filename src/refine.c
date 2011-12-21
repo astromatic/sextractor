@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/10/2010
+*	Last modified:		21/12/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -37,8 +37,8 @@
 #include	"define.h"
 #include	"globals.h"
 #include	"prefs.h"
+#include	"lutz.h"
 #include	"plist.h"
-#include	"extract.h"
 
 #ifndef	RAND_MAX
 #define	RAND_MAX	2147483647
@@ -57,8 +57,8 @@ INPUT   input objlist,
 OUTPUT  RETURN_OK if success, RETURN_FATAL_ERROR otherwise (memory overflow).
 NOTES   Even if the object is not deblended, the output objlist threshold is
         recomputed if a variable threshold is used.
-AUTHOR  E. Bertin (IAP, Leiden & ESO)
-VERSION 15/03/98
+AUTHOR  E. Bertin (IAP)
+VERSION 21/12/2011
  ***/
 int	parcelout(objliststruct *objlistin, objliststruct *objlistout)
 
@@ -119,8 +119,8 @@ int	parcelout(objliststruct *objlistin, objliststruct *objlistout)
 
         for (i=0; i<objlist[k-1].nobj; i++)
           {
-          if ((out=lutz(objlistin,l,&objlist[k-1].obj[i], &debobjlist))
-			==RETURN_FATAL_ERROR)
+          if ((out=lutz_subextract(objlistin, l, &objlist[k-1].obj[i],
+			&debobjlist)) == RETURN_FATAL_ERROR)
             goto exit_parcelout;
 
           for (j=h=0; j<debobjlist.nobj; j++)

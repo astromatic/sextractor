@@ -1,7 +1,7 @@
 /*
-*				clean.h
+*				scan.h
 *
-* Include file for clean.c.
+* Include file for scan.c.
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 *
@@ -28,19 +28,15 @@
 
 /*------------------------------ definitions --------------------------------*/
 
-#define		CLEAN_ZONE		10.0	/* zone (in sigma) to */
-						/* consider for processing */
+#define	NOBJ			256		/* starting number of obj. */
+#define	UNKNOWN			-1		/* flag for LUTZ */
 
-/*------------------------------- variables ---------------------------------*/
-
-objliststruct	*cleanobjlist;		/* laconic, isn't it? */
+/*--------------------------------- typedefs --------------------------------*/
 
 /*------------------------------- functions ---------------------------------*/
-
-extern void	clean_add(objstruct *objin),
-		clean_end(void),
-		clean_init(void),
-		clean_sub(int);
-
-extern int	clean_process(fieldstruct *field, objstruct *objin);
-
+void		scan_extract(fieldstruct **fields, fieldstruct **wfields,
+			int nfield, fieldstruct **ffields, int nffield),
+		scan_output(fieldstruct **fields, fieldstructs **wfields,
+			int nfield, infostruct *info, objliststruct *objlist),
+		scan_preanalyse(int no, objliststruct *objlist,
+			int analyse_type);

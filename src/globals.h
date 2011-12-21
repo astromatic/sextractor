@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		08/12/2011
+*	Last modified:		21/12/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -52,13 +52,10 @@ extern void	allocparcelout(void),
 		neurinit(void),
 		neurclose(void),
 		neurresp(double *, double *),
-		preanalyse(int, objliststruct *, int),
 		readdata(fieldstruct *, PIXTYPE *, int),
 		readidata(fieldstruct *, FLAGTYPE *, int),
 		readimagehead(fieldstruct *),
 		readprefs(char *, char **, char **, int),
-		scanimage(fieldstruct *, fieldstruct *, fieldstruct **, int,
-			fieldstruct *, fieldstruct *),
 		useprefs(void),
 		write_error(char *msg1, char *msg2);
 

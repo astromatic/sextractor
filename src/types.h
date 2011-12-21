@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		08/12/2011
+*	Last modified:		21/12/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -169,7 +169,7 @@ typedef struct obj2
   double	mx2,my2,mxy;			/* variances and covariance */
   float		a, b, theta, abcor;		/* moments and angle */
   float		cxx,cyy,cxy;			/* ellipse parameters */
-  float		bkg, dbkg, sigbkg;		/* Background stats (ADU) */
+  float		*bkg, *dbkg, *sigbkg;		/* Background stats (ADU) */
   float		thresh;				/* measur. threshold (ADU) */
   float		dthresh;		       	/* detect. threshold (ADU) */
   float		mthresh;		       	/* max. threshold (ADU) */
