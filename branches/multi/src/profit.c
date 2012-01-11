@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 2006-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 2006-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		23/11/2011
+*	Last modified:		11/01/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -90,7 +90,7 @@ INPUT	Pointer to the field,
 OUTPUT	A pointer to an allocated profit structure.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	06/10/2011
+VERSION	11/01/2012
  ***/
 profitstruct	*profit_init(fieldstruct *field, fieldstruct *wfield,
 		obj2struct *obj2, psfstruct *psf, unsigned int modeltype)
@@ -175,12 +175,12 @@ profitstruct	*profit_init(fieldstruct *field, fieldstruct *wfield,
   QMALLOC16(profit->covar, float, profit->nparam*profit->nparam);
 
 /*-- Set initial guesses and boundaries */
-  profit->sigma = obj2->sigbkg;
+  profit->sigma = obj2->sigbkg[0];
   if ((profit->guessradius = 0.5*psf->fwhm) < obj2->hl_radius)
     profit->guessradius = obj2->hl_radius;
-  if ((profit->guessflux = obj2->flux_auto) <= 0.0)
+  if ((profit->guessflux = obj2->flux_auto[0]) <= 0.0)
     profit->guessflux = 0.0;
-  if ((profit->guessfluxmax = 10.0*obj2->fluxerr_auto) <= profit->guessflux)
+  if ((profit->guessfluxmax = 10.0*obj2->fluxerr_auto[0]) <= profit->guessflux)
     profit->guessfluxmax = profit->guessflux;
   if (profit->guessfluxmax <= 0.0)
     profit->guessfluxmax = 1.0;
@@ -1243,7 +1243,7 @@ void	profit_printout(int n_par, float* par, int m_dat, float* fvec,
       itero = iter;
     field = NULL;	/*! Should be replaced with a global variable to work!*/
     sprintf(filename, "check_%d_%04d.fits", the_gal, itero);
-    check=check_init(filename, CHECK_PROFILES, 0);
+    check=check_init(filename, CHECK_PROFILES, 0, 1);
     check_reinit(field, check);
     check_add(check, profit->lmodpix, profit->objnaxisn[0],profit->objnaxisn[1],
 		profit->ix,profit->iy, 1.0);
@@ -1913,7 +1913,7 @@ INPUT	Pointer to the profit structure,
 OUTPUT	The number of valid pixels copied.
 NOTES	Global preferences are used.
 AUTHOR	E. Bertin (IAP)
-VERSION	02/08/2011
+VERSION	11/01/2012
  ***/
 int	profit_copyobjpix(profitstruct *profit, fieldstruct *field,
 			fieldstruct *wfield, obj2struct *obj2)
@@ -1946,7 +1946,7 @@ int	profit_copyobjpix(profitstruct *profit, fieldstruct *field,
   if (sflag)
     backnoise2 *= (PIXTYPE)sn;
   invgain = (field->gain > 0.0) ? 1.0/field->gain : 0.0;
-  satlevel = field->satur_level - profit->obj2->bkg;
+  satlevel = field->satur_level - profit->obj2->bkg[0];
   rad2 = h/2.0;
   if (rad2 > w/2.0)
     rad2 = w/2.0;
@@ -2006,8 +2006,8 @@ int	profit_copyobjpix(profitstruct *profit, fieldstruct *field,
             dy2 *= dy2;
             dx = (x-ix);
             off = x + (y+sy)*win;
-            spixin = obj2->image + off;
-            swpixin = obj2->weight + off;
+            spixin = obj2->image[0] + off;
+            swpixin = obj2->weight[0] + off;
             for (sx=sn; sx--;)
               {
               dr2 = dy2 + dx*dx;
@@ -2040,8 +2040,8 @@ int	profit_copyobjpix(profitstruct *profit, fieldstruct *field,
         {
         dy2 = y-iy;
         dy2 *= dy2;
-        pixin = obj2->image + xmin + y*win;
-        wpixin = obj2->weight + xmin + y*win;
+        pixin = obj2->image[0] + xmin + y*win;
+        wpixin = obj2->weight[0] + xmin + y*win;
         for (x=xmin; x<xmax; x++)
           {
           dx = x-ix;
@@ -2076,7 +2076,7 @@ int	profit_copyobjpix(profitstruct *profit, fieldstruct *field,
             dy2 = y+sy-iy;
             dy2 *= dy2;
             dx = x-ix;
-            spixin = obj2->image + x + (y+sy)*win;
+            spixin = obj2->image[0] + x + (y+sy)*win;
             for (sx=sn; sx--;)
               {
               dr2 = dy2 + dx*dx;
@@ -2104,7 +2104,7 @@ int	profit_copyobjpix(profitstruct *profit, fieldstruct *field,
         {
         dy2 = y-iy;
         dy2 *= dy2;
-        pixin = obj2->image + xmin + y*win;
+        pixin = obj2->image[0] + xmin + y*win;
         for (x=xmin; x<xmax; x++)
           {
           dx = x-ix;
@@ -2841,8 +2841,8 @@ void	profit_resetparam(profitstruct *profit, paramenum paramtype)
     case PARAM_BACK:
       fittype = PARFIT_LINBOUND;
       param = 0.0;
-      parammin = -6.0*obj2->sigbkg;
-      parammax =  6.0*obj2->sigbkg;
+      parammin = -6.0*obj2->sigbkg[0];
+      parammax =  6.0*obj2->sigbkg[0];
       break;
     case PARAM_X:
       fittype = PARFIT_LINBOUND;

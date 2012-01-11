@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		09/10/2011
+*	Last modified:		11/10/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -47,7 +47,7 @@ INPUT   objlist number,
 OUTPUT  RETURN_OK if success, RETURN_FATAL_ERROR otherwise (memory overflow).
 NOTES   -.
 AUTHOR  E. Bertin (IAP & Leiden & ESO)
-VERSION 27/11/2003
+VERSION 11/01/2012
  ***/
 int	createblank(objliststruct *objlist, int no)
 
@@ -74,27 +74,11 @@ int	createblank(objliststruct *objlist, int no)
   for (i=n; i--;)
     *(pt++) = -BIG;
 
-  if (dflag)
-    {
-    if (!(obj->dblank = dpix = (PIXTYPE *)malloc(n*sizeof(PIXTYPE))))
-      {
-      free(pix);
-      return RETURN_FATAL_ERROR;
-      }
-    pt = dpix;
-    for (i=n; i--;)
-      *(pt++) = -BIG;
-    }
-  else
-    obj->dblank = NULL;
-
   for (i=obj->firstpix; i!=-1; i=PLIST(pixt,nextpix))
     {
     pixt = pixel+i;
     pos = (PLIST(pixt,x)-xmin) + (PLIST(pixt,y)-ymin)*w;
     *(pix+pos) = PLIST(pixt, value);
-    if (dflag)
-      *(dpix+pos) = PLISTPIX(pixt, dvalue);
     }
 
   return RETURN_OK;
@@ -149,7 +133,7 @@ INPUT	-.
 OUTPUT  -.
 NOTES   The preparation of components relies on the preferences.
 AUTHOR  E. Bertin (IAP, Leiden observatory & ESO)
-VERSION 09/10/2011
+VERSION 11/01/2012
  ***/
 void	init_plist(void)
 
@@ -160,28 +144,16 @@ void	init_plist(void)
   plistsize = sizeof(pbliststruct);
   plistoff_value = (char *)&pbdum->value - (char *)pbdum;
 
-  if (prefs.dimage_flag)
-    {
-    plistexist_dvalue = 1;
-    plistoff_dvalue = plistsize;
-    plistsize += sizeof(PIXTYPE);
-    }
-  else
-    {
-    plistexist_dvalue = 0;
-    plistoff_dvalue = plistoff_value;
-    }
-
   if (prefs.filter_flag)
     {
-    plistexist_cdvalue = 1;
-    plistoff_cdvalue = plistsize;
+    plistexist_cvalue = 1;
+    plistoff_cvalue = plistsize;
     plistsize += sizeof(PIXTYPE);
     }
   else
     {
-    plistexist_cdvalue = 0;
-    plistoff_cdvalue = plistoff_dvalue;
+    plistexist_cvalue = 0;
+    plistoff_cvalue = plistoff_value;
     }
 
   if (FLAG(obj2.imaflag))
@@ -196,7 +168,7 @@ void	init_plist(void)
   else
     plistexist_flag = 0;
 
-  if (prefs.weight_flag && prefs.dweight_flag && FLAG(obj2.wflag))
+  if (prefs.weight_flag[0] && FLAG(obj2.wflag))
     {
     plistexist_wflag = 1;
     plistoff_wflag = plistsize;
@@ -205,7 +177,7 @@ void	init_plist(void)
   else
     plistexist_wflag = 0;
 
-  if (prefs.weight_flag)
+  if (prefs.weight_flag[0])
     {
     plistexist_var = 1;
     plistoff_var = plistsize;
@@ -214,7 +186,7 @@ void	init_plist(void)
   else
     plistexist_var = 0;
 
-  if (prefs.dweight_flag)
+  if (prefs.weight_flag[0])
     {
     plistexist_dthresh = 1;
     plistoff_dthresh = plistsize;

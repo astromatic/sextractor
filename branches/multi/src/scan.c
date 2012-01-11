@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		21/12/2011
+*	Last modified:		11/01/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -61,7 +61,7 @@ INPUT	Pointer to an array of image field pointers,
 OUTPUT	-.
 NOTES	Global preferences are used.
 AUTHOR	E. Bertin (IAP)
-VERSION	21/12/2011
+VERSION	11/01/2012
  ***/
 void	scan_extract(fieldstruct **fields, fieldstruct **wfields, int nfield,
 			fieldstruct **ffields, int nffield)
@@ -240,16 +240,23 @@ void	scan_extract(fieldstruct **fields, fieldstruct **wfields, int nfield,
         if (PLISTEXIST(wflag))
           {
           if (yl>0)
-            wscanp[i]
-		= &wfield->strip[((yl-1)%wfield->stripheight)*wfield->width];
+            wscanp = &wfield->strip[((yl-1)%wfield->stripheight)*wfield->width];
           if (yl<h-1)
-            wscann[i]
-		= &wfield->strip[((yl+1)%wfield->stripheight)*wfield->width];
+            wscann = &wfield->strip[((yl+1)%wfield->stripheight)*wfield->width];
             }
         }
       scan = (field->stripy==field->stripysclim)?
 		  (PIXTYPE *)loadstrip(field, wfield)
 		: &field->strip[field->stripy*field->width];
+      if (field->stripy==field->stripysclim)
+        {
+        for (i=1; i<nfield; i++)
+          {
+          loadstrip(fields[i], wfields[i]);
+          if (wfields[i])
+            loadstrip(wfields[i], (fieldstruct *)NULL);
+          }
+        }
 
       if (prefs.filter_flag)
         {
@@ -463,8 +470,7 @@ void	scan_extract(fieldstruct **fields, fieldstruct **wfields, int nfield,
               {
               if ((int)info[co].pixnb >= prefs.ext_minarea)
                 {
-                scan_output(fields, wfields, nfield, &info[co], &objlist,
-		       cwscan, wscan);
+                scan_output(fields, wfields, nfield, &info[co], &objlist);
                 }
 /* ------------------------------------ free the chain-list */
 
@@ -638,9 +644,9 @@ INPUT	Pointer to an array of image field pointers,
 OUTPUT	-.
 NOTES	Global preferences are used.
 AUTHOR	E. Bertin (IAP)
-VERSION	21/12/2011
+VERSION	11/01/2012
  ***/
-void	scan_output(fieldstruct **fields, fieldstructs **wfields, int nfield,
+void	scan_output(fieldstruct **fields, fieldstruct **wfields, int nfield,
 		infostruct *info, objliststruct *objlist)
   {
    fieldstruct		*field;
@@ -650,7 +656,6 @@ void	scan_output(fieldstruct **fields, fieldstructs **wfields, int nfield,
    objstruct		*cobj, *vobj;
    obj2struct		*obj2, *firstobj2, *prevobj2;
    pliststruct		*pixel;
-   float		sigbkg;
    int 			i,j,n,o;
 
   field = fields[0];
@@ -673,7 +678,7 @@ void	scan_output(fieldstruct **fields, fieldstructs **wfields, int nfield,
   obj.dthresh = objlist->dthresh;
   obj.thresh = objlist->thresh;
 
-  scan_preanalyse(0, objlist, ANALYSE_FAST);
+  scan_preanalyse(objlist, 0, ANALYSE_FAST);
 
 /*----- Check if the current strip contains the lower isophote... */
   if ((int)obj.ymin < field->ymin)
@@ -700,25 +705,12 @@ void	scan_output(fieldstruct **fields, fieldstructs **wfields, int nfield,
   for (o=0; o<objlistout->nobj; o++)
     {
 /*-- Basic measurements */
-    scan_preanalyse(o, objlistout, ANALYSE_FULL|ANALYSE_ROBUST);
+    scan_preanalyse(objlistout, o, ANALYSE_FULL|ANALYSE_ROBUST);
     if (prefs.ext_maxarea && objlistout->obj[o].fdnpix > prefs.ext_maxarea)
       continue; 
     cobj = objlistout->obj + o;
     cobj->number = ++thecat.ndetect;
     cobj->blend = thecat.nblend;
-/*-- Local backgrounds */
-    for (i=0; i<nfield; i++)
-      {
-      cobj->bkg[i] = (float)back(fields[i], cobj->mx, cobj->my);
-      cobj->dbkg[i] = 0.0;
-      if (prefs.pback_type == LOCAL)
-        {
-        cobj->dbkg[i] = back_local(fields[i], cobj, &sigbkg);
-        cobj->sigbkg[i] = sigbkg<0.0? fields[i]->backsig : sigbkg;          
-        }
-      else
-        cobj->sigbkg[i] = fields[i]->backsig;
-      }
 /*--- Isophotal measurements */
     analyse_iso(fields, wfields, nfield, objlistout, o);
     if (prefs.blank_flag)
@@ -727,7 +719,7 @@ void	scan_output(fieldstruct **fields, fieldstructs **wfields, int nfield,
         {
 /*------ Not enough mem. for the BLANK vignet: flag the object now */
         cobj->flag |= OBJ_OVERFLOW;
-        cobj->blank = cobj->dblank = NULL;
+        cobj->blank = NULL;
         sprintf(gstr, "%.0f,%.0f", cobj->mx+1, cobj->my+1);
         warning("Memory overflow during masking for detection at ", gstr);
         }
@@ -783,15 +775,15 @@ void	scan_output(fieldstruct **fields, fieldstructs **wfields, int nfield,
 
 
 /****** scan_preanalyse ******************************************************
-PROTO   void scan_preanalyse(int no, objliststruct *objlist, int analyse_type)
+PROTO   void scan_preanalyse(objliststruct *objlist, int no, int analyse_type)
 PURPOSE Compute basic image parameters from the pixel-list for each detection.
-INPUT   objlist number,
-        objlist pointer,
+INPUT   Objlist pointer,
+	objlist number,
         analysis switch flag.
 OUTPUT  -.
 NOTES   -.
-AUTHOR  E. Bertin (IAP & Leiden & ESO)
-VERSION 21/12/2011
+AUTHOR  E. Bertin (IAP)
+VERSION 11/01/2012
  ***/
 void  scan_preanalyse(objliststruct *objlist, int no, int analyse_type)
 
@@ -941,7 +933,7 @@ void  scan_preanalyse(objliststruct *objlist, int no, int analyse_type)
 
     darea = (double)area2 - dnpix;
     t1t2 = thresh/thresh2;
-    if (t1t2>0.0 && !prefs.dweight_flag)
+    if (t1t2>0.0)
       {
       obj->abcor = (darea<0.0?darea:-1.0)/(2*PI*log(t1t2<1.0?t1t2:0.99)
 	*obj->a*obj->b);

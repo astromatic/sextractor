@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		07/12/2011
+*	Last modified:		10/12/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -232,16 +232,16 @@ keystruct	obj2key[] = {
 	"pos.cartesian.y;pos.barycenter;instr.det;meta.main", "pix",
 	1, &prefs.nband},
   {"X_FOCAL", "Barycenter position along focal-plane x axis",
-	&flagobj2.mxf, H_FLOAT, T_DOUBLE, "%18.10e", "",
+	&flagobj2.posxf, H_FLOAT, T_DOUBLE, "%18.10e", "",
 	"pos.cartesian.x", "", 1, &prefs.nband},
   {"Y_FOCAL", "Barycenter position along focal-plane y axis",
-	&flagobj2.myf, H_FLOAT, T_DOUBLE, "%18.10e", "",
+	&flagobj2.posyf, H_FLOAT, T_DOUBLE, "%18.10e", "",
 	"pos.cartesian.y", "", 1, &prefs.nband},
   {"X_WORLD", "Barycenter position along world x axis",
-	&flagobj2.mxw, H_FLOAT, T_DOUBLE, "%18.10e", "deg",
+	&flagobj2.posxw, H_FLOAT, T_DOUBLE, "%18.10e", "deg",
 	"pos.eq.ra", "deg", 1, &prefs.nband},
   {"Y_WORLD", "Barycenter position along world y axis",
-	&flagobj2.myw, H_FLOAT, T_DOUBLE, "%18.10e", "deg",
+	&flagobj2.posyw, H_FLOAT, T_DOUBLE, "%18.10e", "deg",
 	"pos.eq.dec", "deg", 1, &prefs.nband},
   {"X_MAMA", "Barycenter position along MAMA x axis",
 	&flagobj2.mamaposx, H_FLOAT, T_DOUBLE, "%8.1f", "m**(-6)",

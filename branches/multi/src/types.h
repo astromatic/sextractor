@@ -113,7 +113,7 @@ typedef struct
 		poserr_mxy;			/* Error ellips moments */
 /* ---- morphological data */			
   int		xmin,xmax,ymin,ymax,ycmin,ycmax;/* x,y limits */
-  PIXTYPE	*blank, *dblank; 	       	/* BLANKing sub-images  */
+  PIXTYPE	*blank; 	       		/* BLANKing sub-images  */
   int		*submap;			/* Pixel-index sub-map */
   int		subx,suby, subw,subh;		/* sub-image pos. and size */
   short		flag;				/* extraction flags */
@@ -175,8 +175,8 @@ typedef struct obj2
   float		mthresh;		       	/* max. threshold (ADU) */
   int		iso[NISO];			/* isophotal areas */
   float		fwhm;				/* IMAGE FWHM */
-  PIXTYPE	*image,*dimage;			/* Copy of local image data */
-  PIXTYPE	*weight, *dweight;		/* Copy of local weight data */
+  PIXTYPE	**image;			/* Copy of local image data */
+  PIXTYPE	**weight;			/* Copy of local weight data */
   int		imsize[2];			/* Local image data size */
   int		immin[2];			/* Image data min coords */
   int		immax[2];			/* Image data max coords */
@@ -190,10 +190,10 @@ typedef struct obj2
   float		mag_isocor;			/* ISOCOR mag */
   float		magerr_isocor;			/* ISOCOR mag uncertainty */
   float		kronfactor;			/* kron parameter */
-  float		flux_auto;			/* AUTO integrated flux */
-  float		fluxerr_auto;			/* RMS error on AUTO flux */
-  float		mag_auto;			/* AUTO mag */
-  float		magerr_auto;			/* AUTO mag uncertainty */
+  float		*flux_auto;			/* AUTO integrated flux */
+  float		*fluxerr_auto;			/* RMS error on AUTO flux */
+  float		*mag_auto;			/* AUTO mag */
+  float		*magerr_auto;			/* AUTO mag uncertainty */
   float		petrofactor;			/* kron parameter */
   float		flux_petro;			/* AUTO integrated flux */
   float		fluxerr_petro;			/* RMS error on AUTO flux */
@@ -214,10 +214,10 @@ typedef struct obj2
   float		magerr_win;			/* WINdowed magnitude error */
 /* ---- astrometric data */
   BYTE		area_flagw;			/* World area or SB flag */
-  double	posx,posy;			/* "FITS" pos. in pixels */
+  double	*posx,*posy;			/* "FITS" pos. in pixels */
   double	jacob[NAXIS*NAXIS];		/* Local deproject. Jacobian */
   double	pixscale2;			/* Local pixel area */
-  double	mamaposx,mamaposy;		/* "MAMA" pos. in pixels */
+  double	*mamaposx, *mamaposy;		/* "MAMA" pos. in pixels */
   float		poserr_a, poserr_b,
 		poserr_theta;			/* Error ellips parameters */
   float		poserr_cxx, poserr_cyy,
@@ -234,17 +234,17 @@ typedef struct obj2
   double	mx2w,my2w,mxyw;			/* WORLD var. and covar. */
   double	peakxf, peakyf;			/* FOCAL of brightest pix */
   double	peakxw, peakyw;			/* WORLD of brightest pix */
-  double	mxf, myf;			/* FOCAL barycenters */
-  double	mxw, myw;			/* WORLD barycenters */
-  double	alphas, deltas;			/* native alpha, delta */
+  double	*posxf, *posyf;			/* FOCAL barycenters */
+  double	*posxw, *posyw;			/* WORLD barycenters */
+  double	*alphas, *deltas;		/* native alpha, delta */
   float		thetas;				/* native position angle E/N*/
   double	peakalphas, peakdeltas;		/* native for brightest pix */
   double	peakalpha2000, peakdelta2000;	/* J2000 for brightest pix */
   double	peakalpha1950, peakdelta1950;	/* B1950 for brightest pix */
-  double	alpha2000, delta2000;		/* J2000 alpha, delta */
+  double	*alpha2000, *delta2000;		/* J2000 alpha, delta */
   float		theta2000;			/* J2000 position angle E/N */
   double	dtheta2000;			/* North J2000 - native angle*/
-  double	alpha1950, delta1950;		/* B1950 alpha, delta */
+  double	*alpha1950, *delta1950;		/* B1950 alpha, delta */
   float		theta1950;			/* B1950 position angle E/N */
   double	dtheta1950;			/* North B1950 - native angle*/
   float		aw, bw;				/* WORLD ellipse size */

@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		07/10/2010
+*	Last modified:		11/01/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -97,7 +97,7 @@ INPUT   Pointer to image field,
 OUTPUT  0 if the object was CLEANed, 1 otherwise.
 NOTES   Global preferences are used.
 AUTHOR  E. Bertin (IAP)
-VERSION 21/12/2011
+VERSION 11/01/2012
  ***/
 int	clean_process(fieldstruct *field, objstruct *objin)
   {
@@ -138,7 +138,7 @@ int	clean_process(fieldstruct *field, objstruct *objin)
 	    && ((float)(val<1e10?amp*pow(val,-beta) : 0.0) > objin->mthresh))
           {
 /*------- the newcomer is eaten!! */
-          mergeobject(objin, obj);
+          clean_merge(objin, obj);
           if (prefs.blank_flag)
             {
 /*---------- Paste back ``CLEANed'' object pixels before forgetting them */
@@ -161,7 +161,7 @@ int	clean_process(fieldstruct *field, objstruct *objin)
     {
     k = cleanvictim[i];
     obj = cleanobjlist->obj + k;
-    mergeobject(obj, objin);
+    clean_merge(obj, objin);
     if (prefs.blank_flag)
       {
 /*---- Paste back ``CLEANed'' object pixels before forgetting them */

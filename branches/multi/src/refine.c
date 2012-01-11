@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		21/12/2011
+*	Last modified:		11/01/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -39,6 +39,7 @@
 #include	"prefs.h"
 #include	"lutz.h"
 #include	"plist.h"
+#include	"scan.h"
 
 #ifndef	RAND_MAX
 #define	RAND_MAX	2147483647
@@ -253,7 +254,7 @@ int	gatherup(objliststruct *objlistin, objliststruct *objlistout)
   QMALLOC(n, int, nobj);
 
   for (i=1; i<nobj; i++)
-    preanalyse(i, objlistin, ANALYSE_FULL);
+    scan_preanalyse(objlistin, i, ANALYSE_FULL);
 
   p[0] = 0.0;
   bmwidth = objin->xmax - (xs=objin->xmin) + 1;

@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		21/12/2011
+*	Last modified:		11/01/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -61,21 +61,23 @@
 #include	"winpos.h"
 
 /****** analyse_iso *********************************************************
-PROTO	void analyse_iso(fieldstruct *field, fieldstruct *dfield,
-			objliststruct *objlist, int n)
-PURPOSE	Do (isophotal) on pixel lists in the MEASUREMENT image.
-INPUT	Pointer to the measurement image,
-	pointer to the detection image (if different from measurement),
+PROTO	void analyse_iso(fieldstruct **fields, fieldstruct **wfields,
+			int nfield, objliststruct *objlist, int n)
+PURPOSE	Do (isophotal) measurements on pixel lists.
+INPUT	Pointer to an array of image field pointers,
+	pointer to an array of weight-map field pointers,
+	number of images,
 	pointer to the objlist,
 	object index in the objlist.
 OUTPUT	-.
 NOTES	Requires access to the global preferences.
 AUTHOR	E. Bertin (IAP)
-VERSION	09/10/2011
+VERSION	11/01/2012
  ***/
-void  analyse_iso(fieldstruct *field, fieldstruct *dfield,
+void  analyse_iso(fieldstruct **fields, fieldstruct **wfields, int nfield,
 			objliststruct *objlist, int n)
   {
+   fieldstruct		*field, *wfield;
    checkstruct		*check;
    objstruct		*obj;
    pliststruct		*pixel, *pixt;
@@ -89,17 +91,14 @@ void  analyse_iso(fieldstruct *field, fieldstruct *dfield,
 			pospeakflag, minarea, gainflag;
 
 
-  if (!dfield)
-    dfield = field;
-
   obj = objlist->obj+n;
   pixel = objlist->plist;
-
+  field = fields[0];
 /* Prepare computation of positional error */
   esum = emx2 = emy2 = emxy = 0.0;
   if ((errflag=FLAG(obj2.poserr_mx2)))
     {
-    dbacknoise2 = dfield->backsig*dfield->backsig;
+    dbacknoise2 = field->backsig*field->backsig;
     xm = obj->mx;
     ym = obj->my;
     }
@@ -144,7 +143,7 @@ void  analyse_iso(fieldstruct *field, fieldstruct *dfield,
   thresh = field->thresh;
   minthresh = (PLISTEXIST(var))? BIG : thresh;
   threshfac = field->backsig > 0.0 ? field->thresh / field->backsig : 1.0;
-  dthresh = dfield->dthresh;
+dthresh = field->dthresh;
   area = 0;
   for (pixt=pixel+obj->firstpix; pixt>=pixel; pixt=pixel+PLIST(pixt,nextpix))
     {
@@ -152,7 +151,7 @@ void  analyse_iso(fieldstruct *field, fieldstruct *dfield,
     if (pix>peak)
       peak = pix;
 
-    cdpix=PLISTPIX(pixt,cdvalue);
+    cdpix=PLISTPIX(pixt,cvalue);
     if (pospeakflag && cdpix>cdpeak)
       {
       cdpeak=cdpix;
@@ -198,7 +197,7 @@ void  analyse_iso(fieldstruct *field, fieldstruct *dfield,
 /*-- Find the minareath pixel in decreasing intensity for CLEANing */
     if (cleanflag)
       {
-      tpix = PLISTPIX(pixt, cdvalue) - (PLISTEXIST(dthresh)?
+      tpix = PLISTPIX(pixt, cvalue) - (PLISTEXIST(dthresh)?
 		PLISTPIX(pixt, dthresh):dthresh);
       if (h>0)
         *(heapt++) = (float)tpix;
@@ -382,27 +381,24 @@ void  analyse_iso(fieldstruct *field, fieldstruct *dfield,
 
 
 /****** analyse_final *******************************************************
-PROTO	void analyse_final(fieldstruct *field, fieldstruct *dfield,
-		fieldstruct *wfield, fieldstruct *dwfield,
-		objliststruct *objlist, int iobj)
+PROTO	void analyse_final(fieldstruct **fields, fieldstruct **wfields,
+			int nfield, objliststruct *objlist, int iobj)
 PURPOSE Do the final analysis based on a list of detections and a detection
 	index.
-INPUT   Measurement field pointer,
-        detection field pointer,
-        measurement weight-map field pointer,
-        detection weight-map field pointer,
+INPUT	Pointer to an array of image field pointers,
+	pointer to an array of weight-map field pointers,
+	number of images,
 	objlist pointer,
 	obj index.
 OUTPUT  -.
 NOTES   Global preferences are used.
 AUTHOR  E. Bertin (IAP)
-VERSION 21/12/2011
+VERSION 11/01/2012
  ***/
-void analyse_final(fieldstruct *field, fieldstruct *dfield,
-		fieldstruct *wfield, fieldstruct *dwfield,
-		objliststruct *objlist, int iobj)
+void analyse_final(fieldstruct **fields, fieldstruct **wfields,
+			int nfield, objliststruct *objlist, int iobj)
   {
-   fieldstruct		*cfield;
+   fieldstruct		*field;
    obj2liststruct	*obj2list;
    objstruct		*obj;
    obj2struct		*obj2, *prevobj2, *firstobj2;
@@ -410,8 +406,8 @@ void analyse_final(fieldstruct *field, fieldstruct *dfield,
 
   obj2list = thecat.obj2list;
 
-/* cfield is the detection field in any case */
-  cfield = dfield? dfield:field;
+/* field is the detection field */
+  field = fields[0];
 /* Find overlapping detections and link them */
   noverlap = analyse_overlapness(cleanobjlist, iobj);
 /* Convert every linked detection to a linked obj2 */
@@ -420,19 +416,19 @@ void analyse_final(fieldstruct *field, fieldstruct *dfield,
     {
     obj = &objlist->obj[iobj];
 /*-- Warn if there is a possibility for any aperture to be truncated */
-    if ((ymax=obj->ycmax) > cfield->ymax)
+    if ((ymax=obj->ycmax) > field->ymax)
       {
       sprintf(gstr, "Object at position %.0f,%.0f ", obj->mx+1, obj->my+1);
       QWARNING(gstr, "may have some apertures truncated:\n"
 		"          You might want to increase MEMORY_BUFSIZE");
       }
-    else if (ymax>cfield->yblank && prefs.blank_flag)
+    else if (ymax>field->yblank && prefs.blank_flag)
       {
       sprintf(gstr, "Object at position %.0f,%.0f ", obj->mx+1, obj->my+1);
       QWARNING(gstr, "may have some unBLANKed neighbours:\n"
 		"          You might want to increase MEMORY_PIXSTACK");
       }
-    obj2 = analyse_obj2obj2(field,dfield, wfield,dwfield, obj, obj2list);
+    obj2 = analyse_obj2obj2(fields, wfields, nfield, obj, obj2list);
     if (!obj2)
       error(EXIT_FAILURE, "*Error*: ", "obj2 stack full");
     obj2->nextobj2 = NULL;
@@ -456,18 +452,17 @@ void analyse_final(fieldstruct *field, fieldstruct *dfield,
     }
 
 /* Analyse the group of obj2s and write out catalogue */
-  analyse_group(field, dfield, wfield, dwfield, firstobj2);
+  analyse_group(fields, wfields, nfield, firstobj2);
 
 /* Free the group of obj2s */
   for (obj2=firstobj2; obj2; obj2=obj2->nextobj2)
     {
-    QFREE(obj2->image);
-    if (dfield)
-      QFREE(obj2->dimage);
-    if (wfield)
-      QFREE(obj2->weight);
-    if (dwfield)
-      QFREE(obj2->dweight);
+    for (i=0; i<nfield; i++)
+      {
+      QFREE(obj2->image[i]);
+      if (wfields && wfields[i])
+        QFREE(obj2->weight[i]);
+      }
     }
 
   for (obj2=firstobj2; obj2->nextobj2; obj2=obj2->nextobj2);
@@ -518,27 +513,27 @@ int analyse_overlapness(objliststruct *objlist, int iobj)
 
 
 /****** analyse_obj2obj2 ******************************************************
-PROTO	void analyse_obj2obj2(fieldstruct *field, fieldstruct *dfield,
-		fieldstruct *wfield, fieldstruct *dwfield,
-		objstruct *obj, obj2liststruct *obj2list)
+PROTO	obj2struct *analyse_obj2obj2(fieldstruct **fields,
+			fieldstruct **wfields, int nfield,
+			objstruct *obj, obj2liststruct *obj2list)
 PURPOSE Move object data from obj to obj2 structure.
-INPUT   Measurement field pointer,
-        detection field pointer,
-        measurement weight-map field pointer,
-        detection weight-map field pointer,
+INPUT	Pointer to an array of image field pointers,
+	pointer to an array of weight-map field pointers,
+	number of images,
 	obj pointer,
 	obj2list pointer,
 OUTPUT  New obj2 pointer.
 NOTES   -.
 AUTHOR  E. Bertin (IAP)
-VERSION 22/11/2011
+VERSION 11/01/2012
  ***/
-obj2struct	*analyse_obj2obj2(fieldstruct *field, fieldstruct *dfield,
-		fieldstruct *wfield, fieldstruct *dwfield,
-		objstruct *obj, obj2liststruct *obj2list)
+obj2struct	*analyse_obj2obj2(fieldstruct **fields, fieldstruct **wfields,
+			int nfield, objstruct *obj, obj2liststruct *obj2list)
   {
+   fieldstruct *field;
    obj2struct	*obj2;
-   int		idx,idy;
+   float	sigbkg;
+   int		i, idx,idy;
 
   obj2 = obj2list->freeobj2;
   if (obj2->nextobj2)
@@ -549,6 +544,21 @@ obj2struct	*analyse_obj2obj2(fieldstruct *field, fieldstruct *dfield,
   else
     return NULL;
 
+/*-- Local backgrounds */
+  for (i=0; i<nfield; i++)
+    {
+    obj2->bkg[i] = (float)back_interpolate(fields[i], obj->mx, obj->my);
+    obj2->dbkg[i] = 0.0;
+    if (prefs.pback_type == LOCAL)
+      {
+      obj2->dbkg[i] = back_local(fields[i], obj, &sigbkg);
+      obj2->sigbkg[i] = sigbkg<0.0? fields[i]->backsig : sigbkg;          
+      }
+    else
+      obj2->sigbkg[i] = fields[i]->backsig;
+    }
+/* field is the detection field */
+  field = fields[0];
 /* Copy main data */
   obj2->number = obj->number;
   obj2->fdnpix = obj->fdnpix;
@@ -570,8 +580,8 @@ obj2struct	*analyse_obj2obj2(fieldstruct *field, fieldstruct *dfield,
 /* Integer coordinates */
   obj2->ix=(int)(obj2->mx+0.49999);		/* Integer coordinates */
   obj2->iy=(int)(obj2->my+0.49999);
-  obj2->posx = obj2->mx+1.0;			/* That's standard FITS */
-  obj2->posy = obj2->my+1.0;
+  obj2->posx[0] = obj2->mx+1.0;			/* That's standard FITS */
+  obj2->posy[0] = obj2->my+1.0;
   obj2->poserr_mx2 = obj->poserr_mx2;
   obj2->poserr_my2 = obj->poserr_my2;
   obj2->poserr_mxy = obj->poserr_mxy;
@@ -594,9 +604,6 @@ obj2struct	*analyse_obj2obj2(fieldstruct *field, fieldstruct *dfield,
   obj2->cxx = obj->cxx;
   obj2->cyy = obj->cyy;
   obj2->cxy = obj->cxy;
-  obj2->bkg = obj->bkg;
-  obj2->dbkg = obj->dbkg;
-  obj2->sigbkg = obj->sigbkg;
   obj2->thresh = obj->thresh;
   obj2->dthresh = obj->dthresh;
   obj2->mthresh = obj->mthresh;
@@ -610,26 +617,17 @@ obj2struct	*analyse_obj2obj2(fieldstruct *field, fieldstruct *dfield,
   obj2->immin[1] = obj2->iy - obj2->imsize[1]/2;
   obj2->immax[0] = obj2->immin[0] + obj2->imsize[0];
   obj2->immax[1] = obj2->immin[1] + obj2->imsize[1];
-  QMALLOC(obj2->image, PIXTYPE, obj2->imsize[0]*obj2->imsize[1]);
-  copyimage(field, obj2->image, obj2->imsize[0],obj2->imsize[1],
-	obj2->ix,obj2->iy);
-  if (dfield)
+  for (i=0; i<nfield; i++)
     {
-    QMALLOC(obj2->dimage, PIXTYPE, obj2->imsize[0]*obj2->imsize[1]);
-    copyimage(dfield, obj2->dimage, obj2->imsize[0],obj2->imsize[1],
+    QMALLOC(obj2->image[i], PIXTYPE, obj2->imsize[0]*obj2->imsize[1]);
+    copyimage(fields[i], obj2->image[i], obj2->imsize[0],obj2->imsize[1],
 	obj2->ix,obj2->iy);
-    }
-  if (wfield)
-    {
-    QMALLOC(obj2->weight, PIXTYPE, obj2->imsize[0]*obj2->imsize[1]);
-    copyimage(wfield, obj2->weight, obj2->imsize[0],obj2->imsize[1],
+    if (wfields && wfields[i])
+      {
+      QMALLOC(obj2->weight[i], PIXTYPE, obj2->imsize[0]*obj2->imsize[1]);
+      copyimage(wfields[i], obj2->weight[i], obj2->imsize[0],obj2->imsize[1],
 	obj2->ix,obj2->iy);
-    }
-  if (dwfield)
-    {
-    QMALLOC(obj2->dweight, PIXTYPE, obj2->imsize[0]*obj2->imsize[1]);
-    copyimage(dwfield, obj2->dweight, obj2->imsize[0],obj2->imsize[1],
-	obj2->ix,obj2->iy);
+      }
     }
 /* if BLANKing is on, paste back the object pixels in the image*/
   if (prefs.blank_flag)
@@ -640,14 +638,8 @@ obj2struct	*analyse_obj2obj2(fieldstruct *field, fieldstruct *dfield,
     if (obj->blank)
       {
       deblankimage(obj->blank, obj->subw, obj->subh,
-		obj2->image, obj2->imsize[0],obj2->imsize[1], idx,idy);
+		obj2->image[i], obj2->imsize[0],obj2->imsize[1], idx,idy);
       free(obj->blank);
-      }
-    if (obj->dblank)
-      {
-      deblankimage(obj->dblank, obj->subw, obj->subh,
-		obj2->dimage, obj2->imsize[0],obj2->imsize[1], idx,idy);
-      free(obj->dblank);
       }
     }
 
@@ -656,22 +648,22 @@ obj2struct	*analyse_obj2obj2(fieldstruct *field, fieldstruct *dfield,
 
 
 /****** analyse_full *********************************************************
-PROTO	int analyse_full(fieldstruct *field, fieldstruct *dfield,
-		fieldstruct *wfield, fieldstruct *dwfield, obj2struct *obj2)
+PROTO	int analyse_full(fieldstruct **fields, fieldstruct **wfields,
+			int nfield, obj2struct *obj2)
 PURPOSE Final analysis of object data.
-INPUT   Measurement field pointer,
-        Detection field pointer,
-        Measurement weight-map field pointer,
-        Detection weight-map field pointer,
+INPUT   Pointer to an array of image field pointers,
+	pointer to an array of weight-map field pointers,
+	number of images,
 	obj2struct pointer.
 OUTPUT  RETURN_OK if the object has been processed, RETURN_ERROR otherwise.
 NOTES   -.
 AUTHOR  E. Bertin (IAP)
-VERSION 23/11/2011
+VERSION 10/01/2012
  ***/
-int	analyse_full(fieldstruct *field, fieldstruct *dfield,
-		fieldstruct *wfield, fieldstruct *dwfield, obj2struct *obj2)
+int	analyse_full(fieldstruct **fields, fieldstruct **wfields,
+			int nfield, obj2struct *obj2)
   {
+fieldstruct *field, *dfield, *dwfield, *wfield;
    checkstruct		*check;
    double		rawpos[NAXIS],
 			analtime1;
@@ -682,6 +674,10 @@ int	analyse_full(fieldstruct *field, fieldstruct *dfield,
   else
     analtime1 = 0.0;		/* To avoid gcc -Wall warnings */
 
+/* field is the detection field */
+  field = fields[0];
+
+dfield = dwfield = wfield = NULL;
    if (prefs.psf_flag)
      obj2->psf_flag = 0;	/* Reset PSF building flag */
    if (prefs.dpsf_flag)
@@ -690,7 +686,8 @@ int	analyse_full(fieldstruct *field, fieldstruct *dfield,
 /*------------------------------ Association ------------------------------*/
   if (prefs.assoc_flag)
     {
-    obj2->assoc_number = do_assoc(field, obj2->posx, obj2->posy, obj2->assoc);
+    obj2->assoc_number = do_assoc(field, obj2->posx[0],obj2->posy[0],
+			obj2->assoc);
     if ((prefs.assocselec_type==ASSOCSELEC_MATCHED && !(obj2->assoc_number))
 	||
 	(prefs.assocselec_type==ASSOCSELEC_NOMATCHED && (obj2->assoc_number)))
@@ -759,8 +756,8 @@ int	analyse_full(fieldstruct *field, fieldstruct *dfield,
 		/ (obj2->a*obj2->a+obj2->b*obj2->b);
 
 /* Express positions in FOCAL or WORLD coordinates */
-  if (FLAG(obj2.mxf) || FLAG(obj2.mxw))
-    astrom_pos(field, obj2);
+  if (FLAG(obj2.posxf) || FLAG(obj2.posxw))
+    astrom_pos(fields, nfield, obj2);
 
   obj2->pixscale2 = 0.0;	/* To avoid gcc -Wall warnings */
   if (FLAG(obj2.mx2w)
@@ -773,8 +770,8 @@ int	analyse_full(fieldstruct *field, fieldstruct *dfield,
 	|| ((!prefs.pixel_scale) && FLAG(obj2.area_flagw))
 	|| ((!prefs.pixel_scale) && FLAG(obj2.fwhmw_psf)))
     {
-    rawpos[0] = obj2->posx;
-    rawpos[1] = obj2->posy;
+    rawpos[0] = obj2->posx[0];
+    rawpos[1] = obj2->posy[0];
     obj2->pixscale2 = wcs_jacobian(field->wcs, rawpos, obj2->jacob);
     }
 
@@ -810,7 +807,8 @@ int	analyse_full(fieldstruct *field, fieldstruct *dfield,
       photom_aper(field, wfield, obj2, i);
 
   if (FLAG(obj2.flux_auto))
-    photom_auto(field, dfield, wfield, dwfield, obj2);
+    for (i=0; i<nfield; i++)
+      photom_auto(fields, wfields, nfield, obj2);
 
   if (FLAG(obj2.flux_petro))
     photom_petro(field, dfield, wfield, dwfield, obj2);
@@ -819,10 +817,10 @@ int	analyse_full(fieldstruct *field, fieldstruct *dfield,
 /* Express positions in FOCAL or WORLD coordinates */
   if (FLAG(obj2.peakxf) || FLAG(obj2.peakxw))
     astrom_peakpos(field, obj2);
-  if (obj2->peak+obj2->bkg >= field->satur_level)
+  if (obj2->peak+obj2->bkg[0] >= field->satur_level)
     obj2->flag |= OBJ_SATUR;
 /* Estimate of shape */
-  growth_aver(field, wfield, obj2);
+  growth_aver(fields, wfields, nfield, obj2);
 /* Get a good estimate of position and flux */
   compute_winpos(field, wfield, obj2);
 /* Express positions in FOCAL or WORLD coordinates */
@@ -962,39 +960,43 @@ int	analyse_full(fieldstruct *field, fieldstruct *dfield,
 
 
 /****** analyse_group ********************************************************
-PROTO	void analyse_group(fieldstruct *field, fieldstruct *dfield,
-		fieldstruct *wfield, fieldstruct *dwfield, obj2struct *fobj2)
+PROTO	void analyse_group(fieldstruct **fields, fieldstruct **wfields,
+			int nfield, obj2struct *fobj2)
 PURPOSE Perform measurements on a group of detections.
-INPUT   Measurement field pointer,
-        Detection field pointer,
-        Measurement weight-map field pointer,
-        Detection weight-map field pointer,
+INPUT   Pointer to an array of image field pointers,
+	pointer to an array of weight-map field pointers,
+	number of images,
 	obj2struct pointer.
 OUTPUT  -.
 NOTES   -.
 AUTHOR  E. Bertin (IAP)
-VERSION 09/10/2011
+VERSION 11/01/2012
  ***/
-void	analyse_group(fieldstruct *field, fieldstruct *dfield,
-		fieldstruct *wfield, fieldstruct *dwfield, obj2struct *fobj2)
+void	analyse_group(fieldstruct **fields, fieldstruct **wfields,
+			int nfield, obj2struct *fobj2)
   {
-   obj2struct		*obj2, *modobj2;
-   int			i;
+   fieldstruct	*field, *wfield;
+   obj2struct	*obj2, *modobj2;
+   int		i;
+
+/* field is the detection field */
+  field = fields[0];
+  wfield = wfields? wfields[0]:NULL;
 
   if (prefs.prof_flag)
     {
 /*-- Setup model fitting for this group */
     for (obj2=fobj2; obj2; obj2=obj2->nextobj2)
       {
-      photom_auto(field, dfield, wfield, dwfield, obj2);
-      growth_aver(field, wfield, obj2);
+      photom_auto(fields, wfields, nfield, obj2);
+      growth_aver(fields, wfields, nfield, obj2);
       obj2->profit = profit_init(field, wfield,
 		obj2, thepsf, prefs.prof_modelflags);
       }
     for (obj2=fobj2; obj2; obj2=obj2->nextobj2)
       {
-      photom_auto(field, dfield, wfield, dwfield, obj2);
-      growth_aver(field, wfield, obj2);
+      photom_auto(fields, wfields, nfield, obj2);
+      growth_aver(fields, wfields, nfield, obj2);
       }
     if (fobj2->nextobj2)
       {
@@ -1030,7 +1032,7 @@ void	analyse_group(fieldstruct *field, fieldstruct *dfield,
 
 /* Full source analysis and catalogue output */
   for (obj2=fobj2; obj2; obj2=obj2->nextobj2)
-    if (analyse_full(field, dfield, wfield, dwfield, obj2) == RETURN_OK)
+    if (analyse_full(fields, wfields, nfield, obj2) == RETURN_OK)
       {
 /*---- Catalogue output */
       FPRINTF(OUTPUT, "%8d %6.1f %6.1f %5.1f %5.1f %12g "

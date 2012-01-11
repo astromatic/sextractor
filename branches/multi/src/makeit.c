@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		21/12/2011
+*	Last modified:		11/01/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -49,6 +49,7 @@
 #include	"filter.h"
 #include	"growth.h"
 #include	"interpolate.h"
+#include	"misc.h"
 #include	"pattern.h"
 #include	"psf.h"
 #include	"profit.h"
@@ -57,7 +58,6 @@
 #include	"weight.h"
 #include	"xml.h"
 
-static int		selectext(char *filename);
 time_t			thetimet, thetimet2;
 extern char		profname[][32];
 double			dtime;
@@ -409,7 +409,7 @@ void	makeit(void)
     if (prefs.check_flag)
       for (i=0; i<MAXCHECK; i++)
         if ((check=prefs.check[i]))
-          check_reend(fields, check);
+          check_reend(fields[0], check);
 
 /*-- Final time measurements*/
     if (time(&thetime2)!=-1)
@@ -478,7 +478,7 @@ void	makeit(void)
   if (prefs.psf_flag)
     for (i=0; i<prefs.nband; i++)
       if (psfs[i])
-        psf_end(psfs[i]);
+        psf_end(psfs[i], NULL);
   free(psfs);
 
 /* End classification neural network */

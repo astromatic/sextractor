@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		07/12/2011
+*	Last modified:		11/01/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -278,7 +278,7 @@ void	readimagehead(fieldstruct *field)
   if (field->flags&(MEASURE_FIELD|DETECT_FIELD))
     field->wcs = read_wcs(tab);
 
-  QFSEEK(field->file, tab->bodypos, SEEK_SET, field->filename);
+  QFSEEK(field->cat->file, tab->bodypos, SEEK_SET, field->filename);
 
   return;
 

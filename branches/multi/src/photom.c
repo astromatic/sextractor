@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		06/10/2011
+*	Last modified:		11/01/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -119,8 +119,8 @@ void  photom_aper(fieldstruct *field, fieldstruct *wfield, obj2struct *obj2,
     obj2->flag |= OBJ_APERT_PB;
     }
 
-  image = obj2->image;
-  weight = obj2->weight;
+  image = obj2->image[0];
+  weight = obj2->weight[0];
   for (y=ymin; y<ymax; y++)
     {
     imaget = image + (pos = y*w + xmin);
@@ -189,23 +189,23 @@ void  photom_aper(fieldstruct *field, fieldstruct *wfield, obj2struct *obj2,
 
   if (pflag)
     {
-    tv = ngamma*(tv-area*exp(obj2->dbkg/ngamma));
+    tv = ngamma*(tv-area*exp(obj2->dbkg[0]/ngamma));
     sigtv /= ngamma*ngamma;
     }
   else
     {
-    tv -= area*obj2->dbkg;
+    tv -= area*obj2->dbkg[0];
     if (!gainflag && gain > 0.0 && tv>0.0)
       sigtv += tv/gain;
     }
 
-  if (aper<prefs.flux_apersize)
+  if (aper<prefs.aper_size[0])
     obj2->flux_aper[aper] = tv;
-  if (aper<prefs.fluxerr_apersize)
+  if (aper<prefs.aper_size[0])
     obj2->fluxerr_aper[aper] = sqrt(sigtv);
-  if (aper<prefs.mag_apersize)
+  if (aper<prefs.aper_size[0])
     obj2->mag_aper[aper] = tv>0.0? -2.5*log10(tv) + prefs.mag_zeropoint : 99.0;
-  if (aper<prefs.magerr_apersize)
+  if (aper<prefs.aper_size[0])
     obj2->magerr_aper[aper] = tv>0.0? 1.086*sqrt(sigtv)/tv:99.0;
 
   return;
@@ -213,8 +213,8 @@ void  photom_aper(fieldstruct *field, fieldstruct *wfield, obj2struct *obj2,
 
 
 /****** photom_petro *********************************************************
-PROTO	void photom_petro(fieldstruct *field, fieldstruct *dfield,
-		fieldstruct *wfield, fieldstruct *dwfield, obj2struct *obj2)
+PROTO	void photom_petro(fieldstruct **fields, fieldstruct **wfields,
+			int nfield, obj2struct *obj2)
 PURPOSE	Measure the flux within a Petrosian elliptical aperture
 INPUT	Pointer to the image structure,
 	pointer to the detection image structure,
@@ -224,7 +224,7 @@ INPUT	Pointer to the image structure,
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	06/10/2010
+VERSION	11/01/2012
  ***/
 void  photom_petro(fieldstruct *field, fieldstruct *dfield,
 	fieldstruct *wfield, fieldstruct *dwfield, obj2struct *obj2)
@@ -253,7 +253,7 @@ void  photom_petro(fieldstruct *field, fieldstruct *dfield,
   w = obj2->imsize[0];
   h = obj2->imsize[1];
   ngamma = field->ngamma;
-  bkg = (double)obj2->dbkg;
+  bkg = (double)obj2->dbkg[0];
   mx = obj2->mx - (float)obj2->immin[0];
   my = obj2->my - (float)obj2->immin[1];
   var = backnoise2 = field->backsig*field->backsig;
@@ -306,9 +306,9 @@ void  photom_petro(fieldstruct *field, fieldstruct *dfield,
     obj2->flag |= OBJ_APERT_PB;
     }
 
-  dimage = obj2->dimage;
+  dimage = obj2->image[0];
   if (dwfield)
-    dweight = obj2->dweight;
+    dweight = obj2->weight[0];
   klim = sqrt(klim2);
   kstep = klim/20.0;
   area = areab = areanum = areaden = 0;
@@ -426,9 +426,9 @@ void  photom_petro(fieldstruct *field, fieldstruct *dfield,
 
     area = areab = 0;
     tv = sigtv = 0.0;
-    image = obj2->image;
+    image = obj2->image[0];
     if (wfield)
-      weight = obj2->weight;
+      weight = obj2->weight[0];
     for (y=ymin; y<ymax; y++)
       {
       imaget = image + (pos = y*w + xmin);
@@ -520,47 +520,44 @@ void  photom_petro(fieldstruct *field, fieldstruct *dfield,
 
 
 /****** photom_auto*********************************************************
-PROTO	void photom_auto(fieldstruct *field, fieldstruct *dfield,
-		fieldstruct *wfield, fieldstruct *dwfield, obj2struct *obj2)
+PROTO	void photom_auto(fieldstruct **fields, fieldstruct **wfields,
+			int nfield, obj2struct *obj2)
 PURPOSE	Measure the flux within a Kron elliptical aperture
-INPUT	Pointer to the image structure,
-	pointer to the detection image structure,
-	pointer to the weight-map structure,
-	pointer to the detection weight-map structure,
+INPUT	Pointer to an array of image field pointers,
+	pointer to an array of weight-map field pointers,
+	number of images,
 	pointer to the obj2 structure.
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	06/10/2011
+VERSION	11/01/2012
  ***/
-void  photom_auto(fieldstruct *field, fieldstruct *dfield,
-	fieldstruct *wfield, fieldstruct *dwfield, obj2struct *obj2)
+void  photom_auto(fieldstruct **fields, fieldstruct **wfields,
+			int nfield, obj2struct *obj2)
 
   {
+   fieldstruct		*field, *wfield;
    double		sigtv, tv, r1, v1,var,gain,backnoise2;
-   float		bkg, ngamma, mx,my, dx,dy, cx2,cy2,cxy, r2,klim2,
+   float		ngamma, mx,my, dx,dy, cx2,cy2,cxy, r2,klim2,
 			dxlim, dylim;
-   int			area,areab, x,y, x2,y2, xmin,xmax,ymin,ymax,
+   PIXTYPE		*image,*imaget, *weight,*weightt,
+			pix, wthresh=0.0;
+   int			i, area,areab, x,y, x2,y2, xmin,xmax,ymin,ymax,
 			fymin,fymax, w,h,
 			pflag, corrflag, gainflag, pos;
-   PIXTYPE		*image,*imaget, *dimage,*dimaget, *weight,*weightt,
-			*dweight,*dweightt,
-			pix, wthresh=0.0, dwthresh=0.0;
 
+/* field is the detection field */
+  field = fields[0];
+  wfield = (wfields && wfields[0])? wfields[0] : NULL;
 
 /* Let's initialize some variables */
-  if (!dfield)
-    dfield = field;
-  if (dwfield)
-    dwthresh = dwfield->weight_thresh;
-  weight = dweight = NULL;
+  weight = NULL;
   if (wfield)
     wthresh = wfield->weight_thresh;
-  weightt = dweightt = NULL;
+  weightt = NULL;
   w = obj2->imsize[0];
   h = obj2->imsize[1];
   ngamma = field->ngamma;
-  bkg = (double)obj2->dbkg;
   mx = obj2->mx - (float)obj2->immin[0];
   my = obj2->my - (float)obj2->immin[1];
   var = backnoise2 = field->backsig*field->backsig;
@@ -615,21 +612,21 @@ void  photom_auto(fieldstruct *field, fieldstruct *dfield,
 
   v1 = r1 = 0.0;
   area = areab = 0;
-  dimage = obj2->dimage? obj2->dimage : obj2->image;
-  if (dwfield)
-    dweight = obj2->dweight;
+  image = obj2->image[0];
+  if (wfield)
+    weight = obj2->weight[0];
   for (y=ymin; y<ymax; y++)
     {
-    dimaget = dimage + (pos = y*w + xmin);
-    if (dwfield)
-      dweightt = dweight + pos;
-    for (x=xmin; x<xmax; x++, dimaget++, dweightt++)
+    imaget = image + (pos = y*w + xmin);
+    if (wfield)
+      weightt = weight + pos;
+    for (x=xmin; x<xmax; x++, imaget++, weightt++)
       {
       dx = x - mx;
       dy = y - my;
       if ((r2=cx2*dx*dx + cy2*dy*dy + cxy*dx*dy) <= klim2)
         {
-        if ((pix=*dimaget)>-BIG && (!dwfield || (dwfield&&*dweightt<dwthresh)))
+        if ((pix=*imaget)>-BIG && (!wfield || (wfield&&*weightt<wthresh)))
           {
           area++;
           r1 += sqrt(r2)*pix;
@@ -703,98 +700,104 @@ void  photom_auto(fieldstruct *field, fieldstruct *dfield,
       obj2->flag |= OBJ_APERT_PB;
       }
 
-    area = areab = 0;
-    tv = sigtv = 0.0;
-    image = obj2->image;
-    if (wfield)
-      weight = obj2->weight;
-    for (y=ymin; y<ymax; y++)
+    for (i=0; i<nfield; i++)
       {
-      imaget = image + (pos = xmin + (y%h)*w);
-      if (wfield)
-        weightt = weight + pos;
-      for (x=xmin; x<xmax; x++, imaget++, weightt++)
+      area = areab = 0;
+      tv = sigtv = 0.0;
+      image = obj2->image[i];
+      if (wfields && wfields[i])
+        weight = obj2->weight[i];
+      for (y=ymin; y<ymax; y++)
         {
-        dx = x - mx;
-        dy = y - my;
-        if ((cx2*dx*dx + cy2*dy*dy + cxy*dx*dy) <= klim2)
+        imaget = image + (pos = xmin + (y%h)*w);
+        if (wfield)
+          weightt = weight + pos;
+        for (x=xmin; x<xmax; x++, imaget++, weightt++)
           {
-          area++;
-/*-------- Here begin tests for pixel and/or weight overflows. Things are a */
-/*-------- bit intricated to have it running as fast as possible in the most */
-/*-------- common cases */
-          if ((pix=*imaget)<=-BIG || (wfield && (var=*weightt)>=wthresh))
+          dx = x - mx;
+          dy = y - my;
+          if ((cx2*dx*dx + cy2*dy*dy + cxy*dx*dy) <= klim2)
             {
-            areab++;
-            if (corrflag
+            area++;
+/*---------- Here begin tests for pixel and/or weight overflows. Things are a */
+/*---------- bit intricated to have it running as fast as possible in the most */
+/*---------- common cases */
+            if ((pix=*imaget)<=-BIG || (wfield && (var=*weightt)>=wthresh))
+              {
+              areab++;
+              if (corrflag
 		&& (x2=(int)(2*mx+0.49999-x))>=0 && x2<w
 		&& (y2=(int)(2*my+0.49999-y))>=0 && y2<h
 		&& (pix=*(image + (pos = y2*w + x2)))>-BIG)
-              {
-              if (wfield)
                 {
-                var = *(weight + pos);
-                if (var>=wthresh)
-                  pix = var = 0.0;
+                if (wfield)
+                  {
+                  var = *(weight + pos);
+                  if (var>=wthresh)
+                    pix = var = 0.0;
+                  }
+                }
+              else
+                {
+                pix = 0.0;
+                if (wfield)
+                  var = 0.0;
                 }
               }
-            else
+            if (pflag)
               {
-              pix = 0.0;
-              if (wfield)
-                var = 0.0;
+              pix = exp(pix/ngamma);
+              sigtv += var*pix*pix;
               }
+            else
+              sigtv += var;
+            tv += pix;
+            if (gainflag && pix>0.0 && gain>0.0)
+              sigtv += pix/gain*var/backnoise2;
             }
-          if (pflag)
-            {
-            pix = exp(pix/ngamma);
-            sigtv += var*pix*pix;
-            }
-          else
-            sigtv += var;
-          tv += pix;
-          if (gainflag && pix>0.0 && gain>0.0)
-            sigtv += pix/gain*var/backnoise2;
           }
+        }
+
+/*---- Flag if the Kron photometry can be strongly affected by neighhours */
+      if ((float)areab > CROWD_THRESHOLD*area)
+        obj2->flag |= OBJ_CROWDED;
+
+      if (pflag)
+        {
+        tv = ngamma*(tv-area*exp(obj2->dbkg[i]/ngamma));
+        sigtv /= ngamma*ngamma;
+        }
+      else
+        {
+        tv -= area*obj2->dbkg[i];
+        if (!gainflag && gain > 0.0 && tv>0.0)
+          sigtv += tv/gain;
         }
       }
 
-/*-- Flag if the Kron photometry can be strongly affected by neighhours */
-    if ((float)areab > CROWD_THRESHOLD*area)
-      obj2->flag |= OBJ_CROWDED;
-
-    if (pflag)
-      {
-      tv = ngamma*(tv-area*exp(bkg/ngamma));
-      sigtv /= ngamma*ngamma;
-      }
-    else
-      {
-      tv -= area*bkg;
-      if (!gainflag && gain > 0.0 && tv>0.0)
-        sigtv += tv/gain;
-      }
+    obj2->flux_auto[i] = tv;
+    obj2->fluxerr_auto[i] = sqrt(sigtv);
     }
   else
-/*-- No available pixels: set the flux to zero */
-    tv = sigtv = 0.0;
+/*---- No available pixels: set the flux to zero */
+    {
+    obj2->kronfactor = 0.0;
+    for (i=0; i<nfield; i++)
+      obj2->flux_auto[i] = obj2->fluxerr_auto[i] = 0.0;
+    }
 
-
-  obj2->flux_auto = tv;
-  obj2->fluxerr_auto = sqrt(sigtv);
-
-/* MAG_AUTO is computed here for being ready for use in variable PSF models */
+/*-- MAG_AUTO is computed here for being ready for use in variable PSF models */
 
   if (FLAG(obj2.mag_auto))
-    obj2->mag_auto = obj2->flux_auto>0.0?
-			 -2.5*log10(obj2->flux_auto) + prefs.mag_zeropoint
+    for (i=0; i<nfield; i++)
+      obj2->mag_auto[i] = obj2->flux_auto[i]>0.0?
+			 -2.5*log10(obj2->flux_auto[i]) + prefs.mag_zeropoint
 			:99.0;
-  if (FLAG(obj2.magerr_auto))
-    obj2->magerr_auto = obj2->flux_auto>0.0?
-			 1.086*obj2->fluxerr_auto/obj2->flux_auto
+  if (FLAG(obj2.magerr_auto[i]))
+    for (i=0; i<nfield; i++)
+      obj2->magerr_auto[i] = obj2->flux_auto[i]>0.0?
+			 1.086*obj2->fluxerr_auto[i]/obj2->flux_auto[i]
 			:99.0;
-  if (tv<=0.0)
-    obj2->kronfactor = 0.0;
 
   return;
   }
@@ -882,8 +885,8 @@ void	photom_mags(fieldstruct *field, obj2struct *obj2)
       }
     else
       {
-      obj2->flux_best = obj2->flux_auto;
-      obj2->fluxerr_best = obj2->fluxerr_auto;
+      obj2->flux_best = obj2->flux_auto[0];
+      obj2->fluxerr_best = obj2->fluxerr_auto[0];
       }
     }
 

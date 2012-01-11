@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 2011 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 2011-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		09/10/2011
+*	Last modified:		04/01/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -34,21 +34,17 @@
 
 /*------------------------------ Prototypes ---------------------------------*/
 
-obj2struct	*analyse_obj2obj2(fieldstruct *field, fieldstruct *dfield,
-			fieldstruct *wfield, fieldstruct *dwfield,
-			objstruct *obj, obj2liststruct *obj2list);
-int		analyse_full(fieldstruct *field, fieldstruct *dfield,
-			fieldstruct *wfield, fieldstruct *dwfield,
-			obj2struct *obj2),
+obj2struct	*analyse_obj2obj2(fieldstruct **fields, fieldstruct **wfields,
+			int nfield, objstruct *obj, obj2liststruct *obj2list);
+int		analyse_full(fieldstruct **fields, fieldstruct **wfields,
+			int nfield, obj2struct *obj2),
 		analyse_overlapness(objliststruct *objlist, int iobj);
 
-void		analyse_final(fieldstruct *field, fieldstruct *dfield,
-		fieldstruct *wfield, fieldstruct *dwfield,
-		objliststruct *objlist, int iobj),
-		analyse_group(fieldstruct *field, fieldstruct *dfield,
-			fieldstruct *wfield, fieldstruct *dwfield,
-			obj2struct *obj2),
-		analyse_iso(fieldstruct *field, fieldstruct *dfield,
-			objliststruct *objlist, int n);
+void		analyse_final(fieldstruct **fields, fieldstruct **wfields,
+			int nfield, objliststruct *objlist, int iobj),
+		analyse_group(fieldstruct **fields, fieldstruct **wfields,
+			int nfield, obj2struct *fobj2),
+		analyse_iso(fieldstruct **fields, fieldstruct **wfields,
+			int nfield, objliststruct *objlist, int n);
 		
 
