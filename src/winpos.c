@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 2005-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 2005-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		09/10/2011
+*	Last modified:		11/01/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -48,7 +48,7 @@ INPUT	Picture structure pointer,
 OUTPUT  -.
 NOTES   obj2->mx and obj2->my are taken as initial centroid guesses.
 AUTHOR  E. Bertin (IAP)
-VERSION 09/10/2011
+VERSION 11/01/2012
  ***/
 void	compute_winpos(fieldstruct *field, fieldstruct *wfield,
 			obj2struct *obj2)
@@ -88,7 +88,7 @@ void	compute_winpos(fieldstruct *field, fieldstruct *wfield,
   if (pflag)
     {
     invngamma = 1.0/field->ngamma;
-    pdbkg = expf(obj2->dbkg*invngamma);
+    pdbkg = expf(obj2->dbkg[0]*invngamma);
     }
   else
     {
@@ -141,10 +141,10 @@ void	compute_winpos(fieldstruct *field, fieldstruct *wfield,
 
     tv = esum = emxy = emx2 = emy2 = mx2 = my2 = mxy = 0.0;
     dxpos = dypos = 0.0;
-    image = obj2->image;
+    image = obj2->image[0];
     weight = weightt = NULL;		/* To avoid gcc -Wall warnings */
     if (wfield)
-      weight = obj2->weight;
+      weight = obj2->weight[0];
     for (y=ymin; y<ymax; y++)
       {
       imaget = image + (pos = y*w + xmin);

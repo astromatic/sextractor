@@ -342,7 +342,7 @@ void	psf_fit(psfstruct *psf, fieldstruct *field, fieldstruct *wfield,
   pixstep = 1.0/psf->pixstep;
   gain = (field->gain >0.0? field->gain: 1e30);
   backnoise2 = field->backsig*field->backsig;
-  satlevel = field->satur_level - obj2->bkg;
+  satlevel = field->satur_level - obj2->bkg[0];
   wthresh = wfield?wfield->weight_thresh:BIG;
   gainflag = prefs.weightgain_flag;
   psf_fwhm = psf->fwhm*psf->pixstep;
@@ -353,8 +353,8 @@ void	psf_fit(psfstruct *psf, fieldstruct *field, fieldstruct *wfield,
   thepsfit->npsf = 0;
   for (j=0; j<npsfmax; j++) 
     {
-      thepsfit->x[j] = obj2->posx;
-      thepsfit->y[j] = obj2->posy;
+      thepsfit->x[j] = obj2->posx[0];
+      thepsfit->y[j] = obj2->posy[0];
       thepsfit->flux[j] = 0.0;
       thepsfit->fluxerr[j] = 0.0;
     }
@@ -438,7 +438,7 @@ void	psf_fit(psfstruct *psf, fieldstruct *field, fieldstruct *wfield,
 
   /* Weight the data */
   dh = datah;
-  val = obj2->dbkg;      /* Take into account a local background change */
+  val = obj2->dbkg[0];      /* Take into account a local background change */
   d = data;
   w = weight;
   for (p=npix; p--;)
@@ -620,7 +620,7 @@ void	psf_fit(psfstruct *psf, fieldstruct *field, fieldstruct *wfield,
               if (chi2>1E29) chi2=1E28;
             }
           obj2->chi2_psf = flux[j]>0?
-		chi2/((npix - 3*npsf)*obj2->sigbkg*obj2->sigbkg):999999;
+		chi2/((npix - 3*npsf)*obj2->sigbkg[0]*obj2->sigbkg[0]):999999;
 
         }
       
@@ -711,7 +711,7 @@ void    double_psf_fit(psfstruct *ppsf, fieldstruct *pfield, fieldstruct *pwfiel
   gain = (field->gain >0.0? field->gain: 1e30);
   npsfmax=prefs.psf_npsfmax;
   pbacknoise2 = pfield->backsig*pfield->backsig;
-  satlevel = field->satur_level - obj2->bkg;
+  satlevel = field->satur_level - obj2->bkg[0];
   gainflag = prefs.weightgain_flag;
   psf_fwhm = psf->fwhm*psf->pixstep;
   ppsf_fwhm = ppsf->fwhm*ppsf->pixstep;
@@ -811,7 +811,7 @@ void    double_psf_fit(psfstruct *ppsf, fieldstruct *pfield, fieldstruct *pwfiel
   pdh = pdatah;
   pd = pdata;
   pw = pweight;
-  val = obj2->dbkg;
+  val = obj2->dbkg[0];
   for (p=npix; p--;)
     *(pd++) = (*(pdh++)-val)**(pw++);
 
@@ -907,7 +907,7 @@ void    double_psf_fit(psfstruct *ppsf, fieldstruct *pfield, fieldstruct *pwfiel
               if (chi2>1E29) chi2=1E28;
             }
           obj2->chi2_psf = pflux[j]>0?
-		chi2/((npix - 3*npsf)*obj2->sigbkg*obj2->sigbkg):999999;
+		chi2/((npix - 3*npsf)*obj2->sigbkg[0]*obj2->sigbkg[0]):999999;
 
         }
       
@@ -1029,12 +1029,12 @@ int	psf_copyobjpix(PIXTYPE *data, PIXTYPE *weight,
     }
 
 /* Copy the right pixels to the destination */
-  imagein = detect_flag? obj2->dimage:obj2->image;
+  imagein = obj2->image[0];
   for (y=ymin; y<ymax; y++, data += wout)
     memcpy(data, imagein + xmin+y*win, w2*sizeof(PIXTYPE));
   if (weight)
     {
-    weightin = detect_flag? obj2->dweight:obj2->weight;
+    weightin = obj2->weight[0];
     for (y=ymin; y<ymax; y++, data += wout)
       memcpy(weight, weightin + xmin+y*win, w2*sizeof(PIXTYPE));
     }

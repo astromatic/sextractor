@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 2006-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 2006-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		06/10/2011
+*	Last modified:		11/01/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -88,17 +88,21 @@ int	end_xml(void)
   }
 
 /****** update_xml ***********************************************************
-PROTO	int	update_xml(void)
+PROTO	int update_xml(sexcatstruct *sexcat, fieldstruct **fields,
+			fieldstruct **wfields)
 PURPOSE	Update a set of meta-data kept in memory before being written to the
 	XML file
-INPUT	-.
+INPUT	Pointer to catalog,
+	pointer to an array of image field pointers,
+	pointer to an array of weight-map field pointers,
+	number of images.
 OUTPUT	RETURN_OK if everything went fine, RETURN_ERROR otherwise.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	05/02/2010
+VERSION	11/01/2012
  ***/
-int	update_xml(sexcatstruct *sexcat, fieldstruct *dfield, fieldstruct *field,
-		fieldstruct *dwfield, fieldstruct *wfield)
+int	update_xml(sexcatstruct *sexcat, fieldstruct **fields,
+		fieldstruct **wfields)
   {
    xmlstruct	*x;
 
@@ -107,31 +111,31 @@ int	update_xml(sexcatstruct *sexcat, fieldstruct *dfield, fieldstruct *field,
 			"");
   x = &xmlstack[nxml++];
   x->currext = sexcat->currext;
-  x->headflag[0] = dfield->headflag;
-  x->headflag[1] = field->headflag;
+  x->headflag[0] = fields[0]->headflag;
+  x->headflag[1] = fields[0]->headflag;
   x->ndetect = sexcat->ndetect;
   x->ntotal = sexcat->ntotal;
   strcpy(x->ext_date, sexcat->ext_date);
   strcpy(x->ext_time, sexcat->ext_time);
   x->ext_elapsed = sexcat->ext_elapsed;
-  strcpy(x->ident[0], dfield->ident); 
-  strcpy(x->ident[1], field->ident); 
-  x->backmean[0] = dfield->backmean;
-  x->backmean[1] = field->backmean;
-  x->backsig[0] = dfield->backsig;
-  x->backsig[1] = field->backsig;
-  x->sigfac[0] = dfield->sigfac;
-  x->sigfac[1] = field->sigfac;
-  x->thresh[0] = dfield->dthresh;
-  x->thresh[1] = field->thresh;
-  x->pixscale[0] = dfield->pixscale;
-  x->pixscale[1] = field->pixscale;
-  x->epoch[0] = dfield->epoch;
-  x->epoch[1] = field->epoch;
-  x->gain[0] = dfield->gain;
-  x->gain[1] = field->gain;
-  x->satur_level[0] = dfield->satur_level;
-  x->satur_level[1] = field->satur_level;
+  strcpy(x->ident[0], fields[0]->ident); 
+  strcpy(x->ident[1], fields[0]->ident); 
+  x->backmean[0] = fields[0]->backmean;
+  x->backmean[1] = fields[0]->backmean;
+  x->backsig[0] = fields[0]->backsig;
+  x->backsig[1] = fields[0]->backsig;
+  x->sigfac[0] = fields[0]->sigfac;
+  x->sigfac[1] = fields[0]->sigfac;
+  x->thresh[0] = fields[0]->dthresh;
+  x->thresh[1] = fields[0]->thresh;
+  x->pixscale[0] = fields[0]->pixscale;
+  x->pixscale[1] = fields[0]->pixscale;
+  x->epoch[0] = fields[0]->epoch;
+  x->epoch[1] = fields[0]->epoch;
+  x->gain[0] = fields[0]->gain;
+  x->gain[1] = fields[0]->gain;
+  x->satur_level[0] = fields[0]->satur_level;
+  x->satur_level[1] = fields[0]->satur_level;
 
   return EXIT_SUCCESS;
   }

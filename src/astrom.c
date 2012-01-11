@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		06/10/2011
+*	Last modified:		11/01/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -90,92 +90,98 @@ void	initastrom(fieldstruct *field)
 /******* astrom_pos **********************************************************
 PROTO	void astrom_pos(fieldstruct *field, obj2struct *obj2)
 PURPOSE Compute FOCAL and WORLD coordinates from basic measurements.
-INPUT   Measurement field pointer,
+INPUT   Pointer to an array of image field pointers,
+	number of images,
 	obj2struct pointer.
 OUTPUT  -.
 NOTES   -.
 AUTHOR  E. Bertin (IAP)
-VERSION 17/06/2011
+VERSION 11/01/2012
  ***/
-void	astrom_pos(fieldstruct *field, obj2struct *obj2)
+void	astrom_pos(fieldstruct **fields, int nfield, obj2struct *obj2)
 
   {
+   fieldstruct	*field;
    wcsstruct	*wcs;
    double	rawpos[NAXIS], wcspos[NAXIS],
 		da,dd;
-   int		lng,lat;
+   int		i, lng,lat;
 
-  wcs = field->wcs;
-  lng = wcs->lng;
-  lat = wcs->lat;
-
-/* If working with WCS, compute FOCAL coordinates and local matrix */
-  if (FLAG(obj2.mxf))
+  for (i=0; i<nfield; i++)
     {
-    rawpos[0] = obj2->posx;
-    rawpos[1] = obj2->posy;
-    raw_to_red(wcs, rawpos, wcspos);
-    obj2->mxf = wcspos[0];
-    obj2->myf = wcspos[1];
-    }
+    field = fields[i];
+    wcs = field->wcs;
+    lng = wcs->lng;
+    lat = wcs->lat;
 
-/* If working with WCS, compute WORLD coordinates and local matrix */
-  if (FLAG(obj2.mxw))
-    {
-    rawpos[0] = obj2->posx;
-    rawpos[1] = obj2->posy;
-    raw_to_wcs(wcs, rawpos, wcspos);
-    obj2->mxw = wcspos[0];
-    obj2->myw = wcspos[1];
-    if (lng != lat)
+/*-- If working with WCS, compute FOCAL coordinates and local matrix */
+    if (FLAG(obj2.posxf))
       {
-      obj2->alphas = lng<lat? obj2->mxw : obj2->myw;
-      obj2->deltas = lng<lat? obj2->myw : obj2->mxw;
-      if (FLAG(obj2.alpha2000))
+      rawpos[0] = obj2->posx[i];
+      rawpos[1] = obj2->posy[i];
+      raw_to_red(wcs, rawpos, wcspos);
+      obj2->posxf[i] = wcspos[0];
+      obj2->posyf[i] = wcspos[1];
+      }
+
+/*-- If working with WCS, compute WORLD coordinates and local matrix */
+    if (FLAG(obj2.posxw[i]))
+      {
+      rawpos[0] = obj2->posx[i];
+      rawpos[1] = obj2->posy[i];
+      raw_to_wcs(wcs, rawpos, wcspos);
+      obj2->posxw[i] = wcspos[0];
+      obj2->posyw[i] = wcspos[1];
+      if (lng != lat)
         {
-        if (fabs(wcs->equinox-2000.0)>0.003)
-          precess(wcs->equinox, wcspos[lng<lat?0:1], wcspos[lng<lat?1:0],
-		2000.0, &obj2->alpha2000, &obj2->delta2000);
-        else
+        obj2->alphas[i] = lng<lat? obj2->posxw[i] : obj2->posyw[i];
+        obj2->deltas[i] = lng<lat? obj2->posyw[i] : obj2->posxw[i];
+        if (FLAG(obj2.alpha2000))
           {
-          obj2->alpha2000 = lng<lat? obj2->mxw : obj2->myw;
-          obj2->delta2000 = lng<lat? obj2->myw : obj2->mxw;
-          }
-        if (FLAG(obj2.dtheta2000))
-          {
-          da = wcs->ap2000 - obj2->alpha2000;
-          dd = (sin(wcs->dp2000*DEG)
-		-sin(obj2->delta2000*DEG)*sin(obj2->deltas*DEG))
-		/(cos(obj2->delta2000*DEG)*cos(obj2->deltas*DEG));
-          dd = dd<1.0? (dd>-1.0?acos(dd)/DEG:180.0) : 0.0;
-          obj2->dtheta2000 = (((da>0.0 && da<180.0) || da<-180.0)?-dd:dd);
-          }
-        if (FLAG(obj2.alpha1950))
-          {
-          j2b(wcs->equinox, obj2->alpha2000, obj2->delta2000,
-		&obj2->alpha1950, &obj2->delta1950);
-          if (FLAG(obj2.dtheta1950))
+          if (fabs(wcs->equinox-2000.0)>0.003)
+            precess(wcs->equinox, wcspos[lng<lat?0:1], wcspos[lng<lat?1:0],
+		2000.0, &obj2->alpha2000[i], &obj2->delta2000[i]);
+          else
             {
-            da = wcs->ap1950 - obj2->alpha1950;
-            dd = (sin(wcs->dp1950*DEG)
-		-sin(obj2->delta1950*DEG)*sin(obj2->deltas*DEG))
-		/(cos(obj2->delta1950*DEG)*cos(obj2->deltas*DEG));
+            obj2->alpha2000[i] = lng<lat? obj2->posxw[i] : obj2->posyw[i];
+            obj2->delta2000[i] = lng<lat? obj2->posyw[i] : obj2->posxw[i];
+            }
+          if (FLAG(obj2.dtheta2000))
+            {
+            da = wcs->ap2000 - obj2->alpha2000[i];
+            dd = (sin(wcs->dp2000*DEG)
+		-sin(obj2->delta2000[i]*DEG)*sin(obj2->deltas[i]*DEG))
+		/(cos(obj2->delta2000[i]*DEG)*cos(obj2->deltas[i]*DEG));
             dd = dd<1.0? (dd>-1.0?acos(dd)/DEG:180.0) : 0.0;
-            obj2->dtheta1950 = (((da>0.0 && da<180.0) || da<-180.0)?-dd:dd);
-           }
+            obj2->dtheta2000 = (((da>0.0 && da<180.0) || da<-180.0)?-dd:dd);
+            }
+          if (FLAG(obj2.alpha1950))
+            {
+            j2b(wcs->equinox, obj2->alpha2000[i], obj2->delta2000[i],
+		&obj2->alpha1950[i], &obj2->delta1950[i]);
+            if (FLAG(obj2.dtheta1950))
+              {
+              da = wcs->ap1950 - obj2->alpha1950[i];
+              dd = (sin(wcs->dp1950*DEG)
+		-sin(obj2->delta1950[i]*DEG)*sin(obj2->deltas[i]*DEG))
+		/(cos(obj2->delta1950[i]*DEG)*cos(obj2->deltas[i]*DEG));
+              dd = dd<1.0? (dd>-1.0?acos(dd)/DEG:180.0) : 0.0;
+              obj2->dtheta1950 = (((da>0.0 && da<180.0)||da<-180.0)?-dd:dd);
+              }
+            }
           }
         }
       }
-    }
 
-/* Custom coordinate system for the MAMA machine */
-  if (FLAG(obj2.mamaposx))
-    {
-    rawpos[0] = obj2->posx - 0.5;
-    rawpos[1] = obj2->posy - 0.5;
-    raw_to_wcs(wcs, rawpos, wcspos);
-    obj2->mamaposx = wcspos[1]*(MAMA_CORFLEX+1.0);
-    obj2->mamaposy = wcspos[0]*(MAMA_CORFLEX+1.0);
+/*-- Custom coordinate system for the MAMA machine */
+    if (FLAG(obj2.mamaposx))
+      {
+      rawpos[0] = obj2->posx[i] - 0.5;
+      rawpos[1] = obj2->posy[i] - 0.5;
+      raw_to_wcs(wcs, rawpos, wcspos);
+      obj2->mamaposx[i] = wcspos[1]*(MAMA_CORFLEX+1.0);
+      obj2->mamaposy[i] = wcspos[0]*(MAMA_CORFLEX+1.0);
+      }
     }
 
   return;

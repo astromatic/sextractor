@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,9 +22,13 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		21/12/2011
+*	Last modified:		11/01/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
+
+#ifndef _LUTZ_H_
+#include "lutz.h"
+#endif
 
 /*------------------------------ definitions --------------------------------*/
 
@@ -36,7 +40,7 @@
 /*------------------------------- functions ---------------------------------*/
 void		scan_extract(fieldstruct **fields, fieldstruct **wfields,
 			int nfield, fieldstruct **ffields, int nffield),
-		scan_output(fieldstruct **fields, fieldstructs **wfields,
+		scan_output(fieldstruct **fields, fieldstruct **wfields,
 			int nfield, infostruct *info, objliststruct *objlist),
-		scan_preanalyse(int no, objliststruct *objlist,
+		scan_preanalyse(objliststruct *objlist, int no,
 			int analyse_type);

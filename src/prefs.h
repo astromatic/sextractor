@@ -54,7 +54,7 @@ typedef struct
   char		**command_line;				/* Command line */
   int		ncommand_line;				/* nb of params */
   char		prefs_name[MAXCHAR];			/* prefs filename*/
-  char		*(image_name[2]);			/* image filenames */
+  char		*(image_name[MAXIMAGE]);			/* image filenames */
   int		nimage_name;				/* nb of params */
   char		cat_name[MAXCHAR];			/* catalog filename*/
   char		head_suffix[MAXCHAR];			/* ext. header suffix */

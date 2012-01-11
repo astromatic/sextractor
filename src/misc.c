@@ -164,7 +164,7 @@ NOTES	The bracket and its extension number are removed from the filename if
 AUTHOR  E. Bertin (IAP)
 VERSION 08/10/2007
  ***/
-static int	selectext(char *filename)
+int	selectext(char *filename)
   {
    char	*bracl,*bracr;
    int	next;

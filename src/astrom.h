@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		06/10/2011
+*	Last modified:		11/01/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -38,7 +38,8 @@
 /*------------------------------- functions ---------------------------------*/
 extern void		astrom_errparam(fieldstruct *field, obj2struct *obj2),
 			astrom_peakpos(fieldstruct *field, obj2struct *obj2),
-			astrom_pos(fieldstruct *field, obj2struct *obj2),
+			astrom_pos(fieldstruct **fields, int nfield,
+				obj2struct *obj2),
 			astrom_proferrparam(fieldstruct *field, obj2struct *obj2),
 			astrom_profpos(fieldstruct *field, obj2struct *obj2),
 			astrom_profshapeparam(fieldstruct *field,

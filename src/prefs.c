@@ -582,7 +582,7 @@ void	useprefs()
 		prefs.ext_minarea:MAXDEBAREA);
 
 /*-------------------------------- Astrometry ------------------------------*/
-  prefs.world_flag = FLAG(obj2.mxw) || FLAG(obj2.mamaposx)
+  prefs.world_flag = FLAG(obj2.posxw) || FLAG(obj2.mamaposx)
 		|| FLAG(obj2.peakxw) || FLAG(obj2.winpos_xw)
 		|| FLAG(obj2.mx2w) || FLAG(obj2.win_mx2w)
 		|| FLAG(obj2.xw_prof) || FLAG(obj2.poserrmx2w_prof)
@@ -599,13 +599,15 @@ void	useprefs()
 /* Find the largest APERture-photometry vector */
   if (FLAG(obj2.flux_aper))
     {
-    naper = prefs.flux_apersize;
+    naper = prefs.aper_size[0];
+/*
     if (prefs.fluxerr_apersize>naper)
       naper = prefs.fluxerr_apersize;
     if (prefs.mag_apersize>naper)
       naper = prefs.mag_apersize;
     if (prefs.magerr_apersize>naper)
       naper = prefs.magerr_apersize;
+*/
     if (naper>prefs.naper)
       {
       warning("Not enough apertures provided in config.:\n",
@@ -621,19 +623,19 @@ void	useprefs()
 /* Find the largest "minimum margin" necessary for apertures */
   prefs.cleanmargin = 0;
   if (FLAG(obj2.vignet)
-	&& (margin=(prefs.vignetsize[1]+1)/2) > prefs.cleanmargin)
+	&& (margin=(prefs.vignet_size[1]+1)/2) > prefs.cleanmargin)
     prefs.cleanmargin = margin;
   if (FLAG(obj2.vigshift)
-	&& (margin=(prefs.vigshiftsize[1]+1)/2+3)>prefs.cleanmargin)
+	&& (margin=(prefs.vigshift_size[1]+1)/2+3)>prefs.cleanmargin)
     prefs.cleanmargin = margin;
   if (FLAG(obj2.flux_aper))
     for (i=0; i<naper; i++)
       if ((margin=(int)((prefs.apert[i]+1)/2)+1) > prefs.cleanmargin)
         prefs.cleanmargin = margin;
 
-  if (FLAG(obj2.flux_radius) && prefs.flux_radiussize)
-    if (prefs.nflux_frac>prefs.flux_radiussize)
-      prefs.nflux_frac = prefs.flux_radiussize;
+  if (FLAG(obj2.flux_radius) && prefs.flux_radius_size[0])
+    if (prefs.nflux_frac>prefs.flux_radius_size[0])
+      prefs.nflux_frac = prefs.flux_radius_size[0];
 
 /*------------------------------- MASKing ----------------------------------*/
   prefs.blank_flag = (prefs.mask_type!=MASK_NONE);
@@ -696,25 +698,22 @@ void	useprefs()
         prefs.pattern_flag = 1;
 
 /*----------------------------- WEIGHT-images ------------------------------*/
-  if (prefs.nweight_type<2)
-    prefs.weight_type[1] = prefs.weight_type[0];
-
-  prefs.dweight_flag = (prefs.weight_type[0]!= WEIGHT_NONE);
-  prefs.weight_flag = (prefs.weight_type[1]!= WEIGHT_NONE);
-
-  if (prefs.dweight_flag || prefs.weight_flag)
+  for (i=0; i<prefs.nweight_type; i++)
+    prefs.weight_flag[i] = (prefs.weight_type[1]!= WEIGHT_NONE);
+/*
+  if (prefs.weight_flag[0])
     {
-/*-- Handle the default weight-threshold values */
+*-- Handle the default weight-threshold values *
     if (prefs.nweight_thresh<2)
       for (i=2; --i >= prefs.nweight_thresh;)
         prefs.weight_thresh[i] = (prefs.weight_type[i]==WEIGHT_FROMWEIGHTMAP)?
 					0.0 : BIG;
-/*-- Weight rescaling flags */
+*-- Weight rescaling flags *
     if (prefs.nwscale_flag<2)
        prefs.wscale_flag[1] = (prefs.weight_type[1]==WEIGHT_FROMBACK)?
 					BACK_WSCALE : prefs.wscale_flag[0];
 
-/*-- Check WEIGHT_IMAGE parameter(s) */
+*-- Check WEIGHT_IMAGE parameter(s) *
     if ((!prefs.nwimage_name
 	&& ((prefs.weight_type[0]!=WEIGHT_FROMBACK
 		&& prefs.weight_type[0]!=WEIGHT_NONE)
@@ -733,8 +732,8 @@ void	useprefs()
     if (prefs.nwimage_name==2 && prefs.nweight_type==1)
       prefs.nweight_type = 2;
 
-/*-- If detection-only interpolation is needed with 1 Weight image... */
-/*-- ...pretend we're using 2, with only one being interpolated */
+*-- If detection-only interpolation is needed with 1 Weight image... *
+*-- ...pretend we're using 2, with only one being interpolated *
     if (prefs.nweight_type==1
 	&& prefs.nwimage_name && prefs.wimage_name[1]==prefs.wimage_name[0]
 	&& prefs.interp_type[0]==INTERP_VARONLY )
@@ -744,7 +743,6 @@ void	useprefs()
       prefs.weight_type[0] = WEIGHT_FROMINTERP;
       prefs.wimage_name[1] = prefs.wimage_name[0];
       prefs.interp_type[1] = INTERP_NONE;
-      prefs.dweight_flag = 1;
       if (prefs.nweight_thresh<2)
         {
         prefs.nweight_thresh = 2;
@@ -752,7 +750,7 @@ void	useprefs()
         }
       }
     }
-
+*/
 /*------------------------------ Catalogue ---------------------------------*/
 
   if (!strcmp(prefs.cat_name, "STDOUT"))

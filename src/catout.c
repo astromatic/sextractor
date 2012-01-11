@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		07/12/2011
+*	Last modified:		10/01/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -280,7 +280,7 @@ INPUT	Pointer to the obj2list.
 OUTPUT	-.
 NOTES	Requires access to the flagobj2 static pointer.
 AUTHOR	E. Bertin (IAP)
-VERSION	07/12/2011
+VERSION	10/01/2012
  ***/
 void	catout_updateparamflags(void)
 
@@ -638,9 +638,9 @@ void	catout_updateparamflags(void)
   FLAG(obj2.peakxw) |= FLAG(obj2.peakyw) | FLAG(obj2.peakalphas);
   FLAG(obj2.peakx) |= FLAG(obj2.peaky) | FLAG(obj2.peakxw) | FLAG(obj2.peakxf);
 
-  FLAG(obj2.mxf) |= FLAG(obj2.myf);
+  FLAG(obj2.posxf) |= FLAG(obj2.posyf);
 
-  FLAG(obj2.mxw) |= FLAG(obj2.myw) | FLAG(obj2.mx2w) | FLAG(obj2.alphas)
+  FLAG(obj2.posxw) |= FLAG(obj2.posyw) | FLAG(obj2.mx2w) | FLAG(obj2.alphas)
 		| FLAG(obj2.poserr_mx2w);
   FLAG(obj2.mamaposx) |= FLAG(obj2.mamaposy);
   FLAG(obj2.fluxerr_win) |= FLAG(obj2.snr_win);
@@ -659,7 +659,7 @@ void	catout_updateparamflags(void)
 			| FLAG(obj2.prof_disk_mumax)
 			| FLAG(obj2.mumax_prof);
 
-  prefs.world_flag = FLAG(obj2.mxw) || FLAG(obj2.mamaposx)
+  prefs.world_flag = FLAG(obj2.posxw) || FLAG(obj2.mamaposx)
 		|| FLAG(obj2.peakxw) || FLAG(obj2.winpos_xw)
 		|| FLAG(obj2.mx2w) || FLAG(obj2.win_mx2w)
 		|| FLAG(obj2.xw_prof) || FLAG(obj2.poserrmx2w_prof)

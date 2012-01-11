@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1995-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1995-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		07/12/2011
+*	Last modified:		11/01/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -42,19 +42,23 @@
 
 
 /****** growth_aver *********************************************************
-PROTO	void growth_aver(fieldstruct *field, fieldstruct *wfield, obj2struct *obj2)
+PROTO	void growth_aver(fieldstruct **fields, fieldstruct **wfields,
+			int nfield, obj2struct *obj2)
 PURPOSE	Build an average growth curve.
-INPUT	Pointer to the image structure,
-	pointer to the weight-map structure,
+INPUT   Pointer to an array of image field pointers,
+	pointer to an array of weight-map field pointers,
+	number of images,
 	pointer to the obj2 structure.
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
 VERSION	07/12/2011
  ***/
-void  growth_aver(fieldstruct *field, fieldstruct *wfield, obj2struct *obj2)
+void  growth_aver(fieldstruct **fields, fieldstruct **wfields, int nfield,
+			obj2struct *obj2)
 
   {
+   fieldstruct		*field, *wfield;
    float		*fgrowth;
    double		*growth, *growtht,
 			dx,dx1,dy,dy2,mx,my, r2,r,rlim, d, rextlim2, raper,
@@ -67,7 +71,9 @@ void  growth_aver(fieldstruct *field, fieldstruct *wfield, obj2struct *obj2)
    PIXTYPE		*image,*imaget, *weight,*weightt,
 			pdbkg, wthresh;
   
-
+/* field is the detection field */
+  field = fields[0];
+  wfield = (wfields && wfields[0])? wfields[0] : NULL;
   if (wfield)
     wthresh = wfield->weight_thresh;
   else
@@ -111,7 +117,7 @@ void  growth_aver(fieldstruct *field, fieldstruct *wfield, obj2struct *obj2)
   if (pflag)
     {
     ngamma = field->ngamma;
-    pdbkg = exp(obj2->dbkg/ngamma);
+    pdbkg = exp(obj2->dbkg[0]/ngamma);
     }
   else
     {
@@ -149,10 +155,10 @@ void  growth_aver(fieldstruct *field, fieldstruct *wfield, obj2struct *obj2)
     obj2->flag |= OBJ_APERT_PB;
     }
 
-  image = obj2->image;
+  image = obj2->image[0];
   weight = weightt = NULL;		/* To avoid gcc -Wall warnings */
   if (wfield)
-    weight = obj2->weight;
+    weight = obj2->weight[0];
   for (y=ymin; y<ymax; y++)
     {
     imaget = image + (pos = y*w + xmin);
@@ -260,6 +266,7 @@ void  growth_aver(fieldstruct *field, fieldstruct *wfield, obj2struct *obj2)
     }
 
 /* Now let's remap the growth-curve to match user's choice */
+/*
   if (FLAG(obj2.flux_growth))
     {
     n = prefs.flux_growth_size;
@@ -320,12 +327,12 @@ void  growth_aver(fieldstruct *field, fieldstruct *wfield, obj2struct *obj2)
         obj2->flux_radius[j] = rlim;
       }
     }
-
+*/
 /* Specific to Half-light radius used by other parameters */
   if (FLAG(obj2.hl_radius))
     {
     n = ngrowth-1;
-    tv = 0.5*obj2->flux_auto;
+    tv = 0.5*obj2->flux_auto[0];
     growtht = growth-1;
     for (i=0; i<n && *(++growtht)<tv; i++);
     obj2->hl_radius = fabs(step*(i? ((dg=*growtht - *(growtht-1)) != 0.0 ?
