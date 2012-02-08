@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/01/2012
+*	Last modified:		08/02/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -50,10 +50,13 @@
 #include	"weight.h"
 
 /****** scan_extract *********************************************************
-PROTO	void scan_extract(fieldstruct **fields, fieldstruct **wfields, int nfield,
+PROTO	void scan_extract(fieldstruct *dfield, fieldstruct *dwfield,
+			fieldstruct **fields, fieldstruct **wfields, int nfield,
 			fieldstruct **ffields, int nffield)
 PURPOSE	Scan of the large pixmap(s). Main loop and heart of the program.
-INPUT	Pointer to an array of image field pointers,
+INPUT	Pointer to the detection image field,
+	pointer to the detection weight field,
+	pointer to an array of image field pointers,
 	pointer to an array of weight-map field pointers,
 	number of images,
 	pointer to an array of flag map field pointers,
@@ -61,15 +64,16 @@ INPUT	Pointer to an array of image field pointers,
 OUTPUT	-.
 NOTES	Global preferences are used.
 AUTHOR	E. Bertin (IAP)
-VERSION	11/01/2012
+VERSION	08/02/2012
  ***/
-void	scan_extract(fieldstruct **fields, fieldstruct **wfields, int nfield,
+void	scan_extract(fieldstruct *dfield, fieldstruct *dwfield,
+			fieldstruct **fields, fieldstruct **wfields, int nfield,
 			fieldstruct **ffields, int nffield)
 
   {
    static infostruct	curpixinfo, *info, *store,
 			initinfo, freeinfo, *victim;
-   fieldstruct		*field, *wfield, *ffield;
+   fieldstruct		*ffield;
    checkstruct		*check;
    objliststruct       	objlist;
    objstruct		*cleanobj;
@@ -93,28 +97,24 @@ void	scan_extract(fieldstruct **fields, fieldstruct **wfields, int nfield,
   blankh = 0;				/* Avoid gcc -Wall warnings */
 /*----- Beginning of the main loop: Initialisations  */
   thecat.ntotal = thecat.ndetect = 0;
-
-/* field is the detection field in any case */
-  field = fields[0];
   
-/* wfield is the detection weight-field if available */
-  wfield = wfields[0];
-  wthresh = wfield ? wfield->weight_thresh : 0.0;
+  wthresh = dwfield ? dwfield->weight_thresh : 0.0;
   if (wthresh>BIG*WTHRESH_CONVFAC);
     wthresh = BIG*WTHRESH_CONVFAC;
 
 /* If WEIGHTing and no absolute thresholding, activate threshold scaling */
-  varthreshflag = (wfield && prefs.thresh_type[0]!=THRESH_ABSOLUTE);
+  varthreshflag = (dwfield && prefs.thresh_type[0]!=THRESH_ABSOLUTE);
   relthresh = varthreshflag ? prefs.dthresh[0] : 0.0;/* To avoid gcc warnings*/
-  w = field->width;
-  h = field->height;
-  objlist.dthresh = field->dthresh;
-  objlist.thresh = field->thresh;
-  field->y = field->stripy = field->ymin = field->stripylim
-	= field->stripysclim = 0;
-  field->yblank = 1;
-  wfield->y = wfield->stripy = wfield->ymin = wfield->stripylim
-	= wfield->stripysclim = 0;
+  w = dfield->width;
+  h = dfield->height;
+  objlist.dthresh = dfield->dthresh;
+  objlist.thresh = dfield->thresh;
+  dfield->y = dfield->stripy = dfield->ymin = dfield->stripylim
+	= dfield->stripysclim = 0;
+  dfield->yblank = 1;
+  if ((dwfield))
+    dwfield->y = dwfield->stripy = dwfield->ymin = dwfield->stripylim
+	= dwfield->stripysclim = 0;
 
   if (nffield)
     for (i=0; i<nffield; i++)
@@ -177,7 +177,7 @@ void	scan_extract(fieldstruct **fields, fieldstruct **wfields, int nfield,
   if (prefs.filter_flag)
     {
     QMALLOC(cscan, PIXTYPE, stacksize);
-    if (wfield)
+    if (dwfield)
       {
       QCALLOC(cwscan, PIXTYPE, stacksize);
       if (PLISTEXIST(wflag))
@@ -191,7 +191,7 @@ void	scan_extract(fieldstruct **fields, fieldstruct **wfields, int nfield,
       {
       blankh = thefilter->convh/2+1;
       QMALLOC(blankpad, char, w*blankh);
-      field->yblank -= blankh;
+      dfield->yblank -= blankh;
       bpt = blankpad;
       }
     }
@@ -207,7 +207,7 @@ void	scan_extract(fieldstruct **fields, fieldstruct **wfields, int nfield,
       if (prefs.filter_flag)
         {
         free(cscan);
-        if (wfield)
+        if (dwfield)
           {
           if (PLISTEXIST(wflag))
             {
@@ -231,24 +231,26 @@ void	scan_extract(fieldstruct **fields, fieldstruct **wfields, int nfield,
 		  (FLAGTYPE *)loadstrip(ffield, (fieldstruct *)NULL)
 		: &ffield->fstrip[ffield->stripy*ffield->width];
           }
-      if (wfield)
+      if (dwfield)
         {
 /*------ Copy the previous weight line to track bad pixel limits */
-        wscan = (wfield->stripy==wfield->stripysclim)?
-		  (PIXTYPE *)loadstrip(wfield, (fieldstruct *)NULL)
-		: &wfield->strip[wfield->stripy*wfield->width];
+        wscan = (dwfield->stripy==dwfield->stripysclim)?
+		  (PIXTYPE *)loadstrip(dwfield, (fieldstruct *)NULL)
+		: &dwfield->strip[dwfield->stripy*dwfield->width];
         if (PLISTEXIST(wflag))
           {
           if (yl>0)
-            wscanp = &wfield->strip[((yl-1)%wfield->stripheight)*wfield->width];
+            wscanp = &dwfield->strip[((yl-1)%dwfield->stripheight)
+			*dwfield->width];
           if (yl<h-1)
-            wscann = &wfield->strip[((yl+1)%wfield->stripheight)*wfield->width];
+            wscann = &dwfield->strip[((yl+1)%dwfield->stripheight)
+			*dwfield->width];
             }
         }
-      scan = (field->stripy==field->stripysclim)?
-		  (PIXTYPE *)loadstrip(field, wfield)
-		: &field->strip[field->stripy*field->width];
-      if (field->stripy==field->stripysclim)
+      scan = (dfield->stripy==dfield->stripysclim)?
+		  (PIXTYPE *)loadstrip(dfield, dwfield)
+		: &dfield->strip[dfield->stripy*dfield->width];
+      if (dfield->stripy==dfield->stripysclim)
         {
         for (i=1; i<nfield; i++)
           {
@@ -260,22 +262,22 @@ void	scan_extract(fieldstruct **fields, fieldstruct **wfields, int nfield,
 
       if (prefs.filter_flag)
         {
-        filter(field, cscan, field->y);
-        if (wfield)
+        filter(dfield, cscan, dfield->y);
+        if (dwfield)
           {
           if (PLISTEXIST(wflag))
             {
             if (yl==0)
-              filter(wfield, cwscann, yl);
+              filter(dwfield, cwscann, yl);
             wscand = cwscanp;
             cwscanp = cwscan;
             cwscan = cwscann;
             cwscann = wscand;
             if (yl < h-1)
-              filter(wfield, cwscann, yl + 1);
+              filter(dwfield, cwscann, yl + 1);
             }
           else
-            filter(wfield, cwscan, yl);
+            filter(dwfield, cwscan, yl);
           }
         }
       else
@@ -528,32 +530,32 @@ void	scan_extract(fieldstruct **fields, fieldstruct **wfields, int nfield,
       if (prefs.filter_flag)
         {
         bpt = bpt0 = blankpad + w*((yl+1)%blankh);
-        if (field->yblank >= 0)
+        if (dfield->yblank >= 0)
           {
-          scant = &PIX(field, 0, field->yblank);
+          scant = &PIX(dfield, 0, dfield->yblank);
           for (i=w; i--; scant++)
             if (*(bpt++))
               *scant = -BIG;
           bpt = bpt0;
           }
         }
-      field->yblank++;
+      dfield->yblank++;
       }
 
 /*-- Prepare markers for the next line */
     yl++;
-    field->stripy = (field->y=yl)%field->stripheight;
+    dfield->stripy = (dfield->y=yl)%dfield->stripheight;
     if (nffield)
       for (i=0; i<nffield; i++)
         {
         ffield = ffields[i];
         ffield->stripy = (ffield->y=yl)%ffield->stripheight;
         }
-    if (wfield)
-      wfield->stripy = (wfield->y=yl)%wfield->stripheight;
+    if (dwfield)
+      dwfield->stripy = (dwfield->y=yl)%dwfield->stripheight;
 
 /*-- Remove objects close to the ymin limit if ymin is ready to increase */
-    if (field->stripy==field->stripysclim)
+    if (dfield->stripy==dfield->stripysclim)
       {
       ontotal = 0;
       i = cleanobjlist->nobj;
@@ -562,7 +564,7 @@ void	scan_extract(fieldstruct **fields, fieldstruct **wfields, int nfield,
         if (i>=cleanobjlist->nobj)
           i = cleanobjlist->nobj - 1;
         cleanobj = cleanobjlist->obj+i;
-        if (cleanobj->ycmin <= field->ymin)
+        if (cleanobj->ycmin <= dfield->ymin)
           {
           if ((prefs.prof_flag && !(thecat.ntotal%10)
 		&& thecat.ntotal != ontotal)
@@ -584,15 +586,15 @@ void	scan_extract(fieldstruct **fields, fieldstruct **wfields, int nfield,
     }
 
 /* Removal or the remaining pixels */
-  if (prefs.blank_flag && prefs.filter_flag && (field->yblank >= 0))
+  if (prefs.blank_flag && prefs.filter_flag && (dfield->yblank >= 0))
     for (j=blankh-1; j--; yl++)
       {
       bpt = bpt0 = blankpad + w*(yl%blankh);
-      scant = &PIX(field, 0, field->yblank);
+      scant = &PIX(dfield, 0, dfield->yblank);
       for (i=w; i--; scant++)
         if (*(bpt++))
           *scant = -BIG;
-      field->yblank++;
+      dfield->yblank++;
       }
 
 /* Now that all "detected" pixels have been removed, analyse detections */
@@ -612,7 +614,7 @@ void	scan_extract(fieldstruct **fields, fieldstruct **wfields, int nfield,
   clean_end();
 
 /*Free memory */
-  if (prefs.filter_flag && wfield && PLISTEXIST(wflag))
+  if (prefs.filter_flag && dwfield && PLISTEXIST(wflag))
     free(cwscanp);
   freeparcelout();
   free(pixel);

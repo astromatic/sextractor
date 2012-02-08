@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		08/12/2011
+*	Last modified:		08/02/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -72,12 +72,16 @@ typedef struct field
   int		stripy;			/* y position in buffer */
   int		stripylim;		/* y limit in buffer */
   int		stripysclim;		/* y scroll limit in buffer */
-/* ---- basic astrometric parameters */
-   double	pixscale;		/* pixel size in arcsec.pix-1 */
-   double	epoch;			/* epoch of coordinates */
-/* ---- basic photometric parameters */
-   double	gain;			/* conversion factor in e-/ADU */
-   double	satur_level;		/* saturation level in ADUs */
+/* ---- astrometric parameters */
+  struct wcs	*wcs;			/* astrometric data */
+  struct structassoc	*assoc;		/* ptr to the assoc-list */
+  int		flags;			/* flags defining the field type */
+  double	pixscale;		/* pixel size in arcsec.pix-1 */
+  double	epoch;			/* epoch of coordinates */
+/* ---- photometric parameters */
+  int		photomlabel;		/* photometric label index */
+  double	gain;			/* conversion factor in e-/ADU */
+  double	satur_level;		/* saturation level in ADUs */
 /* ---- background parameters */
   float		*back;			/* ptr to the background map in mem */
   float		*dback;			/* ptr to the background deriv. map */
@@ -96,9 +100,6 @@ typedef struct field
   PIXTYPE	thresh;			/* analysis threshold */
   backenum	back_type;		/* Background type */
 /* ---- astrometric parameters */
-  struct wcs	*wcs;			/* astrometric data */
-  struct structassoc	*assoc;		/* ptr to the assoc-list */
-  int		flags;			/* flags defining the field type */
 /* ---- image interpolation */
   int		interp_flag;		/* interpolation for this field? */
   PIXTYPE	*interp_backup;		/* backup line for interpolation */
@@ -116,6 +117,6 @@ typedef struct field
 void		field_end(fieldstruct *field);
 
 fieldstruct	*field_inherit(fieldstruct *infield, int flags),
-		*field_init(char *filename, int flags, int ext);
+		*field_init(char *filename, int ext, int flags);
 
 #endif

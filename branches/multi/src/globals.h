@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		21/12/2011
+*	Last modified:		18/01/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -55,8 +55,6 @@ extern void	allocparcelout(void),
 		readdata(fieldstruct *, PIXTYPE *, int),
 		readidata(fieldstruct *, FLAGTYPE *, int),
 		readimagehead(fieldstruct *),
-		readprefs(char *, char **, char **, int),
-		useprefs(void),
 		write_error(char *msg1, char *msg2);
 
 extern int	addobj(int, objliststruct *, objliststruct *),

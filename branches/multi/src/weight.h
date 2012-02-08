@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1997-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1997-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		12/08/2011
+*	Last modified:		18/01/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -38,6 +38,6 @@ void			weight_count(objstruct *obj, pliststruct *pixel),
 				int npix);
 
 extern fieldstruct	*weight_init(char *filename, fieldstruct *reffield,
-				weightenum wtype, int nok);
+				int ext, weightenum wtype);
 
 

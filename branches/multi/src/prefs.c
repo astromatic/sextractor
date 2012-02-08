@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		22/11/2011
+*	Last modified:		18/01/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -56,11 +56,16 @@
 #include	"fits/fitscat.h"
 
 
-/********************************* dumpprefs ********************************/
-/*
-Print the default preference parameters.
-*/
-void	dumpprefs(int state)
+/****** prefs_dump ***********************************************************
+PROTO	void prefs_dump(int state)
+PURPOSE	Dump the list of configuration parameters, default values and comments.
+INPUT	Dump style (0 for regular, !=0 for including advanced parameters).
+OUTPUT	-.
+NOTES	default_prefs[] global array used.
+AUTHOR	E. Bertin (IAP)
+VERSION	18/01/2012
+ ***/
+void	prefs_dump(int state)
   {
    char	**dp;
 
@@ -76,12 +81,20 @@ void	dumpprefs(int state)
   }
 
 
-/********************************* readprefs ********************************/
-/*
-Read a configuration file in ``standard'' format (see the SExtractor
-documentation)
-*/
-void    readprefs(char *filename, char **argkey, char **argval, int narg)
+/****** prefs_read ***********************************************************
+PROTO	void prefs_read(char *filename, char **argkey, char **argval, int narg)
+PURPOSE	Read a configuration file in ``standard'' format (see the SExtractor
+	documentation)
+INPUT	Configuration file name,
+	pointer to an array of keyword strings,
+	pointer to an array of value strings,
+	number of keywords.
+OUTPUT	-.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	18/01/2012
+ ***/
+void    prefs_read(char *filename, char **argkey, char **argval, int narg)
 
   {
    FILE		*infile;
@@ -358,7 +371,7 @@ void    readprefs(char *filename, char **argkey, char **argval, int narg)
 
           default:
             error(EXIT_FAILURE, "*Internal ERROR*: Type Unknown",
-				" in readprefs()");
+				" in prefs_read()");
             break;
           }
         key[nkey].flag = 1;
@@ -466,11 +479,16 @@ char	*list_to_str(char *listname)
   }
 
 
-/********************************* preprefs **********************************/
-/*
-Set number of threads, endianity, CPU ID overrides.
-*/
-void	preprefs()
+/****** prefs_tune ***********************************************************
+PROTO	void prefs_tune(void)
+PURPOSE	Set up stuff such as number of threads, endianity, CPU ID overrides,...
+INPUT	-.
+OUTPUT	-.
+NOTES	Global preferences are used.
+AUTHOR	E. Bertin (IAP)
+VERSION	18/01/2012
+ ***/
+void	prefs_tune(void)
 
   {
    unsigned short	ashort=1;
@@ -560,18 +578,22 @@ void	preprefs()
   }
 
 
-/********************************* useprefs **********************************/
-/*
-Update various structures according to the prefs.
-*/
-void	useprefs()
+/****** prefs_use ************************************************************
+PROTO	void prefs_use(void)
+PURPOSE	Update various structures according to configuration parameters.
+INPUT	-.
+OUTPUT	-.
+NOTES	Global preferences are used.
+AUTHOR	E. Bertin (IAP)
+VERSION	18/01/2012
+ ***/
+void	prefs_use(void)
 
   {
    int			i, margin, naper;
    char			*str;
 
 /*-------------------------------- Images ----------------------------------*/
-  prefs.dimage_flag = (prefs.nimage_name>1);
 
 /*-------------------------------- Extracting ------------------------------*/
   if (prefs.nthresh_type<2)
@@ -595,6 +617,11 @@ void	useprefs()
   prefs.epoch = 2000.0;
 
 /*-------------------------------- Photometry ------------------------------*/
+
+/* Field label strings */
+  prefs.nphotinstrustrmax = prefs.nimage_name;
+  QCALLOC(prefs.photinstrustr, char *, prefs.nphotinstrustrmax);
+  prefs.nphotinstrustr = 0;
 
 /* Find the largest APERture-photometry vector */
   if (FLAG(obj2.flux_aper))
@@ -782,15 +809,27 @@ void	useprefs()
   }
 
 
-/********************************* endprefs *********************************/
-/*
-Mostly free memory allocate for static arrays.
-*/
-void	endprefs(void)
+/****** prefs_end ************************************************************
+PROTO	void prefs_end(void)
+PURPOSE	Free memory allocated for config-related arrays.
+INPUT	-.
+OUTPUT	-.
+NOTES	Global preferences are used.
+AUTHOR	E. Bertin (IAP)
+VERSION	18/01/2012
+ ***/
+void	prefs_end(void)
 
   {
     int i;
 
+  if (prefs.photinstrustr)
+    {
+    for (i=0; i<prefs.nphotinstrustr; i++)
+      free(prefs.photinstrustr[i]);
+    free(prefs.photinstrustr);
+    prefs.nphotinstrustr = 0;
+    }
   for (i=0; i<prefs.nparam; i++)
       free(prefs.param[i]);
   for (i=0; i<prefs.nfimage_name; i++)

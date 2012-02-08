@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		08/12/2011
+*	Last modified:		08/02/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -49,24 +49,27 @@
 #include	"interpolate.h"
 
 /****** field_init ***********************************************************
-PROTO	fieldstruct *field_init(char *filename, int flags, int ext)
+PROTO	fieldstruct *field_init(char *filename, int ext, int flags)
 PURPOSE	Create and initialize a new field (image structure).
 INPUT	Image filename,
-	image flags (e.g. DETECT_FIELD, MEASURE_FIELD...),
-	position among valid extensions in FITS file.
+	position among valid extensions in FITS file,
+	image flags (e.g. DETECT_FIELD, MEASURE_FIELD...).
 OUTPUT	Pointer to a new malloc'ed field structure.
 NOTES	Global preferences are used.
 AUTHOR	E. Bertin (IAP)
-VERSION	08/12/2011
+VERSION	08/02/2012
  ***/
-fieldstruct	*field_init(char *filename, int flags, int ext)
+fieldstruct	*field_init(char *filename, int ext, int flags)
 
   {
    fieldstruct	*field;
    catstruct	*cat;
    tabstruct	*tab;
-   char		*pstr;
-   int		nok, ntab, margin;
+   h_type	htype;
+   t_type	ttype;
+   char		str[MAXCHAR], label[72],
+		*photombuf, *pstr;
+   int		j,s, line, nok, ntab, margin;
 
 /* Move to ext'th valid FITS image extension */
   if (!(cat = read_cat(filename)))
@@ -144,6 +147,50 @@ fieldstruct	*field_init(char *filename, int flags, int ext)
 	H_FLOAT, T_DOUBLE) !=RETURN_OK)
       field->satur_level = prefs.satur_level;
     }
+
+/* Put a photometric label to the present field */
+  field->photomlabel = 0;
+/* Create dummy a FITS header to store all keyword values */
+  QMALLOC(photombuf, char, FBSIZE);
+  memset(photombuf, ' ', FBSIZE);
+  strncpy(photombuf, "END     ", 8);
+  for (s=0; s<prefs.nphotinstru_key; s++)
+    {
+    fitsadd(photombuf, prefs.photinstru_key[s], "");
+/*-- Look in the main header */
+    if ((line=fitsfind(cat->tab->headbuf,prefs.photinstru_key[s]))
+        != RETURN_ERROR)
+      {
+      fitspick(cat->tab->headbuf+line*80, str,(void *)label,&htype,&ttype, str);
+      fitswrite(photombuf, prefs.photinstru_key[s], label, htype, ttype);
+      }
+/*-- Override with what is in the current header */
+    if ((line=fitsfind(field->tab->headbuf,prefs.photinstru_key[s]))
+        != RETURN_ERROR)
+      {
+      fitspick(field->tab->headbuf+line*80,str,(void *)label,&htype,&ttype,str);
+      fitswrite(photombuf, prefs.photinstru_key[s], label, htype, ttype);
+      }
+    }
+/* Compare the dummy photometric FITS header to the ones previously stored */
+  for (j=0; j<prefs.nphotinstrustr; j++)
+    if (!strncmp((const char *)prefs.photinstrustr[j], photombuf,
+        80*prefs.nphotinstru_key))
+      {
+      field->photomlabel = j;
+      break;
+      }
+  if (j>=prefs.nphotinstrustr)
+    {
+    if (prefs.nphotinstrustr >= prefs.nphotinstrustrmax)
+      {
+      prefs.nphotinstrustrmax += prefs.nimage_name;
+      QREALLOC(prefs.photinstrustr, char *, prefs.nphotinstrustrmax);
+      }
+    QMEMCPY(photombuf, prefs.photinstrustr[prefs.nphotinstrustr], char, FBSIZE);
+    field->photomlabel = prefs.nphotinstrustr++;
+    }
+  free(photombuf);
 
 /* Background */
   if (flags & (DETECT_FIELD|MEASURE_FIELD|WEIGHT_FIELD|VAR_FIELD|RMS_FIELD))

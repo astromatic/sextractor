@@ -99,11 +99,11 @@ setlinebuf(stdout);
             break;
           case 'd':
             if (opt2=='d')
-              dumpprefs(1);
+              prefs_dump(1);
             else if (opt2=='p')
               catout_dumpparams();
             else
-              dumpprefs(0);
+              prefs_dump(0);
             exit(EXIT_SUCCESS);
             break;
           case 'v':
@@ -136,13 +136,11 @@ setlinebuf(stdout);
       }
     }
 
-  prefs.nband = prefs.nimage_name;
-
 /* Read configuration keywords */
-  readprefs(prefs.prefs_name, argkey, argval, narg);
+  prefs_read(prefs.prefs_name, argkey, argval, narg);
 
 /* Apply low level preferences/settings (threads, architecture, endianity) */
-  preprefs();
+  prefs_tune();
 
   free(argkey);
   free(argval);
@@ -151,7 +149,7 @@ setlinebuf(stdout);
   makeit();
 
 /* Free memory associated with preferences/settings */
-  endprefs();
+  prefs_end();
 
 /* Display computing time / statistics */
   NFPRINTF(OUTPUT, "");

@@ -1089,4 +1089,31 @@ void	photom_mags(fieldstruct *field, obj2struct *obj2)
   return;
   }
 
+/****** print_instruinfo *****************************************************
+PROTO	void print_instruinfo(void)
+PURPOSE	Print info about photometric instruments found
+INPUT	-.
+OUTPUT	-.
+NOTES	Global preferences are used.
+AUTHOR	E. Bertin (IAP)
+VERSION	18/01/2012
+ ***/
+void	print_instruinfo(void)
+  {
+   int		i,l,len;
+
+  QPRINTF(OUTPUT, "\n----- %d %s found for photometry:\n",
+	prefs.nphotinstrustr, prefs.nphotinstrustr>1?
+		"instruments":"instrument");
+  for (i=0; i<prefs.nphotinstrustr; i++)
+    {
+    QPRINTF(OUTPUT, "\nInstrument P%-2d:\n", i+1);
+    len = fitsfind(prefs.photinstrustr[i], "END     ");
+    for (l=0; l<len; l++)
+      QPRINTF(OUTPUT, "%.80s\n", prefs.photinstrustr[i]+l*80);
+    }
+
+  return;
+  }
+
 
