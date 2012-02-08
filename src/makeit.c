@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/01/2012
+*	Last modified:		08/02/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -69,13 +69,15 @@ INPUT	-.
 OUTPUT	-.
 NOTES	Global preferences are used.
 AUTHOR	E. Bertin (IAP)
-VERSION	06/12/2011
+VERSION	08/02/2012
  ***/
 void	makeit(void)
   {
    profitstruct		*profit;
    checkstruct		*check;
-   fieldstruct		**fields,**wfields,**ffields;
+   fieldstruct		**fields,**wfields,**ffields,
+			**efields,**wefields,**fefields,
+			*field,*wfield,*ffield;
    catstruct		*imacat;
    tabstruct		*imatab;
    patternstruct	*pattern;
@@ -84,10 +86,12 @@ void	makeit(void)
    static time_t        thetime1, thetime2;
    struct tm		*tm;
    PIXTYPE		interpthresh;
-   int			ext_flag[MAXFLAG],ext_image[MAXIMAGE],
+   int			ext_fimage[MAXFLAG],ext_image[MAXIMAGE],
 			ext_wimage[MAXIMAGE], nparam2[2],
-			i,t, nok, ntab, next, ntabmax, forcextflag,
-			npat, nmodels;
+			*file_index,*wfile_index,*ffile_index,*file_next,
+			*ffile_next, e,i,t, nok, ntab, previndex, ne,ext,
+			next,nfext, ntabmax, forcextflag, npat, nmodels,
+			nfield,nffield, nfieldmax,nffieldmax, nfile,nffile;
 
 /* Install error logging */
   error_installfunc(write_error);
@@ -113,7 +117,7 @@ void	makeit(void)
   NFPRINTF(OUTPUT, "Setting catalog parameters");
   thecat.obj2list = catout_readparams(prefs.param, prefs.nparam,
 					prefs.obj2_stacksize);
-  useprefs();			/* update things accor. to prefs parameters */
+  prefs_use();			/* update things accor. to prefs parameters */
 
   if (prefs.psf_flag)
     {
@@ -123,7 +127,7 @@ void	makeit(void)
       psfs[i] = psf_load(prefs.psf_name[i]);
  /*-- Need to check things up because of PSF context parameters */
     catout_updateparamflags();
-    useprefs();
+    prefs_use();
     }
 
   if (prefs.prof_flag)
@@ -227,7 +231,7 @@ void	makeit(void)
 
 /* Allocate memory for multidimensional catalog parameter arrays */
   catout_allocparams(thecat.obj2list);
-  useprefs();
+  prefs_use();
 
 /* Read extension numbers and remove them from the filenames if present */
  for (i=0; i<prefs.nimage_name; i++)
@@ -235,7 +239,7 @@ void	makeit(void)
  for (i=0; i<prefs.nwimage_name; i++)
    ext_wimage[i] = selectext(prefs.wimage_name[i]);
  for (i=0; i<prefs.nfimage_name; i++)
-   ext_flag[i] = selectext(prefs.fimage_name[i]);
+   ext_fimage[i] = selectext(prefs.fimage_name[i]);
 
 /* Use the first image to probe the number of extensions to analyse */
   if (ext_image[0] != RETURN_ERROR)
@@ -250,23 +254,131 @@ void	makeit(void)
     error(EXIT_FAILURE, "*Error*: cannot open ", prefs.image_name[0]);
   close_cat(imacat);
   imatab = imacat->tab;
-  if (!forcextflag)
-    {
-    ntabmax = imacat->ntab;
-/*-- Compute the number of valid input extensions */
-    next = 0;
-    for (ntab = 0 ; ntab<imacat->ntab; ntab++, imatab = imatab->nexttab)
-      {
-/*---- Check for the next valid image extension */
-      if ((imatab->naxis < 2)
-	|| !strncmp(imatab->xtension, "BINTABLE", 8)
-	|| !strncmp(imatab->xtension, "ASCTABLE", 8))
-        continue;
-      next++;
-      }
-    }
 
   thecat.next = next;
+
+  nfieldmax = nfile = prefs.nimage_name;
+  QMALLOC(efields, fieldstruct *, nfile);
+  QMALLOC(wefields, fieldstruct *, nfile);
+  QMALLOC(fields, fieldstruct *, nfieldmax);
+  QMALLOC(wfields, fieldstruct *, nfieldmax);
+  QMALLOC(file_index, int, nfile);
+  QMALLOC(wfile_index, int, nfile);
+  QMALLOC(file_next, int, nfile);
+  ext = 0;
+  previndex = -1;
+  for (i=0; i<nfile; i++, ext+=next)
+    {
+    if (!(imacat = read_cat(prefs.image_name[i])))
+      error(EXIT_FAILURE, "*Error*: cannot open ", prefs.image_name[i]);
+    if (!forcextflag)
+      {
+/*---- Compute the number of valid input extensions */
+      next = 0;
+      for (ntab = 0 ; ntab<imacat->ntab; ntab++, imatab = imatab->nexttab)
+        {
+/*------ Check for the next valid image extension */
+        if ((imatab->naxis < 2)
+		|| !strncmp(imatab->xtension, "BINTABLE", 8)
+		|| !strncmp(imatab->xtension, "ASCTABLE", 8))
+          continue;
+        next++;
+        }
+      }
+    if (ext+next>nfieldmax)
+      {
+      nfieldmax = (ext+next)*2;
+      QREALLOC(fields, fieldstruct *, nfieldmax);
+      QREALLOC(wfields, fieldstruct *, nfieldmax);
+      }
+    for (e=0; e<next; e++)
+      {
+      ne = ext+e;
+      field = fields[ne] = field_init(prefs.image_name[i],
+		forcextflag? ext_image[i]:e,
+		i? MEASURE_FIELD : DETECT_FIELD|MEASURE_FIELD);
+      if (previndex>=0 && (field->width != fields[previndex+e]->width
+		|| field->height != fields[previndex+e]->height))
+        error(EXIT_FAILURE, "*Error*: unexpected image size in ",
+		prefs.image_name[i]);
+/*---- Prepare image interpolation */
+      if (prefs.weight_flag[i])
+        {
+        if (prefs.interp_type[i] == INTERP_ALL)
+          init_interpolate(fields[ne], -1, -1);
+        wfield = wfields[ne] = weight_init(prefs.wimage_name[i], field,
+		forcextflag? ext_wimage[i]:e,
+		prefs.weight_type[i]);
+        interpthresh = prefs.weight_thresh[i];
+/*------ Convert the interpolation threshold to variance units */
+        weight_to_var(wfield, &interpthresh, 1);
+        wfield->weight_thresh = interpthresh;
+          if (prefs.interp_type[i] != INTERP_NONE)
+            init_interpolate(wfield, prefs.interp_xtimeout[i],
+				prefs.interp_ytimeout[i]);
+        }
+      else
+        wfields[ne] = NULL;
+      }
+
+    previndex = wfile_index[i] = file_index[i] = ext;
+    file_next[i] = next;
+    }
+
+  nfield = ext;
+
+/* Init the FLAG-images */
+  nffieldmax = nffile = prefs.nimaisoflag;
+  nfext = next;
+  if ((nffile))
+    {
+    QMALLOC(fefields, fieldstruct *, nffieldmax)
+    QMALLOC(ffields, fieldstruct *, nffile);
+    QMALLOC(ffile_index, int, nffile);
+    QMALLOC(ffile_next, int, nffile);
+    }
+  else
+    fefields = ffields = NULL;
+  ext = 0;
+  previndex = -1;
+  for (i=0; i<nffile; i++, ext+=nfext)
+    {
+    if (!(imacat = read_cat(prefs.fimage_name[i])))
+      error(EXIT_FAILURE, "*Error*: cannot open ", prefs.fimage_name[i]);
+    if (!forcextflag)
+      {
+/*---- Compute the number of valid input extensions */
+      nfext = 0;
+      for (ntab = 0 ; ntab<imacat->ntab; ntab++, imatab = imatab->nexttab)
+        {
+/*------ Check for the next valid image extension */
+        if ((imatab->naxis < 2)
+		|| !strncmp(imatab->xtension, "BINTABLE", 8)
+		|| !strncmp(imatab->xtension, "ASCTABLE", 8))
+          continue;
+        nfext++;
+        }
+      }
+    if (ext+nfext>nffieldmax)
+      {
+      nffieldmax *= 2;
+      QREALLOC(ffields, fieldstruct *, nffieldmax);
+      }
+    for (e=0; e<nfext; e++)
+      {
+      ne = ext+e;
+      ffield = ffields[ne] = field_init(prefs.fimage_name[i],
+		forcextflag? ext_fimage[i]:e, FLAG_FIELD);
+      if ((previndex>=0) && (ffield->width != ffields[previndex+e]->width
+		|| ffield->height != ffields[previndex+e]->height))
+        error(EXIT_FAILURE, "*Error*: unexpected image size in ",
+		prefs.fimage_name[i]);
+      }
+    previndex = ffile_index[i] = ext;
+    ffile_next[i] = nfext;
+    }
+
+  nffield = ext;
 
 /* Initialize the CHECK-images */
   if (prefs.check_flag)
@@ -293,123 +405,70 @@ void	makeit(void)
   if (prefs.xml_flag || prefs.cat_type==ASCII_VO)
     init_xml(next);
 
-/* Go through all images */
-  nok = -1;
-  for (ntab = 0 ; ntab<ntabmax; ntab++, imatab = imatab->nexttab)
+/* Initial time measurement*/
+  time(&thetime1);
+  thecat.currext = nok+1;
+
+/* Process one extension at a time */
+  for (e=0; e<next; e++)
     {
-/*--  Check for the next valid image extension */
-    if (!forcextflag && ((imatab->naxis < 2)
-	|| !strncmp(imatab->xtension, "BINTABLE", 8)
-	|| !strncmp(imatab->xtension, "ASCTABLE", 8)))
-      continue;
-    nok++;
-
-/*-- Initial time measurement*/
-    time(&thetime1);
-    thecat.currext = nok+1;
-
-/*-- Allocate memory to store field (image) information */
-    QCALLOC(fields, fieldstruct *, prefs.nband);
-    QCALLOC(wfields, fieldstruct *, prefs.nband);
-
-    for (i=0; i<prefs.nband; i++)
+    for (i=0; i<nfile; i++)
       {
-      if (!i)
-/*------ Load detection field (image) information */
-        fields[i] = field_init(prefs.image_name[i], DETECT_FIELD | MEASURE_FIELD,
-			ext_image[i]<0? nok:ext_image[0]);
-      else
-        {
-/*------ Load measurement field (image) information */
-        fields[i] = field_init(prefs.image_name[i], MEASURE_FIELD,
-			ext_image[i]<0? nok:ext_image[i]);
-        if ((fields[i]->width!=fields[0]->width)
-		|| (fields[i]->height!=fields[i]->height))
-          error(EXIT_FAILURE, "*Error*: Frames have different sizes","");
-        }
-/*---- Prepare image interpolation */
-      if (prefs.weight_flag[i] && prefs.interp_type[i] == INTERP_ALL)
-        init_interpolate(fields[i], -1, -1);
-      if (prefs.weight_flag[i]) 
-        {
-/*------ Load weight image information */
-        wfields[i] = weight_init(prefs.wimage_name[i], fields[i],
-			prefs.weight_type[i],
-			ext_wimage[i]<0? nok:ext_wimage[i]);
-        interpthresh = prefs.weight_thresh[i];
-/*------ Convert the interpolation threshold to variance units */
-        weight_to_var(wfields[i], &interpthresh, 1);
-        wfields[i]->weight_thresh = interpthresh;
-          if (prefs.interp_type[i] != INTERP_NONE)
-            init_interpolate(wfields[i],
-			prefs.interp_xtimeout[i], prefs.interp_ytimeout[i]);
-        }
-      }
-
-/*-- Init the FLAG-images */
-    QCALLOC(ffields, fieldstruct *, prefs.nimaflag);
-    for (i=0; i<prefs.nimaflag; i++)
-      {
-      ffields[i] = field_init(prefs.fimage_name[i], FLAG_FIELD,
-		ext_flag[i]<0? nok:ext_flag[i]);
-      if ((ffields[i]->width!=fields[0]->width)
-	|| (ffields[i]->height!=fields[0]->height))
-        error(EXIT_FAILURE,
-	"*Error*: Incompatible FLAG-map size in ", prefs.fimage_name[i]);
-      }
-
-/*-- Compute background maps for `standard' fields */
-    for (i=0; i<prefs.nband; i++)
-      {
+      efields[i]= fields[i*next+e];
+      wefields[i] = wfields[i*next+e];
       QPRINTF(OUTPUT, i? "Measurement image:":"Detection+Measurement image: ");
-      back_map(fields[i], wfields[i], prefs.wscale_flag[i]);
+      back_map(efields[i], wefields[i], prefs.wscale_flag[i]);
       if (i)
         QPRINTF(OUTPUT,
 		"Background: %-10g RMS: %-10g / Analysis threshold: %-10g \n",
-		fields[i]->backmean, fields[i]->backsig, fields[i]->thresh);
+		efields[i]->backmean, efields[i]->backsig, efields[i]->thresh);
       else
         QPRINTF(OUTPUT,
 		"Background: %-10g RMS: %-10g / Detection threshold: %-10g"
 		" / Analysis threshold: %-10g \n",
-		fields[i]->backmean, fields[i]->backsig,
-		fields[i]->dthresh, fields[i]->thresh);
+		efields[i]->backmean, efields[i]->backsig,
+		efields[i]->dthresh, efields[i]->thresh);
 
 /*---- For interpolated weight-maps, copy the background structure */
-      if (wfields[i] && wfields[i]->flags&(INTERP_FIELD|BACKRMS_FIELD))
-        back_copy(wfields[i]->reffield, wfields[i]);
+      if (wefields[i] && wefields[i]->flags&(INTERP_FIELD|BACKRMS_FIELD))
+        back_copy(wefields[i]->reffield, wefields[i]);
+
+/*---- Initialize PSF contexts and workspace */
+      if (prefs.psf_flag)
+        if (psfs[i])
+          {
+          psf_readcontext(psfs[i], efields[i]);
+          psf_init(psfs[i]);
+          fields[i]->psf = &psf[i];
+          }
       }
+
+/*-- Flag maps */
+    for (i=0; i<nffile; i++)
+      fefields[i]= ffields[i*next+e];
 
 /*-- Prepare learn and/or associations */
     if (prefs.assoc_flag)
-      init_assoc(fields[0]);
+      init_assoc(efields[0]);
 
 /*-- Update CHECK-images */
     if (prefs.check_flag)
       for (i=0; i<MAXCHECK; i++)
         if ((check=prefs.check[i]))
-          check_reinit(fields[0], check);	/* FIX */
+          check_reinit(efields[0], check);	/* FIX */
 
-/*-- Initialize PSF contexts and workspace */
-    if (prefs.psf_flag)
-      for (i=0; i<prefs.nband; i++)
-        if (psfs[i])
-          {
-          psf_readcontext(psfs[i], fields[i]);
-          psf_init(psfs[i]);
-          fields[i]->psf = &psf[i];
-          }
-
-    catout_initext(fields[0]);
+    catout_initext(efields[0]);
 
 /*-- Start the extraction pipeline */
     NFPRINTF(OUTPUT, "Scanning image");
-    scan_extract(fields, wfields, prefs.nband, ffields, prefs.nimaflag);
+    scan_extract(efields[0], wfields? wefields[0] : NULL,
+		efields, wefields, prefs.nband, fefields, prefs.nimaflag);
 
 /*-- Finish the current CHECK-image processing */
     if (prefs.check_flag)
       for (i=0; i<MAXCHECK; i++)
         if ((check=prefs.check[i]))
-          check_reend(fields[0], check);
+          check_reend(efields[0], check);
 
 /*-- Final time measurements*/
     if (time(&thetime2)!=-1)
@@ -425,25 +484,36 @@ void	makeit(void)
 
 /* --Update XML data */
     if (prefs.xml_flag || prefs.cat_type==ASCII_VO)
-      update_xml(&thecat, fields, wfields);
+      update_xml(&thecat, efields, wefields);
 
 
 /*-- Close ASSOC routines */
-    end_assoc(fields[0]);
+    end_assoc(efields[0]);
 
 /*-- End flag-images */
-    for (i=0; i<prefs.nimaflag; i++)
-      field_end(ffields[i]);
+    if ((nffile))
+      for (i=0; i<nffile; i++)
+        field_end(fefields[i]);
 /*-- End science images and weight maps */
-    for (i=0; i<prefs.nband; i++)
+    for (i=0; i<nfile; i++)
       {
-      field_end(fields[i]);
-      if (wfields[i])
-        field_end(wfields[i]);
+      field_end(efields[i]);
+      if (wefields[i])
+        field_end(wefields[i]);
       }
     QPRINTF(OUTPUT,"      Objects: detected %-8d / sextracted %-8d        \n\n",
 	thecat.ndetect, thecat.ntotal);
     }
+
+  free(efields);
+  free(wefields);
+  free(fefields);
+  free(fields);
+  free(wfields);
+  free(file_index);
+  free(wfile_index);
+  free(file_next);
+  free(ffile_next);
 
   if (nok<0)
     error(EXIT_FAILURE, "Not enough valid FITS image extensions in ",

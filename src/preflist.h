@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		06/10/2011
+*	Last modified:		18/01/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -143,6 +143,8 @@
    {""}, 1, MAXNAPER, &prefs.nflux_frac},
   {"PHOT_PETROPARAMS", P_FLOATLIST, prefs.petroparam, 0,0, 0.0,10.0,
    {""}, 2,2, &prefs.npetroparam},
+  {"PHOTINSTRU_KEY", P_STRINGLIST, prefs.photinstru_key, 0,0, 0.0,0.0,
+   {""}, 0, 32, &prefs.nphotinstru_key},
   {"PIXEL_SCALE", P_FLOAT, &prefs.pixel_scale, 0,0, 0.0, 1e+10},
   {"PSF_NAME", P_STRINGLIST, prefs.psf_name, 0,0, 0.0,0.0,
    {""}, 1, MAXIMAGE, &prefs.npsf_name},
@@ -230,6 +232,7 @@ char *default_prefs[] =
 "*",
 "#------------------------------ Photometry -----------------------------------",
 " ",
+"PHOTINSTRU_KEY   FILTER         # FITS keyword(s) defining the photom.",
 "PHOT_APERTURES   5              # MAG_APER aperture diameter(s) in pixels",
 "PHOT_AUTOPARAMS  2.5, 3.5       # MAG_AUTO parameters: <Kron_fact>,<min_radius>",
 "PHOT_PETROPARAMS 2.0, 3.5       # MAG_PETRO parameters: <Petrosian_fact>,",

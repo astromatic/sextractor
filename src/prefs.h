@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-20112 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		07/12/2011
+*	Last modified:		18/01/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -62,6 +62,9 @@ typedef struct
 /*----- catalog output */
   char		*(param[MAXLIST]);			/* catalog parameters*/
   int		nparam;					/* nb of params */
+  enum	{CAT_NONE, ASCII, ASCII_HEAD, ASCII_SKYCAT, ASCII_VO,
+	FITS_LDAC, FITS_TPX, FITS_10}
+		cat_type;				/* type of catalog */
 /*----- thresholding */
   double	dthresh[2];				/* detect. threshold */
   int		ndthresh;				/* (1 or 2 entries) */
@@ -71,7 +74,6 @@ typedef struct
 					thresh_type[2];	/* bkgnd type */
   int		nthresh_type;				/* nb of params */
 /*----- extraction */
-  int		dimage_flag;				/* detect. image ? */
   int		ext_minarea;				/* min area in pix. */
   int		ext_maxarea;				/* max area in pix. */
   int		deb_maxarea;				/* max deblend. area */
@@ -106,10 +108,11 @@ typedef struct
   int		wscale_flag[2];		/* Weight rescaling */
   int		nwscale_flag;				/* nb of params */
 /*----- photometry */
-  enum	{CAT_NONE, ASCII, ASCII_HEAD, ASCII_SKYCAT, ASCII_VO,
-	FITS_LDAC, FITS_TPX, FITS_10}
-		cat_type;				/* type of catalog */
-  enum	{PNONE, FIXED, AUTO}		apert_type;	/* type of aperture */
+  char		*(photinstru_key[72]);		/* Photom instrument keywords*/
+  int		nphotinstru_key;			/* nb of params */
+  char		**photinstrustr;		/* Photom instrument labels */
+  int		nphotinstrustr;				/* nb of params */
+  int		nphotinstrustrmax;			/* max nb of params */
   double	apert[MAXNAPER];			/* apert size (pix) */
   int		naper;					/* effective apert. */
   int		aper_size[2];				/* requested apert. */
@@ -260,9 +263,9 @@ extern char	*list_to_str(char *listname);
 
 extern int	cistrcmp(char *cs, char *ct, int mode);
 
-extern void	dumpprefs(int state),
-		endprefs(void),
-		preprefs(void),
-		readprefs(char *filename,char **argkey,char **argval,int narg),
-		useprefs(void);
+extern void	prefs_dump(int state),
+		prefs_end(void),
+		prefs_tune(void),
+		prefs_read(char *filename,char **argkey,char **argval,int narg),
+		prefs_use(void);
 #endif

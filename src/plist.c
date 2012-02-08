@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/10/2012
+*	Last modified:		12/01/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -47,7 +47,7 @@ INPUT   objlist number,
 OUTPUT  RETURN_OK if success, RETURN_FATAL_ERROR otherwise (memory overflow).
 NOTES   -.
 AUTHOR  E. Bertin (IAP & Leiden & ESO)
-VERSION 11/01/2012
+VERSION 12/01/2012
  ***/
 int	createblank(objliststruct *objlist, int no)
 
@@ -60,7 +60,6 @@ int	createblank(objliststruct *objlist, int no)
   obj = objlist->obj+no;
   pixel = objlist->plist;
   dpix = NULL;			/* To avoid gcc -Wall warnings */
-  dflag = prefs.dimage_flag;
 
   obj->subx = xmin = obj->xmin;
   obj->suby = ymin = obj->ymin;

@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1997-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1997-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		08/12/2011
+*	Last modified:		18/01/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -43,19 +43,19 @@
 
 /****** weight_init **********************************************************
 PROTO	fieldstruct *weight_init(char *filename, fieldstruct *reffield,
-			weightenum wtype, int ext)
+			int ext, weightenum wtype)
 PURPOSE	Create and initialize a new weight map.
 INPUT	Image filename,
 	pointer to reference image field,
-	weight map type,
-	position among valid extensions in FITS file.
+	position among valid extensions in FITS file,
+	weight map type.
 OUTPUT	Pointer to a new malloc'ed field structure.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	08/12/2011
+VERSION	18/01/2012
  ***/
-fieldstruct	*weight_init(char *filename, fieldstruct *reffield,
-			weightenum wtype, int nok)
+fieldstruct	*weight_init(char *filename, fieldstruct *reffield, int ext,
+			weightenum wtype)
 
   {
    fieldstruct	*wfield;
@@ -71,7 +71,7 @@ fieldstruct	*weight_init(char *filename, fieldstruct *reffield,
       break;
 
     case WEIGHT_FROMRMSMAP:
-      wfield = field_init(filename, RMS_FIELD, nok);
+      wfield = field_init(filename, ext, RMS_FIELD);
       if ((wfield->width!=reffield->width)||(wfield->height!=reffield->height))
         error(EXIT_FAILURE,
 	"*Error*: measured frame and weight map have different sizes","");
@@ -79,14 +79,14 @@ fieldstruct	*weight_init(char *filename, fieldstruct *reffield,
       break;
 
     case WEIGHT_FROMVARMAP:
-      wfield = field_init(filename, VAR_FIELD, nok);
+      wfield = field_init(filename, ext, VAR_FIELD);
       if ((wfield->width!=reffield->width)||(wfield->height!=reffield->height))
         error(EXIT_FAILURE,
 	"*Error*: measured frame and weight map have different sizes","");
       break;
 
     case WEIGHT_FROMWEIGHTMAP:
-      wfield = field_init(filename, WEIGHT_FIELD, nok);
+      wfield = field_init(filename, ext, WEIGHT_FIELD);
       if ((wfield->width!=reffield->width)||(wfield->height!=reffield->height))
         error(EXIT_FAILURE,
 	"*Error*: measured frame and weight map have different sizes","");
