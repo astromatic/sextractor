@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/01/2012
+*	Last modified:		10/02/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -40,8 +40,8 @@
 #include	"plist.h"
 
 /****** photom_aper **********************************************************
-PROTO	void photom_aper(fieldstruct *field, fieldstruct *wfield, obj2struct *obj2,
-			int aper)
+PROTO	void photom_aper(fieldstruct *field, fieldstruct *wfield,
+			obj2struct *obj2, int aper)
 PURPOSE	Measure the flux within a circular aperture.
 INPUT	Pointer to the image structure,
 	pointer to the weight-map structure,
@@ -1096,16 +1096,15 @@ INPUT	-.
 OUTPUT	-.
 NOTES	Global preferences are used.
 AUTHOR	E. Bertin (IAP)
-VERSION	18/01/2012
+VERSION	10/02/2012
  ***/
 void	print_instruinfo(void)
   {
    int		i,l,len;
 
   QPRINTF(OUTPUT, "\n----- %d %s found for photometry:\n",
-	prefs.nphotinstrustr, prefs.nphotinstrustr>1?
-		"instruments":"instrument");
-  for (i=0; i<prefs.nphotinstrustr; i++)
+	prefs.nphotinstru, prefs.nphotinstru>1? "instruments":"instrument");
+  for (i=0; i<prefs.nphotinstru; i++)
     {
     QPRINTF(OUTPUT, "\nInstrument P%-2d:\n", i+1);
     len = fitsfind(prefs.photinstrustr[i], "END     ");

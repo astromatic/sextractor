@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/01/2012
+*	Last modified:		10/02/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -189,14 +189,14 @@ INPUT	file or stream pointer.
 OUTPUT	RETURN_OK if everything went fine, RETURN_ERROR otherwise.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	25/05/2010
+VERSION	10/02/2012
  ***/
 int	write_xml_header(FILE *file)
   {
    char		*filename, *rfilename;
 
 /* A short, "relative" version of the filename */
-  filename = prefs.image_name[prefs.nimage_name>1? 1:0];
+  filename = prefs.image_name[prefs.nimage>1? 1:0];
   if (!(rfilename = strrchr(filename, '/')))
     rfilename = filename;
   else
@@ -236,7 +236,7 @@ INPUT	Pointer to the output file (or stream),
 OUTPUT	RETURN_OK if everything went fine, RETURN_ERROR otherwise.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	06/10/2011
+VERSION	10/02/2012
  ***/
 int	write_xml_meta(FILE *file, char *error)
   {
@@ -309,7 +309,7 @@ int	write_xml_meta(FILE *file, char *error)
   fprintf(file,
 	"  <PARAM name=\"Image_Name\" datatype=\"char\" arraysize=\"*\""
 	" ucd=\"obs.image;meta.fits\" value=\"%s", prefs.image_name[0]);
-  if (prefs.nimage_name>1)
+  if (prefs.nimage>1)
     fprintf(file, ",%s", prefs.image_name[1]);
   fprintf(file, "\"/>\n");
 
@@ -346,8 +346,7 @@ int	write_xml_meta(FILE *file, char *error)
   fprintf(file, "   <FIELD name=\"Extension\" datatype=\"int\""
 	" ucd=\"meta.record\"/>\n");
   fprintf(file, "   <FIELD name=\"External_Header\" datatype=\"boolean\""
-	" arraysize=\"%d\" ucd=\"meta.code\"/>\n",
-	prefs.nimage_name);
+	" arraysize=\"%d\" ucd=\"meta.code\"/>\n", prefs.nimage);
   fprintf(file, "   <FIELD name=\"Date\" datatype=\"char\" arraysize=\"*\""
 	" ucd=\"meta.record;time.event.end\"/>\n");
   fprintf(file, "   <FIELD name=\"Time\" datatype=\"char\" arraysize=\"*\""
@@ -362,31 +361,31 @@ int	write_xml_meta(FILE *file, char *error)
 	" arraysize=\"*\" ucd=\"meta.id;obs\"/>\n");
   fprintf(file, "   <FIELD name=\"Background_Mean\" datatype=\"float\""
 	" arraysize=\"%d\" ucd=\"instr.skyLevel;obs.image;stat.median\""
-	" unit=\"ct\"/>\n", prefs.nimage_name);
+	" unit=\"ct\"/>\n", prefs.nimage);
   fprintf(file, "   <FIELD name=\"Background_StDev\" datatype=\"float\""
 	" arraysize=\"%d\" ucd=\"stat.stdev;obs.image;stat.median\""
-	" unit=\"ct\"/>\n", prefs.nimage_name);
+	" unit=\"ct\"/>\n", prefs.nimage);
   fprintf(file, "   <FIELD name=\"Threshold\" datatype=\"float\""
 	" arraysize=\"%d\" ucd=\"instr.sensitivity;obs.image;stat.median\""
-	" unit=\"ct\"/>\n", prefs.nimage_name);
+	" unit=\"ct\"/>\n", prefs.nimage);
   fprintf(file, "   <FIELD name=\"Weight_Scaling\" datatype=\"float\""
 	" arraysize=\"%d\" ucd=\"arith.factor;obs.image;stat.median\"/>\n",
-	prefs.nimage_name);
+	prefs.nimage);
   fprintf(file, "   <FIELD name=\"Pixel_Scale\" datatype=\"float\""
 	" arraysize=\"%d\" ucd=\"instr.scale;obs.image;stat.mean\""
-	" unit=\"arcsec\"/>\n", prefs.nimage_name);
+	" unit=\"arcsec\"/>\n", prefs.nimage);
   fprintf(file, "   <FIELD name=\"Epoch\" datatype=\"float\""
 	" arraysize=\"%d\" ucd=\"time.epoch;obs\" unit=\"yr\"/>\n",
-	prefs.nimage_name);
+	prefs.nimage);
   fprintf(file, "   <FIELD name=\"Gain\" datatype=\"float\""
 	" arraysize=\"%d\" ucd=\"instr.param;obs.param\"/>\n",
-	prefs.nimage_name);
+	prefs.nimage);
   fprintf(file, "   <FIELD name=\"Satur_Level\" datatype=\"float\""
 	" arraysize=\"%d\" ucd=\"instr.saturation;phot.count\" unit=\"ct\"/>\n",
-	prefs.nimage_name);
+	prefs.nimage);
   fprintf(file, "   <DATA><TABLEDATA>\n");
   for (n=0; n<nxml; n++)
-    if (prefs.nimage_name>1)
+    if (prefs.nimage>1)
       fprintf(file, "     <TR>\n"
 	"      <TD>%d</TD><TD>%c %c</TD><TD>%s</TD><TD>%s</TD><TD>%.0f</TD>"
 	"<TD>%d</TD><TD>%d</TD>\n"

@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		08/02/2012
+*	Last modified:		10/02/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -57,7 +57,7 @@ INPUT	Image filename,
 OUTPUT	Pointer to a new malloc'ed field structure.
 NOTES	Global preferences are used.
 AUTHOR	E. Bertin (IAP)
-VERSION	08/02/2012
+VERSION	10/02/2012
  ***/
 fieldstruct	*field_init(char *filename, int ext, int flags)
 
@@ -148,49 +148,53 @@ fieldstruct	*field_init(char *filename, int ext, int flags)
       field->satur_level = prefs.satur_level;
     }
 
-/* Put a photometric label to the present field */
-  field->photomlabel = 0;
-/* Create dummy a FITS header to store all keyword values */
-  QMALLOC(photombuf, char, FBSIZE);
-  memset(photombuf, ' ', FBSIZE);
-  strncpy(photombuf, "END     ", 8);
-  for (s=0; s<prefs.nphotinstru_key; s++)
+  if ((flags & MEASURE_FIELD))
     {
-    fitsadd(photombuf, prefs.photinstru_key[s], "");
-/*-- Look in the main header */
-    if ((line=fitsfind(cat->tab->headbuf,prefs.photinstru_key[s]))
-        != RETURN_ERROR)
+/*-- Put a photometric label to the present field */
+    field->photomlabel = 0;
+/*-- Create dummy a FITS header to store all keyword values */
+    QMALLOC(photombuf, char, FBSIZE);
+    memset(photombuf, ' ', FBSIZE);
+    strncpy(photombuf, "END     ", 8);
+    for (s=0; s<prefs.nphotinstru_key; s++)
       {
-      fitspick(cat->tab->headbuf+line*80, str,(void *)label,&htype,&ttype, str);
-      fitswrite(photombuf, prefs.photinstru_key[s], label, htype, ttype);
+      fitsadd(photombuf, prefs.photinstru_key[s], "");
+/*---- Look in the main header */
+      if ((line=fitsfind(cat->tab->headbuf,prefs.photinstru_key[s]))
+		!= RETURN_ERROR)
+        {
+        fitspick(cat->tab->headbuf+line*80, str,(void *)label,&htype,&ttype, str);
+        fitswrite(photombuf, prefs.photinstru_key[s], label, htype, ttype);
+        }
+/*---- Override with what is in the current header */
+      if ((line=fitsfind(field->tab->headbuf,prefs.photinstru_key[s]))
+		!= RETURN_ERROR)
+        {
+        fitspick(field->tab->headbuf+line*80,str,(void *)label,&htype,&ttype,
+		str);
+        fitswrite(photombuf, prefs.photinstru_key[s], label, htype, ttype);
+        }
       }
-/*-- Override with what is in the current header */
-    if ((line=fitsfind(field->tab->headbuf,prefs.photinstru_key[s]))
-        != RETURN_ERROR)
+/*-- Compare the dummy photometric FITS header to the ones previously stored */
+    for (j=0; j<prefs.nphotinstru; j++)
+      if (!strncmp((const char *)prefs.photinstrustr[j], photombuf,
+		80*prefs.nphotinstru_key))
+        {
+        field->photomlabel = j;
+        break;
+        }
+    if (j>=prefs.nphotinstru)
       {
-      fitspick(field->tab->headbuf+line*80,str,(void *)label,&htype,&ttype,str);
-      fitswrite(photombuf, prefs.photinstru_key[s], label, htype, ttype);
+      if (prefs.nphotinstru >= prefs.nphotinstrumax)
+        {
+        prefs.nphotinstrumax += prefs.nimage;
+        QREALLOC(prefs.photinstrustr, char *, prefs.nphotinstrumax);
+        }
+      QMEMCPY(photombuf, prefs.photinstrustr[prefs.nphotinstru], char, FBSIZE);
+      field->photomlabel = prefs.nphotinstru++;
       }
+    free(photombuf);
     }
-/* Compare the dummy photometric FITS header to the ones previously stored */
-  for (j=0; j<prefs.nphotinstrustr; j++)
-    if (!strncmp((const char *)prefs.photinstrustr[j], photombuf,
-        80*prefs.nphotinstru_key))
-      {
-      field->photomlabel = j;
-      break;
-      }
-  if (j>=prefs.nphotinstrustr)
-    {
-    if (prefs.nphotinstrustr >= prefs.nphotinstrustrmax)
-      {
-      prefs.nphotinstrustrmax += prefs.nimage_name;
-      QREALLOC(prefs.photinstrustr, char *, prefs.nphotinstrustrmax);
-      }
-    QMEMCPY(photombuf, prefs.photinstrustr[prefs.nphotinstrustr], char, FBSIZE);
-    field->photomlabel = prefs.nphotinstrustr++;
-    }
-  free(photombuf);
 
 /* Background */
   if (flags & (DETECT_FIELD|MEASURE_FIELD|WEIGHT_FIELD|VAR_FIELD|RMS_FIELD))

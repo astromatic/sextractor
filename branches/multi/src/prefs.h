@@ -54,11 +54,10 @@ typedef struct
   char		**command_line;				/* Command line */
   int		ncommand_line;				/* nb of params */
   char		prefs_name[MAXCHAR];			/* prefs filename*/
-  char		*(image_name[MAXIMAGE]);			/* image filenames */
-  int		nimage_name;				/* nb of params */
+  char		*(image_name[MAXIMAGE]);		/* image filenames */
+  int		nimage;					/* nb of images */
   char		cat_name[MAXCHAR];			/* catalog filename*/
   char		head_suffix[MAXCHAR];			/* ext. header suffix */
-  int		nband;					/* Number of channels*/
 /*----- catalog output */
   char		*(param[MAXLIST]);			/* catalog parameters*/
   int		nparam;					/* nb of params */
@@ -108,11 +107,11 @@ typedef struct
   int		wscale_flag[2];		/* Weight rescaling */
   int		nwscale_flag;				/* nb of params */
 /*----- photometry */
+  int		nphotinstru;				/* nb of channels */
   char		*(photinstru_key[72]);		/* Photom instrument keywords*/
   int		nphotinstru_key;			/* nb of params */
   char		**photinstrustr;		/* Photom instrument labels */
-  int		nphotinstrustr;				/* nb of params */
-  int		nphotinstrustrmax;			/* max nb of params */
+  int		nphotinstrumax;				/* max nb of params */
   double	apert[MAXNAPER];			/* apert size (pix) */
   int		naper;					/* effective apert. */
   int		aper_size[2];				/* requested apert. */

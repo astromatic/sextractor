@@ -617,11 +617,13 @@ void	prefs_use(void)
   prefs.epoch = 2000.0;
 
 /*-------------------------------- Photometry ------------------------------*/
-
 /* Field label strings */
-  prefs.nphotinstrustrmax = prefs.nimage_name;
-  QCALLOC(prefs.photinstrustr, char *, prefs.nphotinstrustrmax);
-  prefs.nphotinstrustr = 0;
+  if (!prefs.nphotinstrumax)
+    {
+    prefs.nphotinstrumax = prefs.nimage;
+    QCALLOC(prefs.photinstrustr, char *, prefs.nphotinstrumax);
+    prefs.nphotinstru = 0;
+    }
 
 /* Find the largest APERture-photometry vector */
   if (FLAG(obj2.flux_aper))
@@ -798,10 +800,10 @@ void	prefs_use(void)
   else
     strcpy(thecat.nnw_name, prefs.nnw_name);
 
-  if ((str=strrchr(prefs.image_name[prefs.nimage_name-1], '/')))
+  if ((str=strrchr(prefs.image_name[prefs.nimage-1], '/')))
     strcpy(thecat.image_name, str+1);
   else
-    strcpy(thecat.image_name, prefs.image_name[prefs.nimage_name-1]);
+    strcpy(thecat.image_name, prefs.image_name[prefs.nimage-1]);
 
   sprintf(thecat.soft_name, "%s %s", BANNER, VERSION);
 
@@ -816,7 +818,7 @@ INPUT	-.
 OUTPUT	-.
 NOTES	Global preferences are used.
 AUTHOR	E. Bertin (IAP)
-VERSION	18/01/2012
+VERSION	10/02/2012
  ***/
 void	prefs_end(void)
 
@@ -825,10 +827,10 @@ void	prefs_end(void)
 
   if (prefs.photinstrustr)
     {
-    for (i=0; i<prefs.nphotinstrustr; i++)
+    for (i=0; i<prefs.nphotinstru; i++)
       free(prefs.photinstrustr[i]);
     free(prefs.photinstrustr);
-    prefs.nphotinstrustr = 0;
+    prefs.nphotinstru = 0;
     }
   for (i=0; i<prefs.nparam; i++)
       free(prefs.param[i]);
