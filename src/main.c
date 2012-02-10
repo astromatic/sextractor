@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		23/11/2011
+*	Last modified:		10/02/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -48,7 +48,16 @@ EXECUTABLE " <image> [<image2>][-c <configuration_file>][-<keyword> <value>]\n" 
 
 extern const char       notokstr[];
 
-/********************************** main ************************************/
+/****** main *****************************************************************
+PROTO	void main(int argc, char *argv[])
+PURPOSE	Main function (called from the shell).
+INPUT	Number of arguments (including the executable name),
+	array of strings.
+OUTPUT	EXIT_SUCCESS in case of success, EXIT_FAILURE otherwise.
+NOTES	Global preferences are used.
+AUTHOR	E. Bertin (IAP)
+VERSION	10/02/2012
+ ***/
 int	main(int argc, char *argv[])
 
   {
@@ -73,7 +82,7 @@ setlinebuf(stdout);
   prefs.command_line = argv;
   prefs.ncommand_line = argc;
   prefs.pipe_flag = 0;
-  prefs.nimage_name = 1;
+  prefs.nimage = 1;
   prefs.image_name[0] = "image";
   strcpy(prefs.prefs_name, "default.sex");
   narg = nim = 0;
@@ -131,7 +140,7 @@ setlinebuf(stdout);
             prefs.image_name[nim] = str;
           else
             error(EXIT_FAILURE, "*Error*: Too many input images: ", str);
-      prefs.nimage_name = nim;
+      prefs.nimage = nim;
       a--;
       }
     }
