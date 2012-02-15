@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-20112 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		18/01/2012
+*	Last modified:		15/02/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -102,6 +102,7 @@ typedef struct
   int		nwimage_name;				/* nb of params */
   weightenum	weight_type[MAXIMAGE];			/* weighting scheme */
   int		nweight_type;				/* nb of params */
+  int		weights_flag;				/* weight at all? */
   int		weight_flag[MAXIMAGE];			/* do we weight ? */
   int		weightgain_flag;			/* weight gain? */
   int		wscale_flag[2];		/* Weight rescaling */

@@ -727,8 +727,10 @@ void	prefs_use(void)
         prefs.pattern_flag = 1;
 
 /*----------------------------- WEIGHT-images ------------------------------*/
+  prefs.weights_flag = 0;
   for (i=0; i<prefs.nweight_type; i++)
-    prefs.weight_flag[i] = (prefs.weight_type[1]!= WEIGHT_NONE);
+    prefs.weights_flag |=
+	(prefs.weight_flag[i] = (prefs.weight_type[1]!= WEIGHT_NONE));
 /*
   if (prefs.weight_flag[0])
     {

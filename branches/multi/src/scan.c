@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		08/02/2012
+*	Last modified:		15/02/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -785,7 +785,7 @@ INPUT   Objlist pointer,
 OUTPUT  -.
 NOTES   -.
 AUTHOR  E. Bertin (IAP)
-VERSION 11/01/2012
+VERSION 15/02/2012
  ***/
 void  scan_preanalyse(objliststruct *objlist, int no, int analyse_type)
 
@@ -844,7 +844,6 @@ void  scan_preanalyse(objliststruct *objlist, int no, int analyse_type)
   obj->fdnpix = (LONG)fdnpix;
   obj->fdflux = (float)rv;
   obj->fdpeak = cpeak;
-  obj->dpeak = peak;
   obj->xmin = xmin;
   obj->xmax = xmax;
   obj->ymin = ymin;
@@ -919,7 +918,6 @@ void  scan_preanalyse(objliststruct *objlist, int no, int analyse_type)
     pmy2-=temp;
 
     obj->dnpix = (obj->flag & OBJ_OVERFLOW)? obj->fdnpix:(LONG)dnpix;
-    obj->dflux = tv;
     obj->mx = xm+xmin;	/* add back xmin */
     obj->my = ym+ymin;	/* add back ymin */
     obj->mx2 = xm2;

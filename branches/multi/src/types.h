@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/01/2012
+*	Last modified:		15/02/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -99,15 +99,13 @@ typedef struct
   int		npix;				/* "" in measured frame */
   int		nzdwpix;			/* nb of zero-dweights around */
   int		nzwpix;				/* nb of zero-weights inside */
-  float		fdflux;				/* integrated ext. flux */
-  float		dflux;				/* integrated det. flux */
-  float		flux;				/* integrated mes. flux */
-  float		fluxerr;			/* integrated variance */
+  float		fdflux;				/* filtered data flux */
+  float		dflux;				/* detection data flux */
+  float		dfluxerr;			/* detection data variance */
   PIXTYPE	fdpeak;				/* peak intensity (ADU) */
   PIXTYPE	dpeak;				/* peak intensity (ADU) */
-  PIXTYPE	peak;				/* peak intensity (ADU) */
-/* ---- astrometric data */
-  int		peakx,peaky;			/* pos of brightest pix */
+/* ---- basic astrometric data */
+  int		dpeakx,dpeaky;			/* pos of brightest pix */
   double       	mx, my;				/* barycenter */
   double	poserr_mx2, poserr_my2,
 		poserr_mxy;			/* Error ellips moments */
@@ -146,10 +144,8 @@ typedef struct obj2
   int		npix;				/* "" in measured frame */
   int		nzdwpix;			/* nb of zero-dweights around */
   int		nzwpix;				/* nb of zero-weights inside */
-  float		fdflux;				/* integrated ext. flux */
-  float		dflux;				/* integrated det. flux */
-  float		flux;				/* integrated mes. flux */
-  float		fluxerr;			/* integrated variance */
+  float		dflux;				/* detection data flux */
+  float		dfluxerr;			/* detection data flux error */
   PIXTYPE	fdpeak;				/* peak intensity (ADU) */
   PIXTYPE	dpeak;				/* peak intensity (ADU) */
   PIXTYPE	peak;				/* peak intensity (ADU) */
@@ -181,6 +177,8 @@ typedef struct obj2
   int		immin[2];			/* Image data min coords */
   int		immax[2];			/* Image data max coords */
 /* ---- photometric data */
+  double	*flux;				/* internal flux array */
+  double	*fluxerr;			/* internal flux error array */
   float		flux_iso;			/* ISO integrated flux */
   float		fluxerr_iso;			/* RMS error on ISO flux */
   float		mag_iso;			/* ISO mag */

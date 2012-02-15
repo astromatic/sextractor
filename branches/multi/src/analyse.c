@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/01/2012
+*	Last modified:		15/02/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -72,7 +72,7 @@ INPUT	Pointer to an array of image field pointers,
 OUTPUT	-.
 NOTES	Requires access to the global preferences.
 AUTHOR	E. Bertin (IAP)
-VERSION	11/01/2012
+VERSION	15/02/2012
  ***/
 void  analyse_iso(fieldstruct **fields, fieldstruct **wfields, int nfield,
 			objliststruct *objlist, int n)
@@ -155,8 +155,8 @@ dthresh = field->dthresh;
     if (pospeakflag && cdpix>cdpeak)
       {
       cdpeak=cdpix;
-      obj->peakx =  PLIST(pixt,x) + 1;
-      obj->peaky =  PLIST(pixt,y) + 1;
+      obj->dpeakx =  PLIST(pixt,x) + 1;
+      obj->dpeaky =  PLIST(pixt,y) + 1;
       }
     if (PLISTEXIST(var))
       {
@@ -279,11 +279,11 @@ dthresh = field->dthresh;
     }
 
   obj->npix = area;
-  obj->flux = tv;
-  obj->fluxerr = sigtv;
-  obj->peak = peak;
+  obj->dflux = tv;
+  obj->dfluxerr = sigtv;
+  obj->dpeak = peak;
   obj->thresh = minthresh - obj->dbkg;
-  obj->peak -= obj->dbkg;
+  obj->dpeak -= obj->dbkg;
 
 /* Initialize isophotal thresholds so as to sample optimally the full profile*/
 
@@ -295,12 +295,12 @@ dthresh = field->dthresh;
     memset(obj->iso, 0, NISO*sizeof(int));
     if (prefs.detect_type == PHOTO)
       for (i=0; i<NISO; i++)
-        threshs[i] = obj->thresh + (obj->peak-obj->thresh)*i/NISO;
+        threshs[i] = obj->thresh + (obj->dpeak-obj->thresh)*i/NISO;
     else
       {
-      if (obj->peak>0.0 && obj->thresh>0.0)
+      if (obj->dpeak>0.0 && obj->thresh>0.0)
         for (i=0; i<NISO; i++)
-          threshs[i] = obj->thresh*pow(obj->peak/obj->thresh, (double)i/NISO);
+          threshs[i] = obj->thresh*pow(obj->dpeak/obj->thresh, (double)i/NISO);
       else
         for (i=0; i<NISO; i++)
           threshs[i] = 0.0;
@@ -328,7 +328,7 @@ dthresh = field->dthresh;
     {
      PIXTYPE	thresh0;
 
-    thresh0 = obj->peak/5.0;
+    thresh0 = obj->dpeak/5.0;
     if (thresh0<obj->thresh)
       thresh0 = obj->thresh;
     if (thresh0>0.0)
@@ -393,7 +393,7 @@ INPUT	Pointer to an array of image field pointers,
 OUTPUT  -.
 NOTES   Global preferences are used.
 AUTHOR  E. Bertin (IAP)
-VERSION 11/01/2012
+VERSION 15/01/2012
  ***/
 void analyse_final(fieldstruct **fields, fieldstruct **wfields,
 			int nfield, objliststruct *objlist, int iobj)
@@ -525,7 +525,7 @@ INPUT	Pointer to an array of image field pointers,
 OUTPUT  New obj2 pointer.
 NOTES   -.
 AUTHOR  E. Bertin (IAP)
-VERSION 11/01/2012
+VERSION 15/02/2012
  ***/
 obj2struct	*analyse_obj2obj2(fieldstruct **fields, fieldstruct **wfields,
 			int nfield, objstruct *obj, obj2liststruct *obj2list)
@@ -547,11 +547,14 @@ obj2struct	*analyse_obj2obj2(fieldstruct **fields, fieldstruct **wfields,
 /*-- Local backgrounds */
   for (i=0; i<nfield; i++)
     {
-    obj2->bkg[i] = (float)back_interpolate(fields[i], obj->mx, obj->my);
+    if (FLAG(obj2.bkg))
+      obj2->bkg[i] = (float)back_interpolate(fields[i], obj->mx, obj->my);
     obj2->dbkg[i] = 0.0;
     if (prefs.pback_type == LOCAL)
       {
       obj2->dbkg[i] = back_local(fields[i], obj, &sigbkg);
+      if (FLAG(obj2.bkg))
+        obj2->bkg[i] += obj2->dbkg[i];
       obj2->sigbkg[i] = sigbkg<0.0? fields[i]->backsig : sigbkg;          
       }
     else
@@ -566,15 +569,12 @@ obj2struct	*analyse_obj2obj2(fieldstruct **fields, fieldstruct **wfields,
   obj2->npix = obj->npix;
   obj2->nzdwpix = obj->nzdwpix;
   obj2->nzwpix = obj->nzwpix;
-  obj2->fdflux = obj->fdflux;
   obj2->dflux = obj->dflux;
-  obj2->flux = obj->flux;
-  obj2->fluxerr = obj->fluxerr;
+  obj2->dfluxerr = obj->dfluxerr;
   obj2->fdpeak = obj->fdpeak;
-  obj2->dpeak = obj->dpeak;
-  obj2->peak = obj->peak;
-  obj2->peakx = obj->peakx;
-  obj2->peaky = obj->peaky;
+  obj2->peak = obj->dpeak;
+  obj2->peakx = obj->dpeakx;
+  obj2->peaky = obj->dpeaky;
   obj2->mx = obj->mx;
   obj2->my = obj->my;
 /* Integer coordinates */
@@ -638,7 +638,7 @@ obj2struct	*analyse_obj2obj2(fieldstruct **fields, fieldstruct **wfields,
     if (obj->blank)
       {
       deblankimage(obj->blank, obj->subw, obj->subh,
-		obj2->image[i], obj2->imsize[0],obj2->imsize[1], idx,idy);
+		obj2->image[0], obj2->imsize[0],obj2->imsize[1], idx,idy);
       free(obj->blank);
       }
     }
@@ -796,8 +796,8 @@ dfield = dwfield = wfield = NULL;
 /*------------------------------- Photometry -------------------------------*/
 
 /* Convert the father of photom. error estimates from variance to RMS */
-  obj2->flux_iso = obj2->flux;
-  obj2->fluxerr_iso = sqrt(obj2->fluxerr);
+  obj2->flux_iso = obj2->dflux;
+  obj2->fluxerr_iso = sqrt(obj2->dfluxerr);
 
   if (FLAG(obj2.flux_isocor))
     photom_isocor(field, obj2);
@@ -970,7 +970,7 @@ INPUT   Pointer to an array of image field pointers,
 OUTPUT  -.
 NOTES   -.
 AUTHOR  E. Bertin (IAP)
-VERSION 11/01/2012
+VERSION 15/02/2012
  ***/
 void	analyse_group(fieldstruct **fields, fieldstruct **wfields,
 			int nfield, obj2struct *fobj2)
@@ -1039,7 +1039,7 @@ void	analyse_group(fieldstruct **fields, fieldstruct **wfields,
 			"%c%c%c%c%c%c%c%c\n",
 	obj2->number, obj2->mx+1.0, obj2->my+1.0,
 	obj2->a, obj2->b,
-	obj2->flux,
+	obj2->dflux,
 	obj2->flag&OBJ_CROWDED?'C':'_',
 	obj2->flag&OBJ_MERGED?'M':'_',
 	obj2->flag&OBJ_SATUR?'S':'_',
