@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/01/2012
+*	Last modified:		15/02/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -239,7 +239,7 @@ INPUT   Pointer to the input object,
 OUTPUT  -.
 NOTES   -.
 AUTHOR  E. Bertin (IAP)
-VERSION 21/12/2011
+VERSION 15/02/2012
  ***/
 void	clean_merge(objstruct *objin, objstruct *objout)
 
@@ -266,19 +266,16 @@ void	clean_merge(objstruct *objin, objstruct *objout)
   objout->dnpix += objin->dnpix;
   objout->fdflux += objin->fdflux;
   objout->dflux += objin->dflux;
-  objout->flux += objin->flux;
-  objout->fluxerr += objin->fluxerr;
+  objout->dfluxerr += objin->dfluxerr;
 
   if (objin->fdpeak>objout->fdpeak)
     {
     objout->fdpeak = objin->fdpeak;
-    objout->peakx = objin->peakx;
-    objout->peaky = objin->peaky;
+    objout->dpeakx = objin->dpeakx;
+    objout->dpeaky = objin->dpeaky;
     }
   if (objin->dpeak>objout->dpeak)
     objout->dpeak = objin->dpeak;
-  if (objin->peak>objout->peak)
-    objout->peak = objin->peak;
 
   if (objin->xmin<objout->xmin)
     objout->xmin = objin->xmin;

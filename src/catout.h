@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 2011 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 2011-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		18/07/2011
+*	Last modified:		14/02/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -32,6 +32,10 @@
 
 obj2liststruct	*catout_readparams(char **paramlist, int nparam,
 						int nobj2);
+
+int		catout_allocother(obj2liststruct *obj2list, void *flagobj2elem,
+				int nbytes),
+		catout_freeother(obj2liststruct *obj2list, void *flagobj2elem);
 
 void		catout_allocparams(obj2liststruct *obj2list),
 		catout_changeparamsize(char *keyword, int *axisn, int naxis),		

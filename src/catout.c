@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		10/01/2012
+*	Last modified:		15/02/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -62,7 +62,7 @@ INPUT	Array of pointers to strings containing the measurement parameters,
 OUTPUT	Pointer to the allocated obj2list.
 NOTES	Requires access to the objtab and obj2key static pointers.
 AUTHOR	E. Bertin (IAP)
-VERSION	07/12/2011
+VERSION	15/02/2012
  ***/
 obj2liststruct	*catout_readparams(char **paramlist, int nparam, int nobj2)
   {
@@ -175,23 +175,21 @@ INPUT	keyword string,
 OUTPUT	-.
 NOTES	Requires access to the obj2key static pointer.
 AUTHOR	E. Bertin (IAP)
-VERSION	09/10/2011
+VERSION	15/02/2012
  ***/
 void	catout_changeparamsize(char *keyword, int *axisn, int naxis)
   {
    keystruct	*key;
-   int		i,k, size;
+   int		i,k;
 
   if ((k = findkey(keyword,(char *)obj2key,sizeof(keystruct)))!=RETURN_ERROR)
     {
     key = obj2key+k;
     if (key->naxis)
       {
-      size = t_size[key->ttype];
       key->naxis = naxis;
       for (i=0; i<naxis; i++)
-        size *= (key->naxisn[i]=axisn[i]);
-      key->nbytes = size;
+        key->naxisn[i]=axisn[i];
       }
     }
 
@@ -206,14 +204,14 @@ INPUT	Pointer to the obj2list.
 OUTPUT	-.
 NOTES	Requires access to the obj2key static pointer.
 AUTHOR	E. Bertin (IAP)
-VERSION	09/10/2011
+VERSION	15/02/2012
  ***/
 void	catout_allocparams(obj2liststruct *obj2list)
   {
    obj2struct	*obj2;
    keystruct	*key, *key2;
    char		**ptr;
-   int		k,o, nkeys, ptroffset;
+   int		i,k,o, nkeys, ptroffset, size;
 
 /* Allocate arrays for multidimensional measurement parameters */
 /* Note that they do not need to be selected for catalog output */
@@ -221,18 +219,25 @@ void	catout_allocparams(obj2liststruct *obj2list)
   for (key=obj2key; *key->name; key++)
     if (key->naxis && *((char *)key->ptr))
       {
+      size=t_size[key->ttype];
+      for (i=0; i<key->naxis; i++)
+        size *= key->naxisn[i];
+      key->nbytes = size;
       ptroffset = (char *)key->ptr-(char *)&flagobj2;
       obj2 = obj2list->obj2;
       for (o=obj2list->nobj2; o--; obj2++)
         {
         ptr = (char **)((char *)obj2 + ptroffset);
-        QCALLOC(*ptr, char, key->nbytes);
+        QCALLOC(*ptr, char, size);
 /*------ Now the tricky part: we replace the pointer to the array pointer */
-/*------ with the array pointer itself */
+/*------ with the array pointer itself when applicable */
         key2=obj2->keys;
         for (k=nkeys; k--; key2++)
           if (key2->ptr == ptr)
+            {
             key2->ptr = *ptr;
+            key2->nbytes = size;
+            }
         }
       }
 
@@ -247,7 +252,7 @@ INPUT	Pointer to the obj2list.
 OUTPUT	-.
 NOTES	Requires access to the obj2key static pointer.
 AUTHOR	E. Bertin (IAP)
-VERSION	09/10/2011
+VERSION	15/02/2012
  ***/
 void	catout_freeparams(obj2liststruct *obj2list)
   {
@@ -264,12 +269,85 @@ void	catout_freeparams(obj2liststruct *obj2list)
       obj2 = obj2list->obj2;
       for (o=obj2list->nobj2; o--; obj2++)
         {
-        ptr = (char **)obj2 + ptroffset;
+        ptr = (char **)((char *)obj2 + ptroffset);
         free(*ptr);
         }
       }
 
   return;
+  }
+
+
+/****** catout_allocother *************************************************
+PROTO	int	catout_allocother(obj2liststruct *obj2list, void *flagobj2elem,
+				int nbytes)
+PURPOSE	Allocate an array in the obj2 structure that does not correspond
+	to a measurement parameter.
+INPUT	Pointer to the obj2list,
+	pointer to the flagobj2 element pointer which must be allocated.
+	number of bytes to be allocated
+OUTPUT	RETURN_OK if pointers were not already allocated, or RETURN_ERROR
+	otherwise.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	14/02/2012
+ ***/
+int	catout_allocother(obj2liststruct *obj2list, void *flagobj2elem,
+				int nbytes)
+  {
+   obj2struct	*obj2;
+   char		**ptr;
+   int		o, ptroffset;
+
+   if (*(char *)flagobj2elem)
+     return RETURN_ERROR;
+
+   ptroffset = (char *)flagobj2elem - (char *)&flagobj2;
+   obj2 = obj2list->obj2;
+   for (o=obj2list->nobj2; o--; obj2++)
+     {
+     ptr = (char **)((char *)obj2 + ptroffset);
+     QCALLOC(*ptr, char, nbytes);
+     }
+
+  *(char *)flagobj2elem = 1;
+
+  return RETURN_OK;
+  }
+
+
+/****** catout_freeother *************************************************
+PROTO	int	catout_freeother(obj2liststruct *obj2list, void *flagobj2elem)
+PURPOSE	Free an array in the obj2 structure that does not correspond
+	to a measurement parameter.
+INPUT	Pointer to the obj2list,
+	pointer to the flagobj2 element pointer which must be free'ed.
+OUTPUT	RETURN_OK if pointers were already allocated, or RETURN_ERROR otherwise.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	15/02/2012
+ ***/
+int	catout_freeother(obj2liststruct *obj2list, void *flagobj2elem)
+  {
+   obj2struct	*obj2;
+   char		**ptr;
+   int		o, ptroffset;
+
+  if (!*(char *)flagobj2elem)
+    return RETURN_ERROR;
+
+/* Free arrays allocated for multidimensional measurement parameters */
+  ptroffset = (char *)flagobj2elem - (char *)&flagobj2;
+  obj2 = obj2list->obj2;
+  for (o=obj2list->nobj2; o--; obj2++)
+    {
+    ptr = (char **)((char *)obj2 + ptroffset);
+    free(*ptr);
+    }
+
+  *(char *)flagobj2elem = 0;
+
+  return RETURN_OK;
   }
 
 
@@ -280,7 +358,7 @@ INPUT	Pointer to the obj2list.
 OUTPUT	-.
 NOTES	Requires access to the flagobj2 static pointer.
 AUTHOR	E. Bertin (IAP)
-VERSION	10/01/2012
+VERSION	15/02/2012
  ***/
 void	catout_updateparamflags(void)
 
@@ -546,6 +624,7 @@ void	catout_updateparamflags(void)
     }
 
 /*------------------------------ Astrometry ---------------------------------*/
+  FLAG(obj2.posx) = FLAG(obj2.posy) = 1;	/* Always required! */
   FLAG(obj2.win_aw) |= FLAG(obj2.win_bw) | FLAG(obj2.win_polarw);
   FLAG(obj2.win_cxxw) |= FLAG(obj2.win_cyyw) | FLAG(obj2.win_cxyw);
   FLAG(obj2.win_thetas) |= FLAG(obj2.win_theta1950)
@@ -674,7 +753,8 @@ void	catout_updateparamflags(void)
 
   FLAG(obj2.hl_radius) |= FLAG(obj2.winpos_x) | prefs.prof_flag;
 
-  FLAG(obj2.flux_auto)  |= FLAG(obj2.mag_auto) | FLAG(obj2.magerr_auto)
+  FLAG(obj2.fluxerr_auto) |= FLAG(obj2.magerr_auto);
+  FLAG(obj2.flux_auto)  |= FLAG(obj2.mag_auto)
 			| FLAG(obj2.fluxerr_auto)
 			| FLAG(obj2.kronfactor)
 			| FLAG(obj2.flux_best)
@@ -749,6 +829,9 @@ void	catout_updateparamflags(void)
 
   if (FLAG(obj2.flux_psf))
     prefs.psffit_flag = 1;
+
+/*---------------------------- Sky background -------------------------------*/
+  FLAG(obj2.bkg) = 1;			/* Always required */
 
 /*--------------------------------- ASSOC ----------------------------------*/
   prefs.assoc_flag = FLAG(obj2.assoc) || FLAG(obj2.assoc_number);

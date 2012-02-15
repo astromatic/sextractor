@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		10/02/2012
+*	Last modified:		15/02/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -70,7 +70,7 @@ INPUT	-.
 OUTPUT	-.
 NOTES	Global preferences are used.
 AUTHOR	E. Bertin (IAP)
-VERSION	10/02/2012
+VERSION	15/02/2012
  ***/
 void	makeit(void)
   {
@@ -399,6 +399,17 @@ void	makeit(void)
 
 /* Allocate memory for multidimensional catalog parameter arrays */
   catout_allocparams(thecat.obj2list);
+/* Allocate memory for other arrays (not catalogue measurements) */
+  catout_allocother(thecat.obj2list, &flagobj2.image, nimage*sizeof(PIXTYPE *));
+  if (prefs.weights_flag)
+    catout_allocother(thecat.obj2list, &flagobj2.weight,
+					 nimage*sizeof(PIXTYPE *));
+  catout_allocother(thecat.obj2list, &flagobj2.dbkg, nimage*sizeof(float));
+  catout_allocother(thecat.obj2list, &flagobj2.sigbkg, nimage*sizeof(float));
+  catout_allocother(thecat.obj2list, &flagobj2.flux,
+					prefs.nphotinstru*sizeof(double));
+  catout_allocother(thecat.obj2list, &flagobj2.fluxerr,
+					prefs.nphotinstru*sizeof(double));
   prefs_use();
 
 
@@ -512,13 +523,16 @@ void	makeit(void)
 
   free(efields);
   free(wefields);
-  free(fefields);
   free(fields);
   free(wfields);
   free(file_index);
   free(wfile_index);
   free(file_next);
-  free(ffile_next);
+  if ((nfimage))
+    {
+    free(fefields);
+    free(ffile_next);
+    }
 
   if (nok<0)
     error(EXIT_FAILURE, "Not enough valid FITS image extensions in ",
@@ -551,10 +565,12 @@ void	makeit(void)
 
 /* End PSFs */
   if (prefs.psf_flag)
+    {
     for (i=0; i<nfield; i++)
       if (psfs[i])
         psf_end(psfs[i], NULL);
-  free(psfs);
+    free(psfs);
+    }
 
 /* End classification neural network */
   if (FLAG(obj2.sprob))
@@ -573,8 +589,18 @@ void	makeit(void)
   if (prefs.xml_flag)
     write_xml(prefs.xml_name);
 
+/* Free memory allocated for arrays that are not catalogue measurements */
+  catout_freeother(thecat.obj2list, &flagobj2.image);
+  if (prefs.weights_flag)
+    catout_freeother(thecat.obj2list, &flagobj2.weight);
+  catout_freeother(thecat.obj2list, &flagobj2.dbkg);
+  catout_freeother(thecat.obj2list, &flagobj2.sigbkg);
+  catout_freeother(thecat.obj2list, &flagobj2.flux);
+  catout_freeother(thecat.obj2list, &flagobj2.fluxerr);
+
 /* End catalog */
   catout_end((char *)NULL);
+
 
   if (prefs.xml_flag || prefs.cat_type==ASCII_VO)
     end_xml();

@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		10/02/2012
+*	Last modified:		15/02/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -530,21 +530,21 @@ INPUT	Pointer to an array of image field pointers,
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	11/01/2012
+VERSION	15/02/2012
  ***/
 void  photom_auto(fieldstruct **fields, fieldstruct **wfields,
 			int nfield, obj2struct *obj2)
 
   {
    fieldstruct		*field, *wfield;
-   double		sigtv, tv, r1, v1,var,gain,backnoise2;
+   double		sigtv, tv, wv, r1, v1,var,gain,backnoise2;
    float		ngamma, mx,my, dx,dy, cx2,cy2,cxy, r2,klim2,
 			dxlim, dylim;
    PIXTYPE		*image,*imaget, *weight,*weightt,
 			pix, wthresh=0.0;
    int			i, area,areab, x,y, x2,y2, xmin,xmax,ymin,ymax,
-			fymin,fymax, w,h,
-			pflag, corrflag, gainflag, pos;
+			fymin,fymax, w,h, band, nband, pos,
+			pflag, corrflag, gainflag;
 
 /* field is the detection field */
   field = fields[0];
@@ -637,6 +637,10 @@ void  photom_auto(fieldstruct **fields, fieldstruct **wfields,
         }
       }
     }
+
+  nband = prefs.nphotinstru;
+  for (band=0; band<nband; band++)
+    obj2->flux[band] = obj2->fluxerr[band] = 0.0;
 
   area += areab;
   if (area)
@@ -773,31 +777,46 @@ void  photom_auto(fieldstruct **fields, fieldstruct **wfields,
         if (!gainflag && gain > 0.0 && tv>0.0)
           sigtv += tv/gain;
         }
-      }
 
-    obj2->flux_auto[i] = tv;
-    obj2->fluxerr_auto[i] = sqrt(sigtv);
+      band = fields[i]->photomlabel;
+      wv = sigtv>0.0? 1.0/sigtv : 0.0;
+      obj2->flux[band] += wv*tv;
+      obj2->fluxerr[band] += wv;
+      }
     }
   else
-/*---- No available pixels: set the flux to zero */
+/*---- No available pixels */
     {
-    obj2->kronfactor = 0.0;
-    for (i=0; i<nfield; i++)
-      obj2->flux_auto[i] = obj2->fluxerr_auto[i] = 0.0;
     }
+
+  nband = prefs.nphotinstru;
+  for (band=0; band<nband; band++)
+    if (obj2->fluxerr[band]>0.0)
+      {
+      obj2->flux_auto[band] = obj2->flux[band] / obj2->fluxerr[band];
+      }
+    else
+      obj2->flux_auto[band] = 0.0;
+
+  if (FLAG(obj2.fluxerr_auto))
+    for (band=0; band<nband; band++)
+      if (obj2->fluxerr[band]>0.0)
+        obj2->fluxerr_auto[band] = sqrtf(1.0/obj2->fluxerr[band]);
+      else
+        obj2->fluxerr_auto[band] = 0.0;
 
 /*-- MAG_AUTO is computed here for being ready for use in variable PSF models */
 
   if (FLAG(obj2.mag_auto))
-    for (i=0; i<nfield; i++)
-      obj2->mag_auto[i] = obj2->flux_auto[i]>0.0?
-			 -2.5*log10(obj2->flux_auto[i]) + prefs.mag_zeropoint
-			:99.0;
-  if (FLAG(obj2.magerr_auto[i]))
-    for (i=0; i<nfield; i++)
-      obj2->magerr_auto[i] = obj2->flux_auto[i]>0.0?
-			 1.086*obj2->fluxerr_auto[i]/obj2->flux_auto[i]
-			:99.0;
+    for (band=0; band<nband; band++)
+      obj2->mag_auto[band] = obj2->flux_auto[band]>0.0?
+		 -2.5*log10(obj2->flux_auto[band]) + prefs.mag_zeropoint
+		:99.0;
+  if (FLAG(obj2.magerr_auto))
+    for (band=0; band<nband; band++)
+      obj2->magerr_auto[band] = obj2->flux_auto[band]>0.0?
+		 1.086*obj2->fluxerr_auto[band]/obj2->flux_auto[band]
+		:99.0;
 
   return;
   }
@@ -811,31 +830,31 @@ INPUT	Pointer to the image structure,
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	06/10/2011
+VERSION	15/02/2012
  ***/
 void  photom_isocor(fieldstruct *field, obj2struct *obj2)
   {
    double	ati;
 
-  ati = (obj2->flux>0.0)? (obj2->fdnpix*obj2->dthresh/obj2->flux) : 0.0;
+  ati = (obj2->flux_iso>0.0)? (obj2->fdnpix*obj2->dthresh/obj2->flux_iso) : 0.0;
   if (ati>1.0)
     ati = 1.0;
   else if (ati<0.0)
     ati = 0.0;
-  obj2->flux_isocor = obj2->flux/(1.0-0.196099*ati-0.751208*ati*ati);
+  obj2->flux_isocor = obj2->flux_iso/(1.0-0.196099*ati-0.751208*ati*ati);
   if (FLAG(obj2.fluxerr_isocor))
     {
-    if (obj2->flux>0.0)
+    if (obj2->flux_iso>0.0)
       {
        double	dati, sigtv;
 
-      sigtv = obj2->fluxerr/(obj2->flux*obj2->flux);
+      sigtv = obj2->fluxerr_iso/(obj2->flux_iso*obj2->flux_iso);
       dati = obj2->fdnpix?ati*sqrt(sigtv+1.0/obj2->fdnpix): 0.0;
       dati = 0.196099*dati + 0.751208*2*ati*dati;
-      obj2->fluxerr_isocor = sqrt(sigtv+dati*dati)*obj2->flux;
+      obj2->fluxerr_isocor = sqrt(sigtv+dati*dati)*obj2->flux_iso;
       }
     else
-      obj2->fluxerr_isocor = sqrt(obj2->fluxerr);
+      obj2->fluxerr_isocor = sqrt(obj2->fluxerr_iso);
     }
 
   return;
