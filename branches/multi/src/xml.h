@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/01/2012
+*	Last modified:		24/02/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -61,12 +61,14 @@ typedef struct
 
 /*------------------------------- functions ---------------------------------*/
 
-extern int		end_xml(void),
-			init_xml(int next),
-			update_xml(sexcatstruct *sexcat, fieldstruct **fields,
+extern int		xml_end(void),
+			xml_init(int next),
+			xml_update(sexcatstruct *sexcat, fieldstruct **fields,
 			fieldstruct **wfields),
-			write_xml(char *filename),
-			write_xml_header(FILE *file),
-			write_xml_meta(FILE *file, char *error);
+			xml_write(char *filename),
+			xml_write_configparam(FILE *file, char *name,
+				char *unit, char *ucd, char *format),
+			xml_write_header(FILE *file),
+			xml_write_meta(FILE *file, char *error);
 
-extern void		write_xmlerror(char *filename, char *error);
+extern void		xml_write_error(char *filename, char *error);

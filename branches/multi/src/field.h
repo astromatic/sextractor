@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		08/02/2012
+*	Last modified:		21/03/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -55,9 +55,11 @@ typedef struct field
   tabstruct	*tab;			/* FITS extension structure */
   int		bitpix;			/* FITS image bitpix (for metadata) */
 /* ---- main image parameters */
+  int		flags;			/* flags defining the field type */
+  int		imindex;		/* image file index */
+  int		ext;			/* FITS extension index */
   int		width, height;		/* x,y size of the field */
   KINGSIZE_T	npix;			/* total number of pixels */
-  double	ngamma;			/* normalized photo gamma */
   int		nlevels;		/* nb of quantification levels */
   float		pixmin, pixmax;		/* min and max values in frame */
   int		y;			/* y current position in field */
@@ -75,13 +77,17 @@ typedef struct field
 /* ---- astrometric parameters */
   struct wcs	*wcs;			/* astrometric data */
   struct structassoc	*assoc;		/* ptr to the assoc-list */
-  int		flags;			/* flags defining the field type */
   double	pixscale;		/* pixel size in arcsec.pix-1 */
   double	epoch;			/* epoch of coordinates */
 /* ---- photometric parameters */
   int		photomlabel;		/* photometric label index */
+  detectorenum	detector_type;		/* type of detector (CCD, PHOTO) */
+  double	mag_zeropoint;		/* magnitude zero-point */
+  double	flux_factor;		/* flux factor for combined photometry*/
+  double	ngamma;			/* normalized photo gamma */
   double	gain;			/* conversion factor in e-/ADU */
   double	satur_level;		/* saturation level in ADUs */
+  int		weightgain_flag;	/* weight changes are gain changes? */
 /* ---- background parameters */
   float		*back;			/* ptr to the background map in mem */
   float		*dback;			/* ptr to the background deriv. map */
@@ -114,9 +120,10 @@ typedef struct field
 
 /*------------------------------- functions ---------------------------------*/
 
-void		field_end(fieldstruct *field);
+void		field_end(fieldstruct *field),
+		field_printinfo(fieldstruct *field, fieldstruct *wfield);
 
 fieldstruct	*field_inherit(fieldstruct *infield, int flags),
-		*field_init(char *filename, int ext, int flags);
+		*field_init(char *filename, int imindex, int ext, int flags);
 
 #endif

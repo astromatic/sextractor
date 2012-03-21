@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		10/02/2012
+*	Last modified:		21/03/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -56,14 +56,15 @@ INPUT	Number of arguments (including the executable name),
 OUTPUT	EXIT_SUCCESS in case of success, EXIT_FAILURE otherwise.
 NOTES	Global preferences are used.
 AUTHOR	E. Bertin (IAP)
-VERSION	10/02/2012
+VERSION	21/03/2012
  ***/
 int	main(int argc, char *argv[])
 
   {
    double	tdiff, lines, dets;
-   int		a, narg, nim, opt, opt2;
-   char		**argkey, **argval, *str;
+   char		**argkey, **argval,
+		*str, *listbuf;
+   int		a, narg, nim,ntok, opt, opt2;
 
 setlinebuf(stdout);
  if (argc<2)
@@ -135,11 +136,14 @@ setlinebuf(stdout);
       {
 /*---- The input image filename(s) */
       for(; (a<argc) && (*argv[a]!='-'); a++)
-        for (str=NULL;(str=strtok(str?NULL:argv[a], notokstr)); nim++)
+        {
+        str = (*argv[a] == '@'? listbuf=list_to_str(argv[a]+1) : argv[a]);
+        for (ntok=0; (str=strtok(ntok?NULL:str, notokstr)); nim++,ntok++)
           if (nim<MAXIMAGE)
             prefs.image_name[nim] = str;
           else
             error(EXIT_FAILURE, "*Error*: Too many input images: ", str);
+        }
       prefs.nimage = nim;
       a--;
       }
@@ -163,8 +167,8 @@ setlinebuf(stdout);
 /* Display computing time / statistics */
   NFPRINTF(OUTPUT, "");
   tdiff = prefs.time_diff>0.0? prefs.time_diff : 0.001;
-  lines = (double)thefield1.height/tdiff;
-  dets = (double)thecat.ntotal/tdiff;
+  lines = (double)thecat.nlinesum/tdiff;
+  dets = (double)thecat.ntotalsum/tdiff;
   NPRINTF(OUTPUT,
 	"> All done (in %.1f s: %.1f line%s/s , %.1f detection%s/s)\n",
 	prefs.time_diff, lines, lines>1.0? "s":"", dets, dets>1.0? "s":"");

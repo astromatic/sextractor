@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		15/02/2012
+*	Last modified:		20/03/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -72,7 +72,7 @@ INPUT	Pointer to an array of image field pointers,
 OUTPUT	-.
 NOTES	Requires access to the global preferences.
 AUTHOR	E. Bertin (IAP)
-VERSION	15/02/2012
+VERSION	07/03/2012
  ***/
 void  analyse_iso(fieldstruct **fields, fieldstruct **wfields, int nfield,
 			objliststruct *objlist, int n)
@@ -108,7 +108,7 @@ void  analyse_iso(fieldstruct **fields, fieldstruct **wfields, int nfield,
   pospeakflag = FLAG(obj2.peakx);
   gain = field->gain;
   ngamma = field->ngamma;
-  photoflag = (prefs.detect_type==PHOTO);
+  photoflag = (field->detector_type==DETECTOR_PHOTO);
   gainflag = PLISTEXIST(var) && prefs.weightgain_flag;
 
   h = minarea = prefs.ext_minarea;
@@ -231,7 +231,7 @@ dthresh = field->dthresh;
 
 /* Flagging from the flag-map */
   if (PLISTEXIST(flag))
-    getflags(obj, pixel);
+    flag_get(obj, pixel);
 
 /* Flag and count pixels with a low weight */
   if (PLISTEXIST(wflag))
@@ -293,7 +293,7 @@ dthresh = field->dthresh;
      PIXTYPE	*thresht;
 
     memset(obj->iso, 0, NISO*sizeof(int));
-    if (prefs.detect_type == PHOTO)
+    if (field->detector_type == DETECTOR_PHOTO)
       for (i=0; i<NISO; i++)
         threshs[i] = obj->thresh + (obj->dpeak-obj->thresh)*i/NISO;
     else
@@ -474,7 +474,7 @@ void analyse_final(fieldstruct **fields, fieldstruct **wfields,
   }
 
 
-/****** analyse_overlapness ******************************************************
+/****** analyse_overlapness ***************************************************
 PROTO	obj2struct analyse_overlapness(objliststruct *objlist, int iobj)
 PURPOSE Link together overlapping detections.
 INPUT   objliststruct pointer,
@@ -525,7 +525,7 @@ INPUT	Pointer to an array of image field pointers,
 OUTPUT  New obj2 pointer.
 NOTES   -.
 AUTHOR  E. Bertin (IAP)
-VERSION 15/02/2012
+VERSION 16/03/2012
  ***/
 obj2struct	*analyse_obj2obj2(fieldstruct **fields, fieldstruct **wfields,
 			int nfield, objstruct *obj, obj2liststruct *obj2list)
@@ -533,7 +533,7 @@ obj2struct	*analyse_obj2obj2(fieldstruct **fields, fieldstruct **wfields,
    fieldstruct *field;
    obj2struct	*obj2;
    float	sigbkg;
-   int		i, idx,idy;
+   int		f, idx,idy, npix;
 
   obj2 = obj2list->freeobj2;
   if (obj2->nextobj2)
@@ -545,20 +545,22 @@ obj2struct	*analyse_obj2obj2(fieldstruct **fields, fieldstruct **wfields,
     return NULL;
 
 /*-- Local backgrounds */
-  for (i=0; i<nfield; i++)
+  for (f=0; f<nfield; f++)
     {
     if (FLAG(obj2.bkg))
-      obj2->bkg[i] = (float)back_interpolate(fields[i], obj->mx, obj->my);
-    obj2->dbkg[i] = 0.0;
+      obj2->bkg[f] = (float)back_interpolate(fields[f], obj->mx, obj->my);
+    obj2->dbkg[f] = 0.0;
     if (prefs.pback_type == LOCAL)
       {
-      obj2->dbkg[i] = back_local(fields[i], obj, &sigbkg);
+      obj2->dbkg[f] = back_local(fields[f], obj, &sigbkg);
       if (FLAG(obj2.bkg))
-        obj2->bkg[i] += obj2->dbkg[i];
-      obj2->sigbkg[i] = sigbkg<0.0? fields[i]->backsig : sigbkg;          
+        obj2->bkg[f] += obj2->dbkg[f];
+      obj2->sigbkg[f] = sigbkg<0.0? fields[f]->backsig : sigbkg;          
       }
     else
-      obj2->sigbkg[i] = fields[i]->backsig;
+      obj2->sigbkg[f] = fields[f]->backsig;
+    if (FLAG(obj2.wflag))
+      obj2->wflag[f] = obj->wflag;
     }
 /* field is the detection field */
   field = fields[0];
@@ -589,11 +591,13 @@ obj2struct	*analyse_obj2obj2(fieldstruct **fields, fieldstruct **wfields,
   obj2->xmax = obj->xmax;
   obj2->ymin = obj->ymin;
   obj2->ymax = obj->ymax;
-  obj2->flag = obj->flag;
-  obj2->wflag = obj->wflag;
-  memcpy(obj2->imaflag, obj->imaflag, prefs.imaflag_size*sizeof(FLAGTYPE));
+  obj2->flags = obj->flag;
   obj2->singuflag = obj->singuflag;
-  memcpy(obj2->imanflag, obj->imanflag, prefs.imanflag_size*sizeof(int));
+  if (FLAG(obj2.imaflags))
+    {
+    memcpy(obj2->imaflags, obj->imaflags, prefs.nfimage*sizeof(FLAGTYPE));
+    memcpy(obj2->imanflags, obj->imanflags, prefs.nfimage*sizeof(int));
+    }
   obj2->mx2 = obj->mx2;
   obj2->my2 = obj->my2;
   obj2->mxy = obj->mxy;
@@ -611,39 +615,137 @@ obj2struct	*analyse_obj2obj2(fieldstruct **fields, fieldstruct **wfields,
   obj2->fwhm = obj->fwhm;
 
 /* Copy image data around current object */
-  obj2->imsize[0] = 2.0*(obj2->xmax-obj2->xmin)+1+2*field->stripmargin;
-  obj2->imsize[1] = 2.0*(obj2->ymax-obj2->ymin)+1+2*field->stripmargin;
-  obj2->immin[0] = obj2->ix - obj2->imsize[0]/2;
-  obj2->immin[1] = obj2->iy - obj2->imsize[1]/2;
-  obj2->immax[0] = obj2->immin[0] + obj2->imsize[0];
-  obj2->immax[1] = obj2->immin[1] + obj2->imsize[1];
-  for (i=0; i<nfield; i++)
+  for (f=0; f<nfield; f++)
     {
-    QMALLOC(obj2->image[i], PIXTYPE, obj2->imsize[0]*obj2->imsize[1]);
-    copyimage(fields[i], obj2->image[i], obj2->imsize[0],obj2->imsize[1],
+    obj2->imxsize[f] = 2.0*(obj2->xmax-obj2->xmin)+1+2*field->stripmargin;
+    obj2->imysize[f] = 2.0*(obj2->ymax-obj2->ymin)+1+2*field->stripmargin;
+    obj2->imxmin[f] = obj2->ix - obj2->imxsize[f]/2;
+    obj2->imymin[f] = obj2->iy - obj2->imysize[f]/2;
+    obj2->imxmax[f] = obj2->imxmin[f] + obj2->imxsize[f];
+    obj2->imymax[f] = obj2->imymin[f] + obj2->imysize[f];
+    npix = obj2->imxsize[f]*obj2->imysize[f];
+    QMALLOC(obj2->image[f], PIXTYPE, npix);
+    copyimage(fields[f], obj2->image[f], obj2->imxsize[f],obj2->imysize[f],
 	obj2->ix,obj2->iy);
-    if (wfields && wfields[i])
+    if (wfields && wfields[f])
       {
-      QMALLOC(obj2->weight[i], PIXTYPE, obj2->imsize[0]*obj2->imsize[1]);
-      copyimage(wfields[i], obj2->weight[i], obj2->imsize[0],obj2->imsize[1],
+      QMALLOC(obj2->weight[f], PIXTYPE, obj2->imxsize[f]*obj2->imysize[f]);
+      copyimage(wfields[f], obj2->weight[f], obj2->imxsize[f],obj2->imysize[f],
 	obj2->ix,obj2->iy);
-      }
-    }
-/* if BLANKing is on, paste back the object pixels in the image*/
-  if (prefs.blank_flag)
-    {
-/*-- Compute coordinates of blank start in object image */
-    idx = obj->subx - obj2->immin[0];
-    idy = obj->suby - obj2->immin[1];
-    if (obj->blank)
-      {
-      deblankimage(obj->blank, obj->subw, obj->subh,
-		obj2->image[0], obj2->imsize[0],obj2->imsize[1], idx,idy);
-      free(obj->blank);
       }
     }
 
+/* if BLANKing is on, paste back the object pixels in the image*/
+  if (prefs.blank_flag && obj->blank)
+    {
+    deblankimage(obj->blank, obj->subw, obj->subh,
+		obj2->image[0], obj2->imxsize[0],obj2->imysize[0],
+		obj->subx - obj2->imxmin[0], obj->suby - obj2->imymin[0]);
+    free(obj->blank);
+    }
+
   return obj2;
+  }
+
+
+/****** analyse_group ********************************************************
+PROTO	void analyse_group(fieldstruct **fields, fieldstruct **wfields,
+			int nfield, obj2struct *fobj2)
+PURPOSE Perform measurements on a group of detections.
+INPUT   Pointer to an array of image field pointers,
+	pointer to an array of weight-map field pointers,
+	number of images,
+	obj2struct pointer.
+OUTPUT  -.
+NOTES   -.
+AUTHOR  E. Bertin (IAP)
+VERSION 15/02/2012
+ ***/
+void	analyse_group(fieldstruct **fields, fieldstruct **wfields,
+			int nfield, obj2struct *fobj2)
+  {
+   fieldstruct	*field, *wfield;
+   obj2struct	*obj2, *modobj2;
+   int		i;
+
+/* field is the detection field */
+  field = fields[0];
+  wfield = wfields? wfields[0]:NULL;
+
+  if (prefs.prof_flag)
+    {
+/*-- Setup model fitting for this group */
+    for (obj2=fobj2; obj2; obj2=obj2->nextobj2)
+      {
+      photom_auto(fields, wfields, nfield, obj2);
+      growth_aver(fields, wfields, nfield, obj2);
+      obj2->profit = profit_init(field, wfield,
+		obj2, thepsf, prefs.prof_modelflags);
+      }
+    for (obj2=fobj2; obj2; obj2=obj2->nextobj2)
+      {
+      photom_auto(fields, wfields, nfield, obj2);
+      growth_aver(fields, wfields, nfield, obj2);
+      }
+    if (fobj2->nextobj2)
+      {
+/*---- Iterative multiple fit if several sources overlap */
+      for (i=0; i<ANALYSE_NMULTITER; i++)
+        {
+        for (obj2=fobj2; obj2; obj2=obj2->nextobj2)
+          profit_fit(obj2->profit, obj2);
+        for (obj2=fobj2; obj2; obj2=obj2->nextobj2)
+          {
+          if (i)
+            profit_copyobjpix(obj2->profit, field, wfield, obj2);
+          for (modobj2=fobj2; modobj2; modobj2=modobj2->nextobj2)
+            if (modobj2 != obj2)
+              profit_submodpix(obj2->profit, modobj2->profit, 0.9);
+          }
+        }
+/*
+      for (obj2=fobj2; obj2; obj2=obj2->nextobj2)
+        for (modobj2=fobj2; modobj2; modobj2=modobj2->nextobj2)
+          if (modobj2 != obj2)
+            addtobig(modobj2->profit->lmodpix,
+		modobj2->profit->objnaxisn[0],modobj2->profit->objnaxisn[1],
+		obj2->image, obj2->imsize[0], obj2->imsize[1],
+		modobj2->profit->ix-obj2->ix, modobj2->profit->iy-obj2->iy,
+		-1.0);
+*/
+      }
+    else
+/*---- One single source */
+      profit_fit(fobj2->profit, fobj2);
+    }
+
+/* Full source analysis and catalogue output */
+  for (obj2=fobj2; obj2; obj2=obj2->nextobj2)
+    if (analyse_full(fields, wfields, nfield, obj2) == RETURN_OK)
+      {
+/*---- Catalogue output */
+      FPRINTF(OUTPUT, "%8d %6.1f %6.1f %5.1f %5.1f %12g "
+			"%c%c%c%c%c%c%c%c\n",
+	obj2->number, obj2->mx+1.0, obj2->my+1.0,
+	obj2->a, obj2->b,
+	obj2->dflux,
+	obj2->flags&OBJ_CROWDED?'C':'_',
+	obj2->flags&OBJ_MERGED?'M':'_',
+	obj2->flags&OBJ_SATUR?'S':'_',
+	obj2->flags&OBJ_TRUNC?'T':'_',
+	obj2->flags&OBJ_APERT_PB?'A':'_',
+	obj2->flags&OBJ_ISO_PB?'I':'_',
+	obj2->flags&OBJ_DOVERFLOW?'D':'_',
+	obj2->flags&OBJ_OVERFLOW?'O':'_');
+      catout_writeobj(obj2);
+      }
+
+/* Deallocate memory used for model-fitting */
+  if (prefs.prof_flag)
+    for (obj2=fobj2; obj2; obj2=obj2->nextobj2)
+      profit_end(obj2->profit);
+
+  return;
   }
 
 
@@ -658,7 +760,7 @@ INPUT   Pointer to an array of image field pointers,
 OUTPUT  RETURN_OK if the object has been processed, RETURN_ERROR otherwise.
 NOTES   -.
 AUTHOR  E. Bertin (IAP)
-VERSION 10/01/2012
+VERSION 20/03/2012
  ***/
 int	analyse_full(fieldstruct **fields, fieldstruct **wfields,
 			int nfield, obj2struct *obj2)
@@ -806,9 +908,8 @@ dfield = dwfield = wfield = NULL;
     for (i=0; i<prefs.naper; i++)
       photom_aper(field, wfield, obj2, i);
 
-  if (FLAG(obj2.flux_auto))
-    for (i=0; i<nfield; i++)
-      photom_auto(fields, wfields, nfield, obj2);
+  if ((prefs.auto_flag))
+    photom_auto(fields, wfields, nfield, obj2);
 
   if (FLAG(obj2.flux_petro))
     photom_petro(field, dfield, wfield, dwfield, obj2);
@@ -818,20 +919,22 @@ dfield = dwfield = wfield = NULL;
   if (FLAG(obj2.peakxf) || FLAG(obj2.peakxw))
     astrom_peakpos(field, obj2);
   if (obj2->peak+obj2->bkg[0] >= field->satur_level)
-    obj2->flag |= OBJ_SATUR;
+      obj2->flags |= OBJ_SATUR;
+
 /* Estimate of shape */
   growth_aver(fields, wfields, nfield, obj2);
 /* Get a good estimate of position and flux */
-  compute_winpos(field, wfield, obj2);
+  if ((prefs.win_flag))
+    win_pos(fields, wfields, nfield, obj2);
 /* Express positions in FOCAL or WORLD coordinates */
   if (FLAG(obj2.winpos_xf) || FLAG(obj2.winpos_xw))
-    astrom_winpos(field, obj2);
+    astrom_winpos(fields, nfield, obj2);
 /* Express shape parameters in the FOCAL or WORLD frame */
   if (FLAG(obj2.win_mx2w))
-    astrom_winshapeparam(field, obj2);
+    astrom_winshapeparam(fields, nfield, obj2);
 /* Express position error parameters in the FOCAL or WORLD frame */
   if (FLAG(obj2.winposerr_mx2w))
-    astrom_winerrparam(field, obj2);
+    astrom_winerrparam(fields, nfield, obj2);
 
 /* Check-image CHECK_APERTURES option */
   if ((check = prefs.check[CHECK_APERTURES]))
@@ -843,15 +946,15 @@ dfield = dwfield = wfield = NULL;
 
     if (FLAG(obj2.flux_auto))
       sexellipse(check->pix, check->width, check->height,
-		obj2->mx, obj2->my, obj2->a*obj2->kronfactor,
-		obj2->b*obj2->kronfactor, obj2->theta,
-		check->overlay, obj2->flag&OBJ_CROWDED);
+		obj2->mx, obj2->my, obj2->a*obj2->auto_kronfactor,
+		obj2->b*obj2->auto_kronfactor, obj2->theta,
+		check->overlay, obj2->flags&OBJ_CROWDED);
 
     if (FLAG(obj2.flux_petro))
       sexellipse(check->pix, check->width, check->height,
 		obj2->mx, obj2->my, obj2->a*obj2->petrofactor,
 		obj2->b*obj2->petrofactor, obj2->theta,
-		check->overlay, obj2->flag&OBJ_CROWDED);
+		check->overlay, obj2->flags&OBJ_CROWDED);
     }
 
 /*----------------------------- Model fitting -----------------------------*/
@@ -956,107 +1059,6 @@ dfield = dwfield = wfield = NULL;
   obj2->analtime = (float)(counter_seconds() - analtime1);
 
   return RETURN_OK;
-  }
-
-
-/****** analyse_group ********************************************************
-PROTO	void analyse_group(fieldstruct **fields, fieldstruct **wfields,
-			int nfield, obj2struct *fobj2)
-PURPOSE Perform measurements on a group of detections.
-INPUT   Pointer to an array of image field pointers,
-	pointer to an array of weight-map field pointers,
-	number of images,
-	obj2struct pointer.
-OUTPUT  -.
-NOTES   -.
-AUTHOR  E. Bertin (IAP)
-VERSION 15/02/2012
- ***/
-void	analyse_group(fieldstruct **fields, fieldstruct **wfields,
-			int nfield, obj2struct *fobj2)
-  {
-   fieldstruct	*field, *wfield;
-   obj2struct	*obj2, *modobj2;
-   int		i;
-
-/* field is the detection field */
-  field = fields[0];
-  wfield = wfields? wfields[0]:NULL;
-
-  if (prefs.prof_flag)
-    {
-/*-- Setup model fitting for this group */
-    for (obj2=fobj2; obj2; obj2=obj2->nextobj2)
-      {
-      photom_auto(fields, wfields, nfield, obj2);
-      growth_aver(fields, wfields, nfield, obj2);
-      obj2->profit = profit_init(field, wfield,
-		obj2, thepsf, prefs.prof_modelflags);
-      }
-    for (obj2=fobj2; obj2; obj2=obj2->nextobj2)
-      {
-      photom_auto(fields, wfields, nfield, obj2);
-      growth_aver(fields, wfields, nfield, obj2);
-      }
-    if (fobj2->nextobj2)
-      {
-/*---- Iterative multiple fit if several sources overlap */
-      for (i=0; i<ANALYSE_NMULTITER; i++)
-        {
-        for (obj2=fobj2; obj2; obj2=obj2->nextobj2)
-          profit_fit(obj2->profit, obj2);
-        for (obj2=fobj2; obj2; obj2=obj2->nextobj2)
-          {
-          if (i)
-            profit_copyobjpix(obj2->profit, field, wfield, obj2);
-          for (modobj2=fobj2; modobj2; modobj2=modobj2->nextobj2)
-            if (modobj2 != obj2)
-              profit_submodpix(obj2->profit, modobj2->profit, 0.9);
-          }
-        }
-/*
-      for (obj2=fobj2; obj2; obj2=obj2->nextobj2)
-        for (modobj2=fobj2; modobj2; modobj2=modobj2->nextobj2)
-          if (modobj2 != obj2)
-            addtobig(modobj2->profit->lmodpix,
-		modobj2->profit->objnaxisn[0],modobj2->profit->objnaxisn[1],
-		obj2->image, obj2->imsize[0], obj2->imsize[1],
-		modobj2->profit->ix-obj2->ix, modobj2->profit->iy-obj2->iy,
-		-1.0);
-*/
-      }
-    else
-/*---- One single source */
-      profit_fit(fobj2->profit, fobj2);
-    }
-
-/* Full source analysis and catalogue output */
-  for (obj2=fobj2; obj2; obj2=obj2->nextobj2)
-    if (analyse_full(fields, wfields, nfield, obj2) == RETURN_OK)
-      {
-/*---- Catalogue output */
-      FPRINTF(OUTPUT, "%8d %6.1f %6.1f %5.1f %5.1f %12g "
-			"%c%c%c%c%c%c%c%c\n",
-	obj2->number, obj2->mx+1.0, obj2->my+1.0,
-	obj2->a, obj2->b,
-	obj2->dflux,
-	obj2->flag&OBJ_CROWDED?'C':'_',
-	obj2->flag&OBJ_MERGED?'M':'_',
-	obj2->flag&OBJ_SATUR?'S':'_',
-	obj2->flag&OBJ_TRUNC?'T':'_',
-	obj2->flag&OBJ_APERT_PB?'A':'_',
-	obj2->flag&OBJ_ISO_PB?'I':'_',
-	obj2->flag&OBJ_DOVERFLOW?'D':'_',
-	obj2->flag&OBJ_OVERFLOW?'O':'_');
-      catout_writeobj(obj2);
-      }
-
-/* Deallocate memory used for model-fitting */
-  if (prefs.prof_flag)
-    for (obj2=fobj2; obj2; obj2=obj2->nextobj2)
-      profit_end(obj2->profit);
-
-  return;
   }
 
 

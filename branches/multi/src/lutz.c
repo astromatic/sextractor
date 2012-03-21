@@ -371,7 +371,7 @@ INPUT	Pointer to detection info,
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	21/12/2011
+VERSION	15/03/2012
  ***/
 void	lutz_update(infostruct *infoptr1, infostruct *infoptr2,
 		pliststruct *pixel)
@@ -401,7 +401,7 @@ INPUT	-.
 OUTPUT	-.
 NOTES	Global preferences are used.
 AUTHOR	E. Bertin (IAP)
-VERSION	11/01/2012
+VERSION	15/03/2012
  ***/
 /*
 Build the object structure.

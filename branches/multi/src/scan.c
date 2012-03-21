@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		15/02/2012
+*	Last modified:		07/03/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -42,6 +42,7 @@
 #include	"back.h"
 #include	"check.h"
 #include	"clean.h"
+#include	"deblend.h"
 #include	"filter.h"
 #include	"image.h"
 #include	"lutz.h"
@@ -64,7 +65,7 @@ INPUT	Pointer to the detection image field,
 OUTPUT	-.
 NOTES	Global preferences are used.
 AUTHOR	E. Bertin (IAP)
-VERSION	08/02/2012
+VERSION	07/03/2012
  ***/
 void	scan_extract(fieldstruct *dfield, fieldstruct *dwfield,
 			fieldstruct **fields, fieldstruct **wfields, int nfield,
@@ -136,7 +137,7 @@ void	scan_extract(fieldstruct *dfield, fieldstruct *dwfield,
   QMALLOC(end, int, stacksize);
   blankpad = bpt = NULL;
   lutz_alloc(w,h);
-  allocparcelout();
+  deblend_alloc();
 
 /* Some initializations */
 
@@ -616,7 +617,7 @@ void	scan_extract(fieldstruct *dfield, fieldstruct *dwfield,
 /*Free memory */
   if (prefs.filter_flag && dwfield && PLISTEXIST(wflag))
     free(cwscanp);
-  freeparcelout();
+  deblend_free();
   free(pixel);
   lutz_free();
   free(info);
@@ -646,7 +647,7 @@ INPUT	Pointer to an array of image field pointers,
 OUTPUT	-.
 NOTES	Global preferences are used.
 AUTHOR	E. Bertin (IAP)
-VERSION	11/01/2012
+VERSION	07/03/2012
  ***/
 void	scan_output(fieldstruct **fields, fieldstruct **wfields, int nfield,
 		infostruct *info, objliststruct *objlist)
@@ -688,7 +689,7 @@ void	scan_output(fieldstruct **fields, fieldstruct **wfields, int nfield,
 
   if (!(obj.flag & OBJ_OVERFLOW) && (createsubmap(objlist, 0) == RETURN_OK))
     {
-    if (parcelout(objlist, &objlistd) == RETURN_OK)
+    if (deblend_parcelout(objlist, &objlistd) == RETURN_OK)
       objlistout = &objlistd;
     else
       {

@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		18/01/2012
+*	Last modified:		21/03/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -54,7 +54,6 @@
 #include	"prefs.h"
 #include	"preflist.h"
 #include	"fits/fitscat.h"
-
 
 /****** prefs_dump ***********************************************************
 PROTO	void prefs_dump(int state)
@@ -92,7 +91,7 @@ INPUT	Configuration file name,
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	18/01/2012
+VERSION	21/02/2012
  ***/
 void    prefs_read(char *filename, char **argkey, char **argval, int narg)
 
@@ -121,7 +120,6 @@ void    prefs_read(char *filename, char **argkey, char **argval, int narg)
   for (i=0; key[i].name[0]; i++)
     strcpy(keylist[i], key[i].name);
   keylist[i][0] = '\0';
-
 
 /*Scan the configuration file*/
 
@@ -267,7 +265,7 @@ void    prefs_read(char *filename, char **argkey, char **argval, int narg)
             break;
 
           case P_BOOLLIST:
-            if (value && *value=='@')
+             if (value && *value=='@')
               value = strtok(listbuf = list_to_str(value+1), notokstr);
             for (i=0; i<MAXLIST&&value&&value[0]!=(char)'#'; i++)
               {
@@ -333,7 +331,7 @@ void    prefs_read(char *filename, char **argkey, char **argval, int narg)
 			!= RETURN_ERROR)
                 ((int *)(key[nkey].ptr))[i] = ival;
               else
-                 {
+                {
                 sprintf(errstr, "*Error*: %s set to an unknown keyword: ",
 			keyword);
                 error(EXIT_FAILURE, errstr, value);
@@ -585,19 +583,28 @@ INPUT	-.
 OUTPUT	-.
 NOTES	Global preferences are used.
 AUTHOR	E. Bertin (IAP)
-VERSION	18/01/2012
+VERSION	21/03/2012
  ***/
 void	prefs_use(void)
 
   {
-   int			i, margin, naper;
-   char			*str;
+   int			i,j, last, margin;
+   char			*pstr;
 
 /*-------------------------------- Images ----------------------------------*/
 
 /*-------------------------------- Extracting ------------------------------*/
   if (prefs.nthresh_type<2)
     prefs.thresh_type[1] = prefs.thresh_type[0];
+
+  if (prefs.ndetector_type<prefs.nimage)
+    {
+    last = prefs.ndetector_type - 1;
+    for (i=prefs.ndetector_type; i<prefs.nimage; i++)
+      prefs.detector_type[i] = prefs.detector_type[last];
+    prefs.ndetector_type = prefs.nimage;
+    }
+
 
 /*-------------------------------- Deblending ------------------------------*/
   prefs.deb_maxarea = (prefs.ext_minarea<MAXDEBAREA ?
@@ -617,6 +624,34 @@ void	prefs_use(void)
   prefs.epoch = 2000.0;
 
 /*-------------------------------- Photometry ------------------------------*/
+
+/* Detector gain */
+  if (prefs.ngain != prefs.nimage)
+    {
+    last = prefs.ngain-1;
+    for (i=prefs.ngain; i<prefs.nimage; i++)
+      prefs.gain[i] = prefs.gain[last];
+    prefs.ngain = prefs.nimage;
+    }
+
+/* Saturation level */
+  if (prefs.nsatur_level != prefs.nimage)
+    {
+    last = prefs.nsatur_level-1;
+    for (i=prefs.nsatur_level; i<prefs.nimage; i++)
+      prefs.satur_level[i] = prefs.satur_level[last];
+    prefs.nsatur_level = prefs.nimage;
+    }
+
+/* Magnitude zero-point */
+  if (prefs.nmag_zeropoint != prefs.nimage)
+    {
+    last = prefs.nmag_zeropoint-1;
+    for (i=prefs.nmag_zeropoint; i<prefs.nimage; i++)
+      prefs.mag_zeropoint[i] = prefs.mag_zeropoint[last];
+    prefs.nmag_zeropoint = prefs.nimage;
+    }
+
 /* Field label strings */
   if (!prefs.nphotinstrumax)
     {
@@ -625,42 +660,19 @@ void	prefs_use(void)
     prefs.nphotinstru = 0;
     }
 
-/* Find the largest APERture-photometry vector */
-  if (FLAG(obj2.flux_aper))
-    {
-    naper = prefs.aper_size[0];
-/*
-    if (prefs.fluxerr_apersize>naper)
-      naper = prefs.fluxerr_apersize;
-    if (prefs.mag_apersize>naper)
-      naper = prefs.mag_apersize;
-    if (prefs.magerr_apersize>naper)
-      naper = prefs.magerr_apersize;
-*/
-    if (naper>prefs.naper)
-      {
-      warning("Not enough apertures provided in config.:\n",
-	"         some APER photometric values will remain blank ");
-      naper = prefs.naper;
-      }
-    else
-      prefs.naper = naper;
-    }
-  else
-    naper = 0;			/* To avoid gcc -Wall warnings */
-
-/* Find the largest "minimum margin" necessary for apertures */
+/* Set up CLEANing margin based on photometric apertures */
   prefs.cleanmargin = 0;
+
+  if (FLAG(obj2.flux_aper))
+    for (i=0; i<prefs.naper; i++)
+      if ((margin=(int)((prefs.apert[i]+1)/2)+1) > prefs.cleanmargin)
+        prefs.cleanmargin = margin;
   if (FLAG(obj2.vignet)
 	&& (margin=(prefs.vignet_size[1]+1)/2) > prefs.cleanmargin)
     prefs.cleanmargin = margin;
   if (FLAG(obj2.vigshift)
 	&& (margin=(prefs.vigshift_size[1]+1)/2+3)>prefs.cleanmargin)
     prefs.cleanmargin = margin;
-  if (FLAG(obj2.flux_aper))
-    for (i=0; i<naper; i++)
-      if ((margin=(int)((prefs.apert[i]+1)/2)+1) > prefs.cleanmargin)
-        prefs.cleanmargin = margin;
 
   if (FLAG(obj2.flux_radius) && prefs.flux_radius_size[0])
     if (prefs.nflux_frac>prefs.flux_radius_size[0])
@@ -678,16 +690,22 @@ void	prefs_use(void)
     prefs.back_type[1] = prefs.back_type[0];
 
 /*------------------------------ FLAG-images -------------------------------*/
-  prefs.nimaisoflag = (prefs.imaflag_size > prefs.imanflag_size) ?
-			prefs.imaflag_size : prefs.imanflag_size;
-  prefs.nimaflag = (prefs.nimaisoflag < prefs.nfimage_name) ?
-		prefs.nimaisoflag : prefs.nfimage_name;
+  if (prefs.nflag_type<prefs.nfimage)
+    {
+    last = prefs.nflag_type - 1;
+    for (i=prefs.nflag_type; i<prefs.nfimage; i++)
+      prefs.flag_type[i] = prefs.flag_type[last];
+    prefs.nflag_type = prefs.nfimage;
+    }
 
 /*----------------------------- CHECK-images -------------------------------*/
   prefs.check_flag = 0;
   for (i=0; i<prefs.ncheck_type; i++)
     if (prefs.check_type[i] != CHECK_NONE)	/* at least 1 is not NONE */
+      {
       prefs.check_flag = 1;
+      break;
+      }
 
   if (prefs.check_flag && prefs.ncheck_name!=prefs.ncheck_type)
     error(EXIT_FAILURE, "*Error*: CHECKIMAGE_NAME(s) and CHECKIMAGE_TYPE(s)",
@@ -719,50 +737,135 @@ void	prefs_use(void)
   if (prefs.seeing_fwhm == 0 && FLAG(obj2.sprob) || FLAG(obj2.fwhm_psf))
     prefs.psf_flag = 1;
 
-/*-------------------------- Pattern-fitting -------------------------------*/
+/*--------------------------- Pattern-fitting -------------------------------*/
 /* Profile-fitting is possible only if a PSF file is loaded */
   if (prefs.check_flag)
     for (i=0; i<prefs.ncheck_type; i++)
       if (prefs.check_type[i] == CHECK_PATTERNS)
         prefs.pattern_flag = 1;
 
-/*----------------------------- WEIGHT-images ------------------------------*/
+/*-------------------------------- WEIGHTs ----------------------------------*/
   prefs.weights_flag = 0;
   for (i=0; i<prefs.nweight_type; i++)
-    prefs.weights_flag |=
-	(prefs.weight_flag[i] = (prefs.weight_type[1]!= WEIGHT_NONE));
-/*
-  if (prefs.weight_flag[0])
+    prefs.weights_flag |= (prefs.weight_type[1]!= WEIGHT_NONE);
+
+/* If Weights are needed... */
+  if (prefs.weights_flag)
     {
-*-- Handle the default weight-threshold values *
-    if (prefs.nweight_thresh<2)
-      for (i=2; --i >= prefs.nweight_thresh;)
-        prefs.weight_thresh[i] = (prefs.weight_type[i]==WEIGHT_FROMWEIGHTMAP)?
-					0.0 : BIG;
-*-- Weight rescaling flags *
-    if (prefs.nwscale_flag<2)
-       prefs.wscale_flag[1] = (prefs.weight_type[1]==WEIGHT_FROMBACK)?
-					BACK_WSCALE : prefs.wscale_flag[0];
+/*-- Weight types */
+    if (prefs.nweight_type != prefs.nimage)
+      {
+      last = prefs.nweight_type-1;
+      for (i=prefs.nweight_type; i<prefs.nimage; i++)
+        prefs.weight_type[i] = prefs.weight_type[last];
+      prefs.nweight_type = prefs.nimage;
+      }
 
-*-- Check WEIGHT_IMAGE parameter(s) *
-    if ((!prefs.nwimage_name
-	&& ((prefs.weight_type[0]!=WEIGHT_FROMBACK
-		&& prefs.weight_type[0]!=WEIGHT_NONE)
-	|| (prefs.weight_type[1]!=WEIGHT_FROMBACK
-		&& prefs.weight_type[1]!=WEIGHT_NONE)))
-	|| (prefs.nwimage_name<2
-	&& prefs.weight_type[0]!=WEIGHT_FROMBACK
-	&& prefs.weight_type[0]!=WEIGHT_NONE
-	&& prefs.weight_type[1]!=WEIGHT_FROMBACK
-	&& prefs.weight_type[1]!=WEIGHT_NONE
-	&& prefs.weight_type[0]!=prefs.weight_type[1]))
-      error(EXIT_FAILURE, "*Error*: WEIGHT_IMAGE missing","");
+/*-- Weight flags (new) */
+    if (!prefs.weight_flag)
+      {
+      for (i=0; i<prefs.nimage; i++)
+        prefs.weight_flag[i] = (prefs.weight_type[i]!= WEIGHT_NONE);
+      }
 
-    if (prefs.nwimage_name && prefs.nwimage_name<2)
-      prefs.wimage_name[1] = prefs.wimage_name[0];
-    if (prefs.nwimage_name==2 && prefs.nweight_type==1)
-      prefs.nweight_type = 2;
+/*-- Weight rescaling flag */
+    if (prefs.nwscale_flag != prefs.nimage)
+      {
+      last = prefs.nwscale_flag-1;
+      for (i=prefs.nwscale_flag; i<prefs.nimage; i++)
+        prefs.wscale_flag[i] = (prefs.weight_type[i]==WEIGHT_FROMBACK)?
+					BACK_WSCALE : prefs.wscale_flag[last];
+      prefs.nwscale_flag = prefs.nimage;
+      }
 
+/*-- Weight thresholds */
+    if (prefs.nweight_thresh != prefs.nimage)
+      {
+      if (!(prefs.nweight_thresh))
+        {
+        prefs.weight_thresh[0] = (prefs.weight_type[0]==WEIGHT_FROMWEIGHTMAP)?
+                      0.0:BIG;
+        prefs.nweight_thresh = 1;
+        }
+
+      last = prefs.nweight_thresh - 1;
+      for (i=prefs.nweight_thresh; i<prefs.nimage; i++)
+        prefs.weight_thresh[i] = prefs.weight_thresh[last];
+      prefs.nweight_thresh = prefs.nimage;
+      }
+
+/*-- Weight gains */
+    if (prefs.nweightgain_flag != prefs.nimage)
+      {
+      last = prefs.nweightgain_flag-1;
+      for (i=prefs.nweightgain_flag; i<prefs.nimage; i++)
+        prefs.weightgain_flag[i] = prefs.weightgain_flag[last];
+      prefs.nweightgain_flag = prefs.nimage;
+      }
+
+/*-- Weight images */
+
+    if (prefs.nwimage != prefs.nimage)
+      {
+      if (prefs.nwimage > prefs.nimage)
+        prefs.nwimage = prefs.nimage;
+      else if (!prefs.nwimage)
+        {
+/*------ Use the WEIGHT_SUFFIX to identify the weight-maps */
+        for (i=0; i<prefs.nimage; i++)
+          {
+          QMALLOC(prefs.wimage_name[i], char, MAXCHAR);
+/*-------- Create a file name with a new extension */
+          strcpy(prefs.wimage_name[i], prefs.image_name[i]);
+          if (!(pstr = strrchr(prefs.wimage_name[i], '.')))
+            pstr = prefs.wimage_name[i]+strlen(prefs.wimage_name[i]);
+          sprintf(pstr, "%s", prefs.weight_suffix);
+          }
+        prefs.nwimage = prefs.nimage;
+        }
+      if (prefs.nweight_type > prefs.nwimage)
+        {
+        for (i=0; i<prefs.nweight_type; i++)
+          {
+          if (prefs.weight_type[i] == WEIGHT_NONE
+		|| prefs.weight_type[i] == WEIGHT_FROMBACK)
+            {
+/*---------- If the background map is internal, shift the next filenames ...*/
+            for (j=prefs.nwimage; j>i; j--)
+              prefs.wimage_name[j] = prefs.wimage_name[j-1];
+/*---------- ... and replace the current one with a dummy one */
+            QMALLOC(prefs.wimage_name[i], char, MAXCHAR);
+            sprintf(prefs.wimage_name[i], "INTERNAL");
+            prefs.nwimage++;
+            }
+          }      
+/*------ Now check that we haven't gone too far!! */
+        if (prefs.nwimage > prefs.nweight_type)
+          error(EXIT_FAILURE, "*Error*: the number of WEIGHT_TYPEs and ",
+		"weight-maps do not match");
+        }
+
+      if (prefs.nwimage != prefs.nimage)
+        {
+/*------ Weight-maps given through the WEIGHT_IMAGE keyword */
+        if (prefs.nwimage == 1)
+          {
+          warning("Several input images and a single weight-map found: ",
+		"applying the same weight-map to all images");
+          prefs.nwimage = prefs.nimage;
+          for (i=1; i<prefs.nwimage; i++)
+            {
+            QMALLOC(prefs.wimage_name[i], char, MAXCHAR);
+            strcpy(prefs.wimage_name[i],prefs.wimage_name[0]);
+            }
+          }
+        else
+          error(EXIT_FAILURE, "*Error*: the number of input images and ",
+		"weight-maps do not match");
+        }
+      }
+    }
+/*
 *-- If detection-only interpolation is needed with 1 Weight image... *
 *-- ...pretend we're using 2, with only one being interpolated *
     if (prefs.nweight_type==1
@@ -780,30 +883,29 @@ void	prefs_use(void)
         prefs.weight_thresh[1] = prefs.weight_thresh[0];
         }
       }
-    }
 */
 /*------------------------------ Catalogue ---------------------------------*/
 
   if (!strcmp(prefs.cat_name, "STDOUT"))
     prefs.pipe_flag = 1;
 
-  if ((str=strrchr(prefs.filter_name, '/')))
-    strcpy(thecat.filter_name, str+1);
+  if ((pstr=strrchr(prefs.filter_name, '/')))
+    strcpy(thecat.filter_name, pstr+1);
   else
     strcpy(thecat.filter_name, prefs.filter_name);
 
-  if ((str=strrchr(prefs.prefs_name, '/')))
-    strcpy(thecat.prefs_name, str+1);
+  if ((pstr=strrchr(prefs.prefs_name, '/')))
+    strcpy(thecat.prefs_name, pstr+1);
   else
     strcpy(thecat.prefs_name, prefs.prefs_name);
 
-  if ((str=strrchr(prefs.nnw_name, '/')))
-    strcpy(thecat.nnw_name, str+1);
+  if ((pstr=strrchr(prefs.nnw_name, '/')))
+    strcpy(thecat.nnw_name, pstr+1);
   else
     strcpy(thecat.nnw_name, prefs.nnw_name);
 
-  if ((str=strrchr(prefs.image_name[prefs.nimage-1], '/')))
-    strcpy(thecat.image_name, str+1);
+  if ((pstr=strrchr(prefs.image_name[prefs.nimage-1], '/')))
+    strcpy(thecat.image_name, pstr+1);
   else
     strcpy(thecat.image_name, prefs.image_name[prefs.nimage-1]);
 
@@ -820,7 +922,7 @@ INPUT	-.
 OUTPUT	-.
 NOTES	Global preferences are used.
 AUTHOR	E. Bertin (IAP)
-VERSION	10/02/2012
+VERSION	21/02/2012
  ***/
 void	prefs_end(void)
 
@@ -834,16 +936,6 @@ void	prefs_end(void)
     free(prefs.photinstrustr);
     prefs.nphotinstru = 0;
     }
-  for (i=0; i<prefs.nparam; i++)
-      free(prefs.param[i]);
-  for (i=0; i<prefs.nfimage_name; i++)
-      free(prefs.fimage_name[i]);
-  for (i=0; i<prefs.nwimage_name; i++)
-      free(prefs.wimage_name[i]);
-  for (i=0; i<prefs.npsf_name; i++)
-      free(prefs.psf_name[i]);
-  for (i=0; i<prefs.ncheck_name; i++)
-      free(prefs.check_name[i]);
 
   return;
   }

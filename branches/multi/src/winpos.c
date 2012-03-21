@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/01/2012
+*	Last modified:		20/03/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -38,63 +38,49 @@
 #include	"prefs.h"
 #include	"winpos.h"
 
-/****** compute_winpos ********************************************************
-PROTO	void compute_winpos(fieldstruct *field, fieldstruct *wfield,
-			 obj2struct *obj2)
+/****** win_pos **************************************************************
+PROTO	void win_pos(fieldstruct **fields, fieldstruct **wfields,
+			int nfield, obj2struct *obj2)
 PURPOSE	Compute windowed source barycenter.
-INPUT	Picture structure pointer,
-	Weight-map structure pointer,
+INPUT	Pointer to an array of image field pointers,
+	pointer to an array of weight-map field pointers,
+	number of images,
 	obj2 structure.
 OUTPUT  -.
 NOTES   obj2->mx and obj2->my are taken as initial centroid guesses.
 AUTHOR  E. Bertin (IAP)
-VERSION 11/01/2012
+VERSION 20/03/2012
  ***/
-void	compute_winpos(fieldstruct *field, fieldstruct *wfield,
-			obj2struct *obj2)
-
+void	win_pos(fieldstruct **fields, fieldstruct **wfields,
+			int nfield, obj2struct *obj2)
   {
+   fieldstruct		*field, *wfield;
    float		r2,invtwosig2, raper,raper2, rintlim,rintlim2,rextlim2,
 			dx,dx1,dy,dy2, sig, invngamma, pdbkg,
                         offsetx,offsety,scalex,scaley,scale2, locarea;
    double               tv, norm, pix, var, backnoise2, invgain, locpix,
 			dxpos,dypos, err,err2, emx2,emy2,emxy,
 			esum, temp,temp2, mx2, my2,mxy,pmx2, theta, mx,my,
-			mx2ph, my2ph;
-   int                  i,x,y, x2,y2, xmin,xmax,ymin,ymax, sx,sy, w,h,
-                        pflag,corrflag, gainflag, errflag, momentflag;
+			mx2ph, my2ph, ftv, fdxpos,fdypos, femx2,femy2,femxy,
+			fesum, fmx2,fmy2,fmxy, wsum, fw;
+   int                  f,i,x,y, x2,y2, xmin,xmax,ymin,ymax, sx,sy, w,h,
+                        pflag,corrflag, gainflag, errflag, momentflag, winflag,
+			band,nband;
    long                 pos;
    PIXTYPE              *image, *imaget, *weight,*weightt,
                         wthresh = 0.0;
 
-  if (wfield)
-    wthresh = wfield->weight_thresh;
-  w = obj2->imsize[0];
-  h = obj2->imsize[1];
-  pflag = (prefs.detect_type==PHOTO)? 1:0;
   corrflag = (prefs.mask_type==MASK_CORRECT);
-  gainflag = wfield && prefs.weightgain_flag;
   errflag = FLAG(obj2.winposerr_mx2) | FLAG(obj2.fluxerr_win);
   momentflag = FLAG(obj2.win_mx2) | FLAG(obj2.winposerr_mx2);
-  var = backnoise2 = field->backsig*field->backsig;
-  invgain = field->gain>0.0? 1.0/field->gain : 0.0;
-  sig = obj2->hl_radius*2.0/2.35; /* From half-FWHM to sigma */
+  sig = obj2->hl_radius*2.0/2.35482;	/* From half FWHM to sigma */
   invtwosig2 = 1.0/(2.0*sig*sig);
+/* Use isophotal centroid on detection image as a first guess */
+  mx = obj2->mx - obj2->imxmin[0];
+  my = obj2->my - obj2->imymin[0];
 
 /* Integration radius */
   raper = WINPOS_NSIG*sig;
-
-/* For photographic data */
-  if (pflag)
-    {
-    invngamma = 1.0/field->ngamma;
-    pdbkg = expf(obj2->dbkg[0]*invngamma);
-    }
-  else
-    {
-    invngamma = 0.0;
-    pdbkg = 0.0;
-    }
   raper2 = raper*raper;
 /* Internal radius of the oversampled annulus (<r-sqrt(2)/2) */
   rintlim = raper - 0.75;
@@ -105,291 +91,379 @@ void	compute_winpos(fieldstruct *field, fieldstruct *wfield,
   scale2 = scalex*scaley;
   offsetx = 0.5*(scalex-1.0);
   offsety = 0.5*(scaley-1.0);
-/* Use isophotal centroid as a first guess */
-  mx = obj2->mx - obj2->immin[0];
-  my = obj2->my - obj2->immin[1];
 
-  for (i=0; i<WINPOS_NITERMAX; i++)
+  nband = prefs.nphotinstru;
+  for (band=0; band<nband; band++)
     {
-    xmin = (int)(mx-raper+0.499999);
-    xmax = (int)(mx+raper+1.499999);
-    ymin = (int)(my-raper+0.499999);
-    ymax = (int)(my+raper+1.499999);
-    mx2ph = mx*2.0 + 0.49999;
-    my2ph = my*2.0 + 0.49999;
-
-    if (xmin < 0)
+    for (i=0; i<WINPOS_NITERMAX; i++)
       {
-      xmin = 0;
-      obj2->flag |= OBJ_APERT_PB;
-      }
-    if (xmax > w)
-      {
-      xmax = w;
-      obj2->flag |= OBJ_APERT_PB;
-      }
-    if (ymin < 0)
-      {
-      ymin = 0;
-      obj2->flag |= OBJ_APERT_PB;
-      }
-    if (ymax > h)
-      {
-      ymax = h;
-      obj2->flag |= OBJ_APERT_PB;
-      }
-
-    tv = esum = emxy = emx2 = emy2 = mx2 = my2 = mxy = 0.0;
-    dxpos = dypos = 0.0;
-    image = obj2->image[0];
-    weight = weightt = NULL;		/* To avoid gcc -Wall warnings */
-    if (wfield)
-      weight = obj2->weight[0];
-    for (y=ymin; y<ymax; y++)
-      {
-      imaget = image + (pos = y*w + xmin);
-      if (wfield)
-        weightt = weight + pos;
-      for (x=xmin; x<xmax; x++, imaget++, weightt++)
+      tv = wsum = esum = emxy = emx2 = emy2 = mx2 = my2 = mxy = 0.0;
+      dxpos = dypos = 0.0;
+      for (f=0; f<nfield; f++)
         {
-        dx = x - mx;
-        dy = y - my;
-        if ((r2=dx*dx+dy*dy)<rextlim2)
+        field = fields[f];
+        if (band != field->photomlabel)
+          continue;
+        ftv = fesum = femxy = femx2 = femy2 = fmx2 = fmy2 = fmxy = 0.0;
+        fdxpos = fdypos = 0.0;
+        if (wfields)
+          wfield = wfields[f];
+        if (wfield)
+          wthresh = wfield->weight_thresh;
+/*------ For photographic data */
+        pflag = (field->detector_type==DETECTOR_PHOTO);
+        if (pflag)
           {
-          if (WINPOS_OVERSAMP>1 && r2>rintlim2)
+          invngamma = 1.0/field->ngamma;
+          pdbkg = expf(obj2->dbkg[0]*invngamma);
+          }
+        else
+          {
+          invngamma = 0.0;
+          pdbkg = 0.0;
+          }
+        gainflag = wfield && field->weightgain_flag;
+        var = backnoise2 = field->backsig*field->backsig;
+        invgain = field->gain>0.0? 1.0/field->gain : 0.0;
+
+        xmin = (int)(mx-raper+0.499999);
+        xmax = (int)(mx+raper+1.499999);
+        ymin = (int)(my-raper+0.499999);
+        ymax = (int)(my+raper+1.499999);
+        mx2ph = mx*2.0 + 0.49999;
+        my2ph = my*2.0 + 0.49999;
+
+        w = obj2->imxsize[0];
+        h = obj2->imysize[0];
+        if (xmin < 0)
+          {
+          xmin = 0;
+          winflag = WINFLAG_APERT_PB;
+          }
+        if (xmax > w)
+          {
+          xmax = w;
+          winflag = WINFLAG_APERT_PB;
+          }
+        if (ymin < 0)
+          {
+          ymin = 0;
+          winflag = WINFLAG_APERT_PB;
+          }
+        if (ymax > h)
+          {
+          ymax = h;
+          winflag = WINFLAG_APERT_PB;
+          }
+
+        image = obj2->image[f];
+        weight = weightt = NULL;	/* To avoid gcc -Wall warnings */
+        if (wfield)
+          weight = obj2->weight[f];
+        for (y=ymin; y<ymax; y++)
+          {
+          imaget = image + (pos = y*w + xmin);
+          if (wfield)
+            weightt = weight + pos;
+          for (x=xmin; x<xmax; x++, imaget++, weightt++)
             {
-            dx += offsetx;
-            dy += offsety;
-            locarea = 0.0;
-            for (sy=WINPOS_OVERSAMP; sy--; dy+=scaley)
+            dx = x - mx;
+            dy = y - my;
+            if ((r2=dx*dx+dy*dy)<rextlim2)
               {
-              dx1 = dx;
-              dy2 = dy*dy;
-              for (sx=WINPOS_OVERSAMP; sx--; dx1+=scalex)
-                if (dx1*dx1+dy2<raper2)
-                  locarea += scale2;
-              }
-            }
-          else
-            locarea = 1.0;
-          locarea *= expf(-r2*invtwosig2);
-/*-------- Here begin tests for pixel and/or weight overflows. Things are a */
-/*-------- bit intricated to have it running as fast as possible in the most */
-/*-------- common cases */
-          if ((pix=*imaget)<=-BIG || (wfield && (var=*weightt)>=wthresh))
-            {
-            if (corrflag
-		&& (x2=(int)(mx2ph-x))>=0 && x2<w
-		&& (y2=(int)(my2ph-y))>=0 && y2<h
-		&& (pix=*(image + (pos = y2*w + x2)))>-BIG)
-              {
-              if (wfield)
+              if (WINPOS_OVERSAMP>1 && r2>rintlim2)
                 {
-                var = *(weight + pos);
-                if (var>=wthresh)
-                  pix = var = 0.0;
+                dx += offsetx;
+                dy += offsety;
+                locarea = 0.0;
+                for (sy=WINPOS_OVERSAMP; sy--; dy+=scaley)
+                  {
+                  dx1 = dx;
+                  dy2 = dy*dy;
+                  for (sx=WINPOS_OVERSAMP; sx--; dx1+=scalex)
+                    if (dx1*dx1+dy2<raper2)
+                      locarea += scale2;
+                  }
+                }
+              else
+                locarea = 1.0;
+              locarea *= expf(-r2*invtwosig2);
+/*------------ Here begin tests for pixel/weight overflows. Things are a */
+/*------------ bit intricated to have it running as fast as possible in the */
+/*------------ most common cases */
+              if ((pix=*imaget)<=-BIG || (wfield && (var=*weightt)>=wthresh))
+                {
+                if (corrflag
+			&& (x2=(int)(mx2ph-x))>=0 && x2<w
+			&& (y2=(int)(my2ph-y))>=0 && y2<h
+			&& (pix=*(image + (pos = y2*w + x2)))>-BIG)
+                  {
+                  if (wfield)
+                    {
+                    var = *(weight + pos);
+                    if (var>=wthresh)
+                      pix = var = 0.0;
+                    }
+                  }
+                else
+                  {
+                  pix = 0.0;
+                  if (wfield)
+                    var = 0.0;
+                  }
+                }
+              if (pflag)
+                pix = expf(pix*invngamma);
+              dx = x - mx;
+              dy = y - my;
+              locpix = locarea*pix;
+              ftv += locpix;
+              fdxpos += locpix*dx;
+              fdypos += locpix*dy;
+              if (errflag)
+                {
+                err = var;
+                if (pflag)
+                  err *= locpix*pix*invngamma*invngamma;
+                else if (invgain>0.0 && pix>0.0)
+                  {
+                  if (gainflag)
+                    err += pix*invgain*var/backnoise2;
+                  else
+                    err += pix*invgain;
+                  }
+                err2 = locarea*locarea*err;
+                fesum += err2;
+                femx2 += err2*(dx*dx+0.0833);	/* Finite pixel size */
+                femy2 += err2*(dy*dy+0.0833);	/* Finite pixel size */
+                femxy += err2*dx*dy;
+                }
+              if (momentflag)
+                {
+                fmx2 += locpix*dx*dx;
+                fmy2 += locpix*dy*dy;
+                fmxy += locpix*dx*dy;
                 }
               }
-            else
-              {
-              pix = 0.0;
-              if (wfield)
-                var = 0.0;
-              }
             }
-          if (pflag)
-            pix = expf(pix*invngamma);
-          dx = x - mx;
-          dy = y - my;
-          locpix = locarea*pix;
-          tv += locpix;
-          dxpos += locpix*dx;
-          dypos += locpix*dy;
-          if (errflag)
+          }
+        if (fesum <= 1.0/BIG)
+          continue;
+        fw = 1.0/fesum;
+        wsum += fw;
+        esum += 1.0;
+        tv += fw*ftv;
+        dxpos += fw*fdxpos;
+        dypos += fw*fdypos;
+        emx2 += fw*femx2;
+        emy2 += fw*femy2;
+        emxy += fw*femxy;
+
+        if (momentflag)
+          {
+          mx2 += fw*fmx2;
+          my2 += fw*fmy2;
+          mxy += fw*fmxy;
+          }
+        }
+
+      if (wsum>0.0)
+        {
+        wsum = 1.0/wsum;
+        esum *= wsum;
+        tv *= wsum;
+        dxpos *= wsum;
+        dypos *= wsum;
+        emx2 *= wsum;
+        emy2 *= wsum;
+        emxy *= wsum;
+        if (momentflag)
+          {
+          mx2 *= wsum;
+          my2 *= wsum;
+          mxy *= wsum;
+          }
+        }
+
+      if (tv>0.0)
+        {
+        mx += (dxpos /= tv)*WINPOS_FAC;
+        my += (dypos /= tv)*WINPOS_FAC;
+        }
+      else
+        break;
+
+/*---- Stop here if position does not change */
+      if (dxpos*dxpos+dypos*dypos < WINPOS_STEPMIN*WINPOS_STEPMIN)
+        break;
+      }
+
+
+    mx2 = mx2/tv - dxpos*dxpos;
+    my2 = my2/tv - dypos*dypos;
+    mxy = mxy/tv - dxpos*dypos;
+
+    temp2=mx2*my2-mxy*mxy;
+
+    winflag =  (tv <= 0.0)*WINFLAG_NEGFLUX
+		+ (mx2 < 0.0 || my2 < 0.0)*WINFLAG_NEGMOMENT
+		+ (temp2<0.0)*WINFLAG_SINGULAR;
+
+    for (f=0; f<nfield; f++)
+      {
+      if (field->photomlabel != band)
+        continue;
+
+      obj2->winpos_x[f] = mx + obj2->imxmin[f]
+				+ 1.0;	/* Mind the 1 pixel FITS offset */
+      obj2->winpos_y[f] = my + obj2->imymin[f]
+				+ 1.0;	/* Mind the 1 pixel FITS offset */
+      if (FLAG(obj2.winpos_niter))
+        obj2->winpos_niter[f] = i+1;
+
+/*---- WINdowed flux */
+      if (FLAG(obj2.flux_win))
+        obj2->flux_win[f] = tv;
+      if (FLAG(obj2.fluxerr_win))
+        obj2->fluxerr_win[f] = sqrt(esum);
+      if (FLAG(obj2.snr_win))
+        obj2->snr_win[f] = esum>(1.0/BIG)? tv / sqrt(esum) : BIG;
+      
+      if (FLAG(obj2.win_flags))
+        obj2->win_flags[f] = winflag;
+
+      if (winflag)
+        {      
+/*------- Negative values: revert to isophotal estimates */
+        if (FLAG(obj2.winposerr_mx2))
+          {
+          obj2->winposerr_mx2[f] = obj2->poserr_mx2;
+          obj2->winposerr_my2[f] = obj2->poserr_my2;
+          obj2->winposerr_mxy[f] = obj2->poserr_mxy;
+          if (FLAG(obj2.winposerr_a))
             {
-            err = var;
-            if (pflag)
-              err *= locpix*pix*invngamma*invngamma;
-            else if (invgain>0.0 && pix>0.0)
-              {
-              if (gainflag)
-                err += pix*invgain*var/backnoise2;
-              else
-                err += pix*invgain;
-              }
-            err2 = locarea*locarea*err;
-            esum += err2;
-            emx2 += err2*(dx*dx+0.0833);	/* Finite pixel size */
-            emy2 += err2*(dy*dy+0.0833);	/* Finite pixel size */
-            emxy += err2*dx*dy;
+            obj2->winposerr_a[f] = obj2->poserr_a;
+            obj2->winposerr_b[f] = obj2->poserr_b;
+            obj2->winposerr_theta[f] = obj2->poserr_theta;
             }
-          if (momentflag)
+          if (FLAG(obj2.winposerr_cxx))
             {
-            mx2 += locpix*dx*dx;
-            my2 += locpix*dy*dy;
-            mxy += locpix*dx*dy;
+            obj2->winposerr_cxx[f] = obj2->poserr_cxx;
+            obj2->winposerr_cyy[f] = obj2->poserr_cyy;
+            obj2->winposerr_cxy[f] = obj2->poserr_cxy;
+            }
+          }
+        if (momentflag)
+          {
+          obj2->win_mx2[f] = obj2->mx2;
+          obj2->win_my2[f] = obj2->my2;
+          obj2->win_mxy[f] = obj2->mxy;
+          if (FLAG(obj2.win_cxx))
+            {
+            obj2->win_cxx[f] = obj2->cxx;
+            obj2->win_cyy[f] = obj2->cyy;
+            obj2->win_cxy[f] = obj2->cxy;
+            }
+          if (FLAG(obj2.win_a))
+            {
+            obj2->win_a[f] = obj2->a;
+            obj2->win_b[f] = obj2->b;
+            obj2->win_polar[f] = obj2->polar;
+            obj2->win_theta[f] = obj2->theta;
             }
           }
         }
-      }
-
-    if (tv>0.0)
-      {
-      mx += (dxpos /= tv)*WINPOS_FAC;
-      my += (dypos /= tv)*WINPOS_FAC;
-      }
-    else
-      break;
-
-/*-- Stop here if position does not change */
-    if (dxpos*dxpos+dypos*dypos < WINPOS_STEPMIN*WINPOS_STEPMIN)
-      break;
-    }
-  mx2 = mx2/tv - dxpos*dxpos;
-  my2 = my2/tv - dypos*dypos;
-  mxy = mxy/tv - dxpos*dypos;
-  obj2->winpos_x = mx + obj2->immin[0] + 1.0;/* The dreaded 1.0 FITS offset */
-  obj2->winpos_y = my + obj2->immin[1] + 1.0;/* The dreaded 1.0 FITS offset */
-  obj2->winpos_niter = i+1;
-
-/* WINdowed flux */
-  if (FLAG(obj2.flux_win))
-    {
-    obj2->flux_win = tv;
-    obj2->fluxerr_win = sqrt(esum);
-    obj2->snr_win = esum>(1.0/BIG)? obj2->flux_win / obj2->fluxerr_win: BIG;
-    }
-  temp2=mx2*my2-mxy*mxy;
-  obj2->win_flag = (tv <= 0.0)*4 + (mx2 < 0.0 || my2 < 0.0)*2 + (temp2<0.0);
-  if (obj2->win_flag)
-    {
-/*--- Negative values: revert to isophotal estimates */
-    if (FLAG(obj2.winposerr_mx2))
-      {
-      obj2->winposerr_mx2 = obj2->poserr_mx2;
-      obj2->winposerr_my2 = obj2->poserr_my2;
-      obj2->winposerr_mxy = obj2->poserr_mxy;
-      if (FLAG(obj2.winposerr_a))
+      else
         {
-        obj2->winposerr_a = obj2->poserr_a;
-        obj2->winposerr_b = obj2->poserr_b;
-        obj2->winposerr_theta = obj2->poserr_theta;
-        }
-      if (FLAG(obj2.winposerr_cxx))
-        {
-        obj2->winposerr_cxx = obj2->poserr_cxx;
-        obj2->winposerr_cyy = obj2->poserr_cyy;
-        obj2->winposerr_cxy = obj2->poserr_cxy;
-        }
-      }
-    if (momentflag)
-      {
-      obj2->win_mx2 = obj2->mx2;
-      obj2->win_my2 = obj2->my2;
-      obj2->win_mxy = obj2->mxy;
-      if (FLAG(obj2.win_cxx))
-        {
-        obj2->win_cxx = obj2->cxx;
-        obj2->win_cyy = obj2->cyy;
-        obj2->win_cxy = obj2->cxy;
-        }
-      if (FLAG(obj2.win_a))
-        {
-        obj2->win_a = obj2->a;
-        obj2->win_b = obj2->b;
-        obj2->win_polar = obj2->polar;
-        obj2->win_theta = obj2->theta;
-        }
-      }
-    }
-  else
-    {
-    if (FLAG(obj2.winposerr_mx2))
-      {
-      norm = WINPOS_FAC*WINPOS_FAC/(tv*tv);
-      emx2 *= norm;
-      emy2 *= norm;
-      emxy *= norm;
-/*-- Handle fully correlated profiles (which cause a singularity...) */
-      esum *= 0.08333*norm;
-      if (obj2->singuflag && (emx2*emy2-emxy*emxy) < esum*esum)
-        {
-        emx2 += esum;
-        emy2 += esum;
-        }
+        if (FLAG(obj2.winposerr_mx2))
+          {
+          norm = WINPOS_FAC*WINPOS_FAC/(tv*tv);
+          emx2 *= norm;
+          emy2 *= norm;
+          emxy *= norm;
+/*-------- Handle fully correlated profiles (which cause a singularity...) */
+          esum *= 0.08333*norm;
+          if (obj2->singuflag && (emx2*emy2-emxy*emxy) < esum*esum)
+            {
+            emx2 += esum;
+            emy2 += esum;
+            }
 
-      obj2->winposerr_mx2 = emx2;
-      obj2->winposerr_my2 = emy2;
-      obj2->winposerr_mxy = emxy;
-/*---- Error ellipse parameters */
-      if (FLAG(obj2.winposerr_a))
-        {
-         double	pmx2,pmy2,temp,theta;
+          obj2->winposerr_mx2[f] = emx2;
+          obj2->winposerr_my2[f] = emy2;
+          obj2->winposerr_mxy[f] = emxy;
+/*-------- Error ellipse parameters */
+          if (FLAG(obj2.winposerr_a))
+            {
+             double	pmx2,pmy2,temp,theta;
 
-        if (fabs(temp=emx2-emy2) > 0.0)
-          theta = atan2(2.0 * emxy,temp) / 2.0;
-        else
-          theta = PI/4.0;
+            if (fabs(temp=emx2-emy2) > 0.0)
+              theta = atan2(2.0 * emxy,temp) / 2.0;
+            else
+              theta = PI/4.0;
 
-        temp = sqrt(0.25*temp*temp+ emxy*emxy);
-        pmy2 = pmx2 = 0.5*(emx2+emy2);
-        pmx2+=temp;
-        pmy2-=temp;
+            temp = sqrt(0.25*temp*temp+ emxy*emxy);
+            pmy2 = pmx2 = 0.5*(emx2+emy2);
+            pmx2+=temp;
+            pmy2-=temp;
 
-        obj2->winposerr_a = (float)sqrt(pmx2);
-        obj2->winposerr_b = (float)sqrt(pmy2);
-        obj2->winposerr_theta = theta*180.0/PI;
-        }
+            obj2->winposerr_a[f] = (float)sqrt(pmx2);
+            obj2->winposerr_b[f] = (float)sqrt(pmy2);
+            obj2->winposerr_theta[f] = theta*180.0/PI;
+            }
 
-      if (FLAG(obj2.winposerr_cxx))
-        {
-         double	temp;
+          if (FLAG(obj2.winposerr_cxx))
+            {
+             double	temp;
 
-        obj2->winposerr_cxx = (float)(emy2/(temp=emx2*emy2-emxy*emxy));
-        obj2->winposerr_cyy = (float)(emx2/temp);
-        obj2->winposerr_cxy = (float)(-2*emxy/temp);
-        }
-      }
+            obj2->winposerr_cxx[f] = (float)(emy2/(temp=emx2*emy2-emxy*emxy));
+            obj2->winposerr_cyy[f] = (float)(emx2/temp);
+            obj2->winposerr_cxy[f] = (float)(-2*emxy/temp);
+            }
+          }
 
-    if (momentflag)
-      {
-/*-- Handle fully correlated profiles (which cause a singularity...) */
-      if ((temp2=mx2*my2-mxy*mxy)<0.00694)
-        {
-        mx2 += 0.0833333;
-        my2 += 0.0833333;
-        temp2 = mx2*my2-mxy*mxy;
-        }
-      obj2->win_mx2 = mx2;
-      obj2->win_my2 = my2;
-      obj2->win_mxy = mxy;
+        if (momentflag)
+          {
+/*------ Handle fully correlated profiles (which cause a singularity...) */
+          if ((temp2=mx2*my2-mxy*mxy)<0.00694)
+            {
+            mx2 += 0.0833333;
+            my2 += 0.0833333;
+            temp2 = mx2*my2-mxy*mxy;
+            }
+          obj2->win_mx2[f] = mx2;
+          obj2->win_my2[f] = my2;
+          obj2->win_mxy[f] = mxy;
 
-      if (FLAG(obj2.win_cxx))
-        {
-        obj2->win_cxx = (float)(my2/temp2);
-        obj2->win_cyy = (float)(mx2/temp2);
-        obj2->win_cxy = (float)(-2*mxy/temp2);
-        }
+          if (FLAG(obj2.win_cxx))
+            {
+            obj2->win_cxx[f] = (float)(my2/temp2);
+            obj2->win_cyy[f] = (float)(mx2/temp2);
+            obj2->win_cxy[f] = (float)(-2*mxy/temp2);
+            }
 
-      if (FLAG(obj2.win_a))
-        {
-        if ((fabs(temp=mx2-my2)) > 0.0)
-          theta = atan2(2.0 * mxy,temp) / 2.0;
-        else
-          theta = PI/4.0;
+          if (FLAG(obj2.win_a))
+            {
+            if ((fabs(temp=mx2-my2)) > 0.0)
+              theta = atan2(2.0 * mxy,temp) / 2.0;
+            else
+              theta = PI/4.0;
 
-        temp = sqrt(0.25*temp*temp+mxy*mxy);
-        pmx2 = 0.5*(mx2+my2);
-        obj2->win_a = (float)sqrt(pmx2 + temp);
-        obj2->win_b = (float)sqrt(pmx2 - temp);
-        if (FLAG(obj2.win_polar))
-          obj2->win_polar = temp / pmx2;
-        obj2->win_theta = theta*180.0/PI;
+            temp = sqrt(0.25*temp*temp+mxy*mxy);
+            pmx2 = 0.5*(mx2+my2);
+            obj2->win_a[f] = (float)sqrt(pmx2 + temp);
+            obj2->win_b[f] = (float)sqrt(pmx2 - temp);
+            if (FLAG(obj2.win_polar))
+              obj2->win_polar[f] = temp / pmx2;
+            obj2->win_theta[f] = theta*180.0/PI;
+            }
+          }
         }
       }
     }
 
   return;
   }
+
 
 

@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		10/02/2012
+*	Last modified:		19/03/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -76,16 +76,25 @@ keystruct	obj2key[] = {
 
   {"FLUX_AUTO", "Flux within a Kron-like elliptical aperture",
 	&flagobj2.flux_auto, H_FLOAT, T_FLOAT, "%12.7g", "count",
-	"phot.flux;meta.main", "ct", 1, &prefs.nphotinstru},
+	"phot.flux;meta.main", "ct", 1, &prefs.nimage},
   {"FLUXERR_AUTO", "RMS error for AUTO flux",
 	&flagobj2.fluxerr_auto, H_FLOAT, T_FLOAT, "%12.7g", "count",
-	"stat.stdev;phot.flux;meta.main", "ct", 1, &prefs.nphotinstru},
+	"stat.stdev;phot.flux;meta.main", "ct", 1, &prefs.nimage},
   {"MAG_AUTO", "Kron-like elliptical aperture magnitude",
 	&flagobj2.mag_auto, H_FLOAT, T_FLOAT, "%8.4f", "mag",
-	"phot.mag;meta.main", "mag", 1, &prefs.nphotinstru},
+	"phot.mag;meta.main", "mag", 1, &prefs.nimage},
   {"MAGERR_AUTO", "RMS error for AUTO magnitude",
 	&flagobj2.magerr_auto, H_FLOAT, T_FLOAT, "%8.4f", "mag",
+	"stat.stdev;phot.mag;meta.main", "mag", 1, &prefs.nimage},
+  {"CMAG_AUTO", "Averaged Kron-like elliptical aperture magnitude",
+	&flagobj2.cmag_auto, H_FLOAT, T_FLOAT, "%8.4f", "mag",
+	"phot.mag;meta.main", "mag", 1, &prefs.nphotinstru},
+  {"CMAGERR_AUTO", "RMS error for Averaged AUTO magnitude",
+	&flagobj2.cmagerr_auto, H_FLOAT, T_FLOAT, "%8.4f", "mag",
 	"stat.stdev;phot.mag;meta.main", "mag", 1, &prefs.nphotinstru},
+  {"FLAGS_AUTO", "MAG_AUTO measurement flags",
+	&flagobj2.auto_flags, H_INT, T_BYTE, "%3d", "",
+	"meta.code.qual", "", 1, &prefs.nimage},
 
   {"FLUX_PETRO", "Flux within a Petrosian-like elliptical aperture",
 	&flagobj2.flux_petro, H_FLOAT, T_FLOAT, "%12.7g", "count",
@@ -149,7 +158,7 @@ keystruct	obj2key[] = {
 	"src.morph.param", "", 2, prefs.somfit_vector_size},
 
   {"KRON_RADIUS", "Kron apertures in units of A or B",
-	&flagobj2.kronfactor, H_FLOAT, T_FLOAT, "%5.2f", "",
+	&flagobj2.auto_kronfactor, H_FLOAT, T_FLOAT, "%5.2f", "",
 	"arith.factor;arith.ratio", ""},
   {"PETRO_RADIUS", "Petrosian apertures in units of A or B",
 	&flagobj2.petrofactor, H_FLOAT, T_FLOAT, "%5.2f", "",
@@ -629,20 +638,19 @@ keystruct	obj2key[] = {
 	"phys.area;instr.det", "pix2", 1, &prefs.nimage},
 
   {"FLAGS", "Extraction flags",
-	&flagobj2.flag, H_INT, T_SHORT, "%3d", "",
-	"meta.code.qual", "", 1, &prefs.nimage},
+	&flagobj2.flags, H_INT, T_SHORT, "%3d", "", "meta.code.qual", ""},
   {"FLAGS_WEIGHT", "Weighted extraction flags",
 	&flagobj2.wflag, H_INT, T_SHORT, "%1d", "",
 	"meta.code.qual", "", 1, &prefs.nimage},
    {"FLAGS_WIN", "Flags for WINdowed parameters",
-	&flagobj2.win_flag, H_INT, T_SHORT, "%3d", "",
+	&flagobj2.win_flags, H_INT, T_SHORT, "%3d", "",
 	"meta.code.qual", "", 1, &prefs.nimage},
    {"IMAFLAGS_ISO", "FLAG-image flags OR'ed over the iso. profile",
-	&flagobj2.imaflag, H_INT, T_LONG, "%9u", "",
-	"meta.code.qual", "", 1, &prefs.imaflag_size},
+	&flagobj2.imaflags, H_INT, T_LONG, "%9u", "",
+	"meta.code.qual", "", 1, &prefs.nfimage},
   {"NIMAFLAGS_ISO", "Number of flagged pixels entering IMAFLAGS_ISO",
-	&flagobj2.imanflag, H_INT, T_LONG, "%9d", "",
-	"meta.number", "", 1, &prefs.imanflag_size},
+	&flagobj2.imanflags, H_INT, T_LONG, "%9d", "",
+	"meta.number", "", 1, &prefs.nfimage},
   {"NLOWWEIGHT_ISO", "Nb of pixels with low weight over the iso. profile",
 	&flagobj2.nzwpix, H_INT, T_LONG, "%9d", "",
 	"meta.number", "", 1, &prefs.nimage},

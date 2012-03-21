@@ -7,7 +7,7 @@
 *
 *	This file part of:	AstrOmatic software
 *
-*	Copyright:		(C) 1993-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -23,7 +23,7 @@
 *	along with AstrOmatic software.
 *	If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		03/10/2011
+*	Last modified:		21/02/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -42,7 +42,7 @@ typedef struct
   char		name[32];
   enum  {P_FLOAT, P_INT, P_STRING, P_BOOL, P_KEY, P_INTLIST, P_FLOATLIST,
 	P_BOOLLIST, P_KEYLIST, P_STRINGLIST} type;
-  void		*ptr;			/* Pointer to the keyword value */
+  void		*ptr;			/* Pointer to value(s) */
   int		imin, imax;		/* Range for int's */
   double	dmin, dmax;		/* Range for floats */
   char		keylist[32][32];	/* List of keywords */

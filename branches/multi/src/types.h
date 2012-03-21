@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		15/02/2012
+*	Last modified:		21/03/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -65,10 +65,10 @@ typedef	char		pliststruct;		/* Dummy type for plist */
 typedef	int		LONG;
 typedef	unsigned int	ULONG;
 
-typedef  enum {BACK_RELATIVE, BACK_ABSOLUTE}
+typedef	enum {BACK_RELATIVE, BACK_ABSOLUTE}
 		backenum;				/* BACK_TYPE */
 
-typedef  enum {CHECK_NONE, CHECK_IDENTICAL, CHECK_BACKGROUND,
+typedef	enum {CHECK_NONE, CHECK_IDENTICAL, CHECK_BACKGROUND,
         CHECK_BACKRMS, CHECK_MINIBACKGROUND, CHECK_MINIBACKRMS,
         CHECK_SUBTRACTED, CHECK_FILTERED, CHECK_OBJECTS, CHECK_APERTURES,
 	CHECK_SEGMENTATION, CHECK_MASK, CHECK_SUBMASK, CHECK_ASSOC,
@@ -80,7 +80,10 @@ typedef  enum {CHECK_NONE, CHECK_IDENTICAL, CHECK_BACKGROUND,
 		checkenum;
 	/* CHECK_IMAGE type */
 
-typedef  enum {WEIGHT_NONE, WEIGHT_FROMBACK, WEIGHT_FROMRMSMAP,
+typedef	enum {DETECTOR_CCD, DETECTOR_PHOTO}
+		detectorenum;				/* DETECT_TYPE */
+
+typedef	enum {WEIGHT_NONE, WEIGHT_FROMBACK, WEIGHT_FROMRMSMAP,
 		WEIGHT_FROMVARMAP, WEIGHT_FROMWEIGHTMAP, WEIGHT_FROMINTERP}
 		weightenum;				/* WEIGHT_IMAGE type */
 
@@ -116,9 +119,9 @@ typedef struct
   int		subx,suby, subw,subh;		/* sub-image pos. and size */
   short		flag;				/* extraction flags */
   BYTE		wflag;				/* weighted extraction flags */
-  FLAGTYPE	imaflag[MAXFLAG];		/* flags from FLAG-images */
+  FLAGTYPE	imaflags[MAXFLAG];		/* flags from FLAG-images */
   BYTE		singuflag;			/* flags for singularities */
-  int		imanflag[MAXFLAG];     		/* number of MOST flags */
+  int		imanflags[MAXFLAG];     		/* number of MOST flags */
   double	mx2,my2,mxy;			/* variances and covariance */
   float		a, b, theta, abcor;		/* moments and angle */
   float		cxx,cyy,cxy;			/* ellipse parameters */
@@ -157,11 +160,11 @@ typedef struct obj2
 		poserr_mxy;			/* Error ellips moments */
 /* ---- morphological data */			
   int		xmin,xmax,ymin,ymax,ycmin,ycmax;/* x,y limits */
-  short		flag;				/* extraction flags */
-  BYTE		wflag;				/* weighted extraction flags */
-  FLAGTYPE	*imaflag;			/* flags from FLAG-images */
+  short		flags;				/* extraction flags */
+  BYTE		*wflag;				/* weighted extraction flags */
+  FLAGTYPE	*imaflags;			/* flags from FLAG-images */
   BYTE		singuflag;			/* flags for singularities */
-  int		*imanflag;     			/* number of MOST flags */
+  int		*imanflags;     		/* number of MOST flags */
   double	mx2,my2,mxy;			/* variances and covariance */
   float		a, b, theta, abcor;		/* moments and angle */
   float		cxx,cyy,cxy;			/* ellipse parameters */
@@ -173,12 +176,13 @@ typedef struct obj2
   float		fwhm;				/* IMAGE FWHM */
   PIXTYPE	**image;			/* Copy of local image data */
   PIXTYPE	**weight;			/* Copy of local weight data */
-  int		imsize[2];			/* Local image data size */
-  int		immin[2];			/* Image data min coords */
-  int		immax[2];			/* Image data max coords */
+  int		*imxsize, *imysize;		/* Local image data size */
+  int		*imxmin, *imxmax;		/* Local image data min/max x */
+  int		*imymin, *imymax;		/* Local image data min/max y */
+  float		*imjacob;			/* Local image Jacobian matrix*/
 /* ---- photometric data */
-  double	*flux;				/* internal flux array */
-  double	*fluxerr;			/* internal flux error array */
+  double	*cflux;				/* internal flux array */
+  double	*cfluxw;			/* internal flux weight array */
   float		flux_iso;			/* ISO integrated flux */
   float		fluxerr_iso;			/* RMS error on ISO flux */
   float		mag_iso;			/* ISO mag */
@@ -187,11 +191,16 @@ typedef struct obj2
   float		fluxerr_isocor;			/* RMS error on ISOCOR flux */
   float		mag_isocor;			/* ISOCOR mag */
   float		magerr_isocor;			/* ISOCOR mag uncertainty */
-  float		kronfactor;			/* kron parameter */
   float		*flux_auto;			/* AUTO integrated flux */
   float		*fluxerr_auto;			/* RMS error on AUTO flux */
   float		*mag_auto;			/* AUTO mag */
   float		*magerr_auto;			/* AUTO mag uncertainty */
+  float		*cflux_auto;			/* Band-combined AUTO flux */
+  float		*cfluxerr_auto;			/* Comb. AUTO flux uncertainty*/
+  float		*cmag_auto;			/* Band-combined AUTO mag */
+  float		*cmagerr_auto;			/* Comb. AUTO mag uncertainty */
+  float		auto_kronfactor;		/* Kron parameter */
+  short		*auto_flags;			/* AUTO mag flags */
   float		petrofactor;			/* kron parameter */
   float		flux_petro;			/* AUTO integrated flux */
   float		fluxerr_petro;			/* RMS error on AUTO flux */
@@ -205,11 +214,11 @@ typedef struct obj2
   float		*fluxerr_aper;			/* APER flux error vector  */
   float		*mag_aper;			/* APER magnitude vector */
   float		*magerr_aper;			/* APER mag error vector */
-  float		flux_win;			/* WINdowed flux*/
-  float		fluxerr_win;			/* WINdowed flux error */
-  float		snr_win;			/* WINdowed SNR */
-  float		mag_win;			/* WINdowed magnitude */
-  float		magerr_win;			/* WINdowed magnitude error */
+  float		*flux_win;			/* WINdowed flux*/
+  float		*fluxerr_win;			/* WINdowed flux error */
+  float		*snr_win;			/* WINdowed SNR */
+  float		*mag_win;			/* WINdowed magnitude */
+  float		*magerr_win;			/* WINdowed magnitude error */
 /* ---- astrometric data */
   BYTE		area_flagw;			/* World area or SB flag */
   double	*posx,*posy;			/* "FITS" pos. in pixels */
@@ -263,46 +272,46 @@ typedef struct obj2
   float		*vigshift;			/* (Shifted) pixel data */
 
 /* Windowed measurements */
-  double	winpos_x,winpos_y;		/* Windowed barycenter */
-  double	winposerr_mx2, winposerr_my2,
-		winposerr_mxy;			/* Error ellips moments */
-  float		winposerr_a, winposerr_b,
-		winposerr_theta;		/* Error ellips parameters */
-  float		winposerr_cxx, winposerr_cyy,
-		winposerr_cxy;			/* pos. error ellipse */
-  double	winposerr_mx2w, winposerr_my2w,
-		winposerr_mxyw;			/* WORLD error moments */
-  float		winposerr_aw, winposerr_bw,
-		winposerr_thetaw;		/* WORLD error parameters */
-  float		winposerr_thetas;		/* native error pos. angle */
-  float		winposerr_theta2000;		/* J2000 error pos. angle */
-  float		winposerr_theta1950;		/* B1950 error pos. angle */
-  float		winposerr_cxxw, winposerr_cyyw,
-		winposerr_cxyw;			/* WORLD error ellipse */
-  double	win_mx2, win_my2,
-		win_mxy;			/* Windowed moments */
-  float		win_a, win_b,
-		win_theta;			/* Windowed ellipse parameters*/
-  float		win_polar;			/* Windowed "polarization" */
-  float		win_cxx, win_cyy,
-		win_cxy;			/* Windowed ellipse parameters*/
-  double	win_mx2w, win_my2w,
-		win_mxyw;			/* WORLD windowed moments */
-  float		win_aw, win_bw,
-		win_thetaw;			/* WORLD ellipse parameters */
-  float		win_polarw;			/* WORLD WIN "polarization" */
-  float		win_thetas;			/* native error pos. angle */
-  float		win_theta2000;			/* J2000 error pos. angle */
-  float		win_theta1950;			/* B1950 error pos. angle */
-  float		win_cxxw, win_cyyw,
-		win_cxyw;			/* WORLD ellipse parameters */
-  double	winpos_xf, winpos_yf;		/* FOCAL coordinates */
-  double	winpos_xw, winpos_yw;		/* WORLD coordinates */
-  double	winpos_alphas, winpos_deltas;	/* native alpha, delta */
-  double	winpos_alpha2000, winpos_delta2000;	/* J2000 alpha, delta */
-  double	winpos_alpha1950, winpos_delta1950;	/* B1950 alpha, delta */
-  short		winpos_niter;			/* Number of WIN iterations */
-  short		win_flag;			/* 1:x2<0 2:xy=x2 4:flux<0 */
+  double	*winpos_x,*winpos_y;		/* WINdowed barycenter */
+  double	*winposerr_mx2, *winposerr_my2,
+		*winposerr_mxy;			/* Error ellips moments */
+  float		*winposerr_a, *winposerr_b,
+		*winposerr_theta;		/* Error ellips parameters */
+  float		*winposerr_cxx, *winposerr_cyy,
+		*winposerr_cxy;			/* pos. error ellipse */
+  double	*winposerr_mx2w, *winposerr_my2w,
+		*winposerr_mxyw;		/* WORLD error moments */
+  float		*winposerr_aw, *winposerr_bw,
+		*winposerr_thetaw;		/* WORLD error parameters */
+  float		*winposerr_thetas;		/* native error pos. angle */
+  float		*winposerr_theta2000;		/* J2000 error pos. angle */
+  float		*winposerr_theta1950;		/* B1950 error pos. angle */
+  float		*winposerr_cxxw, *winposerr_cyyw,
+		*winposerr_cxyw;		/* WORLD error ellipse */
+  double	*win_mx2, *win_my2,
+		*win_mxy;			/* WINdowed moments */
+  float		*win_a, *win_b,
+		*win_theta;			/* WINdowed ellipse parameters*/
+  float		*win_polar;			/* WINdowed "polarization" */
+  float		*win_cxx, *win_cyy,
+		*win_cxy;			/* WINdowed ellipse parameters*/
+  double	*win_mx2w, *win_my2w,
+		*win_mxyw;			/* WORLD WINdowed moments */
+  float		*win_aw, *win_bw,
+		*win_thetaw;			/* WORLD ellipse parameters */
+  float		*win_polarw;			/* WORLD WIN "polarization" */
+  float		*win_thetas;			/* native error pos. angle */
+  float		*win_theta2000;			/* J2000 error pos. angle */
+  float		*win_theta1950;			/* B1950 error pos. angle */
+  float		*win_cxxw, *win_cyyw,
+		*win_cxyw;			/* WORLD ellipse parameters */
+  double	*winpos_xf, *winpos_yf;		/* FOCAL coordinates */
+  double	*winpos_xw, *winpos_yw;		/* WORLD coordinates */
+  double	*winpos_alphas, *winpos_deltas;	/* native alpha, delta */
+  double	*winpos_alpha2000, *winpos_delta2000;	/* J2000 alpha, delta */
+  double	*winpos_alpha1950, *winpos_delta1950;	/* B1950 alpha, delta */
+  short		*winpos_niter;			/* Number of WIN iterations */
+  short		*win_flags;			/* 1:x2<0 2:xy=x2 4:flux<0 */
 
  /* ---- SOM fitting */
   float		flux_somfit;			/* Fitted amplitude */
@@ -411,7 +420,7 @@ typedef struct obj2
 		prof_pol12corr;			/* Model-fitting pol. errors */
   float		prof_e1, prof_e2;		/* Model-fitting ellip.vector*/
   float		prof_e1err, prof_e2err,
-		prof_e12corr;			/* Model-fitting ellip. errors */
+		prof_e12corr;			/* Model-fitting ellip. errors*/
   double	prof_mx2w, prof_my2w,
 		prof_mxyw;			/* WORLD model-fitting moments*/
   float		prof_aw, prof_bw,
@@ -573,6 +582,8 @@ typedef struct
   {
   int		ndetect;				/* nb of detections */
   int		ntotal;					/* Total object nb */
+  int		ntotalsum;				/* Sum of all objects */
+  int		nlinesum;				/* Sum of all lines */
   int		nblend;					/* Number of blends */
   int		nparam;					/* Nb of parameters */
   obj2liststruct	*obj2list;			/* List of objects */

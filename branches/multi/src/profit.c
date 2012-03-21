@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/01/2012
+*	Last modified:		16/03/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -833,7 +833,7 @@ INPUT		Profile-fitting structure,
 OUTPUT	Model-corrected flux.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	26/07/2011
+VERSION	16/03/2012
  ***/
 void	profit_fluxcor(profitstruct *profit, obj2struct *obj2)
   {
@@ -858,12 +858,12 @@ void	profit_fluxcor(profitstruct *profit, obj2struct *obj2)
       my += *profit->paramlist[PARAM_Y];
     }
 
-  if (obj2->kronfactor>0.0)
+  if (obj2->auto_kronfactor>0.0)
     {
     cx2 = obj2->cxx;
     cy2 = obj2->cyy;
     cxy = obj2->cxy;
-    klim2 = 0.64*obj2->kronfactor*obj2->kronfactor;
+    klim2 = 0.64*obj2->auto_kronfactor*obj2->auto_kronfactor;
     }
   else
 /*-- ...if not, use the circular aperture provided by the user */
@@ -1913,7 +1913,7 @@ INPUT	Pointer to the profit structure,
 OUTPUT	The number of valid pixels copied.
 NOTES	Global preferences are used.
 AUTHOR	E. Bertin (IAP)
-VERSION	11/01/2012
+VERSION	20/03/2012
  ***/
 int	profit_copyobjpix(profitstruct *profit, fieldstruct *field,
 			fieldstruct *wfield, obj2struct *obj2)
@@ -1933,10 +1933,10 @@ int	profit_copyobjpix(profitstruct *profit, fieldstruct *field,
     *(wpixout++) = 0.0;
     }
 
-  ix = profit->ix - obj2->immin[0];
-  iy = profit->iy - obj2->immin[1];
-  win = obj2->imsize[0];
-  hin = obj2->imsize[1];
+  ix = profit->ix - obj2->imxmin[0];
+  iy = profit->iy - obj2->imymin[0];
+  win = obj2->imxsize[0];
+  hin = obj2->imysize[0];
 
   backnoise2 = field->backsig*field->backsig;
   sn = (int)profit->subsamp;
@@ -1990,7 +1990,7 @@ int	profit_copyobjpix(profitstruct *profit, fieldstruct *field,
   if (wfield)
     {
     wthresh = wfield->weight_thresh;
-    gainflag = prefs.weightgain_flag;
+    gainflag = prefs.weightgain_flag[0];
     if (sflag)
       {
 /*---- Sub-sampling case */

@@ -22,9 +22,15 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/01/2012
+*	Last modified:		21/03/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
+
+/*----------------------------- AUTO flags ----------------------------------*/
+
+#define	AUTOFLAG_CROWDED	0x0001	/* Singularity in WINdowed light dist.*/
+#define	AUTOFLAG_APERT_PB	0x0002	/* Meas. area incomplete or truncated */
+#define	AUTOFLAG_DETECT_PB	0x0004	/* Detection area too truncated */
 
 /*----------------------------- Internal constants --------------------------*/
 
@@ -53,5 +59,6 @@ extern void	photom_aper(fieldstruct *field, fieldstruct *wfield,
 		photom_mags(fieldstruct *field, obj2struct *obj2),
 		photom_petro(fieldstruct *field, fieldstruct *dfield,
 			fieldstruct *wfield, fieldstruct *dwfield,
-			obj2struct *obj2);
+			obj2struct *obj2),
+		photom_printinstruinfo(void);
 

@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/01/2012
+*	Last modified:		16/03/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -52,7 +52,7 @@ INPUT   Pointer to an array of image field pointers,
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	07/12/2011
+VERSION	16/03/2012
  ***/
 void  growth_aver(fieldstruct **fields, fieldstruct **wfields, int nfield,
 			obj2struct *obj2)
@@ -82,11 +82,11 @@ void  growth_aver(fieldstruct **fields, fieldstruct **wfields, int nfield,
 /* Allocate the growth-curve buffer */
   QCALLOC(growth, double, GROWTH_NSTEP);
 
-  mx = obj2->mx - obj2->immin[0];
-  my = obj2->my - obj2->immin[1];
-  w = obj2->imsize[0];
-  h = obj2->imsize[1];
-  pflag = (prefs.detect_type==PHOTO)? 1:0;
+  mx = obj2->mx - obj2->imxmin[0];
+  my = obj2->my - obj2->imymin[0];
+  w = obj2->imxsize[0];
+  h = obj2->imysize[0];
+  pflag = (field->detector_type==DETECTOR_PHOTO)? 1:0;
   corrflag = (prefs.mask_type==MASK_CORRECT);
   var = backnoise2 = field->backsig*field->backsig;
   gain = field->gain;
@@ -137,22 +137,22 @@ void  growth_aver(fieldstruct **fields, fieldstruct **wfields, int nfield,
   if (xmin < 0)
     {
     xmin = 0;
-    obj2->flag |= OBJ_APERT_PB;
+    obj2->flags |= OBJ_APERT_PB;
     }
   if (xmax > w)
     {
     xmax = w;
-    obj2->flag |= OBJ_APERT_PB;
+    obj2->flags |= OBJ_APERT_PB;
     }
   if (ymin < 0)
     {
     ymin = 0;
-    obj2->flag |= OBJ_APERT_PB;
+    obj2->flags |= OBJ_APERT_PB;
     }
   if (ymax > h)
     {
     ymax = h;
-    obj2->flag |= OBJ_APERT_PB;
+    obj2->flags |= OBJ_APERT_PB;
     }
 
   image = obj2->image[0];

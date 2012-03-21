@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		12/01/2012
+*	Last modified:		21/02/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -132,7 +132,7 @@ INPUT	-.
 OUTPUT  -.
 NOTES   The preparation of components relies on the preferences.
 AUTHOR  E. Bertin (IAP, Leiden observatory & ESO)
-VERSION 11/01/2012
+VERSION 21/02/2012
  ***/
 void	init_plist(void)
 
@@ -155,10 +155,10 @@ void	init_plist(void)
     plistoff_cvalue = plistoff_value;
     }
 
-  if (FLAG(obj2.imaflag))
+  if (FLAG(obj2.imaflags))
     {
     plistexist_flag = 1;
-    for (i=0; i<prefs.nimaisoflag; i++)
+    for (i=0; i<prefs.nfimage; i++)
       {
       plistoff_flag[i] = plistsize;
       plistsize += sizeof(FLAGTYPE);

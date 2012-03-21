@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		18/01/2012
+*	Last modified:		21/03/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -34,7 +34,7 @@
 /*----------------------- miscellaneous variables ---------------------------*/
 
 sexcatstruct		thecat;
-fieldstruct		thefield1,thefield2, thewfield1,thewfield2;
+fieldstruct		thefield, thewfield;
 extern objstruct	flagobj;
 extern obj2struct	flagobj2;
 char			gstr[MAXCHAR];

@@ -1,5 +1,5 @@
 /*
-*				refine.c
+*				deblend.c
 *
 * Deblend sources based on their pixel lists.
 *
@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/01/2012
+*	Last modified:		20/03/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -37,47 +37,40 @@
 #include	"define.h"
 #include	"globals.h"
 #include	"prefs.h"
+#include	"deblend.h"
 #include	"lutz.h"
 #include	"plist.h"
 #include	"scan.h"
 
-#ifndef	RAND_MAX
-#define	RAND_MAX	2147483647
-#endif
-#define	NSONMAX			1024	/* max. number per level */
-#define	NBRANCH			16	/* starting number per branch */
-
 static objliststruct	*objlist;
 static short		*son, *ok;
 
-/******************************** parcelout **********************************
-PROTO   parcelout(objliststruct *objlistin, objliststruct *objlistout)
-PURPOSE Divide a list of isophotal detections in several parts (deblending).
-INPUT   input objlist,
-        output objlist,
-OUTPUT  RETURN_OK if success, RETURN_FATAL_ERROR otherwise (memory overflow).
-NOTES   Even if the object is not deblended, the output objlist threshold is
-        recomputed if a variable threshold is used.
-AUTHOR  E. Bertin (IAP)
-VERSION 21/12/2011
+/****** deblend_parcelout ****************************************************
+PROTO	deblend_parcelout(objliststruct *objlistin, objliststruct *objlistout)
+PURPOSE	Divide a list of isophotal detections in several parts (deblending).
+INPUT	Input objlist,
+	output objlist,
+OUTPUT	RETURN_OK if success, RETURN_FATAL_ERROR otherwise (memory overflow).
+NOTES	Even if the object is not deblended, the output objlist threshold is
+	recomputed if a variable threshold is used.
+AUTHOR	E. Bertin (IAP)
+VERSION	20/03/2012
  ***/
-int	parcelout(objliststruct *objlistin, objliststruct *objlistout)
+int	deblend_parcelout(objliststruct *objlistin, objliststruct *objlistout)
 
   {
    objstruct		*obj;
    static objliststruct	debobjlist, debobjlist2;
    double		dthresh, dthresh0, value0;
-   int			h,i,j,k,l,m,
-			xn,
-			nbm = NBRANCH,
+   int			h,i,j,k,l,m, xn,
+			nbm = DEBLEND_NBRANCH,
 			out;
-
 
   out = RETURN_OK;
 
   xn = prefs.deblend_nthresh;
 
-/* ---- initialize lists of objects */
+/* Initialize lists of objects */
 
   debobjlist.obj = debobjlist2.obj =  NULL;
   debobjlist.plist = debobjlist2.plist = NULL;
@@ -103,7 +96,7 @@ int	parcelout(objliststruct *objlistin, objliststruct *objlistout)
         dthresh = objlistin->obj[l].fdpeak;
         if (dthresh>0.0)
           {
-          if (prefs.detect_type == PHOTO)
+          if (prefs.detector_type[0] == DETECTOR_PHOTO)
             debobjlist.dthresh= dthresh0 + (dthresh-dthresh0) * (double)k/xn;
           else
             debobjlist.dthresh = dthresh0 * pow(dthresh/dthresh0,(double)k/xn);
@@ -111,8 +104,8 @@ int	parcelout(objliststruct *objlistin, objliststruct *objlistout)
         else
           debobjlist.dthresh = dthresh0;
 
-/*--------- Build tree (bottom->up) */
-        if (objlist[k-1].nobj>=NSONMAX)
+/*------ Build tree (bottom->up) */
+        if (objlist[k-1].nobj >= DEBLEND_NSONMAX)
           {
           out = RETURN_FATAL_ERROR;
           goto exit_parcelout;
@@ -129,33 +122,33 @@ int	parcelout(objliststruct *objlistin, objliststruct *objlistout)
               {
               debobjlist.obj[j].dthresh = debobjlist.dthresh;
               m = addobj(j, &debobjlist, &objlist[k]);
-              if (m==RETURN_FATAL_ERROR || m>=NSONMAX)
+              if (m==RETURN_FATAL_ERROR || m>=DEBLEND_NSONMAX)
                 {
                 out = RETURN_FATAL_ERROR;
                 goto exit_parcelout;
                 }
               if (h>=nbm-1)
                 if (!(son = (short *)realloc(son,
-			xn*NSONMAX*(nbm+=16)*sizeof(short))))
+			xn*DEBLEND_NSONMAX*(nbm+=16)*sizeof(short))))
                   {
                   out = RETURN_FATAL_ERROR;
                   goto exit_parcelout;
                   }
-              son[k-1+xn*(i+NSONMAX*(h++))] = (short)m;
+              son[k-1+xn*(i+DEBLEND_NSONMAX*(h++))] = (short)m;
               ok[k+xn*m] = (short)1;
               }
-          son[k-1+xn*(i+NSONMAX*h)] = (short)-1;
+          son[k-1+xn*(i+DEBLEND_NSONMAX*h)] = (short)-1;
           }
         }
 
-/*------- cut the right branches (top->down) */
+/*---- Cut the right branches (top->down) */
 
       for (k = xn-2; k>=0; k--)
         {
         obj = objlist[k+1].obj;
         for (i=0; i<objlist[k].nobj; i++)
           {
-          for (m=h=0; (j=(int)son[k+xn*(i+NSONMAX*h)])!=-1; h++)
+          for (m=h=0; (j=(int)son[k+xn*(i+DEBLEND_NSONMAX*h)])!=-1; h++)
             {
             if (obj[j].fdflux - obj[j].dthresh*obj[j].fdnpix > value0)
               m++;
@@ -163,7 +156,7 @@ int	parcelout(objliststruct *objlistin, objliststruct *objlistout)
             }
           if (m>1)	
             {
-            for (h=0; (j=(int)son[k+xn*(i+NSONMAX*h)])!=-1; h++)
+            for (h=0; (j=(int)son[k+xn*(i+DEBLEND_NSONMAX*h)])!=-1; h++)
               if (ok[k+1+xn*j] && obj[j].fdflux-obj[j].dthresh*obj[j].fdnpix
 			> value0)
                 {
@@ -182,7 +175,7 @@ int	parcelout(objliststruct *objlistin, objliststruct *objlistout)
       if (ok[0])
         out = addobj(0, &debobjlist2, objlistout);
       else
-        out = gatherup(&debobjlist2, objlistout);
+        out = deblend_gatherup(&debobjlist2, objlistout);
 
 exit_parcelout:
 
@@ -202,24 +195,36 @@ exit_parcelout:
   return out;
   }
 
-/******************************* allocparcelout ******************************/
-/*
-Allocate the memory allocated by global pointers in refine.c
-*/
-void	allocparcelout(void)
+
+/****** deblend_alloc ********************************************************
+PROTO	deblend_alloc(void)
+PURPOSE	Allocate the memory allocated for global pointers in refine.c
+INPUT	-,
+OUTPUT	-.
+NOTES	Global preferences are used.
+AUTHOR	E. Bertin (IAP)
+VERSION	07/03/2012
+ ***/
+void	deblend_alloc(void)
   {
-  QMALLOC(son, short,  prefs.deblend_nthresh*NSONMAX*NBRANCH);
-  QMALLOC(ok, short,  prefs.deblend_nthresh*NSONMAX);
+  QMALLOC(son, short,  prefs.deblend_nthresh*DEBLEND_NSONMAX*DEBLEND_NBRANCH);
+  QMALLOC(ok, short,  prefs.deblend_nthresh*DEBLEND_NSONMAX);
   QMALLOC(objlist, objliststruct,  prefs.deblend_nthresh);
 
   return;
   }
 
-/******************************* freeparcelout *******************************/
-/*
-Free the memory allocated by global pointers in refine.c
-*/
-void	freeparcelout(void)
+
+/****** deblend_free *********************************************************
+PROTO	deblend_free(void)
+PURPOSE	Free the memory allocated for global pointers in refine.c
+INPUT	-,
+OUTPUT	-.
+NOTES	Global preferences are used.
+AUTHOR	E. Bertin (IAP)
+VERSION	07/03/2012
+ ***/
+void	deblend_free(void)
   {
   QFREE(son);
   QFREE(ok);
@@ -227,12 +232,19 @@ void	freeparcelout(void)
   return;
   }
 
-/********************************* gatherup **********************************/
-/*
-Collect faint remaining pixels and allocate them to their most probable
-progenitor.
-*/
-int	gatherup(objliststruct *objlistin, objliststruct *objlistout)
+
+/****** deblend_gatherup *****************************************************
+PROTO	int deblend_gatherup(objliststruct *objlistin,objliststruct *objlistout)
+PURPOSE	Collect faint remaining pixels and allocate them to their most probable
+	progenitor.
+INPUT	Input objlist,
+	output objlist,
+OUTPUT	RETURN_OK if success, RETURN_FATAL_ERROR otherwise (memory overflow).
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	07/03/2012
+ ***/
+int	deblend_gatherup(objliststruct *objlistin, objliststruct *objlistout)
 
   {
    char		*bmp;

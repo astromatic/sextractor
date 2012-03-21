@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		15/02/2012
+*	Last modified:		20/03/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -53,7 +53,7 @@ char		*buf;
 int		catopen_flag = 0;
 
 /****** catout_readparams ****************************************************
-PROTO	obj2liststruct	*catout_readparams(char **paramlist, int nparam,
+PROTO	obj2liststruct *catout_readparams(char **paramlist, int nparam,
 						int nobj2)
 PURPOSE	Read user's choice of catalog parameters and initialize obj2 list.
 INPUT	Array of pointers to strings containing the measurement parameters,
@@ -167,7 +167,7 @@ obj2liststruct	*catout_readparams(char **paramlist, int nparam, int nobj2)
 
 
 /****** catout_changeparamsize *********************************************
-PROTO	void	catout_changeparamsize(char *keyword, int *axisn, int naxis)
+PROTO	void catout_changeparamsize(char *keyword, int *axisn, int naxis)
 PURPOSE	Change the size of a multidimensional measurement parameter.
 INPUT	keyword string,
 	array of sizes,
@@ -198,7 +198,7 @@ void	catout_changeparamsize(char *keyword, int *axisn, int naxis)
 
 
 /****** catout_allocparams *************************************************
-PROTO	void	catout_allocparams(obj2liststruct *obj2list)
+PROTO	void catout_allocparams(obj2liststruct *obj2list)
 PURPOSE	Allocate arrays for all multidimensional measurement parameters.
 INPUT	Pointer to the obj2list.
 OUTPUT	-.
@@ -246,7 +246,7 @@ void	catout_allocparams(obj2liststruct *obj2list)
 
 
 /****** catout_freeparams *************************************************
-PROTO	void	catout_freeparams(obj2liststruct *obj2list)
+PROTO	void catout_freeparams(obj2liststruct *obj2list)
 PURPOSE	Free memory for all multidimensional measurement parameters.
 INPUT	Pointer to the obj2list.
 OUTPUT	-.
@@ -279,7 +279,7 @@ void	catout_freeparams(obj2liststruct *obj2list)
 
 
 /****** catout_allocother *************************************************
-PROTO	int	catout_allocother(obj2liststruct *obj2list, void *flagobj2elem,
+PROTO	int catout_allocother(obj2liststruct *obj2list, void *flagobj2elem,
 				int nbytes)
 PURPOSE	Allocate an array in the obj2 structure that does not correspond
 	to a measurement parameter.
@@ -317,7 +317,7 @@ int	catout_allocother(obj2liststruct *obj2list, void *flagobj2elem,
 
 
 /****** catout_freeother *************************************************
-PROTO	int	catout_freeother(obj2liststruct *obj2list, void *flagobj2elem)
+PROTO	int catout_freeother(obj2liststruct *obj2list, void *flagobj2elem)
 PURPOSE	Free an array in the obj2 structure that does not correspond
 	to a measurement parameter.
 INPUT	Pointer to the obj2list,
@@ -352,18 +352,23 @@ int	catout_freeother(obj2liststruct *obj2list, void *flagobj2elem)
 
 
 /****** catout_updateparamflags **********************************************
-PROTO	void	catout_updateparamflags(void)
+PROTO	void catout_updateparamflags(void)
 PURPOSE	Update parameter flags according to their mutual dependencies.
 INPUT	Pointer to the obj2list.
 OUTPUT	-.
 NOTES	Requires access to the flagobj2 static pointer.
 AUTHOR	E. Bertin (IAP)
-VERSION	15/02/2012
+VERSION	20/03/2012
  ***/
 void	catout_updateparamflags(void)
 
   {
    int	i;
+
+
+/*---------------------------- Always required ------------------------------*/
+
+  FLAG(obj2.bkg) = 1;			/* Sky background */
 
 /*----------------------------- Model-fitting -----------------------------*/
 
@@ -728,8 +733,9 @@ void	catout_updateparamflags(void)
   FLAG(obj2.winpos_x) |= FLAG(obj2.winpos_y)
 			| FLAG(obj2.winposerr_mx2) | FLAG(obj2.win_mx2)
 			| FLAG(obj2.winpos_xw) | FLAG(obj2.winpos_xf)
-			| FLAG(obj2.win_flag)
-			| FLAG(obj2.flux_win) |FLAG(obj2.winpos_niter);
+			| FLAG(obj2.win_flags)
+			| FLAG(obj2.flux_win) | FLAG(obj2.winpos_niter);
+  prefs.win_flag = FLAG(obj2.winpos_x);
 
   FLAG(obj2.area_flagw) |= FLAG(obj2.npixw) | FLAG(obj2.fdnpixw)
 			| FLAG(obj2.fwhmw)
@@ -753,14 +759,16 @@ void	catout_updateparamflags(void)
 
   FLAG(obj2.hl_radius) |= FLAG(obj2.winpos_x) | prefs.prof_flag;
 
-  FLAG(obj2.fluxerr_auto) |= FLAG(obj2.magerr_auto);
-  FLAG(obj2.flux_auto)  |= FLAG(obj2.mag_auto)
-			| FLAG(obj2.fluxerr_auto)
-			| FLAG(obj2.kronfactor)
-			| FLAG(obj2.flux_best)
+  FLAG(obj2.flux_auto) = FLAG(obj2.flux_best)
 			| FLAG(obj2.flux_radius)
 			| FLAG(obj2.hl_radius)
 			| FLAG(obj2.fluxcor_prof);
+  prefs.auto_flag = FLAG(obj2.flux_auto)
+			| FLAG(obj2.fluxerr_auto)
+			| FLAG(obj2.mag_auto)
+			| FLAG(obj2.magerr_auto)
+			| FLAG(obj2.auto_flags)
+			| FLAG(obj2.auto_kronfactor);
   FLAG(obj2.flux_petro) |= FLAG(obj2.mag_petro) | FLAG(obj2.magerr_petro)
 			| FLAG(obj2.fluxerr_petro)
 			| FLAG(obj2.petrofactor);
@@ -784,7 +792,8 @@ void	catout_updateparamflags(void)
     prefs.growth_flag = 1;
 
 /*---------------------------- External flags -------------------------------*/
-  FLAG(obj2.imaflag) |= FLAG(obj2.imanflag);
+  prefs.imaflags_flag = FLAG(obj2.imaflags)
+			| FLAG(obj2.imanflags);
 
 /*------------------------------ PSF-fitting --------------------------------*/
   FLAG(obj2.fwhm_psf) |= FLAG(obj2.fwhmw_psf);
@@ -830,9 +839,6 @@ void	catout_updateparamflags(void)
   if (FLAG(obj2.flux_psf))
     prefs.psffit_flag = 1;
 
-/*---------------------------- Sky background -------------------------------*/
-  FLAG(obj2.bkg) = 1;			/* Always required */
-
 /*--------------------------------- ASSOC ----------------------------------*/
   prefs.assoc_flag = FLAG(obj2.assoc) || FLAG(obj2.assoc_number);
 
@@ -853,7 +859,7 @@ void	catout_updateparamflags(void)
 
 
 /****** catout_dumpparams ****************************************************
-PROTO	void	catout_dumpparams(void)
+PROTO	void catout_dumpparams(void)
 PURPOSE	Dump the complete list of catalog parameters to standard output.
 INPUT	-.
 OUTPUT	-.
@@ -878,13 +884,13 @@ void	catout_dumpparams(void)
 
 
 /****** catout_init *********************************************************
-PROTO	void	catout_init(void)
+PROTO	void catout_init(void)
 PURPOSE	Initialize the catalog output.
 INPUT	-.
 OUTPUT	-.
 NOTES	Requires access to global prefs and the obj2key static pointer.
 AUTHOR	E. Bertin (IAP)
-VERSION	06/10/2011
+VERSION	24/02/2012
  ***/
 void	catout_init(void)
   {
@@ -933,7 +939,7 @@ void	catout_init(void)
       }
     else if (prefs.cat_type == ASCII_VO && objtab->key) 
       {
-      write_xml_header(ascfile);
+      xml_write_header(ascfile);
       catout_writevofields(ascfile);
       fprintf(ascfile, "   <DATA><TABLEDATA>\n");
       }
@@ -973,7 +979,7 @@ void	catout_init(void)
 
 
 /****** catout_writevofields *************************************************
-PROTO	int	catout_writevofields(FILE *file)
+PROTO	int catout_writevofields(FILE *file)
 PURPOSE	Write the list of columns to an XML-VOTable file or stream
 INPUT	Pointer to the output file (or stream).
 OUTPUT	-.
@@ -1027,7 +1033,7 @@ void	catout_writevofields(FILE *file)
 
 
 /****** catout_initext ********************************************************
-PROTO	void	catout_initext(fieldstruct *field)
+PROTO	void catout_initext(fieldstruct *field)
 PURPOSE	Initialize the catalog header for the current extension.
 INPUT	Pointer to image field.
 OUTPUT	-.
@@ -1128,7 +1134,7 @@ void	catout_initext(fieldstruct *field)
 
 
 /****** catout_writeobj ******************************************************
-PROTO	void	catout_writeobj(obj2struct *obj2)
+PROTO	void catout_writeobj(obj2struct *obj2)
 PURPOSE	Write one object in the output catalog.
 INPUT	Pointer to the current obj2 structure.
 OUTPUT	-.
@@ -1176,7 +1182,7 @@ void	catout_writeobj(obj2struct *obj2)
 
 
 /****** catout_endext ********************************************************
-PROTO	void	catout_endext(void)
+PROTO	void catout_endext(void)
 PURPOSE	End catalog output for the current extension.
 INPUT	-.
 OUTPUT	-.
@@ -1240,13 +1246,13 @@ void	catout_endext(void)
 
 
 /****** catout_end **********************************************************
-PROTO	void	catout_end(char *error)
+PROTO	void catout_end(char *error)
 PURPOSE	End catalog output.
 INPUT	Error message character string (or NULL if no error).
 OUTPUT	-.
 NOTES	Requires access to global prefs and the objtab static pointer.
 AUTHOR	E. Bertin (IAP)
-VERSION	06/10/2011
+VERSION	24/02/2012
  ***/
 void	catout_end(char *error)
   {
@@ -1256,7 +1262,7 @@ void	catout_end(char *error)
   if (!catopen_flag)
     {
     if (prefs.cat_type == ASCII_VO)
-      write_xmlerror(prefs.cat_name, error);
+      xml_write_error(prefs.cat_name, error);
     return;
     }
   switch(prefs.cat_type)
@@ -1277,7 +1283,7 @@ void	catout_end(char *error)
       fprintf(ascfile, "    </TABLEDATA></DATA>\n");
       fprintf(ascfile, "  </TABLE>\n");
 /*---- Add configuration file meta-data */
-      write_xml_meta(ascfile, error);
+      xml_write_meta(ascfile, error);
       fprintf(ascfile, "</RESOURCE>\n");
       fprintf(ascfile, "</VOTABLE>\n");
 

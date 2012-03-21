@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		10/02/2012
+*	Last modified:		24/02/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -51,17 +51,17 @@ extern char		keylist[][32];		/* from preflist.h */
 xmlstruct		*xmlstack = NULL;
 int			nxml=0, nxmlmax=0;
 
-/****** init_xml ************************************************************
-PROTO	int	init_xml(void)
+/****** xml_init *************************************************************
+PROTO	int xml_init(void)
 PURPOSE	Initialize a set of meta-data kept in memory before being written to the
 	XML file
 INPUT	Number of image extensions.
 OUTPUT	RETURN_OK if everything went fine, RETURN_ERROR otherwise.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	03/07/2006
+VERSION	24/02/2012
  ***/
-int	init_xml(int next)
+int	xml_init(int next)
   {
   QMALLOC(xmlstack, xmlstruct, next);
   nxml = 0;
@@ -71,24 +71,24 @@ int	init_xml(int next)
   }
 
 
-/****** end_xml ************************************************************
-PROTO	int	end_xml(void)
+/****** xml_end **************************************************************
+PROTO	int xml_end(void)
 PURPOSE	Free the set of meta-data kept in memory.
 INPUT	-.
 OUTPUT	RETURN_OK if everything went fine, RETURN_ERROR otherwise.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	12/07/2006
+VERSION	24/02/2012
  ***/
-int	end_xml(void)
+int	xml_end(void)
   {
   free(xmlstack);
 
   return EXIT_SUCCESS;
   }
 
-/****** update_xml ***********************************************************
-PROTO	int update_xml(sexcatstruct *sexcat, fieldstruct **fields,
+/****** xml_update ***********************************************************
+PROTO	int xml_update(sexcatstruct *sexcat, fieldstruct **fields,
 			fieldstruct **wfields)
 PURPOSE	Update a set of meta-data kept in memory before being written to the
 	XML file
@@ -99,9 +99,9 @@ INPUT	Pointer to catalog,
 OUTPUT	RETURN_OK if everything went fine, RETURN_ERROR otherwise.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	11/01/2012
+VERSION	24/02/2012
  ***/
-int	update_xml(sexcatstruct *sexcat, fieldstruct **fields,
+int	xml_update(sexcatstruct *sexcat, fieldstruct **fields,
 		fieldstruct **wfields)
   {
    xmlstruct	*x;
@@ -141,23 +141,23 @@ int	update_xml(sexcatstruct *sexcat, fieldstruct **fields,
   }
 
 
-/****** write_xml ************************************************************
-PROTO	int	write_xml(char *filename)
+/****** xml_write ************************************************************
+PROTO	int xml_write(char *filename)
 PURPOSE	Save meta-data to an XML file/stream.
 INPUT	XML file name.
 OUTPUT	RETURN_OK if everything went fine, RETURN_ERROR otherwise.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	18/07/2011
+VERSION	24/02/2012
  ***/
-int	write_xml(char *filename)
+int	xml_write(char *filename)
   {
    FILE		*file;
 
   if (!(file = fopen(prefs.xml_name, "w")))
     return RETURN_ERROR;
 
-  write_xml_header(file);
+  xml_write_header(file);
   catout_writevofields(file);
 
   fprintf(file, "   <DATA>\n");
@@ -171,7 +171,7 @@ int	write_xml(char *filename)
   fprintf(file, "   </DATA>\n");
   fprintf(file, "  </TABLE>\n");
 
-  write_xml_meta(file, (char *)NULL);
+  xml_write_meta(file, (char *)NULL);
 
   fprintf(file, "</RESOURCE>\n");
   fprintf(file, "</VOTABLE>\n");
@@ -182,16 +182,16 @@ int	write_xml(char *filename)
   }
 
 
-/****** write_xml_header ******************************************************
-PROTO	int	write_xml_header(FILE *file)
+/****** xml_write_header *****************************************************
+PROTO	int xml_write_header(FILE *file)
 PURPOSE	Save an XML-VOtable header to an XML file/stream
 INPUT	file or stream pointer.
 OUTPUT	RETURN_OK if everything went fine, RETURN_ERROR otherwise.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	10/02/2012
+VERSION	24/02/2012
  ***/
-int	write_xml_header(FILE *file)
+int	xml_write_header(FILE *file)
   {
    char		*filename, *rfilename;
 
@@ -228,17 +228,17 @@ int	write_xml_header(FILE *file)
   }
 
 
-/****** write_xml_meta ********************************************************
-PROTO	int	write_xml_meta(FILE *file, char *error)
+/****** xml_write_meta *******************************************************
+PROTO	int xml_write_meta(FILE *file, char *error)
 PURPOSE	Save meta-data to an XML-VOTable file or stream
 INPUT	Pointer to the output file (or stream),
 	Pointer to an error msg (or NULL).
 OUTPUT	RETURN_OK if everything went fine, RETURN_ERROR otherwise.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	10/02/2012
+VERSION	24/02/2012
  ***/
-int	write_xml_meta(FILE *file, char *error)
+int	xml_write_meta(FILE *file, char *error)
   {
    char			*pspath,*psuser, *pshost, *str;
    struct tm		*tm;
@@ -472,353 +472,117 @@ int	write_xml_meta(FILE *file, char *error)
 
   if (!error)
     {
-    fprintf(file,
-	"   <PARAM name=\"Catalog_Type\" datatype=\"char\" arraysize=\"*\""
-	" ucd=\"meta\" value=\"%s\"/>\n",
-    	key[findkeys("CATALOG_TYPE",keylist,
-			FIND_STRICT)].keylist[prefs.cat_type]);
-    fprintf(file,
-	"   <PARAM name=\"Catalog_Name\" datatype=\"char\" arraysize=\"*\""
-	" ucd=\"meta.dataset;meta.file\" value=\"%s\"/>\n",
-	prefs.cat_name);
-    fprintf(file,
-	"   <PARAM name=\"Parameters\" datatype=\"char\" arraysize=\"*\""
-	" ucd=\"obs.param;meta.file\" value=\"%s\"/>\n",
-	prefs.nparam? prefs.param[0] : "");
+    xml_write_configparam(file, "Catalog_Type", "", "meta.code;meta.table", "");
+    xml_write_configparam(file, "Catalog_Name", "",
+	"meta;meta.table;meta.file", "");
+    xml_write_configparam(file, "Parameters", "", "meta;obs.param", "");
 
-    for (n=1; n<prefs.nparam; n++)
-      fprintf(file, ",%s", prefs.param[n]);
-    fprintf(file, "\"/>\n");
+    xml_write_configparam(file, "Detect_Type", "",
+	"meta.code;obs.param;instr.det", "");
+    xml_write_configparam(file, "Detect_MinArea", "pix",
+	"obs.param;phys.area;stat.min", "%d");
+    xml_write_configparam(file, "Detect_MaxArea", "pix",
+	"obs.param;phys.area;stat.max", "%d");
+    xml_write_configparam(file, "Thresh_Type", "",
+	"meta.code;obs.param;instr.sensitivity", "");
+    xml_write_configparam(file, "Detect_Thresh", "",
+	"obs.param;instr.sensitivity", "%g");
+    xml_write_configparam(file, "Analysis_Thresh", "",
+	"obs.param;instr.sensitivity", "%g");
+    xml_write_configparam(file, "Filter", "", "meta.code;obs.param", "");
+    xml_write_configparam(file, "Filter_Name","", "obs.param;meta.file", "");
+    xml_write_configparam(file, "Filter_Thresh", "", "obs.param", "%g");
+    xml_write_configparam(file, "Deblend_NThresh", "",
+	"meta.number;obs.param", "%d");
+    xml_write_configparam(file, "Deblend_MinCont", "",
+	"obs.param;arith.ratio", "%g");
+    xml_write_configparam(file, "Clean", "", "meta.code;obs.param", "");
+    xml_write_configparam(file, "Clean_Param","","obs.param;arith.ratio", "%g");
+    xml_write_configparam(file, "Mask_Type", "", "meta.code;obs.param", "");
 
+    xml_write_configparam(file, "Weight_Type", "", "meta.code;obs.param", "");
+    xml_write_configparam(file, "Rescale_Weights","","meta.code;obs.param", "");
+    xml_write_configparam(file, "Weight_Suffix", "",
+	"meta;meta.file;meta.fits", "");
+    xml_write_configparam(file, "Weight_Thresh", "", "obs.param", "%g");
+    xml_write_configparam(file, "Weight_Image", "",
+	"stat.weight;meta.file;meta.fits", "");
+    xml_write_configparam(file, "Weight_Gain", "", "meta.code;obs.param", "");
 
-    fprintf(file,
-	"   <PARAM name=\"Detect_Type\" datatype=\"char\" arraysize=\"*\""
-	" ucd=\"meta.code;instr.det;obs.param\" value=\"%s\"/>\n",
-    	key[findkeys("DETECT_TYPE", keylist,
-			FIND_STRICT)].keylist[prefs.detect_type]);
-    fprintf(file, "   <PARAM name=\"Detect_MinArea\" datatype=\"int\""
-	" ucd=\"phys.area;stat.min;obs.param;\" value=\"%d\" unit=\"pix2\"/>\n",
-    	prefs.ext_minarea);
+    xml_write_configparam(file, "Flag_Image", "",
+	"meta.code;meta.file;meta.fits", "");
+    xml_write_configparam(file, "Flag_Type", "", "meta.code;obs.param", "");
 
-    fprintf(file, "   <PARAM name=\"Detect_MaxArea\" datatype=\"int\""
-	" ucd=\"phys.area;stat.max;obs.param\" value=\"%d\" unit=\"pix2\"/>\n",
-    	prefs.ext_maxarea);
+    xml_write_configparam(file, "Phot_Apertures", "pix",
+	"obs.param;phys.size.diameter", "%g");
+    xml_write_configparam(file, "Phot_AutoParams", "",
+	"meta.code;obs.param", "%g");
+    xml_write_configparam(file, "Phot_PetroParams", "",
+	"meta.code;obs.param", "%g");
+    xml_write_configparam(file, "Phot_AutoApers", "pix",
+	"obs.param;phys.size.diameter", "%g");
+    xml_write_configparam(file, "Phot_FluxFrac", "",
+	"obs.param;arith.ratio", "%g");
+    xml_write_configparam(file, "Satur_Level", "ct",
+	"obs.param;instr.saturation", "%g");
+    xml_write_configparam(file, "Satur_Key", "",
+	"meta.code;obs.param;instr.saturation", "");
+    xml_write_configparam(file, "Mag_ZeroPoint", "mag",
+	"obs.param;phot.calib;phot.mag", "%.4f");
+    xml_write_configparam(file, "Mag_Gamma", "",
+	"obs.param;phot.calib;instr.plate.emulsion", "%.2f");
+    xml_write_configparam(file, "Gain", "/ct", "obs.param;instr.param", "%g");
+    xml_write_configparam(file, "Gain_Key", "",
+	"meta.code;obs.param;instr.param", "");
 
-    fprintf(file,
-	"   <PARAM name=\"Thresh_Type\" datatype=\"char\" arraysize=\"*\""
-	" ucd=\"meta.code;instr.sensitivity;obs.param\" value=\"%s",
-    	key[findkeys("THRESH_TYPE", keylist,
-			FIND_STRICT)].keylist[prefs.thresh_type[0]]);
-    if (prefs.nthresh_type>1)
-      fprintf(file, ",%s", key[findkeys("THRESH_TYPE", keylist,
-			FIND_STRICT)].keylist[prefs.thresh_type[1]]);
-    fprintf(file, "\"/>\n");
+    xml_write_configparam(file, "Pixel_Scale", "arcsec/pix",
+	"obs.param;instr.scale", "%g");
+    xml_write_configparam(file, "Seeing_FWHM", "arcsec",
+	"obs.param;instr.obsty.seeing", "%g");
+    xml_write_configparam(file, "StarNNW_Name", "",
+	"obs.param;meta.dataset;meta.file", "");
 
-    fprintf(file, "   <PARAM name=\"Detect_Thresh\" datatype=\"float\""
-	" arraysize=\"%d\" ucd=\"instr.sensitivity;obs.param\" value=\"%g",
-	prefs.ndthresh, prefs.dthresh[0]);
-    if (prefs.ndthresh>1)
-      fprintf(file, " %g", prefs.dthresh[1]);
-    fprintf(file, "\"/>\n");
+    xml_write_configparam(file, "Back_Type", "", "meta.code;obs.param", "");
+    xml_write_configparam(file, "Back_Value", "ct", "obs.param", "%g");
+    xml_write_configparam(file, "Back_Size", "pix", "obs.param", "%d");
+    xml_write_configparam(file, "Back_FilterSize", "", "obs.param", "%d");
+    xml_write_configparam(file, "BackPhoto_Type", "","meta.code;obs.param", "");
+    xml_write_configparam(file, "BackPhoto_Thick", "pix", "obs.param", "%d");
+    xml_write_configparam(file, "Back_FilterThresh", "ct", "obs.param;", "%g");
 
-    fprintf(file, "   <PARAM name=\"Analysis_Thresh\" datatype=\"float\""
-	" arraysize=\"%d\" ucd=\"instr.sensitivity;obs.param\" value=\"%g",
-	prefs.nthresh, prefs.thresh[0]);
-    if (prefs.nthresh>1)
-      fprintf(file, " %g", prefs.thresh[1]);
-    fprintf(file, "\"/>\n");
+    xml_write_configparam(file, "CheckImage_Type","","meta.code;obs.param", "");
+    xml_write_configparam(file, "CheckImage_Name", "",
+	"meta.id;meta.file;meta.fits", "");
 
-    fprintf(file,
-	"   <PARAM name=\"Filter\" datatype=\"boolean\""
-	" ucd=\"meta.code;obs.param\" value=\"%c\"/>\n",
-    	prefs.filter_flag? 'T':'F');
-    fprintf(file,
-	"   <PARAM name=\"Filter_Name\" datatype=\"char\" arraysize=\"*\""
-	" ucd=\"meta.dataset;meta.file;obs.param\" value=\"%s\"/>\n",
-	prefs.filter_name);
+    xml_write_configparam(file, "Memory_ObjStack", "",
+	"meta.number;src;obs.param", "%d");
+    xml_write_configparam(file, "Memory_Obj2Stack", "",
+	"meta.number;src;obs.param", "%d");
+    xml_write_configparam(file, "Memory_PixStack", "pix",
+	"meta.number;obs.param", "%d");
+    xml_write_configparam(file, "Memory_BufSize", "pix",
+	"meta.number;obs.param", "%d");
 
-    if (prefs.nfilter_thresh)
-      {
-      fprintf(file, "   <PARAM name=\"Filter_Thresh\" datatype=\"float\""
-	" arraysize=\"%d\" ucd=\"instr.sensitivity;obs.param\" value=\"%g",
-	prefs.nfilter_thresh, prefs.filter_thresh[0]);
-      if (prefs.nfilter_thresh>1)
-        fprintf(file, " %g", prefs.filter_thresh[1]);
-      fprintf(file, "\"/>\n");
-      }
+    xml_write_configparam(file, "Assoc_Name", "",
+	"meta;meta.table;meta.file", "");
+    xml_write_configparam(file, "Assoc_Data", "", "meta;meta.table", "%d");
+    xml_write_configparam(file, "Assoc_Params", "", "meta;meta.table", "%d");
+    xml_write_configparam(file, "AssocCoord_Type", "", "meta.code", "");
+    xml_write_configparam(file, "Assoc_Radius", "pix",
+	"meta;phys.size.radius", "");
+    xml_write_configparam(file, "Assoc_Type", "", "meta.code", "");
+    xml_write_configparam(file, "AssocSelec_Type", "", "meta.code", "");
 
-    fprintf(file, "   <PARAM name=\"Deblend_NThresh\" datatype=\"int\""
-	" ucd=\"meta.number;obs.param\" value=\"%d\"/>\n",
-    	prefs.deblend_nthresh);
-    fprintf(file, "   <PARAM name=\"Deblend_MinCont\" datatype=\"float\""
-	" ucd=\"obs.param;arith.ratio\" value=\"%g\"/>\n",
-    	prefs.deblend_mincont);
-    fprintf(file,
-	"   <PARAM name=\"Clean\" datatype=\"boolean\""
-	" ucd=\"meta.code;obs.param\" value=\"%c\"/>\n",
-    	prefs.clean_flag? 'T':'F');
-    fprintf(file, "   <PARAM name=\"Clean_Param\" datatype=\"float\""
-	" ucd=\"meta\" value=\"%g\"/>\n",
-    	prefs.clean_param);
-    fprintf(file,
-	"   <PARAM name=\"Mask_Type\" datatype=\"char\" arraysize=\"*\""
-	" ucd=\"meta.code;obs.param;\" value=\"%s\"/>\n",
-    	key[findkeys("MASK_TYPE", keylist,
-			FIND_STRICT)].keylist[prefs.mask_type]);
+    xml_write_configparam(file, "Verbose_Type", "", "meta.code", "");
+    xml_write_configparam(file, "Header_Suffix", "", "meta.id;meta.file", "");
+    xml_write_configparam(file, "Write_XML", "", "meta.code", "");
+    xml_write_configparam(file, "XML_Name", "", "meta;meta.file", "");
+    xml_write_configparam(file, "XSL_URL", "", "meta.ref.url;meta.file", "");
+    xml_write_configparam(file, "NThreads", "", "meta.number", "%d");
+    xml_write_configparam(file, "FITS_Unsigned", "", "meta.code;obs.param", "");
 
-    fprintf(file,
-	"   <PARAM name=\"Weight_Type\" datatype=\"char\" arraysize=\"*\""
-	" ucd=\"meta.code;obs.param\" value=\"%s",
-    	key[findkeys("WEIGHT_TYPE", keylist,
-			FIND_STRICT)].keylist[prefs.weight_type[0]]);
-    if (prefs.nweight_type>1)
-      fprintf(file, ",%s", key[findkeys("WEIGHT_TYPE", keylist,
-			FIND_STRICT)].keylist[prefs.weight_type[1]]);
-    fprintf(file, "\"/>\n");
-
-    fprintf(file,
-	"   <PARAM name=\"Rescale_Weights\" datatype=\"boolean\""
-	" arraysize=\"%d\" ucd=\"meta.code;obs.param\" value=\"%c",
-    	prefs.nwscale_flag, prefs.wscale_flag[0]? 'T':'F');
-    if (prefs.nwscale_flag>1)
-      fprintf(file, " %c", prefs.wscale_flag[1]? 'T':'F');
-    fprintf(file, "\"/>\n");
-
-
-    fprintf(file, "   <PARAM name=\"Weight_Thresh\" datatype=\"float\""
-	" arraysize=\"%d\" ucd=\"instr.sensitivity;obs.param\" value=\"%g",
-	prefs.nweight_thresh, prefs.weight_thresh[0]);
-    if (prefs.nweight_thresh>1)
-      fprintf(file, " %g", prefs.weight_thresh[1]);
-    fprintf(file, "\"/>\n");
-
-    if ((prefs.weight_type[0] != WEIGHT_NONE
-		&& prefs.weight_type[0] != WEIGHT_FROMBACK)
-	|| (prefs.weight_type[1] != WEIGHT_NONE
-		&& prefs.weight_type[1] != WEIGHT_FROMBACK))
-      {
-      fprintf(file,
-	"   <PARAM name=\"Weight_Image\" datatype=\"char\" arraysize=\"*\""
-	" ucd=\"obs.image;meta.fits;obs.param\" value=\"%s",
-    	(prefs.weight_type[0] != WEIGHT_NONE
-	&& prefs.weight_type[0] != WEIGHT_FROMBACK) ?
-		prefs.wimage_name[0] : NULL);
-      if (prefs.weight_type[1] != WEIGHT_NONE
-		&& prefs.weight_type[1] != WEIGHT_FROMBACK)
-        fprintf(file, ",%s", prefs.wimage_name[1]);
-      fprintf(file, "\"/>\n");
-      }
-
-    fprintf(file,
-	"   <PARAM name=\"Weight_Gain\" datatype=\"boolean\""
-	" ucd=\"meta.code;obs.param\" value=\"%c\"/>\n",
-    	prefs.weightgain_flag? 'T':'F');
-
-    if (prefs.nimaflag)
-      {
-      fprintf(file,
-	"   <PARAM name=\"Flag_Image\" datatype=\"char\" arraysize=\"*\""
-	" ucd=\"obs.image;meta.fits\" value=\"%s",
-    	prefs.fimage_name[0]);
-      for (n=1; n<prefs.nimaflag; n++)
-        fprintf(file, ",%s", prefs.fimage_name[n]);
-      fprintf(file, "\"/>\n");
-      fprintf(file,
-	"   <PARAM name=\"Flag_Type\" datatype=\"char\" arraysize=\"*\""
-	" ucd=\"meta.code\" value=\"%s",
-    	key[findkeys("FLAG_TYPE", keylist,
-			FIND_STRICT)].keylist[prefs.flag_type[0]]);
-      for (n=1; n<prefs.nimaflag; n++)
-        fprintf(file, ",%s", key[findkeys("FLAG_TYPE", keylist,
-			FIND_STRICT)].keylist[prefs.flag_type[n]]);
-      fprintf(file, "\"/>\n");
-      }
-
-    fprintf(file, "   <PARAM name=\"Phot_Apertures\" datatype=\"float\""
-	" arraysize=\"%d\" ucd=\"obs.param\" value=\"%g",
-	prefs.naper, prefs.apert[0]);
-    for (n=1; n<prefs.naper; n++)
-      fprintf(file, " %g", prefs.apert[n]);
-    fprintf(file, "\" unit=\"pix\"/>\n");
-
-    fprintf(file, "   <PARAM name=\"Phot_AutoParams\" datatype=\"float\""
-	" arraysize=\"%d\" ucd=\"obs.param;phot\" value=\"%g",
-	prefs.nautoparam, prefs.autoparam[0]);
-    for (n=1; n<prefs.nautoparam; n++)
-      fprintf(file, " %g", prefs.autoparam[n]);
-    fprintf(file, "\"/>\n");
-
-    fprintf(file, "   <PARAM name=\"Phot_PetroParams\" datatype=\"float\""
-	" arraysize=\"%d\" ucd=\"obs.param;phot\" value=\"%g",
-	prefs.npetroparam, prefs.petroparam[0]);
-    for (n=1; n<prefs.npetroparam; n++)
-      fprintf(file, " %g", prefs.petroparam[n]);
-    fprintf(file, "\"/>\n");
-
-    fprintf(file, "   <PARAM name=\"Phot_AutoApers\" datatype=\"float\""
-	" arraysize=\"%d\" ucd=\"obs.param;phot\" value=\"%g",
-	prefs.nautoaper, prefs.autoaper[0]);
-    for (n=1; n<prefs.nautoaper; n++)
-      fprintf(file, " %g", prefs.autoaper[n]);
-    fprintf(file, "\"/>\n");
-
-    fprintf(file, "   <PARAM name=\"Phot_FluxFrac\" datatype=\"float\""
-	" arraysize=\"%d\" ucd=\"arith.factor;obs.param;phot\" value=\"%g",
-	prefs.nflux_frac, prefs.flux_frac[0]);
-    for (n=1; n<prefs.nflux_frac; n++)
-      fprintf(file, " %g", prefs.flux_frac[n]);
-    fprintf(file, "\"/>\n");
-
-    fprintf(file, "   <PARAM name=\"Satur_Level\" datatype=\"float\""
-	" ucd=\"instr.saturation;phot.count;obs.param\" value=\"%g\""
-	" unit=\"ct\"/>\n", prefs.satur_level);
-    fprintf(file, "   <PARAM name=\"Mag_ZeroPoint\" datatype=\"float\""
-	" ucd=\"phot.calib;phot.mag;obs.param\" value=\"%g\" unit=\"mag\"/>\n",
-    	prefs.mag_zeropoint);
-    fprintf(file, "   <PARAM name=\"Mag_Gamma\" datatype=\"float\""
-	" ucd=\"phot.calib;obs.param\" value=\"%g\"/>\n",
-    	prefs.mag_gamma);
-    fprintf(file, "   <PARAM name=\"Gain\" datatype=\"float\""
-	" ucd=\"instr.param;obs.param\" value=\"%g\"/>\n",
-    	prefs.gain);
-    fprintf(file, "   <PARAM name=\"Pixel_Scale\" datatype=\"float\""
-	" ucd=\"instr.scale;obs.param\" value=\"%g\" unit=\"arcsec\"/>\n",
-    	prefs.pixel_scale);
-    fprintf(file, "   <PARAM name=\"Seeing_FWHM\" datatype=\"float\""
-	" ucd=\"instr.det.psf;stat.mean;obs.param\" value=\"%g\""
-	" unit=\"pix\"/>\n", prefs.seeing_fwhm);
-    fprintf(file,
-	"   <PARAM name=\"StarNNW_Name\" datatype=\"char\" arraysize=\"*\""
-	" ucd=\"meta.dataset;meta.file;obs.param\" value=\"%s\"/>\n",
-	prefs.nnw_name);
-
-    fprintf(file, "   <PARAM name=\"Back_Size\" datatype=\"int\""
-	" arraysize=\"%d\" ucd=\"obs.param\" value=\"%d",
-	prefs.nbacksize, prefs.backsize[0]);
-    for (n=1; n<prefs.nbacksize; n++)
-      fprintf(file, " %d", prefs.backsize[n]);
-    fprintf(file, "\" unit=\"pix\"/>\n");
-
-    fprintf(file, "   <PARAM name=\"Back_FilterSize\" datatype=\"int\""
-	" arraysize=\"%d\" ucd=\"obs.param\" value=\"%d",
-	prefs.nbackfsize, prefs.backfsize[0]);
-    for (n=1; n<prefs.nbackfsize; n++)
-      fprintf(file, " %d", prefs.backfsize[n]);
-    fprintf(file, "\"/>\n");
-
-    fprintf(file,
-	"   <PARAM name=\"BackPhoto_Type\" datatype=\"char\" arraysize=\"*\""
-	" ucd=\"meta.code;obs.param;\" value=\"%s\"/>\n",
-    	key[findkeys("BACKPHOTO_TYPE", keylist,
-			FIND_STRICT)].keylist[prefs.pback_type]);
-
-    fprintf(file, "   <PARAM name=\"BackPhoto_Thick\" datatype=\"int\""
-	" ucd=\"obs.param\" value=\"%d\" unit=\"pix\"/>\n",
-    	prefs.pback_size);
-
-    fprintf(file, "   <PARAM name=\"Back_FiltThresh\" datatype=\"float\""
-	" ucd=\"phot.count;arith.ratio;obs.param\" value=\"%g\"/>\n",
-    	prefs.backfthresh);
-
-    fprintf(file,
-	"   <PARAM name=\"CheckImage_Type\" datatype=\"char\" arraysize=\"*\""
-	" ucd=\"meta.code\" value=\"%s",
-    	key[findkeys("CHECKIMAGE_TYPE", keylist,
-			FIND_STRICT)].keylist[prefs.check_type[0]]);
-    for (n=1; n<prefs.ncheck_type; n++)
-      fprintf(file,
-	",%s",
-    	key[findkeys("CHECKIMAGE_TYPE", keylist,
-			FIND_STRICT)].keylist[prefs.check_type[n]]);
-    fprintf(file, "\"/>\n");
-
-    fprintf(file,
-	"   <PARAM name=\"CheckImage_Name\" datatype=\"char\" arraysize=\"*\""
-	" ucd=\"meta.file\" value=\"%s",
-    	prefs.check_name[0]);
-    for (n=1; n<prefs.ncheck_type; n++)
-      if (prefs.check_type[n] != CHECK_NONE)
-        fprintf(file, ",%s", prefs.check_name[n]);
-    fprintf(file, "\"/>\n");
-
-    fprintf(file, "   <PARAM name=\"Memory_ObjStack\" datatype=\"int\""
-	" ucd=\"meta.number;src;obs.param\" value=\"%d\"/>\n",
-    	prefs.clean_stacksize);
-    fprintf(file, "   <PARAM name=\"Memory_PixStack\" datatype=\"int\""
-	" ucd=\"meta.number;obs.param\" value=\"%d\"/>\n",
-    	prefs.mem_pixstack);
-    fprintf(file, "   <PARAM name=\"Memory_BufSize\" datatype=\"int\""
-	" ucd=\"meta.number;obs.param\" value=\"%d\"/>\n",
-    	prefs.mem_bufsize);
-
-    fprintf(file,
-	"   <PARAM name=\"Assoc_Name\" datatype=\"char\" arraysize=\"*\""
-	" ucd=\"meta.dataset;meta.file\" value=\"%s\"/>\n",
-	prefs.assoc_name);
-    if (prefs.nassoc_data)
-      {
-      fprintf(file, "   <PARAM name=\"Assoc_Data\" datatype=\"int\""
-	" arraysize=\"%d\" ucd=\"meta.code;obs.param\" value=\"%d",
-	prefs.nassoc_data, prefs.assoc_data[0]);
-      for (n=1; n<prefs.nassoc_data; n++)
-        fprintf(file, " %d", prefs.assoc_data[n]);
-      fprintf(file, "\"/>\n");
-      }
-    if (prefs.nassoc_param)
-      {
-      fprintf(file, "   <PARAM name=\"Assoc_Params\" datatype=\"int\""
-	" arraysize=\"%d\" ucd=\"meta.code;obs.param\" value=\"%d",
-	prefs.nassoc_param, prefs.assoc_param[0]);
-      for (n=1; n<prefs.nassoc_param; n++)
-        fprintf(file, " %d", prefs.assoc_param[n]);
-      fprintf(file, "\"/>\n");
-      }
-    fprintf(file,
-	"   <PARAM name=\"AssocCoord_Type\" datatype=\"char\" arraysize=\"*\""
-	" ucd=\"meta.code;obs.param\" value=\"%s\"/>\n",
-    	key[findkeys("ASSOCCOORD_TYPE", keylist,
-			FIND_STRICT)].keylist[prefs.assoccoord_type]);
-    fprintf(file, "   <PARAM name=\"Assoc_Radius\" datatype=\"float\""
-	" ucd=\"phys.size.radius;obs.param\" value=\"%g\" unit=\"pix\"/>\n",
-    	prefs.assoc_radius);
-    fprintf(file,
-	"   <PARAM name=\"Assoc_Type\" datatype=\"char\" arraysize=\"*\""
-	" ucd=\"meta.code;obs.param\" value=\"%s\"/>\n",
-    	key[findkeys("ASSOC_TYPE", keylist,
-			FIND_STRICT)].keylist[prefs.assoc_type]);
-    fprintf(file,
-	"   <PARAM name=\"AssocSelec_Type\" datatype=\"char\" arraysize=\"*\""
-	" ucd=\"meta.code;obs.param\" value=\"%s\"/>\n",
-    	key[findkeys("ASSOCSELEC_TYPE", keylist,
-			FIND_STRICT)].keylist[prefs.assocselec_type]);
-
-    fprintf(file,
-	"   <PARAM name=\"Verbose_Type\" datatype=\"char\" arraysize=\"*\""
-	" ucd=\"meta.code\" value=\"%s\"/>\n",
-    	key[findkeys("VERBOSE_TYPE", keylist,
-			FIND_STRICT)].keylist[prefs.verbose_type]);
-
-    fprintf(file,
-	"   <PARAM name=\"Header_Suffix\" datatype=\"char\" arraysize=\"*\""
-	" ucd=\"meta.dataset;meta.file\" value=\"%s\"/>\n",
-	prefs.head_suffix);
-    fprintf(file,
-	"   <PARAM name=\"FITS_Unsigned\" datatype=\"boolean\""
-	" ucd=\"meta.code;obs.param\" value=\"%c\"/>\n",
-    	prefs.fitsunsigned_flag? 'T':'F');
-
-    fprintf(file,
-	"   <PARAM name=\"PSF_Name\" datatype=\"char\" arraysize=\"*\""
-	" ucd=\"meta.dataset;meta.file;obs.param\" value=\"%s\"/>\n",
-	prefs.psf_name[0]);
-    fprintf(file, "   <PARAM name=\"PSF_NMax\" datatype=\"int\""
-	" ucd=\"meta.number;obs.param\" value=\"%d\"/>\n",
-    	prefs.psf_npsfmax);
-
-    fprintf(file,
-	"   <PARAM name=\"SOM_Name\" datatype=\"char\" arraysize=\"*\""
-	" ucd=\"meta.dataset;meta.file;obs.param\" value=\"%s\"/>\n",
-	prefs.som_name);
+    xml_write_configparam(file, "PSF_Name", "",
+	"instr.det.psf;meta.file;meta.fits", "");
     }
 
   fprintf(file, "  </RESOURCE>\n");
@@ -828,29 +592,27 @@ int	write_xml_meta(FILE *file, char *error)
   }
 
 
-
-
-/****** write_xmlerror ******************************************************
-PROTO	int	write_xmlerror(char *error)
+/****** xml_write_error ******************************************************
+PROTO	int xml_write_error(char *error)
 PURPOSE	Save meta-data to a simplified XML file in case of a catched error
 INPUT	a character string.
 OUTPUT	RETURN_OK if everything went fine, RETURN_ERROR otherwise.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	14/07/2006
+VERSION	24/02/2012
  ***/
-void	write_xmlerror(char *filename, char *error)
+void	xml_write_error(char *filename, char *error)
   {
    FILE			*file;
 
   if (!(file = fopen(filename, "w")))
     return;
 
-  write_xml_header(file);
+  xml_write_header(file);
 
   fprintf(file, " </TABLE>\n");
 
-  write_xml_meta(file, error);
+  xml_write_meta(file, error);
 
   fprintf(file, "</RESOURCE>\n");
   fprintf(file, "</VOTABLE>\n");
@@ -860,4 +622,172 @@ void	write_xmlerror(char *filename, char *error)
   return;
   }
 
+
+/****** xml_write_configparam ************************************************
+PROTO	int xml_write_configparam(FILE *file, char *name, char *unit,
+		char *ucd, char *format)
+PURPOSE	Write to a VO-table the configuration parameters.
+INPUT	Output stream (file) pointer,
+	Name of the parameter keyword,
+	unit,
+	UCD string,
+	printf() format to use in "value".
+OUTPUT	RETURN_OK if the keyword exists, RETURN_ERROR otherwise.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	24/02/2012
+ ***/
+int	xml_write_configparam(FILE *file, char *name, char *unit,
+		 char *ucd, char *format)
+  {
+   char		value[MAXCHAR], uunit[MAXCHAR];
+   int		i,j,n;
+
+  for (i=0; key[i].name[0] && cistrcmp(name, key[i].name, FIND_STRICT); i++);
+  if (!key[i].name[0])
+    return RETURN_ERROR;
+
+  if (*unit)
+    sprintf(uunit, " unit=\"%s\"", unit);
+  else
+    *uunit = '\0';
+  switch(key[i].type)
+    {
+    case P_FLOAT:
+      sprintf(value, format, *((double *)key[i].ptr));
+      fprintf(file, "   <PARAM name=\"%s\"%s datatype=\"double\""
+	" ucd=\"%s\" value=\"%s\"/>\n",
+	name, uunit, ucd, value);
+      break;
+    case P_FLOATLIST:
+      n = *(key[i].nlistptr);
+      if (n)
+        {
+        sprintf(value, format, ((double *)key[i].ptr)[0]);
+        fprintf(file, "   <PARAM name=\"%s\"%s datatype=\"double\""
+		" arraysize=\"%d\" ucd=\"%s\" value=\"%s",
+		name, uunit, n, ucd, value);
+        for (j=1; j<n; j++)
+          {
+          sprintf(value, format, ((double *)key[i].ptr)[j]);
+          fprintf(file, " %s", value);
+          }
+        fprintf(file, "\"/>\n");
+        }
+      else
+        fprintf(file, "   <PARAM name=\"%s\"%s datatype=\"double\""
+		" ucd=\"%s\" value=\"\"/>\n",
+		name, uunit, ucd);
+      break;
+    case P_INT:
+      sprintf(value, format, *((int *)key[i].ptr));
+      fprintf(file, "   <PARAM name=\"%s\"%s datatype=\"int\""
+	" ucd=\"%s\" value=\"%s\"/>\n",
+	name, uunit, ucd, value);
+      break;
+    case P_INTLIST:
+      n = *(key[i].nlistptr);
+      if (n)
+        {
+        sprintf(value, format, ((int *)key[i].ptr)[0]);
+        fprintf(file, "   <PARAM name=\"%s\"%s datatype=\"int\""
+		" arraysize=\"%d\" ucd=\"%s\" value=\"%s",
+		name, uunit, n, ucd, value);
+        for (j=1; j<n; j++)
+          {
+          sprintf(value, format, ((int *)key[i].ptr)[j]);
+          fprintf(file, " %s", value);
+          }
+        fprintf(file, "\"/>\n");
+        }
+      else
+        fprintf(file, "   <PARAM name=\"%s\"%s datatype=\"double\""
+		" ucd=\"%s\" value=\"\"/>\n",
+		name, uunit, ucd);
+      break;
+    case P_BOOL:
+      sprintf(value, "%c", *((int *)key[i].ptr)? 'T':'F');
+      fprintf(file, "   <PARAM name=\"%s\" datatype=\"boolean\""
+	" ucd=\"%s\" value=\"%s\"/>\n",
+	name, ucd, value);
+      break;
+    case P_BOOLLIST:
+      n = *(key[i].nlistptr);
+      if (n)
+        {
+        sprintf(value, "%c", ((int *)key[i].ptr)[0]? 'T':'F');
+        fprintf(file, "   <PARAM name=\"%s\" datatype=\"boolean\""
+		" arraysize=\"%d\" ucd=\"%s\" value=\"%s",
+		name, n, ucd, value);
+        for (j=1; j<n; j++)
+          {
+          sprintf(value, "%c", ((int *)key[i].ptr)[j]? 'T':'F');
+          fprintf(file, " %s", value);
+          }
+        fprintf(file, "\"/>\n");
+        }
+      else
+        fprintf(file, "   <PARAM name=\"%s\" datatype=\"boolean\""
+		" ucd=\"%s\" value=\"\"/>\n",
+		name, ucd);
+      break;
+    case P_STRING:
+      strcpy(value, (char *)key[i].ptr);
+      fprintf(file, "   <PARAM name=\"%s\" datatype=\"char\" arraysize=\"*\""
+	" ucd=\"%s\" value=\"%s\"/>\n",
+	name, ucd, value);
+      break;
+    case P_STRINGLIST:
+      n = *(key[i].nlistptr);
+      if (n)
+        {
+        strcpy(value, ((char **)key[i].ptr)[0]);
+        fprintf(file, "   <PARAM name=\"%s\" datatype=\"char\""
+		" arraysize=\"*\" ucd=\"%s\" value=\"%s",
+		name, ucd, value);
+        for (j=1; j<n; j++)
+          {
+          strcpy(value, ((char **)key[i].ptr)[j]);
+          fprintf(file, ",%s", value);
+          }
+        fprintf(file, "\"/>\n");
+        }
+      else
+        fprintf(file, "   <PARAM name=\"%s\" datatype=\"char\""
+		" arraysize=\"*\" ucd=\"%s\" value=\"\"/>\n",
+		name, ucd);
+      break;
+    case P_KEY:
+      strcpy(value, key[i].keylist[*((int *)key[i].ptr)]);
+      fprintf(file, "   <PARAM name=\"%s\" datatype=\"char\" arraysize=\"*\""
+	" ucd=\"%s\" value=\"%s\"/>\n",
+	name, ucd, value);
+      break;
+    case P_KEYLIST:
+      n = *(key[i].nlistptr);
+      if (n)
+        {
+        strcpy(value, key[i].keylist[((int *)key[i].ptr)[0]]);
+        fprintf(file, "   <PARAM name=\"%s\" datatype=\"char\""
+		" arraysize=\"*\" ucd=\"%s\" value=\"%s",
+		name, ucd, value);
+        for (j=1; j<n; j++)
+          {
+          strcpy(value, key[i].keylist[((int *)key[i].ptr)[j]]);
+          fprintf(file, ",%s", value);
+          }
+        fprintf(file, "\"/>\n");
+        }
+      else
+        fprintf(file, "   <PARAM name=\"%s\" datatype=\"char\""
+		" arraysize=\"*\" ucd=\"%s\" value=\"\"/>\n",
+		name, ucd);
+      break;
+    default:
+      error(EXIT_FAILURE, "*Internal Error*: Type Unknown",
+		" in xml_write_configparam()");
+    }
+
+  return RETURN_OK;
+  }
 

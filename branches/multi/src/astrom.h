@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/01/2012
+*	Last modified:		06/03/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -37,18 +37,23 @@
 /*------------------------------- structures --------------------------------*/
 /*------------------------------- functions ---------------------------------*/
 extern void		astrom_errparam(fieldstruct *field, obj2struct *obj2),
+			astrom_init(fieldstruct *field, double pixel_scale),
 			astrom_peakpos(fieldstruct *field, obj2struct *obj2),
 			astrom_pos(fieldstruct **fields, int nfield,
 				obj2struct *obj2),
-			astrom_proferrparam(fieldstruct *field, obj2struct *obj2),
+			astrom_proferrparam(fieldstruct *field,
+				obj2struct *obj2),
 			astrom_profpos(fieldstruct *field, obj2struct *obj2),
 			astrom_profshapeparam(fieldstruct *field,
-					obj2struct *obj2),
-			astrom_psferrparam(fieldstruct *field, obj2struct *obj2),
+				obj2struct *obj2),
+			astrom_psferrparam(fieldstruct *field,
+				obj2struct *obj2),
 			astrom_psfpos(fieldstruct *field, obj2struct *obj2),
 			astrom_shapeparam(fieldstruct *field, obj2struct *obj2),
-			astrom_winerrparam(fieldstruct *field, obj2struct *obj2),
-			astrom_winpos(fieldstruct *field, obj2struct *obj2),
-			astrom_winshapeparam(fieldstruct *field, obj2struct *obj2),
-			initastrom(fieldstruct *field);
+			astrom_winerrparam(fieldstruct **fields, int nfield,
+				obj2struct *obj2),
+			astrom_winpos(fieldstruct **fields, int nfield,
+				obj2struct *obj2),
+			astrom_winshapeparam(fieldstruct **fields, int nfield,
+				obj2struct *obj2);
 
