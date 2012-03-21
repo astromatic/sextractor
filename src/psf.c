@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1998-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1998-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		09/10/2011
+*	Last modified:		20/03/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -344,7 +344,7 @@ void	psf_fit(psfstruct *psf, fieldstruct *field, fieldstruct *wfield,
   backnoise2 = field->backsig*field->backsig;
   satlevel = field->satur_level - obj2->bkg[0];
   wthresh = wfield?wfield->weight_thresh:BIG;
-  gainflag = prefs.weightgain_flag;
+  gainflag = prefs.weightgain_flag[0];
   psf_fwhm = psf->fwhm*psf->pixstep;
 
  
@@ -712,7 +712,7 @@ void    double_psf_fit(psfstruct *ppsf, fieldstruct *pfield, fieldstruct *pwfiel
   npsfmax=prefs.psf_npsfmax;
   pbacknoise2 = pfield->backsig*pfield->backsig;
   satlevel = field->satur_level - obj2->bkg[0];
-  gainflag = prefs.weightgain_flag;
+  gainflag = prefs.weightgain_flag[0];
   psf_fwhm = psf->fwhm*psf->pixstep;
   ppsf_fwhm = ppsf->fwhm*ppsf->pixstep;
   pwthresh = pwfield?pwfield->weight_thresh:BIG;
@@ -973,7 +973,7 @@ OUTPUT	RETURN_ERROR if the coordinates are outside object image,
 	RETURN_OK otherwise.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	23/06/2011
+VERSION	20/03/2012
  ***/
 int	psf_copyobjpix(PIXTYPE *data, PIXTYPE *weight,
 			int wout, int hout, int ix, int iy,
@@ -989,10 +989,10 @@ int	psf_copyobjpix(PIXTYPE *data, PIXTYPE *weight,
   if (weight)
     memset(weight, 0, wout*hout*sizeof(PIXTYPE));
 
-  ix -= obj2->immin[0];
-  iy -= obj2->immin[1];
-  win = obj2->imsize[0];
-  hin = obj2->imsize[1];
+  ix -= obj2->imxmin[0];
+  iy -= obj2->imymin[0];
+  win = obj2->imxsize[0];
+  hin = obj2->imysize[0];
 
 /* Don't go further if out of frame!! */
   if (ix<0 || ix>=win || iy<0 || iy>=hin)

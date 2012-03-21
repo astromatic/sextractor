@@ -5,7 +5,7 @@
 *
 *	This file part of:	AstrOmatic software
 *
-*	Copyright:		(C) 2007-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 2007-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
 *				(C) 2004 Manolis Lourakis (original version)
 *
 *	Licenses:		GNU General Public License

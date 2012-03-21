@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		18/01/2012
+*	Last modified:		20/03/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -38,6 +38,6 @@ void			weight_count(objstruct *obj, pliststruct *pixel),
 				int npix);
 
 extern fieldstruct	*weight_init(char *filename, fieldstruct *reffield,
-				int ext, weightenum wtype);
+				int imindex, int ext, weightenum wtype);
 
 

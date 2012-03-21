@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		15/02/2012
+*	Last modified:		21/03/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -70,7 +70,7 @@ INPUT	-.
 OUTPUT	-.
 NOTES	Global preferences are used.
 AUTHOR	E. Bertin (IAP)
-VERSION	15/02/2012
+VERSION	21/03/2012
  ***/
 void	makeit(void)
   {
@@ -87,6 +87,7 @@ void	makeit(void)
    static time_t        thetime1, thetime2;
    struct tm		*tm;
    PIXTYPE		interpthresh;
+   char			str[82];
    int			ext_fimage[MAXFLAG],ext_image[MAXIMAGE],
 			ext_wimage[MAXIMAGE], nparam2[2],
 			*file_index,*wfile_index,*ffile_index,*file_next,
@@ -123,9 +124,9 @@ void	makeit(void)
 /* Read extension numbers and remove them from the filenames if present */
  for (i=0; i<prefs.nimage; i++)
    ext_image[i] = selectext(prefs.image_name[i]);
- for (i=0; i<prefs.nwimage_name; i++)
+ for (i=0; i<prefs.nwimage; i++)
    ext_wimage[i] = selectext(prefs.wimage_name[i]);
- for (i=0; i<prefs.nfimage_name; i++)
+ for (i=0; i<prefs.nfimage; i++)
    ext_fimage[i] = selectext(prefs.fimage_name[i]);
 
 /* Use the first image to probe the number of extensions to analyse */
@@ -183,7 +184,16 @@ void	makeit(void)
     for (e=0; e<next; e++)
       {
       ne = ext+e;
-      field = fields[ne] = field_init(prefs.image_name[i],
+      if (next>1)
+        sprintf(str, "Examining %s %.40s[%d/%d]...",
+		i? "measurement image":"detection image",
+		prefs.image_name[i], e+1,next);
+      else
+        sprintf(str, "Examining %s %.40s...",
+		i? "measurement image":"detection image",
+		prefs.image_name[i]);
+      NFPRINTF(OUTPUT, str);
+      field = fields[ne] = field_init(prefs.image_name[i], i,
 		forcextflag? ext_image[i]:e,
 		i? MEASURE_FIELD : DETECT_FIELD|MEASURE_FIELD);
       if (previndex>=0 && (field->width != fields[previndex+e]->width
@@ -195,7 +205,16 @@ void	makeit(void)
         {
         if (prefs.interp_type[i] == INTERP_ALL)
           init_interpolate(fields[ne], -1, -1);
-        wfield = wfields[ne] = weight_init(prefs.wimage_name[i], field,
+        if (next>1)
+          sprintf(str, "Examining %s %.40s[%d/%d]...",
+		"weight image",
+		prefs.wimage_name[i], e+1,next);
+        else
+          sprintf(str, "Examining %s %.40s...",
+		"weight image",
+		prefs.wimage_name[i]);
+        NFPRINTF(OUTPUT, str);
+        wfield = wfields[ne] = weight_init(prefs.wimage_name[i], field, i,
 		forcextflag? ext_wimage[i]:e,
 		prefs.weight_type[i]);
         interpthresh = prefs.weight_thresh[i];
@@ -214,68 +233,83 @@ void	makeit(void)
     file_next[i] = next;
     }
 
+  NFPRINTF(OUTPUT,"");
+
   nfield = ext;
-  print_instruinfo();
+  photom_printinstruinfo();
 
 /* Init the FLAG-images */
-  nffieldmax = nfimage = prefs.nimaisoflag;
-  nfext = next;
-  if ((nfimage))
+  nfimage = 0;
+  if ((prefs.imaflags_flag))
     {
-    QMALLOC(fefields, fieldstruct *, nffieldmax)
-    QMALLOC(ffields, fieldstruct *, nfimage);
-    QMALLOC(ffile_index, int, nfimage);
-    QMALLOC(ffile_next, int, nfimage);
-    }
-  else
-    fefields = ffields = NULL;
-  ext = 0;
-  previndex = -1;
-  for (i=0; i<nfimage; i++, ext+=nfext)
-    {
-    if (!(imacat = read_cat(prefs.fimage_name[i])))
-      error(EXIT_FAILURE, "*Error*: cannot open ", prefs.fimage_name[i]);
-    if (!forcextflag)
+    nffieldmax = nfimage = prefs.nfimage;
+    nfext = next;
+    if ((nfimage))
       {
-/*---- Compute the number of valid input extensions */
-      nfext = 0;
-      for (ntab = 0 ; ntab<imacat->ntab; ntab++, imatab = imatab->nexttab)
+      QMALLOC(fefields, fieldstruct *, nffieldmax)
+      QMALLOC(ffields, fieldstruct *, nfimage);
+      QMALLOC(ffile_index, int, nfimage);
+      QMALLOC(ffile_next, int, nfimage);
+      }
+    else
+      fefields = ffields = NULL;
+    ext = 0;
+    previndex = -1;
+    for (i=0; i<nfimage; i++, ext+=nfext)
+      {
+      if (!(imacat = read_cat(prefs.fimage_name[i])))
+        error(EXIT_FAILURE, "*Error*: cannot open ", prefs.fimage_name[i]);
+      if (!forcextflag)
         {
-/*------ Check for the next valid image extension */
-        if ((imatab->naxis < 2)
+/*------ Compute the number of valid input extensions */
+        nfext = 0;
+        for (ntab = 0 ; ntab<imacat->ntab; ntab++, imatab = imatab->nexttab)
+          {
+/*-------- Check for the next valid image extension */
+          if ((imatab->naxis < 2)
 		|| !strncmp(imatab->xtension, "BINTABLE", 8)
 		|| !strncmp(imatab->xtension, "ASCTABLE", 8))
-          continue;
-        nfext++;
+            continue;
+          nfext++;
+          }
         }
-      }
-    if (ext+nfext>nffieldmax)
-      {
-      nffieldmax *= 2;
-      QREALLOC(ffields, fieldstruct *, nffieldmax);
-      }
-    for (e=0; e<nfext; e++)
-      {
-      ne = ext+e;
-      ffield = ffields[ne] = field_init(prefs.fimage_name[i],
-		forcextflag? ext_fimage[i]:e, FLAG_FIELD);
-      if ((previndex>=0) && (ffield->width != ffields[previndex+e]->width
-		|| ffield->height != ffields[previndex+e]->height))
-        error(EXIT_FAILURE, "*Error*: unexpected image size in ",
+      if (ext+nfext>nffieldmax)
+        {
+        nffieldmax *= 2;
+        QREALLOC(ffields, fieldstruct *, nffieldmax);
+        }
+      for (e=0; e<nfext; e++)
+        {
+        ne = ext+e;
+        if (nfext>1)
+          sprintf(str, "Examining %s %.40s[%d/%d]...",
+		"flag image",
+		prefs.fimage_name[i], e+1,nfext);
+        else
+          sprintf(str, "Examining %s %.40s...",
+		"flag image",
 		prefs.fimage_name[i]);
+        NFPRINTF(OUTPUT, str);
+        ffield = ffields[ne] = field_init(prefs.fimage_name[i], i,
+		forcextflag? ext_fimage[i]:e, FLAG_FIELD);
+        if ((previndex>=0) && (ffield->width != ffields[previndex+e]->width
+		|| ffield->height != ffields[previndex+e]->height))
+          error(EXIT_FAILURE, "*Error*: unexpected image size in ",
+		prefs.fimage_name[i]);
+        }
+      previndex = ffile_index[i] = ext;
+      ffile_next[i] = nfext;
       }
-    previndex = ffile_index[i] = ext;
-    ffile_next[i] = nfext;
+
+    nffield = ext;
     }
 
-  nffield = ext;
-
-/* Initialize the CHECK-images */
+/*-- Initialize the CHECK-images */
   if (prefs.check_flag)
     {
      checkenum	c;
 
-    NFPRINTF(OUTPUT, "Initializing check-image(s)");
+    NFPRINTF(OUTPUT, "Initializing check-image(s)...");
     for (i=0; i<prefs.ncheck_type; i++)
       if ((c=prefs.check_type[i]) != CHECK_NONE)
         {
@@ -289,7 +323,7 @@ void	makeit(void)
 
   if (prefs.psf_flag)
     {
-    NFPRINTF(OUTPUT, "Reading PSF information");
+    NFPRINTF(OUTPUT, "Reading PSF information...");
     QCALLOC(psfs, psfstruct *, nfield);
     for (i=0; i<nfield; i++)
       psfs[i] = psf_load(prefs.psf_name[i]);
@@ -303,7 +337,7 @@ void	makeit(void)
 #ifdef USE_MODEL
     fft_init(prefs.nthreads);
 /* Create profiles at full resolution */
-    NFPRINTF(OUTPUT, "Preparing profile models");
+    NFPRINTF(OUTPUT, "Preparing profile models...");
     prefs.prof_modelflags = 
 	 (FLAG(obj2.prof_offset_flux)? MODEL_BACK : MODEL_NONE)
 	|(FLAG(obj2.prof_dirac_flux)? MODEL_DIRAC : MODEL_NONE)
@@ -376,9 +410,9 @@ void	makeit(void)
 
   if (FLAG(obj2.sprob))
     {
-    NFPRINTF(OUTPUT, "Initializing Neural Network");
+    NFPRINTF(OUTPUT, "Initializing classification neural network...");
     neurinit();
-    NFPRINTF(OUTPUT, "Reading Neural Network Weights");
+    NFPRINTF(OUTPUT, "Reading neural network weights...");
     getnnw(); 
     }
 
@@ -401,25 +435,32 @@ void	makeit(void)
   catout_allocparams(thecat.obj2list);
 /* Allocate memory for other arrays (not catalogue measurements) */
   catout_allocother(thecat.obj2list, &flagobj2.image, nimage*sizeof(PIXTYPE *));
+  catout_allocother(thecat.obj2list, &flagobj2.imxsize, nimage*sizeof(int));
+  catout_allocother(thecat.obj2list, &flagobj2.imysize, nimage*sizeof(int));
+  catout_allocother(thecat.obj2list, &flagobj2.imxmin, nimage*sizeof(int));
+  catout_allocother(thecat.obj2list, &flagobj2.imxmax, nimage*sizeof(int));
+  catout_allocother(thecat.obj2list, &flagobj2.imymin, nimage*sizeof(int));
+  catout_allocother(thecat.obj2list, &flagobj2.imymax, nimage*sizeof(int));
   if (prefs.weights_flag)
     catout_allocother(thecat.obj2list, &flagobj2.weight,
-					 nimage*sizeof(PIXTYPE *));
+		nimage*sizeof(PIXTYPE *));
   catout_allocother(thecat.obj2list, &flagobj2.dbkg, nimage*sizeof(float));
   catout_allocother(thecat.obj2list, &flagobj2.sigbkg, nimage*sizeof(float));
-  catout_allocother(thecat.obj2list, &flagobj2.flux,
-					prefs.nphotinstru*sizeof(double));
-  catout_allocother(thecat.obj2list, &flagobj2.fluxerr,
-					prefs.nphotinstru*sizeof(double));
+  catout_allocother(thecat.obj2list, &flagobj2.cflux,
+		prefs.nphotinstru*sizeof(double));	/* to combine fluxes*/
+  catout_allocother(thecat.obj2list, &flagobj2.cfluxw,
+		prefs.nphotinstru*sizeof(double));	/* to combine fluxes*/
   prefs_use();
 
 
 /* Initialize catalog output */
-  NFPRINTF(OUTPUT, "Initializing catalog");
+  NFPRINTF(OUTPUT, "Initializing catalogue...");
   catout_init();
 
 /* Initialize XML data */
+  NFPRINTF(OUTPUT, "Initializing XML output...");
   if (prefs.xml_flag || prefs.cat_type==ASCII_VO)
-    init_xml(next);
+    xml_init(next);
 
 /* Initial time measurement*/
   time(&thetime1);
@@ -430,38 +471,50 @@ void	makeit(void)
     {
     for (i=0; i<nimage; i++)
       {
-      efields[i]= fields[i*next+e];
-      wefields[i] = wfields[i*next+e];
-      QPRINTF(OUTPUT, i? "Measurement image:":"Detection+Measurement image: ");
-      back_map(efields[i], wefields[i], prefs.wscale_flag[i]);
-      if (i)
+      field = efields[i]= fields[i*next+e];
+      wfield = wefields[i] = wfields[i*next+e];
+      if (next>1)
+        sprintf(str, "[%d/%d]", e+1, next);
+      NFPRINTF(OUTPUT, "");
+      QPRINTF(OUTPUT, " \n");
+      QPRINTF(OUTPUT, "----- Image %.60s%s:\n",
+	field->rfilename, next>1? str:"");
+      field_printinfo(field, field);
+      back_map(field, wfield, prefs.wscale_flag[i]);
+      if ((i))
+        {
         QPRINTF(OUTPUT,
-		"Background: %-10g RMS: %-10g / Analysis threshold: %-10g \n",
-		efields[i]->backmean, efields[i]->backsig, efields[i]->thresh);
+		"    Background: %.6g   RMS: %.5g"
+		"   Analysis threshold: %.5g \n",
+		field->backmean, field->backsig, field->thresh);
+        }
       else
+        {
         QPRINTF(OUTPUT,
-		"Background: %-10g RMS: %-10g / Detection threshold: %-10g"
-		" / Analysis threshold: %-10g \n",
-		efields[i]->backmean, efields[i]->backsig,
-		efields[i]->dthresh, efields[i]->thresh);
+		"    Background: %.6g   RMS: %.5g   Analysis threshold: %.5g"
+		"   Detection threshold: %.5g \n",
+		field->backmean, field->backsig,
+		field->thresh, field->dthresh);
+        }
 
 /*---- For interpolated weight-maps, copy the background structure */
-      if (wefields[i] && wefields[i]->flags&(INTERP_FIELD|BACKRMS_FIELD))
-        back_copy(wefields[i]->reffield, wefields[i]);
+      if (wfield && wfield->flags&(INTERP_FIELD|BACKRMS_FIELD))
+        back_copy(wfield->reffield, wfield);
 
 /*---- Initialize PSF contexts and workspace */
       if (prefs.psf_flag)
         if (psfs[i])
           {
-          psf_readcontext(psfs[i], efields[i]);
+          psf_readcontext(psfs[i], field);
           psf_init(psfs[i]);
           fields[i]->psf = &psf[i];
           }
       }
 
 /*-- Flag maps */
-    for (i=0; i<nfimage; i++)
-      fefields[i]= ffields[i*next+e];
+    if ((prefs.imaflags_flag))
+      for (i=0; i<nfimage; i++)
+        fefields[i]= ffields[i*next+e];
 
 /*-- Prepare learn and/or associations */
     if (prefs.assoc_flag)
@@ -479,6 +532,9 @@ void	makeit(void)
     NFPRINTF(OUTPUT, "Scanning image");
     scan_extract(efields[0], wfields? wefields[0] : NULL,
 		efields, wefields, nimage, fefields, nfimage);
+
+    thecat.ntotalsum += thecat.ntotal;
+    thecat.nlinesum += efields[0]->height;
 
 /*-- Finish the current CHECK-image processing */
     if (prefs.check_flag)
@@ -500,7 +556,7 @@ void	makeit(void)
 
 /* --Update XML data */
     if (prefs.xml_flag || prefs.cat_type==ASCII_VO)
-      update_xml(&thecat, efields, wefields);
+      xml_update(&thecat, efields, wefields);
 
 
 /*-- Close ASSOC routines */
@@ -587,23 +643,29 @@ void	makeit(void)
 
 /* Write XML */
   if (prefs.xml_flag)
-    write_xml(prefs.xml_name);
+    xml_write(prefs.xml_name);
 
 /* Free memory allocated for arrays that are not catalogue measurements */
   catout_freeother(thecat.obj2list, &flagobj2.image);
+  catout_freeother(thecat.obj2list, &flagobj2.imxsize);
+  catout_freeother(thecat.obj2list, &flagobj2.imysize);
+  catout_freeother(thecat.obj2list, &flagobj2.imxmin);
+  catout_freeother(thecat.obj2list, &flagobj2.imxmax);
+  catout_freeother(thecat.obj2list, &flagobj2.imymin);
+  catout_freeother(thecat.obj2list, &flagobj2.imymax);
   if (prefs.weights_flag)
     catout_freeother(thecat.obj2list, &flagobj2.weight);
   catout_freeother(thecat.obj2list, &flagobj2.dbkg);
   catout_freeother(thecat.obj2list, &flagobj2.sigbkg);
-  catout_freeother(thecat.obj2list, &flagobj2.flux);
-  catout_freeother(thecat.obj2list, &flagobj2.fluxerr);
+  catout_freeother(thecat.obj2list, &flagobj2.cflux);
+  catout_freeother(thecat.obj2list, &flagobj2.cfluxw);
 
 /* End catalog */
   catout_end((char *)NULL);
 
 
   if (prefs.xml_flag || prefs.cat_type==ASCII_VO)
-    end_xml();
+    xml_end();
 
   return;
   }
@@ -617,7 +679,7 @@ INPUT	a character string,
 OUTPUT	RETURN_OK if everything went fine, RETURN_ERROR otherwise.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	18/07/2011
+VERSION	24/02/2012
  ***/
 void	write_error(char *msg1, char *msg2)
   {
@@ -625,12 +687,12 @@ void	write_error(char *msg1, char *msg2)
 
   sprintf(error, "%s%s", msg1,msg2);
   if (prefs.xml_flag)
-    write_xmlerror(prefs.xml_name, error);
+    xml_write_error(prefs.xml_name, error);
 
 /* Also close existing catalog */
   catout_end(error);
 
-  end_xml();
+  xml_end();
 
   return;
   }

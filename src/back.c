@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		21/12/2011
+*	Last modified:		07/03/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -53,7 +53,7 @@ INPUT	Pointer to image field,
 OUTPUT	-.
 NOTES	Global preferences are used.
 AUTHOR	E. Bertin (IAP)
-VERSION	07/12/2011
+VERSION	07/03/2012
  ***/
 void	back_map(fieldstruct *field, fieldstruct *wfield, int wscale_flag)
 
@@ -385,7 +385,7 @@ void	back_map(fieldstruct *field, fieldstruct *wfield, int wscale_flag)
     error(EXIT_FAILURE,
 	"*Error*: I cannot deal with zero or negative thresholds!", "");
 
-  if (prefs.detect_type == PHOTO
+  if (field->detector_type == DETECTOR_PHOTO
 	&& field->backmean+3*field->backsig > 50*field->ngamma)
     error(EXIT_FAILURE,
 	"*Error*: The density range of this image is too large for ",

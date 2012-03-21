@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		06/01/2012
+*	Last modified:		20/03/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -68,7 +68,9 @@
 #ifndef PI
 #define	PI			3.1415926535898	/* never met before? */
 #endif
+
 #define	DEG			(PI/180.0)	/* 1 deg in radians */
+#define	FDMAG			1.0857362f
 
 /* NOTES:
  *

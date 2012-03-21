@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		15/02/2012
+*	Last modified:		15/03/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -239,7 +239,7 @@ INPUT   Pointer to the input object,
 OUTPUT  -.
 NOTES   -.
 AUTHOR  E. Bertin (IAP)
-VERSION 15/02/2012
+VERSION 15/03/2012
  ***/
 void	clean_merge(objstruct *objin, objstruct *objout)
 
@@ -288,7 +288,7 @@ void	clean_merge(objstruct *objin, objstruct *objout)
     objout->ymax = objin->ymax;
 
   objout->flag |= (objin->flag & (~(OBJ_MERGED|OBJ_CROWDED)));
-  mergeflags(objout, objin);
+  flag_merge(objout, objin);
 
   return;
   }

@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		15/02/2012
+*	Last modified:		21/03/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -50,7 +50,7 @@ INPUT	Pointer to the image structure,
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	06/10/2011
+VERSION	16/03/2012
  ***/
 void  photom_aper(fieldstruct *field, fieldstruct *wfield, obj2struct *obj2,
 		int aper)
@@ -69,12 +69,12 @@ void  photom_aper(fieldstruct *field, fieldstruct *wfield, obj2struct *obj2,
   if (wfield)
     wthresh = wfield->weight_thresh;
   weight = weightt = NULL;
-  mx = obj2->mx - obj2->immin[0];
-  my = obj2->my - obj2->immin[1];
-  w = obj2->imsize[0];
-  h = obj2->imsize[1];
+  mx = obj2->mx - obj2->imxmin[0];
+  my = obj2->my - obj2->imymin[0];
+  w = obj2->imxsize[0];
+  h = obj2->imysize[0];
   ngamma = field->ngamma;
-  pflag = (prefs.detect_type==PHOTO)? 1:0;
+  pflag = (field->detector_type==DETECTOR_PHOTO);
   corrflag = (prefs.mask_type==MASK_CORRECT);
   gainflag = wfield && prefs.weightgain_flag;
   var = backnoise2 = field->backsig*field->backsig;
@@ -101,22 +101,22 @@ void  photom_aper(fieldstruct *field, fieldstruct *wfield, obj2struct *obj2,
   if (xmin < 0)
     {
     xmin = 0;
-    obj2->flag |= OBJ_APERT_PB;
+    obj2->flags |= OBJ_APERT_PB;
     }
   if (xmax > w)
     {
     xmax = w;
-    obj2->flag |= OBJ_APERT_PB;
+    obj2->flags |= OBJ_APERT_PB;
     }
   if (ymin < 0)
     {
     ymin = 0;
-    obj2->flag |= OBJ_APERT_PB;
+    obj2->flags |= OBJ_APERT_PB;
     }
   if (ymax > h)
     {
     ymax = h;
-    obj2->flag |= OBJ_APERT_PB;
+    obj2->flags |= OBJ_APERT_PB;
     }
 
   image = obj2->image[0];
@@ -204,7 +204,7 @@ void  photom_aper(fieldstruct *field, fieldstruct *wfield, obj2struct *obj2,
   if (aper<prefs.aper_size[0])
     obj2->fluxerr_aper[aper] = sqrt(sigtv);
   if (aper<prefs.aper_size[0])
-    obj2->mag_aper[aper] = tv>0.0? -2.5*log10(tv) + prefs.mag_zeropoint : 99.0;
+    obj2->mag_aper[aper] = tv>0.0? -2.5*log10(tv) + field->mag_zeropoint : 99.0;
   if (aper<prefs.aper_size[0])
     obj2->magerr_aper[aper] = tv>0.0? 1.086*sqrt(sigtv)/tv:99.0;
 
@@ -224,7 +224,7 @@ INPUT	Pointer to the image structure,
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	11/01/2012
+VERSION	16/03/2012
  ***/
 void  photom_petro(fieldstruct *field, fieldstruct *dfield,
 	fieldstruct *wfield, fieldstruct *dwfield, obj2struct *obj2)
@@ -250,15 +250,15 @@ void  photom_petro(fieldstruct *field, fieldstruct *dfield,
   if (wfield)
     wthresh = wfield->weight_thresh;
   weightt = dweightt = NULL;
-  w = obj2->imsize[0];
-  h = obj2->imsize[1];
+  w = obj2->imxsize[0];
+  h = obj2->imysize[0];
   ngamma = field->ngamma;
   bkg = (double)obj2->dbkg[0];
-  mx = obj2->mx - (float)obj2->immin[0];
-  my = obj2->my - (float)obj2->immin[1];
+  mx = obj2->mx - (float)obj2->imxmin[0];
+  my = obj2->my - (float)obj2->imymin[0];
   var = backnoise2 = field->backsig*field->backsig;
   gain = field->gain;
-  pflag = (prefs.detect_type==PHOTO)? 1:0;
+  pflag = (field->detector_type==DETECTOR_PHOTO);
   corrflag = (prefs.mask_type==MASK_CORRECT);
   gainflag = wfield && prefs.weightgain_flag;
 
@@ -288,22 +288,22 @@ void  photom_petro(fieldstruct *field, fieldstruct *dfield,
   if ((xmin = RINT(mx-dxlim)) < 0)
     {
     xmin = 0;
-    obj2->flag |= OBJ_APERT_PB;
+    obj2->flags |= OBJ_APERT_PB;
     }
   if ((xmax = RINT(mx+dxlim)+1) > w)
     {
     xmax = w;
-    obj2->flag |= OBJ_APERT_PB;
+    obj2->flags |= OBJ_APERT_PB;
     }
   if ((ymin = RINT(my-dylim)) < 0)
     {
     ymin = 0;
-    obj2->flag |= OBJ_APERT_PB;
+    obj2->flags |= OBJ_APERT_PB;
     }
   if ((ymax = RINT(my+dylim)+1) > h)
     {
     ymax = h;
-    obj2->flag |= OBJ_APERT_PB;
+    obj2->flags |= OBJ_APERT_PB;
     }
 
   dimage = obj2->image[0];
@@ -377,7 +377,7 @@ void  photom_petro(fieldstruct *field, fieldstruct *dfield,
 
 /*-- Flag if the Petrosian photometry can be strongly affected by neighhours */
     if ((float)areab/area > CROWD_THRESHOLD)
-      obj2->flag |= OBJ_CROWDED;
+      obj2->flags |= OBJ_CROWDED;
 
 /*-- Second step: integrate within the ellipse */
 /*-- Clip boundaries in x and y (bis) */
@@ -406,22 +406,22 @@ void  photom_petro(fieldstruct *field, fieldstruct *dfield,
     if ((xmin = RINT(mx-dxlim)) < 0)
       {
       xmin = 0;
-      obj2->flag |= OBJ_APERT_PB;
+      obj2->flags |= OBJ_APERT_PB;
       }
     if ((xmax = RINT(mx+dxlim)+1) > w)
       {
       xmax = w;
-      obj2->flag |= OBJ_APERT_PB;
+      obj2->flags |= OBJ_APERT_PB;
       }
     if ((ymin = RINT(my-dylim)) < 0)
       {
       ymin = 0;
-      obj2->flag |= OBJ_APERT_PB;
+      obj2->flags |= OBJ_APERT_PB;
       }
     if ((ymax = RINT(my+dylim)+1) > w)
       {
       ymax = w;
-      obj2->flag |= OBJ_APERT_PB;
+      obj2->flags |= OBJ_APERT_PB;
       }
 
     area = areab = 0;
@@ -482,7 +482,7 @@ void  photom_petro(fieldstruct *field, fieldstruct *dfield,
 
 /*-- Flag if the Petrosian photometry can be strongly affected by neighhours */
     if ((float)areab > CROWD_THRESHOLD*area)
-      obj2->flag |= OBJ_CROWDED;
+      obj2->flags |= OBJ_CROWDED;
 
     if (pflag)
       {
@@ -506,7 +506,7 @@ void  photom_petro(fieldstruct *field, fieldstruct *dfield,
 
   if (FLAG(obj2.mag_petro))
     obj2->mag_petro = obj2->flux_petro>0.0?
-			 -2.5*log10(obj2->flux_petro) + prefs.mag_zeropoint
+			 -2.5*log10(obj2->flux_petro) + field->mag_zeropoint
 			:99.0;
   if (FLAG(obj2.magerr_petro))
     obj2->magerr_petro = obj2->flux_petro>0.0?
@@ -519,7 +519,7 @@ void  photom_petro(fieldstruct *field, fieldstruct *dfield,
   }
 
 
-/****** photom_auto*********************************************************
+/****** photom_auto *********************************************************
 PROTO	void photom_auto(fieldstruct **fields, fieldstruct **wfields,
 			int nfield, obj2struct *obj2)
 PURPOSE	Measure the flux within a Kron elliptical aperture
@@ -530,7 +530,7 @@ INPUT	Pointer to an array of image field pointers,
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	15/02/2012
+VERSION	21/03/2012
  ***/
 void  photom_auto(fieldstruct **fields, fieldstruct **wfields,
 			int nfield, obj2struct *obj2)
@@ -539,12 +539,12 @@ void  photom_auto(fieldstruct **fields, fieldstruct **wfields,
    fieldstruct		*field, *wfield;
    double		sigtv, tv, wv, r1, v1,var,gain,backnoise2;
    float		ngamma, mx,my, dx,dy, cx2,cy2,cxy, r2,klim2,
-			dxlim, dylim;
+			dxlim, dylim, ftv,fwv;
    PIXTYPE		*image,*imaget, *weight,*weightt,
 			pix, wthresh=0.0;
-   int			i, area,areab, x,y, x2,y2, xmin,xmax,ymin,ymax,
+   int			f, area,areab, x,y, x2,y2, xmin,xmax,ymin,ymax,
 			fymin,fymax, w,h, band, nband, pos,
-			pflag, corrflag, gainflag;
+			pflag, corrflag, gainflag, autoflag, cfluxflag;
 
 /* field is the detection field */
   field = fields[0];
@@ -555,16 +555,17 @@ void  photom_auto(fieldstruct **fields, fieldstruct **wfields,
   if (wfield)
     wthresh = wfield->weight_thresh;
   weightt = NULL;
-  w = obj2->imsize[0];
-  h = obj2->imsize[1];
+  w = obj2->imxsize[0];
+  h = obj2->imysize[0];
   ngamma = field->ngamma;
-  mx = obj2->mx - (float)obj2->immin[0];
-  my = obj2->my - (float)obj2->immin[1];
+  mx = obj2->mx - (float)obj2->imxmin[0];
+  my = obj2->my - (float)obj2->imymin[0];
   var = backnoise2 = field->backsig*field->backsig;
   gain = field->gain;
-  pflag = (prefs.detect_type==PHOTO)? 1:0;
   corrflag = (prefs.mask_type==MASK_CORRECT);
   gainflag = wfield && prefs.weightgain_flag;
+  cfluxflag = FLAG(obj2.cflux_auto) | FLAG(obj2.cfluxerr_auto)
+	| FLAG(obj2.cmag_auto) | FLAG(obj2.cmagerr_auto);
 
 /* First step: find the extent of the ellipse (the kron factor r1) */
 /* Clip boundaries in x and y */
@@ -592,22 +593,22 @@ void  photom_auto(fieldstruct **fields, fieldstruct **wfields,
   if ((xmin = RINT(mx-dxlim)) < 0)
     {
     xmin = 0;
-    obj2->flag |= OBJ_APERT_PB;
+    obj2->flags |= OBJ_APERT_PB;
     }
   if ((xmax = RINT(mx+dxlim)+1) > w)
     {
     xmax = w;
-    obj2->flag |= OBJ_APERT_PB;
+    obj2->flags |= OBJ_APERT_PB;
     }
   if ((ymin = RINT(my-dylim)) < 0)
     {
     ymin = 0;
-    obj2->flag |= OBJ_APERT_PB;
+    obj2->flags |= OBJ_APERT_PB;
     }
   if ((ymax = RINT(my+dylim)+1) > h)
     {
     ymax = h;
-    obj2->flag |= OBJ_APERT_PB;
+    obj2->flags |= OBJ_APERT_PB;
     }
 
   v1 = r1 = 0.0;
@@ -640,7 +641,7 @@ void  photom_auto(fieldstruct **fields, fieldstruct **wfields,
 
   nband = prefs.nphotinstru;
   for (band=0; band<nband; band++)
-    obj2->flux[band] = obj2->fluxerr[band] = 0.0;
+    obj2->cflux[band] = obj2->cfluxw[band] = 0.0;
 
   area += areab;
   if (area)
@@ -648,30 +649,35 @@ void  photom_auto(fieldstruct **fields, fieldstruct **wfields,
 /*-- Go further only if some pixels are available !! */
     if (r1>0.0 && v1>0.0)
       {
-      obj2->kronfactor = prefs.autoparam[0]*r1/v1;
-      if (obj2->kronfactor < prefs.autoparam[1])
-        obj2->kronfactor = prefs.autoparam[1];
+      obj2->auto_kronfactor = prefs.autoparam[0]*r1/v1;
+      if (obj2->auto_kronfactor < prefs.autoparam[1])
+        obj2->auto_kronfactor = prefs.autoparam[1];
       }
     else
-      obj2->kronfactor = prefs.autoparam[1];
+      obj2->auto_kronfactor = prefs.autoparam[1];
 
 /*-- Flag if the Kron photometry can be strongly affected by neighhours */
     if ((float)areab/area > CROWD_THRESHOLD)
-      obj2->flag |= OBJ_CROWDED;
+      {
+      obj2->flags |= OBJ_CROWDED;
+      if (FLAG(obj2.auto_flags))
+        for (f=0; f<nfield; f++)
+          obj2->auto_flags[f] |= OBJ_CROWDED;
+      }
 
 /*-- Second step: integrate within the ellipse */
 /*-- Clip boundaries in x and y (bis) */
 /*-- We first check that the derived ellipse is large enough... */
-    if (obj2->kronfactor*sqrt(obj2->a*obj2->b)>prefs.autoaper[1]/2.0)
+    if (obj2->auto_kronfactor*sqrt(obj2->a*obj2->b)>prefs.autoaper[1]/2.0)
       {
       cx2 = obj2->cxx;
       cy2 = obj2->cyy;
       cxy = obj2->cxy;
       dxlim = cx2 - cxy*cxy/(4.0*cy2);
-      dxlim = dxlim>0.0 ? obj2->kronfactor/sqrt(dxlim) : 0.0;
+      dxlim = dxlim>0.0 ? obj2->auto_kronfactor/sqrt(dxlim) : 0.0;
       dylim = cy2 - cxy*cxy/(4.0*cx2);
-      dylim = dylim > 0.0 ? obj2->kronfactor/sqrt(dylim) : 0.0;
-      klim2 = obj2->kronfactor*obj2->kronfactor;
+      dylim = dylim > 0.0 ? obj2->auto_kronfactor/sqrt(dylim) : 0.0;
+      klim2 = obj2->auto_kronfactor*obj2->auto_kronfactor;
       }
     else
 /*---- ...if not, use the circular aperture provided by the user */
@@ -680,37 +686,40 @@ void  photom_auto(fieldstruct **fields, fieldstruct **wfields,
       cxy = 0.0;
       dxlim = dylim = prefs.autoaper[1]/2.0;
       klim2 =  dxlim*dxlim;
-      obj2->kronfactor = 0.0;
+      obj2->auto_kronfactor = 0.0;
       }
 
-    if ((xmin = RINT(mx-dxlim)) < 0)
+    for (f=0; f<nfield; f++)
       {
-      xmin = 0;
-      obj2->flag |= OBJ_APERT_PB;
-      }
-    if ((xmax = RINT(mx+dxlim)+1) > w)
-      {
-      xmax = w;
-      obj2->flag |= OBJ_APERT_PB;
-      }
-    if ((ymin = RINT(my-dylim)) < 0)
-      {
-      ymin = 0;
-      obj2->flag |= OBJ_APERT_PB;
-      }
-    if ((ymax = RINT(my+dylim)+1) > h)
-      {
-      ymax = h;
-      obj2->flag |= OBJ_APERT_PB;
-      }
-
-    for (i=0; i<nfield; i++)
-      {
+      pflag = (fields[f]->detector_type==DETECTOR_PHOTO);
       area = areab = 0;
       tv = sigtv = 0.0;
-      image = obj2->image[i];
-      if (wfields && wfields[i])
-        weight = obj2->weight[i];
+      image = obj2->image[f];
+      if (wfields && wfields[f])
+        weight = obj2->weight[f];
+
+      autoflag = 0;
+      if ((xmin = RINT(mx-dxlim)) < 0)
+        {
+        xmin = 0;
+        autoflag = AUTOFLAG_APERT_PB;
+        }
+      if ((xmax = RINT(mx+dxlim)+1) > w)
+        {
+        xmax = w;
+        autoflag = AUTOFLAG_APERT_PB;
+        }
+      if ((ymin = RINT(my-dylim)) < 0)
+        {
+        ymin = 0;
+        autoflag = AUTOFLAG_APERT_PB;
+        }
+      if ((ymax = RINT(my+dylim)+1) > h)
+        {
+        ymax = h;
+        autoflag = AUTOFLAG_APERT_PB;
+        }
+
       for (y=ymin; y<ymax; y++)
         {
         imaget = image + (pos = xmin + (y%h)*w);
@@ -764,59 +773,90 @@ void  photom_auto(fieldstruct **fields, fieldstruct **wfields,
 
 /*---- Flag if the Kron photometry can be strongly affected by neighhours */
       if ((float)areab > CROWD_THRESHOLD*area)
-        obj2->flag |= OBJ_CROWDED;
+        autoflag |= AUTOFLAG_CROWDED;
 
       if (pflag)
         {
-        tv = ngamma*(tv-area*exp(obj2->dbkg[i]/ngamma));
+        tv = ngamma*(tv-area*exp(obj2->dbkg[f]/ngamma));
         sigtv /= ngamma*ngamma;
         }
       else
         {
-        tv -= area*obj2->dbkg[i];
+        tv -= area*obj2->dbkg[f];
         if (!gainflag && gain > 0.0 && tv>0.0)
           sigtv += tv/gain;
         }
 
-      band = fields[i]->photomlabel;
-      wv = sigtv>0.0? 1.0/sigtv : 0.0;
-      obj2->flux[band] += wv*tv;
-      obj2->fluxerr[band] += wv;
+      if (FLAG(obj2.auto_flags))
+        obj2->auto_flags[f] |= autoflag;
+      if (FLAG(obj2.flux_auto))
+        obj2->flux_auto[f] = tv;
+      if (FLAG(obj2.mag_auto))
+        obj2->mag_auto[f] = tv>0.0?
+			-FDMAG * log(tv) + prefs.mag_zeropoint[f] : 99.0f;
+      if (FLAG(obj2.fluxerr_auto))
+        obj2->fluxerr_auto[f] = sqrt(sigtv);
+      if (FLAG(obj2.magerr_auto))
+        obj2->magerr_auto[f] = tv>0.0? FDMAG * sqrt(sigtv) / tv : 99.0f;
+
+      if (FLAG(obj2.cflux_auto))
+        {
+        tv *= field->flux_factor;
+        wv /= field->flux_factor*field->flux_factor;
+        band = fields[f]->photomlabel;
+        wv = sigtv>0.0? 1.0/sigtv : 0.0;
+        obj2->cflux[band] += wv*tv;
+        obj2->cfluxw[band] += wv;
+        }
       }
     }
   else
 /*---- No available pixels */
     {
+    for (f=0; f<nfield; f++)
+      {
+      if (FLAG(obj2.auto_flags))
+        obj2->auto_flags[f] |= AUTOFLAG_DETECT_PB;
+      if (FLAG(obj2.flux_auto))
+        obj2->flux_auto[f] = 0.0f;
+      if (FLAG(obj2.mag_auto))
+        obj2->mag_auto[f] = 99.0f;
+      if (FLAG(obj2.fluxerr_auto))
+        obj2->fluxerr_auto[f] = 0.0f;
+      if (FLAG(obj2.magerr_auto))
+        obj2->magerr_auto[f] = 99.0f;
+      }
+    if ((cfluxflag))
+      for (band=0; band<nband; band++)
+        {
+        if (FLAG(obj2.cflux_auto))
+          obj2->cflux_auto[band] = 0.0f;
+        if (FLAG(obj2.cmag_auto))
+          obj2->cmag_auto[band] = 99.0f;
+        if (FLAG(obj2.cfluxerr_auto))
+          obj2->cfluxerr_auto[band] = 0.0f;
+        if (FLAG(obj2.cmagerr_auto))
+          obj2->cmagerr_auto[band] = 99.0f;
+        }
     }
 
-  nband = prefs.nphotinstru;
-  for (band=0; band<nband; band++)
-    if (obj2->fluxerr[band]>0.0)
+/* Combined fluxes */
+
+  if ((cfluxflag))
+    for (band=0; band<nband; band++)
       {
-      obj2->flux_auto[band] = obj2->flux[band] / obj2->fluxerr[band];
+      fwv = (float)obj2->cfluxw[band];
+      ftv = fwv>0.0f? (float)(obj2->cflux[band]/obj2->cfluxw[band]) : 0.0f;
+      if (FLAG(obj2.cflux_auto))
+        obj2->cflux_auto[band] = ftv;
+      if (FLAG(obj2.cmag_auto))
+        obj2->cmag_auto[band] = ftv>0.0f ? -FDMAG * logf(ftv) : 99.0f;
+      if (FLAG(obj2.cfluxerr_auto))
+        obj2->cfluxerr_auto[band] = fwv>0.0? sqrtf(1.0/fwv) : 0.0f;
+      if (FLAG(obj2.cmagerr_auto))
+        obj2->cmagerr_auto[band] = obj2->cflux[band]>0.0?
+			FDMAG * sqrtf(fwv)/(float)obj2->cflux[band] : 99.0f;
       }
-    else
-      obj2->flux_auto[band] = 0.0;
-
-  if (FLAG(obj2.fluxerr_auto))
-    for (band=0; band<nband; band++)
-      if (obj2->fluxerr[band]>0.0)
-        obj2->fluxerr_auto[band] = sqrtf(1.0/obj2->fluxerr[band]);
-      else
-        obj2->fluxerr_auto[band] = 0.0;
-
-/*-- MAG_AUTO is computed here for being ready for use in variable PSF models */
-
-  if (FLAG(obj2.mag_auto))
-    for (band=0; band<nband; band++)
-      obj2->mag_auto[band] = obj2->flux_auto[band]>0.0?
-		 -2.5*log10(obj2->flux_auto[band]) + prefs.mag_zeropoint
-		:99.0;
-  if (FLAG(obj2.magerr_auto))
-    for (band=0; band<nband; band++)
-      obj2->magerr_auto[band] = obj2->flux_auto[band]>0.0?
-		 1.086*obj2->fluxerr_auto[band]/obj2->flux_auto[band]
-		:99.0;
 
   return;
   }
@@ -869,14 +909,14 @@ INPUT	Pointer to the image structure,
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	06/10/2011
+VERSION	16/03/2012
  ***/
 void	photom_mags(fieldstruct *field, obj2struct *obj2)
   {
 /* Mag. isophotal */
   if (FLAG(obj2.mag_iso))
     obj2->mag_iso = obj2->flux_iso>0.0?
-			 -2.5*log10(obj2->flux_iso) + prefs.mag_zeropoint
+			 -2.5*log10(obj2->flux_iso) + prefs.mag_zeropoint[0]
 			:99.0;
   if (FLAG(obj2.magerr_iso))
     obj2->magerr_iso = obj2->flux_iso>0.0?
@@ -886,7 +926,7 @@ void	photom_mags(fieldstruct *field, obj2struct *obj2)
 /* Mag. isophotal corrected */
   if (FLAG(obj2.mag_isocor))
     obj2->mag_isocor = obj2->flux_isocor>0.0?
-			 -2.5*log10(obj2->flux_isocor) + prefs.mag_zeropoint
+			 -2.5*log10(obj2->flux_isocor) + prefs.mag_zeropoint[0]
 			:99.0;
   if (FLAG(obj2.magerr_isocor))
     obj2->magerr_isocor = obj2->flux_isocor>0.0?
@@ -897,7 +937,7 @@ void	photom_mags(fieldstruct *field, obj2struct *obj2)
 
   if (FLAG(obj2.flux_best))
     {
-    if (obj2->flag&OBJ_CROWDED)
+    if (obj2->flags&OBJ_CROWDED)
       {
       obj2->flux_best = obj2->flux_isocor;
       obj2->fluxerr_best = obj2->fluxerr_isocor;
@@ -912,7 +952,7 @@ void	photom_mags(fieldstruct *field, obj2struct *obj2)
 /* Mag. Best */
   if (FLAG(obj2.mag_best))
     obj2->mag_best = obj2->flux_best>0.0?
-			 -2.5*log10(obj2->flux_best) + prefs.mag_zeropoint
+			 -2.5*log10(obj2->flux_best) + prefs.mag_zeropoint[0]
 			:99.0;
   if (FLAG(obj2.magerr_best))
     obj2->magerr_best = obj2->flux_best>0.0?
@@ -922,7 +962,7 @@ void	photom_mags(fieldstruct *field, obj2struct *obj2)
 /* Mag. SOM-fit */
   if (FLAG(obj2.mag_somfit))
     obj2->mag_somfit = obj2->flux_somfit>0.0?
-			 -2.5*log10(obj2->flux_somfit) + prefs.mag_zeropoint
+			 -2.5*log10(obj2->flux_somfit) + prefs.mag_zeropoint[0]
 			:99.0;
   if (FLAG(obj2.magerr_somfit))
     obj2->magerr_somfit = obj2->flux_somfit>0.0?
@@ -932,7 +972,7 @@ void	photom_mags(fieldstruct *field, obj2struct *obj2)
 /* Mag. models */
   if (FLAG(obj2.mag_prof))
     obj2->mag_prof = obj2->flux_prof>0.0?
-			 -2.5*log10(obj2->flux_prof) + prefs.mag_zeropoint
+			 -2.5*log10(obj2->flux_prof) + prefs.mag_zeropoint[0]
 			:99.0;
   if (FLAG(obj2.magerr_prof))
     obj2->magerr_prof = obj2->flux_prof>0.0?
@@ -941,7 +981,7 @@ void	photom_mags(fieldstruct *field, obj2struct *obj2)
 
   if (FLAG(obj2.magcor_prof))
     obj2->magcor_prof = obj2->fluxcor_prof>0.0?
-			 -2.5*log10(obj2->fluxcor_prof) + prefs.mag_zeropoint
+			 -2.5*log10(obj2->fluxcor_prof) + prefs.mag_zeropoint[0]
 			:99.0;
   if (FLAG(obj2.magcorerr_prof))
     obj2->magcorerr_prof = obj2->fluxcor_prof>0.0?
@@ -953,7 +993,7 @@ void	photom_mags(fieldstruct *field, obj2struct *obj2)
 		-2.5*log10((obj2->peak_prof)
 		 / (prefs.pixel_scale? field->pixscale*field->pixscale
 				: obj2->pixscale2 * 3600.0*3600.0))
-		+ prefs.mag_zeropoint
+		+ prefs.mag_zeropoint[0]
 		: 99.0;
 
   if (FLAG(obj2.mueff_prof))
@@ -961,7 +1001,7 @@ void	photom_mags(fieldstruct *field, obj2struct *obj2)
 		-2.5*log10((obj2->fluxeff_prof)
 		 / (prefs.pixel_scale? field->pixscale*field->pixscale
 				: obj2->pixscale2 * 3600.0*3600.0))
-		+ prefs.mag_zeropoint
+		+ prefs.mag_zeropoint[0]
 		: 99.0;
 
   if (FLAG(obj2.mumean_prof))
@@ -969,13 +1009,13 @@ void	photom_mags(fieldstruct *field, obj2struct *obj2)
 		-2.5*log10((obj2->fluxmean_prof)
 		 / (prefs.pixel_scale? field->pixscale*field->pixscale
 				: obj2->pixscale2 * 3600.0*3600.0))
-		+ prefs.mag_zeropoint
+		+ prefs.mag_zeropoint[0]
 		: 99.0;
 
   if (FLAG(obj2.prof_dirac_mag))
     obj2->prof_dirac_mag = obj2->prof_dirac_flux>0.0?
 			 -2.5*log10(obj2->prof_dirac_flux)
-			+ prefs.mag_zeropoint
+			+ prefs.mag_zeropoint[0]
 			:99.0;
 
   if (FLAG(obj2.prof_dirac_magerr))
@@ -987,7 +1027,7 @@ void	photom_mags(fieldstruct *field, obj2struct *obj2)
   if (FLAG(obj2.prof_spheroid_mag))
     obj2->prof_spheroid_mag = obj2->prof_spheroid_flux>0.0?
 			 -2.5*log10(obj2->prof_spheroid_flux)
-			+ prefs.mag_zeropoint
+			+ prefs.mag_zeropoint[0]
 			:99.0;
 
   if (FLAG(obj2.prof_spheroid_mumax))
@@ -995,7 +1035,7 @@ void	photom_mags(fieldstruct *field, obj2struct *obj2)
 		-2.5*log10((obj2->prof_spheroid_peak)
 		 / (prefs.pixel_scale? field->pixscale*field->pixscale
 				: obj2->pixscale2 * 3600.0*3600.0))
-		+ prefs.mag_zeropoint
+		+ prefs.mag_zeropoint[0]
 		: 99.0;
 
   if (FLAG(obj2.prof_spheroid_mueff))
@@ -1003,7 +1043,7 @@ void	photom_mags(fieldstruct *field, obj2struct *obj2)
 		-2.5*log10((obj2->prof_spheroid_fluxeff)
 		 / (prefs.pixel_scale? field->pixscale*field->pixscale
 				: obj2->pixscale2 * 3600.0*3600.0))
-		+ prefs.mag_zeropoint
+		+ prefs.mag_zeropoint[0]
 		: 99.0;
 
   if (FLAG(obj2.prof_spheroid_mumean))
@@ -1011,7 +1051,7 @@ void	photom_mags(fieldstruct *field, obj2struct *obj2)
 		-2.5*log10((obj2->prof_spheroid_fluxmean)
 		 / (prefs.pixel_scale? field->pixscale*field->pixscale
 				: obj2->pixscale2 * 3600.0*3600.0))
-		+ prefs.mag_zeropoint
+		+ prefs.mag_zeropoint[0]
 		: 99.0;
 
   if (FLAG(obj2.prof_spheroid_magerr))
@@ -1023,7 +1063,7 @@ void	photom_mags(fieldstruct *field, obj2struct *obj2)
   if (FLAG(obj2.prof_disk_mag))
     obj2->prof_disk_mag = obj2->prof_disk_flux>0.0?
 			 -2.5*log10(obj2->prof_disk_flux)
-			+ prefs.mag_zeropoint
+			+ prefs.mag_zeropoint[0]
 			:99.0;
   if (FLAG(obj2.prof_disk_magerr))
     obj2->prof_disk_magerr = obj2->prof_disk_flux>0.0?
@@ -1036,7 +1076,7 @@ void	photom_mags(fieldstruct *field, obj2struct *obj2)
 		-2.5*log10((obj2->prof_disk_peak)
 		 / (prefs.pixel_scale? field->pixscale*field->pixscale
 				: obj2->pixscale2 * 3600.0*3600.0))
-		+ prefs.mag_zeropoint
+		+ prefs.mag_zeropoint[0]
 		: 99.0;
 
   if (FLAG(obj2.prof_disk_mueff))
@@ -1044,7 +1084,7 @@ void	photom_mags(fieldstruct *field, obj2struct *obj2)
 		-2.5*log10((obj2->prof_disk_fluxeff)
 		 / (prefs.pixel_scale? field->pixscale*field->pixscale
 				: obj2->pixscale2 * 3600.0*3600.0))
-		+ prefs.mag_zeropoint
+		+ prefs.mag_zeropoint[0]
 		: 99.0;
 
   if (FLAG(obj2.prof_disk_mumean))
@@ -1052,13 +1092,13 @@ void	photom_mags(fieldstruct *field, obj2struct *obj2)
 		-2.5*log10((obj2->prof_disk_fluxmean)
 		 / (prefs.pixel_scale? field->pixscale*field->pixscale
 				: obj2->pixscale2 * 3600.0*3600.0))
-		+ prefs.mag_zeropoint
+		+ prefs.mag_zeropoint[0]
 		: 99.0;
 
   if (FLAG(obj2.prof_bar_mag))
     obj2->prof_bar_mag = obj2->prof_bar_flux>0.0?
 			 -2.5*log10(obj2->prof_bar_flux)
-			+ prefs.mag_zeropoint
+			+ prefs.mag_zeropoint[0]
 			:99.0;
   if (FLAG(obj2.prof_bar_magerr))
     obj2->prof_bar_magerr = obj2->prof_bar_flux>0.0?
@@ -1069,7 +1109,7 @@ void	photom_mags(fieldstruct *field, obj2struct *obj2)
   if (FLAG(obj2.prof_arms_mag))
     obj2->prof_arms_mag = obj2->prof_arms_flux>0.0?
 			 -2.5*log10(obj2->prof_arms_flux)
-			+ prefs.mag_zeropoint
+			+ prefs.mag_zeropoint[0]
 			:99.0;
   if (FLAG(obj2.prof_arms_magerr))
     obj2->prof_arms_magerr = obj2->prof_arms_flux>0.0?
@@ -1077,15 +1117,6 @@ void	photom_mags(fieldstruct *field, obj2struct *obj2)
 				/obj2->prof_arms_flux
 			:99.0;
 
-/* Mag. WINdowed */
-  if (FLAG(obj2.mag_win))
-    obj2->mag_win = obj2->flux_win>0.0?
-			 -2.5*log10(obj2->flux_win) + prefs.mag_zeropoint
-			:99.0;
-  if (FLAG(obj2.magerr_win))
-    obj2->magerr_win = obj2->flux_win>0.0?
-			 1.086*obj2->fluxerr_win/obj2->flux_win
-			:99.0;
 
 /* Other surface brightnesses */
   if (FLAG(obj2.maxmu))
@@ -1093,7 +1124,7 @@ void	photom_mags(fieldstruct *field, obj2struct *obj2)
 		-2.5*log10((obj2->peak)
 		 / (prefs.pixel_scale? field->pixscale*field->pixscale
 				: obj2->pixscale2 * 3600.0*3600.0))
-		+ prefs.mag_zeropoint
+		+ prefs.mag_zeropoint[0]
 		: 99.0;
 
   if (FLAG(obj2.threshmu))
@@ -1101,27 +1132,28 @@ void	photom_mags(fieldstruct *field, obj2struct *obj2)
 		-2.5*log10((obj2->thresh)
 		 / (prefs.pixel_scale? field->pixscale*field->pixscale
 				: obj2->pixscale2 * 3600.0*3600.0))
-		+ prefs.mag_zeropoint
+		+ prefs.mag_zeropoint[0]
 		: 99.0;
 
 
   return;
   }
 
-/****** print_instruinfo *****************************************************
-PROTO	void print_instruinfo(void)
+
+/****** photom_printinstruinfo **********************************************
+PROTO	void photom_printinstruinfo(void)
 PURPOSE	Print info about photometric instruments found
 INPUT	-.
 OUTPUT	-.
 NOTES	Global preferences are used.
 AUTHOR	E. Bertin (IAP)
-VERSION	10/02/2012
+VERSION	21/03/2012
  ***/
-void	print_instruinfo(void)
+void	photom_printinstruinfo(void)
   {
    int		i,l,len;
 
-  QPRINTF(OUTPUT, "\n----- %d %s found for photometry:\n",
+  QPRINTF(OUTPUT, "----- %d %s found for photometry:\n",
 	prefs.nphotinstru, prefs.nphotinstru>1? "instruments":"instrument");
   for (i=0; i<prefs.nphotinstru; i++)
     {
