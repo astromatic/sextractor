@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		07/03/2012
+*	Last modified:		27/03/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -47,6 +47,7 @@
 #include	"image.h"
 #include	"lutz.h"
 #include	"plist.h"
+#include	"readimage.h"
 #include	"scan.h"
 #include	"weight.h"
 
@@ -65,7 +66,7 @@ INPUT	Pointer to the detection image field,
 OUTPUT	-.
 NOTES	Global preferences are used.
 AUTHOR	E. Bertin (IAP)
-VERSION	07/03/2012
+VERSION	27/03/2012
  ***/
 void	scan_extract(fieldstruct *dfield, fieldstruct *dwfield,
 			fieldstruct **fields, fieldstruct **wfields, int nfield,
@@ -229,14 +230,14 @@ void	scan_extract(fieldstruct *dfield, fieldstruct *dwfield,
           {
           ffield = ffields[i];
           fscan[i] = (ffield->stripy==ffield->stripysclim)?
-		  (FLAGTYPE *)loadstrip(ffield, (fieldstruct *)NULL)
+		  (FLAGTYPE *)readimage_loadstrip(ffield, (fieldstruct *)NULL)
 		: &ffield->fstrip[ffield->stripy*ffield->width];
           }
       if (dwfield)
         {
 /*------ Copy the previous weight line to track bad pixel limits */
         wscan = (dwfield->stripy==dwfield->stripysclim)?
-		  (PIXTYPE *)loadstrip(dwfield, (fieldstruct *)NULL)
+		  (PIXTYPE *)readimage_loadstrip(dwfield, (fieldstruct *)NULL)
 		: &dwfield->strip[dwfield->stripy*dwfield->width];
         if (PLISTEXIST(wflag))
           {
@@ -249,16 +250,17 @@ void	scan_extract(fieldstruct *dfield, fieldstruct *dwfield,
             }
         }
       scan = (dfield->stripy==dfield->stripysclim)?
-		  (PIXTYPE *)loadstrip(dfield, dwfield)
+		  (PIXTYPE *)readimage_loadstrip(dfield, dwfield)
 		: &dfield->strip[dfield->stripy*dfield->width];
       if (dfield->stripy==dfield->stripysclim)
         {
         for (i=1; i<nfield; i++)
-          {
-          loadstrip(fields[i], wfields[i]);
-          if (wfields[i])
-            loadstrip(wfields[i], (fieldstruct *)NULL);
-          }
+          if (!(fields[i]->flags&MULTIGRID_FIELD))
+            {
+            readimage_loadstrip(fields[i], wfields[i]);
+            if (wfields[i])
+              readimage_loadstrip(wfields[i], (fieldstruct *)NULL);
+            }
         }
 
       if (prefs.filter_flag)

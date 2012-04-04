@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		21/03/2012
+*	Last modified:		28/03/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -40,30 +40,6 @@ extern obj2struct	flagobj2;
 char			gstr[MAXCHAR];
 
 /*------------------------------- functions ---------------------------------*/
-extern void	allocparcelout(void),
-		blankit(char *, int),
-                closecheck(void),
-		copydata(fieldstruct *, int, int),
-		flagcleancrowded(int, objliststruct *),
-		freeparcelout(void),
-		getnnw(void),
-		makeit(void),
-		mergeobject(objstruct *, objstruct *),
-		neurinit(void),
-		neurclose(void),
-		neurresp(double *, double *),
-		readdata(fieldstruct *, PIXTYPE *, int),
-		readidata(fieldstruct *, FLAGTYPE *, int),
-		readimagehead(fieldstruct *),
+extern void	makeit(void),
 		write_error(char *msg1, char *msg2);
-
-extern int	addobj(int, objliststruct *, objliststruct *),
-		belong(int, objliststruct *, int, objliststruct *),
-		gatherup(objliststruct *, objliststruct *),
-		parcelout(objliststruct *, objliststruct *);
-
-extern void	*loadstrip(fieldstruct *, fieldstruct *);
-
-extern char	*readfitshead(FILE *, char *, int *);
-
 

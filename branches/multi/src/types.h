@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		21/03/2012
+*	Last modified:		02/04/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -140,6 +140,8 @@ typedef struct obj2
   {
   struct obj2	*prevobj2;			/* Previous obj2 in the chain */
   struct obj2	*nextobj2;			/* Next obj2 in the chain */
+  struct subimage	*subimage;		/* Array of sub-images */
+  int		nsubimage;			/* nb of sub-images */
 /* ---- basic parameters */
   int		number;				/* ID */
   int		fdnpix;				/* nb of extracted pix */
@@ -174,12 +176,6 @@ typedef struct obj2
   float		mthresh;		       	/* max. threshold (ADU) */
   int		iso[NISO];			/* isophotal areas */
   float		fwhm;				/* IMAGE FWHM */
-  PIXTYPE	**image;			/* Copy of local image data */
-  PIXTYPE	**weight;			/* Copy of local weight data */
-  int		*imxsize, *imysize;		/* Local image data size */
-  int		*imxmin, *imxmax;		/* Local image data min/max x */
-  int		*imymin, *imymax;		/* Local image data min/max y */
-  float		*imjacob;			/* Local image Jacobian matrix*/
 /* ---- photometric data */
   double	*cflux;				/* internal flux array */
   double	*cfluxw;			/* internal flux weight array */
@@ -220,6 +216,8 @@ typedef struct obj2
   float		*mag_win;			/* WINdowed magnitude */
   float		*magerr_win;			/* WINdowed magnitude error */
 /* ---- astrometric data */
+  double	*cposx,*cposy;			/* internal position arrays */
+  double	*cposw;			/* internal position weight array */
   BYTE		area_flagw;			/* World area or SB flag */
   double	*posx,*posy;			/* "FITS" pos. in pixels */
   double	jacob[NAXIS*NAXIS];		/* Local deproject. Jacobian */

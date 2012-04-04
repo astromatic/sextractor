@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		16/03/2012
+*	Last modified:		29/03/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -38,8 +38,9 @@
 #include	"define.h"
 #include	"globals.h"
 #include	"prefs.h"
+#include	"field.h"
 #include	"growth.h"
-
+#include	"subimage.h"
 
 /****** growth_aver *********************************************************
 PROTO	void growth_aver(fieldstruct **fields, fieldstruct **wfields,
@@ -52,13 +53,14 @@ INPUT   Pointer to an array of image field pointers,
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	16/03/2012
+VERSION	29/03/2012
  ***/
 void  growth_aver(fieldstruct **fields, fieldstruct **wfields, int nfield,
 			obj2struct *obj2)
 
   {
    fieldstruct		*field, *wfield;
+   subimagestruct	*subimage;
    float		*fgrowth;
    double		*growth, *growtht,
 			dx,dx1,dy,dy2,mx,my, r2,r,rlim, d, rextlim2, raper,
@@ -81,11 +83,11 @@ void  growth_aver(fieldstruct **fields, fieldstruct **wfields, int nfield,
 
 /* Allocate the growth-curve buffer */
   QCALLOC(growth, double, GROWTH_NSTEP);
-
-  mx = obj2->mx - obj2->imxmin[0];
-  my = obj2->my - obj2->imymin[0];
-  w = obj2->imxsize[0];
-  h = obj2->imysize[0];
+  subimage = obj2->subimage;
+  mx = subimage->dpos[0] - subimage->immin[0];
+  my = subimage->dpos[1] - subimage->immin[1];
+  w = subimage->imsize[0];
+  h = subimage->imsize[1];
   pflag = (field->detector_type==DETECTOR_PHOTO)? 1:0;
   corrflag = (prefs.mask_type==MASK_CORRECT);
   var = backnoise2 = field->backsig*field->backsig;
@@ -155,10 +157,10 @@ void  growth_aver(fieldstruct **fields, fieldstruct **wfields, int nfield,
     obj2->flags |= OBJ_APERT_PB;
     }
 
-  image = obj2->image[0];
+  image = subimage->image;
   weight = weightt = NULL;		/* To avoid gcc -Wall warnings */
   if (wfield)
-    weight = obj2->weight[0];
+    weight = subimage->weight;
   for (y=ymin; y<ymax; y++)
     {
     imaget = image + (pos = y*w + xmin);

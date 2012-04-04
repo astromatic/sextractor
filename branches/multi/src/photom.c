@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		21/03/2012
+*	Last modified:		03/04/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -38,6 +38,7 @@
 #include	"prefs.h"
 #include	"photom.h"
 #include	"plist.h"
+#include	"subimage.h"
 
 /****** photom_aper **********************************************************
 PROTO	void photom_aper(fieldstruct *field, fieldstruct *wfield,
@@ -50,12 +51,13 @@ INPUT	Pointer to the image structure,
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	16/03/2012
+VERSION	29/03/2012
  ***/
 void  photom_aper(fieldstruct *field, fieldstruct *wfield, obj2struct *obj2,
 		int aper)
 
   {
+   subimagestruct	*subimage;
    float		r2, raper,raper2, rintlim,rintlim2,rextlim2,
 			mx,my,dx,dx1,dy,dy2,
 			offsetx,offsety,scalex,scaley,scale2, ngamma, locarea;
@@ -69,10 +71,11 @@ void  photom_aper(fieldstruct *field, fieldstruct *wfield, obj2struct *obj2,
   if (wfield)
     wthresh = wfield->weight_thresh;
   weight = weightt = NULL;
-  mx = obj2->mx - obj2->imxmin[0];
-  my = obj2->my - obj2->imymin[0];
-  w = obj2->imxsize[0];
-  h = obj2->imysize[0];
+  subimage = obj2->subimage;
+  mx = subimage->dpos[0] - subimage->immin[0];
+  my = subimage->dpos[1] - subimage->immin[1];
+  w = subimage->imsize[0];
+  h = subimage->imsize[1];
   ngamma = field->ngamma;
   pflag = (field->detector_type==DETECTOR_PHOTO);
   corrflag = (prefs.mask_type==MASK_CORRECT);
@@ -119,8 +122,8 @@ void  photom_aper(fieldstruct *field, fieldstruct *wfield, obj2struct *obj2,
     obj2->flags |= OBJ_APERT_PB;
     }
 
-  image = obj2->image[0];
-  weight = obj2->weight[0];
+  image = subimage->image;
+  weight = subimage->weight;
   for (y=ymin; y<ymax; y++)
     {
     imaget = image + (pos = y*w + xmin);
@@ -224,11 +227,12 @@ INPUT	Pointer to the image structure,
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	16/03/2012
+VERSION	30/03/2012
  ***/
 void  photom_petro(fieldstruct *field, fieldstruct *dfield,
 	fieldstruct *wfield, fieldstruct *dwfield, obj2struct *obj2)
   {
+   subimagestruct	*subimage;
    double		sigtv, tv, r1, v1,var,gain,backnoise2, muden,munum;
    float		bkg, ngamma, mx,my, dx,dy, cx2,cy2,cxy, r2,
 			klim, klim2,kmin,kmin2,kmax,kmax2,kstep,kmea,kmea2,
@@ -250,12 +254,13 @@ void  photom_petro(fieldstruct *field, fieldstruct *dfield,
   if (wfield)
     wthresh = wfield->weight_thresh;
   weightt = dweightt = NULL;
-  w = obj2->imxsize[0];
-  h = obj2->imysize[0];
+  subimage = obj2->subimage;
+  w = subimage->imsize[0];
+  h = subimage->imsize[1];
   ngamma = field->ngamma;
   bkg = (double)obj2->dbkg[0];
-  mx = obj2->mx - (float)obj2->imxmin[0];
-  my = obj2->my - (float)obj2->imymin[0];
+  mx = subimage->dpos[0] - (double)subimage->immin[0];
+  my = subimage->dpos[1] - (double)subimage->immin[1];
   var = backnoise2 = field->backsig*field->backsig;
   gain = field->gain;
   pflag = (field->detector_type==DETECTOR_PHOTO);
@@ -306,9 +311,9 @@ void  photom_petro(fieldstruct *field, fieldstruct *dfield,
     obj2->flags |= OBJ_APERT_PB;
     }
 
-  dimage = obj2->image[0];
+  dimage = subimage->image;
   if (dwfield)
-    dweight = obj2->weight[0];
+    dweight = subimage->weight;
   klim = sqrt(klim2);
   kstep = klim/20.0;
   area = areab = areanum = areaden = 0;
@@ -426,9 +431,9 @@ void  photom_petro(fieldstruct *field, fieldstruct *dfield,
 
     area = areab = 0;
     tv = sigtv = 0.0;
-    image = obj2->image[0];
+    image = subimage->image;
     if (wfield)
-      weight = obj2->weight[0];
+      weight = subimage->weight;
     for (y=ymin; y<ymax; y++)
       {
       imaget = image + (pos = y*w + xmin);
@@ -530,20 +535,22 @@ INPUT	Pointer to an array of image field pointers,
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	21/03/2012
+VERSION	03/04/2012
  ***/
 void  photom_auto(fieldstruct **fields, fieldstruct **wfields,
 			int nfield, obj2struct *obj2)
 
   {
    fieldstruct		*field, *wfield;
-   double		sigtv, tv, wv, r1, v1,var,gain,backnoise2;
+   subimagestruct	*subimage;
+   double		*jac,
+			sigtv, tv, wv, r1, v1,var,gain,backnoise2;
    float		ngamma, mx,my, dx,dy, cx2,cy2,cxy, r2,klim2,
 			dxlim, dylim, ftv,fwv;
    PIXTYPE		*image,*imaget, *weight,*weightt,
 			pix, wthresh=0.0;
-   int			f, area,areab, x,y, x2,y2, xmin,xmax,ymin,ymax,
-			fymin,fymax, w,h, band, nband, pos,
+   int			f,s, area,areab, x,y, x2,y2, xmin,xmax,ymin,ymax,
+			fymin,fymax, w,h, band, nband, nsubimage, pos,
 			pflag, corrflag, gainflag, autoflag, cfluxflag;
 
 /* field is the detection field */
@@ -555,11 +562,12 @@ void  photom_auto(fieldstruct **fields, fieldstruct **wfields,
   if (wfield)
     wthresh = wfield->weight_thresh;
   weightt = NULL;
-  w = obj2->imxsize[0];
-  h = obj2->imysize[0];
+  subimage = obj2->subimage;
+  w = subimage->imsize[0];
+  h = subimage->imsize[1];
   ngamma = field->ngamma;
-  mx = obj2->mx - (float)obj2->imxmin[0];
-  my = obj2->my - (float)obj2->imymin[0];
+  mx = subimage->dpos[0] - (double)subimage->immin[0];
+  my = subimage->dpos[1] - (double)subimage->immin[1];
   var = backnoise2 = field->backsig*field->backsig;
   gain = field->gain;
   corrflag = (prefs.mask_type==MASK_CORRECT);
@@ -613,9 +621,9 @@ void  photom_auto(fieldstruct **fields, fieldstruct **wfields,
 
   v1 = r1 = 0.0;
   area = areab = 0;
-  image = obj2->image[0];
+  image = subimage->image;
   if (wfield)
-    weight = obj2->weight[0];
+    weight = subimage->weight;
   for (y=ymin; y<ymax; y++)
     {
     imaget = image + (pos = y*w + xmin);
@@ -689,14 +697,34 @@ void  photom_auto(fieldstruct **fields, fieldstruct **wfields,
       obj2->auto_kronfactor = 0.0;
       }
 
-    for (f=0; f<nfield; f++)
+    nsubimage = obj2->nsubimage;
+    subimage = obj2->subimage;
+    for (s=0; s<nsubimage; s++, subimage++)
       {
-      pflag = (fields[f]->detector_type==DETECTOR_PHOTO);
-      area = areab = 0;
-      tv = sigtv = 0.0;
-      image = obj2->image[f];
-      if (wfields && wfields[f])
-        weight = obj2->weight[f];
+      field = subimage->field;
+      wfield = subimage->wfield;
+      f = field->imindex;
+      pflag = (field->detector_type==DETECTOR_PHOTO);
+
+      w = subimage->imsize[0];
+      h = subimage->imsize[1];
+      mx = subimage->dpos[0];
+      my = subimage->dpos[1];
+
+      jac = subimage->dinvjacob;
+      cx2 = jac[0]*jac[0]*obj2->cxx
+	+ jac[2]*jac[2]*obj2->cyy
+	+ jac[0]*jac[2]*obj2->cxy;
+      cy2 = jac[1]*jac[1]*obj2->cxx
+	+ jac[3]*jac[3]*obj2->cyy
+	+ jac[1]*jac[3]*obj2->cxy;
+      cxy = 2.0*jac[0]*jac[1]*obj2->cxx
+	+ 2.0*jac[2]*jac[3]*obj2->cyy
+	+ (jac[0]*jac[3]+jac[1]*jac[2])*obj2->cxy;
+      dxlim = cx2 - cxy*cxy/(4.0*cy2);
+      dxlim = dxlim>0.0 ? obj2->auto_kronfactor/sqrt(dxlim) : 0.0;
+      dylim = cy2 - cxy*cxy/(4.0*cx2);
+      dylim = dylim > 0.0 ? obj2->auto_kronfactor/sqrt(dylim) : 0.0;
 
       autoflag = 0;
       if ((xmin = RINT(mx-dxlim)) < 0)
@@ -719,6 +747,11 @@ void  photom_auto(fieldstruct **fields, fieldstruct **wfields,
         ymax = h;
         autoflag = AUTOFLAG_APERT_PB;
         }
+
+      area = areab = 0;
+      tv = sigtv = 0.0;
+      image = subimage->image;
+      weight = subimage->weight;
 
       for (y=ymin; y<ymax; y++)
         {

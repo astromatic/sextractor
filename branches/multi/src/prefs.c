@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		21/03/2012
+*	Last modified:		26/03/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -583,7 +583,7 @@ INPUT	-.
 OUTPUT	-.
 NOTES	Global preferences are used.
 AUTHOR	E. Bertin (IAP)
-VERSION	21/03/2012
+VERSION	26/03/2012
  ***/
 void	prefs_use(void)
 
@@ -591,7 +591,7 @@ void	prefs_use(void)
    int			i,j, last, margin;
    char			*pstr;
 
-/*-------------------------------- Images ----------------------------------*/
+/*--------------------------------- Images ---------------------------------*/
 
 /*-------------------------------- Extracting ------------------------------*/
   if (prefs.nthresh_type<2)
@@ -603,6 +603,24 @@ void	prefs_use(void)
     for (i=prefs.ndetector_type; i<prefs.nimage; i++)
       prefs.detector_type[i] = prefs.detector_type[last];
     prefs.ndetector_type = prefs.nimage;
+    }
+
+
+/*-------------------------------- Multigrid -------------------------------*/
+  prefs.multigrids_flag = 0;
+  for (i=0; i<prefs.nmultigrid_flag; i++)
+    if ((prefs.multigrid_flag[i]))
+      {
+      prefs.multigrids_flag = 1;
+      break;
+      }
+
+  if (prefs.nmultigrid_flag<prefs.nimage)
+    {
+    last = prefs.nmultigrid_flag - 1;
+    for (i=prefs.nmultigrid_flag; i<prefs.nimage; i++)
+      prefs.multigrid_flag[i] = prefs.multigrid_flag[last];
+    prefs.nmultigrid_flag = prefs.nimage;
     }
 
 

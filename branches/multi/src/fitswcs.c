@@ -7,7 +7,7 @@
 *
 *	This file part of:	AstrOmatic software
 *
-*	Copyright:		(C) 1993-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -23,7 +23,7 @@
 *	along with AstrOmatic software.
 *	If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		10/10/2010
+*	Last modified:		27/03/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -1049,23 +1049,23 @@ void	range_wcs(wcsstruct *wcs)
 
 
 /******* frame_wcs ***********************************************************
-PROTO	void frame_wcs(wcsstruct *wcsin, wcsstruct *wcsout)
+PROTO	int frame_wcs(wcsstruct *wcsin, wcsstruct *wcsout)
 PURPOSE	Find the x and y limits of an input frame in an output image.
 INPUT	WCS structure of the input frame,
 	WCS structure of the output frame.
-OUTPUT	-.
-NOTES	.
+OUTPUT	1 if frames overlap, 0 otherwise.
+NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	29/12/2004
+VERSION	26/03/2012
  ***/
-void	frame_wcs(wcsstruct *wcsin, wcsstruct *wcsout)
+int	frame_wcs(wcsstruct *wcsin, wcsstruct *wcsout)
 
   {
    double		rawin[NAXIS], rawout[NAXIS], world[NAXIS];
    int			linecount[NAXIS];
    double		worldc;
    int			*min, *max,
-			i,j, naxis, npoints, out, swapflag;
+			i,j, naxis, npoints, out, swapflag, overlapflag;
 
   naxis = wcsin->naxis;
 
@@ -1118,7 +1118,7 @@ void	frame_wcs(wcsstruct *wcsin, wcsstruct *wcsout)
       }
     }
 
-/* Just add a little margin, in case of... */
+/* Add a little margin, just in case... */
   for (i=0; i<naxis; i++)
     {
     if (min[i]>-2147483647)
@@ -1127,7 +1127,16 @@ void	frame_wcs(wcsstruct *wcsin, wcsstruct *wcsout)
       max[i] += 2;
     }
 
-  return;
+/* Check overlap */
+  overlapflag = 1;
+  for (i=0; i<naxis; i++)
+    if (min[i]>wcsout->naxisn[i] || max[i]<0)
+      {
+      overlapflag = 0;
+      break;
+      }
+
+  return overlapflag;
   }
 
 
@@ -1569,7 +1578,7 @@ double	wcs_scale(wcsstruct *wcs, double *pixpos)
 
 /****** wcs jacobian *********************************************************
 PROTO	double wcs_jacobian(wcsstruct *wcs, double *pixpos, double *jacob)
-PURPOSE	Compute the local Jacobian matrice of the astrometric deprojection.
+PURPOSE	Compute the local Jacobian matrix of the astrometric deprojection.
 INPUT	WCS structure,
 	Pointer to the array of local raw coordinates,
 	Pointer to the jacobian array (output).
@@ -1612,6 +1621,71 @@ double	wcs_jacobian(wcsstruct *wcs, double *pixpos, double *jacob)
         }
       jacob[j*naxis+i] = dpos;
       }
+    }
+
+  if (lng==lat)
+    {
+    lng = 0;
+    lat = 1;
+    }
+
+  return fabs(jacob[lng+naxis*lng]*jacob[lat+naxis*lat]
+		- jacob[lat+naxis*lng]*jacob[lng+naxis*lat]);
+  }
+
+
+/****** wcs rawtoraw *********************************************************
+PROTO	double wcs_rawtoraw(wcsstruct *wcsin, wcsstruct *wcsout,
+		double *pixpos, double *jacob)
+PURPOSE	Convert raw coordinates from input wcs structure to raw coordinates
+	from output wcs structure, and the local Jacobian matrix of the
+	reprojection.
+INPUT	WCS input structure,
+	WCS output structure,
+	pointer to the array of local input raw coordinates,
+	pointer to the array of local output raw coordinates (output),
+	pointer to the jacobian array (output).
+OUTPUT	Determinant over spatial coordinates (ratio of pixel areas),
+	0.0 if jacob is NULL (Jacobian not computed in that case),
+	or -1.0 if mapping was unsuccesful.
+NOTES   Memory must have been allocated (naxis*naxis*sizeof(double)) for the
+        Jacobian array.
+AUTHOR	E. Bertin (IAP)
+VERSION	31/03/2012
+ ***/
+double	wcs_rawtoraw(wcsstruct *wcsin, wcsstruct *wcsout,
+		double *pixposin, double *pixposout, double *jacob)
+  {
+   double	pixpos0[NAXIS], pixpos2[NAXIS], wcspos[NAXIS],
+		dpos;
+   int		i,j, lng,lat,naxis;
+
+  naxis = wcsin->naxis;
+  for (i=0; i<naxis; i++)
+    pixpos0[i] = pixposin[i];
+
+/* Coordinate transformation */
+  if (raw_to_wcs(wcsin, pixposin, wcspos) == RETURN_ERROR)
+    return -1.0;
+  if (wcs_to_raw(wcsout, wcspos, pixposout) == RETURN_ERROR)
+    return -1.0;
+ 
+/* Jacobian */
+  if (!jacob)
+    return 0.0;
+
+  lng = wcsin->lng;
+  lat = wcsin->lat;
+  for (i=0; i<naxis; i++)
+    {
+    pixpos0[i] += 1.0;
+    if (raw_to_wcs(wcsin, pixpos0, wcspos) == RETURN_ERROR)
+      return -1.0;
+    if (wcs_to_raw(wcsout, wcspos, pixpos2) == RETURN_ERROR)
+      return -1.0;
+    pixpos0[i] -= 1.0;
+    for (j=0; j<naxis; j++)
+      jacob[j*naxis+i] = pixpos2[j] - pixposout[j];
     }
 
   if (lng==lat)

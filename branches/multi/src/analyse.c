@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		20/03/2012
+*	Last modified:		29/03/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -52,11 +52,13 @@
 #include	"growth.h"
 #include	"image.h"
 #include	"misc.h"
+#include	"neurro.h"
 #include	"photom.h"
 #include	"psf.h"
 #include	"profit.h"
 #include	"retina.h"
 #include	"som.h"
+#include	"subimage.h"
 #include	"weight.h"
 #include	"winpos.h"
 
@@ -393,7 +395,7 @@ INPUT	Pointer to an array of image field pointers,
 OUTPUT  -.
 NOTES   Global preferences are used.
 AUTHOR  E. Bertin (IAP)
-VERSION 15/01/2012
+VERSION 29/03/2012
  ***/
 void analyse_final(fieldstruct **fields, fieldstruct **wfields,
 			int nfield, objliststruct *objlist, int iobj)
@@ -456,14 +458,7 @@ void analyse_final(fieldstruct **fields, fieldstruct **wfields,
 
 /* Free the group of obj2s */
   for (obj2=firstobj2; obj2; obj2=obj2->nextobj2)
-    {
-    for (i=0; i<nfield; i++)
-      {
-      QFREE(obj2->image[i]);
-      if (wfields && wfields[i])
-        QFREE(obj2->weight[i]);
-      }
-    }
+    subimage_endall(obj2);
 
   for (obj2=firstobj2; obj2->nextobj2; obj2=obj2->nextobj2);
   obj2->nextobj2 = obj2list->freeobj2;
@@ -525,15 +520,16 @@ INPUT	Pointer to an array of image field pointers,
 OUTPUT  New obj2 pointer.
 NOTES   -.
 AUTHOR  E. Bertin (IAP)
-VERSION 16/03/2012
+VERSION 29/03/2012
  ***/
 obj2struct	*analyse_obj2obj2(fieldstruct **fields, fieldstruct **wfields,
 			int nfield, objstruct *obj, obj2liststruct *obj2list)
   {
-   fieldstruct *field;
-   obj2struct	*obj2;
-   float	sigbkg;
-   int		f, idx,idy, npix;
+   fieldstruct		*field;
+   subimagestruct	*subimage;
+   obj2struct		*obj2;
+   float		sigbkg;
+   int			f, idx,idy;
 
   obj2 = obj2list->freeobj2;
   if (obj2->nextobj2)
@@ -547,23 +543,23 @@ obj2struct	*analyse_obj2obj2(fieldstruct **fields, fieldstruct **wfields,
 /*-- Local backgrounds */
   for (f=0; f<nfield; f++)
     {
+    field = fields[f];
     if (FLAG(obj2.bkg))
-      obj2->bkg[f] = (float)back_interpolate(fields[f], obj->mx, obj->my);
+      obj2->bkg[f] = (float)back_interpolate(field, obj->mx, obj->my);
     obj2->dbkg[f] = 0.0;
     if (prefs.pback_type == LOCAL)
       {
-      obj2->dbkg[f] = back_local(fields[f], obj, &sigbkg);
+      obj2->dbkg[f] = back_local(field, obj, &sigbkg);
       if (FLAG(obj2.bkg))
         obj2->bkg[f] += obj2->dbkg[f];
-      obj2->sigbkg[f] = sigbkg<0.0? fields[f]->backsig : sigbkg;          
+      obj2->sigbkg[f] = sigbkg<0.0? field->backsig : sigbkg;          
       }
     else
-      obj2->sigbkg[f] = fields[f]->backsig;
+      obj2->sigbkg[f] = field->backsig;
     if (FLAG(obj2.wflag))
       obj2->wflag[f] = obj->wflag;
     }
-/* field is the detection field */
-  field = fields[0];
+
 /* Copy main data */
   obj2->number = obj->number;
   obj2->fdnpix = obj->fdnpix;
@@ -615,32 +611,15 @@ obj2struct	*analyse_obj2obj2(fieldstruct **fields, fieldstruct **wfields,
   obj2->fwhm = obj->fwhm;
 
 /* Copy image data around current object */
-  for (f=0; f<nfield; f++)
-    {
-    obj2->imxsize[f] = 2.0*(obj2->xmax-obj2->xmin)+1+2*field->stripmargin;
-    obj2->imysize[f] = 2.0*(obj2->ymax-obj2->ymin)+1+2*field->stripmargin;
-    obj2->imxmin[f] = obj2->ix - obj2->imxsize[f]/2;
-    obj2->imymin[f] = obj2->iy - obj2->imysize[f]/2;
-    obj2->imxmax[f] = obj2->imxmin[f] + obj2->imxsize[f];
-    obj2->imymax[f] = obj2->imymin[f] + obj2->imysize[f];
-    npix = obj2->imxsize[f]*obj2->imysize[f];
-    QMALLOC(obj2->image[f], PIXTYPE, npix);
-    copyimage(fields[f], obj2->image[f], obj2->imxsize[f],obj2->imysize[f],
-	obj2->ix,obj2->iy);
-    if (wfields && wfields[f])
-      {
-      QMALLOC(obj2->weight[f], PIXTYPE, obj2->imxsize[f]*obj2->imysize[f]);
-      copyimage(wfields[f], obj2->weight[f], obj2->imxsize[f],obj2->imysize[f],
-	obj2->ix,obj2->iy);
-      }
-    }
+  subimage_getall(fields, wfields, nfield, obj2);
 
 /* if BLANKing is on, paste back the object pixels in the image*/
   if (prefs.blank_flag && obj->blank)
     {
+    subimage = obj2->subimage;
     deblankimage(obj->blank, obj->subw, obj->subh,
-		obj2->image[0], obj2->imxsize[0],obj2->imysize[0],
-		obj->subx - obj2->imxmin[0], obj->suby - obj2->imymin[0]);
+		subimage->image, subimage->imsize[0],subimage->imsize[1],
+		obj->subx - subimage->immin[0], obj->suby - subimage->immin[0]);
     free(obj->blank);
     }
 

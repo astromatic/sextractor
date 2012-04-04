@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		21/03/2012
+*	Last modified:		23/03/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -30,15 +30,15 @@
 #define _FIELD_H_
 
 /*------------------------------ field flags -------------------------------*/
-#define		DETECT_FIELD	0x01	/* Detection */
-#define		MEASURE_FIELD	0x02	/* Measurement */
-#define		FLAG_FIELD	0x04	/* Flagging */
-#define		RMS_FIELD	0x08	/* Weighting with std deviations */
-#define		VAR_FIELD	0x10	/* Weighting with variances */
-#define		WEIGHT_FIELD	0x20	/* Weighting with weights */
-#define		BACKRMS_FIELD	0x40	/* Weighting from a backrms matrix */
-#define		INTERP_FIELD	0x80	/* Purely interpolated data */
-
+#define		DETECT_FIELD	0x0001	/* Detection */
+#define		MEASURE_FIELD	0x0002	/* Measurement */
+#define		FLAG_FIELD	0x0004	/* Flagging */
+#define		RMS_FIELD	0x0008	/* Weighting with std deviations */
+#define		VAR_FIELD	0x0010	/* Weighting with variances */
+#define		WEIGHT_FIELD	0x0020	/* Weighting with weights */
+#define		BACKRMS_FIELD	0x0040	/* Weighting from a backrms matrix */
+#define		INTERP_FIELD	0x0080	/* Purely interpolated data */
+#define		MULTIGRID_FIELD	0x0100	/* Multi-grid mode */
 
 /*------------------------------- structures --------------------------------*/
 /* image parameters */

@@ -1106,26 +1106,28 @@ PURPOSE	Interpolate background at line y (bicubic spline interpolation between
 INPUT	Pointer to image field structure,
 	y coordinate of image line,
 	pointer to the image line.
+
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	07/12/2011
+VERSION	03/04/2012
  ***/
-void	back_subline(fieldstruct *field, int y, PIXTYPE *line)
+void	back_subline(fieldstruct *field, int y, int xmin, int width,
+		PIXTYPE *line)
 
   {
-   int		i,j,x,yl, nbx,nbxm1,nby, nx,width, ystep, changepoint;
+   int		i,j,x,yl, nbx,nbxm1,nby, nx, ystep, changepoint;
    float	dx,dx0,dy,dy3, cdx,cdy,cdy3, temp, xstep,
 		*node,*nodep,*dnode, *blo,*bhi,*dblo,*dbhi, *u;
    PIXTYPE	*backline, bval;
 
-  width = field->width;
   backline = field->backline;
 
   if (field->back_type==BACK_ABSOLUTE)
     {
 /*-- In absolute background mode, just subtract a cste */
     bval = field->backmean;
+    line += xmin;
     for (i=width; i--;)
       *(line++) -= ((*backline++)=bval);
     return;
@@ -1205,7 +1207,7 @@ void	back_subline(fieldstruct *field, int y, PIXTYPE *line)
     bhi = node + 1;
     dblo = dnode;
     dbhi = dnode + 1;
-    for (x=i=0,j=width; j--; i++, dx += xstep)
+    for (x=i=0,j=xmin; j--; i++, dx += xstep)
       {
       if (i==changepoint && x>0 && x<nbxm1)
         {
@@ -1216,6 +1218,25 @@ void	back_subline(fieldstruct *field, int y, PIXTYPE *line)
         dx = dx0;
         }
       cdx = 1 - dx;
+      if (i==nx)
+        {
+        x++;
+        i = 0;
+        }
+      }
+
+    for (j=width; j--; i++, dx += xstep)
+      {
+      if (i==changepoint && x>0 && x<nbxm1)
+        {
+        blo++;
+        bhi++;
+        dblo++;
+        dbhi++;
+        dx = dx0;
+        }
+      cdx = 1 - dx;
+      
       *(line++) -= (*(backline++) = (PIXTYPE)(cdx*(*blo+(cdx*cdx-1)**dblo)
 			+ dx*(*bhi+(dx*dx-1)**dbhi)));
       if (i==nx)

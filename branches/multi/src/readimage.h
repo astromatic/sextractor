@@ -1,13 +1,13 @@
 /*
-*				deblend.h
+*				readimage.h
 *
-* Include file for deblend.c.
+* Include file for readimage.c.
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 2012 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 2010-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -26,22 +26,11 @@
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-/*------------------------------ definitions --------------------------------*/
-
-#ifndef	RAND_MAX
-#define	RAND_MAX		2147483647
+#ifndef _FIELD_H_
+#include "field.h"
 #endif
-#define	DEBLEND_NSONMAX		1024		/* max. number per level */
-#define	DEBLEND_NBRANCH		16		/* starting number per branch */
 
 /*------------------------------- functions ---------------------------------*/
-void	deblend_alloc(void),
-	deblend_free(void);
-
-int	deblend_addobj(int objnb, objliststruct *objl1, objliststruct *objl2),
-	deblend_belong(int corenb, objliststruct *coreobjlist,
-	       int shellnb, objliststruct *shellobjlist),
-	deblend_gatherup(objliststruct *objlistin,objliststruct *objlistout),
-	deblend_parcelout(objliststruct *objlistin, objliststruct *objlistout);
-
+extern void	readimage_copydata(fieldstruct *field, int offset, int size),
+		*readimage_loadstrip(fieldstruct *field, fieldstruct *wfield);
 

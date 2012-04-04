@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		21/06/2011
+*	Last modified:		03/04/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -32,11 +32,13 @@
 
 #include	<math.h>
 #include	<stdlib.h>
+#include	<stdio.h>
 #include	<string.h>
 
 #include	"define.h"
 #include	"globals.h"
 #include	"prefs.h"
+#include	"back.h"
 #include	"image.h"
 
 static float	interpm[INTERPW*INTERPW];
@@ -49,6 +51,7 @@ set to -BIG.
 int	copyimage(fieldstruct *field, PIXTYPE *dest, int w,int h, int ix,int iy)
   {
    PIXTYPE	*destt;
+   OFF_T	offset,step;
    int		i,y, xmin,xmax,ymin,ymax,w2;
 
 /* First put the retina background to -BIG */
@@ -87,8 +90,27 @@ int	copyimage(fieldstruct *field, PIXTYPE *dest, int w,int h, int ix,int iy)
     }
 
 /* Copy the right pixels to the destination */
-  for (y=ymin; y<ymax; y++, dest += w)
-      memcpy(dest, &PIX(field, xmin, y), w2*sizeof(PIXTYPE));
+  if ((field->flags&MULTIGRID_FIELD))
+    {
+    offset = (OFF_T)ymin*field->tab->naxisn[1] + xmin;
+    step = w - w2;
+/*-- Read and skip, read and skip, etc... */
+    QFSEEK(field->cat->file,
+	field->tab->bodypos + offset*(OFF_T)field->tab->bytepix,
+	SEEK_SET, field->cat->filename);
+    y = ymin;
+    for (i = ymax - ymin; i--; dest += step)
+        {
+        read_body(field->tab, dest, w2);
+        back_subline(field, y++, xmin, w2, dest);
+        if (i)
+          QFSEEK(field->cat->file, step*(OFF_T)field->tab->bytepix,
+		SEEK_CUR, field->cat->filename);
+        }
+    }
+  else
+    for (i = ymax - ymin; i--; dest += w)
+      memcpy(dest, &PIX(field, xmin, y++), w2*sizeof(PIXTYPE));
 
   return RETURN_OK;
   }

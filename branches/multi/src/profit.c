@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		16/03/2012
+*	Last modified:		30/03/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -53,6 +53,7 @@
 #include	"pattern.h"
 #include	"psf.h"
 #include	"profit.h"
+#include	"subimage.h"
 
 static double	prof_gammainc(double x, double a),
 		prof_gamma(double x);
@@ -1913,16 +1914,18 @@ INPUT	Pointer to the profit structure,
 OUTPUT	The number of valid pixels copied.
 NOTES	Global preferences are used.
 AUTHOR	E. Bertin (IAP)
-VERSION	20/03/2012
+VERSION	30/03/2012
  ***/
 int	profit_copyobjpix(profitstruct *profit, fieldstruct *field,
 			fieldstruct *wfield, obj2struct *obj2)
   {
-   float	dx, dy2, dr2, rad2;
-   PIXTYPE	*pixin,*spixin, *wpixin,*swpixin, *pixout,*wpixout,
-		backnoise2, invgain, satlevel, wthresh, pix,spix, wpix,swpix;
-   int		i,x,y, xmin,xmax,ymin,ymax, w,h,dw, npix, off, gainflag,
-		badflag, sflag, sx,sy,sn, ix,iy, win,hin;
+   subimagestruct	*subimage;
+   float		dx, dy2, dr2, rad2;
+   PIXTYPE		*pixin,*spixin, *wpixin,*swpixin, *pixout,*wpixout,
+			backnoise2, invgain, satlevel, wthresh, pix,spix,
+			wpix,swpix;
+   int			i,x,y, xmin,xmax,ymin,ymax, w,h,dw, npix, off, gainflag,
+			badflag, sflag, sx,sy,sn, ix,iy, win,hin;
 
 /* First put the image background to -BIG */
   pixout = profit->objpix;
@@ -1933,10 +1936,11 @@ int	profit_copyobjpix(profitstruct *profit, fieldstruct *field,
     *(wpixout++) = 0.0;
     }
 
-  ix = profit->ix - obj2->imxmin[0];
-  iy = profit->iy - obj2->imymin[0];
-  win = obj2->imxsize[0];
-  hin = obj2->imysize[0];
+  subimage = obj2->subimage;
+  ix = profit->ix - subimage->immin[0];
+  iy = profit->iy - subimage->immin[1];
+  win = subimage->imsize[0];
+  hin = subimage->imsize[1];
 
   backnoise2 = field->backsig*field->backsig;
   sn = (int)profit->subsamp;
@@ -2006,8 +2010,8 @@ int	profit_copyobjpix(profitstruct *profit, fieldstruct *field,
             dy2 *= dy2;
             dx = (x-ix);
             off = x + (y+sy)*win;
-            spixin = obj2->image[0] + off;
-            swpixin = obj2->weight[0] + off;
+            spixin = subimage->image + off;
+            swpixin = subimage->weight + off;
             for (sx=sn; sx--;)
               {
               dr2 = dy2 + dx*dx;
@@ -2040,8 +2044,8 @@ int	profit_copyobjpix(profitstruct *profit, fieldstruct *field,
         {
         dy2 = y-iy;
         dy2 *= dy2;
-        pixin = obj2->image[0] + xmin + y*win;
-        wpixin = obj2->weight[0] + xmin + y*win;
+        pixin = subimage->image + xmin + y*win;
+        wpixin = subimage->weight + xmin + y*win;
         for (x=xmin; x<xmax; x++)
           {
           dx = x-ix;
@@ -2076,7 +2080,7 @@ int	profit_copyobjpix(profitstruct *profit, fieldstruct *field,
             dy2 = y+sy-iy;
             dy2 *= dy2;
             dx = x-ix;
-            spixin = obj2->image[0] + x + (y+sy)*win;
+            spixin = subimage->image + x + (y+sy)*win;
             for (sx=sn; sx--;)
               {
               dr2 = dy2 + dx*dx;
@@ -2104,7 +2108,7 @@ int	profit_copyobjpix(profitstruct *profit, fieldstruct *field,
         {
         dy2 = y-iy;
         dy2 *= dy2;
-        pixin = obj2->image[0] + xmin + y*win;
+        pixin = subimage->weight + xmin + y*win;
         for (x=xmin; x<xmax; x++)
           {
           dx = x-ix;

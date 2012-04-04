@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		20/03/2012
+*	Last modified:		27/03/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -49,12 +49,12 @@ static short		*son, *ok;
 PROTO	deblend_parcelout(objliststruct *objlistin, objliststruct *objlistout)
 PURPOSE	Divide a list of isophotal detections in several parts (deblending).
 INPUT	Input objlist,
-	output objlist,
+	output objlist.
 OUTPUT	RETURN_OK if success, RETURN_FATAL_ERROR otherwise (memory overflow).
 NOTES	Even if the object is not deblended, the output objlist threshold is
 	recomputed if a variable threshold is used.
 AUTHOR	E. Bertin (IAP)
-VERSION	20/03/2012
+VERSION	27/03/2012
  ***/
 int	deblend_parcelout(objliststruct *objlistin, objliststruct *objlistout)
 
@@ -84,9 +84,11 @@ int	deblend_parcelout(objliststruct *objlistin, objliststruct *objlistout)
       dthresh0 = objlistin->obj[l].dthresh;
 
       objlistout->dthresh = debobjlist2.dthresh = dthresh0;
-      if ((out = addobj(l, objlistin, &objlist[0])) == RETURN_FATAL_ERROR)
+      if ((out = deblend_addobj(l, objlistin, &objlist[0]))
+		== RETURN_FATAL_ERROR)
         goto exit_parcelout;
-      if ((out = addobj(l, objlistin, &debobjlist2)) == RETURN_FATAL_ERROR)
+      if ((out = deblend_addobj(l, objlistin, &debobjlist2))
+		== RETURN_FATAL_ERROR)
         goto exit_parcelout;
       value0 = objlist[0].obj[0].fdflux*prefs.deblend_mincont;
       ok[0] = (short)1;
@@ -118,10 +120,10 @@ int	deblend_parcelout(objliststruct *objlistin, objliststruct *objlistout)
             goto exit_parcelout;
 
           for (j=h=0; j<debobjlist.nobj; j++)
-            if (belong(j, &debobjlist, i, &objlist[k-1]))
+            if (deblend_belong(j, &debobjlist, i, &objlist[k-1]))
               {
               debobjlist.obj[j].dthresh = debobjlist.dthresh;
-              m = addobj(j, &debobjlist, &objlist[k]);
+              m = deblend_addobj(j, &debobjlist, &objlist[k]);
               if (m==RETURN_FATAL_ERROR || m>=DEBLEND_NSONMAX)
                 {
                 out = RETURN_FATAL_ERROR;
@@ -163,7 +165,7 @@ int	deblend_parcelout(objliststruct *objlistin, objliststruct *objlistout)
                 objlist[k+1].obj[j].flag |= OBJ_MERGED	/* Merge flag on */
 			| ((OBJ_ISO_PB|OBJ_APERT_PB|OBJ_OVERFLOW)
 			&debobjlist2.obj[0].flag);
-                if ((out = addobj(j, &objlist[k+1], &debobjlist2))
+                if ((out = deblend_addobj(j, &objlist[k+1], &debobjlist2))
 			== RETURN_FATAL_ERROR)
                   goto exit_parcelout;
                 }
@@ -173,7 +175,7 @@ int	deblend_parcelout(objliststruct *objlistin, objliststruct *objlistout)
         }
 
       if (ok[0])
-        out = addobj(0, &debobjlist2, objlistout);
+        out = deblend_addobj(0, &debobjlist2, objlistout);
       else
         out = deblend_gatherup(&debobjlist2, objlistout);
 
@@ -193,6 +195,107 @@ exit_parcelout:
   free(debobjlist.plist);
 
   return out;
+  }
+
+
+/****** deblend_addobj ******************************************************
+PROTO	int deblend_addobj(int objnb, objliststruct *objl1,objliststruct *objl2)
+PURPOSE	Add an object from an object list to another object list.
+INPUT	Object index,
+	input objlist,
+	output objlist,
+OUTPUT	New object index, or RETURN_FATAL_ERROR if a memory overflow occurs.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	27/03/2012
+ ***/
+int	deblend_addobj(int objnb, objliststruct *objl1, objliststruct *objl2)
+
+  {
+   objstruct	*objl2obj;
+   pliststruct	*plist1 = objl1->plist, *plist2 = objl2->plist;
+   int		fp, i, j, npx, objnb2;
+
+  j = (fp = objl2->npix)*plistsize;
+  objnb2 = objl2->nobj;
+
+/* Update the object list */
+  if (objl2->nobj)
+    {
+    if (!(objl2obj = (objstruct *)realloc(objl2->obj,
+		(++objl2->nobj) * sizeof(objstruct))))
+      goto exit_addobj;
+    }
+  else
+    if (!(objl2obj = (objstruct *)malloc((++objl2->nobj)*sizeof(objstruct))))
+      goto exit_addobj;
+
+/* Update the pixel list */
+  npx = objl1->obj[objnb].fdnpix;
+  if (fp)
+    {
+    if (!(plist2 = (pliststruct *)realloc(plist2,
+		(objl2->npix+=npx) * plistsize)))
+      goto exit_addobj;
+    }
+  else
+    if (!(plist2=(pliststruct *)malloc((objl2->npix=npx)*plistsize)))
+      goto exit_addobj;
+
+  objl2->obj = objl2obj;
+  objl2->plist = plist2;
+
+  plist2 += j;
+  for(i=objl1->obj[objnb].firstpix; i!=-1; i=PLIST(plist1+i,nextpix))
+    {
+    memcpy(plist2, plist1+i, (size_t)plistsize);
+    PLIST(plist2,nextpix) = (j+=plistsize);
+    plist2 += plistsize;
+    }
+
+  PLIST(plist2-=plistsize, nextpix) = -1;
+
+  objl2->obj[objnb2] = objl1->obj[objnb];
+  objl2->obj[objnb2].firstpix = fp*plistsize;
+  objl2->obj[objnb2].lastpix = j-plistsize;
+  return	objnb2;
+
+exit_addobj:
+
+  objl2->nobj--;
+  objl2->npix = fp;
+  return RETURN_FATAL_ERROR;
+  }
+
+
+/****** deblend_belong ******************************************************
+PROTO	int deblend_belong(int corenb, objliststruct *coreobjlist,
+	       int shellnb, objliststruct *shellobjlist)
+PURPOSE	Tell if an object is "included" in another.
+INPUT	"Core" object index,
+	"core" objlist,
+	"shell" object index,
+	"shell" objlist.
+OUTPUT	1 if the "core" object is included in the "shell" object; 0 otherwise.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	27/03/2012
+ ***/
+int	deblend_belong(int corenb, objliststruct *coreobjlist,
+	       int shellnb, objliststruct *shellobjlist)
+
+  {
+   objstruct	*cobj = &(coreobjlist->obj[corenb]),
+		*sobj = &(shellobjlist->obj[shellnb]);
+   pliststruct	*cpl = coreobjlist->plist, *spl = shellobjlist->plist, *pixt;
+
+   int		xc=PLIST(cpl+cobj->firstpix,x), yc=PLIST(cpl+cobj->firstpix,y);
+
+  for (pixt = spl+sobj->firstpix; pixt>=spl; pixt = spl+PLIST(pixt,nextpix))
+    if ((PLIST(pixt,x) == xc) && (PLIST(pixt,y) == yc))
+      return 1;
+
+  return 0;
   }
 
 
@@ -289,7 +392,7 @@ int	deblend_gatherup(objliststruct *objlistin, objliststruct *objlistout)
 	pixt=pixelin+PLIST(pixt,nextpix))
       bmp[(PLIST(pixt,x)-xs) + (PLIST(pixt,y)-ys)*bmwidth] = '\1';
 
-    if ((n[i] = addobj(i, objlistin, objlistout)) == RETURN_FATAL_ERROR)
+    if ((n[i] = deblend_addobj(i, objlistin, objlistout)) == RETURN_FATAL_ERROR)
       {
       out = RETURN_FATAL_ERROR;
       goto exit_gatherup;
