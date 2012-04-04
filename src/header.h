@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 2010-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/10/2010
+*	Last modified:		26/03/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -30,7 +30,12 @@
 #include "fits/fitscat.h"
 #endif
 
+#ifndef _FIELD_H_
+#include "field.h"
+#endif
+
 /*------------------------------- functions ---------------------------------*/
-extern int		read_aschead(char *filename, int frameno,
-					tabstruct *tab);
+extern int	header_readasc(char *filename, int frameno, tabstruct *tab);
+
+extern void	header_readima(fieldstruct *field);
 

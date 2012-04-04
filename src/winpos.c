@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		20/03/2012
+*	Last modified:		02/04/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -36,6 +36,7 @@
 #include	"define.h"
 #include	"globals.h"
 #include	"prefs.h"
+#include	"subimage.h"
 #include	"winpos.h"
 
 /****** win_pos **************************************************************
@@ -49,13 +50,15 @@ INPUT	Pointer to an array of image field pointers,
 OUTPUT  -.
 NOTES   obj2->mx and obj2->my are taken as initial centroid guesses.
 AUTHOR  E. Bertin (IAP)
-VERSION 20/03/2012
+VERSION 02/04/2012
  ***/
 void	win_pos(fieldstruct **fields, fieldstruct **wfields,
 			int nfield, obj2struct *obj2)
   {
    fieldstruct		*field, *wfield;
-   float		r2,invtwosig2, raper,raper2, rintlim,rintlim2,rextlim2,
+   subimagestruct	*subimage;
+   float		*sposx,*sposy,
+			r2,invtwosig2, raper,raper2, rintlim2, rextlim2,
 			dx,dx1,dy,dy2, sig, invngamma, pdbkg,
                         offsetx,offsety,scalex,scaley,scale2, locarea;
    double               tv, norm, pix, var, backnoise2, invgain, locpix,
@@ -63,9 +66,10 @@ void	win_pos(fieldstruct **fields, fieldstruct **wfields,
 			esum, temp,temp2, mx2, my2,mxy,pmx2, theta, mx,my,
 			mx2ph, my2ph, ftv, fdxpos,fdypos, femx2,femy2,femxy,
 			fesum, fmx2,fmy2,fmxy, wsum, fw;
-   int                  f,i,x,y, x2,y2, xmin,xmax,ymin,ymax, sx,sy, w,h,
+   int                  *sokflag,
+			f,i,s,x,y, x2,y2, xmin,xmax,ymin,ymax, sx,sy, w,h,
                         pflag,corrflag, gainflag, errflag, momentflag, winflag,
-			band,nband;
+			band,nband, nsubimage;
    long                 pos;
    PIXTYPE              *image, *imaget, *weight,*weightt,
                         wthresh = 0.0;
@@ -75,39 +79,99 @@ void	win_pos(fieldstruct **fields, fieldstruct **wfields,
   momentflag = FLAG(obj2.win_mx2) | FLAG(obj2.winposerr_mx2);
   sig = obj2->hl_radius*2.0/2.35482;	/* From half FWHM to sigma */
   invtwosig2 = 1.0/(2.0*sig*sig);
-/* Use isophotal centroid on detection image as a first guess */
-  mx = obj2->mx - obj2->imxmin[0];
-  my = obj2->my - obj2->imymin[0];
 
-/* Integration radius */
-  raper = WINPOS_NSIG*sig;
-  raper2 = raper*raper;
-/* Internal radius of the oversampled annulus (<r-sqrt(2)/2) */
-  rintlim = raper - 0.75;
-  rintlim2 = (rintlim>0.0)? rintlim*rintlim: 0.0;
-/* External radius of the oversampled annulus (>r+sqrt(2)/2) */
-  rextlim2 = (raper + 0.75)*(raper + 0.75);
-  scaley = scalex = 1.0/WINPOS_OVERSAMP;
-  scale2 = scalex*scaley;
-  offsetx = 0.5*(scalex-1.0);
-  offsety = 0.5*(scaley-1.0);
+/* Use isophotal centroid as a first guess */
+  nsubimage = obj2->nsubimage;
+  QMALLOC(sposx, float, nsubimage);
+  QMALLOC(sposy, float, nsubimage);
+  QMALLOC(sokflag, int, nsubimage);
+  subimage = obj2->subimage;
+  for (s=0; s<nsubimage; s++, subimage++)
+    {
+/*-- Store positions in sub-images */
+    sposx[s] = subimage->dpos[0] - 1.0 - subimage->immin[0];
+    sposy[s] = subimage->dpos[1] - 1.0 - subimage->immin[1];
+    sokflag[s] = 1;
+    }
+
+/* Initialize WIN measurements to "N/A" values */
+  for (f=0; f<nfield; f++)
+    {
+    if (FLAG(obj2.winpos_x))
+     obj2->winpos_x[f] = 0.0;
+    if (FLAG(obj2.winpos_y))
+     obj2->winpos_y[f] = 0.0;
+    if (FLAG(obj2.winpos_niter))
+      obj2->winpos_niter[f] = 0;
+    if (FLAG(obj2.flux_win))
+      obj2->flux_win[f] = 0.0;
+    if (FLAG(obj2.fluxerr_win))
+      obj2->fluxerr_win[f] = 0.0;
+    if (FLAG(obj2.snr_win))
+      obj2->snr_win[f] = 0.0;
+    if (FLAG(obj2.win_flags))
+      obj2->win_flags[f] = WINFLAG_NOTCOVERED;
+    if (errflag)
+      {
+      if (FLAG(obj2.winposerr_mx2))
+        obj2->winposerr_mx2[f] = 0.0;
+      if (FLAG(obj2.winposerr_my2))
+        obj2->winposerr_my2[f] = 0.0;
+      if (FLAG(obj2.winposerr_mxy))
+        obj2->winposerr_mxy[f] = 0.0;
+      if (FLAG(obj2.winposerr_a))
+        obj2->winposerr_a[f] = 0.0;
+      if (FLAG(obj2.winposerr_b))
+        obj2->winposerr_b[f] = 0.0;
+      if (FLAG(obj2.winposerr_theta))
+        obj2->winposerr_theta[f] = 0.0;
+      if (FLAG(obj2.winposerr_cxx))
+        obj2->winposerr_cxx[f] = 0.0;
+      if (FLAG(obj2.winposerr_cyy))
+        obj2->winposerr_cyy[f] = 0.0;
+      if (FLAG(obj2.winposerr_cxy))
+        obj2->winposerr_cxy[f] = 0.0;
+      }
+    if (momentflag)
+      {
+      if (FLAG(obj2.win_mx2))
+        obj2->win_mx2[f] = 0.0;
+      if (FLAG(obj2.win_my2))
+        obj2->win_my2[f] = 0.0;
+      if (FLAG(obj2.win_mxy))
+        obj2->win_mxy[f] = 0.0;
+      if (FLAG(obj2.win_cxx))
+        obj2->win_cxx[f] = 0.0;
+      if (FLAG(obj2.win_cyy))
+        obj2->win_cyy[f] = 0.0;
+      if (FLAG(obj2.win_cxy))
+        obj2->win_cxy[f] = 0.0;
+      if (FLAG(obj2.win_a))
+        obj2->win_a[f] = 0.0;
+      if (FLAG(obj2.win_b))
+        obj2->win_b[f] = 0.0;
+      if (FLAG(obj2.win_theta))
+        obj2->win_theta[f] = 0.0;
+      }
+    }
 
   nband = prefs.nphotinstru;
+  nsubimage = obj2->nsubimage;
   for (band=0; band<nband; band++)
     {
     for (i=0; i<WINPOS_NITERMAX; i++)
       {
       tv = wsum = esum = emxy = emx2 = emy2 = mx2 = my2 = mxy = 0.0;
       dxpos = dypos = 0.0;
-      for (f=0; f<nfield; f++)
+      subimage = obj2->subimage;
+      for (s=0; s<nsubimage; s++, subimage++)
         {
-        field = fields[f];
-        if (band != field->photomlabel)
+        field = subimage->field;
+        if (!sokflag[s] || field->photomlabel != band)
           continue;
         ftv = fesum = femxy = femx2 = femy2 = fmx2 = fmy2 = fmxy = 0.0;
         fdxpos = fdypos = 0.0;
-        if (wfields)
-          wfield = wfields[f];
+        wfield = subimage->wfield;
         if (wfield)
           wthresh = wfield->weight_thresh;
 /*------ For photographic data */
@@ -126,6 +190,21 @@ void	win_pos(fieldstruct **fields, fieldstruct **wfields,
         var = backnoise2 = field->backsig*field->backsig;
         invgain = field->gain>0.0? 1.0/field->gain : 0.0;
 
+        mx = sposx[s];
+        my = sposy[s];
+        raper = WINPOS_NSIG*sig*subimage->dscale;
+        raper2 = raper*raper;
+/*------ Internal radius of the oversampled annulus (<r-sqrt(2)/2) */
+        rintlim2 = raper - 0.75;
+        rintlim2 = (rintlim2>0.0)? rintlim2*rintlim2: 0.0;
+
+/*------ External radius of the oversampled annulus (>r+sqrt(2)/2) */
+        rextlim2 = (raper + 0.75)*(raper + 0.75);
+        scaley = scalex = 1.0/WINPOS_OVERSAMP;
+        scale2 = scalex*scaley;
+        offsetx = 0.5*(scalex-1.0);
+        offsety = 0.5*(scaley-1.0);
+
         xmin = (int)(mx-raper+0.499999);
         xmax = (int)(mx+raper+1.499999);
         ymin = (int)(my-raper+0.499999);
@@ -133,8 +212,8 @@ void	win_pos(fieldstruct **fields, fieldstruct **wfields,
         mx2ph = mx*2.0 + 0.49999;
         my2ph = my*2.0 + 0.49999;
 
-        w = obj2->imxsize[0];
-        h = obj2->imysize[0];
+        w = subimage->imsize[0];
+        h = subimage->imsize[1];
         if (xmin < 0)
           {
           xmin = 0;
@@ -156,10 +235,10 @@ void	win_pos(fieldstruct **fields, fieldstruct **wfields,
           winflag = WINFLAG_APERT_PB;
           }
 
-        image = obj2->image[f];
+        image = subimage->image;
         weight = weightt = NULL;	/* To avoid gcc -Wall warnings */
         if (wfield)
-          weight = obj2->weight[f];
+          weight = subimage->weight;
         for (y=ymin; y<ymax; y++)
           {
           imaget = image + (pos = y*w + xmin);
@@ -220,24 +299,21 @@ void	win_pos(fieldstruct **fields, fieldstruct **wfields,
               ftv += locpix;
               fdxpos += locpix*dx;
               fdypos += locpix*dy;
-              if (errflag)
+              err = var;
+              if (pflag)
+                err *= locpix*pix*invngamma*invngamma;
+              else if (invgain>0.0 && pix>0.0)
                 {
-                err = var;
-                if (pflag)
-                  err *= locpix*pix*invngamma*invngamma;
-                else if (invgain>0.0 && pix>0.0)
-                  {
-                  if (gainflag)
-                    err += pix*invgain*var/backnoise2;
-                  else
-                    err += pix*invgain;
-                  }
-                err2 = locarea*locarea*err;
-                fesum += err2;
-                femx2 += err2*(dx*dx+0.0833);	/* Finite pixel size */
-                femy2 += err2*(dy*dy+0.0833);	/* Finite pixel size */
-                femxy += err2*dx*dy;
+                if (gainflag)
+                  err += pix*invgain*var/backnoise2;
+                else
+                  err += pix*invgain;
                 }
+              err2 = locarea*locarea*err;
+              fesum += err2;
+              femx2 += err2*(dx*dx+0.0833);	/* Finite pixel size */
+              femy2 += err2*(dy*dy+0.0833);	/* Finite pixel size */
+              femxy += err2*dx*dy;
               if (momentflag)
                 {
                 fmx2 += locpix*dx*dx;
@@ -285,19 +361,26 @@ void	win_pos(fieldstruct **fields, fieldstruct **wfields,
           }
         }
 
-      if (tv>0.0)
-        {
-        mx += (dxpos /= tv)*WINPOS_FAC;
-        my += (dypos /= tv)*WINPOS_FAC;
-        }
-      else
+/*---- Exit here if the summed flux is negative */
+      if (tv<=0.0)
         break;
 
-/*---- Stop here if position does not change */
+      dxpos /= tv;
+      dypos /= tv;
+
+/*---- Exit here if the incremental displacement is too small */
       if (dxpos*dxpos+dypos*dypos < WINPOS_STEPMIN*WINPOS_STEPMIN)
         break;
-      }
 
+/*---- Introduce a small dampening factor before iterating */
+      dxpos *= WINPOS_FAC;
+      dypos *= WINPOS_FAC;
+      for (s=0; s<obj2->nsubimage; s++)
+        {
+        sposx[s] += dxpos;
+        sposy[s] += dypos;
+        }
+      }
 
     mx2 = mx2/tv - dxpos*dxpos;
     my2 = my2/tv - dypos*dypos;
@@ -309,14 +392,20 @@ void	win_pos(fieldstruct **fields, fieldstruct **wfields,
 		+ (mx2 < 0.0 || my2 < 0.0)*WINFLAG_NEGMOMENT
 		+ (temp2<0.0)*WINFLAG_SINGULAR;
 
-    for (f=0; f<nfield; f++)
+/*-- Write final parameters */
+    subimage = obj2->subimage;
+    for (s=0; s<nsubimage; s++, subimage++)
       {
-      if (field->photomlabel != band)
+      field = subimage->field;
+      if (!sokflag[s] || field->photomlabel != band)
         continue;
 
-      obj2->winpos_x[f] = mx + obj2->imxmin[f]
+      f = field->imindex;
+      if (FLAG(obj2.winpos_x))
+        obj2->winpos_x[f] = sposx[s] + subimage->immin[0]
 				+ 1.0;	/* Mind the 1 pixel FITS offset */
-      obj2->winpos_y[f] = my + obj2->imymin[f]
+      if (FLAG(obj2.winpos_y))
+        obj2->winpos_y[f] = sposy[s] + subimage->immin[1]
 				+ 1.0;	/* Mind the 1 pixel FITS offset */
       if (FLAG(obj2.winpos_niter))
         obj2->winpos_niter[f] = i+1;
@@ -461,6 +550,10 @@ void	win_pos(fieldstruct **fields, fieldstruct **wfields,
         }
       }
     }
+
+  free(sposx);
+  free(sposy);
+  free(sokflag);
 
   return;
   }

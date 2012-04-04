@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		20/03/2012
+*	Last modified:		23/03/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -53,7 +53,7 @@ INPUT	Image filename,
 OUTPUT	Pointer to a new malloc'ed field structure.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	20/03/2012
+VERSION	23/03/2012
  ***/
 fieldstruct	*weight_init(char *filename, fieldstruct *reffield,
 			int imindex, int ext, weightenum wtype)
@@ -72,7 +72,8 @@ fieldstruct	*weight_init(char *filename, fieldstruct *reffield,
       break;
 
     case WEIGHT_FROMRMSMAP:
-      wfield = field_init(filename, imindex, ext, RMS_FIELD);
+      wfield = field_init(filename, imindex, ext,
+		RMS_FIELD|(reffield->flags&MULTIGRID_FIELD));
       if ((wfield->width!=reffield->width)||(wfield->height!=reffield->height))
         error(EXIT_FAILURE,
 	"*Error*: measured frame and weight map have different sizes","");
@@ -80,14 +81,16 @@ fieldstruct	*weight_init(char *filename, fieldstruct *reffield,
       break;
 
     case WEIGHT_FROMVARMAP:
-      wfield = field_init(filename, imindex, ext, VAR_FIELD);
+      wfield = field_init(filename, imindex, ext,
+		VAR_FIELD|(reffield->flags&MULTIGRID_FIELD));
       if ((wfield->width!=reffield->width)||(wfield->height!=reffield->height))
         error(EXIT_FAILURE,
 	"*Error*: measured frame and weight map have different sizes","");
       break;
 
     case WEIGHT_FROMWEIGHTMAP:
-      wfield = field_init(filename, imindex, ext, WEIGHT_FIELD);
+      wfield = field_init(filename, imindex, ext,
+		WEIGHT_FIELD|(reffield->flags&MULTIGRID_FIELD));
       if ((wfield->width!=reffield->width)||(wfield->height!=reffield->height))
         error(EXIT_FAILURE,
 	"*Error*: measured frame and weight map have different sizes","");

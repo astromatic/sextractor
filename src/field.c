@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		20/03/2012
+*	Last modified:		26/03/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -58,7 +58,7 @@ INPUT	Image filename,
 OUTPUT	Pointer to a new malloc'ed field structure.
 NOTES	Global preferences are used.
 AUTHOR	E. Bertin (IAP)
-VERSION	20/03/2012
+VERSION	26/03/2012
  ***/
 fieldstruct	*field_init(char *filename, int imindex, int ext, int flags)
 
@@ -113,11 +113,12 @@ fieldstruct	*field_init(char *filename, int imindex, int ext, int flags)
   sprintf(gstr, "Looking for %s", field->rfilename);
   NFPRINTF(OUTPUT, gstr);
 /* Check the image exists and read important info (image size, etc...) */
-  field->headflag = !read_aschead(field->hfilename, nok - 1, field->tab);
-  readimagehead(field);
+  field->headflag = !header_readasc(field->hfilename, nok - 1, field->tab);
+  header_readima(field);
 
 /* Check the astrometric system and do the setup of the astrometric stuff */
-  if (prefs.world_flag && (flags & (MEASURE_FIELD|DETECT_FIELD)))
+  if ((prefs.world_flag && (flags & (MEASURE_FIELD|DETECT_FIELD)))
+	|| (flags & MULTIGRID_FIELD))
     astrom_init(field, prefs.pixel_scale[imindex]);
   else
     field->pixscale = prefs.pixel_scale[imindex];
@@ -206,6 +207,8 @@ fieldstruct	*field_init(char *filename, int imindex, int ext, int flags)
   margin = (prefs.pback_type == LOCAL)? prefs.pback_size + prefs.mem_bufsize/4
 					: 0;
 
+  field->ymin = 0;
+  field->ymax = field->height;
   field->stripheight = prefs.mem_bufsize + margin;
   if (field->stripheight>field->height)
     field->stripheight = field->height;

@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		20/03/2011
+*	Last modified:		30/03/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -45,6 +45,7 @@
 #include	"image.h"
 #include	"wcs/poly.h"
 #include	"psf.h"
+#include	"subimage.h"
 
 /*------------------------------- variables ---------------------------------*/
 
@@ -973,14 +974,15 @@ OUTPUT	RETURN_ERROR if the coordinates are outside object image,
 	RETURN_OK otherwise.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	20/03/2012
+VERSION	30/03/2012
  ***/
 int	psf_copyobjpix(PIXTYPE *data, PIXTYPE *weight,
 			int wout, int hout, int ix, int iy,
 			obj2struct *obj2, int detect_flag)
   {
-   PIXTYPE	*datat,*weightt, *imagein,*weightin;
-   int		i,y, win,hin, w2, xmin,xmax,ymin,ymax;
+   subimagestruct	*subimage;
+   PIXTYPE		*datat,*weightt, *imagein,*weightin;
+   int			i,y, win,hin, w2, xmin,xmax,ymin,ymax;
 
 /* Set output to -BIG */
   datat = data;
@@ -989,10 +991,10 @@ int	psf_copyobjpix(PIXTYPE *data, PIXTYPE *weight,
   if (weight)
     memset(weight, 0, wout*hout*sizeof(PIXTYPE));
 
-  ix -= obj2->imxmin[0];
-  iy -= obj2->imymin[0];
-  win = obj2->imxsize[0];
-  hin = obj2->imysize[0];
+  ix -= subimage->immin[0];
+  iy -= subimage->immin[1];
+  win = subimage->imsize[0];
+  hin = subimage->imsize[1];
 
 /* Don't go further if out of frame!! */
   if (ix<0 || ix>=win || iy<0 || iy>=hin)
@@ -1029,12 +1031,12 @@ int	psf_copyobjpix(PIXTYPE *data, PIXTYPE *weight,
     }
 
 /* Copy the right pixels to the destination */
-  imagein = obj2->image[0];
+  imagein = subimage->image;
   for (y=ymin; y<ymax; y++, data += wout)
     memcpy(data, imagein + xmin+y*win, w2*sizeof(PIXTYPE));
   if (weight)
     {
-    weightin = obj2->weight[0];
+    weightin = subimage->weight;
     for (y=ymin; y<ymax; y++, data += wout)
       memcpy(weight, weightin + xmin+y*win, w2*sizeof(PIXTYPE));
     }

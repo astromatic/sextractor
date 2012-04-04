@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		07/03/2012
+*	Last modified:		26/03/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -128,6 +128,8 @@
   {"MEMORY_OBJSTACK", P_INT, &prefs.clean_stacksize, 16,65536},
   {"MEMORY_OBJ2STACK", P_INT, &prefs.obj2_stacksize, 16,65536},
   {"MEMORY_PIXSTACK", P_INT, &prefs.mem_pixstack, 1000, 10000000},
+  {"MULTIGRID", P_BOOLLIST, prefs.multigrid_flag, 0,0, 0.0,0.0,
+   {""}, 1, MAXIMAGE-1, &prefs.nmultigrid_flag},
   {"NTHREADS", P_INT, &prefs.nthreads, -THREADS_PREFMAX, THREADS_PREFMAX},
   {"PARAMETERS", P_STRINGLIST, prefs.param, 0,0,0.0,0.0,
     {""}, 0, MAXLIST, &prefs.nparam},
@@ -200,6 +202,7 @@ char *default_prefs[] =
 " ",
 "#------------------------------- Extraction ----------------------------------",
 " ",
+"MULTIGRID        N              # multiple pixel grid mode (Y or N)?",
 "DETECT_TYPE      CCD            # CCD (linear) or PHOTO (with gamma correction)",
 "DETECT_MINAREA   5              # min. # of pixels above threshold",
 "*DETECT_MAXAREA   0              # max. # of pixels above threshold (0=unlimited)",
@@ -216,7 +219,7 @@ char *default_prefs[] =
 "DEBLEND_NTHRESH  32             # Number of deblending sub-thresholds",
 "DEBLEND_MINCONT  0.005          # Minimum contrast parameter for deblending",
 " ",
-"CLEAN            Y              # Clean spurious detections? (Y or N)?",
+"CLEAN            Y              # Clean spurious detections (Y or N)?",
 "CLEAN_PARAM      1.0            # Cleaning efficiency",
 " ",
 "MASK_TYPE        CORRECT        # type of detection MASKing: can be one of",

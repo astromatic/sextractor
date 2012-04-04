@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		21/03/2012
+*	Last modified:		26/03/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -74,6 +74,9 @@ typedef struct
 		thresh_type[2];				/* threshold type */
   int		nthresh_type;				/* nb of params */
 /*----- extraction */
+  int		multigrids_flag;			/* any multigrid use? */
+  int		multigrid_flag[MAXIMAGE];		/* use multigrid? */
+  int		nmultigrid_flag;			/* nb of params */
   int		ext_minarea;				/* min area in pix. */
   int		ext_maxarea;				/* max area in pix. */
   int		deb_maxarea;				/* max deblend. area */

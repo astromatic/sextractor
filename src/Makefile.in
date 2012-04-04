@@ -39,7 +39,7 @@
 #	You should have received a copy of the GNU General Public License
 #	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 #
-#	Last modified:		07/03/2012
+#	Last modified:		27/03/2012
 #
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -86,17 +86,16 @@ ldactoasc_DEPENDENCIES = $(top_builddir)/src/fits/libfits.a
 am__sex_SOURCES_DIST = analyse.c assoc.c astrom.c back.c bpro.c \
 	catout.c check.c clean.c deblend.c fft.c field.c filter.c \
 	fitswcs.c flag.c graph.c growth.c header.c image.c \
-	interpolate.c lutz.c main.c makeit.c manobjlist.c misc.c \
-	neurro.c pattern.c photom.c plist.c prefs.c profit.c psf.c \
-	readimage.c retina.c scan.c som.c weight.c winpos.c xml.c \
-	analyse.h assoc.h astrom.h back.h bpro.h catout.h check.h \
-	clean.h deblend.h define.h fft.h field.h filter.h fitswcs.h \
-	flag.h globals.h graph.h growth.h header.h image.h \
-	interpolate.h key.h lutz.h misc.h neurro.h param.h \
-	paramprofit.h pattern.h photom.h plist.h prefs.h preflist.h \
-	profit.h psf.h retina.h scan.h sexhead1.h sexhead.h \
-	sexheadsc.h som.h threads.h types.h wcscelsys.h weight.h \
-	winpos.h xml.h
+	interpolate.c lutz.c main.c makeit.c misc.c neurro.c pattern.c \
+	photom.c plist.c prefs.c profit.c psf.c readimage.c retina.c \
+	scan.c som.c subimage.c weight.c winpos.c xml.c analyse.h \
+	assoc.h astrom.h back.h bpro.h catout.h check.h clean.h \
+	deblend.h define.h fft.h field.h filter.h fitswcs.h flag.h \
+	globals.h graph.h growth.h header.h image.h interpolate.h \
+	key.h lutz.h misc.h neurro.h param.h paramprofit.h pattern.h \
+	photom.h plist.h prefs.h preflist.h profit.h psf.h readimage.h \
+	retina.h scan.h sexhead1.h sexhead.h sexheadsc.h subimage.h \
+	som.h threads.h types.h wcscelsys.h weight.h winpos.h xml.h
 @USE_MODEL_TRUE@am__objects_1 = fft.$(OBJEXT)
 @USE_MODEL_TRUE@am__objects_2 = pattern.$(OBJEXT)
 @USE_MODEL_TRUE@am__objects_3 = profit.$(OBJEXT)
@@ -106,12 +105,12 @@ am_sex_OBJECTS = analyse.$(OBJEXT) assoc.$(OBJEXT) astrom.$(OBJEXT) \
 	field.$(OBJEXT) filter.$(OBJEXT) fitswcs.$(OBJEXT) \
 	flag.$(OBJEXT) graph.$(OBJEXT) growth.$(OBJEXT) \
 	header.$(OBJEXT) image.$(OBJEXT) interpolate.$(OBJEXT) \
-	lutz.$(OBJEXT) main.$(OBJEXT) makeit.$(OBJEXT) \
-	manobjlist.$(OBJEXT) misc.$(OBJEXT) neurro.$(OBJEXT) \
-	$(am__objects_2) photom.$(OBJEXT) plist.$(OBJEXT) \
-	prefs.$(OBJEXT) $(am__objects_3) psf.$(OBJEXT) \
+	lutz.$(OBJEXT) main.$(OBJEXT) makeit.$(OBJEXT) misc.$(OBJEXT) \
+	neurro.$(OBJEXT) $(am__objects_2) photom.$(OBJEXT) \
+	plist.$(OBJEXT) prefs.$(OBJEXT) $(am__objects_3) psf.$(OBJEXT) \
 	readimage.$(OBJEXT) retina.$(OBJEXT) scan.$(OBJEXT) \
-	som.$(OBJEXT) weight.$(OBJEXT) winpos.$(OBJEXT) xml.$(OBJEXT)
+	som.$(OBJEXT) subimage.$(OBJEXT) weight.$(OBJEXT) \
+	winpos.$(OBJEXT) xml.$(OBJEXT)
 sex_OBJECTS = $(am_sex_OBJECTS)
 sex_DEPENDENCIES = $(top_builddir)/src/fits/libfits.a \
 	$(top_builddir)/src/wcs/libwcs_c.a $(LEVLIB)
@@ -311,18 +310,18 @@ sex_SOURCES = analyse.c assoc.c astrom.c back.c bpro.c catout.c \
 			  check.c clean.c deblend.c $(FFTSOURCE) field.c \
 			  filter.c fitswcs.c flag.c graph.c growth.c header.c \
 			  image.c interpolate.c lutz.c main.c makeit.c \
-			  manobjlist.c misc.c neurro.c $(PATTERNSOURCE) \
-			  photom.c plist.c prefs.c $(PROFITSOURCE) psf.c \
-			  readimage.c retina.c scan.c som.c weight.c winpos.c \
-			  xml.c \
+			  misc.c neurro.c $(PATTERNSOURCE) photom.c plist.c \
+			  prefs.c $(PROFITSOURCE) psf.c readimage.c retina.c \
+			  scan.c som.c subimage.c weight.c winpos.c xml.c \
 			  analyse.h assoc.h astrom.h back.h bpro.h catout.h \
 			  check.h clean.h deblend.h define.h fft.h field.h \
 			  filter.h fitswcs.h flag.h globals.h graph.h growth.h \
 			  header.h image.h interpolate.h key.h lutz.h misc.h \
 			  neurro.h param.h paramprofit.h pattern.h photom.h \
-			  plist.h prefs.h preflist.h profit.h psf.h retina.h \
-			  scan.h sexhead1.h sexhead.h sexheadsc.h som.h \
-			  threads.h types.h wcscelsys.h weight.h winpos.h xml.h
+			  plist.h prefs.h preflist.h profit.h psf.h \
+			  readimage.h retina.h scan.h sexhead1.h sexhead.h \
+			  sexheadsc.h subimage.h som.h threads.h types.h \
+			  wcscelsys.h weight.h winpos.h xml.h
 
 ldactoasc_SOURCES = ldactoasc.c ldactoasc.h
 sex_LDADD = $(top_builddir)/src/fits/libfits.a \
@@ -453,7 +452,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lutz.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/main.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/makeit.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/manobjlist.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/misc.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/neurro.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pattern.Po@am__quote@
@@ -466,6 +464,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/retina.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/scan.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/som.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/subimage.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/weight.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/winpos.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xml.Po@am__quote@

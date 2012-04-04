@@ -22,16 +22,18 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		04/01/2012
+*	Last modified:		28/03/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
+
+#ifndef _ANALYSE_H_
+#define _ANALYSE_H_
 
 /*----------------------------- Internal constants --------------------------*/
 
 #define	ANALYSE_NMULTITER	5	/* number of multi-model iterations */
 
 /*--------------------------------- typedefs --------------------------------*/
-
 /*------------------------------ Prototypes ---------------------------------*/
 
 obj2struct	*analyse_obj2obj2(fieldstruct **fields, fieldstruct **wfields,
@@ -47,4 +49,4 @@ void		analyse_final(fieldstruct **fields, fieldstruct **wfields,
 		analyse_iso(fieldstruct **fields, fieldstruct **wfields,
 			int nfield, objliststruct *objlist, int n);
 		
-
+#endif

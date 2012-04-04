@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 2010-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/10/2010
+*	Last modified:		26/03/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -37,11 +37,12 @@
 #include "define.h"
 #include "globals.h"
 #include "fits/fitscat.h"
+#include "field.h"
 #include "header.h"
 #include "prefs.h"
 
-/****** read_aschead ********************************************************
-PROTO	int	read_aschead(char *filename, int frameno, tabstruct *tab)
+/****** header_readasc ******************************************************
+PROTO	int header_readasc(char *filename, int frameno, tabstruct *tab)
 PURPOSE	Read a ASCII header file and update the current field's tab
 INPUT	Name of the ASCII file,
 	Frame number (if extensions),
@@ -49,9 +50,9 @@ INPUT	Name of the ASCII file,
 OUTPUT	RETURN_OK if the file was found, RETURN_ERROR otherwise.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	05/02/2010
+VERSION	26/03/2012
  ***/
-int     read_aschead(char *filename, int frameno, tabstruct *tab)
+int     header_readasc(char *filename, int frameno, tabstruct *tab)
   {
    char         keyword[88],data[88],comment[88], str[88];
    FILE         *file;
@@ -95,6 +96,60 @@ int     read_aschead(char *filename, int frameno, tabstruct *tab)
     }
   else
     return RETURN_ERROR;
+  }
+
+
+/****** header_readima ******************************************************
+PROTO	void header_readima(fieldstruct *field)
+PURPOSE	Read an image field header
+INPUT	Pointer to field structure.
+OUTPUT	-.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	26/03/2012
+ ***/
+void	header_readima(fieldstruct *field)
+  {
+#define FITSREADS(buf, k, str, def) \
+                {if (fitsread(buf,k,str, H_STRING,T_STRING) != RETURN_OK) \
+                   strcpy(str, (def)); \
+                }
+
+   tabstruct	*tab;
+
+  tab = field->tab;
+
+  if(tab->naxis < 2)
+    error(EXIT_FAILURE, field->filename, " does NOT contain 2D-data!");
+
+/*---------------------------- Basic keywords ------------------------------*/
+  if (tab->bitpix != BP_BYTE
+	&& tab->bitpix != BP_SHORT
+	&& tab->bitpix != BP_LONG
+	&& tab->bitpix != BP_FLOAT
+	&& tab->bitpix != BP_DOUBLE)
+    error(EXIT_FAILURE, "Sorry, I don't know that kind of data.", "");
+
+  field->width = tab->naxisn[0];
+  field->height = tab->naxisn[1];
+  field->npix = (KINGSIZE_T)field->width*field->height;
+  field->bitpix = tab->bitpix;
+  if (tab->bitsgn && prefs.fitsunsigned_flag)
+    tab->bitsgn = 0;
+
+  FITSREADS(tab->headbuf, "OBJECT  ", field->ident, "Unnamed");
+
+/*----------------------------- Astrometry ---------------------------------*/
+/* Presently, astrometry is done only on the measurement and detect images */
+  if (field->flags&(MEASURE_FIELD|DETECT_FIELD))
+    field->wcs = read_wcs(tab);
+
+  QFSEEK(field->cat->file, tab->bodypos, SEEK_SET, field->filename);
+
+  return;
+
+#undef FITSREADS
+
   }
 
 

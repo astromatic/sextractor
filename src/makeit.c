@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		21/03/2012
+*	Last modified:		29/03/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -50,6 +50,7 @@
 #include	"growth.h"
 #include	"interpolate.h"
 #include	"misc.h"
+#include	"neurro.h"
 #include	"pattern.h"
 #include	"photom.h"
 #include	"psf.h"
@@ -70,7 +71,7 @@ INPUT	-.
 OUTPUT	-.
 NOTES	Global preferences are used.
 AUTHOR	E. Bertin (IAP)
-VERSION	21/03/2012
+VERSION	29/03/2012
  ***/
 void	makeit(void)
   {
@@ -78,7 +79,7 @@ void	makeit(void)
    checkstruct		*check;
    fieldstruct		**fields,**wfields,**ffields,
 			**efields,**wefields,**fefields,
-			*field,*wfield,*ffield;
+			*field,*wfield,*ffield, *dfield,*dwfield;
    catstruct		*imacat;
    tabstruct		*imatab;
    patternstruct	*pattern;
@@ -91,8 +92,9 @@ void	makeit(void)
    int			ext_fimage[MAXFLAG],ext_image[MAXIMAGE],
 			ext_wimage[MAXIMAGE], nparam2[2],
 			*file_index,*wfile_index,*ffile_index,*file_next,
-			*ffile_next, e,i,t, nok, ntab, previndex, ne,ext,
-			next,nfext, ntabmax, forcextflag, npat, nmodels,
+			*ffile_next,
+			e,e2,i,j,t, nok, ntab, previndex, ne,ext,
+			next,next0,nfext, ntabmax, forcextflag, npat, nmodels,
 			nfield,nffield, nfieldmax,nffieldmax, nimage,nfimage;
 
 /* Install error logging */
@@ -121,6 +123,13 @@ void	makeit(void)
 					prefs.obj2_stacksize);
   prefs_use();	/* update things a first time according to prefs parameters */
 
+  if (prefs.filter_flag)
+    {
+    NFPRINTF(OUTPUT, "Reading detection filter");
+    getfilter(prefs.filter_name);	/* get the detection filter */
+    }
+
+
 /* Read extension numbers and remove them from the filenames if present */
  for (i=0; i<prefs.nimage; i++)
    ext_image[i] = selectext(prefs.image_name[i]);
@@ -133,7 +142,7 @@ void	makeit(void)
   if (ext_image[0] != RETURN_ERROR)
     {
     forcextflag = 1;
-    ntabmax = next = 1;
+    ntabmax = next0 = 1;
     }
   else
     forcextflag = 0;
@@ -143,13 +152,11 @@ void	makeit(void)
   close_cat(imacat);
   imatab = imacat->tab;
 
-  thecat.next = next;
+  thecat.next = next0;
 
 
 /* Examine all extensions of all input images */
   nfieldmax = nimage = prefs.nimage;
-  QMALLOC(efields, fieldstruct *, nimage);
-  QMALLOC(wefields, fieldstruct *, nimage);
   QMALLOC(fields, fieldstruct *, nfieldmax);
   QMALLOC(wfields, fieldstruct *, nfieldmax);
   QMALLOC(file_index, int, nimage);
@@ -157,6 +164,9 @@ void	makeit(void)
   QMALLOC(file_next, int, nimage);
   ext = 0;
   previndex = -1;
+  if ((prefs.multigrids_flag))
+    QPRINTF(OUTPUT, "Multi-grid mode activated\n");
+
   for (i=0; i<nimage; i++, ext+=next)
     {
     if (!(imacat = read_cat(prefs.image_name[i])))
@@ -195,7 +205,9 @@ void	makeit(void)
       NFPRINTF(OUTPUT, str);
       field = fields[ne] = field_init(prefs.image_name[i], i,
 		forcextflag? ext_image[i]:e,
-		i? MEASURE_FIELD : DETECT_FIELD|MEASURE_FIELD);
+		i? MEASURE_FIELD|(prefs.multigrid_flag[i]*MULTIGRID_FIELD)
+		: DETECT_FIELD|MEASURE_FIELD);
+        
       if (previndex>=0 && (field->width != fields[previndex+e]->width
 		|| field->height != fields[previndex+e]->height))
         error(EXIT_FAILURE, "*Error*: unexpected image size in ",
@@ -233,6 +245,10 @@ void	makeit(void)
     file_next[i] = next;
     }
 
+  next0 = file_next[0];
+  QMALLOC(efields, fieldstruct *, nfieldmax);
+  QMALLOC(wefields, fieldstruct *, nfieldmax);
+
   NFPRINTF(OUTPUT,"");
 
   nfield = ext;
@@ -243,7 +259,7 @@ void	makeit(void)
   if ((prefs.imaflags_flag))
     {
     nffieldmax = nfimage = prefs.nfimage;
-    nfext = next;
+    nfext = next0;
     if ((nfimage))
       {
       QMALLOC(fefields, fieldstruct *, nffieldmax)
@@ -294,8 +310,12 @@ void	makeit(void)
 		forcextflag? ext_fimage[i]:e, FLAG_FIELD);
         if ((previndex>=0) && (ffield->width != ffields[previndex+e]->width
 		|| ffield->height != ffields[previndex+e]->height))
-          error(EXIT_FAILURE, "*Error*: unexpected image size in ",
-		prefs.fimage_name[i]);
+          {
+          sprintf(str, "*Error*: %s does not match detection image size\n",
+			prefs.fimage_name[i]);
+          error(EXIT_FAILURE, str,
+		"         You might want to set MULTIGRID to Y");
+          }
         }
       previndex = ffile_index[i] = ext;
       ffile_next[i] = nfext;
@@ -317,7 +337,7 @@ void	makeit(void)
            error(EXIT_FAILURE,"*Error*: 2 CHECK_IMAGEs cannot have the same ",
 			" CHECK_IMAGE_TYPE");
         prefs.check[c] = check_init(prefs.check_name[i], prefs.check_type[i],
-			next, nimage);
+			next0, nimage);
         }
     }
 
@@ -402,18 +422,12 @@ void	makeit(void)
 #endif
     }
 
-  if (prefs.filter_flag)
-    {
-    NFPRINTF(OUTPUT, "Reading detection filter");
-    getfilter(prefs.filter_name);	/* get the detection filter */
-    }
-
   if (FLAG(obj2.sprob))
     {
     NFPRINTF(OUTPUT, "Initializing classification neural network...");
-    neurinit();
+    neur_init();
     NFPRINTF(OUTPUT, "Reading neural network weights...");
-    getnnw(); 
+    neur_getnnw(prefs.nnw_name); 
     }
 
   if (prefs.somfit_flag)
@@ -434,22 +448,21 @@ void	makeit(void)
 /* Allocate memory for multidimensional catalog parameter arrays */
   catout_allocparams(thecat.obj2list);
 /* Allocate memory for other arrays (not catalogue measurements) */
-  catout_allocother(thecat.obj2list, &flagobj2.image, nimage*sizeof(PIXTYPE *));
-  catout_allocother(thecat.obj2list, &flagobj2.imxsize, nimage*sizeof(int));
-  catout_allocother(thecat.obj2list, &flagobj2.imysize, nimage*sizeof(int));
-  catout_allocother(thecat.obj2list, &flagobj2.imxmin, nimage*sizeof(int));
-  catout_allocother(thecat.obj2list, &flagobj2.imxmax, nimage*sizeof(int));
-  catout_allocother(thecat.obj2list, &flagobj2.imymin, nimage*sizeof(int));
-  catout_allocother(thecat.obj2list, &flagobj2.imymax, nimage*sizeof(int));
-  if (prefs.weights_flag)
-    catout_allocother(thecat.obj2list, &flagobj2.weight,
-		nimage*sizeof(PIXTYPE *));
+/* Sky background */
   catout_allocother(thecat.obj2list, &flagobj2.dbkg, nimage*sizeof(float));
   catout_allocother(thecat.obj2list, &flagobj2.sigbkg, nimage*sizeof(float));
+/* Flux combination */
   catout_allocother(thecat.obj2list, &flagobj2.cflux,
-		prefs.nphotinstru*sizeof(double));	/* to combine fluxes*/
+		prefs.nphotinstru*sizeof(double));
   catout_allocother(thecat.obj2list, &flagobj2.cfluxw,
-		prefs.nphotinstru*sizeof(double));	/* to combine fluxes*/
+		prefs.nphotinstru*sizeof(double));
+/* Position combination */
+  catout_allocother(thecat.obj2list, &flagobj2.cposx,
+		prefs.nphotinstru*sizeof(double));
+  catout_allocother(thecat.obj2list, &flagobj2.cposy,
+		prefs.nphotinstru*sizeof(double));
+  catout_allocother(thecat.obj2list, &flagobj2.cposw,
+		prefs.nphotinstru*sizeof(double));
   prefs_use();
 
 
@@ -460,87 +473,164 @@ void	makeit(void)
 /* Initialize XML data */
   NFPRINTF(OUTPUT, "Initializing XML output...");
   if (prefs.xml_flag || prefs.cat_type==ASCII_VO)
-    xml_init(next);
+    xml_init(next0);
 
 /* Initial time measurement*/
   time(&thetime1);
-  thecat.currext = nok+1;
 
-/* Process one extension at a time */
-  for (e=0; e<next; e++)
-    {
+/* Pre-process background subtraction in multigrid mode */
+  if ((prefs.multigrids_flag))
     for (i=0; i<nimage; i++)
       {
-      field = efields[i]= fields[i*next+e];
-      wfield = wefields[i] = wfields[i*next+e];
-      if (next>1)
-        sprintf(str, "[%d/%d]", e+1, next);
-      NFPRINTF(OUTPUT, "");
-      QPRINTF(OUTPUT, " \n");
-      QPRINTF(OUTPUT, "----- Image %.60s%s:\n",
-	field->rfilename, next>1? str:"");
-      field_printinfo(field, field);
-      back_map(field, wfield, prefs.wscale_flag[i]);
-      if ((i))
+      next = file_next[i];
+      field = fields[file_index[i]];
+      wfield = wfields[wfile_index[i]];
+      for (e=0; e<next; e++, field++, wfield++)
         {
-        QPRINTF(OUTPUT,
+        if (next>1)
+          sprintf(str, "[%d/%d]", e+1, next);
+        NFPRINTF(OUTPUT, "");
+        QPRINTF(OUTPUT, " \n");
+        QPRINTF(OUTPUT, "----- Image %.60s%s:\n",
+		field->rfilename, next>1? str:"");
+        field_printinfo(field, wfield);
+        back_map(field, wfield, prefs.wscale_flag[i]);
+        if ((i))
+          {
+          QPRINTF(OUTPUT,
 		"    Background: %.6g   RMS: %.5g"
 		"   Analysis threshold: %.5g \n",
 		field->backmean, field->backsig, field->thresh);
-        }
-      else
-        {
-        QPRINTF(OUTPUT,
+          }
+        else
+          {
+          QPRINTF(OUTPUT,
 		"    Background: %.6g   RMS: %.5g   Analysis threshold: %.5g"
 		"   Detection threshold: %.5g \n",
 		field->backmean, field->backsig,
 		field->thresh, field->dthresh);
-        }
-
-/*---- For interpolated weight-maps, copy the background structure */
-      if (wfield && wfield->flags&(INTERP_FIELD|BACKRMS_FIELD))
-        back_copy(wfield->reffield, wfield);
-
-/*---- Initialize PSF contexts and workspace */
-      if (prefs.psf_flag)
-        if (psfs[i])
-          {
-          psf_readcontext(psfs[i], field);
-          psf_init(psfs[i]);
-          fields[i]->psf = &psf[i];
           }
+        }
+      }
+
+  thecat.currext = nok+1;
+
+/* Process one extension at a time */
+  for (e=0; e<next0; e++)
+    {
+    dfield = fields[e];
+    dwfield = wfields[e];
+    if (!(prefs.multigrids_flag))
+      {
+/*---- Multigrid is off: select only one extension from every file */
+      nfield = nimage;
+      for (i=0; i<nimage; i++)
+        {
+        field = efields[i] = fields[i*next0+e];
+        wfield = wefields[i] = wfields[i*next0+e];
+        if (next0>1)
+          sprintf(str, "[%d/%d]", e+1, next0);
+        NFPRINTF(OUTPUT, "");
+        QPRINTF(OUTPUT, " \n");
+        QPRINTF(OUTPUT, "----- Image %.60s%s:\n",
+		field->rfilename, next0>1? str:"");
+        field_printinfo(field, wfield);
+        back_map(field, wfield, prefs.wscale_flag[i]);
+        if ((i))
+          {
+          QPRINTF(OUTPUT,
+		"    Background: %.6g   RMS: %.5g"
+		"   Analysis threshold: %.5g \n",
+		field->backmean, field->backsig, field->thresh);
+          }
+        else
+          {
+          QPRINTF(OUTPUT,
+		"    Background: %.6g   RMS: %.5g   Analysis threshold: %.5g"
+		"   Detection threshold: %.5g \n",
+		field->backmean, field->backsig,
+		field->thresh, field->dthresh);
+          }
+
+/*------ For interpolated weight-maps, copy the background structure */
+        if (wfield && wfield->flags&(INTERP_FIELD|BACKRMS_FIELD))
+          back_copy(wfield->reffield, wfield);
+
+/*------ Initialize PSF contexts and workspace */
+        if (prefs.psf_flag)
+          if (psfs[i])
+            {
+            psf_readcontext(psfs[i], field);
+            psf_init(psfs[i]);
+            fields[i]->psf = &psf[i];
+            }
+        }
+      }
+    else
+      {
+/*---- Multigrid is on: hybrid selection of fields */
+      j=0;
+      for (i=0; i<nimage; i++)
+        {
+        if (i && prefs.multigrid_flag[i])
+          {
+/*-------- Identify extensions overlapping current detection extension */
+          field = fields[file_index[i]];
+          wfield = wfields[file_index[i]];
+          for (e2=file_next[i]; e2--; field++, wfield++)
+            {
+            if ((frame_wcs(field->wcs, dfield->wcs)))
+              {
+              efields[j] = field;
+              wefields[j++] = wfield;
+              }
+            }
+          }
+        else
+          {
+/*-------- Basic (unique) extension selection */
+          efields[j] = fields[i*next0+e];
+          wefields[j++] = wfields[i*next0+e];
+          }
+        }
+      nfield = j;
+      if (next0>1)
+        sprintf(str, "[%d/%d]", e+1, next0);
+      NFPRINTF(OUTPUT, "");
+      QPRINTF(OUTPUT, " \n");
+      QPRINTF(OUTPUT, "----- Image %.60s%s:\n",
+	fields[e]->rfilename, next0>1? str:"");
       }
 
 /*-- Flag maps */
     if ((prefs.imaflags_flag))
       for (i=0; i<nfimage; i++)
-        fefields[i]= ffields[i*next+e];
+        fefields[i]= ffields[i*next0+e];
 
 /*-- Prepare learn and/or associations */
     if (prefs.assoc_flag)
-      init_assoc(efields[0]);
+      init_assoc(dfield);
 
 /*-- Update CHECK-images */
     if (prefs.check_flag)
       for (i=0; i<MAXCHECK; i++)
         if ((check=prefs.check[i]))
-          check_reinit(efields[0], check);	/* FIX */
+          check_reinit(dfield, check);		/* FIX */
 
-    catout_initext(efields[0]);
+    catout_initext(dfield);
 
 /*-- Start the extraction pipeline */
     NFPRINTF(OUTPUT, "Scanning image");
-    scan_extract(efields[0], wfields? wefields[0] : NULL,
-		efields, wefields, nimage, fefields, nfimage);
+    scan_extract(dfield,dwfield, efields,wefields,nfield, fefields,nfimage);
 
     thecat.ntotalsum += thecat.ntotal;
-    thecat.nlinesum += efields[0]->height;
+    thecat.nlinesum += dfield->height;
 
 /*-- Finish the current CHECK-image processing */
     if (prefs.check_flag)
       for (i=0; i<MAXCHECK; i++)
         if ((check=prefs.check[i]))
-          check_reend(efields[0], check);
+          check_reend(dfield, check);
 
 /*-- Final time measurements*/
     if (time(&thetime2)!=-1)
@@ -560,7 +650,7 @@ void	makeit(void)
 
 
 /*-- Close ASSOC routines */
-    end_assoc(efields[0]);
+    end_assoc(dfield);
 
 /*-- End flag-images */
     if ((nfimage))
@@ -630,7 +720,7 @@ void	makeit(void)
 
 /* End classification neural network */
   if (FLAG(obj2.sprob))
-    neurclose();
+    neur_end();
 
 /* Processing end date and time */
   thetimet2 = time(NULL);
@@ -646,19 +736,13 @@ void	makeit(void)
     xml_write(prefs.xml_name);
 
 /* Free memory allocated for arrays that are not catalogue measurements */
-  catout_freeother(thecat.obj2list, &flagobj2.image);
-  catout_freeother(thecat.obj2list, &flagobj2.imxsize);
-  catout_freeother(thecat.obj2list, &flagobj2.imysize);
-  catout_freeother(thecat.obj2list, &flagobj2.imxmin);
-  catout_freeother(thecat.obj2list, &flagobj2.imxmax);
-  catout_freeother(thecat.obj2list, &flagobj2.imymin);
-  catout_freeother(thecat.obj2list, &flagobj2.imymax);
-  if (prefs.weights_flag)
-    catout_freeother(thecat.obj2list, &flagobj2.weight);
   catout_freeother(thecat.obj2list, &flagobj2.dbkg);
   catout_freeother(thecat.obj2list, &flagobj2.sigbkg);
   catout_freeother(thecat.obj2list, &flagobj2.cflux);
   catout_freeother(thecat.obj2list, &flagobj2.cfluxw);
+  catout_freeother(thecat.obj2list, &flagobj2.cposx);
+  catout_freeother(thecat.obj2list, &flagobj2.cposy);
+  catout_freeother(thecat.obj2list, &flagobj2.cposw);
 
 /* End catalog */
   catout_end((char *)NULL);

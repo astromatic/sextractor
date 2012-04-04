@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		20/03/2012
+*	Last modified:		02/04/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -32,6 +32,7 @@
 #define	WINFLAG_NEGMOMENT	0x0002	/* Negative WINdowed light 2nd moments*/
 #define	WINFLAG_NEGFLUX		0x0004	/* Negative WINdowed integrated flux */
 #define	WINFLAG_APERT_PB	0x0008	/* Window area incomplete or truncated*/
+#define	WINFLAG_NOTCOVERED	0x0010	/* Field does not include object */
 
 /*----------------------------- Internal constants --------------------------*/
 
