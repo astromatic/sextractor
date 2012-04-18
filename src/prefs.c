@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		19/05/2011
+*	Last modified:		02/11/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -581,7 +581,10 @@ void	useprefs()
   if (FLAG(obj2.flux_psf) )
     {
     prefs.psffit_flag = 1;
-    prefs.dpsffit_flag = (prefs.npsf_name>1);	/*?*/
+/* We deactivate double-PSF fits for now */
+/*
+    prefs.dpsffit_flag = (prefs.npsf_name>1);
+*/
     }
   if (prefs.check_flag)
     for (i=0; i<prefs.ncheck_type; i++)
@@ -618,6 +621,8 @@ void	useprefs()
         prefs.prof_flag = 1;
   if (prefs.prof_flag)
     prefs.psf_flag = 1;
+  if (prefs.dprof_flag)
+    prefs.dpsf_flag = 1;
 
 /*-------------------------- Tracking the PSF FWHM --------------------------*/
   if (prefs.seeing_fwhm == 0 && FLAG(obj2.sprob) || FLAG(obj2.fwhm_psf))

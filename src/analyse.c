@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		19/05/2011
+*	Last modified:		02/11/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -56,7 +56,7 @@
 #include	"winpos.h"
 
 static obj2struct	*obj2 = &outobj2;
-extern profitstruct	*theprofit;
+extern profitstruct	*theprofit,*thedprofit;
 
 /********************************* analyse ***********************************/
 void  analyse(picstruct *field, picstruct *dfield, int objnb,
@@ -73,6 +73,7 @@ void  analyse(picstruct *field, picstruct *dfield, int objnb,
     localback(field, obj);
   else
     obj->sigbkg = field->backsig;
+  obj->dsigbkg = dfield? dfield->backsig : field->backsig;
 
   examineiso(field, dfield, obj, objlist->plist);
 
@@ -416,7 +417,7 @@ void	endobject(picstruct *field, picstruct *dfield, picstruct *wfield,
    if (prefs.psf_flag)
      thepsf->build_flag = 0;	/* Reset PSF building flag */
    if (prefs.dpsf_flag)
-     ppsf->build_flag = 0;	/* Reset PSF building flag */
+     thedpsf->build_flag = 0;	/* Reset PSF building flag */
 
   if (FLAG(obj2.analtime))
     analtime1 = counter_seconds();
@@ -701,7 +702,7 @@ void	endobject(picstruct *field, picstruct *dfield, picstruct *wfield,
     if (prefs.psffit_flag)
       {
       if (prefs.dpsffit_flag)
-        double_psf_fit(ppsf, field, wfield, obj, thepsf, dfield, dwfield);
+        double_psf_fit(thepsf, field, wfield, obj, thedpsf, dfield, dwfield);
       else
         psf_fit(thepsf, field, wfield, obj);
       obj2->npsf = thepsfit->npsf;
@@ -724,6 +725,9 @@ void	endobject(picstruct *field, picstruct *dfield, picstruct *wfield,
 /*---- Express position error parameters in the FOCAL or WORLD frame */
       if (FLAG(obj2.poserrmx2w_prof))
         astrom_proferrparam(field, obj);
+      if (prefs.dprof_flag)
+        profit_dfit(theprofit, thedprofit, field, dfield, wfield, dwfield, obj,
+		obj2);
       }
 #endif
 /*--- Express everything in magnitude units */

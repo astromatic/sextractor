@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		06/09/2011
+*	Last modified:		08/12/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -414,6 +414,13 @@ void	updateparamflags()
   FLAG(obj2.prof_dirac_flux) |= FLAG(obj2.prof_dirac_fluxerr)
 			| FLAG(obj2.prof_dirac_mag);
   FLAG(obj2.prof_offset_flux) |= FLAG(obj2.prof_offset_fluxerr);
+  FLAG(obj2.fluxerr_dprof) |= FLAG(obj2.magerr_dprof);
+  FLAG(obj2.flux_dprof) |= FLAG(obj2.mag_dprof)
+			| FLAG(obj2.fluxerr_dprof);
+  prefs.dprof_flag |= FLAG(obj2.dprof_chi2)
+			| FLAG(obj2.dprof_flag)
+			| FLAG(obj2.dprof_niter)
+			| FLAG(obj2.flux_dprof);
   prefs.prof_flag |= FLAG(obj2.prof_chi2) | FLAG(obj2.prof_niter)
 			| FLAG(obj2.prof_vector) | FLAG(obj2.prof_errvector)
 			| FLAG(obj2.prof_errmatrix)
@@ -425,7 +432,8 @@ void	updateparamflags()
 			| FLAG(obj2.prof_disk_flux)
 			| FLAG(obj2.prof_spheroid_flux)
 			| FLAG(obj2.prof_dirac_flux)
-			| FLAG(obj2.prof_offset_flux);
+			| FLAG(obj2.prof_offset_flux)
+			| prefs.dprof_flag;
 
 
 /* If only global parameters are requested, fit a Sersic model */
@@ -535,7 +543,9 @@ void	updateparamflags()
   FLAG(obj2.mxf) |= FLAG(obj2.myf);
 
   FLAG(obj2.mxw) |= FLAG(obj2.myw) | FLAG(obj2.mx2w) | FLAG(obj2.alphas)
-		| FLAG(obj2.poserr_mx2w);
+		| FLAG(obj2.poserr_mx2w)
+		| ((FLAG(obj2.assoc) | FLAG(obj2.assoc_number))
+			&& (prefs.assoccoord_type==ASSOCCOORD_WORLD));
   FLAG(obj2.mamaposx) |= FLAG(obj2.mamaposy);
   FLAG(obj2.fluxerr_win) |= FLAG(obj2.snr_win);
   FLAG(obj2.flux_win) |= FLAG(obj2.mag_win)|FLAG(obj2.magerr_win)

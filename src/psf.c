@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1998-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1998-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/10/2010
+*	Last modified:		26/10/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -55,19 +55,21 @@ extern objstruct	outobj;
 /*
 Allocate memory and stuff for the PSF-fitting.
 */
-void	psf_init(psfstruct *psf)
+void	psf_init(void)
   {
   QMALLOC(thepsfit, psfitstruct, 1);
   QMALLOC(thepsfit->x, double, prefs.psf_npsfmax);
   QMALLOC(thepsfit->y, double, prefs.psf_npsfmax);
   QMALLOC(thepsfit->flux, float, prefs.psf_npsfmax);
   QMALLOC(thepsfit->fluxerr, float, prefs.psf_npsfmax);
-  QMALLOC(ppsfit, psfitstruct, 1); /*?*/
-  QMALLOC(ppsfit->x, double, prefs.psf_npsfmax);
-  QMALLOC(ppsfit->y, double, prefs.psf_npsfmax);
-  QMALLOC(ppsfit->flux, float, prefs.psf_npsfmax);
-  QMALLOC(ppsfit->fluxerr, float, prefs.psf_npsfmax);
-
+  if (prefs.dpsf_flag)
+    {
+    QMALLOC(thedpsfit, psfitstruct, 1);
+    QMALLOC(thedpsfit->x, double, prefs.psf_npsfmax);
+    QMALLOC(thedpsfit->y, double, prefs.psf_npsfmax);
+    QMALLOC(thedpsfit->flux, float, prefs.psf_npsfmax);
+    QMALLOC(thedpsfit->fluxerr, float, prefs.psf_npsfmax);
+    }
   return;
   }  
 
@@ -735,9 +737,9 @@ er */
 /*******************************************************************************
 ****/
 
-void    double_psf_fit(psfstruct *ppsf, picstruct *pfield, picstruct *pwfield,
-                       objstruct *obj, psfstruct *psf, picstruct *field, 
-                       picstruct *wfield)
+void    double_psf_fit(psfstruct *psf, picstruct *field, picstruct *wfield,
+                       objstruct *obj, psfstruct *dpsf, picstruct *dfield, 
+                       picstruct *dwfield)
 {
   static double      /* sum[PSF_NPSFMAX]*/ pdeltax[PSF_NPSFMAX],
     pdeltay[PSF_NPSFMAX],psol[PSF_NPSFMAX], pcovmat[PSF_NPSFMAX*PSF_NPSFMAX], 
@@ -750,8 +752,8 @@ void    double_psf_fit(psfstruct *ppsf, picstruct *pfield, picstruct *pwfield,
     val, ppix,ppix2, /* dflux, */
     gain, radmin2,radmax2,satlevel
     ,chi2,pwthresh,pbacknoise2, /* mr, */
-    r2=0, psf_fwhm,ppsf_fwhm ;
-  float         **ppsfmasks, **ppsfmaskx,**ppsfmasky, *pps;
+    r2=0, dpsf_fwhm,psf_fwhm ;
+  float         **psfmasks, **psfmaskx,**psfmasky, *pps;
   float         *pdata, *pdata2, *pdata3, *pweight, *pd, *pw, 
 		*pdh, *pwh, pixstep,ppixstep;
   PIXTYPE       *pdatah, *pweighth;
@@ -765,53 +767,53 @@ void    double_psf_fit(psfstruct *ppsf, picstruct *pfield, picstruct *pwfield,
     static obj2struct   *obj2 = &outobj2;
 
   pdx = pdy =dx = dy = 0.0;
-  ppixstep = 1.0/ppsf->pixstep;
-  pixstep = 1.0/psf->pixstep;
-  gain = (field->gain >0.0? field->gain: 1e30);
+  ppixstep = 1.0/psf->pixstep;
+  pixstep = 1.0/dpsf->pixstep;
+  gain = (dfield->gain >0.0? dfield->gain: 1e30);
   npsfmax=prefs.psf_npsfmax;
-  pbacknoise2 = pfield->backsig*pfield->backsig;
-  satlevel = field->satur_level - obj->bkg;
+  pbacknoise2 = field->backsig*field->backsig;
+  satlevel = dfield->satur_level - obj->bkg;
   gainflag = prefs.weightgain_flag;
+  dpsf_fwhm = dpsf->fwhm*dpsf->pixstep;
   psf_fwhm = psf->fwhm*psf->pixstep;
-  ppsf_fwhm = ppsf->fwhm*ppsf->pixstep;
-  pwthresh = pwfield?pwfield->weight_thresh:BIG;
+  pwthresh = wfield?wfield->weight_thresh:BIG;
 
   /* Initialize outputs */
-  ppsfit->niter = 0;
-  ppsfit->npsf = 0;
+  thepsfit->niter = 0;
+  thepsfit->npsf = 0;
   for (j=0; j<npsfmax; j++) 
     {
-      ppsfit->x[j] = 999999.0;
-      ppsfit->y[j] = 999999.0;
-      ppsfit->flux[j] = 0.0;
-      ppsfit->fluxerr[j] = 0.0;
+      thepsfit->x[j] = 999999.0;
+      thepsfit->y[j] = 999999.0;
+      thepsfit->flux[j] = 0.0;
+      thepsfit->fluxerr[j] = 0.0;
       pdeltax[j]= pdeltay[j]=psol[j]= pwmat[j]=pflux[j]=pfluxerr[j]=0.0;
    
     }
 
   ix = (obj->xmax+obj->xmin+1)/2;
   iy = (obj->ymax+obj->ymin+1)/2;
-  width = obj->xmax-obj->xmin+1+psf_fwhm;
-  if (width < (ival=(int)(psf_fwhm*2)))
+  width = obj->xmax-obj->xmin+1+dpsf_fwhm;
+  if (width < (ival=(int)(dpsf_fwhm*2)))
     width = ival;
-  height = obj->ymax-obj->ymin+1+psf_fwhm;
-  if (height < (ival=(int)(psf_fwhm*2)))
+  height = obj->ymax-obj->ymin+1+dpsf_fwhm;
+  if (height < (ival=(int)(dpsf_fwhm*2)))
     height = ival;
   npix = width*height;
   radmin2 = PSF_MINSHIFT*PSF_MINSHIFT;
   radmax2 = npix/2.0;
-  psf_fit(psf,field, wfield,obj);
-  npsf=thepsfit->npsf;
+  psf_fit(dpsf,dfield, dwfield,obj);
+  npsf=thedpsfit->npsf;
   
-  QMALLOC(ppsfmasks,float *,npsfmax);
-  QMALLOC(ppsfmaskx,float *,npsfmax);
-  QMALLOC(ppsfmasky,float *,npsfmax);
+  QMALLOC(psfmasks,float *,npsfmax);
+  QMALLOC(psfmaskx,float *,npsfmax);
+  QMALLOC(psfmasky,float *,npsfmax);
 
   for (i=0; i<npsfmax; i++)
     {
-      QMALLOC(ppsfmasks[i],float,npix);
-      QMALLOC(ppsfmaskx[i],float,npix);
-      QMALLOC(ppsfmasky[i],float,npix);
+      QMALLOC(psfmasks[i],float,npix);
+      QMALLOC(psfmaskx[i],float,npix);
+      QMALLOC(psfmasky[i],float,npix);
     }
 
   QMALLOC(pweighth, PIXTYPE, npix);
@@ -824,19 +826,19 @@ void    double_psf_fit(psfstruct *ppsf, picstruct *pfield, picstruct *pwfield,
   
    for (j=0; j<npsf; j++)
     {
-      pdeltax[j] =thepsfit->x[j]-ix-1 ;
-      pdeltay[j] =thepsfit->y[j]-iy-1 ;
-      ppsfit->flux[j] = 0;
-      ppsfit->fluxerr[j] = 0;
+      pdeltax[j] =thedpsfit->x[j]-ix-1 ;
+      pdeltay[j] =thedpsfit->y[j]-iy-1 ;
+      thepsfit->flux[j] = 0;
+      thepsfit->fluxerr[j] = 0;
     }
 
 /*-------------------  Now the photometry fit ---------------------*/
-  copyimage(pfield, pdatah, width, height, ix, iy);
+  copyimage(field, pdatah, width, height, ix, iy);
    /* Compute photometry weights */
   wbad = 0;
-  if (pwfield)
+  if (wfield)
     {
-       copyimage(pwfield, pweighth, width, height, ix, iy);
+       copyimage(wfield, pweighth, width, height, ix, iy);
       for (pwh=pweighth, pw=pweight, pdh=pdatah,p=npix; p--;)
         {
         if ((ppix=*(pwh++)) < pwthresh && ppix>0
@@ -877,7 +879,7 @@ void    double_psf_fit(psfstruct *ppsf, picstruct *pfield, picstruct *pwfield,
 
  
   /* Get the photmetry PSF */
-   psf_build(ppsf);
+  psf_build(psf);
   for (j=1; j<=npsf; j++)
     {
       if (j>1)
@@ -890,11 +892,11 @@ void    double_psf_fit(psfstruct *ppsf, picstruct *pfield, picstruct *pwfield,
           for (k=0; k<j-1; k++)
             {
               pd = pdata2;
-              pps = ppsfmasks[k];
+              pps = psfmasks[k];
               for (p=npix; p--;)
                 *(pd++) -= pflux[k]**(pps++);
             }
-          convolve_image(pfield, pdata2, pdata3, width,height);
+          convolve_image(field, pdata2, pdata3, width,height);
          /*---- Ignore regions too close to stellar cores */
           for (k=0; k<j-1; k++)
             {
@@ -914,12 +916,12 @@ void    double_psf_fit(psfstruct *ppsf, picstruct *pfield, picstruct *pwfield,
       for (k=0; k<j; k++)
             {
               /*------ Resample the PSFs here for the 1st iteration */
-              vignet_resample(ppsf->maskloc,
-			ppsf->masksize[0], ppsf->masksize[1],
-			ppsfmasks[k], width, height,
+              vignet_resample(psf->maskloc,
+			psf->masksize[0], psf->masksize[1],
+			psfmasks[k], width, height,
 			-pdeltax[k]*ppixstep, -pdeltay[k]*ppixstep,
 			ppixstep);              
-              pm=compute_gradient_phot(pweight,width,height, ppsfmasks[k],pm);
+              pm=compute_gradient_phot(pweight,width,height, psfmasks[k],pm);
             }
       
       svdfit(pmat, pdata, npix, j, psol, pvmat, pwmat);  
@@ -942,7 +944,7 @@ void    double_psf_fit(psfstruct *ppsf, picstruct *pfield, picstruct *pwfield,
           for (pd=pdata,pw=pweight,p=0; p<npix; pw++,p++)
             {
               ppix = *(pd++);
-              ppix -=  ppsfmasks[j][p]*pflux[j]**pw;
+              ppix -=  psfmasks[j][p]*pflux[j]**pw;
               chi2 += ppix*ppix;
               if (chi2>1E29) chi2=1E28;
             }
@@ -962,7 +964,7 @@ void    double_psf_fit(psfstruct *ppsf, picstruct *pfield, picstruct *pwfield,
           for (pd=pdata,pw=pweight,p=0; p<npix; pw++,p++)
             {
               ppix = *(pd++)/pflux[j];
-              ppix -=  ppsfmasks[j][p]**pw;
+              ppix -=  psfmasks[j][p]**pw;
               chi2 += ppix*ppix;
               if (chi2>1E29) chi2=1E28;
             }
@@ -972,33 +974,33 @@ void    double_psf_fit(psfstruct *ppsf, picstruct *pfield, picstruct *pwfield,
         }
       
     }
-  ppsfit->niter = thepsfit->niter;
-  ppsfit->npsf = npsf;
+  thepsfit->niter = thedpsfit->niter;
+  thepsfit->npsf = npsf;
 
   for (j=0; j<npsf; j++)
     {
+      thedpsfit->x[j] = ix+pdeltax[j]+1.0;
+      thedpsfit->y[j] = iy+pdeltay[j]+1.0;
+      thedpsfit->flux[j] = pflux[j];
+      thedpsfit->fluxerr[j] = pfluxerr[j];
       thepsfit->x[j] = ix+pdeltax[j]+1.0;
       thepsfit->y[j] = iy+pdeltay[j]+1.0;
       thepsfit->flux[j] = pflux[j];
       thepsfit->fluxerr[j] = pfluxerr[j];
-      ppsfit->x[j] = ix+pdeltax[j]+1.0;
-      ppsfit->y[j] = iy+pdeltay[j]+1.0;
-      ppsfit->flux[j] = pflux[j];
-      ppsfit->fluxerr[j] = pfluxerr[j];
     }
     
   
   for (i=0; i<npsfmax; i++)
     {
-      QFREE(ppsfmasks[i]);
-      QFREE(ppsfmaskx[i]);
-      QFREE(ppsfmasky[i]);
+      QFREE(psfmasks[i]);
+      QFREE(psfmaskx[i]);
+      QFREE(psfmasky[i]);
     }
 
   
-  QFREE(ppsfmasks);
-  QFREE(ppsfmaskx);
-  QFREE(ppsfmasky);
+  QFREE(psfmasks);
+  QFREE(psfmaskx);
+  QFREE(psfmasky);
   QFREE(pdatah);
   QFREE(pdata);
   QFREE(pdata2);

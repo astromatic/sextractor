@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1998-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1998-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/10/2010
+*	Last modified:		26/10/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -102,8 +102,8 @@ typedef struct
   }	psfitstruct;
 
 /*----------------------------- Global variables ----------------------------*/
-psfstruct	*psf,*ppsf,*thepsf;
-psfitstruct	*thepsfit,*ppsfit,*psfit;
+psfstruct	*psf,*thedpsf,*thepsf;
+psfitstruct	*thepsfit,*thedpsfit;
 PIXTYPE		*checkmask;
 
 /*-------------------------------- functions --------------------------------*/
@@ -116,7 +116,7 @@ extern void	compute_pos(int *pnpsf,int *pconvflag,int *pnpsfflag,
 			double *x2, double *y2,double *xy, int npsf),
 		psf_build(psfstruct *psf),
 		psf_end(psfstruct *psf, psfitstruct *psfit),
-		psf_init(psfstruct *psf),
+		psf_init(void),
 		svdfit(double *a, float *b, int m, int n, double *sol,
 			double *vmat, double *wmat),
 		svdvar(double *vmat, double *wmat, int n, double *covmat);

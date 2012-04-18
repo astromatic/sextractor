@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		22/04/2011
+*	Last modified:		02/11/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -57,7 +57,7 @@
 
 static int		selectext(char *filename);
 time_t			thetimet, thetimet2;
-extern profitstruct	*theprofit,*thepprofit,*theqprofit;
+extern profitstruct	*theprofit,*thedprofit, *thepprofit,*theqprofit;
 extern char		profname[][32];
 double			dtime;
 
@@ -75,6 +75,7 @@ void	makeit()
    patternstruct	*pattern;
    static time_t        thetime1, thetime2;
    struct tm		*tm;
+   unsigned int		modeltype;
    int			nflag[MAXFLAG], nparam2[2],
 			i, nok, ntab, next, ntabmax, forcextflag,
 			nima0,nima1, nweight0,nweight1, npat;
@@ -110,9 +111,13 @@ void	makeit()
   if (prefs.psf_flag)
     {
     NFPRINTF(OUTPUT, "Reading PSF information");
-    thepsf = psf_load(prefs.psf_name[0]); 
     if (prefs.dpsf_flag)
-      ppsf = psf_load(prefs.psf_name[1]);
+      {
+      thedpsf = psf_load(prefs.psf_name[0]); 
+      thepsf = psf_load(prefs.psf_name[1]);
+      }
+    else
+      thepsf = psf_load(prefs.psf_name[0]); 
  /*-- Need to check things up because of PSF context parameters */
     updateparamflags();
     useprefs();
@@ -124,19 +129,21 @@ void	makeit()
     fft_init(prefs.nthreads);
 /* Create profiles at full resolution */
     NFPRINTF(OUTPUT, "Preparing profile models");
-    theprofit = profit_init(thepsf,
-	 (FLAG(obj2.prof_offset_flux)? MODEL_BACK : MODEL_NONE)
+    modeltype = (FLAG(obj2.prof_offset_flux)? MODEL_BACK : MODEL_NONE)
 	|(FLAG(obj2.prof_dirac_flux)? MODEL_DIRAC : MODEL_NONE)
 	|(FLAG(obj2.prof_spheroid_flux)?
 		(FLAG(obj2.prof_spheroid_sersicn)?
 			MODEL_SERSIC : MODEL_DEVAUCOULEURS) : MODEL_NONE)
 	|(FLAG(obj2.prof_disk_flux)? MODEL_EXPONENTIAL : MODEL_NONE)
 	|(FLAG(obj2.prof_bar_flux)? MODEL_BAR : MODEL_NONE)
-	|(FLAG(obj2.prof_arms_flux)? MODEL_ARMS : MODEL_NONE));
+	|(FLAG(obj2.prof_arms_flux)? MODEL_ARMS : MODEL_NONE);
+    theprofit = profit_init(thepsf, modeltype);
     changecatparamarrays("VECTOR_MODEL", &theprofit->nparam, 1);
     changecatparamarrays("VECTOR_MODELERR", &theprofit->nparam, 1);
     nparam2[0] = nparam2[1] = theprofit->nparam;
     changecatparamarrays("MATRIX_MODELERR", nparam2, 2);
+    if (prefs.dprof_flag)
+      thedprofit = profit_init(thedpsf, modeltype);
     if (prefs.pattern_flag)
       {
       npat = prefs.prof_disk_patternvectorsize;
@@ -445,11 +452,11 @@ void	makeit()
     if (prefs.psf_flag)
       {
       psf_readcontext(thepsf, field);
-      psf_init(thepsf);
+      psf_init();
       if (prefs.dpsf_flag)
         {
         psf_readcontext(thepsf, dfield);
-        psf_init(thepsf); /*?*/
+        psf_init();
         }
       }
 
@@ -546,6 +553,8 @@ void	makeit()
   if (prefs.prof_flag)
     {
     profit_end(theprofit);
+    if (prefs.dprof_flag)
+      profit_end(thedprofit);
     if (FLAG(obj2.prof_concentration)|FLAG(obj2.prof_concentration))
       {
       profit_end(thepprofit);
@@ -556,10 +565,10 @@ void	makeit()
 #endif
 
   if (prefs.psf_flag)
-    psf_end(thepsf,thepsfit); /*?*/
+    psf_end(thepsf, thepsfit);
 
   if (prefs.dpsf_flag)
-    psf_end(ppsf,ppsfit);
+    psf_end(thedpsf, thedpsfit);
 
   if (FLAG(obj2.sprob))
     neurclose();

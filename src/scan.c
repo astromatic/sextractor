@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/10/2010
+*	Last modified:		21/12/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -59,7 +59,7 @@ INPUT   Measurement field pointer,
 OUTPUT  -.
 NOTES   -.
 AUTHOR  E. Bertin (IAP)
-VERSION 28/09/2010
+VERSION 21/12/2011
  ***/
 void	scanimage(picstruct *field, picstruct *dfield, picstruct **pffield,
 		int nffield, picstruct *wfield, picstruct *dwfield)
@@ -79,7 +79,7 @@ void	scanimage(picstruct *field, picstruct *dfield, picstruct **pffield,
 			nposize, stacksize, w, h, blankh, maxpixnb,
 			varthreshflag, ontotal;
    short	       	trunflag;
-   PIXTYPE		thresh, relthresh, cdnewsymbol, cdvar,cdwthresh,wthresh,
+   PIXTYPE		thresh, relthresh, cdnewsymbol, cdwthresh,wthresh,
 			*scan,*dscan,*cdscan,*dwscan,*dwscanp,*dwscann,
 			*cdwscan,*cdwscanp,*cdwscann,*wscand,
 			*scant, *wscan,*wscann,*wscanp;
@@ -350,7 +350,7 @@ void	scanimage(picstruct *field, picstruct *dfield, picstruct **pffield,
 
       curpixinfo.flag = trunflag;
       if (varthreshflag)
-        thresh = relthresh*sqrt(cdvar = ((xl==w || yl==h)? 0.0:cdwscan[xl]));
+        thresh = relthresh*sqrt((xl==w || yl==h)? 0.0:cdwscan[xl]);
       luflag = cdnewsymbol > thresh?1:0;
 
       if (luflag)

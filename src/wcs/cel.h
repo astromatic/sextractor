@@ -7,7 +7,7 @@
 *
 *	This file part of:	AstrOmatic WCS library
 *
-*	Copyright:		(C) 2000-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 2000-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
 *				(C) 1995-1999 Mark Calabretta (original version)
 *
 *	Licenses:		GNU General Public License
@@ -24,7 +24,7 @@
 *	along with AstrOmatic software.
 *	If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		10/10/2010
+*	Last modified:		11/04/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 /*=============================================================================
@@ -55,7 +55,7 @@
 *                      AUSTRALIA
 *
 *   Author: Mark Calabretta, Australia Telescope National Facility
-*   $Id: cel.h,v 1.1.1.1 2002/03/15 16:33:26 bertin Exp $
+*   $Id: cel.h,v 1.1.1.1 2012/04/11 16:33:26 bertin Exp $
 *===========================================================================*/
  
 #ifndef WCSLIB_CEL
@@ -68,7 +68,7 @@ extern "C" {
 #endif
 
 extern int npcode;
-extern char pcodes[26][4];
+extern char pcodes[27][4];
 
 struct celprm {
    int flag;
