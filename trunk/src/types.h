@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		19/05/2011
+*	Last modified:		08/12/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -124,7 +124,7 @@ typedef struct
   float		cxx,cyy,cxy;			/* ellipse parameters */
   int		firstpix;			/* ptr to first pixel */
   int		lastpix;			/* ptr to last pixel */
-  float		bkg, dbkg, sigbkg;		/* Background stats (ADU) */
+  float		bkg, dbkg, sigbkg, dsigbkg;	/* Background stats (ADU) */
   float		thresh;				/* measur. threshold (ADU) */
   float		dthresh;		       	/* detect. threshold (ADU) */
   float		mthresh;		       	/* max. threshold (ADU) */
@@ -512,6 +512,13 @@ typedef struct
   float		prof_arms_starterrw;		/* RMS error */
   float		prof_arms_quadfrac;		/* Arms quadrature fraction */
   float		prof_arms_quadfracerr;		/* RMS error */
+  float		dprof_chi2;			/* Det. model fit reduced chi2*/
+  BYTE		dprof_flag;			/* Detection model flags*/
+  short		dprof_niter;			/* # of detection model iter. */
+  float		flux_dprof;			/* Flux in detection model*/
+  float		fluxerr_dprof;			/* Error on detect model flux */
+  float		mag_dprof;			/* Mag from detection model */
+  float		magerr_dprof;			/* RMS mag from detect. model */
 /* ---- MEF ----*/
   short		ext_number;			/* FITS extension number */
 /* ---- Time ---- */

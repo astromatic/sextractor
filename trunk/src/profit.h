@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		20/05/2011
+*	Last modified:		08/12/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -74,11 +74,10 @@
 #define	PROFIT_DYNPARAM	10.0	/* Dynamic compression param. in sigma units */
 #define	PROFIT_SMOOTHR	4.0	/* Profile smoothing radius (pixels) */
 #define	PROFIT_MAXMODSIZE  512	/* Maximum size allowed for the model raster */
+#define PROFIT_MAXSMODSIZE 64	/* Number of model planes */
 #define	PROFIT_MAXOBJSIZE  512	/* Maximum size allowed for the object raster */
 #define	PROFIT_BARXFADE	0.1	/* Fract. of bar length crossfaded with arms */
 #define	PROFIT_MAXEXTRA	2	/* Max. nb of extra free params of profiles */
-#define PROFIT_PROFRES	256	/* Pixmap size of model components */
-#define PROFIT_PROFSRES	64	/* Number of model subcomponents */
 #define INTERP_MAXKERNELWIDTH	8	/* Max. range of kernel (pixels) */
 /* NOTES:
 One must have:	PROFIT_NITER > 0
@@ -190,9 +189,13 @@ typedef struct
   float		sigma;		/* Standard deviation of the pixel values */
   float		flux;		/* Total flux in final convolved model */
   float		spirindex;	/* Spiral index (>0 for CCW) */
-  float		guessradius;	/* Best guess for source half-light radius */
+  float		guesssigbkg;	/* Best guess for background noise sigma */
+  float		guessdx,guessdy;/* Best guess for relative source coordinates */
   float		guessflux;	/* Best guess for typical source flux (>0) */
   float		guessfluxmax;	/* Best guess for source flux upper limit (>0)*/
+  float		guessradius;	/* Best guess for source half-light radius */
+  float		guessaspect;	/* Best guess for source aspect ratio */
+  float		guessposang;	/* Best guess for source position angle */
 /* Buffers */
   double	dparam[PARAM_NPARAM];
   }	profitstruct;
@@ -232,7 +235,11 @@ int		profit_boundtounbound(profitstruct *profit,
 		profit_unboundtobound(profitstruct *profit,
 			double *dparam, float *param, int index);
 
-void		prof_end(profstruct *prof),
+void		profit_dfit(profitstruct *profit, profitstruct *dprofit,
+			picstruct *field, picstruct *dfield,
+			picstruct *wfield, picstruct *dwfield,
+			objstruct *obj, obj2struct *obj2),
+		prof_end(profstruct *prof),
 		profit_addparam(profitstruct *profit, paramenum paramindex,
 			float **param),
 		profit_fit(profitstruct *profit,

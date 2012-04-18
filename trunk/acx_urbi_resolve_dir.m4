@@ -7,7 +7,7 @@ dnl %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 dnl
 dnl	This file part of:	AstrOmatic software
 dnl
-dnl	Copyrights:		(C) 2007-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+dnl	Copyrights:		(C) 2007-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
 dnl				(C) 2007 Akim Demaille (original version)
 dnl
 dnl	License:		GPL
@@ -24,7 +24,7 @@ dnl	You should have received a copy of the GNU General Public License
 dnl	along with AstrOmatic software.
 dnl	If not, see <http://www.gnu.org/licenses/>.
 dnl
-dnl	Last modified:		09/10/2010
+dnl	Last modified:		27/12/2011
 dnl
 dnl %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 dnl
@@ -55,7 +55,7 @@ urbi_resolve_dir ()
   while true
   do
     eval ac_$0_res="$ac_$0_dir"
-    if test x"$ac_$0_dir" == x"$ac_$0_res"; then
+    if test x"$ac_$0_dir" = x"$ac_$0_res"; then
       break
     fi
     ac_$0_dir=$ac_$0_res

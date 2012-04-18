@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		19/10/2010
+*	Last modified:		08/11/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -1023,6 +1023,15 @@ void  computemags(picstruct *field, objstruct *obj)
     obj2->prof_arms_magerr = obj2->prof_arms_flux>0.0?
 			 1.086*obj2->prof_arms_fluxerr
 				/obj2->prof_arms_flux
+			:99.0;
+
+  if (FLAG(obj2.mag_dprof))
+    obj2->mag_dprof = obj2->flux_dprof>0.0?
+			 -2.5*log10(obj2->flux_dprof) + prefs.mag_zeropoint
+			:99.0;
+  if (FLAG(obj2.magerr_dprof))
+    obj2->magerr_dprof = obj2->flux_dprof>0.0?
+			 1.086*obj2->fluxerr_dprof/obj2->flux_dprof
 			:99.0;
 
 /* Mag. WINdowed */

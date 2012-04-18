@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		09/07/2011
+*	Last modified:		08/11/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -679,3 +679,27 @@
 	&outobj2.prof_arms_quadfracerr, H_FLOAT, T_FLOAT, "%6.4f", "deg",
 	"stat.error;phot.count;arith.ratio;src.morph;stat.fit.param", "deg"},
 */
+
+  {"CHI2_DETMODEL", "Reduced Chi2 of the det. model fit to measurement image",
+	&outobj2.dprof_chi2, H_FLOAT, T_FLOAT, "%12.7g", "",
+	"stat.fit.chi2;src.morph", ""},
+  {"FLAGS_DETMODEL", "Detection model-fitting flags",
+	&outobj2.dprof_flag, H_INT, T_BYTE, "%3d", "",
+	"meta.code;stat.fit;src.morph", ""},
+  {"NITER_DETMODEL", "Number of iterations for detection model-fitting",
+	&outobj2.dprof_niter, H_INT, T_SHORT, "%3d", "",
+	"meta.number;stat.fit;src.morph", ""},
+
+  {"FLUX_DETMODEL", "Flux from detection model-fitting",
+	&outobj2.flux_dprof, H_FLOAT, T_FLOAT, "%12.7g", "count",
+	"phot.count;stat.fit.param", "ct"},
+  {"FLUXERR_DETMODEL", "RMS error on detection model-fitting flux",
+	&outobj2.fluxerr_dprof, H_FLOAT, T_FLOAT, "%12.7g", "count",
+	"stat.error;phot.count;stat.fit.param", "ct"},
+  {"MAG_DETMODEL", "Magnitude from detection model-fitting",
+	&outobj2.mag_dprof, H_FLOAT, T_FLOAT, "%8.4f", "mag",
+	"phot.mag;stat.fit.param", "mag"},
+  {"MAGERR_DETMODEL", "RMS error on detection model-fitting magnitude",
+	&outobj2.magerr_dprof, H_FLOAT, T_FLOAT, "%8.4f", "mag",
+	"stat.error;phot.mag;stat.fit.param", "mag"},
+
