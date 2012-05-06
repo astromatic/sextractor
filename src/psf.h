@@ -74,7 +74,7 @@ typedef struct
   }	psfitstruct;
 
 /*----------------------------- Global variables ----------------------------*/
-psfstruct	*psf,*ppsf,*thepsf;
+psfstruct	*ppsf,*thepsf;
 psfitstruct	*thepsfit,*ppsfit,*psfit;
 PIXTYPE		*checkmask;
 

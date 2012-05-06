@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		02/04/2012
+*	Last modified:		06/05/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -366,10 +366,10 @@ typedef struct obj2
   BYTE		prof_flag;			/* Model-fitting flags */
   BYTE		prof_flagw;			/* Model-fitting WORLD flag */
   short		prof_niter;			/* # of model-fitting iter. */
-  float		flux_prof;			/* Flux from model-fitting */
-  float		fluxerr_prof;			/* RMS error on model flux */
-  float		mag_prof;			/* Mag from model-fitting */
-  float		magerr_prof;			/* RMS mag from model-fitting */
+  float		*flux_prof;			/* Flux from model-fitting */
+  float		*fluxerr_prof;			/* RMS error on model flux */
+  float		*mag_prof;			/* Mag from model-fitting */
+  float		*magerr_prof;			/* RMS mag from model-fitting */
   float		peak_prof;			/* Model peak flux */
   float		fluxeff_prof;			/* Effective model flux */
   float		fluxmean_prof;			/* Mean effective model flux */
@@ -435,22 +435,22 @@ typedef struct obj2
   float		prof_e1errw, prof_e2errw,
 		prof_e12corrw;			/* WORLD ellipticity errors */
   float		prof_class_star;		/* Mod.-fitting star/gal class*/
-  float		prof_concentration;		/* Model-fitting concentration*/
-  float		prof_concentrationerr;		/* RMS error */
+  float		*prof_concentration;		/* Model-fitting concentration*/
+  float		*prof_concentrationerr;		/* RMS error */
   float		prof_noisearea;			/* Equivalent noise area */
   float		prof_offset_flux;		/* Background offset */
   float		prof_offset_fluxerr;		/* RMS error */
-  float		prof_dirac_flux;		/* Point source total flux */
-  float		prof_dirac_fluxerr;		/* RMS error */
-  float		prof_dirac_mag;			/* Point source "total" mag */
-  float		prof_dirac_magerr;		/* RMS error */
-  float		prof_spheroid_flux;		/* Spheroid total flux */
-  float		prof_spheroid_fluxerr;		/* RMS error */
+  float		*prof_dirac_flux;		/* Point source total flux */
+  float		*prof_dirac_fluxerr;		/* RMS error */
+  float		*prof_dirac_mag;		/* Point source "total" mag */
+  float		*prof_dirac_magerr;		/* RMS error */
+  float		*prof_spheroid_flux;		/* Spheroid total flux */
+  float		*prof_spheroid_fluxerr;		/* RMS error */
   float		prof_spheroid_peak;		/* Spheroid peak flux */
   float		prof_spheroid_fluxeff;		/* Spheroid effective flux */
   float		prof_spheroid_fluxmean;		/* Spheroid mean effect. flux */
-  float		prof_spheroid_mag;		/* Spheroid "total" mag */
-  float		prof_spheroid_magerr;		/* RMS error */
+  float		*prof_spheroid_mag;		/* Spheroid "total" mag */
+  float		*prof_spheroid_magerr;		/* RMS error */
   float		prof_spheroid_mumax;		/* Spehroid peak surf. brigh.*/
   float		prof_spheroid_mueff;		/* Spheroid effect. surf. bri.*/
   float		prof_spheroid_mumean;		/* Spheroid mean eff. su. bri.*/
@@ -471,13 +471,13 @@ typedef struct obj2
   float		prof_spheroid_theta1950;	/* B1950 spheroid pos. angle */
   float		prof_spheroid_sersicn;		/* Spheroid Sersic index */
   float		prof_spheroid_sersicnerr;	/* RMS error */
-  float		prof_disk_flux;			/* Disk total flux */
-  float		prof_disk_fluxerr;		/* RMS error */
+  float		*prof_disk_flux;			/* Disk total flux */
+  float		*prof_disk_fluxerr;		/* RMS error */
   float		prof_disk_peak;			/* Disk peak flux */
   float		prof_disk_fluxeff;		/* Disk effective flux */
   float		prof_disk_fluxmean;		/* Disk mean effective flux */
-  float		prof_disk_mag;			/* Disk "total" mag */
-  float		prof_disk_magerr;		/* RMS error */
+  float		*prof_disk_mag;			/* Disk "total" mag */
+  float		*prof_disk_magerr;		/* RMS error */
   float		prof_disk_mumax;		/* Disk peak surf. brightness */
   float		prof_disk_mueff;		/* Disk effective surf. bri. */
   float		prof_disk_mumean;		/* Disk mean eff. surf. bri. */

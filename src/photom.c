@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		03/04/2012
+*	Last modified:		06/05/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -535,7 +535,7 @@ INPUT	Pointer to an array of image field pointers,
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	03/04/2012
+VERSION	06/05/2012
  ***/
 void  photom_auto(fieldstruct **fields, fieldstruct **wfields,
 			int nfield, obj2struct *obj2)
@@ -708,8 +708,8 @@ void  photom_auto(fieldstruct **fields, fieldstruct **wfields,
 
       w = subimage->imsize[0];
       h = subimage->imsize[1];
-      mx = subimage->dpos[0];
-      my = subimage->dpos[1];
+      mx = subimage->dpos[0] - (double)subimage->immin[0];
+      my = subimage->dpos[1] - (double)subimage->immin[1];
 
       jac = subimage->dinvjacob;
       cx2 = jac[0]*jac[0]*obj2->cxx
@@ -752,7 +752,6 @@ void  photom_auto(fieldstruct **fields, fieldstruct **wfields,
       tv = sigtv = 0.0;
       image = subimage->image;
       weight = subimage->weight;
-
       for (y=ymin; y<ymax; y++)
         {
         imaget = image + (pos = xmin + (y%h)*w);
@@ -942,7 +941,7 @@ INPUT	Pointer to the image structure,
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	16/03/2012
+VERSION	06/05/2012
  ***/
 void	photom_mags(fieldstruct *field, obj2struct *obj2)
   {
@@ -1003,15 +1002,6 @@ void	photom_mags(fieldstruct *field, obj2struct *obj2)
 			:99.0;
 
 /* Mag. models */
-  if (FLAG(obj2.mag_prof))
-    obj2->mag_prof = obj2->flux_prof>0.0?
-			 -2.5*log10(obj2->flux_prof) + prefs.mag_zeropoint[0]
-			:99.0;
-  if (FLAG(obj2.magerr_prof))
-    obj2->magerr_prof = obj2->flux_prof>0.0?
-			 1.086*obj2->fluxerr_prof/obj2->flux_prof
-			:99.0;
-
   if (FLAG(obj2.magcor_prof))
     obj2->magcor_prof = obj2->fluxcor_prof>0.0?
 			 -2.5*log10(obj2->fluxcor_prof) + prefs.mag_zeropoint[0]
@@ -1045,24 +1035,6 @@ void	photom_mags(fieldstruct *field, obj2struct *obj2)
 		+ prefs.mag_zeropoint[0]
 		: 99.0;
 
-  if (FLAG(obj2.prof_dirac_mag))
-    obj2->prof_dirac_mag = obj2->prof_dirac_flux>0.0?
-			 -2.5*log10(obj2->prof_dirac_flux)
-			+ prefs.mag_zeropoint[0]
-			:99.0;
-
-  if (FLAG(obj2.prof_dirac_magerr))
-    obj2->prof_dirac_magerr = obj2->prof_dirac_flux>0.0?
-			 1.086*obj2->prof_dirac_fluxerr
-				/ obj2->prof_dirac_flux
-			:99.0;
-
-  if (FLAG(obj2.prof_spheroid_mag))
-    obj2->prof_spheroid_mag = obj2->prof_spheroid_flux>0.0?
-			 -2.5*log10(obj2->prof_spheroid_flux)
-			+ prefs.mag_zeropoint[0]
-			:99.0;
-
   if (FLAG(obj2.prof_spheroid_mumax))
     obj2->prof_spheroid_mumax = obj2->prof_spheroid_peak > 0.0 ?
 		-2.5*log10((obj2->prof_spheroid_peak)
@@ -1086,23 +1058,6 @@ void	photom_mags(fieldstruct *field, obj2struct *obj2)
 				: obj2->pixscale2 * 3600.0*3600.0))
 		+ prefs.mag_zeropoint[0]
 		: 99.0;
-
-  if (FLAG(obj2.prof_spheroid_magerr))
-    obj2->prof_spheroid_magerr = obj2->prof_spheroid_flux>0.0?
-			 1.086*obj2->prof_spheroid_fluxerr
-				/ obj2->prof_spheroid_flux
-			:99.0;
-
-  if (FLAG(obj2.prof_disk_mag))
-    obj2->prof_disk_mag = obj2->prof_disk_flux>0.0?
-			 -2.5*log10(obj2->prof_disk_flux)
-			+ prefs.mag_zeropoint[0]
-			:99.0;
-  if (FLAG(obj2.prof_disk_magerr))
-    obj2->prof_disk_magerr = obj2->prof_disk_flux>0.0?
-			 1.086*obj2->prof_disk_fluxerr
-				/ obj2->prof_disk_flux
-			:99.0;
 
   if (FLAG(obj2.prof_disk_mumax))
     obj2->prof_disk_mumax = obj2->prof_disk_peak > 0.0 ?

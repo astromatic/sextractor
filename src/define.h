@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		20/03/2012
+*	Last modified:		13/04/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -30,7 +30,7 @@
 #ifndef HAVE_CONFIG_H
 #define		VERSION		"2.x"
 #define		DATE		"2009-03-31"
-#define		THREADS_NMAX	16		/* max. number of threads */
+#define		THREADS_NMAX	1024		/* max. number of threads */
 #endif
 
 /*------------------------ what, who, when and where ------------------------*/
