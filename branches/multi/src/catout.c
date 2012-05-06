@@ -358,7 +358,7 @@ INPUT	Pointer to the obj2list.
 OUTPUT	-.
 NOTES	Requires access to the flagobj2 static pointer.
 AUTHOR	E. Bertin (IAP)
-VERSION	20/03/2012
+VERSION	06/05/2012
  ***/
 void	catout_updateparamflags(void)
 
@@ -758,6 +758,8 @@ void	catout_updateparamflags(void)
   FLAG(obj2.flux_best) |= FLAG(obj2.mag_best) | FLAG(obj2.fluxerr_best);
 
   FLAG(obj2.hl_radius) |= FLAG(obj2.winpos_x) | prefs.prof_flag;
+
+  FLAG(obj2.fluxerr_auto) |= prefs.prof_flag;
 
   FLAG(obj2.flux_auto) = FLAG(obj2.flux_best)
 			| FLAG(obj2.flux_radius)

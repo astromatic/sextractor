@@ -48,6 +48,7 @@ typedef struct subimage
   double	djacob[4];			/* Local image Jacobian matrix*/
   double	dinvjacob[4];			/* Inverse Jacobian matrix */
   double	dscale;				/* Local relative pixel scale */
+  PIXTYPE	bkg;				/* Local background level */
   }	subimagestruct;
 
 /*------------------------------- functions ---------------------------------*/

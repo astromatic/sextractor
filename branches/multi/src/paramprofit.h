@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 2007-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 2007-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		15/07/2011
+*	Last modified:		06/05/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -49,16 +49,16 @@
 
   {"FLUX_MODEL", "Flux from model-fitting",
 	&flagobj2.flux_prof, H_FLOAT, T_FLOAT, "%12.7g", "count",
-	"phot.count;stat.fit.param", "ct"},
+	"phot.count;stat.fit.param", "ct", 1, &prefs.nimage},
   {"FLUXERR_MODEL", "RMS error on model-fitting flux",
 	&flagobj2.fluxerr_prof, H_FLOAT, T_FLOAT, "%12.7g", "count",
-	"stat.error;phot.count;stat.fit.param", "ct"},
+	"stat.error;phot.count;stat.fit.param", "ct", 1, &prefs.nimage},
   {"MAG_MODEL", "Magnitude from model-fitting",
 	&flagobj2.mag_prof, H_FLOAT, T_FLOAT, "%8.4f", "mag",
-	"phot.mag;stat.fit.param", "mag"},
+	"phot.mag;stat.fit.param", "mag", 1, &prefs.nimage},
   {"MAGERR_MODEL", "RMS error on model-fitting magnitude",
 	&flagobj2.magerr_prof, H_FLOAT, T_FLOAT, "%8.4f", "mag",
-	"stat.error;phot.mag;stat.fit.param", "mag"},
+	"stat.error;phot.mag;stat.fit.param", "mag", 1, &prefs.nimage},
 
   {"FLUX_HYBRID", "Hybrid flux from model-fitting",
 	&flagobj2.fluxcor_prof, H_FLOAT, T_FLOAT, "%12.7g", "count",
@@ -344,10 +344,10 @@
 
   {"SPREAD_MODEL", "Spread parameter from model-fitting",
 	&flagobj2.prof_concentration, H_FLOAT, T_FLOAT, "%11.5g", "",
-	"src.morph.param", ""},
+	"src.morph.param", "", 1 , &prefs.nimage},
   {"SPREADERR_MODEL", "Spread parameter error from model-fitting",
 	&flagobj2.prof_concentrationerr, H_FLOAT, T_FLOAT, "%11.5g", "",
-	"src.morph.param", ""},
+	"src.morph.param", "", 1, &prefs.nimage},
 
   {"NOISEAREA_MODEL", "Equivalent noise area of the fitted model",
 	&flagobj2.prof_noisearea, H_FLOAT, T_FLOAT, "%12.2f", "pixel**2",
@@ -367,29 +367,29 @@
 
   {"FLUX_POINTSOURCE", "Point source flux from fitting",
 	&flagobj2.prof_dirac_flux, H_FLOAT, T_FLOAT, "%12.7g", "count",
-	"phot.count;stat.fit.param", "ct"},
+	"phot.count;stat.fit.param", "ct", 1, &prefs.nimage},
   {"FLUXERR_POINTSOURCE", "RMS error on fitted point source total flux",
 	&flagobj2.prof_dirac_fluxerr, H_FLOAT, T_FLOAT, "%12.7g", "count",
-	"stat.error;phot.count;stat.fit.param", "ct"},
+	"stat.error;phot.count;stat.fit.param", "ct", 1, &prefs.nimage},
   {"MAG_POINTSOURCE", "Point source total magnitude from fitting",
 	&flagobj2.prof_dirac_mag, H_FLOAT, T_FLOAT, "%8.4f", "mag",
-	"phot.mag;stat.fit.param", "mag"},
+	"phot.mag;stat.fit.param", "mag", 1, &prefs.nimage},
   {"MAGERR_POINTSOURCE", "RMS error on fitted point source total magnitude",
 	&flagobj2.prof_dirac_magerr, H_FLOAT, T_FLOAT, "%8.4f", "mag",
-	"stat.error;phot.mag;stat.fit.param", "mag"},
+	"stat.error;phot.mag;stat.fit.param", "mag", 1, &prefs.nimage},
 
   {"FLUX_SPHEROID", "Spheroid total flux from fitting",
 	&flagobj2.prof_spheroid_flux, H_FLOAT, T_FLOAT, "%12.7g", "count",
-	"phot.count;stat.fit.param", "ct"},
+	"phot.count;stat.fit.param", "ct", 1 , &prefs.nimage},
   {"FLUXERR_SPHEROID", "RMS error on fitted spheroid total flux",
 	&flagobj2.prof_spheroid_fluxerr, H_FLOAT, T_FLOAT, "%12.7g", "count",
-	"stat.error;phot.count;stat.fit.param", "ct"},
+	"stat.error;phot.count;stat.fit.param", "ct", 1 , &prefs.nimage},
   {"MAG_SPHEROID", "Spheroid total magnitude from fitting",
 	&flagobj2.prof_spheroid_mag, H_FLOAT, T_FLOAT, "%8.4f", "mag",
-	"phot.mag;stat.fit.param", "mag"},
+	"phot.mag;stat.fit.param", "mag", 1, &prefs.nimage},
   {"MAGERR_SPHEROID", "RMS error on fitted spheroid total magnitude",
 	&flagobj2.prof_spheroid_magerr, H_FLOAT, T_FLOAT, "%8.4f", "mag",
-	"stat.error;phot.mag;stat.fit.param", "mag"},
+	"stat.error;phot.mag;stat.fit.param", "mag", 1, &prefs.nimage},
   {"FLUX_MAX_SPHEROID", "Peak spheroid flux above background",
 	&flagobj2.prof_spheroid_peak, H_FLOAT, T_FLOAT, "%12.7g", "count",
 	"phot.flux.sb;stat.max;stat.fit.param", "ct"},
@@ -465,16 +465,16 @@
 
   {"FLUX_DISK", "Disk total flux from fitting",
 	&flagobj2.prof_disk_flux, H_FLOAT, T_FLOAT, "%12.7g", "count",
-	"phot.count;stat.fit.param", "ct"},
+	"phot.count;stat.fit.param", "ct",1 , &prefs.nimage},
   {"FLUXERR_DISK", "RMS error on fitted disk total flux",
 	&flagobj2.prof_disk_fluxerr, H_FLOAT, T_FLOAT, "%12.7g", "count",
-	"stat.error;phot.count;stat.fit.param", "ct"},
+	"stat.error;phot.count;stat.fit.param", "ct", 1, &prefs.nimage},
   {"MAG_DISK", "Disk total magnitude from fitting",
 	&flagobj2.prof_disk_mag, H_FLOAT, T_FLOAT, "%8.4f", "mag",
-	"phot.mag;stat.fit.param", "mag"},
+	"phot.mag;stat.fit.param", "mag", 1, &prefs.nimage},
   {"MAGERR_DISK", "RMS error on fitted disk total magnitude",
 	&flagobj2.prof_disk_magerr, H_FLOAT, T_FLOAT, "%8.4f", "mag",
-	"stat.error;phot.mag;stat.fit.param", "mag"},
+	"stat.error;phot.mag;stat.fit.param", "mag", 1, &prefs.nimage},
   {"FLUX_MAX_DISK", "Peak disk flux above background",
 	&flagobj2.prof_disk_peak, H_FLOAT, T_FLOAT, "%12.7g", "count",
 	"phot.flux.sb;stat.max;stat.fit.param", "ct"},

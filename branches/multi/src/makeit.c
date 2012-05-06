@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		29/03/2012
+*	Last modified:		06/05/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -71,7 +71,7 @@ INPUT	-.
 OUTPUT	-.
 NOTES	Global preferences are used.
 AUTHOR	E. Bertin (IAP)
-VERSION	29/03/2012
+VERSION	06/05/2012
  ***/
 void	makeit(void)
   {
@@ -370,6 +370,7 @@ void	makeit(void)
 
 /*-- Setup a minimum profit structure for component names and number of params*/
     QCALLOC(profit, profitstruct, 1);
+    QCALLOC(profit->subprofit, subprofitstruct, 1);
     QMALLOC(profit->prof, profstruct *, MODEL_NMAX);
     nmodels = 0;
     QPRINTF(OUTPUT, "Fitting model: ");
@@ -513,8 +514,6 @@ void	makeit(void)
         }
       }
 
-  thecat.currext = nok+1;
-
 /* Process one extension at a time */
   for (e=0; e<next0; e++)
     {
@@ -562,7 +561,7 @@ void	makeit(void)
             {
             psf_readcontext(psfs[i], field);
             psf_init(psfs[i]);
-            fields[i]->psf = &psf[i];
+            fields[i]->psf = psfs[i];
             }
         }
       }
@@ -617,6 +616,7 @@ void	makeit(void)
         if ((check=prefs.check[i]))
           check_reinit(dfield, check);		/* FIX */
 
+    thecat.currext++;
     catout_initext(dfield);
 
 /*-- Start the extraction pipeline */
@@ -680,7 +680,7 @@ void	makeit(void)
     free(ffile_next);
     }
 
-  if (nok<0)
+  if (thecat.currext==0)
     error(EXIT_FAILURE, "Not enough valid FITS image extensions in ",
 	prefs.image_name[0]);
   free_cat(&imacat, 1);

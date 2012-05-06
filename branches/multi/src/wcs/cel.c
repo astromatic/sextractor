@@ -7,7 +7,7 @@
 *
 *	This file part of:	AstrOmatic WCS library
 *
-*	Copyright:		(C) 2000-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 2000-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
 *				(C) 1995-1999 Mark Calabretta (original version)
 *
 *	Licenses:		GNU General Public License
@@ -24,7 +24,7 @@
 *	along with AstrOmatic software.
 *	If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		10/10/2010
+*	Last modified:		11/04/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 /*=============================================================================
@@ -262,8 +262,9 @@
 *
 *   Author: Mark Calabretta, Australia Telescope National Facility
 *   IRAF's TNX added by E.Bertin 2000/03/28
+*   TPV added by E.Bertin 2012/04/11
 *   Filtering of abs(phi)>180 and abs(theta)>90 added by E.Bertin 2000/11/11
-*   $Id: cel.c,v 1.1.1.1 2002/03/15 16:33:26 bertin Exp $
+*   $Id: cel.c,v 1.1.1.1 2012/04/11 16:33:26 bertin Exp $
 *===========================================================================*/
 
 #ifdef HAVE_CONFIG_H
@@ -281,11 +282,11 @@
 #include "sph.h"
 #include "tnx.h"
 
-int  npcode = 26;
-char pcodes[26][4] =
+int  npcode = 27;
+char pcodes[27][4] =
       {"AZP", "TAN", "SIN", "STG", "ARC", "ZPN", "ZEA", "AIR", "CYP", "CAR",
        "MER", "CEA", "COP", "COD", "COE", "COO", "BON", "PCO", "GLS", "PAR",
-       "AIT", "MOL", "CSC", "QSC", "TSC", "TNX"};
+       "AIT", "MOL", "CSC", "QSC", "TSC", "TNX", "TPV"};
 
 /* Map error number to error message for each function. */
 const char *celset_errmsg[] = {
@@ -320,13 +321,17 @@ struct prjprm *prj;
    double u, v, x, y, z;
 
    /* Set pointers to the forward and reverse projection routines. */
-   if (strcmp(pcode, "AZP") == 0) {
-      cel->prjfwd = azpfwd;
-      cel->prjrev = azprev;
-      theta0 = 90.0;
-   } else if (strcmp(pcode, "TAN") == 0) {
+   if (strcmp(pcode, "TAN") == 0) {
       cel->prjfwd = tanfwd;
       cel->prjrev = tanrev;
+      theta0 = 90.0;
+   } else if (strcmp(pcode, "TPV") == 0) {
+      cel->prjfwd = tanfwd;
+      cel->prjrev = tanrev;
+      theta0 = 90.0;
+   } else if (strcmp(pcode, "AZP") == 0) {
+      cel->prjfwd = azpfwd;
+      cel->prjrev = azprev;
       theta0 = 90.0;
    } else if (strcmp(pcode, "SIN") == 0) {
       cel->prjfwd = sinfwd;

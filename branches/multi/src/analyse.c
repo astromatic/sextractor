@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		29/03/2012
+*	Last modified:		06/05/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -619,7 +619,7 @@ obj2struct	*analyse_obj2obj2(fieldstruct **fields, fieldstruct **wfields,
     subimage = obj2->subimage;
     deblankimage(obj->blank, obj->subw, obj->subh,
 		subimage->image, subimage->imsize[0],subimage->imsize[1],
-		obj->subx - subimage->immin[0], obj->suby - subimage->immin[0]);
+		obj->subx - subimage->immin[0], obj->suby - subimage->immin[1]);
     free(obj->blank);
     }
 
@@ -638,14 +638,16 @@ INPUT   Pointer to an array of image field pointers,
 OUTPUT  -.
 NOTES   -.
 AUTHOR  E. Bertin (IAP)
-VERSION 15/02/2012
+VERSION 06/05/2012
  ***/
 void	analyse_group(fieldstruct **fields, fieldstruct **wfields,
 			int nfield, obj2struct *fobj2)
   {
-   fieldstruct	*field, *wfield;
-   obj2struct	*obj2, *modobj2;
-   int		i;
+   fieldstruct		*field, *wfield;
+   subprofitstruct	*subprofit,*modsubprofit;
+   subimagestruct	*subimage;
+   obj2struct		*obj2, *modobj2;
+   int			i,s;
 
 /* field is the detection field */
   field = fields[0];
@@ -658,13 +660,7 @@ void	analyse_group(fieldstruct **fields, fieldstruct **wfields,
       {
       photom_auto(fields, wfields, nfield, obj2);
       growth_aver(fields, wfields, nfield, obj2);
-      obj2->profit = profit_init(field, wfield,
-		obj2, thepsf, prefs.prof_modelflags);
-      }
-    for (obj2=fobj2; obj2; obj2=obj2->nextobj2)
-      {
-      photom_auto(fields, wfields, nfield, obj2);
-      growth_aver(fields, wfields, nfield, obj2);
+      obj2->profit = profit_init(obj2, prefs.prof_modelflags);
       }
     if (fobj2->nextobj2)
       {
@@ -676,10 +672,20 @@ void	analyse_group(fieldstruct **fields, fieldstruct **wfields,
         for (obj2=fobj2; obj2; obj2=obj2->nextobj2)
           {
           if (i)
-            profit_copyobjpix(obj2->profit, field, wfield, obj2);
+            {
+            subprofit = obj2->profit->subprofit;
+            subimage = obj2->subimage;
+            for (s=nfield; s--;)
+              subprofit_copyobjpix(subprofit++, subimage++);
+            }
           for (modobj2=fobj2; modobj2; modobj2=modobj2->nextobj2)
             if (modobj2 != obj2)
-              profit_submodpix(obj2->profit, modobj2->profit, 0.9);
+              {
+              subprofit = obj2->profit->subprofit;
+              modsubprofit = modobj2->profit->subprofit;
+              for (s=nfield; s--;)
+                subprofit_submodpix(subprofit++, modsubprofit++, 0.9);
+              }
           }
         }
 /*
@@ -739,7 +745,7 @@ INPUT   Pointer to an array of image field pointers,
 OUTPUT  RETURN_OK if the object has been processed, RETURN_ERROR otherwise.
 NOTES   -.
 AUTHOR  E. Bertin (IAP)
-VERSION 20/03/2012
+VERSION 06/05/2012
  ***/
 int	analyse_full(fieldstruct **fields, fieldstruct **wfields,
 			int nfield, obj2struct *obj2)
@@ -887,7 +893,7 @@ dfield = dwfield = wfield = NULL;
     for (i=0; i<prefs.naper; i++)
       photom_aper(field, wfield, obj2, i);
 
-  if ((prefs.auto_flag))
+  if ((prefs.auto_flag) && !prefs.prof_flag)
     photom_auto(fields, wfields, nfield, obj2);
 
   if (FLAG(obj2.flux_petro))

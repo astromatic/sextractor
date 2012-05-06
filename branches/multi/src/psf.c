@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		30/03/2011
+*	Last modified:		05/05/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -192,7 +192,7 @@ psfstruct	*psf_load(char *filename)
           error(EXIT_FAILURE, gstr, "");
           }
         key = obj2key+k;
-        psf->context[i] = key->ptr;
+        psf->context[i] = key->ptr;	/* !CHECK should depend on channel */
         psf->contexttyp[i] = key->ttype;
 /*------ Declare the parameter "active" to trigger computation by SExtractor */
         *((char *)key->ptr) = (char)'\1';
@@ -1053,7 +1053,7 @@ Build the local PSF (function of "context").
 */
 void	psf_build(psfstruct *psf, obj2struct *obj2)
   {
-   static double	pos[POLY_MAXDIM];
+   double	pos[POLY_MAXDIM];
    double	*basis, fac;
    float	*ppc, *pl;
    int		i,n,p, ndim, npix;

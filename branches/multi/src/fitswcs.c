@@ -23,7 +23,7 @@
 *	along with AstrOmatic software.
 *	If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		27/03/2012
+*	Last modified:		12/04/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -328,7 +328,7 @@ INPUT	tab structure.
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	30/07/2010
+VERSION	22/07/2011
  ***/
 wcsstruct	*read_wcs(tabstruct *tab)
 
@@ -479,7 +479,8 @@ wcsstruct	*read_wcs(tabstruct *tab)
 
     FITSREADF(buf, "EPOCH", wcs->epoch, 2000.0);
     FITSREADF(buf, "EQUINOX", wcs->equinox, wcs->epoch);
-    FITSREADS(buf, "RADECSYS", str,
+    if (fitsread(buf, "RADESYS", str, H_STRING,T_STRING) != RETURN_OK)
+      FITSREADS(buf, "RADECSYS", str,
 	wcs->equinox >= 2000.0? "ICRS" : (wcs->equinox<1984.0? "FK4" : "FK5"));
     if (!strcmp(str, "ICRS"))
       wcs->radecsys = RDSYS_ICRS;
@@ -743,18 +744,18 @@ INPUT	Proposed projection code name.
 OUTPUT	RETURN_OK if projection is supported, RETURN_ERROR otherwise.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	24/05/2000
+VERSION	12/04/2012
  ***/
 int	wcs_supproj(char *name)
 
   {
-   char	projcode[26][5] =
-	{"AZP", "TAN", "SIN", "STG", "ARC", "ZPN", "ZEA", "AIR", "CYP", "CAR",
+   char	projcode[28][5] =
+	{"TAN", "TPV", "AZP", "SIN", "STG", "ARC", "ZPN", "ZEA", "AIR", "CYP", "CAR",
 	"MER", "CEA", "COP", "COD", "COE", "COO", "BON", "PCO", "GLS", "PAR",
-	"AIT", "MOL", "CSC", "QSC", "TSC", "NONE"};
+	"AIT", "MOL", "CSC", "QSC", "TSC", "TNX", "NONE"};
    int	i;
 
-  for (i=0; i<26; i++)
+  for (i=0; i<28; i++)
     if (!strcmp(name, projcode[i]))
       return RETURN_OK;
 

@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		02/04/2012
+*	Last modified:		06/05/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -56,7 +56,7 @@ OUTPUT	Pointer to a new malloc'ed subimage structure.
 NOTES	Global preferences are used. Input fields must have been through
 	frame_wcs() with detection field as a reference.
 AUTHOR	E. Bertin (IAP)
-VERSION	02/04/2012
+VERSION	02/05/2012
  ***/
 subimagestruct	*subimage_getall(fieldstruct **fields, fieldstruct **wfields,
 			int nfield, obj2struct *obj2)
@@ -104,7 +104,7 @@ subimagestruct	*subimage_getall(fieldstruct **fields, fieldstruct **wfields,
     }
 
   subimage = obj2->subimage;
-  for (s=nsubimage; s--; subimage++)
+  for (s=0; s<nsubimage; s++, subimage++)
     {
     QMALLOC(subimage->image, PIXTYPE, subimage->imsize[0]*subimage->imsize[1]);
     copyimage(subimage->field, subimage->image,
@@ -120,6 +120,7 @@ subimagestruct	*subimage_getall(fieldstruct **fields, fieldstruct **wfields,
       }
     else
       subimage->weight = NULL;
+    subimage->bkg = obj2->bkg[s];
     }
 
   return obj2->subimage;
@@ -139,7 +140,7 @@ INPUT	Pointer to subimage,
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	02/04/2012
+VERSION	06/05/2012
  ***/
 void	subimage_init(subimagestruct *subimage,
 			fieldstruct *field, fieldstruct *wfield,
@@ -189,9 +190,9 @@ void	subimage_init(subimagestruct *subimage,
     subimage->ipos[0] = (int)(subimage->dpos[0]-0.50001); /* Integer coords */
     subimage->ipos[1] = (int)(subimage->dpos[1]-0.50001); /* Integer coords */
     subimage->djacob[0] = subimage->djacob[2]
-		= subimage->dinvjacob[0] = subimage->dinvjacob[2] = 1.0;
-    subimage->djacob[1] = subimage->djacob[3]
-		= subimage->dinvjacob[1] = subimage->dinvjacob[3] = 0.0;
+		= subimage->dinvjacob[0] = subimage->dinvjacob[3] = 1.0;
+    subimage->djacob[1] = subimage->djacob[2]
+		= subimage->dinvjacob[1] = subimage->dinvjacob[2] = 0.0;
     subimage->imsize[0] = 2.0*(obj2->xmax-obj2->xmin)+1+2*field->stripmargin;
     subimage->imsize[1] = 2.0*(obj2->ymax-obj2->ymin)+1+2*field->stripmargin;
     subimage->immin[0] = subimage->ipos[0] - subimage->imsize[0]/2;
