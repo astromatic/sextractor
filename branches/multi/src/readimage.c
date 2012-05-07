@@ -185,7 +185,7 @@ void	*readimage_loadstrip(fieldstruct *field, fieldstruct *wfield)
       if ((flags & DETECT_FIELD) && (check=prefs.check[CHECK_IDENTICAL]))
         check_write(check, data, w);
 /*---- Interpolate and subtract the background at current line */
-      if (flags & DETECT_FIELD)
+      if (flags & (MEASURE_FIELD|DETECT_FIELD))
         back_subline(field, field->ymax, 0, w, data);
       if (interpflag)
         interpolate(field,wfield, data, wdata);
