@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		27/03/2012
+*	Last modified:		07/05/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -51,6 +51,9 @@
 #include	"scan.h"
 #include	"weight.h"
 
+static void	scan_initmarkers(fieldstruct *field),
+		scan_updatemarkers(fieldstruct *field, int yl);
+
 /****** scan_extract *********************************************************
 PROTO	void scan_extract(fieldstruct *dfield, fieldstruct *dwfield,
 			fieldstruct **fields, fieldstruct **wfields, int nfield,
@@ -66,7 +69,7 @@ INPUT	Pointer to the detection image field,
 OUTPUT	-.
 NOTES	Global preferences are used.
 AUTHOR	E. Bertin (IAP)
-VERSION	27/03/2012
+VERSION	07/05/2012
  ***/
 void	scan_extract(fieldstruct *dfield, fieldstruct *dwfield,
 			fieldstruct **fields, fieldstruct **wfields, int nfield,
@@ -75,7 +78,7 @@ void	scan_extract(fieldstruct *dfield, fieldstruct *dwfield,
   {
    static infostruct	curpixinfo, *info, *store,
 			initinfo, freeinfo, *victim;
-   fieldstruct		*ffield;
+   fieldstruct		*field,*ffield;
    checkstruct		*check;
    objliststruct       	objlist;
    objstruct		*cleanobj;
@@ -111,21 +114,19 @@ void	scan_extract(fieldstruct *dfield, fieldstruct *dwfield,
   h = dfield->height;
   objlist.dthresh = dfield->dthresh;
   objlist.thresh = dfield->thresh;
-  dfield->y = dfield->stripy = dfield->ymin = dfield->stripylim
-	= dfield->stripysclim = 0;
-  dfield->yblank = 1;
-  if ((dwfield))
-    dwfield->y = dwfield->stripy = dwfield->ymin = dwfield->stripylim
-	= dwfield->stripysclim = 0;
+  scan_initmarkers(dfield);
+  scan_initmarkers(dwfield);
+
+  for (i=1; i<nfield; i++)
+    if (!(fields[i]->flags&MULTIGRID_FIELD))
+      {
+      scan_initmarkers(fields[i]);
+      scan_initmarkers(wfields[i]);
+      }
 
   if (nffield)
     for (i=0; i<nffield; i++)
-      {
-      ffield = ffields[i];
-      ffield->y = ffield->stripy = ffield->ymin = ffield->stripylim
-	= ffield->stripysclim = 0;
-      }
-
+      scan_initmarkers(ffields[i]);
 
 /*Allocate memory for buffers */
   stacksize = w+1;
@@ -225,14 +226,6 @@ void	scan_extract(fieldstruct *dfield, fieldstruct *dwfield,
       }
     else
       {
-      if (nffield)
-        for (i=0; i<nffield; i++)
-          {
-          ffield = ffields[i];
-          fscan[i] = (ffield->stripy==ffield->stripysclim)?
-		  (FLAGTYPE *)readimage_loadstrip(ffield, (fieldstruct *)NULL)
-		: &ffield->fstrip[ffield->stripy*ffield->width];
-          }
       if (dwfield)
         {
 /*------ Copy the previous weight line to track bad pixel limits */
@@ -249,11 +242,9 @@ void	scan_extract(fieldstruct *dfield, fieldstruct *dwfield,
 			*dwfield->width];
             }
         }
-      scan = (dfield->stripy==dfield->stripysclim)?
-		  (PIXTYPE *)readimage_loadstrip(dfield, dwfield)
-		: &dfield->strip[dfield->stripy*dfield->width];
       if (dfield->stripy==dfield->stripysclim)
         {
+        scan = (PIXTYPE *)readimage_loadstrip(dfield, dwfield);
         for (i=1; i<nfield; i++)
           if (!(fields[i]->flags&MULTIGRID_FIELD))
             {
@@ -262,6 +253,17 @@ void	scan_extract(fieldstruct *dfield, fieldstruct *dwfield,
               readimage_loadstrip(wfields[i], (fieldstruct *)NULL);
             }
         }
+      else
+        scan = &dfield->strip[dfield->stripy*dfield->width];
+
+      if (nffield)
+        for (i=0; i<nffield; i++)
+          {
+          ffield = ffields[i];
+          fscan[i] = (ffield->stripy==ffield->stripysclim)?
+		  (FLAGTYPE *)readimage_loadstrip(ffield, (fieldstruct *)NULL)
+		: &ffield->fstrip[ffield->stripy*ffield->width];
+          }
 
       if (prefs.filter_flag)
         {
@@ -547,15 +549,17 @@ void	scan_extract(fieldstruct *dfield, fieldstruct *dwfield,
 
 /*-- Prepare markers for the next line */
     yl++;
-    dfield->stripy = (dfield->y=yl)%dfield->stripheight;
+    scan_updatemarkers(dfield, yl);
+    scan_updatemarkers(dwfield, yl);
+    for (i=1; i<nfield; i++)
+      if (!(fields[i]->flags&MULTIGRID_FIELD))
+        {
+        scan_updatemarkers(fields[i], yl);
+        scan_updatemarkers(wfields[i], yl);
+        }
     if (nffield)
       for (i=0; i<nffield; i++)
-        {
-        ffield = ffields[i];
-        ffield->stripy = (ffield->y=yl)%ffield->stripheight;
-        }
-    if (dwfield)
-      dwfield->stripy = (dwfield->y=yl)%dwfield->stripheight;
+        scan_updatemarkers(ffields[i], yl);
 
 /*-- Remove objects close to the ymin limit if ymin is ready to increase */
     if (dfield->stripy==dfield->stripysclim)
@@ -631,6 +635,46 @@ void	scan_extract(fieldstruct *dfield, fieldstruct *dwfield,
   free(end);
   if (prefs.blank_flag && prefs.filter_flag)
     free(blankpad);
+
+  return;
+  }
+
+
+/*i**** scan_initmarkers **************************************************
+PROTO	static void scan_initmarkers(fieldstruct *field)
+PURPOSE	Initialize scan markers of an image field for the first line.
+INPUT	Pointer to the image field.
+OUTPUT	-.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	07/05/2012
+ ***/
+static void	scan_initmarkers(fieldstruct *field)
+
+  {
+  if (field)
+    field->y = field->stripy = field->ymin = field->stripylim
+	= field->stripysclim = 0;
+
+  return;
+  }
+
+
+/*i**** scan_updatemarkers **************************************************
+PROTO	static void scan_updatemarkers(fieldstruct *field, int yl)
+PURPOSE	Prepare scan markers of an image field for the next line.
+INPUT	Pointer to the image field,
+	scan line y coordinate.
+OUTPUT	-.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	07/05/2012
+ ***/
+static void	scan_updatemarkers(fieldstruct *field, int yl)
+
+  {
+  if (field)
+    field->stripy = (field->y=yl)%field->stripheight;
 
   return;
   }
