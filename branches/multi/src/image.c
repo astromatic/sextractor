@@ -109,8 +109,11 @@ int	copyimage(fieldstruct *field, PIXTYPE *dest, int w,int h, int ix,int iy)
         }
     }
   else
+    {
+    y = ymin;
     for (i = ymax - ymin; i--; dest += w)
       memcpy(dest, &PIX(field, xmin, y++), w2*sizeof(PIXTYPE));
+    }
 
   return RETURN_OK;
   }

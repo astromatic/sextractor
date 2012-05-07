@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		06/05/2012
+*	Last modified:		07/05/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -140,7 +140,7 @@ INPUT	Pointer to subimage,
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	06/05/2012
+VERSION	07/05/2012
  ***/
 void	subimage_init(subimagestruct *subimage,
 			fieldstruct *field, fieldstruct *wfield,
@@ -193,8 +193,8 @@ void	subimage_init(subimagestruct *subimage,
 		= subimage->dinvjacob[0] = subimage->dinvjacob[3] = 1.0;
     subimage->djacob[1] = subimage->djacob[2]
 		= subimage->dinvjacob[1] = subimage->dinvjacob[2] = 0.0;
-    subimage->imsize[0] = 2.0*(obj2->xmax-obj2->xmin)+1+2*field->stripmargin;
-    subimage->imsize[1] = 2.0*(obj2->ymax-obj2->ymin)+1+2*field->stripmargin;
+    subimage->imsize[0] = 3.0*(obj2->xmax-obj2->xmin)+1+2*field->stripmargin;
+    subimage->imsize[1] = 3.0*(obj2->ymax-obj2->ymin)+1+2*field->stripmargin;
     subimage->immin[0] = subimage->ipos[0] - subimage->imsize[0]/2;
     subimage->immin[1] = subimage->ipos[1] - subimage->imsize[1]/2;
     subimage->immax[0] = subimage->immin[0] + subimage->imsize[0];
