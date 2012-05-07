@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		26/03/2012
+*	Last modified:		07/05/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -442,7 +442,7 @@ INPUT	File name.
 OUTPUT	Pointer to an allocated string, or NULL if something went wrong.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	06/02/2008
+VERSION	07/05/2012
  ***/
 char	*list_to_str(char *listname)
   {
@@ -456,7 +456,7 @@ char	*list_to_str(char *listname)
   bufsize = 8*MAXCHAR;
   QMALLOC(listbuf, char, bufsize);
   for (bufpos=0; fgets(liststr,MAXCHAR,fp);)
-    for (str=NULL; (str=strtok(str? NULL: liststr, "\n\r\t "));)
+    for (str=NULL; (str=strtok(str? NULL: liststr, "\n\r\t ")) && str[0]!='#';)
       {
       if (bufpos>MAXLISTSIZE)
         error(EXIT_FAILURE, "*Error*: Too many parameters in ", listname);
