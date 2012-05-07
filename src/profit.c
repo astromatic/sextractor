@@ -1608,17 +1608,7 @@ float	*profit_residuals(profitstruct *profit, float dynparam, float *param,
       {
       subprofit->flux = 0.0;
       for (p=0; p<profit->nprof; p++)
-if(!s)
         subprofit->flux += prof_add(subprofit, profit->prof[p], 0);
-else
-{
-pflux = *profit->prof[p]->flux[s];
-pixin = profit->prof[p]->pix;
-pixout = subprofit->modpix;
-for (i=subprofit->nmodpix; i--;)
-  *(pixout++) += pflux**(pixin++);
-subprofit->flux += pflux;
-        }
       memcpy(subprofit->cmodpix, subprofit->modpix,
 		subprofit->nmodpix*sizeof(float));
       subprofit_convolve(subprofit, subprofit->cmodpix);
@@ -1791,7 +1781,7 @@ int	profit_resample(profitstruct *profit, subprofitstruct *subprofit,
   if (iysina<0 || ((iysina -= hmh)< 0))
     iysina = 0;
   nyin = (int)(ysin+nyout*invpixstep)+INTERPW-hmh;/* Interpolated Input y size*/
-  if (nyin>subprofit->modnaxisn[1])						/* with margin */
+  if (nyin>subprofit->modnaxisn[1])		/* with margin */
     nyin = subprofit->modnaxisn[1];
 /* Express everything relative to the effective Input start (with margin) */
   nyin -= iysina;
@@ -1933,6 +1923,8 @@ VERSION	05/05/2012
  ***/
 void	subprofit_convolve(subprofitstruct *subprofit, float *modpix)
   {
+/* Clean up FFTW plans */
+  fft_reset();
   if (!subprofit->psfdft)
     subprofit_makedft(subprofit);
 
@@ -3540,11 +3532,13 @@ profstruct	*prof_init(profitstruct *profit, unsigned int modeltype)
     case MODEL_DIRAC:
       prof->name = "point source";
       prof->naxis = 2;
+/*
       prof->naxisn[0] = profit->subprofit->modnaxisn[0];
       prof->naxisn[1] = profit->subprofit->modnaxisn[1];
       prof->naxisn[2] = 1;
       prof->npix = prof->naxisn[0]*prof->naxisn[1]*prof->naxisn[2];
       QMALLOC(prof->pix, float, prof->npix);
+*/
       prof->typscale = 1.0;
       profit_addparam(profit, PARAM_X, &prof->x[0]);
       profit_addparam(profit, PARAM_Y, &prof->x[1]);
@@ -3572,11 +3566,13 @@ profstruct	*prof_init(profitstruct *profit, unsigned int modeltype)
     case MODEL_DEVAUCOULEURS:
       prof->name = "de Vaucouleurs spheroid";
       prof->naxis = 2;
+/*
       prof->naxisn[0] = profit->subprofit->modnaxisn[0];
       prof->naxisn[1] = profit->subprofit->modnaxisn[1];
       prof->naxisn[2] = 1;
       prof->npix = prof->naxisn[0]*prof->naxisn[1]*prof->naxisn[2];
       QMALLOC(prof->pix, float, prof->npix);
+*/
       prof->typscale = 1.0;
       profit_addparam(profit, PARAM_X, &prof->x[0]);
       profit_addparam(profit, PARAM_Y, &prof->x[1]);
@@ -3589,11 +3585,13 @@ profstruct	*prof_init(profitstruct *profit, unsigned int modeltype)
     case MODEL_EXPONENTIAL:
       prof->name = "exponential disk";
       prof->naxis = 2;
+/*
       prof->naxisn[0] = profit->subprofit->modnaxisn[0];
       prof->naxisn[1] = profit->subprofit->modnaxisn[1];
       prof->naxisn[2] = 1;
       prof->npix = prof->naxisn[0]*prof->naxisn[1]*prof->naxisn[2];
       QMALLOC(prof->pix, float, prof->npix);
+*/
       prof->typscale = 1.0;
       profit_addparam(profit, PARAM_X, &prof->x[0]);
       profit_addparam(profit, PARAM_Y, &prof->x[1]);
@@ -3820,6 +3818,7 @@ float	prof_add(subprofitstruct *subprofit, profstruct *prof,
     }
 
   scaling = subprofit->pixstep / prof->typscale;
+  QMALLOC(prof->pix, float, subprofit->nmodpix);
 
   if (prof->code!=MODEL_DIRAC)
     {
@@ -4278,6 +4277,7 @@ width = 3.0;
   for (i=npix; i--;)
     *(pixout++) += pflux**(pixin++);
 
+  QFREE(prof->pix);
   return pflux;
   }
 

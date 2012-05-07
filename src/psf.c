@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		05/05/2012
+*	Last modified:		07/05/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -974,7 +974,7 @@ OUTPUT	RETURN_ERROR if the coordinates are outside object image,
 	RETURN_OK otherwise.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	30/03/2012
+VERSION	07/05/2012
  ***/
 int	psf_copyobjpix(PIXTYPE *data, PIXTYPE *weight,
 			int wout, int hout, int ix, int iy,
@@ -991,6 +991,7 @@ int	psf_copyobjpix(PIXTYPE *data, PIXTYPE *weight,
   if (weight)
     memset(weight, 0, wout*hout*sizeof(PIXTYPE));
 
+  subimage = obj2->subimage;	/* !CHECK */
   ix -= subimage->immin[0];
   iy -= subimage->immin[1];
   win = subimage->imsize[0];
