@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		06/05/2012
+*	Last modified:		09/05/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -71,7 +71,7 @@ INPUT	-.
 OUTPUT	-.
 NOTES	Global preferences are used.
 AUTHOR	E. Bertin (IAP)
-VERSION	06/05/2012
+VERSION	09/05/2012
  ***/
 void	makeit(void)
   {
@@ -94,7 +94,7 @@ void	makeit(void)
 			*file_index,*wfile_index,*ffile_index,*file_next,
 			*ffile_next,
 			e,e2,i,j,t, nok, ntab, previndex, ne,ext,
-			next,next0,nfext, ntabmax, forcextflag, npat, nmodels,
+			next,next0,nfext, forcextflag, npat, nmodels,
 			nfield,nffield, nfieldmax,nffieldmax, nimage,nfimage;
 
 /* Install error logging */
@@ -139,21 +139,13 @@ void	makeit(void)
    ext_fimage[i] = selectext(prefs.fimage_name[i]);
 
 /* Use the first image to probe the number of extensions to analyse */
-  if (ext_image[0] != RETURN_ERROR)
-    {
-    forcextflag = 1;
-    ntabmax = next0 = 1;
-    }
-  else
-    forcextflag = 0;
+  forcextflag = ext_image[0] == RETURN_ERROR? 0 : 1;
+  next = 1;
 
   if (!(imacat = read_cat(prefs.image_name[0])))
     error(EXIT_FAILURE, "*Error*: cannot open ", prefs.image_name[0]);
   close_cat(imacat);
   imatab = imacat->tab;
-
-  thecat.next = next0;
-
 
 /* Examine all extensions of all input images */
   nfieldmax = nimage = prefs.nimage;
@@ -245,7 +237,7 @@ void	makeit(void)
     file_next[i] = next;
     }
 
-  next0 = file_next[0];
+  thecat.next = next0 = file_next[0];
   QMALLOC(efields, fieldstruct *, nfieldmax);
   QMALLOC(wefields, fieldstruct *, nfieldmax);
 
@@ -344,9 +336,9 @@ void	makeit(void)
   if (prefs.psf_flag)
     {
     NFPRINTF(OUTPUT, "Reading PSF information...");
-    QCALLOC(psfs, psfstruct *, nfield);
-    for (i=0; i<nfield; i++)
-      psfs[i] = psf_load(prefs.psf_name[i]);
+    QCALLOC(psfs, psfstruct *, prefs.npsf_name);
+    for (i=0; i<prefs.npsf_name; i++)
+     psfs[i] = psf_load(prefs.psf_name[i]);
  /*-- Need to check things up because of PSF context parameters */
     catout_updateparamflags();
     prefs_use();
