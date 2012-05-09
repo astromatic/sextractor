@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		07/05/2012
+*	Last modified:		08/05/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -583,7 +583,7 @@ INPUT	-.
 OUTPUT	-.
 NOTES	Global preferences are used.
 AUTHOR	E. Bertin (IAP)
-VERSION	26/03/2012
+VERSION	08/05/2012
  ***/
 void	prefs_use(void)
 
@@ -761,6 +761,11 @@ void	prefs_use(void)
     for (i=0; i<prefs.ncheck_type; i++)
       if (prefs.check_type[i] == CHECK_PATTERNS)
         prefs.pattern_flag = 1;
+
+/*--------------------------------- PSFs ------------------------------------*/
+  if (prefs.psf_flag && prefs.npsf_name != prefs.nimage)
+     error(EXIT_FAILURE, "*Error*: PSF_NAME(s) and input image(s)",
+		" are not in equal number");
 
 /*-------------------------------- WEIGHTs ----------------------------------*/
   prefs.weights_flag = 0;
