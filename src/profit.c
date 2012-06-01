@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 2006-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 2006-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		08/12/2011
+*	Last modified:		01/06/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -166,7 +166,7 @@ OUTPUT	Pointer to an allocated fit structure (containing details about the
 	fit).
 NOTES	It is a modified version of the lm_minimize() of lmfit.
 AUTHOR	E. Bertin (IAP)
-VERSION	03/11/2011
+VERSION	01/06/2012
  ***/
 void	profit_fit(profitstruct *profit,
 		picstruct *field, picstruct *wfield,
@@ -507,8 +507,8 @@ profit->niter = profit_minimize(profit, PROFIT_MAXITER);
       pmx2+=temp;
       pmy2-=temp;
 
-      obj2->poserra_prof = (float)sqrt(pmx2);
-      obj2->poserrb_prof = (float)sqrt(pmy2);
+      obj2->poserra_prof = (float)sqrt(pmx2>0.0? pmx2 : 0.0);
+      obj2->poserrb_prof = (float)sqrt(pmy2>0.0? pmy2 : 0.0);
       obj2->poserrtheta_prof = (float)(theta/DEG);
       }
 
@@ -750,8 +750,8 @@ profit->niter = profit_minimize(profit, PROFIT_MAXITER);
 /* Star/galaxy classification */
   if (FLAG(obj2.prof_class_star) || FLAG(obj2.prof_concentration))
     {
-profit_residuals(profit,field,wfield, PROFIT_DYNPARAM, profit->paraminit,
-profit->resi);
+    profit_residuals(profit,field,wfield, PROFIT_DYNPARAM, profit->paraminit,
+	FLAG(obj2.prof_class_star) ? profit->resi : NULL);
     pprofit = thepprofit;
     nparam = pprofit->nparam;
     if (pprofit->psfdft)
@@ -792,7 +792,7 @@ profit->resi);
     pprofit->paraminit[pprofit->paramindex[PARAM_DIRAC_FLUX]] = profit->flux;
     pprofit->niter = profit_minimize(pprofit, PROFIT_MAXITER);
     profit_residuals(pprofit,field,wfield, PROFIT_DYNPARAM, pprofit->paraminit,
-			pprofit->resi);
+			FLAG(obj2.prof_class_star)? pprofit->resi : NULL);
     qprofit = theqprofit;
     nparam = qprofit->nparam;
     if (qprofit->psfdft)
@@ -834,7 +834,7 @@ profit->resi);
     qprofit->paraminit[qprofit->paramindex[PARAM_DISK_ASPECT]] = 1.0;
     qprofit->paraminit[qprofit->paramindex[PARAM_DISK_POSANG]] = 0.0;
     profit_residuals(qprofit,field,wfield, PROFIT_DYNPARAM, qprofit->paraminit,
-			qprofit->resi);
+			FLAG(obj2.prof_class_star)? qprofit->resi : NULL);
     sump = sumq = sumpw2 = sumqw2 = sumpqw = sump0 = sumq0 = 0.0;
     for (p=0; p<pprofit->nobjpix; p++)
       if (pprofit->objweight[p]>0 && pprofit->objpix[p]>-BIG)
@@ -861,9 +861,9 @@ profit->resi);
       {
       obj2->prof_concentration = sump>0.0? (sumq/sump - sumq0/sump0) : 1.0;
       if (FLAG(obj2.prof_concentrationerr))
-        obj2->prof_concentrationerr = sump>0.0?
-		sqrt(sumqw2*sump*sump+sumpw2*sumq*sumq-2.0*sumpqw*sump*sumq)
-			/ (sump*sump) : 0.0;
+        obj2->prof_concentrationerr = (sump>0.0 && (err = sumqw2*sump*sump
+		+sumpw2*sumq*sumq-2.0*sumpqw*sump*sumq)>0.0)?
+			sqrt(err) / (sump*sump) : 1.0;
       }
     }
 

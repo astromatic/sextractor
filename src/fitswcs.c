@@ -328,7 +328,7 @@ INPUT	tab structure.
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	30/07/2010
+VERSION	22/07/2011
  ***/
 wcsstruct	*read_wcs(tabstruct *tab)
 
@@ -479,7 +479,8 @@ wcsstruct	*read_wcs(tabstruct *tab)
 
     FITSREADF(buf, "EPOCH", wcs->epoch, 2000.0);
     FITSREADF(buf, "EQUINOX", wcs->equinox, wcs->epoch);
-    FITSREADS(buf, "RADECSYS", str,
+    if (fitsread(buf, "RADESYS", str, H_STRING,T_STRING) != RETURN_OK)
+      FITSREADS(buf, "RADECSYS", str,
 	wcs->equinox >= 2000.0? "ICRS" : (wcs->equinox<1984.0? "FK4" : "FK5"));
     if (!strcmp(str, "ICRS"))
       wcs->radecsys = RDSYS_ICRS;
