@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		25/03/2010
+*	Last modified:		04/06/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -273,7 +273,7 @@ void	readimagehead(picstruct *field)
   field->npix = (KINGSIZE_T)field->width*field->height;
   field->bitpix = tab->bitpix;
   field->bytepix = tab->bytepix;
-  if (tab->bitsgn && prefs.fitsunsigned_flag)
+  if (tab->bitsgn && (prefs.fitsunsigned_flag || tab->bitpix==BP_BYTE))
     tab->bitsgn = 0;
 
   FITSREADS(tab->headbuf, "OBJECT  ", field->ident, "Unnamed");

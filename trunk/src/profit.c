@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		01/06/2012
+*	Last modified:		06/06/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -166,7 +166,7 @@ OUTPUT	Pointer to an allocated fit structure (containing details about the
 	fit).
 NOTES	It is a modified version of the lm_minimize() of lmfit.
 AUTHOR	E. Bertin (IAP)
-VERSION	01/06/2012
+VERSION	06/06/2012
  ***/
 void	profit_fit(profitstruct *profit,
 		picstruct *field, picstruct *wfield,
@@ -177,13 +177,13 @@ void	profit_fit(profitstruct *profit,
     psfstruct		*psf;
     checkstruct		*check;
     double		emx2,emy2,emxy, a , cp,sp, cn, bn, n,
-			sump,sumq, sumpw2,sumqw2,sumpqw, sump0,sumq0;
+			sump,sumq, sumpw2,sumqw2,sumpqw, sump0,sumq0, err;
     PIXTYPE		valp,valq,sig2;
     float		param0[PARAM_NPARAM], param1[PARAM_NPARAM],
 			param[PARAM_NPARAM],
 			**list,
 			*cov,
-			psf_fwhm, dchi2, err, aspect, chi2;
+			psf_fwhm, dchi2, aspect, chi2;
     int			*index,
 			i,j,p, nparam, nparam2, ncomp, nprof;
 
