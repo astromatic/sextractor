@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1998-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1998-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		26/10/2011
+*	Last modified:		13/06/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -116,7 +116,7 @@ void	psf_end(psfstruct *psf, psfitstruct *psfit)
 /*
 Read the PSF data from a FITS file.
 */
-psfstruct	*psf_load(char *filename)
+psfstruct	*psf_load(char *filename, int ext)
   {
    static objstruct	saveobj;
    static obj2struct	saveobj2;
@@ -126,7 +126,7 @@ psfstruct	*psf_load(char *filename)
    keystruct		*key;
    char			*head, *ci,*co;
    int			deg[POLY_MAXDIM], group[POLY_MAXDIM], ndim, ngroup,
-			i,k;
+			e,i,k;
 
 /* Open the cat (well it is not a "cat", but simply a FITS file */
   if (!(cat = read_cat(filename)))
@@ -141,7 +141,10 @@ psfstruct	*psf_load(char *filename)
   else
     strcpy(psf->name, filename);
 
-  if (!(tab = name_to_tab(cat, "PSF_DATA", 0)))
+  tab = cat->tab;
+  for (i=cat->ntab, e=ext; i-- && (strcmp("PSF_DATA",tab->extname) || e--);
+	tab = tab->nexttab);
+  if (i<0)
     error(EXIT_FAILURE, "*Error*: PSF_DATA table not found in catalog ",
 	filename);
 

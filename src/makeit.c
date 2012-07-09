@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		02/11/2011
+*	Last modified:		13/06/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -78,7 +78,7 @@ void	makeit()
    unsigned int		modeltype;
    int			nflag[MAXFLAG], nparam2[2],
 			i, nok, ntab, next, ntabmax, forcextflag,
-			nima0,nima1, nweight0,nweight1, npat;
+			nima0,nima1, nweight0,nweight1, npat,npat0;
 
 /* Install error logging */
   error_installfunc(write_error);
@@ -110,14 +110,15 @@ void	makeit()
 
   if (prefs.psf_flag)
     {
+/*-- Read the first PSF extension to set up stuff such as context parameters */
     NFPRINTF(OUTPUT, "Reading PSF information");
     if (prefs.dpsf_flag)
       {
-      thedpsf = psf_load(prefs.psf_name[0]); 
-      thepsf = psf_load(prefs.psf_name[1]);
+      thedpsf = psf_load(prefs.psf_name[0],0); 
+      thepsf = psf_load(prefs.psf_name[1],0);
       }
     else
-      thepsf = psf_load(prefs.psf_name[0]); 
+      thepsf = psf_load(prefs.psf_name[0],0); 
  /*-- Need to check things up because of PSF context parameters */
     updateparamflags();
     useprefs();
@@ -146,14 +147,14 @@ void	makeit()
       thedprofit = profit_init(thedpsf, modeltype);
     if (prefs.pattern_flag)
       {
-      npat = prefs.prof_disk_patternvectorsize;
-      if (npat<prefs.prof_disk_patternmodvectorsize)
-        npat = prefs.prof_disk_patternmodvectorsize;
-      if (npat<prefs.prof_disk_patternargvectorsize)
-        npat = prefs.prof_disk_patternargvectorsize;
+      npat0 = prefs.prof_disk_patternvectorsize;
+      if (npat0<prefs.prof_disk_patternmodvectorsize)
+        npat0 = prefs.prof_disk_patternmodvectorsize;
+      if (npat0<prefs.prof_disk_patternargvectorsize)
+        npat0 = prefs.prof_disk_patternargvectorsize;
 /*---- Do a copy of the original number of pattern components */
-      prefs.prof_disk_patternncomp = npat;
-      pattern = pattern_init(theprofit, prefs.pattern_type, npat);
+      prefs.prof_disk_patternncomp = npat0;
+      pattern = pattern_init(theprofit, prefs.pattern_type, npat0);
       if (FLAG(obj2.prof_disk_patternvector))
         {
         npat = pattern->size[2];
@@ -180,8 +181,10 @@ void	makeit()
       }
     QPRINTF(OUTPUT, "\n");
     if (FLAG(obj2.prof_concentration)|FLAG(obj2.prof_concentration))
+      {
       thepprofit = profit_init(thepsf, MODEL_DIRAC);
       theqprofit = profit_init(thepsf, MODEL_EXPONENTIAL);
+      }
 #else
     error(EXIT_FAILURE,
 		"*Error*: model-fitting is not supported in this build.\n",
@@ -229,6 +232,7 @@ void	makeit()
 /* Check if a specific extension should be loaded */
   if ((nima0=selectext(prefs.image_name[0])) != RETURN_ERROR)
     {
+printf("%d\n", nima0);
     forcextflag = 1;
     ntabmax = next = 1;
     }
@@ -447,6 +451,48 @@ void	makeit()
       for (i=0; i<MAXCHECK; i++)
         if ((check=prefs.check[i]))
           reinitcheck(field, check);
+
+    if (nok || forcextflag)
+      {
+      if (prefs.psf_flag)
+        {
+/*------ Read other PSF extensions */
+        NFPRINTF(OUTPUT, "Reading PSF information");
+        psf_end(thepsf, thepsfit);
+        if (prefs.dpsf_flag)
+          {
+          psf_end(thedpsf, thedpsfit);
+          thedpsf = psf_load(prefs.psf_name[0], nima0<0? nok:nima0); 
+          thepsf = psf_load(prefs.psf_name[1], nima1<0? nok:nima1);
+          }
+        else
+          thepsf = psf_load(prefs.psf_name[0],nima0<0? nok:nima0); 
+        }
+
+      if (prefs.prof_flag)
+        {
+/*------ Create profiles at full resolution */
+        profit_end(theprofit);
+        theprofit = profit_init(thepsf, modeltype);
+        if (prefs.dprof_flag)
+          {
+          profit_end(thedprofit);
+          thedprofit = profit_init(thedpsf, modeltype);
+          }
+        if (prefs.pattern_flag)
+          {
+          pattern = pattern_init(theprofit, prefs.pattern_type, npat0);
+          pattern_end(pattern);
+          }
+        if (FLAG(obj2.prof_concentration)|FLAG(obj2.prof_concentration))
+          {
+          profit_end(thepprofit);
+          profit_end(theqprofit);
+          thepprofit = profit_init(thepsf, MODEL_DIRAC);
+          theqprofit = profit_init(thepsf, MODEL_EXPONENTIAL);
+          }
+        }
+      }
 
 /*-- Initialize PSF contexts and workspace */
     if (prefs.psf_flag)

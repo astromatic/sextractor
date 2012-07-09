@@ -23,7 +23,7 @@
 *	along with AstrOmatic software.
 *	If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		30/08/2011
+*	Last modified:		20/12/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -36,10 +36,15 @@
 #include	<stdlib.h>
 #include	<string.h>
 
-#include	"poly.h"
 #ifdef HAVE_ATLAS
-#include	ATLAS_LAPACK_H
+#include ATLAS_LAPACK_H
 #endif
+
+#ifdef HAVE_LAPACKE
+#include LAPACKE_H
+#endif
+
+#include	"poly.h"
 
 #define	QCALLOC(ptr, typ, nel) \
 		{if (!(ptr = (typ *)calloc((size_t)(nel),sizeof(typ)))) \
@@ -437,16 +442,16 @@ INPUT   Pointer to the (pseudo 2D) matrix of coefficients,
 OUTPUT  -.
 NOTES   -.
 AUTHOR  E. Bertin (IAP, Leiden observatory & ESO)
-VERSION 26/10/2010
+VERSION 20/12/2011
  ***/
 void	poly_solve(double *a, double *b, int n)
   {
-
-#ifdef HAVE_ATLAS
+#if defined(HAVE_LAPACKE)
+  LAPACKE_dposv(LAPACK_COL_MAJOR, 'L', n, 1, a, n, b, n);
+#elif defined(HAVE_ATLAS)
   clapack_dposv(CblasRowMajor, CblasUpper, n, 1, a, n, b, n);
 #else
-  if (cholsolve(a,b,n))
-    qerror("*Error*: singular matrix found ", "while deprojecting" );
+  cholsolve(a,b,n);
 #endif
 
   return;
@@ -454,7 +459,7 @@ void	poly_solve(double *a, double *b, int n)
 
 
 /****** cholsolve *************************************************************
-PROTO	void cholsolve(double *a, double *b, int n)
+PROTO	int cholsolve(double *a, double *b, int n)
 PURPOSE	Solve a system of linear equations, using Cholesky decomposition.
 INPUT	Pointer to the (pseudo 2D) matrix of coefficients,
 	pointer to the 1D column vector,

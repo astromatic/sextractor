@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		04/06/2012
+*	Last modified:		26/06/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -258,7 +258,7 @@ void	readimagehead(picstruct *field)
   tab = field->tab;
 
   if(tab->naxis < 2)
-    error(EXIT_FAILURE, field->filename, " does NOT contain 2D-data!");
+    error(EXIT_FAILURE, field->filename, " does NOT contain image data!");
 
 /*---------------------------- Basic keywords ------------------------------*/
   if (tab->bitpix != BP_BYTE

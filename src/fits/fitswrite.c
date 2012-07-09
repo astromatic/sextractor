@@ -7,7 +7,7 @@
 *
 *	This file part of:	AstrOmatic FITS/LDAC library
 *
-*	Copyright:		(C) 1995-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1995-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -23,7 +23,7 @@
 *	along with AstrOmatic software.
 *	If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		09/10/2010
+*	Last modified:		13/06/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -88,7 +88,7 @@ INPUT	pointer to the catalog structure,
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP & Leiden observatory)
-VERSION	02/11/2009
+VERSION	13/06/2012
  ***/
 void	save_tab(catstruct *cat, tabstruct *tab)
 
@@ -97,7 +97,7 @@ void	save_tab(catstruct *cat, tabstruct *tab)
    keystruct	*key;
    tabstruct	*keytab;
    KINGSIZE_T	tabsize;
-   KINGLONG	size;
+   long		size;
    int		b,j,k,o, nbytes,nkey,nobj,spoonful,
 		tabflag, larrayin,larrayout;
    char		*buf, *inbuf, *outbuf, *fptr,*ptr;
@@ -395,7 +395,7 @@ INPUT	Output stream
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP & Leiden observatory)
-VERSION	02/11/2009
+VERSION	13/06/2012
  ***/
 void	print_obj(FILE *stream, tabstruct *tab)
 
@@ -435,7 +435,7 @@ void	print_obj(FILE *stream, tabstruct *tab)
             putc(' ', stream);
           break;
         case T_LONGLONG:
-          fprintf(stream, *key->printf?key->printf:"%lld", *(LONGLONG *)ptr);
+          fprintf(stream, *key->printf?key->printf:"%lld", *(SLONGLONG *)ptr);
           if (i)
             putc(' ', stream);
           break;
@@ -477,7 +477,7 @@ INPUT	Output stream
 OUTPUT	-.
 NOTES	-.
 AUTHOR	G. Tissier & E.Bertin (IAP)
-VERSION	02/11/2009
+VERSION	13/06/2012
  ***/
 void	voprint_obj(FILE *stream, tabstruct *tab)
 
@@ -521,7 +521,7 @@ void	voprint_obj(FILE *stream, tabstruct *tab)
             putc(' ', stream);
           break;
         case T_LONGLONG:
-          fprintf(stream, *key->printf?key->printf:"%lld", *(LONGLONG *)ptr);
+          fprintf(stream, *key->printf?key->printf:"%lld", *(SLONGLONG *)ptr);
           if (i)
             putc(' ', stream);
           break;

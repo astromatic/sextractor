@@ -7,7 +7,7 @@
 *
 *	This file part of:	AstrOmatic FITS/LDAC library
 *
-*	Copyright:		(C) 1995-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1995-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -23,7 +23,7 @@
 *	along with AstrOmatic software.
 *	If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		09/10/2010
+*	Last modified:		13/06/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -588,7 +588,7 @@ NOTES	This is approximately the same code as for read_keys.
 	A NULL keynames pointer means read ALL keys belonging to the table.
 	A NULL mask pointer means NO selection for reading.
 AUTHOR	E. Bertin (IAP & Leiden observatory)
-VERSION	08/02/2010
+VERSION	13/06/2012
  ***/
 void	show_keys(tabstruct *tab, char **keynames, keystruct **keys, int nkeys,
 		BYTE *mask, FILE *stream,
@@ -864,7 +864,7 @@ void	show_keys(tabstruct *tab, char **keynames, keystruct **keys, int nkeys,
                 if (key_col[k] == 0 || key_col[k] == j+1) {
 #ifdef HAVE_LONG_LONG_INT
                    fprintf(stream, *key->printf?key->printf:"%lld",
-		         		*(LONGLONG *)ptr);
+		         		*(SLONGLONG *)ptr);
 #else
                    fprintf(stream, *key->printf?key->printf:"%d",
 		         		*(int *)ptr);
