@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/10/2010
+*	Last modified:		26/06/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -70,17 +70,11 @@ picstruct	*newfield(char *filename, int flags, int nok)
   field->flags = flags;
   field->cat = cat;
   tab = cat->tab;
-  nok++;	/* At least one pass through the loop */
   nok2 = nok;
-  for (ntab=cat->ntab; nok && ntab--; tab=tab->nexttab)
-    {
-    if ((tab->naxis < 2)
-	|| !strncmp(tab->xtension, "BINTABLE", 8)
-	|| !strncmp(tab->xtension, "ASCTABLE", 8))
-      continue;
-    field->tab = tab;
-    nok--;
-    }
+  for (ntab=cat->ntab; nok-- && ntab--;)
+    tab=tab->nexttab;
+  field->tab = tab;
+
   if (ntab<0)
     error(EXIT_FAILURE, "Not enough valid FITS image extensions in ",filename);
 

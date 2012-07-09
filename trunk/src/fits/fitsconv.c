@@ -7,7 +7,7 @@
 *
 *	This file part of:	AstrOmatic FITS/LDAC library
 *
-*	Copyright:		(C) 1995-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1995-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -23,7 +23,7 @@
 *	along with AstrOmatic software.
 *	If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		09/10/2010
+*	Last modified:		13/06/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -146,7 +146,7 @@ INPUT	Pointer to element to convert,
 OUTPUT	-.
 NOTES	ttypeconv does not yet handle arrays.
 AUTHOR  E. Bertin (IAP)
-VERSION 19/11/2009
+VERSION 13/06/2012
  ***/
 
 void	ttypeconv(void *ptrin, void *ptrout, t_type ttypein, t_type ttypeout)
@@ -170,7 +170,7 @@ void	ttypeconv(void *ptrin, void *ptrout, t_type ttypein, t_type ttypeout)
            *((int *)ptrout) = (int)x;		\
            break;				\
          case T_LONGLONG:			\
-           *((LONGLONG *)ptrout) = (LONGLONG)x;	\
+           *((SLONGLONG *)ptrout) = (SLONGLONG)x;	\
            break;				\
          case T_FLOAT:				\
            *((float *)ptrout) = (float)x;	\
@@ -220,7 +220,7 @@ void	ttypeconv(void *ptrin, void *ptrout, t_type ttypein, t_type ttypeout)
       break;
 #ifdef HAVE_LONG_LONG_INT
     case T_LONGLONG:
-      OUTCONV(*(LONGLONG *)ptrin, ttypeout);
+      OUTCONV(*(SLONGLONG *)ptrin, ttypeout);
       break;
 #endif
     case T_FLOAT:

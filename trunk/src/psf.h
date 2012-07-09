@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1998-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1998-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		26/10/2011
+*	Last modified:		13/06/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -128,7 +128,7 @@ extern double	*compute_gradient (float *weight,int width, int height,
 			float *masks, double *pm),
 		psf_fwhm(psfstruct *psf);
 
-extern psfstruct	*psf_load(char *filename);
+extern psfstruct	*psf_load(char *filename, int ext);
 
 extern void	pc_end(pcstruct *pc),
 		pc_fit(psfstruct *psf, float *data, float *weight,
