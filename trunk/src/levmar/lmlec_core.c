@@ -5,8 +5,8 @@
 *
 *	This file part of:	AstrOmatic software
 *
-*	Copyright:		(C) 2007-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
-*				(C) 2004 Manolis Lourakis (original version)
+*	Copyright:		(C) 2007-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
+*				(C) 2004-2011 Manolis Lourakis (orig. version)
 *
 *	Licenses:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	along with AstrOmatic software.
 *	If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		25/10/2010
+*	Last modified:		09/07/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 /////////////////////////////////////////////////////////////////////////////////
@@ -75,6 +75,9 @@ struct LMLEC_DATA{
 };
 
 /* prototypes for LAPACK routines */
+#ifdef __cplusplus
+extern "C" {
+#endif
 extern int GEQP3(int *m, int *n, LM_REAL *a, int *lda, int *jpvt,
                    LM_REAL *tau, LM_REAL *work, int *lwork, int *info);
 
@@ -82,6 +85,9 @@ extern int ORGQR(int *m, int *n, int *k, LM_REAL *a, int *lda, LM_REAL *tau,
                    LM_REAL *work, int *lwork, int *info);
 
 extern int TRTRI(char *uplo, char *diag, int *n, LM_REAL *a, int *lda, int *info);
+#ifdef __cplusplus
+}
+#endif
 
 /*
  * This function implements an elimination strategy for linearly constrained
@@ -203,16 +209,17 @@ register int i, j, k;
   }
 
   /* compute the permuted inverse transpose of R */
-  /* first, copy R from the upper triangular part of a to r. R is rank x rank */
+  /* first, copy R from the upper triangular part of a to the lower part of r (thus transposing it). R is rank x rank */
   for(j=0; j<rank; ++j){
     for(i=0; i<=j; ++i)
-      r[i+j*rank]=a[i+j*tm];
+      r[j+i*rank]=a[i+j*tm];
     for(i=j+1; i<rank; ++i)
-      r[i+j*rank]=0.0; // lower part is zero
+      r[j+i*rank]=0.0; // upper part is zero
   }
+  /* r now contains R^T */
 
   /* compute the inverse */
-  TRTRI("U", "N", (int *)&rank, r, (int *)&rank, &info);
+  TRTRI("L", "N", (int *)&rank, r, (int *)&rank, &info);
   /* error checking */
   if(info!=0){
     if(info<0){
@@ -223,14 +230,6 @@ register int i, j, k;
     }
     free(buf);
     return LM_ERROR;
-  }
-  /* then, transpose r in place */
-  for(i=0; i<rank; ++i)
-    for(j=i+1; j<rank; ++j){
-      tmp=r[i+j*rank];
-      k=j+i*rank;
-      r[i+j*rank]=r[k];
-      r[k]=tmp;
   }
 
   /* finally, permute R^-T using Y as intermediate storage */

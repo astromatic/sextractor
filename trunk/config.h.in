@@ -68,6 +68,15 @@
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
+/* Second isnan check */
+#undef HAVE_ISNAN2
+
+/* Define if you have the LAPACK libraries. */
+#undef HAVE_LAPACK
+
+/* Define if you have the LAPACKe libraries. */
+#undef HAVE_LAPACKE
+
 /* Define to 1 if you have the `cblas' library (-lcblas). */
 #undef HAVE_LIBCBLAS
 
@@ -119,6 +128,9 @@
 /* Define if you have POSIX threads libraries and header files. */
 #undef HAVE_PTHREAD
 
+/* Define to 1 if you have the `setlinebuf' function. */
+#undef HAVE_SETLINEBUF
+
 /* Define to 1 if you have the `sincosf' function. */
 #undef HAVE_SINCOSF
 
@@ -144,6 +156,9 @@
 /* Define to 1 if you have the `strstr' function. */
 #undef HAVE_STRSTR
 
+/* Define to 1 if you have the `sysconf' function. */
+#undef HAVE_SYSCONF
+
 /* Define to 1 if you have the <sys/mman.h> header file. */
 #undef HAVE_SYS_MMAN_H
 
@@ -162,9 +177,19 @@
 /* Define to 1 if the system has the type `unsigned long long int'. */
 #undef HAVE_UNSIGNED_LONG_LONG_INT
 
+/* LAPACKe header filename. */
+#undef LAPACKE_H
+
+/* LAPACK header filename. */
+#undef LAPACK_H
+
 /* Define to 1 if `lstat' dereferences a symlink specified with a trailing
    slash. */
 #undef LSTAT_FOLLOWS_SLASHED_SYMLINK
+
+/* Define to the sub-directory in which libtool stores uninstalled libraries.
+   */
+#undef LT_OBJDIR
 
 /* Name of package */
 #undef PACKAGE

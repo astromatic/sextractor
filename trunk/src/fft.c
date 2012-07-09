@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 2007-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 2007-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/10/2010
+*	Last modified:		09/07/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -30,11 +30,16 @@
 #include "config.h"
 #endif
 
+#ifdef USE_THREADS
+#include <pthread.h>
+#endif
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 
+#ifndef FFTW3_H
 #include FFTW_H
+#endif
 
 #include "define.h"
 #include "globals.h"
@@ -45,12 +50,12 @@
 #endif
 
  fftwf_plan	fplan, bplan;
- int    firsttimeflag;
+ int    	firsttimeflag;
+
 #ifdef USE_THREADS
  pthread_mutex_t	fftmutex;
 #endif
- fftwf_complex 	*fdata1;
-#define SWAP(a,b)       tempr=(a);(a)=(b);(b)=tempr
+ fftwf_complex 		*fdata1;
 
 /****** fft_init ************************************************************
 PROTO	void fft_init(void)
@@ -66,15 +71,12 @@ void    fft_init(int nthreads)
   if (!firsttimeflag)
     {
 #ifdef USE_THREADS
-    QPTHREAD_MUTEX_INIT(&fftmutex, NULL);
-#ifdef HAVE_FFTW_MP
     if (nthreads > 1)
       {
       if (!fftw_init_threads())
         error(EXIT_FAILURE, "*Error*: thread initialization failed in ", "FFTW");
       fftwf_plan_with_nthreads(prefs.nthreads);
       }
-#endif
 #endif
     firsttimeflag = 1;
     }
@@ -98,12 +100,6 @@ void    fft_end(void)
   if (firsttimeflag)
     {
     firsttimeflag = 0;
-#ifdef USE_THREADS
-#ifdef HAVE_FFTW_MP
-    fftwf_cleanup_threads();
-#endif
-    QPTHREAD_MUTEX_DESTROY(&fftmutex);
-#endif
     fftwf_cleanup();
     }
 
@@ -145,7 +141,7 @@ OUTPUT	-.
 NOTES	For data1 and fdata2, memory must be allocated for
 	size[0]* ... * 2*(size[naxis-1]/2+1) floats (padding required).
 AUTHOR	E. Bertin (IAP)
-VERSION	01/12/2009
+VERSION	09/07/2012
  ***/
 void    fft_conv(float *data1, float *fdata2, int *size)
   {
@@ -155,38 +151,23 @@ void    fft_conv(float *data1, float *fdata2, int *size)
 
 /* Convert axis indexing to that of FFTW */
   npix = size[0]*size[1];
-  npix2 = (((size[0]/2) + 1)*2) * size[1];
+  npix2 = ((size[0]/2) + 1) * size[1];
 
 /* Forward FFT "in place" for data1 */
-#ifdef USE_THREADS
-  QPTHREAD_MUTEX_LOCK(&fftmutex);
-#endif
   if (!fplan)
     {
     QFFTWMALLOC(fdata1, fftwf_complex, npix2);
     fplan = fftwf_plan_dft_r2c_2d(size[1], size[0], data1,
         (fftwf_complex *)fdata1, FFTW_ESTIMATE);
     }
-#ifdef USE_THREADS
-  QPTHREAD_MUTEX_UNLOCK(&fftmutex);
-#endif
+
   fftwf_execute_dft_r2c(fplan, data1, fdata1);
-
-//  fftwf_execute(plan);
-
-#ifdef USE_THREADS
-  QPTHREAD_MUTEX_LOCK(&fftmutex);
-#endif
-//  fftwf_destroy_plan(plan);
-#ifdef USE_THREADS
-  QPTHREAD_MUTEX_UNLOCK(&fftmutex);
-#endif
 
 /* Actual convolution (Fourier product) */
   fac = 1.0/npix;  
   fdata1p = (float *)fdata1;
   fdata2p = fdata2;
-  for (i=npix2/2; i--; fdata2p+=2)
+  for (i=npix2; i--; fdata2p+=2)
     {
     real = *fdata1p **fdata2p - *(fdata1p+1)**(fdata2p+1);
     imag = *(fdata1p+1)**fdata2p + *fdata1p**(fdata2p+1);
@@ -195,27 +176,13 @@ void    fft_conv(float *data1, float *fdata2, int *size)
     }
 
 /* Reverse FFT */
-#ifdef USE_THREADS
-  QPTHREAD_MUTEX_LOCK(&fftmutex);
-#endif
   if (!bplan)
     bplan = fftwf_plan_dft_c2r_2d(size[1], size[0], (fftwf_complex *)fdata1, 
         data1, FFTW_ESTIMATE);
-#ifdef USE_THREADS
-  QPTHREAD_MUTEX_UNLOCK(&fftmutex);
-#endif
   fftwf_execute_dft_c2r(bplan, fdata1, data1);
 
 //  fftwf_execute(plan);
 
-#ifdef USE_THREADS
-  QPTHREAD_MUTEX_LOCK(&fftmutex);
-#endif
-//  fftwf_destroy_plan(plan);
-/* Free the fdata1 scratch array */
-#ifdef USE_THREADS
-  QPTHREAD_MUTEX_UNLOCK(&fftmutex);
-#endif
 
   return;
   }
@@ -241,23 +208,10 @@ float	*fft_rtf(float *data, int *size)
   npix2 = ((size[0]/2) + 1) * size[1];
 
 /* Forward FFT "in place" for data1 */
-#ifdef USE_THREADS
-  QPTHREAD_MUTEX_LOCK(&fftmutex);
-#endif
   QFFTWMALLOC(fdata, fftwf_complex, npix2);
-  plan = fftwf_plan_dft_r2c_2d(size[1], size[0], data,
-        fdata, FFTW_ESTIMATE);
-#ifdef USE_THREADS
-  QPTHREAD_MUTEX_UNLOCK(&fftmutex);
-#endif
+  plan = fftwf_plan_dft_r2c_2d(size[1], size[0], data, fdata, FFTW_ESTIMATE);
   fftwf_execute(plan);
-#ifdef USE_THREADS
-  QPTHREAD_MUTEX_LOCK(&fftmutex);
-#endif
   fftwf_destroy_plan(plan);
-#ifdef USE_THREADS
-  QPTHREAD_MUTEX_UNLOCK(&fftmutex);
-#endif
 
   return (float *)fdata;
   }

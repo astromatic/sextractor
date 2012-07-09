@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 2007-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 2007-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/10/2010
+*	Last modified:		09/07/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -40,7 +40,6 @@
 #include	<stdio.h>
 #include	<stdlib.h>
 #include	<string.h>
-#include	ATLAS_LAPACK_H
 
 #include	"define.h"
 #include	"globals.h"
@@ -50,6 +49,14 @@
 #include	"check.h"
 #include	"pattern.h"
 #include	"profit.h"
+
+#ifdef HAVE_ATLAS
+#include ATLAS_LAPACK_H
+#endif
+
+#ifdef HAVE_LAPACKE
+#include LAPACKE_H
+#endif
 
 static double	psf_laguerre(double x, int p, int q);
 
@@ -152,7 +159,7 @@ INPUT	Pointer to pattern structure.
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	18/11/2009
+VERSION	09/07/2012
  ***/
 void	pattern_fit(patternstruct *pattern, profitstruct *profit)
   {
@@ -210,8 +217,12 @@ void	pattern_fit(patternstruct *pattern, profitstruct *profit)
     }
 
 /* Solve the system */
-  clapack_dpotrf(CblasRowMajor,CblasUpper,nvec,alpha,nvec);
-  clapack_dpotrs(CblasRowMajor,CblasUpper,nvec,1,alpha,nvec,beta,nvec);
+#if defined(HAVE_LAPACKE)
+  LAPACKE_dposv(LAPACK_COL_MAJOR, 'L', nvec, 1, alpha, nvec, beta, nvec);
+#else
+  clapack_dposv(CblasRowMajor, CblasUpper, nvec, 1, alpha, nvec, beta, nvec);
+#endif
+
   betat = beta;
   coefft = pattern->coeff;
   for (p=nvec; p--;)

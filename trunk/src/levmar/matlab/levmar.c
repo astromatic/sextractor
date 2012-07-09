@@ -220,15 +220,16 @@ double *mp;
 
 
 /*
-[ret, p, info, covar]=levmar_der (f, j, p0, x, itmax, opts, 'unc'                        ...)
-[ret, p, info, covar]=levmar_bc  (f, j, p0, x, itmax, opts, 'bc',   lb, ub,              ...)
-[ret, p, info, covar]=levmar_lec (f, j, p0, x, itmax, opts, 'lec',          A, b,        ...)
-[ret, p, info, covar]=levmar_blec(f, j, p0, x, itmax, opts, 'blec', lb, ub, A, b, wghts, ...)
+[ret, p, info, covar]=levmar_der (f, j, p0, x, itmax, opts, 'unc'                              ...)
+[ret, p, info, covar]=levmar_bc  (f, j, p0, x, itmax, opts, 'bc',   lb, ub,                    ...)
+[ret, p, info, covar]=levmar_bc  (f, j, p0, x, itmax, opts, 'bc',   lb, ub, dscl,              ...)
+[ret, p, info, covar]=levmar_lec (f, j, p0, x, itmax, opts, 'lec',                A, b,        ...)
+[ret, p, info, covar]=levmar_blec(f, j, p0, x, itmax, opts, 'blec', lb, ub,       A, b, wghts, ...)
 
-[ret, p, info, covar]=levmar_bleic(f, j, p0, x, itmax, opts, 'bleic', lb, ub, A, b, C, d, ...)
-[ret, p, info, covar]=levmar_blic (f, j, p0, x, itmax, opts, 'blic',  lb, ub,       C, d, ...)
-[ret, p, info, covar]=levmar_leic (f, j, p0, x, itmax, opts, 'leic',          A, b, C, d, ...)
-[ret, p, info, covar]=levmar_lic  (f, j, p0, x, itmax, opts, 'lic',                 C, d, ...)
+[ret, p, info, covar]=levmar_bleic(f, j, p0, x, itmax, opts, 'bleic', lb, ub,       A, b, C, d, ...)
+[ret, p, info, covar]=levmar_blic (f, j, p0, x, itmax, opts, 'blic',  lb, ub,             C, d, ...)
+[ret, p, info, covar]=levmar_leic (f, j, p0, x, itmax, opts, 'leic',                A, b, C, d, ...)
+[ret, p, info, covar]=levmar_lic  (f, j, p0, x, itmax, opts, 'lic',                       C, d, ...)
 
 */
 
@@ -243,7 +244,7 @@ double *p, *p0, *ret, *x;
 int m, n, havejac, Arows, Crows, itmax, nopts, mintype, nextra;
 double opts[LM_OPTS_SZ]={LM_INIT_MU, LM_STOP_THRESH, LM_STOP_THRESH, LM_STOP_THRESH, LM_DIFF_DELTA};
 double info[LM_INFO_SZ];
-double *lb=NULL, *ub=NULL, *A=NULL, *b=NULL, *wghts=NULL, *C=NULL, *d=NULL, *covar=NULL;
+double *lb=NULL, *ub=NULL, *dscl=NULL, *A=NULL, *b=NULL, *wghts=NULL, *C=NULL, *d=NULL, *covar=NULL;
 
   /* parse input args; start by checking their number */
   if((nrhs<5))
@@ -410,6 +411,20 @@ if(!mxIsDouble(prhs[1]) || mxIsComplex(prhs[1]) || !(mxGetM(prhs[1])==1 && mxGet
     }
   }
 
+  /** dscl **/
+  if(nrhs>=7 && (mintype==MIN_CONSTRAINED_BC)){
+    /* check if the next argument is a real row or column vector */
+    if(mxIsDouble(prhs[5]) && !mxIsComplex(prhs[5]) && (mxGetM(prhs[5])==1 || mxGetN(prhs[5])==1)){
+      if((i=__MAX__(mxGetM(prhs[5]), mxGetN(prhs[5])))!=m)
+        matlabFmtdErrMsgTxt("levmar: dscl must have %d elements, got %d.", m, i);
+
+      dscl=mxGetPr(prhs[5]);
+
+      ++prhs;
+      --nrhs;
+    }
+  }
+
   /** A, b **/
   if(nrhs>=7 && (mintype==MIN_CONSTRAINED_LEC || mintype==MIN_CONSTRAINED_BLEC || mintype==MIN_CONSTRAINED_LEIC || mintype==MIN_CONSTRAINED_BLEIC)){
     /* check if the next two arguments are a real matrix and a real row or column vector */
@@ -519,9 +534,9 @@ extraargs:
     break;
     case MIN_CONSTRAINED_BC: /* box constraints */
       if(havejac)
-        status=dlevmar_bc_der(func, jacfunc, p, x, m, n, lb, ub, itmax, opts, info, NULL, covar, (void *)&mdata);
+        status=dlevmar_bc_der(func, jacfunc, p, x, m, n, lb, ub, dscl, itmax, opts, info, NULL, covar, (void *)&mdata);
       else
-        status=dlevmar_bc_dif(func,          p, x, m, n, lb, ub, itmax, opts, info, NULL, covar, (void *)&mdata);
+        status=dlevmar_bc_dif(func,          p, x, m, n, lb, ub, dscl, itmax, opts, info, NULL, covar, (void *)&mdata);
 #ifdef DEBUG
   fflush(stderr);
   fprintf(stderr, "LEVMAR: calling dlevmar_bc_der()/dlevmar_bc_dif()\n");

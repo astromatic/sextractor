@@ -39,6 +39,10 @@
 #include	<stdlib.h>
 #include	<string.h>
 
+#ifndef FFTW3_H
+#include FFTW_H
+#endif
+
 #include	"define.h"
 #include	"globals.h"
 #include	"prefs.h"
@@ -145,7 +149,7 @@ void	profit_end(profitstruct *profit)
   free(profit->resi);
   free(profit->prof);
   free(profit->covar);
-  free(profit->psfdft);
+  fftwf_free(profit->psfdft);
   free(profit);
 
   return;
@@ -190,9 +194,11 @@ void	profit_fit(profitstruct *profit,
   nparam = profit->nparam;
   nparam2 = nparam*nparam;
   nprof = profit->nprof;
+
   if (profit->psfdft)
     {
-    QFREE(profit->psfdft);
+    fftwf_free(profit->psfdft);
+    profit->psfdft = NULL;
     }
 
   psf = profit->psf;

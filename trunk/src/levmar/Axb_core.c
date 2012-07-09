@@ -76,7 +76,11 @@
 #define GESDD LM_MK_LAPACK_NAME(gesdd)
 #define SYTRF LM_MK_LAPACK_NAME(sytrf)
 #define SYTRS LM_MK_LAPACK_NAME(sytrs)
+#define PLASMA_POSV LM_CAT_(PLASMA_, LM_ADD_PREFIX(posv))
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 /* QR decomposition */
 extern int GEQRF(int *m, int *n, LM_REAL *a, int *lda, LM_REAL *tau, LM_REAL *work, int *lwork, int *info);
 extern int ORGQR(int *m, int *n, int *k, LM_REAL *a, int *lda, LM_REAL *tau, LM_REAL *work, int *lwork, int *info);
@@ -106,6 +110,9 @@ extern int GESDD(char *jobz, int *m, int *n, LM_REAL *a, int *lda, LM_REAL *s, L
 /* LDLt/UDUt factorization and systems solution */
 extern int SYTRF(char *uplo, int *n, LM_REAL *a, int *lda, int *ipiv, LM_REAL *work, int *lwork, int *info);
 extern int SYTRS(char *uplo, int *n, int *nrhs, LM_REAL *a, int *lda, int *ipiv, LM_REAL *b, int *ldb, int *info);
+#ifdef __cplusplus
+}
+#endif
 
 /* precision-specific definitions */
 #define AX_EQ_B_QR LM_ADD_PREFIX(Ax_eq_b_QR)
@@ -114,6 +121,7 @@ extern int SYTRS(char *uplo, int *n, int *nrhs, LM_REAL *a, int *lda, int *ipiv,
 #define AX_EQ_B_LU LM_ADD_PREFIX(Ax_eq_b_LU)
 #define AX_EQ_B_SVD LM_ADD_PREFIX(Ax_eq_b_SVD)
 #define AX_EQ_B_BK LM_ADD_PREFIX(Ax_eq_b_BK)
+#define AX_EQ_B_PLASMA_CHOL LM_ADD_PREFIX(Ax_eq_b_PLASMA_Chol)
 
 /*
  * This function returns the solution of Ax = b
@@ -221,8 +229,7 @@ register LM_REAL sum;
   }
 
   /* R is stored in the upper triangular part of a; copy it in r so that ORGQR() below won't destroy it */ 
-  for(i=0; i<r_sz; i++)
-    r[i]=a[i];
+  memcpy(r, a, r_sz*sizeof(LM_REAL));
 
   /* compute Q using the elementary reflectors computed by the above decomposition */
   ORGQR((int *)&m, (int *)&m, (int *)&m, a, (int *)&m, tau, work, (int *)&worksz, (int *)&info);
@@ -450,9 +457,9 @@ register LM_REAL sum;
  *
  * The function assumes that A is symmetric & postive definite and employs
  * the Cholesky decomposition:
- * If A=U^T U with U upper triangular, the system to be solved becomes
- * (U^T U) x = b
- * This amount to solving U^T y = b for y and then U x = y for x
+ * If A=L L^T with L lower triangular, the system to be solved becomes
+ * (L L^T) x = b
+ * This amounts to solving L y = b for y and then L^T x = y for x
  *
  * A is mxm, b is mx1
  *
@@ -470,7 +477,6 @@ __STATIC__ int buf_sz=0;
 
 LM_REAL *a;
 int a_sz, tot_sz;
-register int i;
 int info, nrhs=1;
    
     if(!A)
@@ -510,21 +516,17 @@ int info, nrhs=1;
       }
 #endif /* LINSOLVERS_RETAIN_MEMORY */
 
-    a=buf;
+  a=buf;
 
-    /* store A into a and B into x. A is assumed symmetric,
-     * hence no transposition is needed
-     */
-    for(i=0; i<m; i++){
-      a[i]=A[i];
-      x[i]=B[i];
-    }
-    for(i=m; i<m*m; i++)
-      a[i]=A[i];
+  /* store A into a and B into x. A is assumed symmetric,
+   * hence no transposition is needed
+   */
+  memcpy(a, A, a_sz*sizeof(LM_REAL));
+  memcpy(x, B, m*sizeof(LM_REAL));
 
   /* Cholesky decomposition of A */
-  //POTF2("U", (int *)&m, a, (int *)&m, (int *)&info);
-  POTRF("U", (int *)&m, a, (int *)&m, (int *)&info);
+  //POTF2("L", (int *)&m, a, (int *)&m, (int *)&info);
+  POTRF("L", (int *)&m, a, (int *)&m, (int *)&info);
   /* error treatment */
   if(info!=0){
     if(info<0){
@@ -543,15 +545,15 @@ int info, nrhs=1;
   }
 
   /* solve using the computed Cholesky in one lapack call */
-  POTRS("U", (int *)&m, (int *)&nrhs, a, (int *)&m, x, (int *)&m, &info);
+  POTRS("L", (int *)&m, (int *)&nrhs, a, (int *)&m, x, (int *)&m, &info);
   if(info<0){
     fprintf(stderr, RCAT(RCAT("LAPACK error: illegal value for argument %d of ", POTRS) " in ", AX_EQ_B_CHOL) "()\n", -info);
     exit(1);
   }
 
 #if 0
-  /* alternative: solve the linear system U^T y = b ... */
-  TRTRS("U", "T", "N", (int *)&m, (int *)&nrhs, a, (int *)&m, x, (int *)&m, &info);
+  /* alternative: solve the linear system L y = b ... */
+  TRTRS("L", "N", "N", (int *)&m, (int *)&nrhs, a, (int *)&m, x, (int *)&m, &info);
   /* error treatment */
   if(info!=0){
     if(info<0){
@@ -568,8 +570,8 @@ int info, nrhs=1;
     }
   }
 
-  /* ... solve the linear system U x = y */
-  TRTRS("U", "N", "N", (int *)&m, (int *)&nrhs, a, (int *)&m, x, (int *)&m, &info);
+  /* ... solve the linear system L^T x = y */
+  TRTRS("L", "T", "N", (int *)&m, (int *)&nrhs, a, (int *)&m, x, (int *)&m, &info);
   /* error treatment */
   if(info!=0){
     if(info<0){
@@ -593,6 +595,155 @@ int info, nrhs=1;
 
 	return 1;
 }
+
+#ifdef HAVE_PLASMA
+
+/* Linear algebra using PLASMA parallel library for multicore CPUs.
+ * http://icl.cs.utk.edu/plasma/
+ *
+ * WARNING: BLAS multithreading should be disabled, e.g. setenv MKL_NUM_THREADS 1
+ */
+
+#ifndef _LM_PLASMA_MISC_
+/* avoid multiple inclusion of helper code */
+#define _LM_PLASMA_MISC_
+
+#include <plasma.h>
+#include <cblas.h>
+#include <lapacke.h>
+#include <plasma_tmg.h>
+#include <core_blas.h>
+
+/* programmatically determine the number of cores on the current machine */
+#ifdef _WIN32
+#include <windows.h>
+#elif __linux
+#include <unistd.h>
+#endif
+static int getnbcores()
+{
+#ifdef _WIN32
+  SYSTEM_INFO sysinfo;
+  GetSystemInfo(&sysinfo);
+  return sysinfo.dwNumberOfProcessors;
+#elif __linux
+  return sysconf(_SC_NPROCESSORS_ONLN);
+#else // unknown system
+  return 2<<1; // will be halved by right shift below
+#endif
+}
+
+static int PLASMA_ncores=-(getnbcores()>>1); // >0 if PLASMA initialized, <0 otherwise
+
+/* user-specified number of cores */
+void levmar_PLASMA_setnbcores(int cores)
+{
+  PLASMA_ncores=(cores>0)? -cores : ((cores)? cores : -2);
+}
+#endif /* _LM_PLASMA_MISC_ */
+
+/*
+ * This function returns the solution of Ax=b
+ *
+ * The function assumes that A is symmetric & positive definite and employs the
+ * Cholesky decomposition implemented by PLASMA for homogeneous multicore processors.
+ *
+ * A is mxm, b is mx1
+ *
+ * The function returns 0 in case of error, 1 if successfull
+ *
+ * This function is often called repetitively to solve problems of identical
+ * dimensions. To avoid repetitive malloc's and free's, allocated memory is
+ * retained between calls and free'd-malloc'ed when not of the appropriate size.
+ * A call with NULL as the first argument forces this memory to be released.
+ */
+int AX_EQ_B_PLASMA_CHOL(LM_REAL *A, LM_REAL *B, LM_REAL *x, int m)
+{
+__STATIC__ LM_REAL *buf=NULL;
+__STATIC__ int buf_sz=0;
+
+LM_REAL *a;
+int a_sz, tot_sz;
+int info, nrhs=1;
+
+    if(A==NULL){
+#ifdef LINSOLVERS_RETAIN_MEMORY
+      if(buf) free(buf);
+      buf=NULL;
+      buf_sz=0;
+#endif /* LINSOLVERS_RETAIN_MEMORY */
+
+      PLASMA_Finalize();
+      PLASMA_ncores=-PLASMA_ncores;
+
+      return 1;
+    }
+
+    /* calculate required memory size */
+    a_sz=m*m;
+    tot_sz=a_sz;
+
+#ifdef LINSOLVERS_RETAIN_MEMORY
+    if(tot_sz>buf_sz){ /* insufficient memory, allocate a "big" memory chunk at once */
+      if(buf) free(buf); /* free previously allocated memory */
+
+      buf_sz=tot_sz;
+      buf=(LM_REAL *)malloc(buf_sz*sizeof(LM_REAL));
+      if(!buf){
+        fprintf(stderr, RCAT("memory allocation in ", AX_EQ_B_PLASMA_CHOL) "() failed!\n");
+        exit(1);
+      }
+    }
+#else
+    buf_sz=tot_sz;
+    buf=(LM_REAL *)malloc(buf_sz*sizeof(LM_REAL));
+    if(!buf){
+      fprintf(stderr, RCAT("memory allocation in ", AX_EQ_B_PLASMA_CHOL) "() failed!\n");
+      exit(1);
+    }
+#endif /* LINSOLVERS_RETAIN_MEMORY */
+
+    a=buf;
+
+    /* store A into a and B into x; A is assumed to be symmetric,
+     * hence no transposition is needed
+     */
+    memcpy(a, A, a_sz*sizeof(LM_REAL));
+    memcpy(x, B, m*sizeof(LM_REAL));
+
+  /* initialize PLASMA */
+  if(PLASMA_ncores<0){
+    PLASMA_ncores=-PLASMA_ncores;
+    PLASMA_Init(PLASMA_ncores);
+    fprintf(stderr, RCAT("\n", AX_EQ_B_PLASMA_CHOL) "(): PLASMA is running on %d cores.\n\n", PLASMA_ncores);
+  }
+  
+  /* Solve the linear system */
+  info=PLASMA_POSV(PlasmaLower, m, 1, a, m, x, m);
+  /* error treatment */
+  if(info!=0){
+    if(info<0){
+      fprintf(stderr, RCAT(RCAT("LAPACK error: illegal value for argument %d of ", PLASMA_POSV) " in ",
+                      AX_EQ_B_PLASMA_CHOL) "()\n", -info);
+      exit(1);
+    }
+    else{
+      fprintf(stderr, RCAT(RCAT("LAPACK error: the leading minor of order %d is not positive definite,\n"
+                                "the factorization could not be completed for ", PLASMA_POSV) " in ", AX_EQ_B_CHOL) "()\n", info);
+#ifndef LINSOLVERS_RETAIN_MEMORY
+      free(buf);
+#endif
+      return 0;
+    }
+  }
+
+#ifndef LINSOLVERS_RETAIN_MEMORY
+  free(buf);
+#endif
+
+	return 1;
+}
+#endif /* HAVE_PLASMA */
 
 /*
  * This function returns the solution of Ax = b
@@ -859,9 +1010,9 @@ int info, rank, worksz, *iwork, iworksz;
 /*
  * This function returns the solution of Ax = b for a real symmetric matrix A
  *
- * The function is based on UDUT factorization with the pivoting
+ * The function is based on LDLT factorization with the pivoting
  * strategy of Bunch and Kaufman:
- * A is factored as U*D*U^T where U is upper triangular and
+ * A is factored as L*D*L^T where L is lower triangular and
  * D symmetric and block diagonal (aka spectral decomposition,
  * Banachiewicz factorization, modified Cholesky factorization)
  *
@@ -881,7 +1032,6 @@ __STATIC__ int buf_sz=0, nb=0;
 
 LM_REAL *a, *work;
 int a_sz, ipiv_sz, work_sz, tot_sz;
-register int i, j;
 int info, *ipiv, nrhs=1;
    
   if(!A)
@@ -904,7 +1054,7 @@ int info, *ipiv, nrhs=1;
     LM_REAL tmp;
 
     work_sz=-1; // workspace query; optimal size is returned in tmp
-    SYTRF("U", (int *)&m, NULL, (int *)&m, NULL, (LM_REAL *)&tmp, (int *)&work_sz, (int *)&info);
+    SYTRF("L", (int *)&m, NULL, (int *)&m, NULL, (LM_REAL *)&tmp, (int *)&work_sz, (int *)&info);
     nb=((int)tmp)/m; // optimal worksize is m*nb
   }
   work_sz=(nb!=-1)? nb*m : 1;
@@ -937,15 +1087,11 @@ int info, *ipiv, nrhs=1;
   /* store A into a and B into x; A is assumed to be symmetric, hence
    * the column and row major order representations are the same
    */
-  for(i=0; i<m; ++i){
-    a[i]=A[i];
-    x[i]=B[i];
-  }
-  for(j=m*m; i<j; ++i) // copy remaining rows; note that i is not re-initialized
-    a[i]=A[i];
+  memcpy(a, A, a_sz*sizeof(LM_REAL));
+  memcpy(x, B, m*sizeof(LM_REAL));
 
-  /* UDUt factorization for A */
-	SYTRF("U", (int *)&m, a, (int *)&m, ipiv, work, (int *)&work_sz, (int *)&info);
+  /* LDLt factorization for A */
+	SYTRF("L", (int *)&m, a, (int *)&m, ipiv, work, (int *)&work_sz, (int *)&info);
 	if(info!=0){
 		if(info<0){
       fprintf(stderr, RCAT(RCAT("LAPACK error: illegal value for argument %d of ", SYTRF) " in ", AX_EQ_B_BK) "()\n", -info);
@@ -962,7 +1108,7 @@ int info, *ipiv, nrhs=1;
 	}
 
   /* solve the system with the computed factorization */
-  SYTRS("U", (int *)&m, (int *)&nrhs, a, (int *)&m, ipiv, x, (int *)&m, (int *)&info);
+  SYTRS("L", (int *)&m, (int *)&nrhs, a, (int *)&m, ipiv, x, (int *)&m, (int *)&info);
   if(info<0){
     fprintf(stderr, RCAT(RCAT("LAPACK error: illegal value for argument %d of ", SYTRS) " in ", AX_EQ_B_BK) "()\n", -info);
     exit(1);
@@ -982,6 +1128,7 @@ int info, *ipiv, nrhs=1;
 #undef AX_EQ_B_LU
 #undef AX_EQ_B_SVD
 #undef AX_EQ_B_BK
+#undef AX_EQ_B_PLASMA_CHOL
 
 #undef GEQRF
 #undef ORGQR
@@ -995,31 +1142,29 @@ int info, *ipiv, nrhs=1;
 #undef GESDD
 #undef SYTRF
 #undef SYTRS
+#undef PLASMA_POSV
 
 #else // no LAPACK
 
 /* precision-specific definitions */
 /* Added by EB */
-#ifdef HAVE_CONFIG_H
-#include        "config.h"
-#endif
-#include        ATLAS_LAPACK_H
+#ifdef HAVE_ATLAS
+#include ATLAS_LAPACK_H
 #define ATLAS_POTRF	LM_CAT_(clapack_, LM_ADD_PREFIX(potrf))
 #define ATLAS_POTRS	LM_CAT_(clapack_, LM_ADD_PREFIX(potrs))
 #define GETRF LM_ADD_PREFIX(getrf_)
 #define GETRS LM_ADD_PREFIX(getrs_)
 extern int GETRF(int *m, int *n, LM_REAL *a, int *lda, int *ipiv, int *info);
 extern int GETRS(char *trans, int *n, int *nrhs, LM_REAL *a, int *lda, int *ipiv, LM_REAL *b, int *ldb, int *info);
+#endif
 /* End added by EB */
 #define AX_EQ_B_LU LM_ADD_PREFIX(Ax_eq_b_LU_noLapack)
 
 /*
  * This function returns the solution of Ax = b
  *
- * The function employs LU decomposition:
- * If A=L U with L lower and U upper triangular, then the original system
- * amounts to solving
- * L y = b, U x = y
+ * The function employs LU decomposition followed by forward/back substitution (see 
+ * also the LAPACK-based LU solver above)
  *
  * A is mxm, b is mx1
  *
@@ -1032,14 +1177,13 @@ extern int GETRS(char *trans, int *n, int *nrhs, LM_REAL *a, int *lda, int *ipiv
  */
 int AX_EQ_B_LU(LM_REAL *A, LM_REAL *B, LM_REAL *x, int m)
 {
-__STATIC__ LM_REAL *buf=NULL;
+__STATIC__ void *buf=NULL;
 __STATIC__ int buf_sz=0;
 
-int a_sz, ipiv_sz, tot_sz;
-register int i, j;
-int info, *ipiv, nrhs=1;
-LM_REAL *a;
-   
+register int i, j, k;
+int *idx, maxi=-1, idx_sz, a_sz, work_sz, tot_sz;
+LM_REAL *a, *work, max, sum, tmp;
+
     if(!A)
 #ifdef LINSOLVERS_RETAIN_MEMORY
     {
@@ -1050,251 +1194,126 @@ LM_REAL *a;
       return 1;
     }
 #else
-      return 1; /* NOP */
+    return 1; /* NOP */
 #endif /* LINSOLVERS_RETAIN_MEMORY */
    
-    /* calculate required memory size */
-    ipiv_sz=m;
-    a_sz=m*m;
-    tot_sz=a_sz*sizeof(LM_REAL) + ipiv_sz*sizeof(int); /* should be arranged in that order for proper doubles alignment */
+  /* calculate required memory size */
+  idx_sz=m;
+  a_sz=m*m;
+  work_sz=m;
+  tot_sz=(a_sz+work_sz)*sizeof(LM_REAL) + idx_sz*sizeof(int); /* should be arranged in that order for proper doubles alignment */
 
 #ifdef LINSOLVERS_RETAIN_MEMORY
-    if(tot_sz>buf_sz){ /* insufficient memory, allocate a "big" memory chunk at once */
-      if(buf) free(buf); /* free previously allocated memory */
+  if(tot_sz>buf_sz){ /* insufficient memory, allocate a "big" memory chunk at once */
+    if(buf) free(buf); /* free previously allocated memory */
 
-      buf_sz=tot_sz;
-      buf=(LM_REAL *)malloc(buf_sz);
-      if(!buf){
-        fprintf(stderr, RCAT("memory allocation in ", AX_EQ_B_LU) "() failed!\n");
-        exit(1);
-      }
+    buf_sz=tot_sz;
+    buf=(void *)malloc(tot_sz);
+    if(!buf){
+      fprintf(stderr, RCAT("memory allocation in ", AX_EQ_B_LU) "() failed!\n");
+      exit(1);
     }
+  }
 #else
-      buf_sz=tot_sz;
-      buf=(LM_REAL *)malloc(buf_sz);
-      if(!buf){
-        fprintf(stderr, RCAT("memory allocation in ", AX_EQ_B_LU) "() failed!\n");
-        exit(1);
-      }
+    buf_sz=tot_sz;
+    buf=(void *)malloc(tot_sz);
+    if(!buf){
+      fprintf(stderr, RCAT("memory allocation in ", AX_EQ_B_LU) "() failed!\n");
+      exit(1);
+    }
 #endif /* LINSOLVERS_RETAIN_MEMORY */
 
-    a=buf;
-    ipiv=(int *)(a+a_sz);
+  a=buf;
+  work=a+a_sz;
+  idx=(int *)(work+work_sz);
 
-    /* store A (column major!) into a and B into x */
-	  for(i=0; i<m; i++){
-		  for(j=0; j<m; j++)
-        a[i+j*m]=A[i*m+j];
+  /* avoid destroying A, B by copying them to a, x resp. */
+  memcpy(a, A, a_sz*sizeof(LM_REAL));
+  memcpy(x, B, m*sizeof(LM_REAL));
 
-      x[i]=B[i];
-    }
-
-  /* LU decomposition for A */
-	//GETRF((int *)&m, (int *)&m, a, (int *)&m, ipiv, (int *)&info);  
-        info = ATLAS_POTRF(CblasRowMajor, CblasUpper, m, a, m);
-	if(info!=0){
-		if(info<0){
-      fprintf(stderr, RCAT(RCAT("argument %d of ", GETRF) " illegal in ", AX_EQ_B_LU) "()\n", -info);
-			exit(1);
-		}
-		else{
-//      fprintf(stderr, RCAT(RCAT("singular matrix A for ", GETRF) " in ", AX_EQ_B_LU) "()\n");
+  /* compute the LU decomposition of a row permutation of matrix a; the permutation itself is saved in idx[] */
+	for(i=0; i<m; ++i){
+		max=0.0;
+		for(j=0; j<m; ++j)
+			if((tmp=FABS(a[i*m+j]))>max)
+        max=tmp;
+		  if(max==0.0){
+        fprintf(stderr, RCAT("Singular matrix A in ", AX_EQ_B_LU) "()!\n");
 #ifndef LINSOLVERS_RETAIN_MEMORY
-      free(buf);
+        free(buf);
 #endif
 
-			return 0;
+        return 0;
+      }
+		  work[i]=LM_CNST(1.0)/max;
+	}
+
+	for(j=0; j<m; ++j){
+		for(i=0; i<j; ++i){
+			sum=a[i*m+j];
+			for(k=0; k<i; ++k)
+        sum-=a[i*m+k]*a[k*m+j];
+			a[i*m+j]=sum;
+		}
+		max=0.0;
+		for(i=j; i<m; ++i){
+			sum=a[i*m+j];
+			for(k=0; k<j; ++k)
+        sum-=a[i*m+k]*a[k*m+j];
+			a[i*m+j]=sum;
+			if((tmp=work[i]*FABS(sum))>=max){
+				max=tmp;
+				maxi=i;
+			}
+		}
+		if(j!=maxi){
+			for(k=0; k<m; ++k){
+				tmp=a[maxi*m+k];
+				a[maxi*m+k]=a[j*m+k];
+				a[j*m+k]=tmp;
+			}
+			work[maxi]=work[j];
+		}
+		idx[j]=maxi;
+		if(a[j*m+j]==0.0)
+      a[j*m+j]=LM_REAL_EPSILON;
+		if(j!=m-1){
+			tmp=LM_CNST(1.0)/(a[j*m+j]);
+			for(i=j+1; i<m; ++i)
+        a[i*m+j]*=tmp;
 		}
 	}
 
-  /* solve the system with the computed LU */
-  //GETRS("N", (int *)&m, (int *)&nrhs, a, (int *)&m, ipiv, x, (int *)&m, (int *)&info);
-  info = ATLAS_POTRS(CblasRowMajor, CblasUpper, m, 1, a, m, x, m);
-	if(info!=0){
-		if(info<0){
-			fprintf(stderr, RCAT(RCAT("argument %d of ", GETRS) " illegal in ", AX_EQ_B_LU) "()\n", -info);
-			exit(1);
-		}
-		else{
-			fprintf(stderr, RCAT(RCAT("unknown error for ", GETRS) " in ", AX_EQ_B_LU) "()\n");
-#ifndef LINSOLVERS_RETAIN_MEMORY
-      free(buf);
-#endif
+  /* The decomposition has now replaced a. Solve the linear system using
+   * forward and back substitution
+   */
+	for(i=k=0; i<m; ++i){
+		j=idx[i];
+		sum=x[j];
+		x[j]=x[i];
+		if(k!=0)
+			for(j=k-1; j<i; ++j)
+        sum-=a[i*m+j]*x[j];
+		else
+      if(sum!=0.0)
+			  k=i+1;
+		x[i]=sum;
+	}
 
-			return 0;
-		}
+	for(i=m-1; i>=0; --i){
+		sum=x[i];
+		for(j=i+1; j<m; ++j)
+      sum-=a[i*m+j]*x[j];
+		x[i]=sum/a[i*m+i];
 	}
 
 #ifndef LINSOLVERS_RETAIN_MEMORY
   free(buf);
 #endif
 
-	return 1;
+  return 1;
 }
 
-///* This function returns the solution of Ax = b
-// *
-// * The function employs LU decomposition followed by forward/back substitution (see 
-// * also the LAPACK-based LU solver above)
-// *
-// * A is mxm, b is mx1
-// *
-// * The function returns 0 in case of error, 1 if successful
-// *
-// * This function is often called repetitively to solve problems of identical
-// * dimensions. To avoid repetitive malloc's and free's, allocated memory is
-// * retained between calls and free'd-malloc'ed when not of the appropriate size.
-// * A call with NULL as the first argument forces this memory to be released.
-// */
-//int AX_EQ_B_LU(LM_REAL *A, LM_REAL *B, LM_REAL *x, int m)
-//{
-//__STATIC__ void *buf=NULL;
-//__STATIC__ int buf_sz=0;
-//
-//register int i, j, k;
-//int *idx, maxi=-1, idx_sz, a_sz, work_sz, tot_sz;
-//LM_REAL *a, *work, max, sum, tmp;
-//
-//    if(!A)
-//#ifdef LINSOLVERS_RETAIN_MEMORY
-//    {
-//      if(buf) free(buf);
-//      buf=NULL;
-//      buf_sz=0;
-//
-//      return 1;
-//    }
-//#else
-//    return 1; /* NOP */
-//#endif /* LINSOLVERS_RETAIN_MEMORY */
-//   
-//  /* calculate required memory size */
-//  idx_sz=m;
-//  a_sz=m*m;
-//  work_sz=m;
-//  tot_sz=(a_sz+work_sz)*sizeof(LM_REAL) + idx_sz*sizeof(int); /* should be arranged in that order for proper doubles alignment */
-//
-//#ifdef LINSOLVERS_RETAIN_MEMORY
-//  if(tot_sz>buf_sz){ /* insufficient memory, allocate a "big" memory chunk at once */
-//    if(buf) free(buf); /* free previously allocated memory */
-//
-//    buf_sz=tot_sz;
-//    buf=(void *)malloc(tot_sz);
-//    if(!buf){
-//      fprintf(stderr, RCAT("memory allocation in ", AX_EQ_B_LU) "() failed!\n");
-//      exit(1);
-//    }
-//  }
-//#else
-//    buf_sz=tot_sz;
-//    buf=(void *)malloc(tot_sz);
-//    if(!buf){
-//      fprintf(stderr, RCAT("memory allocation in ", AX_EQ_B_LU) "() failed!\n");
-//      exit(1);
-//    }
-//#endif /* LINSOLVERS_RETAIN_MEMORY */
-//
-//  a=buf;
-//  work=a+a_sz;
-//  idx=(int *)(work+work_sz);
-//
-//  /* avoid destroying A, B by copying them to a, x resp. */
-//  for(i=0; i<m; ++i){ // B & 1st row of A
-//    a[i]=A[i];
-//    x[i]=B[i];
-//  }
-//  for(  ; i<a_sz; ++i) a[i]=A[i]; // copy A's remaining rows
-//  /****
-//  for(i=0; i<m; ++i){
-//    for(j=0; j<m; ++j)
-//      a[i*m+j]=A[i*m+j];
-//    x[i]=B[i];
-//  }
-//  ****/
-//
-//  /* compute the LU decomposition of a row permutation of matrix a; the permutation itself is saved in idx[] */
-//	for(i=0; i<m; ++i){
-//		max=0.0;
-//		for(j=0; j<m; ++j)
-//			if((tmp=FABS(a[i*m+j]))>max)
-//        max=tmp;
-//		  if(max==0.0){
-//        fprintf(stderr, RCAT("Singular matrix A in ", AX_EQ_B_LU) "()!\n");
-//#ifndef LINSOLVERS_RETAIN_MEMORY
-//        free(buf);
-//#endif
-//
-//        return 0;
-//      }
-//		  work[i]=LM_CNST(1.0)/max;
-//	}
-//
-//	for(j=0; j<m; ++j){
-//		for(i=0; i<j; ++i){
-//			sum=a[i*m+j];
-//			for(k=0; k<i; ++k)
-//        sum-=a[i*m+k]*a[k*m+j];
-//			a[i*m+j]=sum;
-//		}
-//		max=0.0;
-//		for(i=j; i<m; ++i){
-//			sum=a[i*m+j];
-//			for(k=0; k<j; ++k)
-//        sum-=a[i*m+k]*a[k*m+j];
-//			a[i*m+j]=sum;
-//			if((tmp=work[i]*FABS(sum))>=max){
-//				max=tmp;
-//				maxi=i;
-//			}
-//		}
-//		if(j!=maxi){
-//			for(k=0; k<m; ++k){
-//				tmp=a[maxi*m+k];
-//				a[maxi*m+k]=a[j*m+k];
-//				a[j*m+k]=tmp;
-//			}
-//			work[maxi]=work[j];
-//		}
-//		idx[j]=maxi;
-//		if(a[j*m+j]==0.0)
-//      a[j*m+j]=LM_REAL_EPSILON;
-//		if(j!=m-1){
-//			tmp=LM_CNST(1.0)/(a[j*m+j]);
-//			for(i=j+1; i<m; ++i)
-//        a[i*m+j]*=tmp;
-//		}
-//	}
-//
-//  /* The decomposition has now replaced a. Solve the linear system using
-//   * forward and back substitution
-//   */
-//	for(i=k=0; i<m; ++i){
-//		j=idx[i];
-//		sum=x[j];
-//		x[j]=x[i];
-//		if(k!=0)
-//			for(j=k-1; j<i; ++j)
-//        sum-=a[i*m+j]*x[j];
-//		else
-//      if(sum!=0.0)
-//			  k=i+1;
-//		x[i]=sum;
-//	}
-//
-//	for(i=m-1; i>=0; --i){
-//		sum=x[i];
-//		for(j=i+1; j<m; ++j)
-//      sum-=a[i*m+j]*x[j];
-//		x[i]=sum/a[i*m+i];
-//	}
-//
-//#ifndef LINSOLVERS_RETAIN_MEMORY
-//  free(buf);
-//#endif
-//
-//  return 1;
-//}
-//
 /* undefine all. IT MUST REMAIN IN THIS POSITION IN FILE */
 #undef AX_EQ_B_LU
 

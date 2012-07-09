@@ -5,8 +5,8 @@
 *
 *	This file part of:	AstrOmatic software
 *
-*	Copyright:		(C) 2007-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
-*				(C) 2004 Manolis Lourakis (original version)
+*	Copyright:		(C) 2007-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
+*				(C) 2004-2011 Manolis Lourakis (orig. version)
 *
 *	Licenses:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	along with AstrOmatic software.
 *	If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		25/10/2010
+*	Last modified:		09/07/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 /////////////////////////////////////////////////////////////////////////////////
@@ -63,10 +63,14 @@
 #define LM_FINITE finite // ICC, GCC
 #else
 #define LM_FINITE finite // other than MSVC, ICC, GCC, let's hope this will work
-#endif 
+#endif
 
-#ifdef _MSC_VER // avoid deprecation warnings in VS2005
-#define _CRT_SECURE_NO_WARNINGS
+#ifdef _MSC_VER
+#define LM_ISINF(x) (!_finite(x) && !_isnan(x)) // MSVC
+#elif defined(__ICC) || defined(__INTEL_COMPILER) || defined(__GNUC__)
+#define LM_ISINF(x) isinf(x) // ICC, GCC
+#else
+#define LM_ISINF(x) isinf(x) // other than MSVC, ICC, GCC, let's hope this will work
 #endif
 
 #endif /* _COMPILER_H_ */

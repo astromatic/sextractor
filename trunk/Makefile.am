@@ -7,7 +7,7 @@
 #
 #	This file part of:	SExtractor
 #
-#	Copyright:		(C) 2002-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+#	Copyright:		(C) 2002-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
 #
 #	License:		GNU General Public License
 #
@@ -22,7 +22,7 @@
 #	You should have received a copy of the GNU General Public License
 #	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 #
-#	Last modified:		11/10/2010
+#	Last modified:		09/07/2012
 #
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -31,8 +31,8 @@ SUBDIRS			= man src tests
 dist_pkgdata_DATA	= config/* xsl/sextractor.xsl
 EXTRA_DIST		= doc AUTHORS BUGS ChangeLog COPYRIGHT HISTORY \
 			  INSTALL LICENSE README THANKS \
-			  acx_atlas.m4 acx_prog_cc_optim.m4 \
-			  acx_urbi_resolve_dir.m4
+			  acx_atlas.m4 acx_fftw.m4 acx_mkl.m4 \
+			  acx_prog_cc_optim.m4 acx_urbi_resolve_dir.m4
 RPM_ROOTDIR		= `rpmbuild --nobuild -E %_topdir`
 RPM_SRCDIR		= $(RPM_ROOTDIR)/SOURCES
 dist-hook:
