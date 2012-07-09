@@ -1,30 +1,3 @@
-/*
-*				levmar.h
-*
-*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-*
-*	This file part of:	AstrOmatic software
-*
-*	Copyright:		(C) 2007-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
-*				(C) 2004-2011 Manolis Lourakis (orig. version)
-*
-*	Licenses:		GNU General Public License
-*
-*	AstrOmatic software is free software: you can redistribute it and/or
-*	modify it under the terms of the GNU General Public License as
-*	published by the Free Software Foundation, either version 3 of the
-*	License, or (at your option) any later version.
-*	AstrOmatic software is distributed in the hope that it will be useful,
-*	but WITHOUT ANY WARRANTY; without even the implied warranty of
-*	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*	GNU General Public License for more details.
-*	You should have received a copy of the GNU General Public License
-*	along with AstrOmatic software.
-*	If not, see <http://www.gnu.org/licenses/>.
-*
-*	Last modified:		09/07/2012
-*
-*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 /* 
 ////////////////////////////////////////////////////////////////////////////////////
 // 
@@ -49,34 +22,24 @@
 #ifndef _LEVMAR_H_
 #define _LEVMAR_H_
 
-/* Added by EB */
-#ifdef HAVE_CONFIG_H
-#include        "config.h"
-#endif
-/* End added by EB */
-
-
 /************************************* Start of configuration options *************************************/
 /* Note that when compiling with CMake, this configuration section is automatically generated
  * based on the user's input, see levmar.h.in
  */
 
 /* specifies whether to use LAPACK or not. Using LAPACK is strongly recommended */
-/*#define HAVE_LAPACK*/ /* use LAPACK */
+#cmakedefine HAVE_LAPACK
 
 /* specifies whether the PLASMA parallel library for multicore CPUs is available */
-/* #undef HAVE_PLASMA */
-
+#cmakedefine HAVE_PLASMA
+                      
 /* to avoid the overhead of repeated mallocs(), routines in Axb.c can be instructed to
  * retain working memory between calls. Such a choice, however, renders these routines
  * non-reentrant and is not safe in a shared memory multiprocessing environment.
  * Bellow, an attempt is made to issue a warning if this option is turned on and OpenMP
  * is being used (note that this will work only if omp.h is included before levmar.h)
- * NOTE FROM EB: TURNED OFF IN ALL CASES
  */
-/*
-#define LINSOLVERS_RETAIN_MEMORY
-*/
+#cmakedefine LINSOLVERS_RETAIN_MEMORY
 #if (defined(_OPENMP))
 # ifdef LINSOLVERS_RETAIN_MEMORY
 #  ifdef _MSC_VER
@@ -88,9 +51,9 @@
 #endif /* _OPENMP */
 
 /* specifies whether double precision routines will be compiled or not */
-#define LM_DBL_PREC
+#cmakedefine LM_DBL_PREC
 /* specifies whether single precision routines will be compiled or not */
-#define LM_SNGL_PREC
+#cmakedefine LM_SNGL_PREC
 
 /****************** End of configuration options, no changes necessary beyond this point ******************/
 
