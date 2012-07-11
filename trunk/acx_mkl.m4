@@ -23,7 +23,7 @@ dnl	You should have received a copy of the GNU General Public License
 dnl	along with AstrOmatic software.
 dnl	If not, see <http://www.gnu.org/licenses/>.
 dnl
-dnl	Last modified:		09/07/2012
+dnl	Last modified:		11/07/2012
 dnl
 dnl %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 dnl
@@ -63,6 +63,7 @@ dnl --------------------
 dnl Set internal flags
 dnl --------------------
 
+AC_DEFINE(HAVE_MKL,1, [Define if you have the MKL libraries.])
 AC_DEFINE(HAVE_FFTW,1, [Define if you have the FFTW libraries.])
 AC_DEFINE(HAVE_LAPACK,1, [Define if you have the LAPACK libraries.])
 AC_DEFINE(HAVE_LAPACKE,1, [Define if you have the LAPACKe libraries.])
@@ -71,6 +72,7 @@ dnl --------------------
 dnl Set include files
 dnl --------------------
 
+AC_DEFINE_UNQUOTED(MKL_H, "mkl.h", [MKL header filename.])
 AC_DEFINE_UNQUOTED(FFTW_H, "fftw/fftw3_mkl.h", [FFTW header filename.])
 AC_DEFINE_UNQUOTED(LAPACK_H, "mkl_lapack.h", [LAPACK header filename.])
 AC_DEFINE_UNQUOTED(LAPACKE_H, "mkl_lapacke.h", [LAPACKe header filename.])
