@@ -116,6 +116,9 @@
 /* Define to 1 if you have the `mkdir' function. */
 #undef HAVE_MKDIR
 
+/* Define if you have the MKL libraries. */
+#undef HAVE_MKL
+
 /* Define to 1 if you have a working `mmap' system call. */
 #undef HAVE_MMAP
 
@@ -190,6 +193,9 @@
 /* Define to the sub-directory in which libtool stores uninstalled libraries.
    */
 #undef LT_OBJDIR
+
+/* MKL header filename. */
+#undef MKL_H
 
 /* Name of package */
 #undef PACKAGE

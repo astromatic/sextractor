@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		18/04/2012
+*	Last modified:		11/07/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -36,12 +36,17 @@
 #include	<stdlib.h>
 #include	<string.h>
 #include        <unistd.h>
+
 #if defined(USE_THREADS) \
 && (defined(__APPLE__) || defined(FREEBSD) || defined(NETBSD))	/* BSD, Apple */
  #include	<sys/types.h>
  #include	<sys/sysctl.h>
 #elif defined(USE_THREADS) && defined(HAVE_MPCTL)		/* HP/UX */
  #include	<sys/mpctl.h>
+#endif
+
+#ifdef HAVE_MKL
+ #include MKL_H
 #endif
 
 #include	"define.h"
@@ -398,6 +403,7 @@ Set number of threads and endianity.
 void	preprefs()
 
   {
+   char			str[80];
    unsigned short	ashort=1;
 #ifdef USE_THREADS
    int			nproc;
@@ -408,7 +414,7 @@ void	preprefs()
 
 /* Multithreading */
 #ifdef USE_THREADS
-  if (!prefs.nthreads)
+  if (prefs.nthreads <= 0)
     {
 /*-- Get the number of processors for parallel builds */
 /*-- See, e.g. http://ndevilla.free.fr/threads */
@@ -434,12 +440,13 @@ void	preprefs()
 #endif
 
     if (nproc>0)
-      prefs.nthreads = nproc;
+      prefs.nthreads = ((prefs.nthreads) && nproc>(-prefs.nthreads))?
+		-prefs.nthreads : nproc;
     else
       {
-      prefs.nthreads = 2;
-      warning("Cannot find the number of CPUs on this system:",
-		"NTHREADS defaulted to 2");
+      prefs.nthreads = prefs.nthreads? -prefs.nthreads : 2;
+      sprintf(str, "NTHREADS defaulted to %d", prefs.nthreads);
+      warning("Cannot find the number of CPUs on this system:", str);
       }
     }
 #ifndef HAVE_ATLAS_MP
@@ -447,6 +454,10 @@ void	preprefs()
      warning("This executable has been compiled using a version of the ATLAS "
 	"library without support for multithreading. ",
 	"Performance will be degraded.");
+#endif
+
+#ifdef HAVE_MKL
+  mkl_set_num_threads(prefs.nthreads);
 #endif
 
 #else
@@ -457,6 +468,30 @@ void	preprefs()
 	"this build of " BANNER " is single-threaded");
     }
 #endif
+
+/* Override INTEL CPU detection routine to help performance on 3rd-party CPUs */
+#if defined(__INTEL_COMPILER) && defined (USE_CPUREDISPATCH)
+  __get_cpuid(1, &eax, &ebx, &ecx, &edx);
+  if (ecx&bit_AVX)
+    __intel_cpu_indicator = 0x20000;
+  else if (ecx&bit_SSE4_2)
+    __intel_cpu_indicator = 0x8000;
+  else if (ecx&bit_SSE4_1)
+    __intel_cpu_indicator = 0x2000;
+  else if (ecx&bit_SSSE3)
+    __intel_cpu_indicator = 0x1000;
+  else if (ecx&bit_SSE3)
+    __intel_cpu_indicator = 0x0800;
+  else if (edx&bit_SSE2)
+    __intel_cpu_indicator = 0x0200;
+  else if (edx&bit_SSE)
+    __intel_cpu_indicator = 0x0080;
+  else if (edx&bit_MMX)
+    __intel_cpu_indicator = 0x0008;
+  else
+    __intel_cpu_indicator = 0x0001;
+#endif
+
   }
 
 
