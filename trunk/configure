@@ -770,7 +770,7 @@ with_fftw_incdir
 with_xsl_url
 enable_model_fitting
 enable_threads
-enable_gprof
+enable_profiling
 enable_best_link
 '
       ac_precious_vars='build_alias
@@ -1421,8 +1421,7 @@ Optional Features:
   --enable-threads[=<max_number_of_threads>]
                           Enable multhreading (on with up to 16 threads by
                           default)
-  --enable-gprof          Enable special mode for compilation with the gprof
-                          profiler (off by default)
+  --enable-profiling      Enable special mode for profiling (off by default)
   --enable-best-link      Choose the right combination of static and dynamic
                           linking to make the executable as portable as
                           possible (off by default)
@@ -12888,12 +12887,12 @@ fi
 # Deactivate multithreading for now
 use_pthreads="no"
 
-# Provide special option for gprof profiling
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for gprof profiler mode" >&5
-$as_echo_n "checking for gprof profiler mode... " >&6; }
-# Check whether --enable-gprof was given.
-if test "${enable_gprof+set}" = set; then :
-  enableval=$enable_gprof; { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+# Provide special option for profiling
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for profiler mode" >&5
+$as_echo_n "checking for profiler mode... " >&6; }
+# Check whether --enable-profiling was given.
+if test "${enable_profiling+set}" = set; then :
+  enableval=$enable_profiling; { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
 else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
@@ -15017,8 +15016,8 @@ fi
   fi
 fi
 
-# Link with gprof option
-if test "$enable_gprof" = "yes"; then
+# Compile with profiling option
+if test "$enable_profiling" = "yes"; then
   if test "$enable_icc" = "yes"; then
     AM_CFLAGS="$AM_CFLAGS -pq"
   else
