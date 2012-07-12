@@ -187,12 +187,11 @@ AC_ARG_ENABLE(threads,
 # Deactivate multithreading for now
 use_pthreads="no"
 
-# Provide special option for gprof profiling
-AC_MSG_CHECKING([for gprof profiler mode])
-AC_ARG_ENABLE(gprof,
-	[AS_HELP_STRING([--enable-gprof],
-	[Enable special mode for compilation with the gprof profiler \
-(off by default)])],
+# Provide special option for profiling
+AC_MSG_CHECKING([for profiler mode])
+AC_ARG_ENABLE(profiling,
+	[AS_HELP_STRING([--enable-profiling],
+	[Enable special mode for profiling (off by default)])],
 	AC_MSG_RESULT([yes]),
 	AC_MSG_RESULT([no]))
 
@@ -256,8 +255,8 @@ if test "$enable_model_fitting" = "yes"; then
   fi
 fi
 
-# Link with gprof option
-if test "$enable_gprof" = "yes"; then
+# Compile with profiling option
+if test "$enable_profiling" = "yes"; then
   if test "$enable_icc" = "yes"; then
     AM_CFLAGS="$AM_CFLAGS -pq"
   else
