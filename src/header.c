@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/10/2010
+*	Last modified:		12/07/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -44,12 +44,12 @@
 PROTO	int	read_aschead(char *filename, int frameno, tabstruct *tab)
 PURPOSE	Read a ASCII header file and update the current field's tab
 INPUT	Name of the ASCII file,
-	Frame number (if extensions),
+	Frame number (if extensions): 0=first,
 	Tab structure.
 OUTPUT	RETURN_OK if the file was found, RETURN_ERROR otherwise.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	05/02/2010
+VERSION	12/07/2012
  ***/
 int     read_aschead(char *filename, int frameno, tabstruct *tab)
   {
@@ -62,7 +62,7 @@ int     read_aschead(char *filename, int frameno, tabstruct *tab)
   if ((file=fopen(filename, "r")))
     {
 /*- Skip previous ENDs in multi-FITS extension headers */
-    for (i=frameno; i--;)
+    for (i=frameno-1; i--;)
       while (fgets(str, MAXCHAR, file)
 		&& strncmp(str,"END ",4)
 		&& strncmp(str,"END\n",4));

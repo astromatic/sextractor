@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		09/07/2012
+*	Last modified:		12/07/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -120,7 +120,7 @@ void    fft_reset(void)
  {
   if (fplan)
     {
-    QFFTWFREE(fdata1);
+    QFFTWF_FREE(fdata1);
     fftwf_destroy_plan(fplan);
     }
   if (bplan)
@@ -141,7 +141,7 @@ OUTPUT	-.
 NOTES	For data1 and fdata2, memory must be allocated for
 	size[0]* ... * 2*(size[naxis-1]/2+1) floats (padding required).
 AUTHOR	E. Bertin (IAP)
-VERSION	09/07/2012
+VERSION	12/07/2012
  ***/
 void    fft_conv(float *data1, float *fdata2, int *size)
   {
@@ -156,7 +156,7 @@ void    fft_conv(float *data1, float *fdata2, int *size)
 /* Forward FFT "in place" for data1 */
   if (!fplan)
     {
-    QFFTWMALLOC(fdata1, fftwf_complex, npix2);
+    QFFTWF_MALLOC(fdata1, fftwf_complex, npix2);
     fplan = fftwf_plan_dft_r2c_2d(size[1], size[0], data1,
         (fftwf_complex *)fdata1, FFTW_ESTIMATE);
     }
@@ -196,7 +196,7 @@ INPUT	ptr to the image,
 OUTPUT	Pointer to the compressed, memory-allocated Fourier transform.
 NOTES	Input data may end up corrupted.
 AUTHOR	E. Bertin (IAP)
-VERSION	08/10/2009
+VERSION	12/07/2012
  ***/
 float	*fft_rtf(float *data, int *size)
   {
@@ -208,7 +208,7 @@ float	*fft_rtf(float *data, int *size)
   npix2 = ((size[0]/2) + 1) * size[1];
 
 /* Forward FFT "in place" for data1 */
-  QFFTWMALLOC(fdata, fftwf_complex, npix2);
+  QFFTWF_MALLOC(fdata, fftwf_complex, npix2);
   plan = fftwf_plan_dft_r2c_2d(size[1], size[0], data, fdata, FFTW_ESTIMATE);
   fftwf_execute(plan);
   fftwf_destroy_plan(plan);

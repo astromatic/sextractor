@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		26/06/2012
+*	Last modified:		12/07/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -50,18 +50,17 @@
 
 /********************************* newfield **********************************/
 /*
-Returns a pointer to a new field, ready to go!
+Returns a pointer to a new field for extension ext, ready to go!
 */
-picstruct	*newfield(char *filename, int flags, int nok)
+picstruct	*newfield(char *filename, int flags, int ext)
 
   {
    picstruct	*field;
    catstruct	*cat;
    tabstruct	*tab;
    char		*pstr;
-   int		nok2, ntab, margin;
+   int		ext2, nok, ntab, margin;
 
-/* Move to nok'th valid FITS image extension */
   if (!(cat = read_cat(filename)))
     error(EXIT_FAILURE, "*Error*: cannot open ", filename);
 
@@ -69,12 +68,25 @@ picstruct	*newfield(char *filename, int flags, int nok)
   QCALLOC(field, picstruct, 1);
   field->flags = flags;
   field->cat = cat;
+  nok = 0;
   tab = cat->tab;
-  nok2 = nok;
-  for (ntab=cat->ntab; nok-- && ntab--;)
+  if (tab->naxis >= 2
+	&& strncmp(tab->xtension, "BINTABLE", 8)
+	&& strncmp(tab->xtension, "ASCTABLE", 8))
+    nok++;
+  ext2 = ext;
+  for (ntab=cat->ntab; ext2-- && ntab--;)
+    {
     tab=tab->nexttab;
-  field->tab = tab;
+    if (tab->naxis >= 2
+	&& strncmp(tab->xtension, "BINTABLE", 8)
+	&& strncmp(tab->xtension, "ASCTABLE", 8))
+      nok++;
+    }
+  if (!nok)
+    error(EXIT_FAILURE, "Not a valid FITS image in ",filename);
 
+  field->tab = tab;
   if (ntab<0)
     error(EXIT_FAILURE, "Not enough valid FITS image extensions in ",filename);
 
@@ -96,11 +108,11 @@ picstruct	*newfield(char *filename, int flags, int nok)
 /* Check the image exists and read important info (image size, etc...) */
   field->file = cat->file;
 
-  field->headflag = !read_aschead(field->hfilename, nok2 - 1, field->tab);
+  field->headflag = !read_aschead(field->hfilename, nok, field->tab);
   readimagehead(field);
 
   if (cat->ntab>1)
-    sprintf(gstr, " [%d/%d]", nok2, cat->tab->naxis<2? cat->ntab-1 : cat->ntab);
+    sprintf(gstr, " [%d/%d]", ext, cat->tab->naxis<2? cat->ntab-1 : cat->ntab);
   QPRINTF(OUTPUT, "----- %s %s%s\n",
 	flags&FLAG_FIELD?   "Flagging  from:" :
        (flags&(RMS_FIELD|VAR_FIELD|WEIGHT_FIELD)?

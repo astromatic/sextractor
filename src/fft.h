@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		09/07/2012
+*	Last modified:		12/07/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -33,11 +33,12 @@
 /*---------------------------- Internal constants ---------------------------*/
 
 /*------------------------------- Other Macros ------------------------------*/
-#define	QFFTWMALLOC(ptr, typ, nel) \
+#define	QFFTWF_MALLOC(ptr, typ, nel) \
 		{if (!(ptr = (typ *)fftwf_malloc((size_t)(nel)*sizeof(typ)))) \
 		  error(EXIT_FAILURE, "Not enough memory for ", \
 			#ptr " (" #nel " elements) !");;}
-#define	QFFTWFREE(ptr)	fftwf_free(ptr)
+#define	QFFTWF_FREE(ptr) \
+		{fftwf_free(ptr); ptr=NULL;}
 
 /*--------------------------- structure definitions -------------------------*/
 
