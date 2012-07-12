@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		13/06/2012
+*	Last modified:		12/07/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -78,7 +78,7 @@ void	makeit()
    unsigned int		modeltype;
    int			nflag[MAXFLAG], nparam2[2],
 			i, nok, ntab, next, ntabmax, forcextflag,
-			nima0,nima1, nweight0,nweight1, npat,npat0;
+			nima0,nima1, nweight0,nweight1, npsf0,npsf1, npat,npat0;
 
 /* Install error logging */
   error_installfunc(write_error);
@@ -108,17 +108,40 @@ void	makeit()
   readcatparams(prefs.param_name);
   useprefs();			/* update things accor. to prefs parameters */
 
+/* Check if a specific extension should be loaded */
+  if ((nima0=selectext(prefs.image_name[0])) != RETURN_ERROR)
+    {
+    forcextflag = 1;
+    ntabmax = next = 1;
+    }
+  else
+    forcextflag = 0;
+
+/* Do the same for other data (but do not force single extension mode) */
+  nima1 = selectext(prefs.image_name[1]);
+  nweight0 = selectext(prefs.wimage_name[0]);
+  nweight1 = selectext(prefs.wimage_name[1]);
+  if (prefs.dpsf_flag)
+    {
+    npsf0 = selectext(prefs.psf_name[0]);
+    npsf1 = selectext(prefs.psf_name[1]);
+    }
+  else
+    npsf0 = selectext(prefs.psf_name[0]);
+  for (i=0; i<prefs.nfimage_name; i++)
+    nflag[i] = selectext(prefs.fimage_name[i]);
+
   if (prefs.psf_flag)
     {
 /*-- Read the first PSF extension to set up stuff such as context parameters */
     NFPRINTF(OUTPUT, "Reading PSF information");
     if (prefs.dpsf_flag)
       {
-      thedpsf = psf_load(prefs.psf_name[0],0); 
-      thepsf = psf_load(prefs.psf_name[1],0);
+      thedpsf = psf_load(prefs.psf_name[0],nima0<0? 1 :(npsf0<0? 1:npsf0)); 
+      thepsf = psf_load(prefs.psf_name[1], nima1<0? 1 :(npsf1<0? 1:npsf1));
       }
     else
-      thepsf = psf_load(prefs.psf_name[0],0); 
+      thepsf = psf_load(prefs.psf_name[0], nima0<0? 1 :(npsf0<0? 1:npsf0)); 
  /*-- Need to check things up because of PSF context parameters */
     updateparamflags();
     useprefs();
@@ -229,16 +252,6 @@ void	makeit()
   alloccatparams();
   useprefs();
 
-/* Check if a specific extension should be loaded */
-  if ((nima0=selectext(prefs.image_name[0])) != RETURN_ERROR)
-    {
-printf("%d\n", nima0);
-    forcextflag = 1;
-    ntabmax = next = 1;
-    }
-  else
-    forcextflag = 0;
-
   if (!(imacat = read_cat(prefs.image_name[0])))
     error(EXIT_FAILURE, "*Error*: cannot open ", prefs.image_name[0]);
   close_cat(imacat);
@@ -259,13 +272,6 @@ printf("%d\n", nima0);
       next++;
       }
     }
-
-/* Do the same for other data (but do not force single extension mode) */
-  nima1 = selectext(prefs.image_name[1]);
-  nweight0 = selectext(prefs.wimage_name[0]);
-  nweight1 = selectext(prefs.wimage_name[1]);
-  for (i=0; i<prefs.nfimage_name; i++)
-    nflag[i] = selectext(prefs.fimage_name[i]);
 
   thecat.next = next;
 
@@ -294,7 +300,7 @@ printf("%d\n", nima0);
     init_xml(next);
 
 /* Go through all images */
-  nok = -1;
+  nok = 0;
   for (ntab = 0 ; ntab<ntabmax; ntab++, imatab = imatab->nexttab)
     {
 /*--  Check for the next valid image extension */
@@ -302,11 +308,12 @@ printf("%d\n", nima0);
 	|| !strncmp(imatab->xtension, "BINTABLE", 8)
 	|| !strncmp(imatab->xtension, "ASCTABLE", 8)))
       continue;
+
     nok++;
 
 /*-- Initial time measurement*/
     time(&thetime1);
-    thecat.currext = nok+1;
+    thecat.currext = nok;
 
     dfield = field = wfield = dwfield = NULL;
 
@@ -314,9 +321,9 @@ printf("%d\n", nima0);
       {
 /*---- Init the Detection and Measurement-images */
       dfield = newfield(prefs.image_name[0], DETECT_FIELD,
-	nima0<0? nok:nima0);
+	nima0<0? ntab:nima0);
       field = newfield(prefs.image_name[1], MEASURE_FIELD,
-	nima1<0? nok:nima1);
+	nima1<0? ntab:nima1);
       if ((field->width!=dfield->width) || (field->height!=dfield->height))
         error(EXIT_FAILURE, "*Error*: Frames have different sizes","");
 /*---- Prepare interpolation */
@@ -328,7 +335,7 @@ printf("%d\n", nima0);
     else
       {
       field = newfield(prefs.image_name[0], DETECT_FIELD | MEASURE_FIELD,
-		nima0<0? nok:nima0);
+		nima0<0? ntab:nima0);
 
 /*-- Prepare interpolation */
       if ((prefs.dweight_flag || prefs.weight_flag)
@@ -349,7 +356,7 @@ printf("%d\n", nima0);
           {
 /*-------- First: the "measurement" weights */
           wfield = newweight(prefs.wimage_name[1],field,prefs.weight_type[1],
-		nweight1<0? nok:nweight1);
+		nima1<0? ntab : (nweight1<0?1:nweight1));
           wtype = prefs.weight_type[1];
           interpthresh = prefs.weight_thresh[1];
 /*-------- Convert the interpolation threshold to variance units */
@@ -366,13 +373,13 @@ printf("%d\n", nima0);
           if (prefs.weight_type[0] == WEIGHT_FROMINTERP)
             {
             dwfield=newweight(prefs.wimage_name[0],wfield,prefs.weight_type[0],
-		nweight0<0? nok:nweight0);
+		nima0<0? ntab : (nweight0<0? 1 :nweight0));
             weight_to_var(wfield, &interpthresh, 1);
             }
           else
             {
             dwfield = newweight(prefs.wimage_name[0], dfield?dfield:field,
-		prefs.weight_type[0], nweight0<0? nok:nweight0);
+		prefs.weight_type[0], nima0<0? ntab : (nweight0<0?1:nweight0));
             weight_to_var(dwfield, &interpthresh, 1);
             }
           dwfield->weight_thresh = interpthresh;
@@ -385,7 +392,7 @@ printf("%d\n", nima0);
         {
 /*------ Single-weight-map mode */
         wfield = newweight(prefs.wimage_name[0], dfield?dfield:field,
-			prefs.weight_type[0], nweight0<0? nok:nweight0);
+		prefs.weight_type[0], nima0<0? ntab : (nweight0<0?1:nweight0));
         wtype = prefs.weight_type[0];
         interpthresh = prefs.weight_thresh[0];
 /*------ Convert the interpolation threshold to variance units */
@@ -401,7 +408,7 @@ printf("%d\n", nima0);
     for (i=0; i<prefs.nimaflag; i++)
       {
       pffield[i] = newfield(prefs.fimage_name[i], FLAG_FIELD,
-		nflag[i]<0? nok:nflag[i]);
+		nima0<0? ntab : (nflag[i]<0?1:nflag[i]));
       if ((pffield[i]->width!=field->width)
 	|| (pffield[i]->height!=field->height))
         error(EXIT_FAILURE,
@@ -452,7 +459,7 @@ printf("%d\n", nima0);
         if ((check=prefs.check[i]))
           reinitcheck(field, check);
 
-    if (nok || forcextflag)
+    if (!forcextflag && nok>1)
       {
       if (prefs.psf_flag)
         {
@@ -462,11 +469,11 @@ printf("%d\n", nima0);
         if (prefs.dpsf_flag)
           {
           psf_end(thedpsf, thedpsfit);
-          thedpsf = psf_load(prefs.psf_name[0], nima0<0? nok:nima0); 
-          thepsf = psf_load(prefs.psf_name[1], nima1<0? nok:nima1);
+          thedpsf = psf_load(prefs.psf_name[0], nok);
+          thepsf = psf_load(prefs.psf_name[1], nok);
           }
         else
-          thepsf = psf_load(prefs.psf_name[0],nima0<0? nok:nima0); 
+          thepsf = psf_load(prefs.psf_name[0], nok); 
         }
 
       if (prefs.prof_flag)
@@ -548,8 +555,8 @@ printf("%d\n", nima0);
     reendcat();
 
 /* Update XML data */
-  if (prefs.xml_flag || prefs.cat_type==ASCII_VO)
-    update_xml(&thecat, dfield? dfield:field, field,
+    if (prefs.xml_flag || prefs.cat_type==ASCII_VO)
+      update_xml(&thecat, dfield? dfield:field, field,
 	dwfield? dwfield:wfield, wfield);
 
 
@@ -570,7 +577,7 @@ printf("%d\n", nima0);
 	thecat.ndetect, thecat.ntotal);
     }
 
-  if (nok<0)
+  if (nok<=0)
     error(EXIT_FAILURE, "Not enough valid FITS image extensions in ",
 	prefs.image_name[0]);
   free_cat(&imacat, 1);

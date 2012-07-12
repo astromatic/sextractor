@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		06/06/2012
+*	Last modified:		12/07/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -38,10 +38,6 @@
 #include	<stdio.h>
 #include	<stdlib.h>
 #include	<string.h>
-
-#ifndef FFTW3_H
-#include FFTW_H
-#endif
 
 #include	"define.h"
 #include	"globals.h"
@@ -130,7 +126,7 @@ INPUT	Prof structure.
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	06/04/2010
+VERSION	12/07/2012
  ***/
 void	profit_end(profitstruct *profit)
   {
@@ -149,7 +145,7 @@ void	profit_end(profitstruct *profit)
   free(profit->resi);
   free(profit->prof);
   free(profit->covar);
-  fftwf_free(profit->psfdft);
+  QFFTWF_FREE(profit->psfdft);
   free(profit);
 
   return;
@@ -170,7 +166,7 @@ OUTPUT	Pointer to an allocated fit structure (containing details about the
 	fit).
 NOTES	It is a modified version of the lm_minimize() of lmfit.
 AUTHOR	E. Bertin (IAP)
-VERSION	06/06/2012
+VERSION	12/07/2012
  ***/
 void	profit_fit(profitstruct *profit,
 		picstruct *field, picstruct *wfield,
@@ -196,10 +192,8 @@ void	profit_fit(profitstruct *profit,
   nprof = profit->nprof;
 
   if (profit->psfdft)
-    {
-    fftwf_free(profit->psfdft);
-    profit->psfdft = NULL;
-    }
+    QFFTWF_FREE(profit->psfdft);
+
 
   psf = profit->psf;
   profit->pixstep = psf->pixstep;
@@ -761,9 +755,7 @@ profit->niter = profit_minimize(profit, PROFIT_MAXITER);
     pprofit = thepprofit;
     nparam = pprofit->nparam;
     if (pprofit->psfdft)
-      {
-      QFREE(pprofit->psfdft);
-      }
+      QFFTWF_FREE(pprofit->psfdft);
     psf = pprofit->psf;
     pprofit->pixstep = profit->pixstep;
     pprofit->guesssigbkg = profit->guesssigbkg;
@@ -802,9 +794,7 @@ profit->niter = profit_minimize(profit, PROFIT_MAXITER);
     qprofit = theqprofit;
     nparam = qprofit->nparam;
     if (qprofit->psfdft)
-      {
-      QFREE(qprofit->psfdft);
-      }
+      QFFTWF_FREE(qprofit->psfdft);
     qprofit->pixstep = profit->pixstep;
     qprofit->guesssigbkg = profit->guesssigbkg;
     qprofit->guessdx = profit->guessdx;
@@ -898,7 +888,7 @@ OUTPUT	Pointer to an allocated fit structure (containing details about the
 	fit).
 NOTES	It is a modified version of the lm_minimize() of lmfit.
 AUTHOR	E. Bertin (IAP)
-VERSION	08/12/2011
+VERSION	12/07/2012
  ***/
 void	profit_dfit(profitstruct *profit, profitstruct *dprofit,
 		picstruct *field, picstruct *dfield,
@@ -921,9 +911,7 @@ void	profit_dfit(profitstruct *profit, profitstruct *dprofit,
   nparam2 = nparam*nparam;
   nprof = dprofit->nprof;
   if (dprofit->psfdft)
-    {
-    QFREE(dprofit->psfdft);
-    }
+    QFFTWF_FREE(dprofit->psfdft);
 
   dpsf = dprofit->psf;
   dprofit->pixstep = dpsf->pixstep;
@@ -2418,7 +2406,7 @@ INPUT	Profile-fitting structure.
 OUTPUT	Vector of residuals.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	18/05/2011
+VERSION	12/07/2012
  ***/
 float profit_spiralindex(profitstruct *profit)
   {
@@ -2513,8 +2501,8 @@ float profit_spiralindex(profitstruct *profit)
 
   free(dx);
   free(dy);
-  free(fdx);
-  free(fdy);
+  QFFTWF_FREE(fdx);
+  QFFTWF_FREE(fdy);
   free(gdx);
   free(gdy);
 

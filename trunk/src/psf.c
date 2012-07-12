@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		13/06/2012
+*	Last modified:		12/07/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -127,7 +127,6 @@ psfstruct	*psf_load(char *filename, int ext)
    char			*head, *ci,*co;
    int			deg[POLY_MAXDIM], group[POLY_MAXDIM], ndim, ngroup,
 			e,i,k;
-
 /* Open the cat (well it is not a "cat", but simply a FITS file */
   if (!(cat = read_cat(filename)))
     error(EXIT_FAILURE, "*Error*: PSF file not found: ", filename);
@@ -142,7 +141,8 @@ psfstruct	*psf_load(char *filename, int ext)
     strcpy(psf->name, filename);
 
   tab = cat->tab;
-  for (i=cat->ntab, e=ext; i-- && (strcmp("PSF_DATA",tab->extname) || e--);
+  for (i=cat->ntab, e=ext?ext-1 : 0;
+	i-- && (strcmp("PSF_DATA",tab->extname) || e--);
 	tab = tab->nexttab);
   if (i<0)
     error(EXIT_FAILURE, "*Error*: PSF_DATA table not found in catalog ",
