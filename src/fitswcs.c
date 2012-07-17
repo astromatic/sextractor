@@ -23,7 +23,7 @@
 *	along with AstrOmatic software.
 *	If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		18/06/2012
+*	Last modified:		13/07/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -773,7 +773,7 @@ INPUT	WCS structure.
 OUTPUT	-.
 NOTES	.
 AUTHOR	E. Bertin (IAP)
-VERSION	14/06/2012
+VERSION	13/07/2012
  ***/
 void	invert_wcs(wcsstruct *wcs)
 
@@ -792,7 +792,7 @@ void	invert_wcs(wcsstruct *wcs)
   lat = wcs->wcsprm->lat;
   if (!strcmp(wcs->wcsprm->pcode, "TNX"))
     tnxflag = 1;
-  else if ((strcmp(wcs->wcsprm->pcode, "TAN")
+  else if ((!strcmp(wcs->wcsprm->pcode, "TAN")
 	|| !strcmp(wcs->wcsprm->pcode, "TPV"))
 		&& (wcs->projp[1+lng*100] || wcs->projp[1+lat*100]))
     tnxflag = 0;

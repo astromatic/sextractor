@@ -22,7 +22,7 @@
 #	You should have received a copy of the GNU General Public License
 #	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 #
-#	Last modified:		11/07/2012
+#	Last modified:		17/07/2012
 #
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -142,7 +142,7 @@ AC_ARG_WITH(atlas-incdir,
         [Provide an alternative path to the ATLAS include directory])])
 
 # Provide special options for FFTW
-AC_ARG_WITH(fftw,
+AC_ARG_WITH(fftw-libdir,
         [AS_HELP_STRING([--with-fftw-libdir=<FFTW library path>],
         [Provide an alternative path to the FFTW library])])
 AC_ARG_WITH(fftw-incdir,

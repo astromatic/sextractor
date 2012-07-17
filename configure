@@ -765,7 +765,7 @@ enable_libtool_lock
 enable_largefile
 with_atlas_libdir
 with_atlas_incdir
-with_fftw
+with_fftw_libdir
 with_fftw_incdir
 with_xsl_url
 enable_model_fitting
@@ -12796,9 +12796,9 @@ fi
 
 # Provide special options for FFTW
 
-# Check whether --with-fftw was given.
-if test "${with_fftw+set}" = set; then :
-  withval=$with_fftw;
+# Check whether --with-fftw-libdir was given.
+if test "${with_fftw_libdir+set}" = set; then :
+  withval=$with_fftw_libdir;
 fi
 
 
