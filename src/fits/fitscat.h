@@ -7,7 +7,7 @@
 *
 *	This file part of:	AstrOmatic FITS/LDAC library
 *
-*	Copyright:		(C) 1995-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1995-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -23,12 +23,14 @@
 *	along with AstrOmatic software.
 *	If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		02/12/2010
+*	Last modified:		16/06/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
 #ifndef _FITSCAT_H_
 #define _FITSCAT_H_
+
+#include <stdio.h>
 
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
@@ -100,17 +102,15 @@ typedef	size_t				KINGSIZE_T;/* better than nothing */
 typedef union {unsigned int l[2];}	ULONGLONG;
 #endif
 #ifdef HAVE_LONG_LONG_INT
-typedef	long long			KINGLONG;	/* for large sizes */
-typedef long long			LONGLONG;
+typedef long long			SLONGLONG;
 #else
-typedef	long				KINGLONG;/* better than nothing */
-typedef union {int l[2];}		LONGLONG;
+typedef union {int l[2];}		SLONGLONG;
 #endif
 
-#if _FILE_OFFSET_BITS
+#if defined(_FILE_OFFSET_BITS) && !defined(OFF_T)
 #define OFF_T	off_t
 #else
-#define OFF_T	KINGLONG
+#define OFF_T	long
 #endif
 
 /*------------------------------- constants ---------------------------------*/
@@ -322,6 +322,9 @@ extern int	about_cat(catstruct *cat, FILE *stream),
 
 extern PIXTYPE	*alloc_body(tabstruct *tab,
 			void (*func)(PIXTYPE *ptr, int npix));
+
+extern FLAGTYPE	*alloc_ibody(tabstruct *tab,
+			void (*func)(FLAGTYPE *ptr, int npix));
 
 extern t_type	ttypeof(char *str);
 

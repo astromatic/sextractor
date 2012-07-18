@@ -5,8 +5,8 @@
 *
 *	This file part of:	AstrOmatic software
 *
-*	Copyright:		(C) 2007-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
-*				(C) 2004 Manolis Lourakis (original version)
+*	Copyright:		(C) 2007-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
+*				(C) 2004-2011 Manolis Lourakis (orig. version)
 *
 *	Licenses:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	along with AstrOmatic software.
 *	If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		25/10/2010
+*	Last modified:		09/07/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -54,6 +54,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <math.h>
 
 #include "levmar.h"

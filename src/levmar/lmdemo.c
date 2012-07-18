@@ -1038,7 +1038,7 @@ char *probname[]={
       lb[0]=-DBL_MAX; lb[1]=-1.5;
       ub[0]=ub[1]=DBL_MAX;
 
-      ret=dlevmar_bc_der(hs01, jachs01, p, x, m, n, lb, ub, 1000, opts, info, NULL, NULL, NULL); // with analytic Jacobian
+      ret=dlevmar_bc_der(hs01, jachs01, p, x, m, n, lb, ub, NULL, 1000, opts, info, NULL, NULL, NULL); // with analytic Jacobian
     }
     break;
 
@@ -1054,7 +1054,7 @@ char *probname[]={
       lb[0]=2.0; lb[1]=-50.0;
       ub[0]=50.0; ub[1]=50.0;
 
-      ret=dlevmar_bc_der(hs21, jachs21, p, x, m, n, lb, ub, 1000, opts, info, NULL, NULL, NULL); // with analytic Jacobian
+      ret=dlevmar_bc_der(hs21, jachs21, p, x, m, n, lb, ub, NULL, 1000, opts, info, NULL, NULL, NULL); // with analytic Jacobian
     }
     break;
 
@@ -1072,7 +1072,7 @@ char *probname[]={
       ub[0]=ub[2]=ub[3]=DBL_MAX;
       ub[1]=0.8;
 
-      ret=dlevmar_bc_der(hatfldb, jachatfldb, p, x, m, n, lb, ub, 1000, opts, info, NULL, NULL, NULL); // with analytic Jacobian
+      ret=dlevmar_bc_der(hatfldb, jachatfldb, p, x, m, n, lb, ub, NULL, 1000, opts, info, NULL, NULL, NULL); // with analytic Jacobian
     }
     break;
 
@@ -1089,7 +1089,7 @@ char *probname[]={
 
       ub[0]=ub[1]=ub[2]=ub[3]=10.0;
 
-      ret=dlevmar_bc_der(hatfldc, jachatfldc, p, x, m, n, lb, ub, 1000, opts, info, NULL, NULL, NULL); // with analytic Jacobian
+      ret=dlevmar_bc_der(hatfldc, jachatfldc, p, x, m, n, lb, ub, NULL, 1000, opts, info, NULL, NULL, NULL); // with analytic Jacobian
     }
     break;
 
@@ -1106,7 +1106,7 @@ char *probname[]={
 
       ub[0]=ub[1]=ub[2]=ub[3]=ub[4]=100.0;
 
-      ret=dlevmar_bc_der(combust, jaccombust, p, x, m, n, lb, ub, 5000, opts, info, NULL, NULL, NULL); // with analytic Jacobian
+      ret=dlevmar_bc_der(combust, jaccombust, p, x, m, n, lb, ub, NULL, 5000, opts, info, NULL, NULL, NULL); // with analytic Jacobian
     }
     break;
 

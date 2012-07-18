@@ -1,8 +1,7 @@
-function [ret, popt, info, covar]=levmar(fname, jacname, p0, x, itmax, opts, type)
 % LEVMAR  matlab MEX interface to the levmar non-linear least squares minimization
 % library available from http://www.ics.forth.gr/~lourakis/levmar/
 % 
-% levmar can be used in any of the 8 following ways:
+% Usage: levmar can be used in any of the 8 following ways:
 % [ret, popt, info, covar]=levmar(fname, jacname, p0, x, itmax, opts, 'unc', ...)
 % [ret, popt, info, covar]=levmar(fname, jacname, p0, x, itmax, opts, 'bc', lb, ub, ...)
 % [ret, popt, info, covar]=levmar(fname, jacname, p0, x, itmax, opts, 'lec', A, b, ...)
@@ -14,7 +13,7 @@ function [ret, popt, info, covar]=levmar(fname, jacname, p0, x, itmax, opts, typ
 % [ret, popt, info, covar]=levmar(fname, jacname, p0, x, itmax, opts, 'lic', C, d, ...)
 %
 %  
-% The dots at the end denote any additional, problem specific data that are passed uniterpreted to
+% The dots at the end denote any additional, problem specific data that are passed uninterpreted to
 % all invocations of fname and jacname, see below for details.
 %
 % In the following, the word "vector" is meant to imply either a row or a column vector.

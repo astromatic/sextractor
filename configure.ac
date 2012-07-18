@@ -22,7 +22,7 @@
 #	You should have received a copy of the GNU General Public License
 #	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 #
-#	Last modified:		06/05/2012
+#	Last modified:		18/07/2012
 #
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -31,10 +31,10 @@ define([AC_CACHE_LOAD],)
 define([AC_CACHE_SAVE],)
 
 # This is your standard Bertin source code...
-AC_INIT(sextractor, 3.0a6, [bertin@iap.fr])
+AC_INIT(sextractor, 3a6, [bertin@iap.fr])
 AC_CONFIG_SRCDIR(src/makeit.c)
 AC_CONFIG_AUX_DIR(autoconf)
-AM_CONFIG_HEADER(config.h)
+AC_CONFIG_HEADERS(config.h)
 AM_INIT_AUTOMAKE
 date=`date +%Y-%m-%d`
 date2=`date +"%a %b %d %Y"`
@@ -47,6 +47,7 @@ AC_SUBST(DATE3, "$date3")
 # Include macros
 sinclude(acx_atlas.m4)
 sinclude(acx_fftw.m4)
+sinclude(acx_mkl.m4)
 sinclude(acx_prog_cc_optim.m4)
 sinclude(acx_pthread.m4)
 sinclude(acx_urbi_resolve_dir.m4)
@@ -54,42 +55,46 @@ sinclude(acx_urbi_resolve_dir.m4)
 # Display pakage and version number
 AC_MSG_RESULT([*********** Configuring:  $PACKAGE $VERSION ($date) **********])
 
-# Initialize the list of compilers to consider
-cclist="cc gcc"
-
 # Provide special option for choosing automatically the compilation flags.
-AC_MSG_CHECKING([if compilation flags are set automatically])
+AC_MSG_CHECKING([if compilation flags should be set automatically])
 AC_ARG_ENABLE(auto-flags,
-	[AC_HELP_STRING([--enable-auto-flags],
+	[AS_HELP_STRING([--enable-auto-flags],
 	[Let the configure script choose the compilation flags \
 (off by default)])],
 	AC_MSG_RESULT([yes]),
 	AC_MSG_RESULT([no]))
 
 # Provide special option for the Linux Intel C compiler
-AC_MSG_CHECKING([for Linux Intel C compiler mode])
+AC_MSG_CHECKING([whether we should use the INTEL compiler])
 AC_ARG_ENABLE(icc,
-	[AC_HELP_STRING([--enable-icc],
+	[AS_HELP_STRING([--enable-icc],
 	[Enable special mode for compilation with the Intel compiler \
 (off by default)])],
-        cclist="icc $cclist"
+        CC="icc"
+	AC_MSG_RESULT([yes]),
+	AC_MSG_RESULT([no]))
+
+# Provide special options for INTEL MKL
+# We force the use of icc
+AC_MSG_CHECKING([whether we should use INTEL's MKL])
+AC_ARG_ENABLE(mkl,
+	[AS_HELP_STRING([--enable-mkl],
+	[Use INTEL's MKL for solvers and FFTs (off by default)])],
+        enable_icc="yes"
+        CC="icc"
 	AC_MSG_RESULT([yes]),
 	AC_MSG_RESULT([no]))
 
 # Checks for programs.
-# GCC is chosen last because it is likely to yield less optimized code
 AC_LANG(C)
-AC_PROG_CC([$cclist])
-# C Compiler: Check that it is ANSI C and POSIX-compliant
-AM_PROG_CC_STDC
-AC_ISC_POSIX
-# Override automatic CFLAGS and LDFLAGS with those of user
+
+AC_SEARCH_LIBS([strerror],[cposix])
 if test "$enable_auto_flags" = "yes"; then
   CFLAGS=""
   LDFLAGS=""
   ACX_PROG_CC_OPTIM
 fi
-AC_PROG_LIBTOOL
+LT_INIT
 AC_PROG_INSTALL
 
 # Checks for libraries.
@@ -99,7 +104,8 @@ AC_CHECK_LIB(m, sin)
 AC_HEADER_STDC
 AC_CHECK_HEADERS([fcntl.h limits.h malloc.h stdlib.h string.h sys/mman.h \
 		sys/types.h unistd.h])
-if test "$enable_icc" = "yes" -a "$CC" = "icc"; then
+# Checks for INTEL math header files.
+if test "$enable_icc" = "yes"; then
   AC_CHECK_HEADERS(mathimf.h)
 fi
 
@@ -114,77 +120,59 @@ AC_TYPE_UID_T
 
 # Checks for library functions.
 AC_FUNC_ERROR_AT_LINE
-#AC_FUNC_MALLOC
 AC_FUNC_MMAP
 AC_TYPE_SIGNAL
 AC_FUNC_STAT
 AC_FUNC_STRFTIME
-AC_CHECK_FUNCS([atexit getenv memcpy memmove memset mkdir munmap strstr \
-		sincosf logf gettimeofday posix_memalign])
+AC_CHECK_FUNCS([atexit logf getenv gettimeofday memcpy memmove memset mkdir \
+		munmap posix_memalign setlinebuf sincosf strstr sysconf])
+AC_CHECK_FUNC([isnan], AC_DEFINE_UNQUOTED([HAVE_ISNAN2], 1,
+		[Second isnan check]))
 
 # Check support for large files
 AC_SYS_LARGEFILE
 AC_FUNC_FSEEKO
 
-# Set the data directory to a true absolute path
-datadir2=$(URBI_RESOLVE_DIR([$datadir]))
-
 # Provide special options for ATLAS
-AC_ARG_WITH(atlas,
-        [AC_HELP_STRING([--with-atlas=<ATLAS library path>],
-        [Provide an alternative path to the ATLAS library])],
-    atlas_libdir=$withval,
-    atlas_libdir=""
-    )
+AC_ARG_WITH(atlas-libdir,
+        [AS_HELP_STRING([--with-atlas-libdir=<ATLAS library path>],
+        [Provide an alternative path to the ATLAS library])])
 AC_ARG_WITH(atlas-incdir,
-        [AC_HELP_STRING([--with-atlas-incdir=<ATLAS include dir>],
-        [Provide an alternative path to the ATLAS include directory])],
-    atlas_incdir=$withval,
-    atlas_incdir=""
-    )
+        [AS_HELP_STRING([--with-atlas-incdir=<ATLAS include dir>],
+        [Provide an alternative path to the ATLAS include directory])])
 
 # Provide special options for FFTW
-AC_ARG_WITH(fftw,
-        [AC_HELP_STRING([--with-fftw=<FFTW library path>],
-        [Provide an alternative path to the FFTW library])],
-    fftw_libdir=$withval,
-    fftw_libdir=""
-    )
+AC_ARG_WITH(fftw-libdir,
+        [AS_HELP_STRING([--with-fftw-libdir=<FFTW library path>],
+        [Provide an alternative path to the FFTW library])])
 AC_ARG_WITH(fftw-incdir,
-        [AC_HELP_STRING([--with-fftw-incdir=<FFTW include dir>],
-        [Provide an alternative path to the FFTW include directory])],
-    fftw_incdir=$withval,
-    fftw_incdir=""
-    )
+        [AS_HELP_STRING([--with-fftw-incdir=<FFTW include dir>],
+        [Provide an alternative path to the FFTW include directory])])
 
 # Provide a special option for the default XSLT URL
+with_xsl_url="file://"$(URBI_RESOLVE_DIR([$datadir]))"/$PACKAGE_NAME/$PACKAGE_NAME.xsl"
 AC_ARG_WITH(xsl_url,
-	[AC_HELP_STRING([--with-xsl_url=<default URL for XSLT filter>],
-	[Provide an alternative default URL of the XSLT filter])],
-	[xsl_url=$withval],
-	[xsl_url="file://$datadir2/$PACKAGE_NAME/$PACKAGE_NAME.xsl"]
-	)
+	[AS_HELP_STRING([--with-xsl_url=<default URL for XSLT filter>],
+	[Provide an alternative default URL of the XSLT filter])])
 
-AC_DEFINE_UNQUOTED([XSL_URL], "$xsl_url",[Default URL of the XSLT filter])
+AC_DEFINE_UNQUOTED([XSL_URL], "$with_xsl_url",[Default URL of the XSLT filter])
 
 # Provide special option to disable model-fitting (enabled by default)
+enable_model_fitting="yes"
 AC_MSG_CHECKING([if model-fitting should be disabled])
 AC_ARG_ENABLE([model-fitting],
-	[AC_HELP_STRING([--disable-model-fitting],
-	[Disable model-fitting and ATLAS/FFTW dependency \
-(enabled by default)])],
-	[use_model="$enableval"],
-	[use_model="yes"])
-if test "$use_model" = "no"; then
-  AC_MSG_RESULT([yes])
-else
-  AC_MSG_RESULT([no])
-fi
+	[AS_HELP_STRING([--disable-model-fitting],
+	[Disable model-fitting and library dependencies (enabled by default)])],
+	if test "$enable_model_fitting" = "no"; then
+	  AC_MSG_RESULT([yes])
+	else
+	  AC_MSG_RESULT([no])
+	fi)
 
 # Set flags for multithreading
-n_pthreads=1024
+n_pthreads=16
 AC_ARG_ENABLE(threads,
-        [AC_HELP_STRING([--enable-threads@<:@=<max_number_of_threads>@:>@],
+        [AS_HELP_STRING([--enable-threads@<:@=<max_number_of_threads>@:>@],
 	[Enable multhreading (on with up to 16 threads by default)])],
     if test "$enableval" = "no"; then
       use_pthreads="no"
@@ -199,19 +187,18 @@ AC_ARG_ENABLE(threads,
 # Deactivate multithreading for now
 use_pthreads="no"
 
-# Provide special option for gprof profiling
-AC_MSG_CHECKING([for gprof profiler mode])
-AC_ARG_ENABLE(gprof,
-	[AC_HELP_STRING([--enable-gprof],
-	[Enable special mode for compilation with the gprof profiler \
-(off by default)])],
+# Provide special option for profiling
+AC_MSG_CHECKING([for profiler mode])
+AC_ARG_ENABLE(profiling,
+	[AS_HELP_STRING([--enable-profiling],
+	[Enable special mode for profiling (off by default)])],
 	AC_MSG_RESULT([yes]),
 	AC_MSG_RESULT([no]))
 
 # Enable linking options for making the executable as portable as possible.
 AC_MSG_CHECKING([best linking option])
 AC_ARG_ENABLE(best-link,
-	[AC_HELP_STRING([--enable-best-link],
+	[AS_HELP_STRING([--enable-best-link],
 	[Choose the right combination of static and dynamic linking to make \
 the executable as portable as possible (off by default)])],
 	AC_MSG_RESULT([yes]),
@@ -219,13 +206,13 @@ the executable as portable as possible (off by default)])],
 
 ############# Actions to complete if model-fitting is activated ##############
 AC_MSG_CHECKING([for model-fitting configure option])
-if test "$use_model" = "yes"; then
+if test "$enable_model_fitting" = "yes"; then
   AC_MSG_RESULT([enabled])
   AC_DEFINE(USE_MODEL, 1, [Triggers model-fitting and linking with ATLAS/FFTW])
 else
   AC_MSG_RESULT([disabled])
 fi
-AM_CONDITIONAL(USE_MODEL, [test $use_model = "yes"])
+AM_CONDITIONAL(USE_MODEL, [test $enable_model_fitting = "yes"])
 
 ################# Actions to complete in case of multhreading ################
 AC_DEFINE_UNQUOTED(THREADS_NMAX, $n_pthreads,[Maximum number of POSIX threads])
@@ -241,36 +228,35 @@ if test "$use_pthreads" = "yes"; then
 fi
 AM_CONDITIONAL(USE_THREADS, [test $use_pthreads = "yes"])
 
+if test "$enable_model_fitting" = "yes"; then
+############ handle the INTEL MKL library (FFTW + LAPACK) ###########
+  if test "$enable_mkl" = "yes"; then
+    ACX_MKL()
+    if test "$MKL_WARN" != ""; then
+      AC_MSG_WARN([$MKL_WARN])
+    fi
+    AM_CFLAGS="$AM_CFLAGS $MKL_CFLAGS "
+    LIBS="$MKL_LIBS $LIBS"
+  else
 ################ handle the FFTW library (Fourier transforms) ################
-if test "$use_model" = "yes"; then
-  ACX_FFTW($fftw_libdir,$fftw_incdir,$use_pthreads,yes,
-	[use_fftw=yes],[use_fftw=no])
-  if test "$use_fftw" = "yes"; then
-    LIBS="$FFTW_LIBS $LIBS"
-    if test "$FFTW_WARN" != ""; then
-      AC_MSG_WARN([$FFTW_WARN])
-    fi
-  else
-    AC_MSG_ERROR([$FFTW_ERROR Exiting.])
-  fi
-fi
-
+    ACX_FFTW($with_fftw_libdir,$with_fftw_incdir,$use_pthreads,yes,
+	LIBS="$FFTW_LIBS $LIBS"
+	if test "$FFTW_WARN" != ""; then
+	  AC_MSG_WARN([$FFTW_WARN])
+	fi,
+	AC_MSG_ERROR([$FFTW_ERROR Exiting.]))
 ################## handle the ATLAS library(linear algebra) ##################
-if test "$use_model" = "yes"; then
-  ACX_ATLAS($atlas_libdir,$atlas_incdir,$use_pthreads,
-	[use_atlas=yes],[use_atlas=no])
-  if test "$use_atlas" = "yes"; then
-    LIBS="$ATLAS_LIB $LIBS"
-    if test "$ATLAS_WARN" != ""; then
-      AC_MSG_WARN([$ATLAS_WARN])
-    fi
-  else
-    AC_MSG_ERROR([$ATLAS_ERROR Exiting.])
+    ACX_ATLAS($with_atlas_libdir,$with_atlas_incdir,$use_pthreads,
+	LIBS="$ATLAS_LIBS $LIBS"
+	if test "$ATLAS_WARN" != ""; then
+	  AC_MSG_WARN([$ATLAS_WARN])
+	fi,
+	AC_MSG_ERROR([$ATLAS_ERROR Exiting.]))
   fi
 fi
 
-# Link with gprof option
-if test "$enable_gprof" = "yes"; then
+# Compile with profiling option
+if test "$enable_profiling" = "yes"; then
   if test "$enable_icc" = "yes"; then
     AM_CFLAGS="$AM_CFLAGS -pq"
   else
@@ -281,7 +267,12 @@ fi
 
 # "Best" linking option
 if test "$enable_best_link" = "yes"; then
-  AM_LDFLAGS="-shared-libgcc -static-libtool-libs $AM_LDFLAGS"
+  if test "$enable_icc" = "yes"; then
+    AM_LDFLAGS="-static-intel -openmp-link static -shared-libgcc \
+	-static-libtool-libs -avoid-version $AM_LDFLAGS"
+  else
+    AM_LDFLAGS="-shared-libgcc -static-libtool-libs -avoid-version $AM_LDFLAGS"
+  fi
 fi
 
 AC_SUBST(AM_CFLAGS)

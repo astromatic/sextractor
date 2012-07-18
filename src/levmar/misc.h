@@ -5,8 +5,8 @@
 *
 *	This file part of:	AstrOmatic software
 *
-*	Copyright:		(C) 2007-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
-*				(C) 2004 Manolis Lourakis (original version)
+*	Copyright:		(C) 2007-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
+*				(C) 2004-2011 Manolis Lourakis (orig. version)
 *
 *	Licenses:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	along with AstrOmatic software.
 *	If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		25/10/2010
+*	Last modified:		09/07/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 /////////////////////////////////////////////////////////////////////////////////
@@ -71,6 +71,12 @@
 
 #define LM_MK_LAPACK_NAME(s)  LM_ADD_PREFIX(LM_CAT_(s, LM_LAPACK_SUFFIX))
 
+#ifdef LM_BLAS_PREFIX
+#define LM_MK_BLAS_NAME(s) LM_CAT_(LM_BLAS_PREFIX, LM_ADD_PREFIX(LM_CAT_(s, LM_BLAS_SUFFIX)))
+#else
+#define LM_MK_BLAS_NAME(s) LM_ADD_PREFIX(LM_CAT_(s, LM_BLAS_SUFFIX))
+#endif
+
 
 #define __BLOCKSZ__       32 /* block size for cache-friendly matrix-matrix multiply. It should be
                               * such that __BLOCKSZ__^2*sizeof(LM_REAL) is smaller than the CPU (L1)
@@ -85,6 +91,8 @@
 #define LM_CAT__(a, b) a ## b
 #define LM_CAT_(a, b) LM_CAT__(a, b) // force substitution
 #define LM_ADD_PREFIX(s) LM_CAT_(LM_PREFIX, s)
+
+#define FABS(x) (((x)>=0.0)? (x) : -(x))
 
 #ifdef __cplusplus
 extern "C" {

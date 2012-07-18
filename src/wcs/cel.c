@@ -24,7 +24,7 @@
 *	along with AstrOmatic software.
 *	If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/04/2012
+*	Last modified:		18/04/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 /*=============================================================================
@@ -230,6 +230,7 @@
 *      ZEA: zenithal/azimuthal equal area
 *      AIR: Airy
 *      TNX: IRAF's polynomial correction to TAN
+*      TPV: AstrOmatic's polynomial correction to TAN
 *
 *   Cylindricals:
 *      CYP: cylindrical perspective
@@ -264,7 +265,7 @@
 *   IRAF's TNX added by E.Bertin 2000/03/28
 *   TPV added by E.Bertin 2012/04/11
 *   Filtering of abs(phi)>180 and abs(theta)>90 added by E.Bertin 2000/11/11
-*   $Id: cel.c,v 1.1.1.1 2012/04/11 16:33:26 bertin Exp $
+*   $Id: cel.c,v 1.1.1.1 2012/04/18 16:33:26 bertin Exp $
 *===========================================================================*/
 
 #ifdef HAVE_CONFIG_H
