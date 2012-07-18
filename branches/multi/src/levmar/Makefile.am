@@ -35,5 +35,5 @@ EXTRA_liblevmar_a_SOURCES = Axb_core.c lmbc_core.c lm_core.c \
 			  lmblec_core.c lmbleic_core.c lmlec_core.c \
 			  misc_core.c \
 			  LICENSE README README.txt \
-			  Makefile.icc Makefile.vc levmar.vcproj lmdemo.vcproj \
-			  expfit.c lmdemo.c lm.h matlab
+			  Makefile.icc Makefile.vc expfit.c lmdemo.c lm.h matlab
+

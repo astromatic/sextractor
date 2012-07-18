@@ -24,7 +24,7 @@
 #
 #	This file part of:	SExtractor
 #
-#	Copyright:		(C) 2002-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+#	Copyright:		(C) 2002-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
 #
 #	License:		GNU General Public License
 #
@@ -39,7 +39,7 @@
 #	You should have received a copy of the GNU General Public License
 #	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 #
-#	Last modified:		11/10/2010
+#	Last modified:		09/07/2012
 #
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -72,7 +72,8 @@ DIST_COMMON = README $(am__configure_deps) $(dist_pkgdata_DATA) \
 	autoconf/mkinstalldirs
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/acx_atlas.m4 \
-	$(top_srcdir)/acx_fftw.m4 $(top_srcdir)/acx_prog_cc_optim.m4 \
+	$(top_srcdir)/acx_fftw.m4 $(top_srcdir)/acx_mkl.m4 \
+	$(top_srcdir)/acx_prog_cc_optim.m4 \
 	$(top_srcdir)/acx_pthread.m4 \
 	$(top_srcdir)/acx_urbi_resolve_dir.m4 \
 	$(top_srcdir)/configure.ac
@@ -170,8 +171,8 @@ AM_LDFLAGS = @AM_LDFLAGS@
 AR = @AR@
 ATLAS_CFLAGS = @ATLAS_CFLAGS@
 ATLAS_ERROR = @ATLAS_ERROR@
-ATLAS_LIB = @ATLAS_LIB@
 ATLAS_LIBPATH = @ATLAS_LIBPATH@
+ATLAS_LIBS = @ATLAS_LIBS@
 ATLAS_WARN = @ATLAS_WARN@
 AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
@@ -216,6 +217,9 @@ LTLIBOBJS = @LTLIBOBJS@
 MAKEINFO = @MAKEINFO@
 MANIFEST_TOOL = @MANIFEST_TOOL@
 MKDIR_P = @MKDIR_P@
+MKL_CFLAGS = @MKL_CFLAGS@
+MKL_LIBS = @MKL_LIBS@
+MKL_WARN = @MKL_WARN@
 NM = @NM@
 NMEDIT = @NMEDIT@
 OBJDUMP = @OBJDUMP@
@@ -297,8 +301,8 @@ SUBDIRS = man src tests
 dist_pkgdata_DATA = config/* xsl/sextractor.xsl
 EXTRA_DIST = doc AUTHORS BUGS ChangeLog COPYRIGHT HISTORY \
 			  INSTALL LICENSE README THANKS \
-			  acx_atlas.m4 acx_prog_cc_optim.m4 \
-			  acx_urbi_resolve_dir.m4
+			  acx_atlas.m4 acx_fftw.m4 acx_mkl.m4 \
+			  acx_prog_cc_optim.m4 acx_urbi_resolve_dir.m4
 
 RPM_ROOTDIR = `rpmbuild --nobuild -E %_topdir`
 RPM_SRCDIR = $(RPM_ROOTDIR)/SOURCES

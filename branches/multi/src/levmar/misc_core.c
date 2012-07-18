@@ -5,8 +5,8 @@
 *
 *	This file part of:	AstrOmatic software
 *
-*	Copyright:		(C) 2007-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
-*				(C) 2004 Manolis Lourakis (original version)
+*	Copyright:		(C) 2007-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
+*				(C) 2004-2011 Manolis Lourakis (orig. version)
 *
 *	Licenses:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	along with AstrOmatic software.
 *	If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/03/2011
+*	Last modified:		09/07/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 /////////////////////////////////////////////////////////////////////////////////
@@ -65,12 +65,11 @@
 #define LEVMAR_PSEUDOINVERSE LM_ADD_PREFIX(levmar_pseudoinverse)
 static int LEVMAR_PSEUDOINVERSE(LM_REAL *A, LM_REAL *B, int m);
 
-/* BLAS matrix multiplication & LAPACK SVD routines */
-#ifdef LM_BLAS_PREFIX
-#define GEMM LM_CAT_(LM_BLAS_PREFIX, LM_ADD_PREFIX(LM_CAT_(gemm, LM_BLAS_SUFFIX)))
-#else
-#define GEMM LM_ADD_PREFIX(LM_CAT_(gemm, LM_BLAS_SUFFIX))
+#ifdef __cplusplus
+extern "C" {
 #endif
+/* BLAS matrix multiplication, LAPACK SVD & Cholesky routines */
+#define GEMM LM_MK_BLAS_NAME(gemm)
 /* C := alpha*op( A )*op( B ) + beta*C */
 extern void GEMM(char *transa, char *transb, int *m, int *n, int *k,
           LM_REAL *alpha, LM_REAL *a, int *lda, LM_REAL *b, int *ldb, LM_REAL *beta, LM_REAL *c, int *ldc);
@@ -87,10 +86,13 @@ extern int GESDD(char *jobz, int *m, int *n, LM_REAL *a, int *lda, LM_REAL *s, L
 /* Cholesky decomposition */
 #define POTF2 LM_MK_LAPACK_NAME(potf2)
 extern int POTF2(char *uplo, int *n, LM_REAL *a, int *lda, int *info);
+#ifdef __cplusplus
+}
+#endif
 
 #define LEVMAR_CHOLESKY LM_ADD_PREFIX(levmar_chol)
 
-#else
+#else /* !HAVE_LAPACK */
 #define LEVMAR_LUINVERSE LM_ADD_PREFIX(levmar_LUinverse_noLapack)
 
 static int LEVMAR_LUINVERSE(LM_REAL *A, LM_REAL *B, int m);
@@ -572,12 +574,11 @@ LM_REAL *a, *x, *work, max, sum, tmp;
 
 /* precision-specific definitions */
 /* Added by EB */
-#ifdef HAVE_CONFIG_H
-#include        "config.h"
+#ifdef HAVE_ATLAS_CLAPACK
+  #include        ATLAS_LAPACK_H
+  #define ATLAS_POTRF	LM_CAT_(clapack_, LM_ADD_PREFIX(potrf))
+  #define ATLAS_POTRI	LM_CAT_(clapack_, LM_ADD_PREFIX(potri))
 #endif
-#include        ATLAS_LAPACK_H
-#define ATLAS_POTRF	LM_CAT_(clapack_, LM_ADD_PREFIX(potrf))
-#define ATLAS_POTRI	LM_CAT_(clapack_, LM_ADD_PREFIX(potri))
 /* End added by EB */
 
 /*
@@ -620,24 +621,23 @@ LM_REAL fact;
 //   rnk=LEVMAR_LUINVERSE(JtJ, C, m);
 
    rnk = SVDINV(JtJ, C, m);
+   if(!rnk) return 0;
 
-   if (!rnk) return 0;
-
-//  rnk=m; /* assume full rank */
+   rnk=m; /* assume full rank */
 #endif /* HAVE_LAPACK */
-  
-  fact=(LM_REAL)n/(LM_REAL)(n-rnk);
-  for(i=0; i<m*m; ++i)
-    C[i]*=fact;
 
-  for(i=0; i<m; ++i)
-    if (C[i*(m+1)]<0.0 || fabs(C[i*(m+1)])>1e30)
-      {
-      for(j=0; j<m; ++j)
-        C[i*m+j] = 0.0;
-      for(j=0; j<m; ++j)
-        C[j*m+i] = 0.0;
-      }
+   fact=sumsq/(LM_REAL)(n-rnk);
+   for(i=0; i<m*m; ++i)
+     C[i]*=fact;
+
+   for(i=0; i<m; ++i)
+     if (C[i*(m+1)]<0.0 || fabs(C[i*(m+1)])>1e30)
+       {
+       for(j=0; j<m; ++j)
+         C[i*m+j] = 0.0;
+       for(j=0; j<m; ++j)
+         C[j*m+i] = 0.0;
+       }
 
    return rnk;
 }
@@ -683,17 +683,26 @@ LM_REAL SSerr,  // sum of squared errors, i.e. residual sum of squares \sum_i (x
   /* hx=f(p) */
   (*func)(p, hx, m, n, adata);
 
-  for(i=0, tmp=0.0; i<n; ++i)
+  for(i=n, tmp=0.0; i-->0; )
     tmp+=x[i];
   xavg=tmp/(LM_REAL)n;
   
-  for(i=0, SSerr=SStot=0.0; i<n; ++i){
-    tmp=x[i]-hx[i];
-    SSerr+=tmp*tmp;
+  if(x)
+    for(i=n, SSerr=SStot=0.0; i-->0; ){
+      tmp=x[i]-hx[i];
+      SSerr+=tmp*tmp;
 
-    tmp=x[i]-xavg;
-    SStot+=tmp*tmp;
-  }
+      tmp=x[i]-xavg;
+      SStot+=tmp*tmp;
+    }
+  else /* x==0 */
+    for(i=n, SSerr=SStot=0.0; i-->0; ){
+      tmp=-hx[i];
+      SSerr+=tmp*tmp;
+
+      tmp=-xavg;
+      SStot+=tmp*tmp;
+    }
 
   free(hx);
 
@@ -728,7 +737,7 @@ int info;
     W[i]=C[i];
 
   /* Cholesky decomposition */
-  POTF2("U", (int *)&m, W, (int *)&m, (int *)&info);
+  POTF2("L", (int *)&m, W, (int *)&m, (int *)&info);
   /* error treatment */
   if(info!=0){
 		if(info<0){
@@ -741,15 +750,13 @@ int info;
     return LM_ERROR;
   }
 
-  /* the decomposition is in the upper part of W (in column-major order!).
-   * copying it to the lower part and zeroing the upper transposes
-   * W in row-major order
+  /* the decomposition is in the lower part of W (in column-major order!).
+   * zeroing the upper part makes it lower triangular which is equivalent to
+   * upper triangular in row-major order
    */
   for(i=0; i<m; i++)
-    for(j=0; j<i; j++){
-      W[i+j*m]=W[j+i*m];
-      W[j+i*m]=0.0;
-    }
+    for(j=i+1; j<m; j++)
+      W[i+j*m]=0.0;
 
   return 0;
 }
@@ -851,6 +858,7 @@ register LM_REAL sum0=0.0, sum1=0.0, sum2=0.0, sum3=0.0;
   return sum0+sum1+sum2+sum3;
 }
 
+#ifndef HAVE_LAPACK
 /****** svdinv *************************************************************
 PROTO	int svdinv(double *a, double *b, int m)
 PURPOSE	Matrix inversion based on Singular Value Decomposition (SVD).
@@ -1157,7 +1165,13 @@ static int SVDINV(LM_REAL *a, LM_REAL *b, int m)
 #undef SIGN
 #undef MAX
 #undef PYTHAG
+#endif
+
 /* undefine everything. THIS MUST REMAIN AT THE END OF THE FILE */
+#undef POTF2
+#undef GESVD
+#undef GESDD
+#undef GEMM
 #undef LEVMAR_PSEUDOINVERSE
 #undef LEVMAR_LUINVERSE
 #undef LEVMAR_BOX_CHECK

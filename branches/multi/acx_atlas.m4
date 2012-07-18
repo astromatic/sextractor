@@ -23,11 +23,11 @@ dnl	You should have received a copy of the GNU General Public License
 dnl	along with AstrOmatic software.
 dnl	If not, see <http://www.gnu.org/licenses/>.
 dnl
-dnl	Last modified:		10/10/2010
+dnl	Last modified:		12/12/2011
 dnl
 dnl %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 dnl
-dnl @synopsis ACX_ATLAS([ATLAS_LIBDIR, ATLAS_INCDIR, ATLAS_PFLAG,
+dnl @synopsis ACX_ATLAS([ATLAS_LIBSDIR, ATLAS_INCDIR, ATLAS_PFLAG,
 dnl                     [ACTION-IF-FOUND[, ACTION-IF-NOT-FOUND]]])
 dnl You may wish to use these variables in your default LIBS:
 dnl
@@ -218,24 +218,24 @@ dnl Check whether the multithreaded version of ATLAS is there too:
     AC_CHECK_LIB(ptcblas, cblas_dgemm, [acx_atlast_ok=yes], [acx_atlast_ok=no],
 	[$ATLAS_LIBPATH -lcblas -latlas -lm])
     if test x$acx_atlast_ok = xyes; then
-      ATLAS_LIB="$ATLAS_LIBPATH -llapack -lptcblas -lcblas -latlas"
+      ATLAS_LIBS="$ATLAS_LIBPATH -llapack -lptcblas -lcblas -latlas"
       LIBS="$OLIBS"
-      AC_SUBST(ATLAS_LIB)
+      AC_SUBST(ATLAS_LIBS)
       AC_DEFINE(HAVE_ATLAS_MP,1,
 	[Define if you have the parallel ATLAS libraries.])
       $4
     else
-      ATLAS_LIB="$ATLAS_LIBPATH -llapack -lcblas -latlas"
+      ATLAS_LIBS="$ATLAS_LIBPATH -llapack -lcblas -latlas"
       LIBS="$OLIBS"
-      AC_SUBST(ATLAS_LIB)
+      AC_SUBST(ATLAS_LIBS)
       ATLAS_WARN="CBLAS/LAPack was compiled without multithreading support!"
       AC_SUBST(ATLAS_WARN)
       $4         
     fi
   else
-    ATLAS_LIB="$ATLAS_LIBPATH -llapack -lcblas -latlas"
+    ATLAS_LIBS="$ATLAS_LIBPATH -llapack -lcblas -latlas"
     LIBS="$OLIBS"
-    AC_SUBST(ATLAS_LIB)
+    AC_SUBST(ATLAS_LIBS)
     $4
   fi
 else

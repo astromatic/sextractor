@@ -23,7 +23,7 @@
 *	along with AstrOmatic software.
 *	If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		31/03/2012
+*	Last modified:		14/06/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -48,7 +48,7 @@
 #define		WCS_NGRIDPOINTS	12	/* Number of WCS grid points / axis */
 #define		WCS_NGRIDPOINTS2	(WCS_NGRIDPOINTS*WCS_NGRIDPOINTS)
 #define		WCS_INVMAXDEG	9	/* Maximum inversion polynom degree */
-#define		WCS_INVACCURACY	0.04	/* Maximum inversion error (pixels) */
+#define		WCS_INVACCURACY	0.001	/* Maximum inversion error (pixels) */
 #define		WCS_NRANGEPOINTS 32	/* Number of WCS range points / axis */
 
 /*-------------------------------- typedefs ---------------------------------*/

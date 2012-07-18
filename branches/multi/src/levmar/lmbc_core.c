@@ -5,8 +5,8 @@
 *
 *	This file part of:	AstrOmatic software
 *
-*	Copyright:		(C) 2007-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
-*				(C) 2004 Manolis Lourakis (original version)
+*	Copyright:		(C) 2007-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
+*				(C) 2004-2011 Manolis Lourakis (orig. version)
 *
 *	Licenses:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	along with AstrOmatic software.
 *	If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		25/10/2010
+*	Last modified:		09/07/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 /////////////////////////////////////////////////////////////////////////////////
@@ -53,7 +53,9 @@
 #define FUNC_STATE LM_ADD_PREFIX(func_state)
 #define LNSRCH LM_ADD_PREFIX(lnsrch)
 #define BOXPROJECT LM_ADD_PREFIX(boxProject)
+#define BOXSCALE LM_ADD_PREFIX(boxScale)
 #define LEVMAR_BOX_CHECK LM_ADD_PREFIX(levmar_box_check)
+#define VECNORM LM_ADD_PREFIX(vecnorm)
 #define LEVMAR_BC_DER LM_ADD_PREFIX(levmar_bc_der)
 #define LEVMAR_BC_DIF LM_ADD_PREFIX(levmar_bc_dif)
 #define LEVMAR_FDIF_FORW_JAC_APPROX LM_ADD_PREFIX(levmar_fdif_forw_jac_approx)
@@ -76,31 +78,143 @@
 #define AX_EQ_B_LU LM_ADD_PREFIX(Ax_eq_b_LU_noLapack)
 #endif /* HAVE_LAPACK */
 
+#ifdef HAVE_PLASMA
+#define AX_EQ_B_PLASMA_CHOL LM_ADD_PREFIX(Ax_eq_b_PLASMA_Chol)
+#endif
+
 /* find the median of 3 numbers */
 #define __MEDIAN3(a, b, c) ( ((a) >= (b))?\
         ( ((c) >= (a))? (a) : ( ((c) <= (b))? (b) : (c) ) ) : \
         ( ((c) >= (b))? (b) : ( ((c) <= (a))? (a) : (c) ) ) )
 
-#define _POW_ LM_CNST(2.1)
+/* Projections to feasible set \Omega: P_{\Omega}(y) := arg min { ||x - y|| : x \in \Omega},  y \in R^m */
 
-#define __LSITMAX   150 // max #iterations for line search
+/* project vector p to a box shaped feasible set. p is a mx1 vector.
+ * Either lb, ub can be NULL. If not NULL, they are mx1 vectors
+ */
+static void BOXPROJECT(LM_REAL *p, LM_REAL *lb, LM_REAL *ub, int m)
+{
+register int i;
+
+  if(!lb){ /* no lower bounds */
+    if(!ub) /* no upper bounds */
+      return;
+    else{ /* upper bounds only */
+      for(i=m; i-->0; )
+        if(p[i]>ub[i]) p[i]=ub[i];
+    }
+  }
+  else
+    if(!ub){ /* lower bounds only */
+      for(i=m; i-->0; )
+        if(p[i]<lb[i]) p[i]=lb[i];
+    }
+    else /* box bounds */
+      for(i=m; i-->0; )
+        p[i]=__MEDIAN3(lb[i], p[i], ub[i]);
+}
+#undef __MEDIAN3
+
+/* pointwise scaling of bounds with the mx1 vector scl. If div=1 scaling is by 1./scl.
+ * Either lb, ub can be NULL. If not NULL, they are mx1 vectors
+ */
+static void BOXSCALE(LM_REAL *lb, LM_REAL *ub, LM_REAL *scl, int m, int div)
+{
+register int i;
+
+  if(!lb){ /* no lower bounds */
+    if(!ub) /* no upper bounds */
+      return;
+    else{ /* upper bounds only */
+      if(div){
+        for(i=m; i-->0; )
+          if(ub[i]!=LM_REAL_MAX)
+            ub[i]=ub[i]/scl[i];
+      }else{
+        for(i=m; i-->0; )
+          if(ub[i]!=LM_REAL_MAX)
+            ub[i]=ub[i]*scl[i];
+      }
+    }
+  }
+  else
+    if(!ub){ /* lower bounds only */
+      if(div){
+        for(i=m; i-->0; )
+          if(lb[i]!=LM_REAL_MIN)
+            lb[i]=lb[i]/scl[i];
+      }else{
+        for(i=m; i-->0; )
+          if(lb[i]!=LM_REAL_MIN)
+            lb[i]=lb[i]*scl[i];
+      }
+    }
+    else{ /* box bounds */
+      if(div){
+        for(i=m; i-->0; ){
+          if(ub[i]!=LM_REAL_MAX)
+            ub[i]=ub[i]/scl[i];
+          if(lb[i]!=LM_REAL_MIN)
+            lb[i]=lb[i]/scl[i];
+        }
+      }else{
+        for(i=m; i-->0; ){
+          if(ub[i]!=LM_REAL_MAX)
+            ub[i]=ub[i]*scl[i];
+          if(lb[i]!=LM_REAL_MIN)
+            lb[i]=lb[i]*scl[i];
+        }
+      }
+    }
+}
+
+/* compute the norm of a vector in a manner that avoids overflows
+ */
+static LM_REAL VECNORM(LM_REAL *x, int n)
+{
+#ifdef HAVE_LAPACK
+#define NRM2 LM_MK_BLAS_NAME(nrm2)
+extern LM_REAL NRM2(int *n, LM_REAL *dx, int *incx);
+int one=1;
+
+  return NRM2(&n, x, &one);
+#undef NRM2
+#else // no LAPACK, use the simple method described by Blue in TOMS78
+register int i;
+LM_REAL max, sum, tmp;
+
+  for(i=n, max=0.0; i-->0; )
+    if(x[i]>max) max=x[i];
+    else if(x[i]<-max) max=-x[i];
+
+  for(i=n, sum=0.0; i-->0; ){
+    tmp=x[i]/max;
+    sum+=tmp*tmp;
+  }
+
+  return max*(LM_REAL)sqrt(sum);
+#endif /* HAVE_LAPACK */
+}
 
 struct FUNC_STATE{
   int n, *nfev;
   LM_REAL *hx, *x;
+  LM_REAL *lb, *ub;
   void *adata;
 };
 
 static void
 LNSRCH(int m, LM_REAL *x, LM_REAL f, LM_REAL *g, LM_REAL *p, LM_REAL alpha, LM_REAL *xpls,
-       LM_REAL *ffpls, void (*func)(LM_REAL *p, LM_REAL *hx, int m, int n, void *adata), struct FUNC_STATE state,
+       LM_REAL *ffpls, void (*func)(LM_REAL *p, LM_REAL *hx, int m, int n, void *adata), struct FUNC_STATE *state,
        int *mxtake, int *iretcd, LM_REAL stepmx, LM_REAL steptl, LM_REAL *sx)
 {
 /* Find a next newton iterate by backtracking line search.
  * Specifically, finds a \lambda such that for a fixed alpha<0.5 (usually 1e-4),
  * f(x + \lambda*p) <= f(x) + alpha * \lambda * g^T*p
  *
- * Translated (with minor changes) from Schnabel, Koontz & Weiss uncmin.f,  v1.3
+ * Translated (with a few changes) from Schnabel, Koontz & Weiss uncmin.f,  v1.3
+ * Main changes include the addition of box projection and modification of the scaling 
+ * logic since uncmin.f operates in the original (unscaled) variable space.
 
  * PARAMETERS :
 
@@ -141,52 +255,48 @@ LNSRCH(int m, LM_REAL *x, LM_REAL f, LM_REAL *g, LM_REAL *p, LM_REAL alpha, LM_R
     *mxtake = 0;
     *iretcd = 2;
     tmp1 = 0.;
-    if(!sx) /* no scaling */
-      for (i = 0; i < m; ++i)
-        tmp1 += p[i] * p[i];
-    else
-      for (i = 0; i < m; ++i)
-        tmp1 += sx[i] * sx[i] * p[i] * p[i];
+    for (i = m; i-- > 0;  )
+      tmp1 += p[i] * p[i];
     sln = (LM_REAL)sqrt(tmp1);
     if (sln > stepmx) {
 	  /*	newton step longer than maximum allowed */
 	    scl = stepmx / sln;
-      for(i=0; i<m; ++i) /* p * scl */
+      for (i = m; i-- > 0;  ) /* p * scl */
         p[i]*=scl;
 	    sln = stepmx;
     }
-    for(i=0, slp=0.; i<m; ++i) /* g^T * p */
-      slp+=g[i]*p[i];
-    rln = 0.;
-    if(!sx) /* no scaling */
-      for (i = 0; i < m; ++i) {
-	      tmp1 = (FABS(x[i])>=LM_CNST(1.))? FABS(x[i]) : LM_CNST(1.);
-	      tmp2 = FABS(p[i])/tmp1;
-	      if(rln < tmp2) rln = tmp2;
-      }
-    else
-      for (i = 0; i < m; ++i) {
-	      tmp1 = (FABS(x[i])>=LM_CNST(1.)/sx[i])? FABS(x[i]) : LM_CNST(1.)/sx[i];
-	      tmp2 = FABS(p[i])/tmp1;
-	      if(rln < tmp2) rln = tmp2;
-      }
+    for (i = m, slp = rln = 0.; i-- > 0;  ){
+      slp+=g[i]*p[i]; /* g^T * p */
+
+      tmp1 = (FABS(x[i])>=LM_CNST(1.))? FABS(x[i]) : LM_CNST(1.);
+      tmp2 = FABS(p[i])/tmp1;
+      if(rln < tmp2) rln = tmp2;
+    }
     rmnlmb = steptl / rln;
     lambda = LM_CNST(1.0);
 
     /*	check if new iterate satisfactory.  generate new lambda if necessary. */
 
-    for(j=__LSITMAX; j>=0; --j) {
-	    for (i = 0; i < m; ++i)
-	      xpls[i] = x[i] + lambda * p[i];
+    for(j = _LSITMAX_; j-- > 0;  ) {
+      for (i = m; i-- > 0;  )
+        xpls[i] = x[i] + lambda * p[i];
+      BOXPROJECT(xpls, state->lb, state->ub, m); /* project to feasible set */
 
       /* evaluate function at new point */
-      (*func)(xpls, state.hx, m, state.n, state.adata); ++(*(state.nfev));
-      /* ### state.hx=state.x-state.hx, tmp1=||state.hx|| */
+      if(!sx){
+        (*func)(xpls, state->hx, m, state->n, state->adata); ++(*(state->nfev));
+      }
+      else{
+        for (i = m; i-- > 0;  ) xpls[i] *= sx[i];
+        (*func)(xpls, state->hx, m, state->n, state->adata); ++(*(state->nfev));
+        for (i = m; i-- > 0;  ) xpls[i] /= sx[i];
+      }
+      /* ### state->hx=state->x-state->hx, tmp1=||state->hx|| */
 #if 1
-       tmp1=LEVMAR_L2NRMXMY(state.hx, state.x, state.hx, state.n);
+       tmp1=LEVMAR_L2NRMXMY(state->hx, state->x, state->hx, state->n);
 #else
-      for(i=0, tmp1=0.0; i<state.n; ++i){
-        state.hx[i]=tmp2=state.x[i]-state.hx[i];
+      for(i=0, tmp1=0.0; i<state->n; ++i){
+        state->hx[i]=tmp2=state->x[i]-state->hx[i];
         tmp1+=tmp2*tmp2;
       }
 #endif
@@ -253,33 +363,6 @@ LNSRCH(int m, LM_REAL *x, LM_REAL f, LM_REAL *g, LM_REAL *p, LM_REAL alpha, LM_R
 	  return;
 } /* LNSRCH */
 
-/* Projections to feasible set \Omega: P_{\Omega}(y) := arg min { ||x - y|| : x \in \Omega},  y \in R^m */
-
-/* project vector p to a box shaped feasible set. p is a mx1 vector.
- * Either lb, ub can be NULL. If not NULL, they are mx1 vectors
- */
-static void BOXPROJECT(LM_REAL *p, LM_REAL *lb, LM_REAL *ub, int m)
-{
-register int i;
-
-  if(!lb){ /* no lower bounds */
-    if(!ub) /* no upper bounds */
-      return;
-    else{ /* upper bounds only */
-      for(i=0; i<m; ++i)
-        if(p[i]>ub[i]) p[i]=ub[i];
-    }
-  }
-  else
-    if(!ub){ /* lower bounds only */
-      for(i=0; i<m; ++i)
-        if(p[i]<lb[i]) p[i]=lb[i];
-    }
-    else /* box bounds */
-      for(i=0; i<m; ++i)
-        p[i]=__MEDIAN3(lb[i], p[i], ub[i]);
-}
-
 /* 
  * This function seeks the parameter vector p that best describes the measurements
  * vector x under box constraints.
@@ -299,6 +382,15 @@ register int i;
  * Journal of Computational and Applied Mathematics 172, 2004, pp. 375-397.
  * Also, see K. Madsen, H.B. Nielsen and O. Tingleff's lecture notes on 
  * unconstrained Levenberg-Marquardt at http://www.imm.dtu.dk/pubdb/views/edoc_download.php/3215/pdf/imm3215.pdf
+ *
+ * The algorithm implemented by this function employs projected gradient steps. Since steepest descent
+ * is very sensitive to poor scaling, diagonal scaling has been implemented through the dscl argument:
+ * Instead of minimizing f(p) for p, f(D*q) is minimized for q=D^-1*p, D being a diagonal scaling
+ * matrix whose diagonal equals dscl (see Nocedal-Wright p.27). dscl should contain "typical" magnitudes 
+ * for the parameters p. A NULL value for dscl implies no scaling. i.e. D=I.
+ * To account for scaling, the code divides the starting point and box bounds pointwise by dscl. Moreover,
+ * before calling func and jacf the scaling has to be undone (by multiplying), as should be done with
+ * the final point. Note also that jac_q=jac_p*D, where jac_q, jac_p are the jacobians w.r.t. q & p, resp.
  */
 
 int LEVMAR_BC_DER(
@@ -310,6 +402,7 @@ int LEVMAR_BC_DER(
   int n,              /* I: measurement vector dimension */
   LM_REAL *lb,        /* I: vector of lower bounds. If NULL, no lower bounds apply */
   LM_REAL *ub,        /* I: vector of upper bounds. If NULL, no upper bounds apply */
+  LM_REAL *dscl,      /* I: diagonal scaling constants. NULL implies no scaling */
   int itmax,          /* I: maximum number of iterations */
   LM_REAL opts[4],    /* I: minim. options [\mu, \epsilon1, \epsilon2, \epsilon3]. Respectively the scale factor for initial \mu,
                        * stopping thresholds for ||J^T e||_inf, ||Dp||_2 and ||e||_2. Set to NULL for defaults to be used.
@@ -347,7 +440,8 @@ LM_REAL *e,          /* nx1 */
        *jacTjac,    /* mxm */
        *Dp,         /* mx1 */
    *diag_jacTjac,   /* diagonal of J^T J, mx1 */
-       *pDp;        /* p + Dp, mx1 */
+       *pDp,        /* p + Dp, mx1 */
+   *sp_pDp=NULL;    /* dscl*p or dscl*pDp, mx1 */
 
 register LM_REAL mu,  /* damping constant */
                 tmp; /* mainly used in matrix & vector multiplications */
@@ -360,9 +454,8 @@ const int nm=n*m;
 
 /* variables for constrained LM */
 struct FUNC_STATE fstate;
-LM_REAL alpha=LM_CNST(1e-4), beta=LM_CNST(0.9), gamma=LM_CNST(0.99995), gamma_sq=gamma*gamma, rho=LM_CNST(1e-8);
-LM_REAL t, t0;
-LM_REAL steptl=LM_CNST(1e3)*(LM_REAL)sqrt(LM_REAL_EPSILON), jacTeDp;
+LM_REAL alpha=LM_CNST(1e-4), beta=LM_CNST(0.9), gamma=LM_CNST(0.99995), rho=LM_CNST(1e-8);
+LM_REAL t, t0, jacTeDp;
 LM_REAL tmin=LM_CNST(1e-12), tming=LM_CNST(1e-18); /* minimum step length for LS and PG steps */
 const LM_REAL tini=LM_CNST(1.0); /* initial step length for LS and PG steps */
 int nLMsteps=0, nLSsteps=0, nPGsteps=0, gprevtaken=0;
@@ -385,6 +478,20 @@ int (*linsolver)(LM_REAL *A, LM_REAL *B, LM_REAL *x, int m)=NULL;
   if(!LEVMAR_BOX_CHECK(lb, ub, m)){
     fprintf(stderr, LCAT(LEVMAR_BC_DER, "(): at least one lower bound exceeds the upper one\n"));
     return LM_ERROR;
+  }
+
+  if(dscl){ /* check that scaling consts are valid */
+    for(i=m; i-->0; )
+      if(dscl[i]<=0.0){
+        fprintf(stderr, LCAT(LEVMAR_BC_DER, "(): scaling constants should be positive (scale %d: %g <= 0)\n"), i, dscl[i]);
+        return LM_ERROR;
+      }
+
+    sp_pDp=(LM_REAL *)malloc(m*sizeof(LM_REAL));
+    if(!sp_pDp){
+      fprintf(stderr, LCAT(LEVMAR_BC_DER, "(): memory allocation request failed\n"));
+      return LM_ERROR;
+    }
   }
 
   if(opts){
@@ -425,10 +532,12 @@ int (*linsolver)(LM_REAL *A, LM_REAL *B, LM_REAL *x, int m)=NULL;
   fstate.n=n;
   fstate.hx=hx;
   fstate.x=x;
+  fstate.lb=lb;
+  fstate.ub=ub;
   fstate.adata=adata;
   fstate.nfev=&nfev;
   
-  /* see if starting point is within the feasile set */
+  /* see if starting point is within the feasible set */
   for(i=0; i<m; ++i)
     pDp[i]=p[i];
   BOXPROJECT(p, lb, ub, m); /* project to feasible set */
@@ -451,6 +560,12 @@ int (*linsolver)(LM_REAL *A, LM_REAL *B, LM_REAL *x, int m)=NULL;
   init_p_eL2=p_eL2;
   if(!LM_FINITE(p_eL2)) stop=7;
 
+  if(dscl){
+    /* scale starting point and constraints */
+    for(i=m; i-->0; ) p[i]/=dscl[i];
+    BOXSCALE(lb, ub, dscl, m, 1);
+  }
+
   for(k=0; k<itmax && !stop; ++k){
     /* Note that p and e have been updated at a previous iteration */
 
@@ -464,7 +579,22 @@ int (*linsolver)(LM_REAL *A, LM_REAL *B, LM_REAL *x, int m)=NULL;
      * only its upper triangular part and copying it to the lower part
      */
 
-    (*jacf)(p, jac, m, n, adata); ++njev;
+    if(!dscl){
+      (*jacf)(p, jac, m, n, adata); ++njev;
+    }
+    else{
+      for(i=m; i-->0; ) sp_pDp[i]=p[i]*dscl[i];
+      (*jacf)(sp_pDp, jac, m, n, adata); ++njev;
+
+      /* compute jac*D */
+      for(i=n; i-->0; ){
+        register LM_REAL *jacim;
+
+        jacim=jac+i*m;
+        for(j=m; j-->0; )
+          jacim[j]*=dscl[j]; // jac[i*m+j]*=dscl[j];
+      }
+    }
 
     /* J^T J, J^T e */
     if(nm<__BLOCKSZ__SQ){ // this is a small problem
@@ -486,8 +616,7 @@ int (*linsolver)(LM_REAL *A, LM_REAL *B, LM_REAL *x, int m)=NULL;
        * Note that the non-blocking algorithm is faster on small
        * problems since in this case it avoids the overheads of blocking. 
        */
-      register int l, im;
-      register LM_REAL alpha, *jaclm;
+      register LM_REAL alpha, *jaclm, *jacTjacim;
 
       /* looping downwards saves a few computations */
       for(i=m*m; i-->0; )
@@ -498,10 +627,10 @@ int (*linsolver)(LM_REAL *A, LM_REAL *B, LM_REAL *x, int m)=NULL;
       for(l=n; l-->0; ){
         jaclm=jac+l*m;
         for(i=m; i-->0; ){
-          im=i*m;
+          jacTjacim=jacTjac+i*m;
           alpha=jaclm[i]; //jac[l*m+i];
           for(j=i+1; j-->0; ) /* j<=i computes lower triangular part only */
-            jacTjac[im+j]+=jaclm[j]*alpha; //jac[l*m+j]
+            jacTjacim[j]+=jaclm[j]*alpha; //jacTjac[i*m+j]+=jac[l*m+j]*alpha
 
           /* J^T e */
           jacTe[i]+=alpha*e[l];
@@ -579,14 +708,19 @@ if(!(k%100)){
 
       /* solve augmented equations */
 #ifdef HAVE_LAPACK
-      /* 6 alternatives are available: LU, Cholesky, 2 variants of QR decomposition, SVD and LDLt.
-       * Cholesky is the fastest but might be inaccurate; QR is slower but more accurate;
-       * SVD is the slowest but most accurate; LU offers a tradeoff between accuracy and speed
+      /* 7 alternatives are available: LU, Cholesky + Cholesky with PLASMA, LDLt, 2 variants of QR decomposition and SVD.
+       * For matrices with dimensions of at least a few hundreds, the PLASMA implementation of Cholesky is the fastest.
+       * From the serial solvers, Cholesky is the fastest but might occasionally be inapplicable due to numerical round-off;
+       * QR is slower but more robust; SVD is the slowest but most robust; LU is quite robust but
+       * slower than LDLt; LDLt offers a good tradeoff between robustness and speed
        */
 
-      //issolved=AX_EQ_B_BK(jacTjac, jacTe, Dp, m); ++nlss; linsolver=AX_EQ_B_BK;
-      issolved=AX_EQ_B_LU(jacTjac, jacTe, Dp, m); ++nlss; linsolver=AX_EQ_B_LU;
+      issolved=AX_EQ_B_BK(jacTjac, jacTe, Dp, m); ++nlss; linsolver=AX_EQ_B_BK;
+      //issolved=AX_EQ_B_LU(jacTjac, jacTe, Dp, m); ++nlss; linsolver=AX_EQ_B_LU;
       //issolved=AX_EQ_B_CHOL(jacTjac, jacTe, Dp, m); ++nlss; linsolver=AX_EQ_B_CHOL;
+#ifdef HAVE_PLASMA
+      //issolved=AX_EQ_B_PLASMA_CHOL(jacTjac, jacTe, Dp, m); ++nlss; linsolver=AX_EQ_B_PLASMA_CHOL;
+#endif
       //issolved=AX_EQ_B_QR(jacTjac, jacTe, Dp, m); ++nlss; linsolver=AX_EQ_B_QR;
       //issolved=AX_EQ_B_QRLS(jacTjac, jacTe, Dp, m, m); ++nlss; linsolver=(int (*)(LM_REAL *A, LM_REAL *B, LM_REAL *x, int m))AX_EQ_B_QRLS;
       //issolved=AX_EQ_B_SVD(jacTjac, jacTe, Dp, m); ++nlss; linsolver=AX_EQ_B_SVD;
@@ -618,7 +752,14 @@ if(!(k%100)){
           break;
         }
 
-        (*func)(pDp, hx, m, n, adata); ++nfev; /* evaluate function at p + Dp */
+        if(!dscl){
+          (*func)(pDp, hx, m, n, adata); ++nfev; /* evaluate function at p + Dp */
+        }
+        else{
+          for(i=m; i-->0; ) sp_pDp[i]=pDp[i]*dscl[i];
+          (*func)(sp_pDp, hx, m, n, adata); ++nfev; /* evaluate function at p + Dp */
+        }
+
         /* ### hx=x-hx, pDp_eL2=||hx|| */
 #if 1
         pDp_eL2=LEVMAR_L2NRMXMY(hx, x, hx, n);
@@ -628,12 +769,15 @@ if(!(k%100)){
           pDp_eL2+=tmp*tmp;
         }
 #endif
-        if(!LM_FINITE(pDp_eL2)){
+        /* the following test ensures that the computation of pDp_eL2 has not overflowed.
+         * Such an overflow does no harm here, thus it is not signalled as an error
+         */
+        if(!LM_FINITE(pDp_eL2) && !LM_FINITE(VECNORM(hx, n))){
           stop=7;
           break;
         }
 
-        if(pDp_eL2<=gamma_sq*p_eL2){
+        if(pDp_eL2<=gamma*p_eL2){
           for(i=0, dL=0.0; i<m; ++i)
             dL+=Dp[i]*(mu*Dp[i]+jacTe[i]);
 
@@ -644,11 +788,14 @@ if(!(k%100)){
             tmp=LM_CNST(1.0)-tmp*tmp*tmp;
             mu=mu*( (tmp>=LM_CNST(ONE_THIRD))? tmp : LM_CNST(ONE_THIRD) );
           }
-          else
-            mu=(mu>=pDp_eL2)? pDp_eL2 : mu; /* pDp_eL2 is the new pDp_eL2 */
+          else{
+            tmp=LM_CNST(0.1)*pDp_eL2; /* pDp_eL2 is the new p_eL2 */
+            mu=(mu>=tmp)? tmp : mu;
+          }
 #else
 
-          mu=(mu>=pDp_eL2)? pDp_eL2 : mu; /* pDp_eL2 is the new pDp_eL2 */
+          tmp=LM_CNST(0.1)*pDp_eL2; /* pDp_eL2 is the new p_eL2 */
+          mu=(mu>=tmp)? tmp : mu;
 #endif
 
           nu=2;
@@ -663,6 +810,7 @@ if(!(k%100)){
           gprevtaken=0;
           break;
         }
+        /* note that if the LM step is not taken, code falls through to the LM line search below */
       }
       else{
 
@@ -692,37 +840,52 @@ if(!(k%100)){
         jacTeDp+=jacTe[i]*Dp[i];
       }
 
-      if(jacTeDp<=-rho*pow(Dp_L2, _POW_/LM_CNST(2.0))){
+      if(jacTeDp<=-rho*pow(Dp_L2, LM_CNST(_POW_)/LM_CNST(2.0))){
         /* Dp is a descent direction; do a line search along it */
+#if 1
+        /* use Schnabel's backtracking line search; it requires fewer "func" evaluations */
+        {
         int mxtake, iretcd;
-        LM_REAL stepmx;
+        LM_REAL stepmx, steptl=LM_CNST(1e3)*(LM_REAL)sqrt(LM_REAL_EPSILON);
 
         tmp=(LM_REAL)sqrt(p_L2); stepmx=LM_CNST(1e3)*( (tmp>=LM_CNST(1.0))? tmp : LM_CNST(1.0) );
 
-#if 1
-        /* use Schnabel's backtracking line search; it requires fewer "func" evaluations */
-        LNSRCH(m, p, p_eL2, jacTe, Dp, alpha, pDp, &pDp_eL2, func, fstate,
-               &mxtake, &iretcd, stepmx, steptl, NULL); /* NOTE: LNSRCH() updates hx */
-        if(iretcd!=0) goto gradproj; /* rather inelegant but effective way to handle LNSRCH() failures... */
+        LNSRCH(m, p, p_eL2, jacTe, Dp, alpha, pDp, &pDp_eL2, func, &fstate,
+               &mxtake, &iretcd, stepmx, steptl, dscl); /* NOTE: LNSRCH() updates hx */
+        if(iretcd!=0 || !LM_FINITE(pDp_eL2)) goto gradproj; /* rather inelegant but effective way to handle LNSRCH() failures... */
+        }
 #else
         /* use the simpler (but slower!) line search described by Kanzow et al */
         for(t=tini; t>tmin; t*=beta){
-          for(i=0; i<m; ++i){
+          for(i=0; i<m; ++i)
             pDp[i]=p[i] + t*Dp[i];
-            //pDp[i]=__MEDIAN3(lb[i], pDp[i], ub[i]); /* project to feasible set */
+          BOXPROJECT(pDp, lb, ub, m); /* project to feasible set */
+
+          if(!dscl){
+            (*func)(pDp, hx, m, n, adata); ++nfev; /* evaluate function at p + t*Dp */
+          }
+          else{
+            for(i=m; i-->0; ) sp_pDp[i]=pDp[i]*dscl[i];
+            (*func)(sp_pDp, hx, m, n, adata); ++nfev; /* evaluate function at p + t*Dp */
           }
 
-          (*func)(pDp, hx, m, n, adata); ++nfev; /* evaluate function at p + t*Dp */
-          for(i=0, pDp_eL2=0.0; i<n; ++i){ /* compute ||e(pDp)||_2 */
+          /* compute ||e(pDp)||_2 */
+          /* ### hx=x-hx, pDp_eL2=||hx|| */
+#if 1
+          pDp_eL2=LEVMAR_L2NRMXMY(hx, x, hx, n);
+#else
+          for(i=0, pDp_eL2=0.0; i<n; ++i){
             hx[i]=tmp=x[i]-hx[i];
             pDp_eL2+=tmp*tmp;
           }
+#endif /* ||e(pDp)||_2 */
           if(!LM_FINITE(pDp_eL2)) goto gradproj; /* treat as line search failure */
 
           //if(LM_CNST(0.5)*pDp_eL2<=LM_CNST(0.5)*p_eL2 + t*alpha*jacTeDp) break;
           if(pDp_eL2<=p_eL2 + LM_CNST(2.0)*t*alpha*jacTeDp) break;
         }
-#endif
+#endif /* line search alternatives */
+
         ++nLSsteps;
         gprevtaken=0;
 
@@ -731,11 +894,13 @@ if(!(k%100)){
          */
       }
       else{
-gradproj: /* Note that this point can also be reached via a goto when LNSRCH() fails */
+        /* Note that this point can also be reached via a goto when LNSRCH() fails. */
+gradproj:
 
-        /* jacTe is a descent direction; make a projected gradient step */
+        /* jacTe has been negated above. Being a descent direction, it is next used
+         * to make a projected gradient step
+         */
 
-        /* if the previous step was along the gradient descent, try to use the t employed in that step */
         /* compute ||g|| */
         for(i=0, tmp=0.0; i<m; ++i)
           tmp+=jacTe[i]*jacTe[i];
@@ -743,14 +908,24 @@ gradproj: /* Note that this point can also be reached via a goto when LNSRCH() f
         tmp=LM_CNST(100.0)/(LM_CNST(1.0)+tmp);
         t0=(tmp<=tini)? tmp : tini; /* guard against poor scaling & large steps; see (3.50) in C.T. Kelley's book */
 
+        /* if the previous step was along the gradient descent, try to use the t employed in that step */
         for(t=(gprevtaken)? t : t0; t>tming; t*=beta){
           for(i=0; i<m; ++i)
             pDp[i]=p[i] - t*jacTe[i];
           BOXPROJECT(pDp, lb, ub, m); /* project to feasible set */
-          for(i=0; i<m; ++i)
-            Dp[i]=pDp[i]-p[i];
+          for(i=0, Dp_L2=0.0; i<m; ++i){
+            Dp[i]=tmp=pDp[i]-p[i];
+            Dp_L2+=tmp*tmp;
+          }
 
-          (*func)(pDp, hx, m, n, adata); ++nfev; /* evaluate function at p - t*g */
+          if(!dscl){
+            (*func)(pDp, hx, m, n, adata); ++nfev; /* evaluate function at p - t*g */
+          }
+          else{
+            for(i=m; i-->0; ) sp_pDp[i]=pDp[i]*dscl[i];
+            (*func)(sp_pDp, hx, m, n, adata); ++nfev; /* evaluate function at p - t*g */
+          }
+
           /* compute ||e(pDp)||_2 */
           /* ### hx=x-hx, pDp_eL2=||hx|| */
 #if 1
@@ -761,22 +936,36 @@ gradproj: /* Note that this point can also be reached via a goto when LNSRCH() f
             pDp_eL2+=tmp*tmp;
           }
 #endif
-          if(!LM_FINITE(pDp_eL2)){
+          /* the following test ensures that the computation of pDp_eL2 has not overflowed.
+           * Such an overflow does no harm here, thus it is not signalled as an error
+           */
+          if(!LM_FINITE(pDp_eL2) && !LM_FINITE(VECNORM(hx, n))){
             stop=7;
             goto breaknested;
           }
 
-          for(i=0, tmp=0.0; i<m; ++i) /* compute ||g^T * Dp|| */
-            tmp+=jacTe[i]*Dp[i];
+          /* compute ||g^T * Dp||. Note that if pDp has not been altered by projection
+           * (i.e. BOXPROJECT), jacTeDp=-t*||g||^2
+           */
+          for(i=0, jacTeDp=0.0; i<m; ++i)
+            jacTeDp+=jacTe[i]*Dp[i];
 
-          if(gprevtaken && pDp_eL2<=p_eL2 + LM_CNST(2.0)*LM_CNST(0.99999)*tmp){ /* starting t too small */
+          if(gprevtaken && pDp_eL2<=p_eL2 + LM_CNST(2.0)*LM_CNST(0.99999)*jacTeDp){ /* starting t too small */
             t=t0;
             gprevtaken=0;
             continue;
           }
-          //if(LM_CNST(0.5)*pDp_eL2<=LM_CNST(0.5)*p_eL2 + alpha*tmp) break;
-          if(pDp_eL2<=p_eL2 + LM_CNST(2.0)*alpha*tmp) break;
+          //if(LM_CNST(0.5)*pDp_eL2<=LM_CNST(0.5)*p_eL2 + alpha*jacTeDp) terminatePGLS;
+          if(pDp_eL2<=p_eL2 + LM_CNST(2.0)*alpha*jacTeDp) goto terminatePGLS;
+
+          //if(pDp_eL2<=p_eL2 - LM_CNST(2.0)*alpha/t*Dp_L2) goto terminatePGLS; // sufficient decrease condition proposed by Kelley in (5.13)
         }
+        
+        /* if this point is reached then the gradient line search has failed */
+        gprevtaken=0;
+        break;
+
+terminatePGLS:
 
         ++nPGsteps;
         gprevtaken=1;
@@ -831,6 +1020,12 @@ breaknested: /* NOTE: this point is also reached via an explicit goto! */
   /* covariance matrix */
   if(covar){
     LEVMAR_COVAR(jacTjac, covar, p_eL2, m, n);
+
+    if(dscl){ /* correct for the scaling */
+      for(i=m; i-->0; )
+        for(j=m; j-->0; )
+          covar[i*m+j]*=(dscl[i]*dscl[j]);
+    }
   }
                                                                
   if(freework) free(work);
@@ -842,6 +1037,13 @@ breaknested: /* NOTE: this point is also reached via an explicit goto! */
 #if 0
 printf("%d LM steps, %d line search, %d projected gradient\n", nLMsteps, nLSsteps, nPGsteps);
 #endif
+
+  if(dscl){
+    /* scale final point and constraints */
+    for(i=0; i<m; ++i) p[i]*=dscl[i];
+    BOXSCALE(lb, ub, dscl, m, 0);
+    free(sp_pDp);
+  }
 
   return (stop!=4 && stop!=7)?  k : LM_ERROR;
 }
@@ -892,6 +1094,7 @@ int LEVMAR_BC_DIF(
   int n,              /* I: measurement vector dimension */
   LM_REAL *lb,        /* I: vector of lower bounds. If NULL, no lower bounds apply */
   LM_REAL *ub,        /* I: vector of upper bounds. If NULL, no upper bounds apply */
+  LM_REAL *dscl,      /* I: diagonal scaling constants. NULL implies no scaling */
   int itmax,          /* I: maximum number of iterations */
   LM_REAL opts[5],    /* I: opts[0-4] = minim. options [\mu, \epsilon1, \epsilon2, \epsilon3, \delta]. Respectively the
                        * scale factor for initial \mu, stopping thresholds for ||J^T e||_inf, ||Dp||_2 and ||e||_2 and
@@ -938,7 +1141,7 @@ int ret;
   data.adata=adata;
   data.delta=(opts)? FABS(opts[4]) : (LM_REAL)LM_DIFF_DELTA;
 
-  ret=LEVMAR_BC_DER(LMBC_DIF_FUNC, LMBC_DIF_JACF, p, x, m, n, lb, ub, itmax, opts, info, work, covar, (void *)&data);
+  ret=LEVMAR_BC_DER(LMBC_DIF_FUNC, LMBC_DIF_JACF, p, x, m, n, lb, ub, dscl, itmax, opts, info, work, covar, (void *)&data);
 
   if(info){ /* correct the number of function calls */
     if(data.ffdif)
@@ -956,7 +1159,9 @@ int ret;
 #undef FUNC_STATE
 #undef LNSRCH
 #undef BOXPROJECT
+#undef BOXSCALE
 #undef LEVMAR_BOX_CHECK
+#undef VECNORM
 #undef LEVMAR_BC_DER
 #undef LMBC_DIF_DATA
 #undef LMBC_DIF_FUNC
@@ -969,6 +1174,7 @@ int ret;
 #undef LEVMAR_L2NRMXMY
 #undef AX_EQ_B_LU
 #undef AX_EQ_B_CHOL
+#undef AX_EQ_B_PLASMA_CHOL
 #undef AX_EQ_B_QR
 #undef AX_EQ_B_QRLS
 #undef AX_EQ_B_SVD

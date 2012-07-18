@@ -1,6 +1,6 @@
     **************************************************************
                                 LEVMAR
-                              version 2.5
+                              version 2.6
                           By Manolis Lourakis
 
                      Institute of Computer Science
@@ -42,28 +42,29 @@ in using levmar in a proprietary commercial application, a commercial license fo
 can be obtained by contacting the author using the email address at the end of this file.
 
 COMPILATION
- - You might first consider setting a few configuration options at the top of
-   levmar.h. See the accompanying comments for more details.
+ - The preferred way to build levmar is through the CMake cross-platform build
+   system. The included CMakeLists.txt file can be used to generate makefiles
+   for Unix systems or project files for Windows systems. CMakeLists.txt defines
+   some configuration variables that control certain aspects of levmar and can
+   be modified from CMake's user interface. The values of these variables are
+   automatically propagated to levmar.h after CMake runs. 
+   More information on how to use CMake can be found at http://www.cmake.org
 
- - On a Linux/Unix system, typing "make" will build both levmar and the demo
-   program using gcc. Alternatively, if Intel's C++ compiler is installed, it
-   can be used by typing "make -f Makefile.icc".
+ - levmar can also be built using the supplied makefiles. Platform-specific
+   instructions are given below. Before compiling, you might consider setting
+   a few configuration options found at the top of levmar.h. See the
+   accompanying comments for more details.
 
- - Under Windows and if Visual C is installed & configured for command line
-   use, type "nmake /f Makefile.vc" in a cmd window to build levmar and the
-   demo program. In case of trouble, read the comments on top of Makefile.vc
-   Visual C++ project files (levmar.vcproj and lmdemo.vcproj) are also included,
-   however they are not supported and are only meant to serve as a starting point
-   for creating your own. Check http://www.arstdesign.com/articles/prjconverter.html
-   if you need to convert to .dsw/.dsp (i.e., Visual C++ 6.0) project files.
+   -- On a Linux/Unix system, typing "make" will build both levmar and the demo
+      program using gcc. Alternatively, if Intel's C++ compiler is installed, it
+      can be used by typing "make -f Makefile.icc".
 
- - levmar can also be built under various platforms using the CMake cross-platform
-   build system. The included CMakeLists.txt file can be used to generate makefiles
-   for Unix systems or project files for Windows systems. See http://www.cmake.org
-   for details.
+   -- Under Windows and if Visual C is installed & configured for command line
+      use, type "nmake /f Makefile.vc" in a cmd window to build levmar and the
+      demo program. In case of trouble, read the comments on top of Makefile.vc
 
 MATLAB INTERFACE
-Since version 2.2, the levmar distribution includes a matlab interface.
+Since version 2.2, the levmar distribution includes a matlab mex interface.
 See the 'matlab' subdirectory for more information and examples of use.
 
 Notice that *_core.c files are not to be compiled directly; For example,
@@ -71,4 +72,4 @@ Axb_core.c is included by Axb.c, to provide single and double precision
 routine versions.
 
 
-Send your comments/bug reports to lourakis at ics forth gr
+Send your comments/bug reports to lourakis (at) ics (dot) forth (dot) gr

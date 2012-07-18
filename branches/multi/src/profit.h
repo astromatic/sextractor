@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		06/05/2012
+*	Last modified:		18/07/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -208,6 +208,8 @@ typedef struct subprofit
   struct field	*field;		/* Image field */
   struct field	*wfield;	/* Weight field */
   struct psf	*psf;		/* PSF */
+  struct fftscratch
+		*fftscratch;	/* FFT scratch space/plans */
   float		pixstep;	/* Model/PSF sampling step */
   float		fluxfac;	/* Model flux scaling factor */
   float		subsamp;	/* Subsampling factor */

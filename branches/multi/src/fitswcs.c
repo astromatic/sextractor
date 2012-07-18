@@ -23,7 +23,7 @@
 *	along with AstrOmatic software.
 *	If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		12/04/2012
+*	Last modified:		13/07/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -328,7 +328,7 @@ INPUT	tab structure.
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	22/07/2011
+VERSION	18/06/2012
  ***/
 wcsstruct	*read_wcs(tabstruct *tab)
 
@@ -439,6 +439,8 @@ wcsstruct	*read_wcs(tabstruct *tab)
 /*-- Coordinate reference frame */
 /*-- Search for an observation date expressed in Julian days */
     FITSREADF(buf, "MJD-OBS ", date, -1.0);
+    if (date<0.0)
+      FITSREADF(buf, "MJDSTART", date, -1.0);
 /*-- Precession date (defined from Ephemerides du Bureau des Longitudes) */
 /*-- in Julian years from 2000.0 */
     if (date>0.0)
@@ -744,15 +746,16 @@ INPUT	Proposed projection code name.
 OUTPUT	RETURN_OK if projection is supported, RETURN_ERROR otherwise.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	12/04/2012
+VERSION	14/06/2012
  ***/
 int	wcs_supproj(char *name)
 
   {
    char	projcode[28][5] =
-	{"TAN", "TPV", "AZP", "SIN", "STG", "ARC", "ZPN", "ZEA", "AIR", "CYP", "CAR",
-	"MER", "CEA", "COP", "COD", "COE", "COO", "BON", "PCO", "GLS", "PAR",
-	"AIT", "MOL", "CSC", "QSC", "TSC", "TNX", "NONE"};
+	{"TAN", "TPV", "AZP", "SIN", "STG", "ARC", "ZPN", "ZEA", "AIR", "CYP",
+	"CAR", "MER", "CEA", "COP", "COD", "COE", "COO", "BON", "PCO", "GLS",
+	"PAR", "AIT", "MOL", "CSC", "QSC", "TSC", "TNX", "NONE"};
+
    int	i;
 
   for (i=0; i<28; i++)
@@ -770,7 +773,7 @@ INPUT	WCS structure.
 OUTPUT	-.
 NOTES	.
 AUTHOR	E. Bertin (IAP)
-VERSION	06/11/2003
+VERSION	13/07/2012
  ***/
 void	invert_wcs(wcsstruct *wcs)
 
@@ -789,7 +792,8 @@ void	invert_wcs(wcsstruct *wcs)
   lat = wcs->wcsprm->lat;
   if (!strcmp(wcs->wcsprm->pcode, "TNX"))
     tnxflag = 1;
-  else if (!strcmp(wcs->wcsprm->pcode, "TAN")
+  else if ((!strcmp(wcs->wcsprm->pcode, "TAN")
+	|| !strcmp(wcs->wcsprm->pcode, "TPV"))
 		&& (wcs->projp[1+lng*100] || wcs->projp[1+lat*100]))
     tnxflag = 0;
   else
@@ -1652,13 +1656,12 @@ OUTPUT	Determinant over spatial coordinates (ratio of pixel areas),
 NOTES   Memory must have been allocated (naxis*naxis*sizeof(double)) for the
         Jacobian array.
 AUTHOR	E. Bertin (IAP)
-VERSION	31/03/2012
+VERSION	12/06/2012
  ***/
 double	wcs_rawtoraw(wcsstruct *wcsin, wcsstruct *wcsout,
 		double *pixposin, double *pixposout, double *jacob)
   {
-   double	pixpos0[NAXIS], pixpos2[NAXIS], wcspos[NAXIS],
-		dpos;
+   double	pixpos0[NAXIS], pixpos2[NAXIS], wcspos[NAXIS];
    int		i,j, lng,lat,naxis;
 
   naxis = wcsin->naxis;

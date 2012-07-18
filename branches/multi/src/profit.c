@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		06/05/2012
+*	Last modified:		18/07/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -247,7 +247,7 @@ INPUT	SubProfit structure.
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	03/05/2012
+VERSION	18/07/2012
  ***/
 void	subprofit_end(subprofitstruct *subprofit)
   {
@@ -259,7 +259,9 @@ void	subprofit_end(subprofitstruct *subprofit)
   free(subprofit->modpix2);
   free(subprofit->cmodpix);
   free(subprofit->psfpix);
-  free(subprofit->psfdft);
+  QFFTWF_FREE(subprofit->psfdft);
+  fft_scratchend(subprofit->fftscratch);
+  subprofit->fftscratch = NULL;
 
   return;
   }
@@ -273,7 +275,7 @@ INPUT	Pointer to the model structure,
 OUTPUT	Number of minimization iterations (0 in case of error).
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	06/10/2011
+VERSION	18/07/2012
  ***/
 int	profit_fit(profitstruct *profit, obj2struct *obj2)
   {
@@ -303,7 +305,6 @@ int	profit_fit(profitstruct *profit, obj2struct *obj2)
     }
 
 /* Actual minimisation */
-  fft_reset();
   return (profit->niter = profit_minimize(profit, PROFIT_MAXITER));
   }
 
@@ -345,9 +346,6 @@ void	profit_measure(profitstruct *profit, obj2struct *obj2)
 
   for (p=0; p<nparam; p++)
     profit->paramerr[p]= sqrt(profit->covar[p*(nparam+1)]);
-
-/* Clean up FFTW plans */
-  fft_reset();
 
 /* CHECK-Images */
   if ((check = prefs.check[CHECK_PROFILES]))
@@ -1919,16 +1917,15 @@ INPUT	Pointer to the subprofit structure,
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	05/05/2012
+VERSION	18/07/2012
  ***/
 void	subprofit_convolve(subprofitstruct *subprofit, float *modpix)
   {
-/* Clean up FFTW plans */
-  fft_reset();
   if (!subprofit->psfdft)
     subprofit_makedft(subprofit);
 
-  fft_conv(modpix, subprofit->psfdft, subprofit->modnaxisn);
+  fft_conv(modpix, subprofit->psfdft, subprofit->modnaxisn,
+		&subprofit->fftscratch);
 
   return;
   }
@@ -2397,7 +2394,7 @@ INPUT	Profile-fitting structure.
 OUTPUT	Vector of residuals.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	06/05/2012
+VERSION	18/07/2012
  ***/
 float subprofit_spiralindex(subprofitstruct *subprofit, obj2struct *obj2)
   {
@@ -2462,9 +2459,9 @@ float subprofit_spiralindex(subprofitstruct *subprofit, obj2struct *obj2)
   gdy = NULL;			/* to avoid gcc -Wall warnings */
   QMEMCPY(gdx, gdy, float, npix);
   fdx = fft_rtf(dx, subprofit->objnaxisn);
-  fft_conv(gdx, fdx, subprofit->objnaxisn);
+  fft_conv(gdx, fdx, subprofit->objnaxisn, &subprofit->fftscratch);
   fdy = fft_rtf(dy, subprofit->objnaxisn);
-  fft_conv(gdy, fdy, subprofit->objnaxisn);
+  fft_conv(gdy, fdy, subprofit->objnaxisn, &subprofit->fftscratch);
 
 /* Compute estimator */
   invtwosigma2 = -1.18*1.18/(2.0*subprofit->guessradius*subprofit->guessradius);
@@ -2488,8 +2485,8 @@ float subprofit_spiralindex(subprofitstruct *subprofit, obj2struct *obj2)
 
   free(dx);
   free(dy);
-  free(fdx);
-  free(fdy);
+  QFFTWF_FREE(fdx);
+  QFFTWF_FREE(fdy);
   free(gdx);
   free(gdy);
 
