@@ -456,10 +456,6 @@ void	preprefs()
 	"Performance will be degraded.");
 #endif
 
-#ifdef HAVE_MKL
-  mkl_set_num_threads(prefs.nthreads);
-#endif
-
 #else
   if (prefs.nthreads != 1)
     {
@@ -467,6 +463,11 @@ void	preprefs()
     warning("NTHREADS != 1 ignored: ",
 	"this build of " BANNER " is single-threaded");
     }
+#endif
+
+/* We temporarily allow threads for non-multithreaded code (defaulted to 1)*/
+#ifdef HAVE_MKL
+  mkl_set_num_threads(prefs.nthreads);
 #endif
 
 /* Override INTEL CPU detection routine to help performance on 3rd-party CPUs */
