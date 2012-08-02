@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		06/05/2012
+*	Last modified:		02/08/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -143,6 +143,8 @@ typedef struct obj2
   struct subimage	*subimage;		/* Array of sub-images */
   int		nsubimage;			/* nb of sub-images */
 /* ---- basic parameters */
+  int		done_flag;			/* measurements complete ?*/
+  int		writable_flag;			/* to be written to catalog?*/
   int		number;				/* ID */
   int		fdnpix;				/* nb of extracted pix */
   int		dnpix;				/* nb of pix above thresh  */
@@ -581,6 +583,7 @@ typedef struct
   int		ndetect;				/* nb of detections */
   int		ntotal;					/* Total object nb */
   int		ntotalsum;				/* Sum of all objects */
+  int		nline;					/* Number of lines */
   int		nlinesum;				/* Sum of all lines */
   int		nblend;					/* Number of blends */
   int		nparam;					/* Nb of parameters */

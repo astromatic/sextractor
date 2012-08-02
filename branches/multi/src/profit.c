@@ -174,7 +174,7 @@ profitstruct	*profit_init(obj2struct *obj2, unsigned int modeltype)
     subprofit->nmodpix = subprofit->modnaxisn[0]*subprofit->modnaxisn[1];
 
 /* Allocate memory for the complete model */
-    QMALLOC16(subprofit->modpix, float, subprofit->nmodpix);
+    QFFTWF_MALLOC(subprofit->modpix, float, subprofit->nmodpix);
     QMALLOC16(subprofit->modpix2, float, subprofit->nmodpix);
     QMALLOC16(subprofit->cmodpix, float, subprofit->nmodpix);
     QMALLOC16(subprofit->psfpix, float, subprofit->nmodpix);
@@ -247,7 +247,7 @@ INPUT	SubProfit structure.
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	18/07/2012
+VERSION	02/08/2012
  ***/
 void	subprofit_end(subprofitstruct *subprofit)
   {
@@ -255,7 +255,7 @@ void	subprofit_end(subprofitstruct *subprofit)
   free(subprofit->objweight);
   free(subprofit->lmodpix);
   free(subprofit->lmodpix2);
-  free(subprofit->modpix);
+  QFFTWF_FREE(subprofit->modpix);
   free(subprofit->modpix2);
   free(subprofit->cmodpix);
   free(subprofit->psfpix);
@@ -2394,7 +2394,7 @@ INPUT	Profile-fitting structure.
 OUTPUT	Vector of residuals.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	18/07/2012
+VERSION	02/08/2012
  ***/
 float subprofit_spiralindex(subprofitstruct *subprofit, obj2struct *obj2)
   {
@@ -2419,7 +2419,7 @@ float subprofit_spiralindex(subprofitstruct *subprofit, obj2struct *obj2)
   ohh = subprofit->objnaxisn[1] - hh;
   txstart = -hw;
   ty = -hh;
-  QMALLOC(dx, float, npix);
+  QFFTWF_MALLOC(dx, float, npix);
   pix = dx;
   for (j=subprofit->objnaxisn[1]; j--; ty+=1.0)
     {
@@ -2432,7 +2432,7 @@ float subprofit_spiralindex(subprofitstruct *subprofit, obj2struct *obj2)
 		- exp(invtwosigma2*((x-sep)*(x-sep)+y*y));
       }
     }
-  QMALLOC(dy, float, npix);
+  QFFTWF_MALLOC(dy, float, npix);
   pix = dy;
   ty = -hh;
   for (j=subprofit->objnaxisn[1]; j--; ty+=1.0)
@@ -2447,7 +2447,7 @@ float subprofit_spiralindex(subprofitstruct *subprofit, obj2struct *obj2)
       }
     }
 
-  QMALLOC(gdx, float, npix);
+  QFFTWF_MALLOC(gdx, float, npix);
   gdxt = gdx;
   fpix = subprofit->objpix;
   invsig = npix/subprofit->sigma;
@@ -2456,8 +2456,9 @@ float subprofit_spiralindex(subprofitstruct *subprofit, obj2struct *obj2)
     val = *fpix > -1e29? *fpix*invsig : 0.0;
     *(gdxt++) = (val>0.0? log(1.0+val) : -log(1.0-val));
     }
-  gdy = NULL;			/* to avoid gcc -Wall warnings */
-  QMEMCPY(gdx, gdy, float, npix);
+
+  QFFTWF_MALLOC(gdy, float, npix);
+  memcpy(gdy, gdx, npix*sizeof(float));
   fdx = fft_rtf(dx, subprofit->objnaxisn);
   fft_conv(gdx, fdx, subprofit->objnaxisn, &subprofit->fftscratch);
   fdy = fft_rtf(dy, subprofit->objnaxisn);
@@ -2483,12 +2484,12 @@ float subprofit_spiralindex(subprofitstruct *subprofit, obj2struct *obj2)
       }
     }
 
-  free(dx);
-  free(dy);
+  QFFTWF_FREE(dx);
+  QFFTWF_FREE(dy);
   QFFTWF_FREE(fdx);
   QFFTWF_FREE(fdy);
-  free(gdx);
-  free(gdy);
+  QFFTWF_FREE(gdx);
+  QFFTWF_FREE(gdy);
 
   return spirindex;
   }

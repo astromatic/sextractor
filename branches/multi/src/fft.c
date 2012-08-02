@@ -121,17 +121,23 @@ INPUT	Pointer to the fftscratch structure to reset.
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	18/07/2012
+VERSION	01/08/2012
  ***/
 void    fft_scratchend(fftscratchstruct *fftscratch)
   {
   if (!fftscratch)
     return;
 
+#ifdef USE_THREADS
+    QPTHREAD_MUTEX_LOCK(&fftmutex);
+#endif
   if (fftscratch->fplan)
     fftwf_destroy_plan(fftscratch->fplan);
    if (fftscratch->bplan)
     fftwf_destroy_plan(fftscratch->bplan);
+#ifdef USE_THREADS
+    QPTHREAD_MUTEX_UNLOCK(&fftmutex);
+#endif
   if (fftscratch->fdata)
     QFFTWF_FREE(fftscratch->fdata);
   free(fftscratch);

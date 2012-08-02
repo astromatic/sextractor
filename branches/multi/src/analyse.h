@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		28/03/2012
+*	Last modified:		02/08/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -42,11 +42,24 @@ int		analyse_full(fieldstruct **fields, fieldstruct **wfields,
 			int nfield, obj2struct *obj2),
 		analyse_overlapness(objliststruct *objlist, int iobj);
 
-void		analyse_final(fieldstruct **fields, fieldstruct **wfields,
+void		analyse_end(fieldstruct **fields, fieldstruct **wfields,
+			int nfield, obj2struct *fobj2),
+		analyse_final(fieldstruct **fields, fieldstruct **wfields,
 			int nfield, objliststruct *objlist, int iobj),
 		analyse_group(fieldstruct **fields, fieldstruct **wfields,
 			int nfield, obj2struct *fobj2),
 		analyse_iso(fieldstruct **fields, fieldstruct **wfields,
 			int nfield, objliststruct *objlist, int n);
-		
+
+#ifdef	USE_THREADS
+void		*pthread_analyse_obj2(void *arg),
+		pthread_add_obj2(obj2struct *obj2),
+		pthread_end_obj2(void),
+		pthread_init_obj2(fieldstruct **fields, fieldstruct **wfields,
+			int nfield, int nthreads);
+
+pthread_mutex_t	pthread_countobj2mutex;
 #endif
+
+#endif
+

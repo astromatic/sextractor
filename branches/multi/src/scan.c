@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		07/05/2012
+*	Last modified:		02/08/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -51,6 +51,10 @@
 #include	"scan.h"
 #include	"weight.h"
 
+#ifdef USE_THREADS
+#include	"threads.h"
+#endif
+
 static void	scan_initmarkers(fieldstruct *field),
 		scan_updatemarkers(fieldstruct *field, int yl);
 
@@ -69,7 +73,7 @@ INPUT	Pointer to the detection image field,
 OUTPUT	-.
 NOTES	Global preferences are used.
 AUTHOR	E. Bertin (IAP)
-VERSION	07/05/2012
+VERSION	02/08/2012
  ***/
 void	scan_extract(fieldstruct *dfield, fieldstruct *dwfield,
 			fieldstruct **fields, fieldstruct **wfields, int nfield,
@@ -198,6 +202,12 @@ void	scan_extract(fieldstruct *dfield, fieldstruct *dwfield,
       bpt = blankpad;
       }
     }
+
+#ifdef USE_THREADS
+/*Setup measurement threads as we meet the 1st object; leave 1 for extraction */
+  if (prefs.nthreads>1)
+    pthread_init_obj2(fields, wfields, nfield, prefs.nthreads);
+#endif
 
 /*----- Here we go */
   for (yl=0; yl<=h;)
@@ -564,7 +574,6 @@ void	scan_extract(fieldstruct *dfield, fieldstruct *dwfield,
 /*-- Remove objects close to the ymin limit if ymin is ready to increase */
     if (dfield->stripy==dfield->stripysclim)
       {
-      ontotal = 0;
       i = cleanobjlist->nobj;
       while (i--)
         {
@@ -572,23 +581,32 @@ void	scan_extract(fieldstruct *dfield, fieldstruct *dwfield,
           i = cleanobjlist->nobj - 1;
         cleanobj = cleanobjlist->obj+i;
         if (cleanobj->ycmin <= dfield->ymin)
-          {
-          if ((prefs.prof_flag && !(thecat.ntotal%10)
-		&& thecat.ntotal != ontotal)
-		|| !(thecat.ntotal%400))
-            NPRINTF(OUTPUT, "\33[1M> Line:%5d  "
-		"Objects: %8d detected / %8d sextracted\n\33[1A",
-		yl>h? h:yl, thecat.ndetect, thecat.ntotal);
-          ontotal = thecat.ntotal;
           analyse_final(fields, wfields, nfield, cleanobjlist, i);
-          }
         }
       }
 
-    if ((prefs.prof_flag && !(thecat.ntotal%10)) || !(yl%25))
-      NPRINTF(OUTPUT, "\33[1M> Line:%5d  "
+#ifdef USE_THREADS
+    if (prefs.nthreads>1)
+      {
+      QPTHREAD_MUTEX_LOCK(&pthread_countobj2mutex);
+      thecat.nline = yl>h? h:yl;
+      if ((prefs.prof_flag && !(thecat.ntotal%(10*prefs.nthreads))) ||
+		!(thecat.nline%50))
+        NPRINTF(OUTPUT, "\33[1M> Line:%5d  "
 		"Objects: %8d detected / %8d sextracted\n\33[1A",
-	yl>h?h:yl, thecat.ndetect, thecat.ntotal);
+		thecat.nline, thecat.ndetect, thecat.ntotal);
+      QPTHREAD_MUTEX_UNLOCK(&pthread_countobj2mutex);
+      }
+    else
+#endif
+      {
+      thecat.nline = yl>h? h:yl;
+      if ((prefs.prof_flag && !(thecat.ntotal%10)) || !(thecat.nline%50))
+        NPRINTF(OUTPUT, "\33[1M> Line:%5d  "
+		"Objects: %8d detected / %8d sextracted\n\33[1A",
+		thecat.nline, thecat.ndetect, thecat.ntotal);
+      }
+
 /*--------------------- End of the loop over the y's -----------------------*/
     }
 
@@ -605,18 +623,9 @@ void	scan_extract(fieldstruct *dfield, fieldstruct *dwfield,
       }
 
 /* Now that all "detected" pixels have been removed, analyse detections */
-  ontotal = 0;
   while (cleanobjlist->nobj)
-    {
-    if ((prefs.prof_flag && !(thecat.ntotal%10) && thecat.ntotal != ontotal)
-		|| !(thecat.ntotal%400))
-      NPRINTF(OUTPUT, "\33[1M> Line:%5d  "
-		"Objects: %8d detected / %8d sextracted\n\33[1A",
-	h, thecat.ndetect, thecat.ntotal);
-    ontotal = thecat.ntotal;
     analyse_final(fields, wfields, nfield, cleanobjlist,
 	cleanobjlist->nobj-1);
-    }
 
   clean_end();
 
@@ -635,6 +644,11 @@ void	scan_extract(fieldstruct *dfield, fieldstruct *dwfield,
   free(end);
   if (prefs.blank_flag && prefs.filter_flag)
     free(blankpad);
+
+#ifdef	USE_THREADS
+  if (prefs.nthreads>1)
+    pthread_end_obj2();
+#endif
 
   return;
   }
