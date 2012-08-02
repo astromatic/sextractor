@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		08/05/2012
+*	Last modified:		01/08/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -46,6 +46,10 @@
 
 #if defined(__INTEL_COMPILER) && defined (USE_CPUREDISPATCH)
  #include <cpuid.h>
+#endif
+
+#ifdef HAVE_MKL
+ #include MKL_H
 #endif
 
 #include	"define.h"
@@ -489,6 +493,7 @@ VERSION	18/01/2012
 void	prefs_tune(void)
 
   {
+   char			str[MAXCHAR];
    unsigned short	ashort=1;
 #ifdef USE_THREADS
    int			nproc;
@@ -535,11 +540,22 @@ void	prefs_tune(void)
       warning("Cannot find the number of CPUs on this system:", str);
       }
     }
-#ifndef HAVE_ATLAS_MP
+
+#ifdef HAVE_MKL
+  mkl_set_num_threads(1);
+#else
+ #ifndef HAVE_ATLAS_MP
    if (prefs.nthreads>1)
      warning("This executable has been compiled using a version of the ATLAS "
 	"library without support for multithreading. ",
 	"Performance will be degraded.");
+ #endif
+ #ifndef HAVE_FFTWF_MP
+   if (prefs.nthreads>1)
+     warning("This executable has been compiled using a version of the FFTW "
+	"library without support for multithreading. ",
+	"Performance will be degraded.");
+ #endif
 #endif
 
 #else
