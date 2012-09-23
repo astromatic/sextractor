@@ -7,7 +7,7 @@
 *
 *	This file part of:	AstrOmatic FITS/LDAC library
 *
-*	Copyright:		(C) 1995-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1995-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -23,7 +23,7 @@
 *	along with AstrOmatic software.
 *	If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		09/10/2010
+*	Last modified:		29/08/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -386,16 +386,16 @@ catstruct	*new_cat(int ncat)
 
 
 /****** open_cat ***************************************************************
-PROTO	int open_cat(catstruct *cat, access_type at)
+PROTO	int open_cat(catstruct *cat, access_type_t at)
 PURPOSE	Open a FITS catalog with name filename.
 INPUT	catalog structure,
 	access type (can be WRITE_ONLY or READ_ONLY).
 OUTPUT	RETURN_OK if the cat is found, RETURN_ERROR otherwise.
 NOTES	If the file was already opened by this catalog, nothing is done.
 AUTHOR	E. Bertin (IAP & Leiden observatory)
-VERSION	13/06/2002
+VERSION	29/08/2012
  ***/
-int	open_cat(catstruct *cat, access_type at)
+int	open_cat(catstruct *cat, access_type_t at)
 
   {
 

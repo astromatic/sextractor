@@ -23,7 +23,7 @@
 *	along with AstrOmatic software.
 *	If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		13/06/2012
+*	Last modified:		27/08/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -313,9 +313,9 @@ PURPOSE	Write one individual source in a FITS table
 INPUT	Table structure,
 	pointer to the temporary buffer.
 OUTPUT	-.
-NOTES	-.
+NOTES	key content is destroyed (actually, byte-swapped) on output.
 AUTHOR	E. Bertin (IAP & Leiden observatory)
-VERSION	28/12/2004
+VERSION	27/08/2012
  ***/
 int	write_obj(tabstruct *tab, char *buf)
 
