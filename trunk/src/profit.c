@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		12/07/2012
+*	Last modified:		23/09/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -1816,7 +1816,7 @@ INPUT	Profile-fitting structure,
 OUTPUT	RETURN_ERROR if the rasters don't overlap, RETURN_OK otherwise.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	12/09/2010
+VERSION	23/09/2012
  ***/
 int	profit_resample(profitstruct *profit, float *inpix, PIXTYPE *outpix,
 	float factor)
@@ -1825,20 +1825,23 @@ int	profit_resample(profitstruct *profit, float *inpix, PIXTYPE *outpix,
    float	*pixin,*pixin0, *mask,*maskt, *pixinout, *dpixin,*dpixin0,
 		*dpixout,*dpixout0, *dx,*dy,
 		xcin,xcout,ycin,ycout, xsin,ysin, xin,yin, x,y, dxm,dym, val,
-		invpixstep, norm;
+		invpixstep, norm, fluxnorm;
    int		*start,*startt, *nmask,*nmaskt,
 		i,j,k,n,t, 
 		ixsout,iysout, ixout,iyout, dixout,diyout, nxout,nyout,
 		iysina, nyin, hmw,hmh, ix,iy, ixin,iyin;
 
   invpixstep = profit->subsamp/profit->pixstep;
+  factor /= profit->subsamp*profit->subsamp;
 
-  xcin = (profit->modnaxisn[0]/2);
-  xcout = (float)(profit->objnaxisn[0]/2);
-  if ((dx=(profit->paramlist[PARAM_X])))
-    xcout += *dx;
+  xcin = (float)(profit->modnaxisn[0]/2);
+  xcout = ((int)(profit->subsamp*profit->objnaxisn[0])/2 + 0.5)
+		/ profit->subsamp - 0.5;
+  if ((dx=profit->paramlist[PARAM_X]))
+    xcout += *dx / profit->subsamp;
 
   xsin = xcin - xcout*invpixstep;			/* Input start x-coord*/
+
   if ((int)xsin >= profit->modnaxisn[0])
     return RETURN_ERROR;
   ixsout = 0;				/* Int. part of output start x-coord */
@@ -1858,10 +1861,11 @@ int	profit_resample(profitstruct *profit, float *inpix, PIXTYPE *outpix,
   if (!nxout)
     return RETURN_ERROR;
 
-  ycin = (profit->modnaxisn[1]/2);
-  ycout = (float)(profit->objnaxisn[1]/2);
-  if ((dy=(profit->paramlist[PARAM_Y])))
-    ycout += *dy;
+  ycin = (float)(profit->modnaxisn[1]/2);
+  ycout = ((int)(profit->subsamp*profit->objnaxisn[1])/2 + 0.5)
+		/ profit->subsamp - 0.5;
+  if ((dy=profit->paramlist[PARAM_Y]))
+    ycout += *dy / profit->subsamp;
 
   ysin = ycin - ycout*invpixstep;		/* Input start y-coord*/
   if ((int)ysin >= profit->modnaxisn[1])

@@ -23,7 +23,7 @@
 *	along with AstrOmatic software.
 *	If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		18/07/2012
+*	Last modified:		29/08/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -706,16 +706,15 @@ INPUT	TFORM string (see the FITS documentation).
 OUTPUT	size in bytes, or RETURN_ERROR if the TFORM is unknown.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	18/07/2012
+VERSION	29/08/2012
  ***/
 t_type	ttypeof(char *str)
 
   {
    char	*str2;
-   long	dummy;
 
   str2 = str;
-  dummy = strtol(str, &str2, 10);
+  strtol(str, &str2, 10);
   switch ((int)*str2)
     {
     case 'L': case 'B': case 'X':	return	T_BYTE;
