@@ -23,7 +23,7 @@
 *	along with AstrOmatic software.
 *	If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		09/10/2010
+*	Last modified:		11/09/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -570,7 +570,7 @@ INPUT	Table structure.
 OUTPUT	RETURN_OK if tab is a binary table, or RETURN_ERROR otherwise.
 NOTES	The headbuf pointer in the catstruct might be reallocated.
 AUTHOR	E. Bertin (IAP & Leiden observatory)
-VERSION	08/02/97
+VERSION	11/09/2012
  ***/
 int	update_tab(tabstruct *tab)
 
@@ -613,7 +613,7 @@ int	update_tab(tabstruct *tab)
     key = key->nextkey;
     }
 
-  tab->tabsize = nobj*nbytes;
+  tab->tabsize = (KINGSIZE_T)nobj*nbytes;
   tab->naxisn[0] = nbytes;
   tab->naxisn[1] = nobj;
   tab->tfields = tab->nkey;

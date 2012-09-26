@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		18/07/2012
+*	Last modified:		23/09/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -1706,7 +1706,7 @@ INPUT	Profile-fitting structure,
 OUTPUT	RETURN_ERROR if the rasters don't overlap, RETURN_OK otherwise.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	05/05/2012
+VERSION	23/09/2012
  ***/
 int	profit_resample(profitstruct *profit, subprofitstruct *subprofit,
 		float *inpix, PIXTYPE *outpix, float factor)
@@ -1722,11 +1722,13 @@ int	profit_resample(profitstruct *profit, subprofitstruct *subprofit,
 		iysina, nyin, hmw,hmh, ix,iy, ixin,iyin;
 
   invpixstep = subprofit->subsamp/subprofit->pixstep;
+  factor /= subprofit->subsamp*subprofit->subsamp;
 
-  xcin = (subprofit->modnaxisn[0]/2);
-  xcout = (float)(subprofit->objnaxisn[0]/2);
-  if ((dx=(profit->paramlist[PARAM_X])))
-    xcout += *dx;
+  xcin = (float)(subprofit->modnaxisn[0]/2);
+  xcout = ((int)(subprofit->subsamp*subprofit->objnaxisn[0])/2 + 0.5)
+		/ subprofit->subsamp - 0.5;
+  if ((dx=profit->paramlist[PARAM_X]))
+    xcout += *dx / subprofit->subsamp;
 
   xsin = xcin - xcout*invpixstep;			/* Input start x-coord*/
   if ((int)xsin >= subprofit->modnaxisn[0])
@@ -1748,10 +1750,11 @@ int	profit_resample(profitstruct *profit, subprofitstruct *subprofit,
   if (!nxout)
     return RETURN_ERROR;
 
-  ycin = (subprofit->modnaxisn[1]/2);
-  ycout = (float)(subprofit->objnaxisn[1]/2);
-  if ((dy=(profit->paramlist[PARAM_Y])))
-    ycout += *dy;
+  ycin = (float)(subprofit->modnaxisn[1]/2);
+  ycout = ((int)(subprofit->subsamp*subprofit->objnaxisn[1])/2 + 0.5)
+		/ subprofit->subsamp - 0.5;
+  if ((dy=profit->paramlist[PARAM_Y]))
+    ycout += *dy / subprofit->subsamp;
 
   ysin = ycin - ycout*invpixstep;		/* Input start y-coord*/
   if ((int)ysin >= subprofit->modnaxisn[1])
@@ -3505,7 +3508,7 @@ INPUT	Pointer to the profile-fitting structure,
 OUTPUT	A pointer to an allocated prof structure.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	08/12/2011
+VERSION	23/09/2012
  ***/
 profstruct	*prof_init(profitstruct *profit, unsigned int modeltype)
   {
@@ -3541,7 +3544,7 @@ profstruct	*prof_init(profitstruct *profit, unsigned int modeltype)
       profit_addparam(profit, PARAM_X, &prof->x[0]);
       profit_addparam(profit, PARAM_Y, &prof->x[1]);
       for (s=0; s<profit->nsubprofit; s++)
-        profit_addparam(profit, PARAM_DIRAC_FLUX+s, &prof->flux[s]);
+        profit_addparam(profit, (paramenum)((int)PARAM_DIRAC_FLUX+s), &prof->flux[s]);
       break;
     case MODEL_SERSIC:
       prof->name = "Sersic spheroid";
@@ -3555,7 +3558,8 @@ profstruct	*prof_init(profitstruct *profit, unsigned int modeltype)
       profit_addparam(profit, PARAM_X, &prof->x[0]);
       profit_addparam(profit, PARAM_Y, &prof->x[1]);
       for (s=0; s<profit->nsubprofit; s++)
-        profit_addparam(profit, PARAM_SPHEROID_FLUX+s, &prof->flux[s]);
+        profit_addparam(profit, (paramenum)((int)PARAM_SPHEROID_FLUX+s),
+		&prof->flux[s]);
       profit_addparam(profit, PARAM_SPHEROID_REFF, &prof->scale);
       profit_addparam(profit, PARAM_SPHEROID_ASPECT, &prof->aspect);
       profit_addparam(profit, PARAM_SPHEROID_POSANG, &prof->posangle);
@@ -3575,7 +3579,8 @@ profstruct	*prof_init(profitstruct *profit, unsigned int modeltype)
       profit_addparam(profit, PARAM_X, &prof->x[0]);
       profit_addparam(profit, PARAM_Y, &prof->x[1]);
       for (s=0; s<profit->nsubprofit; s++)
-        profit_addparam(profit, PARAM_SPHEROID_FLUX+s, &prof->flux[s]);
+        profit_addparam(profit, (paramenum)((int)PARAM_SPHEROID_FLUX+s),
+		&prof->flux[s]);
       profit_addparam(profit, PARAM_SPHEROID_REFF, &prof->scale);
       profit_addparam(profit, PARAM_SPHEROID_ASPECT, &prof->aspect);
       profit_addparam(profit, PARAM_SPHEROID_POSANG, &prof->posangle);
@@ -3594,7 +3599,8 @@ profstruct	*prof_init(profitstruct *profit, unsigned int modeltype)
       profit_addparam(profit, PARAM_X, &prof->x[0]);
       profit_addparam(profit, PARAM_Y, &prof->x[1]);
       for (s=0; s<profit->nsubprofit; s++)
-        profit_addparam(profit, PARAM_DISK_FLUX+s, &prof->flux[s]);
+        profit_addparam(profit, (paramenum)((int)PARAM_DISK_FLUX+s),
+		&prof->flux[s]);
       profit_addparam(profit, PARAM_DISK_SCALE, &prof->scale);
       profit_addparam(profit, PARAM_DISK_ASPECT, &prof->aspect);
       profit_addparam(profit, PARAM_DISK_POSANG, &prof->posangle);
@@ -3614,7 +3620,8 @@ profstruct	*prof_init(profitstruct *profit, unsigned int modeltype)
       profit_addparam(profit, PARAM_DISK_ASPECT, &prof->aspect);
       profit_addparam(profit, PARAM_DISK_POSANG, &prof->posangle);
       for (s=0; s<profit->nsubprofit; s++)
-        profit_addparam(profit, PARAM_ARMS_FLUX+s, &prof->flux[s]);
+        profit_addparam(profit, (paramenum)((int)PARAM_ARMS_FLUX+s),
+		&prof->flux[s]);
       profit_addparam(profit, PARAM_ARMS_QUADFRAC, &prof->featfrac);
 //      profit_addparam(profit, PARAM_ARMS_SCALE, &prof->featscale);
       profit_addparam(profit, PARAM_ARMS_START, &prof->featstart);
@@ -3639,7 +3646,8 @@ profstruct	*prof_init(profitstruct *profit, unsigned int modeltype)
       profit_addparam(profit, PARAM_DISK_POSANG, &prof->posangle);
       profit_addparam(profit, PARAM_ARMS_START, &prof->featstart);
       for (s=0; s<profit->nsubprofit; s++)
-        profit_addparam(profit, PARAM_BAR_FLUX+s, &prof->flux[s]);
+        profit_addparam(profit, (paramenum)((int)PARAM_BAR_FLUX+s),
+		&prof->flux[s]);
       profit_addparam(profit, PARAM_BAR_ASPECT, &prof->feataspect);
       profit_addparam(profit, PARAM_ARMS_POSANG, &prof->featposang);
       break;
@@ -3659,7 +3667,8 @@ profstruct	*prof_init(profitstruct *profit, unsigned int modeltype)
       profit_addparam(profit, PARAM_DISK_POSANG, &prof->posangle);
       profit_addparam(profit, PARAM_ARMS_START, &prof->featstart);
       for (s=0; s<profit->nsubprofit; s++)
-        profit_addparam(profit, PARAM_INRING_FLUX+s, &prof->flux[s]);
+        profit_addparam(profit, (paramenum)((int)PARAM_INRING_FLUX+s),
+		&prof->flux[s]);
       profit_addparam(profit, PARAM_INRING_WIDTH, &prof->featwidth);
       profit_addparam(profit, PARAM_INRING_ASPECT, &prof->feataspect);
       break;
@@ -3679,7 +3688,8 @@ profstruct	*prof_init(profitstruct *profit, unsigned int modeltype)
       profit_addparam(profit, PARAM_DISK_POSANG, &prof->posangle);
       profit_addparam(profit, PARAM_OUTRING_START, &prof->featstart);
       for (s=0; s<profit->nsubprofit; s++)
-        profit_addparam(profit, PARAM_OUTRING_FLUX+s, &prof->flux[s]);
+        profit_addparam(profit, (paramenum)((int)PARAM_OUTRING_FLUX+s),
+		&prof->flux[s]);
       profit_addparam(profit, PARAM_OUTRING_WIDTH, &prof->featwidth);
       break;
     case MODEL_TABULATED:	/* An example of tabulated profile */
@@ -3718,7 +3728,8 @@ profstruct	*prof_init(profitstruct *profit, unsigned int modeltype)
       profit_addparam(profit, PARAM_X, &prof->x[0]);
       profit_addparam(profit, PARAM_Y, &prof->x[1]);
       for (s=0; s<profit->nsubprofit; s++)
-        profit_addparam(profit, PARAM_SPHEROID_FLUX+s, &prof->flux[s]);
+        profit_addparam(profit, (paramenum)((int)PARAM_SPHEROID_FLUX+s),
+		&prof->flux[s]);
       profit_addparam(profit, PARAM_SPHEROID_REFF, &prof->scale);
       profit_addparam(profit, PARAM_SPHEROID_ASPECT, &prof->aspect);
       profit_addparam(profit, PARAM_SPHEROID_POSANG, &prof->posangle);
