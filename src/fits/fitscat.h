@@ -23,7 +23,7 @@
 *	along with AstrOmatic software.
 *	If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		16/06/2012
+*	Last modified:		29/08/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -87,7 +87,7 @@ typedef enum		{T_BYTE, T_SHORT, T_LONG, T_LONGLONG,
 			T_FLOAT, T_DOUBLE, T_STRING}
 				t_type;		/* Type of data */
 typedef enum		{WRITE_ONLY, READ_ONLY}
-				access_type;	/* Type of access */
+				access_type_t;	/* Type of access */
 typedef enum		{SHOW_ASCII, SHOW_SKYCAT}
 				output_type;    /* Type of output */
 
@@ -149,7 +149,7 @@ typedef struct structcat
   FILE		*file;			/* pointer to the file structure */
   struct structtab *tab;		/* pointer to the first table */
   int		ntab;			/* number of tables included */
-  access_type	access_type;		/* READ_ONLY or WRITE_ONLY */
+  access_type_t	access_type;		/* READ_ONLY or WRITE_ONLY */
   }		catstruct;
 
 /*-------------------------------- table  ----------------------------------*/
@@ -293,7 +293,7 @@ extern int	about_cat(catstruct *cat, FILE *stream),
 		inherit_cat(catstruct *catin, catstruct *catout),
 		init_cat(catstruct *cat),
 		map_cat(catstruct *cat),
-		open_cat(catstruct *cat, access_type at),
+		open_cat(catstruct *cat, access_type_t at),
 		pad_tab(catstruct *cat, KINGSIZE_T size),
 		prim_head(tabstruct *tab),
 		readbintabparam_head(tabstruct *tab),
