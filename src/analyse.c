@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		02/08/2012
+*	Last modified:		03/10/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -89,7 +89,7 @@ INPUT	Pointer to an array of image field pointers,
 OUTPUT	-.
 NOTES	Requires access to the global preferences.
 AUTHOR	E. Bertin (IAP)
-VERSION	07/03/2012
+VERSION	03/10/2012
  ***/
 void  analyse_iso(fieldstruct **fields, fieldstruct **wfields, int nfield,
 			objliststruct *objlist, int n)
@@ -333,7 +333,7 @@ dthresh = field->dthresh;
   if ((check = prefs.check[CHECK_SEGMENTATION]))
     for (pixt=pixel+obj->firstpix; pixt>=pixel; pixt=pixel+PLIST(pixt,nextpix))
       ((ULONG *)check->pix)[check->width*PLIST(pixt,y)+PLIST(pixt,x)]
-		= (ULONG)obj->number;
+		= -(ULONG)obj->number;
 
   if ((check = prefs.check[CHECK_OBJECTS]))
     for (pixt=pixel+obj->firstpix; pixt>=pixel; pixt=pixel+PLIST(pixt,nextpix))
@@ -491,153 +491,6 @@ void analyse_final(fieldstruct **fields, fieldstruct **wfields,
   }
 
 
-#ifdef USE_THREADS
-
-/****** pthread_init_obj2 *****************************************************
-PROTO	void pthread_init_obj2(fieldstruct **fields, fieldstruct **wfields,
-			int nfield, int nthreads)
-PURPOSE	Setup threads, mutexes and semaphores for multhreaded obj2 processing.
-INPUT	Pointer to an array of image field pointers,
-	pointer to an array of weight-map field pointers,
-	number of images,
-	number of threads.
-OUTPUT	-.
-NOTES	Relies on some global variables.
-AUTHOR	E. Bertin (IAP)
-VERSION	02/08/2012
- ***/
-void	pthread_init_obj2(fieldstruct **fields, fieldstruct **wfields,
-			int nfield, int nthreads)
-  {
-   int	p;
-
-  pthread_fields = fields;
-  pthread_wfields = wfields;
-  pthread_nfield = nfield;
-  pthread_nthreads = nthreads;
-  pthread_nobj2 = prefs.obj2_stacksize;
-  QMALLOC(pthread_thread, pthread_t, nthreads);
-  QCALLOC(pthread_obj2, obj2struct *, pthread_nobj2);
-  QPTHREAD_COND_INIT(&pthread_obj2addcond, NULL);
-  QPTHREAD_COND_INIT(&pthread_obj2savecond, NULL);
-  QPTHREAD_MUTEX_INIT(&pthread_obj2mutex, NULL);
-  QPTHREAD_MUTEX_INIT(&pthread_freeobj2mutex, NULL);
-  QPTHREAD_MUTEX_INIT(&pthread_countobj2mutex, NULL);
-  QPTHREAD_ATTR_INIT(&pthread_attr);
-  QPTHREAD_ATTR_SETDETACHSTATE(&pthread_attr, PTHREAD_CREATE_JOINABLE);
-  pthread_obj2addindex = pthread_obj2procindex = pthread_obj2saveindex  = 0;
-/* Start the measurement/write_to_catalog threads */
-  for (p=0; p<nthreads; p++)
-    QPTHREAD_CREATE(&pthread_thread[p], &pthread_attr, &pthread_analyse_obj2,
-			(void *)p);
-
-  return;
-  }
-
-/****** pthread_end_obj2 *****************************************************
-PROTO	void pthread_end_obj2(void)
-PURPOSE	Terminate threads, mutexes and semaphores set for multhreaded obj2
-	processing.
-INPUT	-.
-OUTPUT	-.
-NOTES	-.
-AUTHOR	E. Bertin (IAP)
-VERSION	01/08/2012
- ***/
-void	pthread_end_obj2(void)
-  {
-   int	p;
-
-  QPTHREAD_MUTEX_LOCK(&pthread_obj2mutex);
-/* Call all threads to exit */
-  pthread_endflag = 1;
-  QPTHREAD_COND_BROADCAST(&pthread_obj2addcond);
-  QPTHREAD_COND_BROADCAST(&pthread_obj2addcond);
-  QPTHREAD_MUTEX_UNLOCK(&pthread_obj2mutex);
-
-  for (p=0; p<pthread_nthreads; p++)
-    QPTHREAD_JOIN(pthread_thread[p], NULL);
-
-  QPTHREAD_MUTEX_DESTROY(&pthread_obj2mutex);
-  QPTHREAD_MUTEX_DESTROY(&pthread_freeobj2mutex);
-  QPTHREAD_MUTEX_DESTROY(&pthread_countobj2mutex);
-  QPTHREAD_ATTR_DESTROY(&pthread_attr);
-  QPTHREAD_COND_DESTROY(&pthread_obj2addcond);
-  QPTHREAD_COND_DESTROY(&pthread_obj2savecond);
-
-  free(pthread_thread);
-  free(pthread_obj2);
-
-  return;
-  }
-
-
-/****** pthread_add_obj2 *****************************************************
-PROTO	void pthread_addobj2(obj2struct *obj2)
-PURPOSE	Add an object to the list of obj2 groups that need to be processed.
-INPUT	Pointer to the first obj2 in the group to be processed.
-OUTPUT	-.
-NOTES	-.
-AUTHOR	E. Bertin (IAP)
-VERSION	01/08/2012
- ***/
-void	pthread_add_obj2(obj2struct *obj2)
-  {
-
-  QPTHREAD_MUTEX_LOCK(&pthread_obj2mutex);
-  while (pthread_obj2addindex>=pthread_obj2saveindex+pthread_nobj2)
-/*-- Wait for stack to flush if limit on the number of stored obj2s is reached*/
-    QPTHREAD_COND_WAIT(&pthread_obj2savecond, &pthread_obj2mutex);
-  pthread_obj2[pthread_obj2addindex++%pthread_nobj2] = obj2;
-  QPTHREAD_COND_BROADCAST(&pthread_obj2addcond);
-  QPTHREAD_MUTEX_UNLOCK(&pthread_obj2mutex);
-
-  return;
-  }
-
-/****** pthread_analyse_obj2 *************************************************
-PROTO	void *pthread_analyse_obj2(void *arg)
-PURPOSE	thread that takes care of measuring and saving obj2s.
-INPUT	Pointer to the thread number.
-OUTPUT	-.
-NOTES	-.
-AUTHOR	E. Bertin (IAP)
-VERSION	02/08/2012
- ***/
-void	*pthread_analyse_obj2(void *arg)
-  {
-   obj2struct	*obj2;
-
-  while (1)
-    {
-    QPTHREAD_MUTEX_LOCK(&pthread_obj2mutex);
-/*-- Flush objects for which measurements have been completed */
-    while (pthread_obj2saveindex<pthread_obj2procindex
-		&& (pthread_obj2[pthread_obj2saveindex]->done_flag))
-      analyse_end(pthread_fields, pthread_wfields, pthread_nfield,
-		pthread_obj2[pthread_obj2saveindex++]);
-
-    while (pthread_obj2procindex>=pthread_obj2addindex)
-/*---- Wait for more objects to be pushed in stack */
-      {
-      if ((pthread_endflag))
-        {
-        QPTHREAD_MUTEX_UNLOCK(&pthread_obj2mutex);
-        pthread_exit(NULL);
-        }
-      QPTHREAD_COND_WAIT(&pthread_obj2addcond, &pthread_obj2mutex);
-      }
-    obj2 = pthread_obj2[pthread_obj2procindex++%pthread_nobj2];
-    QPTHREAD_MUTEX_UNLOCK(&pthread_obj2mutex);
-    analyse_group(pthread_fields, pthread_wfields, pthread_nfield, obj2);
-    }
-
-  return (void *)NULL;
-  }
-
-#endif
-
-
 /****** analyse_overlapness ***************************************************
 PROTO	obj2struct analyse_overlapness(objliststruct *objlist, int iobj)
 PURPOSE Link together overlapping detections.
@@ -689,15 +542,17 @@ INPUT	Pointer to an array of image field pointers,
 OUTPUT  New obj2 pointer.
 NOTES   -.
 AUTHOR  E. Bertin (IAP)
-VERSION 01/08/2012
+VERSION 03/10/2012
  ***/
 obj2struct	*analyse_obj2obj2(fieldstruct **fields, fieldstruct **wfields,
 			int nfield, objstruct *obj, obj2liststruct *obj2list)
   {
+   checkstruct		*check;
    fieldstruct		*field;
    subimagestruct	*subimage;
    obj2struct		*obj2;
    float		sigbkg;
+   static int		number;
    int			f, idx,idy;
 
 #ifdef USE_THREADS
@@ -748,7 +603,8 @@ obj2struct	*analyse_obj2obj2(fieldstruct **fields, fieldstruct **wfields,
     }
 
 /* Copy main data */
-  obj2->number = obj->number;
+
+  obj2->number = ++number;
   obj2->fdnpix = obj->fdnpix;
   obj2->dnpix = obj->dnpix;
   obj2->npix = obj->npix;
@@ -808,6 +664,22 @@ obj2struct	*analyse_obj2obj2(fieldstruct **fields, fieldstruct **wfields,
 		subimage->image, subimage->imsize[0],subimage->imsize[1],
 		obj->subx - subimage->immin[0], obj->suby - subimage->immin[1]);
     free(obj->blank);
+    }
+
+  if ((check=prefs.check[CHECK_SEGMENTATION]))
+    {
+/*-- Re-number segmentation map */
+     ULONG	*pix;
+     ULONG	oldsnumber=-obj->number, newsnumber=obj2->number;
+     int	dx,dx0,dy,dpix;
+
+    pix = (ULONG *)check->pix + check->width*obj->ymin + obj->xmin;
+    dx0 = obj->xmax-obj->xmin+1;
+    dpix = check->width-dx0;
+    for (dy=obj->ymax-obj->ymin+1; dy--; pix += dpix)
+      for (dx=dx0; dx--; pix++)
+        if (*pix==oldsnumber)
+          *pix = newsnumber;
     }
 
   return obj2;
@@ -913,69 +785,6 @@ void	analyse_group(fieldstruct **fields, fieldstruct **wfields,
       obj2->done_flag = 1;
     QPTHREAD_MUTEX_UNLOCK(&pthread_obj2mutex);
     }
-#endif
-
-  return;
-  }
-
-
-/****** analyse_write ********************************************************
-PROTO	void analyse_end(fieldstruct **fields, fieldstruct **wfields,
-			int nfield, obj2struct *fobj2)
-PURPOSE Write to catalogue measurements made on a group of detections and
-	release objects.
-INPUT   Pointer to an array of image field pointers,
-	pointer to an array of weight-map field pointers,
-	number of images,
-	obj2struct pointer.
-OUTPUT  -.
-NOTES   -.
-AUTHOR  E. Bertin (IAP)
-VERSION 01/08/2012
- ***/
-void	analyse_end(fieldstruct **fields, fieldstruct **wfields,
-			int nfield, obj2struct *fobj2)
-  {
-   obj2liststruct	*obj2list;
-   obj2struct		*obj2;
-
-  obj2list = thecat.obj2list;
-
-  for (obj2=fobj2; obj2; obj2=obj2->nextobj2)
-    {
-    if ((obj2->writable_flag))
-      {
-/*---- Catalogue output */
-      FPRINTF(OUTPUT, "%8d %6.1f %6.1f %5.1f %5.1f %12g "
-			"%c%c%c%c%c%c%c%c\n",
-	obj2->number, obj2->mx+1.0, obj2->my+1.0,
-	obj2->a, obj2->b,
-	obj2->dflux,
-	obj2->flags&OBJ_CROWDED?'C':'_',
-	obj2->flags&OBJ_MERGED?'M':'_',
-	obj2->flags&OBJ_SATUR?'S':'_',
-	obj2->flags&OBJ_TRUNC?'T':'_',
-	obj2->flags&OBJ_APERT_PB?'A':'_',
-	obj2->flags&OBJ_ISO_PB?'I':'_',
-	obj2->flags&OBJ_DOVERFLOW?'D':'_',
-	obj2->flags&OBJ_OVERFLOW?'O':'_');
-      catout_writeobj(obj2);
-      }
-    obj2->done_flag = 0;
-    }
-
-  for (obj2=fobj2; obj2->nextobj2; obj2=obj2->nextobj2);
-#ifdef USE_THREADS
-  if (prefs.nthreads>1)
-    QPTHREAD_MUTEX_LOCK(&pthread_freeobj2mutex);
-#endif
-  obj2->nextobj2 = obj2list->freeobj2;
-  obj2list->freeobj2->prevobj2 = obj2->nextobj2;
-  obj2list->freeobj2 = fobj2;
-#ifdef USE_THREADS
-  QPTHREAD_COND_BROADCAST(&pthread_obj2savecond);
-  if (prefs.nthreads>1)
-    QPTHREAD_MUTEX_UNLOCK(&pthread_freeobj2mutex);
 #endif
 
   return;
@@ -1295,5 +1104,215 @@ dfield = dwfield = wfield = NULL;
 
   return RETURN_OK;
   }
+
+
+/****** analyse_end *********************************************************
+PROTO	void analyse_end(fieldstruct **fields, fieldstruct **wfields,
+			int nfield, obj2struct *fobj2)
+PURPOSE Write to catalogue measurements made on a group of detections and
+	release objects.
+INPUT   Pointer to an array of image field pointers,
+	pointer to an array of weight-map field pointers,
+	number of images,
+	obj2struct pointer.
+OUTPUT  -.
+NOTES   -.
+AUTHOR  E. Bertin (IAP)
+VERSION 01/08/2012
+ ***/
+void	analyse_end(fieldstruct **fields, fieldstruct **wfields,
+			int nfield, obj2struct *fobj2)
+  {
+   obj2liststruct	*obj2list;
+   obj2struct		*obj2;
+
+  obj2list = thecat.obj2list;
+  for (obj2=fobj2; obj2; obj2=obj2->nextobj2)
+    {
+    if ((obj2->writable_flag))
+      {
+/*---- Catalogue output */
+      FPRINTF(OUTPUT, "%8d %6.1f %6.1f %5.1f %5.1f %12g "
+			"%c%c%c%c%c%c%c%c\n",
+	obj2->number, obj2->mx+1.0, obj2->my+1.0,
+	obj2->a, obj2->b,
+	obj2->dflux,
+	obj2->flags&OBJ_CROWDED?'C':'_',
+	obj2->flags&OBJ_MERGED?'M':'_',
+	obj2->flags&OBJ_SATUR?'S':'_',
+	obj2->flags&OBJ_TRUNC?'T':'_',
+	obj2->flags&OBJ_APERT_PB?'A':'_',
+	obj2->flags&OBJ_ISO_PB?'I':'_',
+	obj2->flags&OBJ_DOVERFLOW?'D':'_',
+	obj2->flags&OBJ_OVERFLOW?'O':'_');
+      catout_writeobj(obj2);
+      }
+    obj2->done_flag = 0;
+    }
+
+  for (obj2=fobj2; obj2->nextobj2; obj2=obj2->nextobj2);
+#ifdef USE_THREADS
+  if (prefs.nthreads>1)
+    QPTHREAD_MUTEX_LOCK(&pthread_freeobj2mutex);
+#endif
+  obj2->nextobj2 = obj2list->freeobj2;
+  obj2list->freeobj2->prevobj2 = obj2->nextobj2;
+  obj2list->freeobj2 = fobj2;
+#ifdef USE_THREADS
+  QPTHREAD_COND_BROADCAST(&pthread_obj2savecond);
+  if (prefs.nthreads>1)
+    QPTHREAD_MUTEX_UNLOCK(&pthread_freeobj2mutex);
+#endif
+
+  return;
+  }
+
+
+#ifdef USE_THREADS
+
+/****** pthread_init_obj2 *****************************************************
+PROTO	void pthread_init_obj2(fieldstruct **fields, fieldstruct **wfields,
+			int nfield, int nthreads)
+PURPOSE	Setup threads, mutexes and semaphores for multhreaded obj2 processing.
+INPUT	Pointer to an array of image field pointers,
+	pointer to an array of weight-map field pointers,
+	number of images,
+	number of threads.
+OUTPUT	-.
+NOTES	Relies on some global variables.
+AUTHOR	E. Bertin (IAP)
+VERSION	02/08/2012
+ ***/
+void	pthread_init_obj2(fieldstruct **fields, fieldstruct **wfields,
+			int nfield, int nthreads)
+  {
+   int	p;
+
+  pthread_fields = fields;
+  pthread_wfields = wfields;
+  pthread_nfield = nfield;
+  pthread_nthreads = nthreads;
+  pthread_nobj2 = prefs.obj2_stacksize;
+  QMALLOC(pthread_thread, pthread_t, nthreads);
+  QCALLOC(pthread_obj2, obj2struct *, pthread_nobj2);
+  QPTHREAD_COND_INIT(&pthread_obj2addcond, NULL);
+  QPTHREAD_COND_INIT(&pthread_obj2savecond, NULL);
+  QPTHREAD_MUTEX_INIT(&pthread_obj2mutex, NULL);
+  QPTHREAD_MUTEX_INIT(&pthread_freeobj2mutex, NULL);
+  QPTHREAD_MUTEX_INIT(&pthread_countobj2mutex, NULL);
+  QPTHREAD_ATTR_INIT(&pthread_attr);
+  QPTHREAD_ATTR_SETDETACHSTATE(&pthread_attr, PTHREAD_CREATE_JOINABLE);
+  pthread_obj2addindex = pthread_obj2procindex = pthread_obj2saveindex  = 0;
+/* Start the measurement/write_to_catalog threads */
+  for (p=0; p<nthreads; p++)
+    QPTHREAD_CREATE(&pthread_thread[p], &pthread_attr, &pthread_analyse_obj2,
+			(void *)p);
+
+  return;
+  }
+
+/****** pthread_end_obj2 *****************************************************
+PROTO	void pthread_end_obj2(void)
+PURPOSE	Terminate threads, mutexes and semaphores set for multhreaded obj2
+	processing.
+INPUT	-.
+OUTPUT	-.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	01/08/2012
+ ***/
+void	pthread_end_obj2(void)
+  {
+   int	p;
+
+  QPTHREAD_MUTEX_LOCK(&pthread_obj2mutex);
+/* Call all threads to exit */
+  pthread_endflag = 1;
+  QPTHREAD_COND_BROADCAST(&pthread_obj2addcond);
+  QPTHREAD_COND_BROADCAST(&pthread_obj2addcond);
+  QPTHREAD_MUTEX_UNLOCK(&pthread_obj2mutex);
+
+  for (p=0; p<pthread_nthreads; p++)
+    QPTHREAD_JOIN(pthread_thread[p], NULL);
+
+  QPTHREAD_MUTEX_DESTROY(&pthread_obj2mutex);
+  QPTHREAD_MUTEX_DESTROY(&pthread_freeobj2mutex);
+  QPTHREAD_MUTEX_DESTROY(&pthread_countobj2mutex);
+  QPTHREAD_ATTR_DESTROY(&pthread_attr);
+  QPTHREAD_COND_DESTROY(&pthread_obj2addcond);
+  QPTHREAD_COND_DESTROY(&pthread_obj2savecond);
+
+  free(pthread_thread);
+  free(pthread_obj2);
+
+  return;
+  }
+
+
+/****** pthread_add_obj2 *****************************************************
+PROTO	void pthread_addobj2(obj2struct *obj2)
+PURPOSE	Add an object to the list of obj2 groups that need to be processed.
+INPUT	Pointer to the first obj2 in the group to be processed.
+OUTPUT	-.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	01/08/2012
+ ***/
+void	pthread_add_obj2(obj2struct *obj2)
+  {
+
+  QPTHREAD_MUTEX_LOCK(&pthread_obj2mutex);
+  while (pthread_obj2addindex>=pthread_obj2saveindex+pthread_nobj2)
+/*-- Wait for stack to flush if limit on the number of stored obj2s is reached*/
+    QPTHREAD_COND_WAIT(&pthread_obj2savecond, &pthread_obj2mutex);
+  pthread_obj2[pthread_obj2addindex++%pthread_nobj2] = obj2;
+  QPTHREAD_COND_BROADCAST(&pthread_obj2addcond);
+  QPTHREAD_MUTEX_UNLOCK(&pthread_obj2mutex);
+
+  return;
+  }
+
+/****** pthread_analyse_obj2 *************************************************
+PROTO	void *pthread_analyse_obj2(void *arg)
+PURPOSE	thread that takes care of measuring and saving obj2s.
+INPUT	Pointer to the thread number.
+OUTPUT	-.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	02/08/2012
+ ***/
+void	*pthread_analyse_obj2(void *arg)
+  {
+   obj2struct	*obj2;
+
+  while (1)
+    {
+    QPTHREAD_MUTEX_LOCK(&pthread_obj2mutex);
+/*-- Flush objects for which measurements have been completed */
+    while (pthread_obj2saveindex<pthread_obj2procindex
+		&& (pthread_obj2[pthread_obj2saveindex]->done_flag))
+      analyse_end(pthread_fields, pthread_wfields, pthread_nfield,
+		pthread_obj2[pthread_obj2saveindex++]);
+
+    while (pthread_obj2procindex>=pthread_obj2addindex)
+/*---- Wait for more objects to be pushed in stack */
+      {
+      if ((pthread_endflag))
+        {
+        QPTHREAD_MUTEX_UNLOCK(&pthread_obj2mutex);
+        pthread_exit(NULL);
+        }
+      QPTHREAD_COND_WAIT(&pthread_obj2addcond, &pthread_obj2mutex);
+      }
+    obj2 = pthread_obj2[pthread_obj2procindex++%pthread_nobj2];
+    QPTHREAD_MUTEX_UNLOCK(&pthread_obj2mutex);
+    analyse_group(pthread_fields, pthread_wfields, pthread_nfield, obj2);
+    }
+
+  return (void *)NULL;
+  }
+
+#endif
+
 
 
