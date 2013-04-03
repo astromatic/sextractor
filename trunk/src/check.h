@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2013 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,13 +22,24 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		25/03/2011
+*	Last modified:		26/02/2013
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
 #ifndef _FITSCAT_H_
 #include "fits/fitscat.h"
 #endif
+
+/*----------------------------- Internal constants --------------------------*/
+
+#define CHECKINTERPW		6	/* Interpolation function range */
+#define	CHECKINTERPFAC		3.0	/* Interpolation envelope factor */
+
+#define	CHECKINTERPF(x)	(x<1e-5 && x>-1e-5? 1.0 \
+			:(x>CHECKINTERPFAC?0.0:(x<-CHECKINTERPFAC?0.0 \
+			:sinf(PI*x)*sinf(PI/CHECKINTERPFAC*x) \
+				/(PI*PI/CHECKINTERPFAC*x*x))))
+				/* Lanczos approximation */
 
 /*--------------------------------- structures ------------------------------*/
 /* Check-image parameters */
@@ -50,6 +61,8 @@ typedef struct structcheck
 checkstruct	*initcheck(char *, checkenum, int next);
 
 void		addcheck(checkstruct *, float *, int,int, int,int, float),
+		addcheck_resample(checkstruct *, float *, int,int, int,int,
+			float, float),
 		blankcheck(checkstruct *, PIXTYPE *, int,int,int,int,PIXTYPE),
 		endcheck(checkstruct *),
 		reendcheck(picstruct *field, checkstruct *),

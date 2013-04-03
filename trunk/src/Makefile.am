@@ -7,7 +7,7 @@
 #
 #	This file part of:	SExtractor
 #
-#	Copyright:		(C) 2002-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+#	Copyright:		(C) 2002-2013 Emmanuel Bertin -- IAP/CNRS/UPMC
 #
 #	License:		GNU General Public License
 #
@@ -22,7 +22,7 @@
 #	You should have received a copy of the GNU General Public License
 #	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 #
-#	Last modified:		11/10/2010
+#	Last modified:		03/04/2013
 #
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -30,7 +30,7 @@ if USE_MODEL
   FFTSOURCE		= fft.c
   PATTERNSOURCE		= pattern.c
   PROFITSOURCE		= profit.c
-  LEVLIB		= $(top_builddir)/src/levmar/liblevmar.a
+  LEVLIB		= $(srcdir)/levmar/liblevmar.a
   LEVDIR		= levmar
 endif
 SUBDIRS			= fits $(LEVDIR) wcs
@@ -53,9 +53,9 @@ sex_SOURCES		= analyse.c assoc.c astrom.c back.c bpro.c catout.c \
 			  sexheadsc.h som.h threads.h types.h wcscelsys.h \
 			  weight.h winpos.h xml.h
 ldactoasc_SOURCES 	= ldactoasc.c ldactoasc.h
-sex_LDADD		= $(top_builddir)/src/fits/libfits.a \
-			  $(top_builddir)/src/wcs/libwcs_c.a \
+sex_LDADD		= $(srcdir)/fits/libfits.a \
+			  $(srcdir)/wcs/libwcs_c.a \
 			  $(LEVLIB) 
-ldactoasc_LDADD		= $(top_builddir)/src/fits/libfits.a
+ldactoasc_LDADD		= $(srcdir)/fits/libfits.a
 DATE=`date +"%Y-%m-%d"`
 

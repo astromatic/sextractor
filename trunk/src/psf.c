@@ -127,6 +127,7 @@ psfstruct	*psf_load(char *filename, int ext)
    char			*head, *ci,*co;
    int			deg[POLY_MAXDIM], group[POLY_MAXDIM], ndim, ngroup,
 			e,i,k;
+
 /* Open the cat (well it is not a "cat", but simply a FITS file */
   if (!(cat = read_cat(filename)))
     error(EXIT_FAILURE, "*Error*: PSF file not found: ", filename);

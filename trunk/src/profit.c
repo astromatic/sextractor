@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 2006-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 2006-2013 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		23/09/2012
+*	Last modified:		16/02/2013
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -111,6 +111,7 @@ profitstruct	*profit_init(psfstruct *psf, unsigned int modeltype)
   QMALLOC16(profit->lmodpix, PIXTYPE, PROFIT_MAXOBJSIZE*PROFIT_MAXOBJSIZE);
   QMALLOC16(profit->lmodpix2, PIXTYPE, PROFIT_MAXOBJSIZE*PROFIT_MAXOBJSIZE);
   QMALLOC16(profit->resi, float, PROFIT_MAXOBJSIZE*PROFIT_MAXOBJSIZE);
+  QMALLOC16(profit->presi, float, profit->nparam);
   QMALLOC16(profit->covar, float, profit->nparam*profit->nparam);
   profit->nprof = nmodels;
   profit->fluxfac = 1.0;	/* Default */
@@ -143,6 +144,7 @@ void	profit_end(profitstruct *profit)
   free(profit->objpix);
   free(profit->objweight);
   free(profit->resi);
+  free(profit->presi);
   free(profit->prof);
   free(profit->covar);
   QFFTWF_FREE(profit->psfdft);
@@ -166,7 +168,7 @@ OUTPUT	Pointer to an allocated fit structure (containing details about the
 	fit).
 NOTES	It is a modified version of the lm_minimize() of lmfit.
 AUTHOR	E. Bertin (IAP)
-VERSION	12/07/2012
+VERSION	26/02/2013
  ***/
 void	profit_fit(profitstruct *profit,
 		picstruct *field, picstruct *wfield,
@@ -221,32 +223,7 @@ void	profit_fit(profitstruct *profit,
     profit->subsamp = 1.0;
   profit->nobjpix = profit->objnaxisn[0]*profit->objnaxisn[1];
 
-/* Use (dirty) global variables to interface with lmfit */
-  the_field = field;
-  the_wfield = wfield;
-  theprofit = profit;
-  profit->obj = obj;
-  profit->obj2 = obj2;
-
-  profit->nresi = profit_copyobjpix(profit, field, wfield);
-/* Check if the number of constraints exceeds the number of free parameters */
-  if (profit->nresi < nparam)
-    {
-    if (FLAG(obj2.prof_vector))
-      for (p=0; p<nparam; p++)
-        obj2->prof_vector[p] = 0.0;
-    if (FLAG(obj2.prof_errvector))
-      for (p=0; p<nparam; p++)
-        obj2->prof_errvector[p] = 0.0;
-    if (FLAG(obj2.prof_errmatrix))
-      for (p=0; p<nparam2; p++)
-        obj2->prof_errmatrix[p] = 0.0;
-    obj2->prof_niter = 0;
-    obj2->prof_flag |= PROFLAG_NOTCONST;
-    return;
-    }
-
-/* Create pixmap at PSF resolution */
+/* Create pixmap at model resolution */
   profit->modnaxisn[0] =
 	((int)(profit->objnaxisn[0]*profit->subsamp/profit->pixstep
 		+0.4999)/2+1)*2; 
@@ -265,8 +242,34 @@ void	profit_fit(profitstruct *profit,
     }
   profit->nmodpix = profit->modnaxisn[0]*profit->modnaxisn[1];
 
+/* Use (dirty) global variables to interface with lmfit */
+  the_field = field;
+  the_wfield = wfield;
+  theprofit = profit;
+  profit->obj = obj;
+  profit->obj2 = obj2;
+
 /* Compute the local PSF */
   profit_psf(profit);
+
+  profit->nresi = profit_copyobjpix(profit, field, wfield);
+  profit->npresi = 0;
+/* Check if the number of constraints exceeds the number of free parameters */
+  if (profit->nresi < nparam)
+    {
+    if (FLAG(obj2.prof_vector))
+      for (p=0; p<nparam; p++)
+        obj2->prof_vector[p] = 0.0;
+    if (FLAG(obj2.prof_errvector))
+      for (p=0; p<nparam; p++)
+        obj2->prof_errvector[p] = 0.0;
+    if (FLAG(obj2.prof_errmatrix))
+      for (p=0; p<nparam2; p++)
+        obj2->prof_errmatrix[p] = 0.0;
+    obj2->prof_niter = 0;
+    obj2->prof_flag |= PROFLAG_NOTCONST;
+    return;
+    }
 
 /* Set initial guesses and boundaries */
   profit->guesssigbkg = profit->sigma = obj->sigbkg;
@@ -358,14 +361,28 @@ profit->niter = profit_minimize(profit, PROFIT_MAXITER);
   if ((check = prefs.check[CHECK_PROFILES]))
     {
     profit_residuals(profit,field,wfield, 0.0, profit->paraminit, NULL);
-    addcheck(check, profit->lmodpix, profit->objnaxisn[0],profit->objnaxisn[1],
+    if (profit->subsamp>1.0)
+      addcheck_resample(check, profit->lmodpix,
+		profit->objnaxisn[0],profit->objnaxisn[1],
+		profit->ix,profit->iy, 1.0/profit->subsamp,
+		1.0/(profit->subsamp*profit->subsamp));
+    else
+      addcheck(check, profit->lmodpix,
+		profit->objnaxisn[0],profit->objnaxisn[1],
 		profit->ix,profit->iy, 1.0);
     }
 
   if ((check = prefs.check[CHECK_SUBPROFILES]))
     {
     profit_residuals(profit,field,wfield, 0.0, profit->paraminit, NULL);
-    addcheck(check, profit->lmodpix, profit->objnaxisn[0],profit->objnaxisn[1],
+    if (profit->subsamp>1.0)
+      addcheck_resample(check, profit->lmodpix,
+		profit->objnaxisn[0],profit->objnaxisn[1],
+		profit->ix,profit->iy, 1.0/profit->subsamp,
+		-1.0/(profit->subsamp*profit->subsamp));
+    else
+      addcheck(check, profit->lmodpix,
+		profit->objnaxisn[0],profit->objnaxisn[1],
 		profit->ix,profit->iy, -1.0);
     }
   if ((check = prefs.check[CHECK_SPHEROIDS]))
@@ -888,7 +905,7 @@ OUTPUT	Pointer to an allocated fit structure (containing details about the
 	fit).
 NOTES	It is a modified version of the lm_minimize() of lmfit.
 AUTHOR	E. Bertin (IAP)
-VERSION	12/07/2012
+VERSION	16/02/2013
  ***/
 void	profit_dfit(profitstruct *profit, profitstruct *dprofit,
 		picstruct *field, picstruct *dfield,
@@ -946,8 +963,9 @@ void	profit_dfit(profitstruct *profit, profitstruct *dprofit,
   dprofit->obj2 = obj2;
 
   dprofit->nresi = profit_copyobjpix(dprofit, dfield, dwfield);
+
 /* Check if the number of constraints exceeds the number of free parameters */
-  if (dprofit->nresi < nparam)
+  if (dprofit->nresi < nparam || profit->nresi < 1)
     {
     obj2->dprof_flag |= PROFLAG_NOTCONST;
     return;
@@ -986,8 +1004,8 @@ void	profit_dfit(profitstruct *profit, profitstruct *dprofit,
     dprofit->guessfluxmax = dprofit->guessflux;
   if (dprofit->guessfluxmax <= 0.0)
     dprofit->guessfluxmax = 1.0;
-  if ((dprofit->guessradius = 0.5*dpsf->fwhm) < sqrtf((float)obj->dnpix))
-    dprofit->guessradius = sqrtf((float)obj->dnpix);
+  if ((dprofit->guessradius = sqrtf(obj->a*obj->b)*1.17)<0.5*dpsf->fwhm)
+    dprofit->guessradius = 0.5*dpsf->fwhm;
   dprofit->guessaspect = obj->b/obj->a;
   dprofit->guessposang = obj->theta;
 
@@ -1024,7 +1042,7 @@ void	profit_dfit(profitstruct *profit, profitstruct *dprofit,
 
   ffac = (float)(sumn/sumd);
   obj2->flux_dprof = sumd!=0.0? dprofit->flux*ffac: 0.0f;
-  obj2->fluxerr_dprof = sumd!=0.0? 1.0f/sqrtf((float)sumd): 0.0f;
+  obj2->fluxerr_dprof = sumd!=0.0? dprofit->flux/sqrtf((float)sumd): 0.0f;
 
   if (FLAG(obj2.dprof_chi2))
     {
@@ -1360,7 +1378,7 @@ INPUT	Profile-fitting structure.
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	07/07/2010
+VERSION	13/02/2013
  ***/
 void	profit_psf(profitstruct *profit)
   {
@@ -1403,7 +1421,7 @@ void	profit_psf(profitstruct *profit)
     }
 
 /* Normalize PSF flux (just in case...) */
-  flux *= profit->pixstep*profit->pixstep;
+  flux *= profit->pixstep*profit->pixstep / (profit->subsamp*profit->subsamp);
   if (fabs(flux) <= 0.0)
     error(EXIT_FAILURE, "*Error*: PSF model is empty or negative: ", psf->name);
 
@@ -1424,7 +1442,7 @@ INPUT	Pointer to the profit structure involved in the fit,
 OUTPUT	Number of iterations used.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	20/05/2011
+VERSION	15/01/2013
  ***/
 int	profit_minimize(profitstruct *profit, int niter)
   {
@@ -1445,7 +1463,8 @@ int	profit_minimize(profitstruct *profit, int niter)
   nfree = profit_boundtounbound(profit, profit->paraminit, dparam,
 				PARAM_ALLPARAMS);
 
-  niter = dlevmar_dif(profit_evaluate, dparam, NULL, nfree, profit->nresi,
+  niter = dlevmar_dif(profit_evaluate, dparam, NULL, nfree,
+			profit->nresi + profit->npresi,
 			niter, lm_opts, info, NULL, dcovar, profit);
 
   profit_unboundtobound(profit, dparam, profit->paraminit, PARAM_ALLPARAMS);
@@ -1516,13 +1535,13 @@ INPUT	Pointer to the vector of parameters,
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	20/05/2011
+VERSION	16/01/2013
  ***/
 void	profit_evaluate(double *dpar, double *fvec, int m, int n, void *adata)
   {
    profitstruct		*profit;
    profstruct		**prof;
-   double		*dpar0, *dresi;
+   double		*dpar0, *dresi, *fvect;
    float		*modpixt, *profpixt, *resi,
 			tparam, val;
    PIXTYPE		*lmodpixt,*lmodpix2t, *objpix,*weight,
@@ -1682,8 +1701,14 @@ jflag = 0;	/* Temporarily deactivated (until problems are fixed) */
     profit_residuals(profit, the_field, the_wfield, PROFIT_DYNPARAM,
 	profit->param, profit->resi);
 
+    profit_presiduals(profit, dpar, profit->presi);
+
+    fvect = fvec;
     for (p=0; p<profit->nresi; p++)
-      fvec[p] = profit->resi[p];
+      *(fvect++) = profit->resi[p];
+    for (p=0; p<profit->npresi; p++)
+      *(fvect++) = profit->presi[p];
+
     }
 
 //  profit_printout(m, par, n, fvec, adata, 0, -1, 0 );
@@ -1694,7 +1719,7 @@ jflag = 0;	/* Temporarily deactivated (until problems are fixed) */
 
 
 /****** profit_residuals ******************************************************
-PROTO	float *prof_residuals(profitstruct *profit, picstruct *field,
+PROTO	float *profit_residuals(profitstruct *profit, picstruct *field,
 		picstruct *wfield, float dynparam, float *param, float *resi)
 PURPOSE	Compute the vector of residuals between the data and the galaxy
 	profile model.
@@ -1702,7 +1727,7 @@ INPUT	Profile-fitting structure,
 	pointer to the field,
 	pointer to the field weight,
 	dynamic compression parameter (0=no compression),
-	pointer to the model parameters (output),
+	pointer to the model parameters
 	pointer to the computed residuals (output).
 OUTPUT	Vector of residuals.
 NOTES	-.
@@ -1739,6 +1764,33 @@ float	*profit_residuals(profitstruct *profit, picstruct *field,
     profit_compresi(profit, dynparam, resi);
 
   return resi;
+  }
+
+
+/****** profit_presiduals *****************************************************
+PROTO	float *profit_presiduals(profitstruct *profit, float *param,
+		float *presi)
+PURPOSE	Compute the vector of prior "residuals" for the model parameters.
+INPUT	Profile-fitting structure,
+	pointer to the (unbound) model parameters,
+	pointer to the computed prior "residuals" (output).
+OUTPUT	Vector of residuals.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	15/01/2013
+ ***/
+float	*profit_presiduals(profitstruct *profit, double *dparam, float *presi)
+  {
+   float	*presit;  
+   int		p;
+
+  presit = presi;
+  for (p=0; p<profit->nparam; p++)
+    if (profit->dparampsig[p]>0.0)
+      *(presit++) = (float)((dparam[p] - profit->dparampcen[p])
+				/ profit->dparampsig[p]);
+
+  return presi;
   }
 
 
@@ -1816,7 +1868,7 @@ INPUT	Profile-fitting structure,
 OUTPUT	RETURN_ERROR if the rasters don't overlap, RETURN_OK otherwise.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	23/09/2012
+VERSION	13/02/2013
  ***/
 int	profit_resample(profitstruct *profit, float *inpix, PIXTYPE *outpix,
 	float factor)
@@ -1832,13 +1884,12 @@ int	profit_resample(profitstruct *profit, float *inpix, PIXTYPE *outpix,
 		iysina, nyin, hmw,hmh, ix,iy, ixin,iyin;
 
   invpixstep = profit->subsamp/profit->pixstep;
-  factor /= profit->subsamp*profit->subsamp;
 
   xcin = (float)(profit->modnaxisn[0]/2);
   xcout = ((int)(profit->subsamp*profit->objnaxisn[0])/2 + 0.5)
 		/ profit->subsamp - 0.5;
   if ((dx=profit->paramlist[PARAM_X]))
-    xcout += *dx / profit->subsamp;
+    xcout += *dx/profit->subsamp;
 
   xsin = xcin - xcout*invpixstep;			/* Input start x-coord*/
 
@@ -1865,7 +1916,7 @@ int	profit_resample(profitstruct *profit, float *inpix, PIXTYPE *outpix,
   ycout = ((int)(profit->subsamp*profit->objnaxisn[1])/2 + 0.5)
 		/ profit->subsamp - 0.5;
   if ((dy=profit->paramlist[PARAM_Y]))
-    ycout += *dy / profit->subsamp;
+    ycout += *dy/profit->subsamp;
 
   ysin = ycin - ycout*invpixstep;		/* Input start y-coord*/
   if ((int)ysin >= profit->modnaxisn[1])
@@ -2986,19 +3037,19 @@ PROTO	void profit_resetparam(profitstruct *profit, paramenum paramtype)
 PURPOSE	Set the initial, lower and upper boundary values of a profile parameter.
 INPUT	Pointer to the profit structure,
 	Parameter index.
-OUTPUT	-.
+OUTPUT	.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	03/11/2011
+VERSION	15/01/2013
  ***/
 void	profit_resetparam(profitstruct *profit, paramenum paramtype)
   {
    obj2struct	*obj2;
-   float	param, parammin,parammax, range;
+   float	param, parammin,parammax, range, priorcen,priorsig;
    parfitenum	fittype;
 
   obj2 = profit->obj2;
-  param = parammin = parammax = 0.0;	/* Avoid gcc -Wall warnings*/
+  param = parammin = parammax = priorcen = priorsig = 0.0;
 
   switch(paramtype)
     {
@@ -3012,8 +3063,8 @@ void	profit_resetparam(profitstruct *profit, paramenum paramtype)
       fittype = PARFIT_LINBOUND;
       param = profit->guessdx;
       range = profit->guessradius*4.0;
-      if (range>profit->objnaxisn[0]*2.0)
-        range = profit->objnaxisn[0]*2.0;
+      if (range>profit->objnaxisn[0]*profit->subsamp*2.0)
+        range = profit->objnaxisn[0]*profit->subsamp*2.0;
       parammin = -range;
       parammax =  range;
       break;
@@ -3021,8 +3072,8 @@ void	profit_resetparam(profitstruct *profit, paramenum paramtype)
       fittype = PARFIT_LINBOUND;
       param = profit->guessdy;
       range = profit->guessradius*4.0;
-      if (range>profit->objnaxisn[1]*2)
-        range = profit->objnaxisn[1]*2;
+      if (range>profit->objnaxisn[1]*profit->subsamp*2)
+        range = profit->objnaxisn[1]*profit->subsamp*2;
       parammin = -range;
       parammax =  range;
       break;
@@ -3050,6 +3101,8 @@ void	profit_resetparam(profitstruct *profit, paramenum paramtype)
       param = FLAG(obj2.prof_disk_flux)? 1.0 : profit->guessaspect;
       parammin = FLAG(obj2.prof_disk_flux)? 0.5 : 0.01;
       parammax = FLAG(obj2.prof_disk_flux)? 2.0 : 100.0;
+      priorcen = 0.3;
+      priorsig = 0.0 /*0.4*/;
       break;
     case PARAM_SPHEROID_POSANG:
       fittype = PARFIT_UNBOUND;
@@ -3062,6 +3115,8 @@ void	profit_resetparam(profitstruct *profit, paramenum paramtype)
       param = 4.0;
       parammin = FLAG(obj2.prof_disk_flux)? 1.0 : 0.3;
       parammax = 10.0;
+      priorcen = 1.0;
+      priorsig = 0.0 /*2.0*/;
       break;
     case PARAM_DISK_FLUX:
       fittype = PARFIT_LOGBOUND;
@@ -3207,7 +3262,8 @@ void	profit_resetparam(profitstruct *profit, paramenum paramtype)
     param = (parammin+parammax)/2.0;
   else if (parammin==0.0 && parammax==0.0)
     parammax = 1.0;
-  profit_setparam(profit, paramtype, param, parammin, parammax, fittype);
+  profit_setparam(profit, paramtype, param, parammin, parammax, fittype,
+	priorcen, priorsig);
 
   return;
   }
@@ -3237,7 +3293,8 @@ void	profit_resetparams(profitstruct *profit)
 /****** profit_setparam ****************************************************
 PROTO	void profit_setparam(profitstruct *profit, paramenum paramtype,
 		float param, float parammin, float parammax,
-		parfitenum parfittype)
+		parfitenum parfittype,
+		float priorcen, float priorsig)
 PURPOSE	Set the actual, lower and upper boundary values of a profile parameter.
 INPUT	Pointer to the profit structure,
 	parameter index,
@@ -3245,14 +3302,18 @@ INPUT	Pointer to the profit structure,
 	lower boundary to the parameter,
 	upper boundary to the parameter,
 	parameter fitting type.
+	prior central value,
+	prior standard deviation.
 OUTPUT	RETURN_OK if the parameter is registered, RETURN_ERROR otherwise.
 AUTHOR	E. Bertin (IAP)
-VERSION	20/05/2011
+VERSION	16/01/2013
  ***/
 int	profit_setparam(profitstruct *profit, paramenum paramtype,
 		float param, float parammin,float parammax,
-		parfitenum parfittype)
+		parfitenum parfittype,
+		float priorcen, float priorsig)
   {
+   double	dtemp;
    float	*paramptr;
    int		index;
 
@@ -3264,6 +3325,8 @@ int	profit_setparam(profitstruct *profit, paramenum paramtype,
     profit->parammin[index] = parammin;
     profit->parammax[index] = parammax;
     profit->parfittype[index] = parfittype;
+    profit_boundtounbound(profit, &priorcen, &profit->dparampcen[index], index);
+    profit->dparampsig[index] = priorsig;
     return RETURN_OK;
     }
   else
@@ -3758,7 +3821,7 @@ INPUT	Profile-fitting structure,
 OUTPUT	Total (asymptotic) flux contribution.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	25/07/2011
+VERSION	13/02/2013
  ***/
 float	prof_add(profitstruct *profit, profstruct *prof, int extfluxfac_flag)
   {

@@ -679,7 +679,6 @@
 	&outobj2.prof_arms_quadfracerr, H_FLOAT, T_FLOAT, "%6.4f", "deg",
 	"stat.error;phot.count;arith.ratio;src.morph;stat.fit.param", "deg"},
 */
-
   {"CHI2_DETMODEL", "Reduced Chi2 of the det. model fit to measurement image",
 	&outobj2.dprof_chi2, H_FLOAT, T_FLOAT, "%12.7g", "",
 	"stat.fit.chi2;src.morph", ""},

@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 2007-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 2007-2013 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		12/07/2012
+*	Last modified:		15/02/2013
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -35,8 +35,14 @@
 /*------------------------------- Other Macros ------------------------------*/
 #define	QFFTWF_MALLOC(ptr, typ, nel) \
 		{if (!(ptr = (typ *)fftwf_malloc((size_t)(nel)*sizeof(typ)))) \
-		  error(EXIT_FAILURE, "Not enough memory for ", \
-			#ptr " (" #nel " elements) !");;}
+		   { \
+		   sprintf(gstr, #ptr " (" #nel "=%lld elements) " \
+			"at line %d in module " __FILE__ " !", \
+			(size_t)(nel)*sizeof(typ), __LINE__); \
+		   error(EXIT_FAILURE, "Could not allocate memory for ", gstr);\
+                   }; \
+                 }
+
 #define	QFFTWF_FREE(ptr) \
 		{fftwf_free(ptr); ptr=NULL;}
 
