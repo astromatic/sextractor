@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2013 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		12/07/2012
+*	Last modified:		13/02/2013
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -337,7 +337,7 @@ void	makeit()
       field = newfield(prefs.image_name[0], DETECT_FIELD | MEASURE_FIELD,
 		nima0<0? ntab:nima0);
 
-/*-- Prepare interpolation */
+/*---- Prepare interpolation */
       if ((prefs.dweight_flag || prefs.weight_flag)
 	&& prefs.interp_type[0] == INTERP_ALL)
       init_interpolate(field, -1, -1);       /* 0.0 or anything else */
@@ -356,7 +356,8 @@ void	makeit()
           {
 /*-------- First: the "measurement" weights */
           wfield = newweight(prefs.wimage_name[1],field,prefs.weight_type[1],
-		nima1<0? ntab : (nweight1<0?1:nweight1));
+		(nima1<0 && prefs.image_name[1])?
+			ntab : (nweight1<0?1:nweight1));
           wtype = prefs.weight_type[1];
           interpthresh = prefs.weight_thresh[1];
 /*-------- Convert the interpolation threshold to variance units */
@@ -437,7 +438,7 @@ void	makeit()
       }
     else if (dwfield && dwfield->flags^INTERP_FIELD)
       {
-      makeback(field, dwfield, BACK_WSCALE);
+      makeback(field, dwfield, prefs.wscale_flag[0]);
       QPRINTF(OUTPUT, "(D)   "
 		"Background: %-10g RMS: %-10g / Threshold: %-10g \n",
 	field->backmean, field->backsig, field->dthresh);

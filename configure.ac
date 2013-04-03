@@ -7,7 +7,7 @@
 #
 #	This file part of:	SExtractor
 #
-#	Copyright:		(C) 2002-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
+#	Copyright:		(C) 2002-2013 Emmanuel Bertin -- IAP/CNRS/UPMC
 #
 #	License:		GNU General Public License
 #
@@ -22,7 +22,7 @@
 #	You should have received a copy of the GNU General Public License
 #	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 #
-#	Last modified:		23/09/2012
+#	Last modified:		03/04/2013
 #
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -31,7 +31,7 @@ define([AC_CACHE_LOAD],)
 define([AC_CACHE_SAVE],)
 
 # This is your standard Bertin source code...
-AC_INIT(sextractor, 2.18.4, [bertin@iap.fr])
+AC_INIT(sextractor, 2.18.8, [bertin@iap.fr])
 AC_CONFIG_SRCDIR(src/makeit.c)
 AC_CONFIG_AUX_DIR(autoconf)
 AC_CONFIG_HEADERS(config.h)
@@ -231,12 +231,14 @@ AM_CONDITIONAL(USE_THREADS, [test $use_pthreads = "yes"])
 if test "$enable_model_fitting" = "yes"; then
 ############ handle the INTEL MKL library (FFTW + LAPACK) ###########
   if test "$enable_mkl" = "yes"; then
-    ACX_MKL()
+    convlibs="${srcdir}/wcs/libwcs_c.a,${srcdir}/levmar/liblevmar.a"
+    ACX_MKL(,,$enable_best_link,$convlibs)
     if test "$MKL_WARN" != ""; then
       AC_MSG_WARN([$MKL_WARN])
     fi
     AM_CFLAGS="$AM_CFLAGS $MKL_CFLAGS "
-    LIBS="$MKL_LIBS $LIBS"
+    AM_LDFLAGS="$AM_LDFLAGS $MKL_LDFLAGS"
+    LIBS="$LIBS $MKL_LIBS"
   else
 ################ handle the FFTW library (Fourier transforms) ################
     ACX_FFTW($with_fftw_libdir,$with_fftw_incdir,$use_pthreads,yes,
@@ -269,7 +271,7 @@ fi
 if test "$enable_best_link" = "yes"; then
   if test "$enable_icc" = "yes"; then
     AM_LDFLAGS="-static-intel -openmp-link static -shared-libgcc \
-	-static-libtool-libs -avoid-version $AM_LDFLAGS"
+	-static-libtool-libs -no-intel-extensions -avoid-version $AM_LDFLAGS"
   else
     AM_LDFLAGS="-shared-libgcc -static-libtool-libs -avoid-version $AM_LDFLAGS"
   fi

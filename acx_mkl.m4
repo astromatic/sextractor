@@ -7,7 +7,7 @@ dnl %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 dnl
 dnl	This file part of:	AstrOmatic software
 dnl
-dnl	Copyright:		(C) 2003-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
+dnl	Copyright:		(C) 2003-2013 Emmanuel Bertin -- IAP/CNRS/UPMC
 dnl
 dnl	License:		GNU General Public License
 dnl
@@ -23,59 +23,130 @@ dnl	You should have received a copy of the GNU General Public License
 dnl	along with AstrOmatic software.
 dnl	If not, see <http://www.gnu.org/licenses/>.
 dnl
-dnl	Last modified:		11/07/2012
+dnl	Last modified:		03/04/2013
 dnl
 dnl %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 dnl
-dnl @synopsis ACX_MKL()
+dnl @synopsis ACX_MKL([MKL_DIR, ILP64_FLAG, STATIC_FLAG, CONV_LIBS])
 dnl
-dnl You may wish to use these variables in your default LIBS:
-dnl
-dnl        LIBS="$MKL_LIBS $LIBS"
-dnl
+dnl This macro sets the MKL_CFLAGS, MKL_LDFLAGS and MKL_LIBS variables to
+dnl for compiling and linking with INTEL's MKL. A coma-separated list of
+dnl convenience libraries may be included in the linked group for static linking.
 dnl You may wish to use these variables in your default CFLAGS:
 dnl
 dnl        CFLAGS="$CFLAGS $MKL_CFLAGS"
+dnl
+dnl You may wish to use these variables in your default LDFLAGS:
+dnl
+dnl        LDFLAGS="$LDFLAGS $MKL_LDLAGS"
+dnl
+dnl You may wish to use these variables in your default LIBS:
+dnl
+dnl        LIBS="$LIBS $MKL_LIBS"
 dnl
 
 AC_DEFUN([ACX_MKL], [
 AC_REQUIRE([AC_CANONICAL_HOST])
 
+dnl ------------------------
+dnl Set MKL's root directory
+dnl ------------------------
+
+if test x$1 = x; then
+  mklroot=${MKLROOT}
+else
+  mklroot=$1
+fi
+
+dnl -----------------------------
+dnl Include convenience libraries
+dnl -----------------------------
+
+if test x$4 = x; then
+  startgroup="-Wl,--start-group"
+else
+  startgroup="-Wl,--start-group,$4"
+fi
+
 dnl ----------------------
 dnl Set architecture flags
 dnl ----------------------
 
-dnl Try to find INTEL architecture (Intel 64 or ia32)
 if icc -V 2>&1 | grep -i "Intel(R) 64" > /dev/null 2>&1; then
-  AC_SUBST(MKL_CFLAGS, "-DMKL_ILP64")
-  AC_SUBST(MKL_LIBS, "-mkl")
+dnl INTEL compiler uses x86_64 architecture
+  if test x$2 = xyes; then
+dnl 64 bit pointers
+    AC_SUBST(MKL_CFLAGS, "-DMKL_ILP64")
+    if test x$3 = xyes; then
+dnl Static linking uses a duplicated libmkl_intel_ilp64.a to fool libtool
+      AC_SUBST(MKL_LIBS,
+	["$startgroup,$mklroot/lib/intel64/libmkl_intel_ilp64.a,\
+$mklroot/lib/intel64/libmkl_intel_thread.a \
+$mklroot/lib/intel64/libmkl_core.a --end-group -openmp -lpthread -lm"])
+    else
+      AC_SUBST(MKL_LIBS, "-lmkl_intel_ilp64 -lmkl_intel_thread -lmkl_core \
+		-openmp -lpthread -lm")
+    fi
+  else
+dnl 32 bit pointers
+    AC_SUBST(MKL_CFLAGS, "")
+    if test x$3 = xyes; then
+dnl Static linking uses a duplicated libmkl_intel.a to fool libtool
+      AC_SUBST(MKL_LIBS,
+	["$startgroup,$mklroot/lib/intel64/libmkl_intel_lp64.a,\
+$mklroot/lib/intel64/libmkl_intel_thread.a,\
+$mklroot/lib/intel64/libmkl_core.a,--end-group -openmp -lpthread -lm"])
+    else
+dnl Dynamic linking
+      AC_SUBST(MKL_LIBS, "-lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core \
+	-openmp -lpthread -lm")
+    fi
+  fi
+
 elif icc -V 2>&1 | grep -i "Intel(R)" > /dev/null 2>&1; then
+dnl INTEL compiler uses IA32 architecture
   AC_SUBST(MKL_CFLAGS, "")
-  AC_SUBST(MKL_LIBS, "-mkl")
+  if test x$3 = xyes; then
+dnl Static linking uses a duplicated libmkl_intel.a to fool libtool
+    AC_SUBST(MKL_LIBS, ["$startgroup,$mklroot/lib/ia32/libmkl_intel.a,\
+$mklroot/lib/ia32/libmkl_intel_thread.a,\
+$mklroot/lib/ia32/libmkl_core.a,--end-group -openmp -lpthread -lm"])
+  else
+dnl Dynamic linking
+    AC_SUBST(MKL_LIBS, "-lmkl_intel -lmkl_intel_thread -lmkl_core \
+	-openmp -lpthread -lm")
+  fi
+
+AC_SUBST(MKL_LDFLAGS, "")
+
 else
+dnl INTEL compiler not found
   AC_SUBST(MKL_CFLAGS, "")
+  AC_SUBST(MKL_LDFLAGS, "")
   AC_SUBST(MKL_LIBS, "")
   MKL_WARN="INTEL compiler not detected"
   AC_SUBST(MKL_WARN)
 fi
 
+if test x$MKL_WARN = x; then
+
 dnl --------------------
 dnl Set internal flags
 dnl --------------------
 
-AC_DEFINE(HAVE_MKL,1, [Define if you have the MKL libraries.])
-AC_DEFINE(HAVE_FFTW,1, [Define if you have the FFTW libraries.])
-AC_DEFINE(HAVE_LAPACK,1, [Define if you have the LAPACK libraries.])
-AC_DEFINE(HAVE_LAPACKE,1, [Define if you have the LAPACKe libraries.])
+  AC_DEFINE(HAVE_MKL,1, [Define if you have the MKL libraries.])
+  AC_DEFINE(HAVE_FFTW,1, [Define if you have the FFTW libraries.])
+  AC_DEFINE(HAVE_LAPACK,1, [Define if you have the LAPACK libraries.])
+  AC_DEFINE(HAVE_LAPACKE,1, [Define if you have the LAPACKe libraries.])
 
 dnl --------------------
 dnl Set include files
 dnl --------------------
 
-AC_DEFINE_UNQUOTED(MKL_H, "mkl.h", [MKL header filename.])
-AC_DEFINE_UNQUOTED(FFTW_H, "fftw/fftw3_mkl.h", [FFTW header filename.])
-AC_DEFINE_UNQUOTED(LAPACK_H, "mkl_lapack.h", [LAPACK header filename.])
-AC_DEFINE_UNQUOTED(LAPACKE_H, "mkl_lapacke.h", [LAPACKe header filename.])
-
+  AC_DEFINE_UNQUOTED(MKL_H, "mkl.h", [MKL header filename.])
+  AC_DEFINE_UNQUOTED(FFTW_H, "fftw/fftw3_mkl.h", [FFTW header filename.])
+  AC_DEFINE_UNQUOTED(LAPACK_H, "mkl_lapack.h", [LAPACK header filename.])
+  AC_DEFINE_UNQUOTED(LAPACKE_H, "mkl_lapacke.h", [LAPACKe header filename.])
+fi
 
 ])dnl ACX_MKL

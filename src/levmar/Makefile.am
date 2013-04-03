@@ -7,8 +7,8 @@
 #
 #	This file part of:	AstrOmatic software
 #
-#	Copyright:		(C) 2007-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
-##				(C) 2004 Manolis Lourakis (original LevMar)
+#	Copyright:		(C) 2007-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
+##				(C) 2004-2011 Manolis Lourakis (orig. LevMar)
 #
 #	Licenses:		GNU General Public License
 #
@@ -24,7 +24,7 @@
 #	along with AstrOmatic software.
 #	If not, see <http://www.gnu.org/licenses/>.
 #
-#	Last modified:		10/10/2010
+#	Last modified:		10/07/2012
 #
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -35,5 +35,6 @@ EXTRA_liblevmar_a_SOURCES = Axb_core.c lmbc_core.c lm_core.c \
 			  lmblec_core.c lmbleic_core.c lmlec_core.c \
 			  misc_core.c \
 			  LICENSE README README.txt \
-			  Makefile.icc Makefile.vc expfit.c lmdemo.c lm.h matlab
+			  Makefile.icc Makefile.vc expfit.c levmar.h.in \
+			  lmdemo.c lm.h matlab
 

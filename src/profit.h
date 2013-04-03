@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 2006-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 2006-2013 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		08/12/2011
+*	Last modified:		13/02/2013
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -157,6 +157,8 @@ typedef struct
   float		paraminit[PARAM_NPARAM];/* Parameter initial guesses */
   float		parammin[PARAM_NPARAM];	/* Parameter lower limits */
   float		parammax[PARAM_NPARAM];	/* Parameter upper limits */
+  double	dparampcen[PARAM_NPARAM];/* Parameter prior center */
+  double	dparampsig[PARAM_NPARAM];/* Parameter prior sigma */
   int		nlimmin;	/* # of parameters that hit the min limit */
   int		nlimmax;	/* # of parameters that hit the max limit */
   float		paramerr[PARAM_NPARAM];	/* Std deviations of parameters */
@@ -185,6 +187,8 @@ typedef struct
   int		ix, iy;		/* Integer coordinates of object pixmap */
   float		*resi;		/* Vector of residuals */
   int		nresi;		/* Number of residual elements */
+  float		*presi;		/* Vector of prior residuals */
+  int		npresi;		/* Number of prior residual elements */
   float		chi2;		/* Std error per residual element */
   float		sigma;		/* Standard deviation of the pixel values */
   float		flux;		/* Total flux in final convolved model */
@@ -209,6 +213,8 @@ profstruct	*prof_init(profitstruct *profit, unsigned int modeltype);
 
 float		*profit_compresi(profitstruct *profit, float dynparam,
 				float *resi),
+		*profit_presiduals(profitstruct *profit, double *dparam,
+			float *presi),
 		*profit_residuals(profitstruct *profit, picstruct *field,
 			picstruct *wfield, float dynparam,
 			float *param, float *resi),
@@ -231,7 +237,8 @@ int		profit_boundtounbound(profitstruct *profit,
 			PIXTYPE *outpix, float factor),
 		profit_setparam(profitstruct *profit, paramenum paramtype,
 			float param, float parammin, float parammax,
-			parfitenum parfittype),
+			parfitenum parfittype,
+			float priorcen, float priorsig),
 		profit_unboundtobound(profitstruct *profit,
 			double *dparam, float *param, int index);
 

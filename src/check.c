@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		06/09/2011
+*	Last modified:		26/02/2013
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -86,6 +86,215 @@ void	addcheck(checkstruct *check, float *psf,
     for (x=w2; x--;)
       *(pix++) += amplitude**(psf++);
     }
+
+  return;
+  }
+
+
+/****** addcheck_resample *****************************************************
+PROTO	void addcheck_resample(checkstruct *check, float *thumb, int w, int h,
+			int ix,int iy, float zoom, float amplitude)
+PURPOSE	Add a resampled thumbnail to a check image (with a multiplicative
+	factor).
+INPUT	Pointer to the check-image,
+	pointer to the thumbnail,
+	thumbnail width,
+	thumbnail height,
+	thumbnail center x coordinate,
+	thumbnail center y coordinate,
+	zoom factor,
+	flux scaling factor.
+OUTPUT	-.
+NOTES	Outside boundaries are taken into account.
+AUTHOR	E. Bertin (IAP)
+VERSION	26/02/2013
+ ***/
+void	addcheck_resample(checkstruct *check, float *thumb, int w, int h,
+			int ix, int iy, float step2, float amplitude)
+  {
+   float	interpm[CHECKINTERPW*CHECKINTERPW],
+		*pix2, *mask,*maskt,*pix12, *pixin,*pixin0, *pixout,*pixout0,
+		xc1,xc2,yc1,yc2, xs1,ys1, x1,y1, x,y, dxm,dym, val, norm, dx,dy;
+   int		i,j,k,n,t, *start,*startt, *nmask,*nmaskt,
+		ixs2,iys2, ix2,iy2, dix2,diy2, nx2,ny2, iys1a, ny1, hmw,hmh,
+		ixs,iys, ix1,iy1, w2,h2;
+
+  pix2 = check->pix;
+  w2 = check->width;
+  h2 = check->height;
+  dx = 0.5*(1.0 - step2);
+  dy = 0.5*(1.0 - step2);
+
+  xc1 = (float)(w/2);	/* Im1 center x-coord*/
+  xc2 = (float)ix;	/* Im2 center x-coord*/
+  xs1 = xc1 + dx - xc2*step2;	/* Im1 start x-coord */
+
+  if ((int)xs1 >= w)
+    return;
+  ixs2 = 0;			/* Int part of Im2 start x-coord */
+  if (xs1<0.0)
+    {
+    dix2 = (int)(1-xs1/step2);
+/*-- Simply leave here if the images do not overlap in x */
+    if (dix2 >= w2)
+      return;
+    ixs2 += dix2;
+    xs1 += dix2*step2;
+    }
+  nx2 = (int)((w-1-xs1)/step2+1);/* nb of interpolated Im2 pixels along x */
+  if (nx2>(ix2=w2-ixs2))
+    nx2 = ix2;
+  if (nx2<=0)
+    return;
+  yc1 = (float)(h/2);	/* Im1 center y-coord */
+  yc2 = (float)iy;	/* Im2 center y-coord */
+  ys1 = yc1 + dy - yc2*step2;	/* Im1 start y-coord */
+  if ((int)ys1 >= h)
+    return;
+  iys2 = 0;			/* Int part of Im2 start y-coord */
+  if (ys1<0.0)
+    {
+    diy2 = (int)(1-ys1/step2);
+/*-- Simply leave here if the images do not overlap in y */
+    if (diy2 >= h2)
+      return;
+    iys2 += diy2;
+    ys1 += diy2*step2;
+    }
+  ny2 = (int)((h-1-ys1)/step2+1);/* nb of interpolated Im2 pixels along y */
+  if (ny2>(iy2=h2-iys2))
+    ny2 = iy2;
+  if (ny2<=0)
+    return;
+
+/* Set the yrange for the x-resampling with some margin for interpolation */
+  iys1a = (int)ys1;		/* Int part of Im1 start y-coord with margin */
+  hmh = CHECKINTERPW/2 - 1;		/* Interpolant start */
+  if (iys1a<0 || ((iys1a -= hmh)< 0))
+    iys1a = 0;
+  ny1 = (int)(ys1+ny2*step2)+CHECKINTERPW-hmh;	/* Interpolated Im1 y size */
+  if (ny1>h)					/* with margin */
+    ny1 = h;
+/* Express everything relative to the effective Im1 start (with margin) */
+  ny1 -= iys1a;
+  ys1 -= (float)iys1a;
+
+/* Allocate interpolant stuff for the x direction */
+  QMALLOC(mask, float, nx2*CHECKINTERPW);	/* Interpolation masks */
+  QMALLOC(nmask, int, nx2);			/* Interpolation mask sizes */
+  QMALLOC(start, int, nx2);			/* Int part of Im1 conv starts */
+/* Compute the local interpolant and data starting points in x */
+  hmw = CHECKINTERPW/2 - 1;
+  x1 = xs1;
+  maskt = mask;
+  nmaskt = nmask;
+  startt = start;
+  for (j=nx2; j--; x1+=step2)
+    {
+    ixs = (ix1=(int)x1) - hmw;
+    dxm = ix1 - x1 - hmw;	/* starting point in the interpolation func */
+    if (ixs < 0)
+      {
+      n = CHECKINTERPW+ixs;
+      dxm -= (float)ixs;
+      ixs = 0;
+      }
+    else
+      n = CHECKINTERPW;
+    if (n>(t=w-ixs))
+      n=t;
+    *(startt++) = ixs;
+    *(nmaskt++) = n;
+    norm = 0.0;
+    for (x=dxm, i=n; i--; x+=1.0)
+      norm += (*(maskt++) = CHECKINTERPF(x));
+    norm = norm>0.0? 1.0/norm : 1.0;
+    maskt -= n;
+    for (i=n; i--;)
+      *(maskt++) *= norm;
+    }
+
+  QCALLOC(pix12, float, nx2*ny1);	/* Intermediary frame-buffer */
+
+/* Make the interpolation in x (this includes transposition) */
+  pixin0 = thumb+iys1a*w;
+  pixout0 = pix12;
+  for (k=ny1; k--; pixin0+=w, pixout0++)
+    {
+    maskt = mask;
+    nmaskt = nmask;
+    startt = start;
+    pixout = pixout0;
+    for (j=nx2; j--; pixout+=ny1)
+      {
+      pixin = pixin0+*(startt++);
+      val = 0.0; 
+      for (i=*(nmaskt++); i--;)
+        val += *(maskt++)**(pixin++);
+      *pixout = val;
+      }
+    }
+
+/* Reallocate interpolant stuff for the y direction */
+  QREALLOC(mask, float, ny2*CHECKINTERPW);	/* Interpolation masks */
+  QREALLOC(nmask, int, ny2);			/* Interpolation mask sizes */
+  QREALLOC(start, int, ny2);			/* Int part of Im1 conv starts */
+
+/* Compute the local interpolant and data starting points in y */
+  hmh = CHECKINTERPW/2 - 1;
+  y1 = ys1;
+  maskt = mask;
+  nmaskt = nmask;
+  startt = start;
+  for (j=ny2; j--; y1+=step2)
+    {
+    iys = (iy1=(int)y1) - hmh;
+    dym = iy1 - y1 - hmh;	/* starting point in the interpolation func */
+    if (iys < 0)
+      {
+      n = CHECKINTERPW+iys;
+      dym -= (float)iys;
+      iys = 0;
+      }
+    else
+      n = CHECKINTERPW;
+    if (n>(t=ny1-iys))
+      n=t;
+    *(startt++) = iys;
+    *(nmaskt++) = n;
+    norm = 0.0;
+    for (y=dym, i=n; i--; y+=1.0)
+      norm += (*(maskt++) = CHECKINTERPF(y));
+    norm = norm>0.0? 1.0/norm : 1.0;
+    maskt -= n;
+    for (i=n; i--;)
+      *(maskt++) *= norm;
+    }
+
+/* Make the interpolation in y  and transpose once again */
+  pixin0 = pix12;
+  pixout0 = pix2+ixs2+iys2*w2;
+  for (k=nx2; k--; pixin0+=ny1, pixout0++)
+    {
+    maskt = mask;
+    nmaskt = nmask;
+    startt = start;
+    pixout = pixout0;
+    for (j=ny2; j--; pixout+=w2)
+      {
+      pixin = pixin0+*(startt++);
+      val = 0.0; 
+      for (i=*(nmaskt++); i--;)
+        val += *(maskt++)**(pixin++);
+      *pixout += amplitude*val;
+      }
+    }
+
+/* Free memory */
+  free(pix12);
+  free(mask);
+  free(nmask);
+  free(start);
 
   return;
   }

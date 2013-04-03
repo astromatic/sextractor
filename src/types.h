@@ -500,10 +500,10 @@ typedef struct
   float		prof_arms_scaleerrw;		/* RMS error */
   float		prof_arms_posang;		/* Arms true position angle */
   float		prof_arms_posangerr;		/* RMS error */
-//  float		prof_arms_thetaw;		/* WORLD arms position angle */
-//  float		prof_arms_thetas;		/* Sky arms position angle */
-//  float		prof_arms_theta2000;		/* J2000 arms position angle */
-//  float		prof_arms_theta1950;		/* B1950 arms position angle */
+  float		prof_arms_thetaw;		/* WORLD arms position angle */
+  float		prof_arms_thetas;		/* Sky arms position angle */
+  float		prof_arms_theta2000;		/* J2000 arms position angle */
+  float		prof_arms_theta1950;		/* B1950 arms position angle */
   float		prof_arms_pitch;		/* Arms pitch angle */
   float		prof_arms_pitcherr;		/* RMS error */
   float		prof_arms_start;		/* Arms starting radius */

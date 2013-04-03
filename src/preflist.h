@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/07/2012
+*	Last modified:		30/10/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -124,7 +124,7 @@
    {"NONE","BLANK","CORRECT",""}},
   {"MEMORY_BUFSIZE", P_INT, &prefs.mem_bufsize, 8, 65534},
   {"MEMORY_OBJSTACK", P_INT, &prefs.clean_stacksize, 16,65536},
-  {"MEMORY_PIXSTACK", P_INT, &prefs.mem_pixstack, 1000, 10000000},
+  {"MEMORY_PIXSTACK", P_INT, &prefs.mem_pixstack, 1000, 100000000},
   {"NTHREADS", P_INT, &prefs.nthreads, -THREADS_PREFMAX, THREADS_PREFMAX},
   {"PARAMETERS_NAME", P_STRING, prefs.param_name},
   {"PATTERN_TYPE", P_KEY, &prefs.pattern_type, 0,0, 0.0,0.0,
