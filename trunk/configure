@@ -13391,8 +13391,8 @@ if icc -V 2>&1 | grep -i "Intel(R) 64" > /dev/null 2>&1; then
 
     if test x$enable_best_link = xyes; then
       MKL_LIBS="$startgroup,$mklroot/lib/intel64/libmkl_intel_ilp64.a,\
-$mklroot/lib/intel64/libmkl_intel_thread.a \
-$mklroot/lib/intel64/libmkl_core.a --end-group -openmp -lpthread -lm"
+$mklroot/lib/intel64/libmkl_intel_thread.a,\
+$mklroot/lib/intel64/libmkl_core.a,-end-group -openmp -lpthread -lm"
 
     else
       MKL_LIBS="-lmkl_intel_ilp64 -lmkl_intel_thread -lmkl_core \
