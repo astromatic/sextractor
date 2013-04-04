@@ -23,7 +23,7 @@ dnl	You should have received a copy of the GNU General Public License
 dnl	along with AstrOmatic software.
 dnl	If not, see <http://www.gnu.org/licenses/>.
 dnl
-dnl	Last modified:		03/04/2013
+dnl	Last modified:		04/04/2013
 dnl
 dnl %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 dnl
@@ -81,8 +81,8 @@ dnl 64 bit pointers
 dnl Static linking uses a duplicated libmkl_intel_ilp64.a to fool libtool
       AC_SUBST(MKL_LIBS,
 	["$startgroup,$mklroot/lib/intel64/libmkl_intel_ilp64.a,\
-$mklroot/lib/intel64/libmkl_intel_thread.a \
-$mklroot/lib/intel64/libmkl_core.a --end-group -openmp -lpthread -lm"])
+$mklroot/lib/intel64/libmkl_intel_thread.a,\
+$mklroot/lib/intel64/libmkl_core.a,-end-group -openmp -lpthread -lm"])
     else
       AC_SUBST(MKL_LIBS, "-lmkl_intel_ilp64 -lmkl_intel_thread -lmkl_core \
 		-openmp -lpthread -lm")
