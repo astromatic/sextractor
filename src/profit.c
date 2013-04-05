@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		16/02/2013
+*	Last modified:		05/04/2013
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -168,7 +168,7 @@ OUTPUT	Pointer to an allocated fit structure (containing details about the
 	fit).
 NOTES	It is a modified version of the lm_minimize() of lmfit.
 AUTHOR	E. Bertin (IAP)
-VERSION	26/02/2013
+VERSION	05/04/2013
  ***/
 void	profit_fit(profitstruct *profit,
 		picstruct *field, picstruct *wfield,
@@ -396,7 +396,14 @@ profit->niter = profit_minimize(profit, PROFIT_MAXITER);
       if (list[i] && flux_flag[i] && i!= PARAM_SPHEROID_FLUX)
         param[index[i]] = 0.0;
     profit_residuals(profit,field,wfield, 0.0, param, NULL);
-    addcheck(check, profit->lmodpix, profit->objnaxisn[0],profit->objnaxisn[1],
+    if (profit->subsamp>1.0)
+      addcheck_resample(check, profit->lmodpix,
+		profit->objnaxisn[0],profit->objnaxisn[1],
+		profit->ix,profit->iy, 1.0/profit->subsamp,
+		1.0/(profit->subsamp*profit->subsamp));
+    else
+      addcheck(check, profit->lmodpix,
+		profit->objnaxisn[0],profit->objnaxisn[1],
 		profit->ix,profit->iy, 1.0);
     }
   if ((check = prefs.check[CHECK_SUBSPHEROIDS]))
@@ -410,7 +417,14 @@ profit->niter = profit_minimize(profit, PROFIT_MAXITER);
       if (list[i] && flux_flag[i] && i!= PARAM_SPHEROID_FLUX)
         param[index[i]] = 0.0;
     profit_residuals(profit,field,wfield, 0.0, param, NULL);
-    addcheck(check, profit->lmodpix, profit->objnaxisn[0],profit->objnaxisn[1],
+    if (profit->subsamp>1.0)
+      addcheck_resample(check, profit->lmodpix,
+		profit->objnaxisn[0],profit->objnaxisn[1],
+		profit->ix,profit->iy, 1.0/profit->subsamp,
+		-1.0/(profit->subsamp*profit->subsamp));
+    else
+      addcheck(check, profit->lmodpix,
+		profit->objnaxisn[0],profit->objnaxisn[1],
 		profit->ix,profit->iy, -1.0);
     }
   if ((check = prefs.check[CHECK_DISKS]))
@@ -424,7 +438,14 @@ profit->niter = profit_minimize(profit, PROFIT_MAXITER);
       if (list[i] && flux_flag[i] && i!= PARAM_DISK_FLUX)
         param[index[i]] = 0.0;
     profit_residuals(profit,field,wfield, 0.0, param, NULL);
-    addcheck(check, profit->lmodpix, profit->objnaxisn[0],profit->objnaxisn[1],
+    if (profit->subsamp>1.0)
+      addcheck_resample(check, profit->lmodpix,
+		profit->objnaxisn[0],profit->objnaxisn[1],
+		profit->ix,profit->iy, 1.0/profit->subsamp,
+		1.0/(profit->subsamp*profit->subsamp));
+    else
+      addcheck(check, profit->lmodpix,
+		profit->objnaxisn[0],profit->objnaxisn[1],
 		profit->ix,profit->iy, 1.0);
     }
   if ((check = prefs.check[CHECK_SUBDISKS]))
@@ -438,7 +459,14 @@ profit->niter = profit_minimize(profit, PROFIT_MAXITER);
       if (list[i] && flux_flag[i] && i!= PARAM_DISK_FLUX)
         param[index[i]] = 0.0;
     profit_residuals(profit,field,wfield, 0.0, param, NULL);
-    addcheck(check, profit->lmodpix, profit->objnaxisn[0],profit->objnaxisn[1],
+    if (profit->subsamp>1.0)
+      addcheck_resample(check, profit->lmodpix,
+		profit->objnaxisn[0],profit->objnaxisn[1],
+		profit->ix,profit->iy, 1.0/profit->subsamp,
+		-1.0/(profit->subsamp*profit->subsamp));
+    else
+      addcheck(check, profit->lmodpix,
+		profit->objnaxisn[0],profit->objnaxisn[1],
 		profit->ix,profit->iy, -1.0);
     }
  
