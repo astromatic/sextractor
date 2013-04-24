@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 2007-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 2007-2013 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		18/07/2012
+*	Last modified:		24/04/2013
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -36,10 +36,6 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-
-#ifndef FFTW3_H
-#include FFTW_H
-#endif
 
 #include "define.h"
 #include "globals.h"
@@ -160,7 +156,7 @@ OUTPUT	ptr to a new FFT scratch structure if initialization is required.
 NOTES	For data1 and fdata2, memory must be allocated for
 	size[0]* ... * 2*(size[naxis-1]/2+1) floats (padding required).
 AUTHOR	E. Bertin (IAP)
-VERSION	18/07/2012
+VERSION	24/04/2013
  ***/
 void	fft_conv(float *data1, float *fdata2, int *size,
 			fftscratchstruct **pfftscratch)
@@ -202,12 +198,15 @@ void	fft_conv(float *data1, float *fdata2, int *size,
   fac = 1.0/npix;  
   fdata1p = (float *)fftscratch->fdata;
   fdata2p = fdata2;
-  for (i=npix2; i--; fdata2p+=2)
+#pragma ivdep
+  for (i=npix2; i--;)
     {
     real = *fdata1p **fdata2p - *(fdata1p+1)**(fdata2p+1);
     imag = *(fdata1p+1)**fdata2p + *fdata1p**(fdata2p+1);
-    *(fdata1p++) = fac*real;
-    *(fdata1p++) = fac*imag;
+    *(fdata1p) = fac*real;
+    *(fdata1p+1) = fac*imag;
+    fdata1p+=2;
+    fdata2p+=2;
     }
 
 /* Reverse FFT */

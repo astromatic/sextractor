@@ -23,7 +23,7 @@
 *	along with AstrOmatic software.
 *	If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		13/06/2012
+*	Last modified:		30/11/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -194,7 +194,7 @@ OUTPUT	RETURN_OK if something was found, RETURN_ERROR otherwise.
 NOTES	-.
 AUTHOR	E. Bertin (IAP),
         E.R. Deul - Handling of NaN
-VERSION	02/07/2010
+VERSION	30/11/2012
  ***/
 int	fitspick(char *fitsline, char *keyword, void *ptr, h_type *htype,
 		t_type *ttype, char *comment)
@@ -216,8 +216,19 @@ int	fitspick(char *fitsline, char *keyword, void *ptr, h_type *htype,
 	&& strncmp(keyword, "HIERARCH", 8)
 	&& strncmp(keyword, "        ", 8))
       return RETURN_ERROR;
-    memcpy(comment, fitsline+9, 71);
-    comment[71] = 0;
+    fptr = fitsline+9;
+    lastspace = NULL;
+    for(i=71; i-- && (c=*(fptr++));)
+      if ((int)c >= ' ')
+	{
+        *(comment++) = c;
+        if (c > ' ')
+          lastspace = comment;
+        }
+    if (lastspace)
+      *lastspace = '\0';
+    else
+      *comment = '\0';
     *htype = H_COMMENT;
     *ttype = T_STRING;
     return RETURN_OK;

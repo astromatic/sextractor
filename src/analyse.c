@@ -1181,7 +1181,7 @@ INPUT	Pointer to an array of image field pointers,
 OUTPUT	-.
 NOTES	Relies on some global variables.
 AUTHOR	E. Bertin (IAP)
-VERSION	02/08/2012
+VERSION	10/10/2012
  ***/
 void	pthread_init_obj2(fieldstruct **fields, fieldstruct **wfields,
 			int nfield, int nthreads)
@@ -1203,6 +1203,8 @@ void	pthread_init_obj2(fieldstruct **fields, fieldstruct **wfields,
   QPTHREAD_ATTR_INIT(&pthread_attr);
   QPTHREAD_ATTR_SETDETACHSTATE(&pthread_attr, PTHREAD_CREATE_JOINABLE);
   pthread_obj2addindex = pthread_obj2procindex = pthread_obj2saveindex  = 0;
+  pthread_endflag = 0;
+
 /* Start the measurement/write_to_catalog threads */
   for (p=0; p<nthreads; p++)
     QPTHREAD_CREATE(&pthread_thread[p], &pthread_attr, &pthread_analyse_obj2,
@@ -1293,7 +1295,6 @@ void	*pthread_analyse_obj2(void *arg)
 		&& (pthread_obj2[pthread_obj2saveindex]->done_flag))
       analyse_end(pthread_fields, pthread_wfields, pthread_nfield,
 		pthread_obj2[pthread_obj2saveindex++]);
-
     while (pthread_obj2procindex>=pthread_obj2addindex)
 /*---- Wait for more objects to be pushed in stack */
       {

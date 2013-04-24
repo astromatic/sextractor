@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2013 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,13 +22,24 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		07/12/2011
+*	Last modified:		24/04/2013
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
 #ifndef _FITSCAT_H_
 #include "fits/fitscat.h"
 #endif
+
+/*----------------------------- Internal constants --------------------------*/
+
+#define CHECKINTERPW		6	/* Interpolation function range */
+#define	CHECKINTERPFAC		3.0	/* Interpolation envelope factor */
+
+#define	CHECKINTERPF(x)	(x<1e-5 && x>-1e-5? 1.0 \
+			:(x>CHECKINTERPFAC?0.0:(x<-CHECKINTERPFAC?0.0 \
+			:sinf(PI*x)*sinf(PI/CHECKINTERPFAC*x) \
+				/(PI*PI/CHECKINTERPFAC*x*x))))
+				/* Lanczos approximation */
 
 /*--------------------------------- structures ------------------------------*/
 /* Check-image parameters */
@@ -52,6 +63,8 @@ checkstruct	*check_init(char *filename, checkenum check_type, int next,
 
 void		check_add(checkstruct *check, float *thumb, int w, int h,
 			int ix,int iy, float amplitude),
+		check_addresample(checkstruct *check, float *thumb, int w,int h,
+			int ix,int iy, float step2, float amplitude),
 		check_blank(checkstruct *check, PIXTYPE *mask, int w, int h,
 			int xmin,int ymin, float val),
 		check_reend(fieldstruct *field, checkstruct *check),

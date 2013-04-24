@@ -87,7 +87,7 @@ INPUT	pointer to the obj2,
 OUTPUT	A pointer to an allocated profit structure.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	06/05/2012
+VERSION	24/04/2012
  ***/
 profitstruct	*profit_init(obj2struct *obj2, unsigned int modeltype)
   {
@@ -112,7 +112,12 @@ profitstruct	*profit_init(obj2struct *obj2, unsigned int modeltype)
     subprofit->psf = subimage->field->psf;
     subprofit->pixstep = subprofit->psf->pixstep;
     subprofit->sigma = obj2->sigbkg[s];
+    subprofit->fluxfac = 1.0;	/* Default */
+
 /*-- Set initial guesses and boundaries */
+    subprofit->guesssigbkg = subprofit->sigma;
+    subprofit->guessdx = obj2->mx - (int)(obj2->mx+0.49999);
+    subprofit->guessdy = obj2->my - (int)(obj2->my+0.49999);
     if ((subprofit->guessradius = 0.5*subprofit->psf->fwhm) < obj2->hl_radius)
       subprofit->guessradius = obj2->hl_radius;
     if ((subprofit->guessflux = obj2->flux_auto[s]) <= 0.0)
@@ -122,7 +127,9 @@ profitstruct	*profit_init(obj2struct *obj2, unsigned int modeltype)
       subprofit->guessfluxmax = subprofit->guessflux;
     if (subprofit->guessfluxmax <= 0.0)
       subprofit->guessfluxmax = 1.0;
-    subprofit->fluxfac = 1.0;	/* Default */
+    subprofit->guessaspect = obj2->b/obj2->a;
+    subprofit->guessposang = obj2->theta;
+
 /*-- Create pixmaps at image resolution */
     subprofit->ix = (int)(obj2->mx + 0.49999); /* 1st pix=0 */
     subprofit->iy = (int)(obj2->my + 0.49999); /* 1st pix=0 */
@@ -154,7 +161,7 @@ profitstruct	*profit_init(obj2struct *obj2, unsigned int modeltype)
     QMALLOC16(subprofit->lmodpix, PIXTYPE, subprofit->nobjpix);
     QMALLOC16(subprofit->lmodpix2, PIXTYPE, subprofit->nobjpix);
 
-/*-- Create pixmap at PSF resolution */
+/*-- Create pixmap at model resolution */
     subprofit->modnaxisn[0] =
 	((int)(subprofit->objnaxisn[0]*subprofit->subsamp
 		/subprofit->pixstep+0.4999)/2+1)*2;
@@ -169,7 +176,7 @@ profitstruct	*profit_init(obj2struct *obj2, unsigned int modeltype)
       {
       subprofit->pixstep = (double)subprofit->modnaxisn[0] / PROFIT_MAXMODSIZE;
       subprofit->modnaxisn[0] = subprofit->modnaxisn[1] = PROFIT_MAXMODSIZE;
-      profit->flag |= PROFLAG_MODSUB;
+      profit->flag |= PROFLAG_MODSUB;	/* !CHECK */
       }
     subprofit->nmodpix = subprofit->modnaxisn[0]*subprofit->modnaxisn[1];
 
@@ -317,7 +324,7 @@ INPUT	Pointer to the model structure,
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	06/05/2012
+VERSION	24/04/2013
  ***/
 void	profit_measure(profitstruct *profit, obj2struct *obj2)
   {
@@ -351,7 +358,13 @@ void	profit_measure(profitstruct *profit, obj2struct *obj2)
   if ((check = prefs.check[CHECK_PROFILES]))
     {
     profit_residuals(profit, 0.0, profit->paraminit, NULL);
-    check_add(check, subprofit->lmodpix,
+    if (subprofit->subsamp>1.0)
+      check_addresample(check, subprofit->lmodpix,
+		subprofit->objnaxisn[0],subprofit->objnaxisn[1],
+		subprofit->ix,subprofit->iy, 1.0/subprofit->subsamp,
+		1.0/(subprofit->subsamp*subprofit->subsamp));
+    else
+      check_add(check, subprofit->lmodpix,
 		subprofit->objnaxisn[0],subprofit->objnaxisn[1],
 		subprofit->ix,subprofit->iy, 1.0);
     }
@@ -359,7 +372,13 @@ void	profit_measure(profitstruct *profit, obj2struct *obj2)
   if ((check = prefs.check[CHECK_SUBPROFILES]))
     {
     profit_residuals(profit, 0.0, profit->paraminit, NULL);
-    check_add(check, subprofit->lmodpix,
+    if (subprofit->subsamp>1.0)
+      check_addresample(check, subprofit->lmodpix,
+		subprofit->objnaxisn[0],subprofit->objnaxisn[1],
+		subprofit->ix,subprofit->iy, 1.0/subprofit->subsamp,
+		-1.0/(subprofit->subsamp*subprofit->subsamp));
+    else
+      check_add(check, subprofit->lmodpix,
 		subprofit->objnaxisn[0],subprofit->objnaxisn[1],
 		subprofit->ix,subprofit->iy, -1.0);
     }
@@ -374,7 +393,13 @@ void	profit_measure(profitstruct *profit, obj2struct *obj2)
       if (list[i] && flux_flag[i] && i!= PARAM_SPHEROID_FLUX)
         param[index[i]] = 0.0;
     profit_residuals(profit, 0.0, param, NULL);
-    check_add(check, subprofit->lmodpix,
+    if (subprofit->subsamp>1.0)
+      check_addresample(check, subprofit->lmodpix,
+		subprofit->objnaxisn[0],subprofit->objnaxisn[1],
+		subprofit->ix,subprofit->iy, 1.0/subprofit->subsamp,
+		1.0/(subprofit->subsamp*subprofit->subsamp));
+    else
+      check_add(check, subprofit->lmodpix,
 		subprofit->objnaxisn[0],subprofit->objnaxisn[1],
 		subprofit->ix,subprofit->iy, 1.0);
     }
@@ -389,7 +414,13 @@ void	profit_measure(profitstruct *profit, obj2struct *obj2)
       if (list[i] && flux_flag[i] && i!= PARAM_SPHEROID_FLUX)
         param[index[i]] = 0.0;
     profit_residuals(profit, 0.0, param, NULL);
-    check_add(check, subprofit->lmodpix,
+    if (subprofit->subsamp>1.0)
+      check_addresample(check, subprofit->lmodpix,
+		subprofit->objnaxisn[0],subprofit->objnaxisn[1],
+		subprofit->ix,subprofit->iy, 1.0/subprofit->subsamp,
+		-1.0/(subprofit->subsamp*subprofit->subsamp));
+    else
+      check_add(check, subprofit->lmodpix,
 		subprofit->objnaxisn[0],subprofit->objnaxisn[1],
 		subprofit->ix,subprofit->iy, -1.0);
     }
@@ -404,7 +435,13 @@ void	profit_measure(profitstruct *profit, obj2struct *obj2)
       if (list[i] && flux_flag[i] && i!= PARAM_DISK_FLUX)
         param[index[i]] = 0.0;
     profit_residuals(profit, 0.0, param, NULL);
-    check_add(check, subprofit->lmodpix,
+    if (subprofit->subsamp>1.0)
+      check_addresample(check, subprofit->lmodpix,
+		subprofit->objnaxisn[0],subprofit->objnaxisn[1],
+		subprofit->ix,subprofit->iy, 1.0/subprofit->subsamp,
+		1.0/(subprofit->subsamp*subprofit->subsamp));
+    else
+      check_add(check, subprofit->lmodpix,
 		subprofit->objnaxisn[0],subprofit->objnaxisn[1],
 		subprofit->ix,subprofit->iy, 1.0);
     }
@@ -419,7 +456,13 @@ void	profit_measure(profitstruct *profit, obj2struct *obj2)
       if (list[i] && flux_flag[i] && i!= PARAM_DISK_FLUX)
         param[index[i]] = 0.0;
     profit_residuals(profit, 0.0, param, NULL);
-    check_add(check, subprofit->lmodpix,
+    if (subprofit->subsamp>1.0)
+      check_addresample(check, subprofit->lmodpix,
+		subprofit->objnaxisn[0],subprofit->objnaxisn[1],
+		subprofit->ix,subprofit->iy, 1.0/subprofit->subsamp,
+		-1.0/(subprofit->subsamp*subprofit->subsamp));
+    else
+      check_add(check, subprofit->lmodpix,
 		subprofit->objnaxisn[0],subprofit->objnaxisn[1],
 		subprofit->ix,subprofit->iy, -1.0);
     }
@@ -1223,7 +1266,7 @@ INPUT	Pointer to sub-profile-fitting structure,
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	06/05/2012
+VERSION	24/04/2012
  ***/
 void	subprofit_psf(subprofitstruct *subprofit, obj2struct *obj2)
   {
@@ -1267,7 +1310,8 @@ void	subprofit_psf(subprofitstruct *subprofit, obj2struct *obj2)
     }
 
 /* Normalize PSF flux (just in case...) */
-  flux *= subprofit->pixstep*subprofit->pixstep;
+  flux *= subprofit->pixstep*subprofit->pixstep
+		/ (subprofit->subsamp*subprofit->subsamp);
   if (fabs(flux) <= 0.0)
     error(EXIT_FAILURE, "*Error*: PSF model is empty or negative: ", psf->name);
 
@@ -1706,7 +1750,7 @@ INPUT	Profile-fitting structure,
 OUTPUT	RETURN_ERROR if the rasters don't overlap, RETURN_OK otherwise.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	23/09/2012
+VERSION	24/04/2013
  ***/
 int	profit_resample(profitstruct *profit, subprofitstruct *subprofit,
 		float *inpix, PIXTYPE *outpix, float factor)
@@ -1731,7 +1775,8 @@ int	profit_resample(profitstruct *profit, subprofitstruct *subprofit,
     xcout += *dx / subprofit->subsamp;
 
   xsin = xcin - xcout*invpixstep;			/* Input start x-coord*/
-  if ((int)xsin >= subprofit->modnaxisn[0])
+
+  if ((int)xsin >= subprofit->modnaxisn[0] || !finitef(xsin))
     return RETURN_ERROR;
   ixsout = 0;				/* Int. part of output start x-coord */
   if (xsin<0.0)
@@ -1757,7 +1802,8 @@ int	profit_resample(profitstruct *profit, subprofitstruct *subprofit,
     ycout += *dy / subprofit->subsamp;
 
   ysin = ycin - ycout*invpixstep;		/* Input start y-coord*/
-  if ((int)ysin >= subprofit->modnaxisn[1])
+
+  if ((int)ysin >= subprofit->modnaxisn[1] || !finitef(ysin))
     return RETURN_ERROR;
   iysout = 0;				/* Int. part of output start y-coord */
   if (ysin<0.0)
@@ -2980,7 +3026,7 @@ INPUT	Pointer to the profit structure,
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	06/05/2012
+VERSION	24/04/2013
  ***/
 void	profit_resetparam(profitstruct *profit, paramenum paramtype)
   {
@@ -3001,24 +3047,24 @@ void	profit_resetparam(profitstruct *profit, paramenum paramtype)
     case PARAM_BACK:
       fittype = PARFIT_LINBOUND;
       param = 0.0;
-      parammin = -6.0*obj2->sigbkg[0];
-      parammax =  6.0*obj2->sigbkg[0];
+      parammin = -6.0*subprofit->guesssigbkg;
+      parammax =  6.0*subprofit->guesssigbkg;
       break;
     case PARAM_X:
       fittype = PARFIT_LINBOUND;
-      param = obj2->mx - (int)(obj2->mx+0.49999);
+      param = subprofit->guessdx;
       range = subprofit->guessradius*4.0;
-      if (range>subprofit->objnaxisn[0]*2.0)
-        range = subprofit->objnaxisn[0]*2.0;
+      if (range>subprofit->objnaxisn[0]*subprofit->subsamp*2.0)
+        range = subprofit->objnaxisn[0]*subprofit->subsamp*2.0;
       parammin = -range;
       parammax =  range;
       break;
     case PARAM_Y:
       fittype = PARFIT_LINBOUND;
-      param = obj2->my - (int)(obj2->my+0.49999);
+      param = subprofit->guessdy;
       range = subprofit->guessradius*4.0;
-      if (range>subprofit->objnaxisn[1]*2)
-        range = subprofit->objnaxisn[1]*2;
+      if (range>subprofit->objnaxisn[1]*subprofit->subsamp*2.0)
+        range = subprofit->objnaxisn[1]*subprofit->subsamp*2.0;
       parammin = -range;
       parammax =  range;
       break;
@@ -3045,19 +3091,19 @@ void	profit_resetparam(profitstruct *profit, paramenum paramtype)
     case PARAM_SPHEROID_REFF:
       fittype = PARFIT_LOGBOUND;
       param = FLAG(obj2.prof_disk_flux)? subprofit->guessradius
-				: subprofit->guessradius*sqrtf(obj2->a/obj2->b);
+			: subprofit->guessradius/sqrtf(subprofit->guessaspect);
       parammin = 0.01;
       parammax = param * 10.0;
       break;
     case PARAM_SPHEROID_ASPECT:
       fittype = PARFIT_LOGBOUND;
-      param = FLAG(obj2.prof_disk_flux)? 1.0 : obj2->b/obj2->a;
+      param = FLAG(obj2.prof_disk_flux)? 1.0 : subprofit->guessaspect;
       parammin = FLAG(obj2.prof_disk_flux)? 0.5 : 0.01;
       parammax = FLAG(obj2.prof_disk_flux)? 2.0 : 100.0;
       break;
     case PARAM_SPHEROID_POSANG:
       fittype = PARFIT_UNBOUND;
-      param = obj2->theta;
+      param = subprofit->guessposang;
       parammin = 90.0;
       parammax =  90.0;
       break;
@@ -3079,19 +3125,19 @@ void	profit_resetparam(profitstruct *profit, paramenum paramtype)
       break;
     case PARAM_DISK_SCALE:	/* From scalelength to Re */
       fittype = PARFIT_LOGBOUND;
-      param = subprofit->guessradius/1.67835*sqrtf(obj2->a/obj2->b);
+      param = subprofit->guessradius/(1.67835*sqrtf(subprofit->guessaspect));
       parammin = 0.01/1.67835;
       parammax = param * 10.0;
       break;
     case PARAM_DISK_ASPECT:
       fittype = PARFIT_LOGBOUND;
-      param = obj2->b/obj2->a;
+      param = subprofit->guessaspect;
       parammin = 0.01;
       parammax = 100.0;
       break;
     case PARAM_DISK_POSANG:
       fittype = PARFIT_UNBOUND;
-      param = obj2->theta;
+      param = subprofit->guessposang;
       parammin = 90.0;
       parammax =  90.0;
       break;
