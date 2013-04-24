@@ -7,7 +7,7 @@
 #
 #	This file part of:	SExtractor
 #
-#	Copyright:		(C) 2002-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
+#	Copyright:		(C) 2002-2013 Emmanuel Bertin -- IAP/CNRS/UPMC
 #
 #	License:		GNU General Public License
 #
@@ -22,7 +22,7 @@
 #	You should have received a copy of the GNU General Public License
 #	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 #
-#	Last modified:		27/03/2012
+#	Last modified:		24/04/2013
 #
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -53,9 +53,9 @@ sex_SOURCES		= analyse.c assoc.c astrom.c back.c bpro.c catout.c \
 			  sexheadsc.h subimage.h som.h threads.h types.h \
 			  wcscelsys.h weight.h winpos.h xml.h
 ldactoasc_SOURCES 	= ldactoasc.c ldactoasc.h
-sex_LDADD		= $(top_builddir)/src/fits/libfits.a \
-			  $(top_builddir)/src/wcs/libwcs_c.a \
+sex_LDADD		= $(srcdir)/fits/libfits.a \
+			  $(srcdir)/wcs/libwcs_c.a \
 			  $(LEVLIB) 
-ldactoasc_LDADD		= $(top_builddir)/src/fits/libfits.a
+ldactoasc_LDADD		= $(srcdir)/fits/libfits.a
 DATE=`date +"%Y-%m-%d"`
 

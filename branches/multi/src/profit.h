@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 2006-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 2006-2013 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		23/09/2012
+*	Last modified:		24/04/2013
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -229,9 +229,13 @@ typedef struct subprofit
   int		ix, iy;		/* Integer coordinates of object pixmap */
   float		spirindex;	/* Spiral index (>0 for CCW) */
   float		sigma;		/* Standard deviation of the pixel values */
-  float		guessradius;	/* Best guess for source half-light radius */
+  float		guesssigbkg;	/* Best guess for background noise sigma */
+  float		guessdx,guessdy;/* Best guess for relative source coordinates */
   float		guessflux;	/* Best guess for typical source flux (>0) */
   float		guessfluxmax;	/* Best guess for source flux upper limit (>0)*/
+  float		guessradius;	/* Best guess for source half-light radius */
+  float		guessaspect;	/* Best guess for source aspect ratio */
+  float		guessposang;	/* Best guess for source position angle */
   float		flux;		/* Total flux in final convolved models */
   }	subprofitstruct;
 

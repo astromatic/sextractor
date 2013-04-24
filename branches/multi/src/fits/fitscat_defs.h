@@ -7,7 +7,7 @@
 *
 *	This file part of:	AstrOmatic FITS/LDAC library
 *
-*	Copyright:		(C) 1995-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1995-2013 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -23,7 +23,7 @@
 *	along with AstrOmatic software.
 *	If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		09/10/2010
+*	Last modified:		15/02/2013
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -41,12 +41,9 @@
 #define		INSTITUTE	"IAP/Leiden"
 
 
-/*----------------------------- External constants --------------------------*/
-
-extern int	bswapflag;		/* != 0 if bytes are swapped/IEEE */
-
 /*----------------------------- Internal constants --------------------------*/
 
+#define	MAXCHAR		512		/* max. number of characters */
 #define	OUTPUT		stdout		/* where all msgs are sent */
 #define	KBYTE		1024		/* 1 kbyte! */
 #define	MBYTE		(1024*KBYTE)	/* 1 Mbyte! */
@@ -88,6 +85,13 @@ We must have:		MAXCHARS >= 16
 typedef	unsigned char	BYTE;			/* a byte */
 typedef	int		LONG;			/* for DEC-Alpha... */
 	
+/*----------------------------- Internal constants --------------------------*/
+char		gstr[MAXCHAR];
+
+/*----------------------------- External constants --------------------------*/
+
+extern int	bswapflag;		/* != 0 if bytes are swapped/IEEE */
+
 /*------------------------------- Other Macros -----------------------------*/
 
 #if _LARGEFILE_SOURCE
@@ -121,24 +125,46 @@ typedef	int		LONG;			/* for DEC-Alpha... */
 
 #define	QCALLOC(ptr, typ, nel) \
 		{if (!(ptr = (typ *)calloc((size_t)(nel),sizeof(typ)))) \
-		   error(EXIT_FAILURE, "Not enough memory for ", \
-			#ptr " (" #nel " elements) !");;}
+		   { \
+		   sprintf(gstr, #ptr " (" #nel "=%lld elements) " \
+			"at line %d in module " __FILE__ " !", \
+			(size_t)(nel)*sizeof(typ), __LINE__); \
+		   error(EXIT_FAILURE, "Could not allocate memory for ", gstr);\
+                   }; \
+                 }
 
 #define	QMALLOC(ptr, typ, nel) \
 		{if (!(ptr = (typ *)malloc((size_t)(nel)*sizeof(typ)))) \
-		   error(EXIT_FAILURE, "Not enough memory for ", \
-			#ptr " (" #nel " elements) !");;}
-
-#define	QMEMCPY(ptrin, ptrout, typ, nel) \
-		{if (!(ptrout = (typ *)malloc((size_t)(nel)*sizeof(typ)))) \
-		   error(EXIT_FAILURE, "Not enough memory for ", \
-			#ptrout " (" #nel " elements) !"); \
-		memcpy(ptrout, ptrin, (size_t)(nel)*sizeof(typ));}
+		   { \
+		   sprintf(gstr, #ptr " (" #nel "=%lld elements) " \
+			"at line %d in module " __FILE__ " !", \
+			(size_t)(nel)*sizeof(typ), __LINE__); \
+		   error(EXIT_FAILURE, "Could not allocate memory for ", gstr);\
+                   }; \
+                 }
 
 #define	QREALLOC(ptr, typ, nel) \
-		{if (!(ptr = (typ *)realloc(ptr, (size_t)(nel)*sizeof(typ)))) \
-		   error(EXIT_FAILURE, "Not enough memory for ", \
-			#ptr " (" #nel " elements) !");;}
+		{if (!(ptr = (typ *)realloc(ptr, (size_t)(nel)*sizeof(typ))))\
+		   { \
+		   sprintf(gstr, #ptr " (" #nel "=%lld elements) " \
+			"at line %d in module " __FILE__ " !", \
+			(size_t)(nel)*sizeof(typ), __LINE__); \
+		   error(EXIT_FAILURE, "Could not allocate memory for ", gstr);\
+                   }; \
+                 }
+
+#define QMEMCPY(ptrin, ptrout, typ, nel) \
+		{if (ptrin) \
+                  {if (!(ptrout = (typ *)malloc((size_t)(nel)*sizeof(typ)))) \
+		     { \
+		     sprintf(gstr, #ptrout " (" #nel "=%lld elements) " \
+			"at line %d in module " __FILE__ " !", \
+			(size_t)(nel)*sizeof(typ), __LINE__); \
+		     error(EXIT_FAILURE,"Could not allocate memory for ",gstr);\
+                     }; \
+                   memcpy(ptrout, ptrin, (size_t)(nel)*sizeof(typ)); \
+                   }; \
+                 }
 
 #define	RINT(x)	(int)(floor(x+0.5))
 
