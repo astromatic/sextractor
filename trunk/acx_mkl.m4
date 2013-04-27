@@ -23,7 +23,7 @@ dnl	You should have received a copy of the GNU General Public License
 dnl	along with AstrOmatic software.
 dnl	If not, see <http://www.gnu.org/licenses/>.
 dnl
-dnl	Last modified:		04/04/2013
+dnl	Last modified:		17/04/2013
 dnl
 dnl %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 dnl
@@ -72,81 +72,137 @@ dnl ----------------------
 dnl Set architecture flags
 dnl ----------------------
 
-if icc -V 2>&1 | grep -i "Intel(R) 64" > /dev/null 2>&1; then
-dnl INTEL compiler uses x86_64 architecture
-  if test x$2 = xyes; then
-dnl 64 bit pointers
-    AC_SUBST(MKL_CFLAGS, "-DMKL_ILP64")
-    if test x$3 = xyes; then
-dnl Static linking uses a duplicated libmkl_intel_ilp64.a to fool libtool
-      AC_SUBST(MKL_LIBS,
-	["$startgroup,$mklroot/lib/intel64/libmkl_intel_ilp64.a,\
-$mklroot/lib/intel64/libmkl_intel_thread.a,\
-$mklroot/lib/intel64/libmkl_core.a,-end-group -openmp -lpthread -lm"])
-    else
-      AC_SUBST(MKL_LIBS, "-lmkl_intel_ilp64 -lmkl_intel_thread -lmkl_core \
-		-openmp -lpthread -lm")
-    fi
-  else
-dnl 32 bit pointers
-    AC_SUBST(MKL_CFLAGS, "")
-    if test x$3 = xyes; then
-dnl Static linking uses a duplicated libmkl_intel.a to fool libtool
-      AC_SUBST(MKL_LIBS,
-	["$startgroup,$mklroot/lib/intel64/libmkl_intel_lp64.a,\
-$mklroot/lib/intel64/libmkl_intel_thread.a,\
-$mklroot/lib/intel64/libmkl_core.a,--end-group -openmp -lpthread -lm"])
-    else
-dnl Dynamic linking
-      AC_SUBST(MKL_LIBS, "-lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core \
-	-openmp -lpthread -lm")
-    fi
-  fi
+dnl check if INTEL compiler is present
+icc -V 2>&1 | grep -i "Intel" > /dev/null 2>&1 && flagicc=yes
+dnl check if INTEL compiler uses x86_64 architecture
+icc -V 2>&1 | grep -i "Intel(R) 64" > /dev/null 2>&1 && flag64=yes
+dnl check if the platform is OSX
+icc -dumpmachine 2>&1 | grep -i "darwin" > /dev/null 2>&1 && flagosx=yes
 
-elif icc -V 2>&1 | grep -i "Intel(R)" > /dev/null 2>&1; then
-dnl INTEL compiler uses IA32 architecture
-  AC_SUBST(MKL_CFLAGS, "")
-  if test x$3 = xyes; then
-dnl Static linking uses a duplicated libmkl_intel.a to fool libtool
-    AC_SUBST(MKL_LIBS, ["$startgroup,$mklroot/lib/ia32/libmkl_intel.a,\
-$mklroot/lib/ia32/libmkl_intel_thread.a,\
-$mklroot/lib/ia32/libmkl_core.a,--end-group -openmp -lpthread -lm"])
-  else
-dnl Dynamic linking
-    AC_SUBST(MKL_LIBS, "-lmkl_intel -lmkl_intel_thread -lmkl_core \
-	-openmp -lpthread -lm")
-  fi
-
-AC_SUBST(MKL_LDFLAGS, "")
-
-else
-dnl INTEL compiler not found
+dnl ----------------------
+dnl Exit if INTEL compiler is not found
+dnl ----------------------
+if test x$flagicc = x; then
   AC_SUBST(MKL_CFLAGS, "")
   AC_SUBST(MKL_LDFLAGS, "")
   AC_SUBST(MKL_LIBS, "")
   MKL_WARN="INTEL compiler not detected"
   AC_SUBST(MKL_WARN)
+  exit
 fi
 
-if test x$MKL_WARN = x; then
+if test x$flagosx = xyes; then
+dnl MacOSX
+  if test x$flag64 = xyes; then
+dnl INTEL compiler uses Intel64 architecture
+    if test x$2 = xyes; then
+dnl 64 bit pointers
+      AC_SUBST(MKL_CFLAGS, "-openmp -DMKL_ILP64 -I$mklroot/include")
+      if test x$3 = xyes; then
+dnl Static linking
+        AC_SUBST(MKL_LIBS, ["$mklroot/lib/libmkl_intel_ilp64.a \
+		$mklroot/lib/libmkl_intel_thread.a \
+		$mklroot/lib/libmkl_core.a -lpthread -lm"])
+      else
+dnl Dynamic linking
+        AC_SUBST(MKL_LIBS, "-L$mklroot/lib  -lmkl_intel_ilp64 \
+	-lmkl_intel_thread -lmkl_core -lpthread -lm")
+      fi
+    else
+dnl 32 bit pointers
+      AC_SUBST(MKL_CFLAGS, "-openmp -I$mklroot/include")
+      if test x$3 = xyes; then
+dnl Static linking
+        AC_SUBST(MKL_LIBS, ["$mklroot/lib/libmkl_intel_lp64.a \
+		$mklroot/lib/libmkl_intel_thread.a \
+		$mklroot/lib/libmkl_core.a -lpthread -lm"])
+      else
+dnl Dynamic linking
+        AC_SUBST(MKL_LIBS, "-L$mklroot/lib -lmkl_intel_lp64 \
+		-lmkl_intel_thread -lmkl_core -lpthread -lm")
+      fi
+    fi
+  else
+dnl INTEL compiler uses IA32 architecture
+    AC_SUBST(MKL_CFLAGS, "-openmp -I$mklroot/include")
+    if test x$3 = xyes; then
+dnl Static linking
+    AC_SUBST(MKL_LIBS, ["$mklroot/lib/libmkl_intel.a \
+	$mklroot/lib/libmkl_intel_thread.a \
+	$mklroot/lib/libmkl_core.a -lpthread -lm"])
+    else
+dnl Dynamic linking
+      AC_SUBST(MKL_LIBS, "-L$mklroot/lib -lmkl_intel -lmkl_intel_thread \
+	-lmkl_core -lpthread -lm")
+    fi
+  fi
+else
+dnl Linux
+  if test x$flag64 = xyes; then
+dnl INTEL compiler uses Intel64 architecture
+    if test x$2 = xyes; then
+dnl 64 bit pointers
+      AC_SUBST(MKL_CFLAGS, "-openmp -DMKL_ILP64 -I$mklroot/include")
+      if test x$3 = xyes; then
+dnl Static linking
+      AC_SUBST(MKL_LIBS,
+	["$startgroup,$mklroot/lib/intel64/libmkl_intel_ilp64.a,\
+$mklroot/lib/intel64/libmkl_intel_thread.a,\
+$mklroot/lib/intel64/libmkl_core.a,-end-group -lpthread -lm"])
+      else
+dnl Dynamic linking
+        AC_SUBST(MKL_LIBS, "-L$mklroot/lib/intel64  -lmkl_intel_ilp64 \
+		-lmkl_intel_thread -lmkl_core -lpthread -lm")
+      fi
+    else
+dnl 32 bit pointers
+      AC_SUBST(MKL_CFLAGS, "-openmp -I$mklroot/include")
+      if test x$3 = xyes; then
+dnl Static linking
+        AC_SUBST(MKL_LIBS,
+		["$startgroup,$mklroot/lib/intel64/libmkl_intel_lp64.a,\
+$mklroot/lib/intel64/libmkl_intel_thread.a,\
+$mklroot/lib/intel64/libmkl_core.a,--end-group -lpthread -lm"])
+      else
+dnl Dynamic linking
+        AC_SUBST(MKL_LIBS, "-L$mklroot/lib/intel64 -lmkl_intel_lp64 \
+	-lmkl_intel_thread -lmkl_core -lpthread -lm")
+      fi
+    fi
+  else
+dnl INTEL compiler uses IA32 architecture
+    AC_SUBST(MKL_CFLAGS, "-openmp -I$mklroot/include")
+    if test x$3 = xyes; then
+dnl Static linking
+      AC_SUBST(MKL_LIBS, ["$startgroup,$mklroot/lib/ia32/libmkl_intel.a,\
+$mklroot/lib/ia32/libmkl_intel_thread.a,\
+$mklroot/lib/ia32/libmkl_core.a,--end-group -lpthread -lm"])
+    else
+dnl Dynamic linking
+      AC_SUBST(MKL_LIBS, "-L$mklroot/lib/ia32 -lmkl_intel -lmkl_intel_thread \
+	-lmkl_core -lpthread -lm")
+    fi
+  fi
+fi
+
+AC_SUBST(MKL_LDFLAGS, "")
 
 dnl --------------------
 dnl Set internal flags
 dnl --------------------
 
-  AC_DEFINE(HAVE_MKL,1, [Define if you have the MKL libraries.])
-  AC_DEFINE(HAVE_FFTW,1, [Define if you have the FFTW libraries.])
-  AC_DEFINE(HAVE_LAPACK,1, [Define if you have the LAPACK libraries.])
-  AC_DEFINE(HAVE_LAPACKE,1, [Define if you have the LAPACKe libraries.])
+AC_DEFINE(HAVE_MKL,1, [Define if you have the MKL libraries.])
+AC_DEFINE(HAVE_FFTW,1, [Define if you have the FFTW libraries.])
+AC_DEFINE(HAVE_LAPACK,1, [Define if you have the LAPACK libraries.])
+AC_DEFINE(HAVE_LAPACKE,1, [Define if you have the LAPACKe libraries.])
 
 dnl --------------------
 dnl Set include files
 dnl --------------------
 
-  AC_DEFINE_UNQUOTED(MKL_H, "mkl.h", [MKL header filename.])
-  AC_DEFINE_UNQUOTED(FFTW_H, "fftw/fftw3_mkl.h", [FFTW header filename.])
-  AC_DEFINE_UNQUOTED(LAPACK_H, "mkl_lapack.h", [LAPACK header filename.])
-  AC_DEFINE_UNQUOTED(LAPACKE_H, "mkl_lapacke.h", [LAPACKe header filename.])
-fi
+AC_DEFINE_UNQUOTED(MKL_H, "mkl.h", [MKL header filename.])
+AC_DEFINE_UNQUOTED(FFTW_H, "fftw/fftw3_mkl.h", [FFTW header filename.])
+AC_DEFINE_UNQUOTED(LAPACK_H, "mkl_lapack.h", [LAPACK header filename.])
+AC_DEFINE_UNQUOTED(LAPACKE_H, "mkl_lapacke.h", [LAPACKe header filename.])
 
 ])dnl ACX_MKL

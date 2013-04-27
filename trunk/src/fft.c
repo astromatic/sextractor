@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		29/03/2013
+*	Last modified:		17/04/2013
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -37,7 +37,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "fftw/fftw3_mkl.h"
+#ifndef FFTW3_H
+#include FFTW_H
+#endif
+
 #include "define.h"
 #include "globals.h"
 #include "fft.h"
@@ -165,7 +168,7 @@ void    fft_conv(float *data1, float *fdata2, int *size)
   fdata1p = (float *)fdata1;
   fdata2p = fdata2;
 #pragma ivdep
-  for (i=npix2; i--; )
+  for (i=npix2; i--;)
     {
     real = *fdata1p **fdata2p - *(fdata1p+1)**(fdata2p+1);
     imag = *(fdata1p+1)**fdata2p + *fdata1p**(fdata2p+1);

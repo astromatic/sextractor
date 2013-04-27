@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1997-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1997-2013 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		04/05/2011
+*	Last modified:		17/04/2013
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -165,7 +165,14 @@ assocstruct  *load_assoc(char *filename, wcsstruct *wcs)
       else
         {
         mindex = -1;
-        prefs.assoc_type = ASSOC_FIRST;
+        if (prefs.assoc_type == ASSOC_MEAN
+	 || prefs.assoc_type == ASSOC_MAGMEAN
+	 || prefs.assoc_type == ASSOC_MIN
+	 || prefs.assoc_type == ASSOC_MAX)
+          {
+          warning("ASSOC_PARAMS #3 missing,", " reverting to ASSOC_TYPE FIRST");
+          prefs.assoc_type = ASSOC_FIRST;
+          }
         }
 
       nlist = ndata+3;

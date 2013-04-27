@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 2006-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 2006-2013 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/10/2010
+*	Last modified:		25/04/2013
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -68,6 +68,8 @@ extern int		end_xml(void),
 				picstruct *wfield),
 			write_xml(char *filename),
 			write_xml_header(FILE *file),
-			write_xml_meta(FILE *file, char *error);
+			write_xml_meta(FILE *file, char *error),
+			write_xmlconfigparam(FILE *file, char *name, char *unit,
+				char *ucd, char *format);
 
 extern void		write_xmlerror(char *filename, char *error);
