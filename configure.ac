@@ -22,7 +22,7 @@
 #	You should have received a copy of the GNU General Public License
 #	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 #
-#	Last modified:		05/04/2013
+#	Last modified:		25/04/2013
 #
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -31,7 +31,7 @@ define([AC_CACHE_LOAD],)
 define([AC_CACHE_SAVE],)
 
 # This is your standard Bertin source code...
-AC_INIT(sextractor, 2.18.9, [bertin@iap.fr])
+AC_INIT(sextractor, 2.18.11, [bertin@iap.fr])
 AC_CONFIG_SRCDIR(src/makeit.c)
 AC_CONFIG_AUX_DIR(autoconf)
 AC_CONFIG_HEADERS(config.h)
@@ -149,6 +149,11 @@ AC_ARG_WITH(fftw-incdir,
         [AS_HELP_STRING([--with-fftw-incdir=<FFTW include dir>],
         [Provide an alternative path to the FFTW include directory])])
 
+# Provide special options for the MKL library
+AC_ARG_WITH(mkl-dir,
+        [AS_HELP_STRING([--with-mkl-dir=<MKL path>],
+        [Provide an alternative path to the MKL library])])
+
 # Provide a special option for the default XSLT URL
 with_xsl_url="file://"$(URBI_RESOLVE_DIR([$datadir]))"/$PACKAGE_NAME/$PACKAGE_NAME.xsl"
 AC_ARG_WITH(xsl_url,
@@ -232,7 +237,7 @@ if test "$enable_model_fitting" = "yes"; then
 ############ handle the INTEL MKL library (FFTW + LAPACK) ###########
   if test "$enable_mkl" = "yes"; then
     convlibs="${srcdir}/wcs/libwcs_c.a,${srcdir}/levmar/liblevmar.a"
-    ACX_MKL(,,$enable_best_link,$convlibs)
+    ACX_MKL($with_mkl_dir,,$enable_best_link,$convlibs)
     if test "$MKL_WARN" != ""; then
       AC_MSG_WARN([$MKL_WARN])
     fi

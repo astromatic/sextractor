@@ -1896,7 +1896,7 @@ INPUT	Profile-fitting structure,
 OUTPUT	RETURN_ERROR if the rasters don't overlap, RETURN_OK otherwise.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	13/02/2013
+VERSION	24/04/2013
  ***/
 int	profit_resample(profitstruct *profit, float *inpix, PIXTYPE *outpix,
 	float factor)
@@ -1921,7 +1921,7 @@ int	profit_resample(profitstruct *profit, float *inpix, PIXTYPE *outpix,
 
   xsin = xcin - xcout*invpixstep;			/* Input start x-coord*/
 
-  if ((int)xsin >= profit->modnaxisn[0])
+  if ((int)xsin >= profit->modnaxisn[0] || !finitef(xsin))
     return RETURN_ERROR;
   ixsout = 0;				/* Int. part of output start x-coord */
   if (xsin<0.0)
@@ -1947,7 +1947,7 @@ int	profit_resample(profitstruct *profit, float *inpix, PIXTYPE *outpix,
     ycout += *dy/profit->subsamp;
 
   ysin = ycin - ycout*invpixstep;		/* Input start y-coord*/
-  if ((int)ysin >= profit->modnaxisn[1])
+  if ((int)ysin >= profit->modnaxisn[1] || !finitef(ysin))
     return RETURN_ERROR;
   iysout = 0;				/* Int. part of output start y-coord */
   if (ysin<0.0)
@@ -3068,7 +3068,7 @@ INPUT	Pointer to the profit structure,
 OUTPUT	.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	15/01/2013
+VERSION	24/04/2013
  ***/
 void	profit_resetparam(profitstruct *profit, paramenum paramtype)
   {
@@ -3100,8 +3100,8 @@ void	profit_resetparam(profitstruct *profit, paramenum paramtype)
       fittype = PARFIT_LINBOUND;
       param = profit->guessdy;
       range = profit->guessradius*4.0;
-      if (range>profit->objnaxisn[1]*profit->subsamp*2)
-        range = profit->objnaxisn[1]*profit->subsamp*2;
+      if (range>profit->objnaxisn[1]*profit->subsamp*2.0)
+        range = profit->objnaxisn[1]*profit->subsamp*2.0;
       parammin = -range;
       parammax =  range;
       break;
