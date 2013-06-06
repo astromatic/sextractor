@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2013 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/10/2010
+*	Last modified:		04/06/2013
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -54,7 +54,9 @@ int	main(int argc, char *argv[])
   {
    double	tdiff, lines, dets;
    int		a, narg, nim, opt, opt2;
-   char		**argkey, **argval, *str;
+   char		str[MAXCHARL],
+		**argkey, **argval,
+		*pstr;
 
 setlinebuf(stdout);
  if (argc<2)
@@ -126,11 +128,14 @@ setlinebuf(stdout);
       {
 /*---- The input image filename(s) */
       for(; (a<argc) && (*argv[a]!='-'); a++)
-        for (str=NULL;(str=strtok(str?NULL:argv[a], notokstr)); nim++)
+        {
+        strncpy(str, argv[a], MAXCHARL-1);
+        for (pstr=NULL;(pstr=strtok(pstr?NULL:str, notokstr)); nim++)
           if (nim<MAXIMAGE)
-            prefs.image_name[nim] = str;
+            prefs.image_name[nim] = pstr;
           else
-            error(EXIT_FAILURE, "*Error*: Too many input images: ", str);
+            error(EXIT_FAILURE, "*Error*: Too many input images: ", pstr);
+        }
       prefs.nimage_name = nim;
       a--;
       }
