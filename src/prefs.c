@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2013 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/07/2012
+*	Last modified:		18/06/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -591,12 +591,15 @@ void	useprefs()
   prefs.somfit_flag = FLAG(obj2.flux_somfit);
 
 /*------------------------------ Background --------------------------------*/
+  if (prefs.nback_type<2)
+    prefs.back_type[1] = prefs.back_type[0];
+  if (prefs.nback_val<2)
+    prefs.back_val[1] = prefs.back_val[0];
+
   if (prefs.nbacksize<2)
     prefs.backsize[1] = prefs.backsize[0];
   if (prefs.nbackfsize<2)
     prefs.backfsize[1] = prefs.backfsize[0];
-  if (prefs.nback_type<2)
-    prefs.back_type[1] = prefs.back_type[0];
 
 /*------------------------------ FLAG-images -------------------------------*/
   prefs.nimaisoflag = (prefs.imaflag_size > prefs.imanflag_size) ?
