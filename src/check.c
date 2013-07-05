@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2013 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		26/02/2013
+*	Last modified:		05/07/2013
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -661,7 +661,7 @@ void	reendcheck(picstruct *field, checkstruct *check)
     {
     case CHECK_MINIBACKGROUND:
     case CHECK_MINIBACKRMS:
-      return;
+      break;
 
     case CHECK_IDENTICAL:
     case CHECK_BACKGROUND:
@@ -671,7 +671,6 @@ void	reendcheck(picstruct *field, checkstruct *check)
       free(check->pix);
       free(check->line);
       check->line = NULL;
-      pad_tab(cat, check->npix*sizeof(PIXTYPE));
       break;
 
     case CHECK_OBJECTS:
@@ -693,13 +692,11 @@ void	reendcheck(picstruct *field, checkstruct *check)
     case CHECK_OTHER:
       write_body(cat->tab, check->pix, check->npix);
       free(check->pix);
-      pad_tab(cat, check->npix*sizeof(PIXTYPE));
       break;
 
     case CHECK_SEGMENTATION:
       write_ibody(cat->tab, check->pix, check->npix);
       free(check->pix);
-      pad_tab(cat, check->npix*sizeof(FLAGTYPE));
       break;
 
     case CHECK_MASK:
@@ -711,7 +708,6 @@ void	reendcheck(picstruct *field, checkstruct *check)
         writecheck(check, &PIX(field, 0, y), field->width);
       free(check->line);
       check->line = NULL;
-      pad_tab(cat, check->npix*sizeof(unsigned char));
       break;
       }
 
@@ -724,13 +720,14 @@ void	reendcheck(picstruct *field, checkstruct *check)
       free(check->pix);
       free(check->line);
       check->line = NULL;
-      pad_tab(cat, check->npix*sizeof(PIXTYPE));
       break;
       }
 
     default:
       error(EXIT_FAILURE, "*Internal Error* in ", "endcheck()!");
     }
+
+  pad_tab(cat, check->npix*sizeof(PIXTYPE));
 
   return;
   }

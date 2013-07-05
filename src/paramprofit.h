@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 2007-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 2007-2013 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		08/11/2011
+*	Last modified:		05/07/2013
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -361,6 +361,12 @@
   {"FLUXERR_POINTSOURCE", "RMS error on fitted point source total flux",
 	&outobj2.prof_dirac_fluxerr, H_FLOAT, T_FLOAT, "%12.7g", "count",
 	"stat.error;phot.count;stat.fit.param", "ct"},
+  {"FLUXRATIO_POINTSOURCE", "Point-source flux-to-total ratio from fitting",
+	&outobj2.prof_dirac_fluxratio, H_FLOAT, T_FLOAT, "%7.5f", "",
+	"phot.count;stat.fit.param;arith.ratio", ""},
+  {"FLUXRATIOERR_POINTSOURCE", "RMS error on point-source flux-to-total ratio",
+	&outobj2.prof_dirac_fluxratioerr, H_FLOAT, T_FLOAT, "%7.5f", "",
+	"stat.error;phot.count;stat.fit.param;arith.ratio", ""},
   {"MAG_POINTSOURCE", "Point source total magnitude from fitting",
 	&outobj2.prof_dirac_mag, H_FLOAT, T_FLOAT, "%8.4f", "mag",
 	"phot.mag;stat.fit.param", "mag"},
@@ -398,6 +404,12 @@
   {"MU_MEAN_SPHEROID", "Mean effective spheroid surface brightness above background",
 	&outobj2.prof_spheroid_mumean, H_FLOAT, T_FLOAT, "%8.4f", "mag * arcsec**(-2)",
 	"phot.mag.sb;stat.mean;stat.fit.param", "mag.arcsec-2"},
+  {"FLUXRATIO_SPHEROID", "Spheroid flux-to-total ratio from fitting",
+	&outobj2.prof_spheroid_fluxratio, H_FLOAT, T_FLOAT, "%7.5f", "",
+	"phot.count;stat.fit.param;arith.ratio", ""},
+  {"FLUXRATIOERR_SPHEROID", "RMS error on spheroid flux-to-total ratio",
+	&outobj2.prof_spheroid_fluxratioerr, H_FLOAT, T_FLOAT, "%7.5f", "",
+	"stat.error;phot.count;stat.fit.param;arith.ratio", ""},
   {"SPHEROID_REFF_IMAGE", "Spheroid effective radius from fitting",
 	&outobj2.prof_spheroid_reff, H_FLOAT, T_FLOAT, "%10.4f", "pixel",
 	"src.morph.scLength;stat.fit.param;instr.det", "pix"},
@@ -480,6 +492,12 @@
   {"MU_MEAN_DISK", "Mean effective disk surface brightness above background",
 	&outobj2.prof_disk_mumean, H_FLOAT, T_FLOAT, "%8.4f", "mag * arcsec**(-2)",
 	"phot.mag.sb;stat.mean;stat.fit.param", "mag.arcsec-2"},
+  {"FLUXRATIO_DISK", "Disk flux-to-total ratio from fitting",
+	&outobj2.prof_disk_fluxratio, H_FLOAT, T_FLOAT, "%7.5f", "",
+	"phot.count;stat.fit.param;arith.ratio", ""},
+  {"FLUXRATIOERR_DISK", "RMS error on disk flux-to-total ratio",
+	&outobj2.prof_disk_fluxratioerr, H_FLOAT, T_FLOAT, "%7.5f", "",
+	"stat.error;phot.count;stat.fit.param;arith.ratio", ""},
   {"DISK_SCALE_IMAGE", "Disk scalelength from fitting",
 	&outobj2.prof_disk_scale, H_FLOAT, T_FLOAT, "%10.4f", "pixel",
 	"src.morph.scLength;stat.fit.param;instr.det", "pix"},
@@ -560,6 +578,12 @@
   {"MAGERR_BAR", "RMS error on fitted total bar magnitude",
 	&outobj2.prof_bar_magerr, H_FLOAT, T_FLOAT, "%8.4f", "mag",
 	"stat.error;phot.mag;stat.fit.param", "mag"},
+  {"FLUXRATIO_BAR", "Bar flux-to-total ratio from fitting",
+	&outobj2.prof_bar_fluxratio, H_FLOAT, T_FLOAT, "%7.5f", "",
+	"phot.count;stat.fit.param;arith.ratio", ""},
+  {"FLUXRATIOERR_BAR", "RMS error on bar flux-to-total ratio",
+	&outobj2.prof_bar_fluxratioerr, H_FLOAT, T_FLOAT, "%7.5f", "",
+	"stat.error;phot.count;stat.fit.param;arith.ratio", ""},
   {"BAR_LENGTH_IMAGE", "Bar length from fitting",
 	&outobj2.prof_bar_length, H_FLOAT, T_FLOAT, "%10.4f", "pixel",
 	"src.morph.scLength;stat.fit.param;instr.det", "pix"},
@@ -623,6 +647,12 @@
   {"MAGERR_ARMS", "RMS error on fitted total magnitude in spiral arms",
 	&outobj2.prof_arms_magerr, H_FLOAT, T_FLOAT, "%8.4f", "mag",
 	"stat.error;phot.mag;stat.fit.param", "mag"},
+  {"FLUXRATIO_ARMS", "Arms flux-to-total ratio from fitting",
+	&outobj2.prof_arms_fluxratio, H_FLOAT, T_FLOAT, "%7.5f", "",
+	"phot.count;stat.fit.param;arith.ratio", ""},
+  {"FLUXRATIOERR_ARMS", "RMS error on arms flux-to-total ratio",
+	&outobj2.prof_arms_fluxratioerr, H_FLOAT, T_FLOAT, "%7.5f", "",
+	"stat.error;phot.count;stat.fit.param;arith.ratio", ""},
   {"ARMS_SCALE_IMAGE", "Spiral arms scale length from fitting",
 	&outobj2.prof_arms_scale, H_FLOAT, T_FLOAT, "%10.4f", "pixel",
 	"src.morph.scLength;stat.fit.param;instr.det", "pix"},

@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2013 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		08/12/2011
+*	Last modified:		05/07/2013
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -409,6 +409,8 @@ typedef struct
   float		prof_offset_fluxerr;		/* RMS error */
   float		prof_dirac_flux;		/* Point source total flux */
   float		prof_dirac_fluxerr;		/* RMS error */
+  float		prof_dirac_fluxratio;		/* Point source flux ratio */
+  float		prof_dirac_fluxratioerr;	/* RMS error */
   float		prof_dirac_mag;			/* Point source "total" mag */
   float		prof_dirac_magerr;		/* RMS error */
   float		prof_spheroid_flux;		/* Spheroid total flux */
@@ -421,6 +423,8 @@ typedef struct
   float		prof_spheroid_mumax;		/* Spehroid peak surf. brigh.*/
   float		prof_spheroid_mueff;		/* Spheroid effect. surf. bri.*/
   float		prof_spheroid_mumean;		/* Spheroid mean eff. su. bri.*/
+  float		prof_spheroid_fluxratio;	/* Spheroid flux ratio */
+  float		prof_spheroid_fluxratioerr;	/* RMS error */
   float		prof_spheroid_reff;		/* Spheroid effective radius */
   float		prof_spheroid_refferr;		/* RMS error */
   float		prof_spheroid_reffw;		/* WORLD spheroid eff. radius */
@@ -448,6 +452,8 @@ typedef struct
   float		prof_disk_mumax;		/* Disk peak surf. brightness */
   float		prof_disk_mueff;		/* Disk effective surf. bri. */
   float		prof_disk_mumean;		/* Disk mean eff. surf. bri. */
+  float		prof_disk_fluxratio;		/* Disk flux ratio */
+  float		prof_disk_fluxratioerr;		/* RMS error */
   float		prof_disk_scale;		/* Disk scale length */
   float		prof_disk_scaleerr;		/* RMS error */
   float		prof_disk_scalew;		/* WORLD disk scale length */
@@ -473,6 +479,8 @@ typedef struct
   float		prof_bar_fluxerr;		/* RMS error */
   float		prof_bar_mag;			/* Bar "total" magnitude */
   float		prof_bar_magerr;		/* RMS error */
+  float		prof_bar_fluxratio;		/* Bar flux ratio */
+  float		prof_bar_fluxratioerr;		/* RMS error */
   float		prof_bar_length;		/* Bar length */
   float		prof_bar_lengtherr;		/* RMS error */
   float		prof_bar_lengthw;		/* WORLD bar length */
@@ -494,6 +502,8 @@ typedef struct
   float		prof_arms_fluxerr;		/* RMS error */
   float		prof_arms_mag;			/* Arms "total" magnitude */
   float		prof_arms_magerr;		/* RMS error */
+  float		prof_arms_fluxratio;		/* Arms flux ratio */
+  float		prof_arms_fluxratioerr;		/* RMS error */
   float		prof_arms_scale;		/* Arms scalelength */
   float		prof_arms_scaleerr;		/* RMS error */
   float		prof_arms_scalew;		/* WORLD arms scalelength */

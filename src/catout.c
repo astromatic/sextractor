@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2013 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		08/12/2011
+*	Last modified:		05/07/2013
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -192,13 +192,6 @@ void	updateparamflags()
   FLAG(obj2.fluxcorerr_prof) |= FLAG(obj2.magcorerr_prof);
   FLAG(obj2.fluxcor_prof) |= FLAG(obj2.magcor_prof)
 			| FLAG(obj2.fluxcorerr_prof);
-  FLAG(obj2.fluxerr_prof) |= FLAG(obj2.magerr_prof)
-			| FLAG(obj2.prof_concentrationerr)
-			| FLAG(obj2.fluxcorerr_prof);
-  FLAG(obj2.flux_prof) |= FLAG(obj2.mag_prof)
-			| FLAG(obj2.fluxerr_prof)
-			| FLAG(obj2.fluxcor_prof);
-
 
   FLAG(obj2.poserraw_prof) |= FLAG(obj2.poserrbw_prof);
   FLAG(obj2.poserrcxxw_prof) |= FLAG(obj2.poserrcyyw_prof)
@@ -240,21 +233,26 @@ void	updateparamflags()
 			| FLAG(obj2.prof_class_star)
 			| FLAG(obj2.fluxcor_prof);
 
+  FLAG(obj2.prof_dirac_fluxratio) |= FLAG(obj2.prof_dirac_fluxratioerr);
   FLAG(obj2.prof_dirac_mag) |= FLAG(obj2.prof_dirac_magerr);
+  FLAG(obj2.prof_spheroid_fluxratio) |= FLAG(obj2.prof_spheroid_fluxratioerr);
   FLAG(obj2.prof_spheroid_mag) |= FLAG(obj2.prof_spheroid_magerr);
   FLAG(obj2.prof_spheroid_reff) |= FLAG(obj2.prof_spheroid_refferr);
   FLAG(obj2.prof_spheroid_aspect) |= FLAG(obj2.prof_spheroid_aspecterr);
   FLAG(obj2.prof_spheroid_theta) |= FLAG(obj2.prof_spheroid_thetaerr);
   FLAG(obj2.prof_spheroid_sersicn) |= FLAG(obj2.prof_spheroid_sersicnerr);
+  FLAG(obj2.prof_disk_fluxratio) |= FLAG(obj2.prof_disk_fluxratioerr);
   FLAG(obj2.prof_disk_mag) |= FLAG(obj2.prof_disk_magerr);
   FLAG(obj2.prof_disk_scale) |= FLAG(obj2.prof_disk_scaleerr);
   FLAG(obj2.prof_disk_aspect) |= FLAG(obj2.prof_disk_aspecterr);
   FLAG(obj2.prof_disk_inclination) |= FLAG(obj2.prof_disk_inclinationerr);
   FLAG(obj2.prof_disk_theta) |= FLAG(obj2.prof_disk_thetaerr);
+  FLAG(obj2.prof_bar_fluxratio) |= FLAG(obj2.prof_bar_fluxratioerr);
   FLAG(obj2.prof_bar_mag) |= FLAG(obj2.prof_bar_magerr);
   FLAG(obj2.prof_bar_length) |= FLAG(obj2.prof_bar_lengtherr);
   FLAG(obj2.prof_bar_aspect) |= FLAG(obj2.prof_bar_aspecterr);
   FLAG(obj2.prof_bar_theta) |= FLAG(obj2.prof_bar_thetaerr);
+  FLAG(obj2.prof_arms_fluxratio) |= FLAG(obj2.prof_arms_fluxratioerr);
   FLAG(obj2.prof_arms_mag) |= FLAG(obj2.prof_arms_magerr);
   FLAG(obj2.prof_e1errw) |= FLAG(obj2.prof_e2errw) | FLAG(obj2.prof_e12corrw);
   FLAG(obj2.prof_e1w) |= FLAG(obj2.prof_e2w) | FLAG(obj2.prof_e1errw);
@@ -379,6 +377,7 @@ void	updateparamflags()
 
   FLAG(obj2.prof_arms_flux) |= FLAG(obj2.prof_arms_fluxerr)
 			| FLAG(obj2.prof_arms_mag)
+			| FLAG(obj2.prof_arms_fluxratio)
 			| FLAG(obj2.prof_arms_scalew)
 			| FLAG(obj2.prof_arms_scale)
 			| FLAG(obj2.prof_arms_posang)
@@ -388,6 +387,7 @@ void	updateparamflags()
   FLAG(obj2.prof_bar_theta) |= FLAG(obj2.prof_bar_lengthw);
   FLAG(obj2.prof_bar_flux) |= FLAG(obj2.prof_bar_fluxerr)
 			| FLAG(obj2.prof_bar_mag)
+			| FLAG(obj2.prof_bar_fluxratio)
 			| FLAG(obj2.prof_bar_lengthw)
 			| FLAG(obj2.prof_bar_length)
 			| FLAG(obj2.prof_bar_aspect)
@@ -396,6 +396,7 @@ void	updateparamflags()
 			| FLAG(obj2.prof_arms_flux);
   FLAG(obj2.prof_disk_flux) |= FLAG(obj2.prof_disk_fluxerr)
 			| FLAG(obj2.prof_disk_mag)
+			| FLAG(obj2.prof_disk_fluxratio)
 			| FLAG(obj2.prof_disk_scalew)
 			| FLAG(obj2.prof_disk_scale)
 			| FLAG(obj2.prof_disk_aspect)
@@ -405,6 +406,7 @@ void	updateparamflags()
 			| FLAG(obj2.prof_bar_flux);
   FLAG(obj2.prof_spheroid_flux) |= FLAG(obj2.prof_spheroid_fluxerr)
 			| FLAG(obj2.prof_spheroid_mag)
+			| FLAG(obj2.prof_spheroid_fluxratio)
 			| FLAG(obj2.prof_spheroid_reffw)
 			| FLAG(obj2.prof_spheroid_reff)
 			| FLAG(obj2.prof_spheroid_aspect)
@@ -412,7 +414,8 @@ void	updateparamflags()
 			| FLAG(obj2.prof_spheroid_sersicn)
 			| FLAG(obj2.prof_spheroid_peak);
   FLAG(obj2.prof_dirac_flux) |= FLAG(obj2.prof_dirac_fluxerr)
-			| FLAG(obj2.prof_dirac_mag);
+			| FLAG(obj2.prof_dirac_mag)
+			| FLAG(obj2.prof_dirac_fluxratio);
   FLAG(obj2.prof_offset_flux) |= FLAG(obj2.prof_offset_fluxerr);
   FLAG(obj2.fluxerr_dprof) |= FLAG(obj2.magerr_dprof);
   FLAG(obj2.flux_dprof) |= FLAG(obj2.mag_dprof)
@@ -421,6 +424,19 @@ void	updateparamflags()
 			| FLAG(obj2.dprof_flag)
 			| FLAG(obj2.dprof_niter)
 			| FLAG(obj2.flux_dprof);
+
+  FLAG(obj2.fluxerr_prof) |= FLAG(obj2.magerr_prof)
+			| FLAG(obj2.prof_concentrationerr)
+			| FLAG(obj2.fluxcorerr_prof)
+			| FLAG(obj2.prof_arms_fluxratio)
+			| FLAG(obj2.prof_bar_fluxratio)
+			| FLAG(obj2.prof_disk_fluxratio)
+			| FLAG(obj2.prof_spheroid_fluxratio)
+			| FLAG(obj2.prof_dirac_fluxratio);
+  FLAG(obj2.flux_prof) |= FLAG(obj2.mag_prof)
+			| FLAG(obj2.fluxerr_prof)
+			| FLAG(obj2.fluxcor_prof);
+
   prefs.prof_flag |= FLAG(obj2.prof_chi2) | FLAG(obj2.prof_niter)
 			| FLAG(obj2.prof_vector) | FLAG(obj2.prof_errvector)
 			| FLAG(obj2.prof_errmatrix)
