@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		10/06/2013
+*	Last modified:		05/07/2013
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -168,7 +168,7 @@ OUTPUT	Pointer to an allocated fit structure (containing details about the
 	fit).
 NOTES	It is a modified version of the lm_minimize() of lmfit.
 AUTHOR	E. Bertin (IAP)
-VERSION	10/06/2013
+VERSION	05/07/2013
  ***/
 void	profit_fit(profitstruct *profit,
 		picstruct *field, picstruct *wfield,
@@ -178,8 +178,9 @@ void	profit_fit(profitstruct *profit,
     patternstruct	*pattern;
     psfstruct		*psf;
     checkstruct		*check;
-    double		emx2,emy2,emxy, a , cp,sp, cn, bn, n,
-			sump,sumq, sumpw2,sumqw2,sumpqw, sump0,sumq0, err;
+    double		emx2,emy2,emxy, a , cp,sp, cn, bn, n, rho,
+			sum, sump,sumq, sumpw2,sumqw2,sumpqw, sump0,sumq0,
+			fluxerr, err;
     PIXTYPE		valp,valq,sig2;
     float		param0[PARAM_NPARAM], param1[PARAM_NPARAM],
 			param[PARAM_NPARAM],
@@ -187,7 +188,7 @@ void	profit_fit(profitstruct *profit,
 			*cov,
 			psf_fwhm, dchi2, aspect, chi2;
     int			*index,
-			i,j,p, nparam, nparam2, ncomp, nprof;
+			c,i,j,p, nparam, nparam2, ncomp, nprof;
 
   nparam = profit->nparam;
   nparam2 = nparam*nparam;
@@ -494,7 +495,7 @@ profit->niter = profit_minimize(profit, PROFIT_MAXITER);
   obj2->flux_prof = profit->flux;
   if (FLAG(obj2.fluxerr_prof))
     {
-    err = 0.0;
+    fluxerr = 0.0;
     cov = profit->covar;
     index = profit->paramindex;
     list = profit->paramlist;
@@ -504,9 +505,9 @@ profit->niter = profit_minimize(profit, PROFIT_MAXITER);
         cov = profit->covar + nparam*index[i];
         for (j=0; j<PARAM_NPARAM; j++)
           if (flux_flag[j] && list[j])
-            err += cov[index[j]];
+            fluxerr += cov[index[j]];
         }
-    obj2->fluxerr_prof = err>0.0? sqrt(err): 0.0;
+    obj2->fluxerr_prof = fluxerr>0.0? sqrt(fluxerr): 0.0;
     }
 
   obj2->prof_chi2 = (profit->nresi > profit->nparam)?
@@ -603,6 +604,23 @@ profit->niter = profit_minimize(profit, PROFIT_MAXITER);
     obj2->prof_dirac_flux = *profit->paramlist[PARAM_DIRAC_FLUX];
     obj2->prof_dirac_fluxerr =
 		profit->paramerr[profit->paramindex[PARAM_DIRAC_FLUX]];
+    if (FLAG(obj2.prof_dirac_fluxratio))
+      {
+      obj2->prof_dirac_fluxratio = (rho = obj2->flux_prof>(1.0/BIG)?
+				obj2->prof_dirac_flux / obj2->flux_prof
+				: 0.0);
+      index = profit->paramindex;
+      c = index[PARAM_DIRAC_FLUX];
+      list = profit->paramlist;
+      cov = profit->covar + c*nparam;
+      err = 0.0;
+      for (i=0; i<PARAM_NPARAM; i++)
+        if (flux_flag[i] && list[i])
+          err += cov[index[i]];
+      err = cov[c] + rho*rho*fluxerr - 2.0*rho*err;
+      obj2->prof_dirac_fluxratioerr = (err>(1.0/BIG) && profit->flux>(1.0/BIG))?
+					sqrt(err)/profit->flux : 0.0;
+      }
     }
 
 /* Spheroid */
@@ -655,6 +673,24 @@ profit->niter = profit_minimize(profit, PROFIT_MAXITER);
       if (FLAG(obj2.prof_spheroid_fluxmean))
         obj2->prof_spheroid_fluxmean = obj2->prof_spheroid_peak * cn;
       }
+    if (FLAG(obj2.prof_spheroid_fluxratio))
+      {
+      obj2->prof_spheroid_fluxratio = (rho = obj2->flux_prof>(1.0/BIG)?
+				obj2->prof_spheroid_flux / obj2->flux_prof
+				: 0.0);
+      index = profit->paramindex;
+      c = index[PARAM_SPHEROID_FLUX];
+      list = profit->paramlist;
+      cov = profit->covar + c*nparam;
+      err = 0.0;
+      for (i=0; i<PARAM_NPARAM; i++)
+        if (flux_flag[i] && list[i])
+          err += cov[index[i]];
+      err = cov[c] + rho*rho*fluxerr - 2.0*rho*err;
+      obj2->prof_spheroid_fluxratioerr
+				= (err>(1.0/BIG) && profit->flux>(1.0/BIG))?
+					sqrt(err)/profit->flux : 0.0;
+      }
     }
 
 /* Disk */
@@ -703,6 +739,24 @@ profit->niter = profit_minimize(profit, PROFIT_MAXITER);
         obj2->prof_disk_fluxeff = obj2->prof_disk_peak * 0.186682; /* e^-(b_n)*/
       if (FLAG(obj2.prof_disk_fluxmean))
         obj2->prof_disk_fluxmean = obj2->prof_disk_peak * 0.355007;/* b_n^(-2)*/
+      }
+
+    if (FLAG(obj2.prof_disk_fluxratio))
+      {
+      obj2->prof_disk_fluxratio = (rho = obj2->flux_prof>(1.0/BIG)?
+					obj2->prof_disk_flux / obj2->flux_prof
+					: 0.0);
+      index = profit->paramindex;
+      c = index[PARAM_DISK_FLUX];
+      list = profit->paramlist;
+      cov = profit->covar + c*nparam;
+      err = 0.0;
+      for (i=0; i<PARAM_NPARAM; i++)
+        if (flux_flag[i] && list[i])
+          err += cov[index[i]];
+      err = cov[c] + rho*rho*fluxerr - 2.0*rho*err;
+      obj2->prof_disk_fluxratioerr = (err>(1.0/BIG) && profit->flux>(1.0/BIG))?
+					sqrt(err)/profit->flux : 0.0;
       }
 
 /* Disk pattern */
@@ -764,6 +818,23 @@ profit->niter = profit_minimize(profit, PROFIT_MAXITER);
 				+ obj2->prof_disk_theta);
         obj2->prof_bar_thetaerr = obj2->prof_bar_posangerr*a/(cp*cp+a*a*sp*sp);
         }
+      if (FLAG(obj2.prof_bar_fluxratio))
+        {
+        obj2->prof_bar_fluxratio = (rho = obj2->flux_prof>(1.0/BIG)?
+					obj2->prof_bar_flux / obj2->flux_prof
+					: 0.0);
+        index = profit->paramindex;
+        c = index[PARAM_BAR_FLUX];
+        list = profit->paramlist;
+        cov = profit->covar + c*nparam;
+        err = 0.0;
+        for (i=0; i<PARAM_NPARAM; i++)
+          if (flux_flag[i] && list[i])
+            err += cov[index[i]];
+        err = cov[c] + rho*rho*fluxerr - 2.0*rho*err;
+        obj2->prof_bar_fluxratioerr = (err>(1.0/BIG) && profit->flux>(1.0/BIG))?
+					sqrt(err)/profit->flux : 0.0;
+        }
 
 /* Arms */
       if (FLAG(obj2.prof_arms_flux))
@@ -788,6 +859,24 @@ profit->niter = profit_minimize(profit, PROFIT_MAXITER);
 			fmod_m90_p90(*profit->paramlist[PARAM_ARMS_POSANG]);
         obj2->prof_arms_posangerr =
 		profit->paramerr[profit->paramindex[PARAM_ARMS_POSANG]];
+        if (FLAG(obj2.prof_arms_fluxratio))
+          {
+          obj2->prof_arms_fluxratio = (rho = obj2->flux_prof>(1.0/BIG)?
+					obj2->prof_arms_flux / obj2->flux_prof
+					: 0.0);
+          index = profit->paramindex;
+          c = index[PARAM_ARMS_FLUX];
+          list = profit->paramlist;
+          cov = profit->covar + c*nparam;
+          err = 0.0;
+          for (i=0; i<PARAM_NPARAM; i++)
+            if (flux_flag[i] && list[i])
+              err += cov[index[i]];
+          err = cov[c] + rho*rho*fluxerr - 2.0*rho*err;
+          obj2->prof_arms_fluxratioerr
+				= (err>(1.0/BIG) && profit->flux>(1.0/BIG))?
+					sqrt(err)/profit->flux : 0.0;
+          }
         }
       }
     }
