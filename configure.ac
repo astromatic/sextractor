@@ -22,7 +22,7 @@
 #	You should have received a copy of the GNU General Public License
 #	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 #
-#	Last modified:		05/07/2013
+#	Last modified:		17/07/2013
 #
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -31,7 +31,7 @@ define([AC_CACHE_LOAD],)
 define([AC_CACHE_SAVE],)
 
 # This is your standard Bertin source code...
-AC_INIT(sextractor, 2.19.0, [bertin@iap.fr])
+AC_INIT(sextractor, 2.19.1, [bertin@iap.fr])
 AC_CONFIG_SRCDIR(src/makeit.c)
 AC_CONFIG_AUX_DIR(autoconf)
 AC_CONFIG_HEADERS(config.h)
@@ -124,10 +124,8 @@ AC_FUNC_MMAP
 AC_TYPE_SIGNAL
 AC_FUNC_STAT
 AC_FUNC_STRFTIME
-AC_CHECK_FUNCS([atexit logf getenv gettimeofday memcpy memmove memset mkdir \
-		munmap posix_memalign setlinebuf sincosf strstr sysconf])
-AC_CHECK_FUNC([isnan], AC_DEFINE_UNQUOTED([HAVE_ISNAN2], 1,
-		[Second isnan check]))
+AC_CHECK_FUNCS([atexit getenv gettimeofday isinf isnan logf memcpy memmove \
+	memset mkdir munmap posix_memalign setlinebuf sincosf strstr sysconf])
 
 # Check support for large files
 AC_SYS_LARGEFILE

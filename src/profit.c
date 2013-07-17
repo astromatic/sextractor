@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		05/07/2013
+*	Last modified:		17/07/2013
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -1985,7 +1985,7 @@ INPUT	Profile-fitting structure,
 OUTPUT	RETURN_ERROR if the rasters don't overlap, RETURN_OK otherwise.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	24/04/2013
+VERSION	17/07/2013
  ***/
 int	profit_resample(profitstruct *profit, float *inpix, PIXTYPE *outpix,
 	float factor)
@@ -2010,7 +2010,11 @@ int	profit_resample(profitstruct *profit, float *inpix, PIXTYPE *outpix,
 
   xsin = xcin - xcout*invpixstep;			/* Input start x-coord*/
 
-  if ((int)xsin >= profit->modnaxisn[0] || !finitef(xsin))
+  if ((int)xsin >= profit->modnaxisn[0]
+#if defined(HAVE_ISNAN) && defined(HAVE_ISINF)
+	|| isnan(xsin) || isinf(xsin)
+#endif
+	)
     return RETURN_ERROR;
   ixsout = 0;				/* Int. part of output start x-coord */
   if (xsin<0.0)
@@ -2036,7 +2040,11 @@ int	profit_resample(profitstruct *profit, float *inpix, PIXTYPE *outpix,
     ycout += *dy/profit->subsamp;
 
   ysin = ycin - ycout*invpixstep;		/* Input start y-coord*/
-  if ((int)ysin >= profit->modnaxisn[1] || !finitef(ysin))
+  if ((int)ysin >= profit->modnaxisn[1]
+#if defined(HAVE_ISNAN) && defined(HAVE_ISINF)
+	|| isnan(ysin) || isinf(ysin)
+#endif
+	)
     return RETURN_ERROR;
   iysout = 0;				/* Int. part of output start y-coord */
   if (ysin<0.0)
