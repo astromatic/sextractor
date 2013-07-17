@@ -68,8 +68,11 @@
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
-/* Second isnan check */
-#undef HAVE_ISNAN2
+/* Define to 1 if you have the `isinf' function. */
+#undef HAVE_ISINF
+
+/* Define to 1 if you have the `isnan' function. */
+#undef HAVE_ISNAN
 
 /* Define if you have the LAPACK libraries. */
 #undef HAVE_LAPACK
