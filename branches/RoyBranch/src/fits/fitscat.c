@@ -323,14 +323,39 @@ int	map_cat(catstruct *cat)
   QCALLOC(tab, tabstruct, 1);
   tab->cat = cat;
   QFTELL(cat->file, tab->headpos, cat->filename);
+
+   // CFITSIO
+   fitsfile *infptr;
+   int status, hdutype, hdunum;
+   status = 0; fits_open_file(&infptr, cat->filename, READONLY, &status);
+   if (status != 0) {
+     fits_report_error(stderr, status);
+     printf("ERROR could not open FITS file with cfitsio: %s\n", cat->filename);
+   }
+   hdunum = 1;
+
   for (ntab=0; !get_head(tab); ntab++)
     {
     readbasic_head(tab);
     readbintabparam_head(tab);
     QFTELL(cat->file, tab->bodypos, cat->filename);
     tab->nseg = tab->seg = 1;
-    if (tab->tabsize)
-      QFSEEK(cat->file, PADTOTAL(tab->tabsize), SEEK_CUR, cat->filename);
+
+    // CFITSIO
+    tab->hdunum = hdunum;
+    tab->infptr = infptr;
+    status = 0; fits_movabs_hdu(tab->infptr, tab->hdunum, &hdutype, &status);
+    if (status != 0) printf("ERROR could not move to hdu %d in file %s\n", tab->hdunum, cat->filename);
+    tab->tabsize = infptr->Fptr->rowlength;
+
+    if (tab->tabsize) {
+
+      // IMPORTANT: moving to start of next header using fseek and cfitsio position rather than table size, as done previously
+      fseek(cat->file, infptr->Fptr->headstart[hdunum], SEEK_SET);
+
+      // this is how it was done previously
+      //QFSEEK(cat->file, PADTOTAL(tab->tabsize), SEEK_CUR, cat->filename);
+    }
     if (prevtab)
       {
       tab->prevtab = prevtab;
@@ -342,6 +367,9 @@ int	map_cat(catstruct *cat)
     QCALLOC(tab, tabstruct, 1);
     tab->cat = cat;
     QFTELL(cat->file, tab->headpos, cat->filename);
+
+    // CFITSIO
+    hdunum++;
     }
 
   cat->ntab = ntab;

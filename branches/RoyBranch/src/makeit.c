@@ -268,6 +268,7 @@ void	makeit()
       if ((imatab->naxis < 2)
 	|| !strncmp(imatab->xtension, "BINTABLE", 8)
 	|| !strncmp(imatab->xtension, "ASCTABLE", 8))
+    	  if (!imatab->isTileCompressed)
         continue;
       next++;
       }
@@ -303,10 +304,12 @@ void	makeit()
   nok = 0;
   for (ntab = 0 ; ntab<ntabmax; ntab++, imatab = imatab->nexttab)
     {
+printf("matab->naxis %d\ imatab->xtension = %s compressed? %d\n", imatab->naxis, imatab->xtension, imatab->isTileCompressed);
 /*--  Check for the next valid image extension */
     if (!forcextflag && ((imatab->naxis < 2)
 	|| !strncmp(imatab->xtension, "BINTABLE", 8)
 	|| !strncmp(imatab->xtension, "ASCTABLE", 8)))
+if (!imatab->isTileCompressed)
       continue;
 
     nok++;

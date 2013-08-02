@@ -1050,7 +1050,7 @@ void	reendcat()
   {
    keystruct	*key;
    tabstruct	*tab;
-   OFF_T	pos;
+   OFF_T2	pos;
    char		*head;
 
   switch(prefs.cat_type)

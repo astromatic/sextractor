@@ -92,7 +92,12 @@ void	*loadstrip(picstruct *field, picstruct *wfield)
       else if (flags & INTERP_FIELD)
         copydata(field, 0, nbpix);
       else
+      {
+        tab->currentElement = 1;
         read_body(tab, data, nbpix);
+
+        //printf("read 1: data[0] = %f %f %f %f %f %f\n", data[0], data[1], data[222], data[777], data[field->width-1], data[nbpix-1]);
+      } 
       if (flags & (WEIGHT_FIELD|RMS_FIELD|BACKRMS_FIELD|VAR_FIELD))
         weight_to_var(field, data, nbpix);
       if ((flags & MEASURE_FIELD) && (check=prefs.check[CHECK_IDENTICAL]))
@@ -175,8 +180,13 @@ void	*loadstrip(picstruct *field, picstruct *wfield)
         backrmsline(field, field->ymax, data);
       else if (flags & INTERP_FIELD)
         copydata(field, field->stripylim*w, w);
-      else
+      else {
+
+        tab->currentElement = 1;
         read_body(tab, data, w);
+
+        //printf("read 2: data[0] = %f %f %f %f %f %f\n", data[0], data[1], data[222], data[777], data[field->width-1], data[w-1]);
+      }
       if (flags & (WEIGHT_FIELD|RMS_FIELD|BACKRMS_FIELD|VAR_FIELD))
         weight_to_var(field, data, w);
 
@@ -284,6 +294,7 @@ void	readimagehead(picstruct *field)
     field->wcs = read_wcs(tab);
 
   QFSEEK(field->file, tab->bodypos, SEEK_SET, field->filename);
+
 
   return;
 

@@ -52,8 +52,9 @@ void	makeback(picstruct *field, picstruct *wfield, int wscale_flag)
 
   {
    backstruct	*backmesh,*wbackmesh, *bm,*wbm;
+   tabstruct	*tab, *wtab;
    PIXTYPE	*buf,*wbuf, *buft,*wbuft;
-   OFF_T	fcurpos,wfcurpos, wfcurpos2,fcurpos2, bufshift, jumpsize;
+   OFF_T2	fcurpos,wfcurpos, wfcurpos2,fcurpos2, bufshift, jumpsize;
    size_t	bufsize, bufsize2,
 		size,meshsize;
    int		i,j,k,m,n, step, nlines,
@@ -65,7 +66,11 @@ void	makeback(picstruct *field, picstruct *wfield, int wscale_flag)
 /* If the weight-map is not an external one, no stats are needed for it */
   if (wfield && wfield->flags&(INTERP_FIELD|BACKRMS_FIELD))
     wfield= NULL;
-
+  tab = field->tab;
+  if (wfield)
+    wtab = wfield->tab;
+  else
+    wtab = NULL;	/* to avoid gcc -Wall warnings */
   w = field->width;
   bw = field->backw;
   bh = field->backh;
@@ -83,12 +88,17 @@ void	makeback(picstruct *field, picstruct *wfield, int wscale_flag)
 
   wfcurpos = wfcurpos2 = 0;		/* to avoid gcc -Wall warnings */
   QFTELL(field->file, fcurpos, field->filename);
+  tab->currentElement = 1; // CFITSIO
+
   if (wfield)
+    {
     QFTELL(wfield->file, wfcurpos, wfield->filename);
+	wtab->currentElement = 1; // CFITSIO
+    }
 
 /* Allocate a correct amount of memory to store pixels */
 
-  bufsize = (OFF_T)w*bh;
+  bufsize = (OFF_T2)w*bh;
   meshsize = (size_t)bufsize;
   nlines = 0;
   if (bufsize > (size_t)BACK_BUFSIZE)
@@ -96,8 +106,8 @@ void	makeback(picstruct *field, picstruct *wfield, int wscale_flag)
     nlines = BACK_BUFSIZE/w;
     step = (field->backh-1)/nlines+1;
     bufsize = (size_t)(nlines = field->backh/step)*w;
-    bufshift = (step/2)*(OFF_T)w;
-    jumpsize = (step-1)*(OFF_T)w;
+    bufshift = (step/2)*(OFF_T2)w;
+    jumpsize = (step-1)*(OFF_T2)w;
     }
   else
     bufshift = jumpsize = 0;		/* to avoid gcc -Wall warnings */
@@ -180,8 +190,8 @@ void	makeback(picstruct *field, picstruct *wfield, int wscale_flag)
         nlines = BACK_BUFSIZE/w;
         step = (n-1)/nlines+1;
         bufsize = (nlines = n/step)*(size_t)w;
-        bufshift = (step/2)*(OFF_T)w;
-        jumpsize = (step-1)*(OFF_T)w;
+        bufshift = (step/2)*(OFF_T2)w;
+        jumpsize = (step-1)*(OFF_T2)w;
         free(buf);
         QMALLOC(buf, PIXTYPE, bufsize);		/* pixel buffer */
         if (wfield)
@@ -192,35 +202,47 @@ void	makeback(picstruct *field, picstruct *wfield, int wscale_flag)
         }
 
 /*---- Read and skip, read and skip, etc... */
-      QFSEEK(field->file, bufshift*(OFF_T)field->bytepix, SEEK_CUR,
+      QFSEEK(field->file, bufshift*(OFF_T2)field->bytepix, SEEK_CUR,
 		field->filename);
+      tab->currentElement += bufshift; // CFITSIO
+
       buft = buf;
       for (i=nlines; i--; buft += w)
         {
         read_body(field->tab, buft, w);
-        if (i)
-          QFSEEK(field->file, jumpsize*(OFF_T)field->bytepix, SEEK_CUR,
+        if (i) {
+          QFSEEK(field->file, jumpsize*(OFF_T2)field->bytepix, SEEK_CUR,
 		field->filename);
+
+          tab->currentElement += jumpsize; // CFITSIO
+        }
         }
 
       if (wfield)
         {
 /*------ Read and skip, read and skip, etc... now on the weight-map */
-        QFSEEK(wfield->file, bufshift*(OFF_T)wfield->bytepix, SEEK_CUR,
+        QFSEEK(wfield->file, bufshift*(OFF_T2)wfield->bytepix, SEEK_CUR,
 		wfield->filename);
+        wtab->currentElement += bufshift; // CFITSIO
+
         wbuft = wbuf;
         for (i=nlines; i--; wbuft += w)
           {
           read_body(wfield->tab, wbuft, w);
           weight_to_var(wfield, wbuft, w);
-          if (i)
-            QFSEEK(wfield->file, jumpsize*(OFF_T)wfield->bytepix, SEEK_CUR,
+          if (i){
+            QFSEEK(wfield->file, jumpsize*(OFF_T2)wfield->bytepix, SEEK_CUR,
 		wfield->filename);
+            wtab->currentElement += jumpsize; // CFITSIO
+
+          }
           }
         }
       backstat(backmesh, wbackmesh, buf, wbuf, bufsize, nx, w, bw,
 	wfield?wfield->weight_thresh:0.0);
       QFSEEK(field->file, fcurpos2, SEEK_SET, field->filename);
+      tab->currentElement = (fcurpos2 == 0) ? 1 : fcurpos2; // CFITSIO
+
       bm = backmesh;
       for (m=nx; m--; bm++)
         if (bm->mean <= -BIG)
@@ -230,6 +252,8 @@ void	makeback(picstruct *field, picstruct *wfield, int wscale_flag)
       if (wfield)
         {
         QFSEEK(wfield->file, wfcurpos2, SEEK_SET, wfield->filename);
+        wtab->currentElement = (wfcurpos2 == 0) ? 1 : wfcurpos2; // CFITSIO
+
         wbm = wbackmesh;
         for (m=nx; m--; wbm++)
           if (wbm->mean <= -BIG)
@@ -242,10 +266,14 @@ void	makeback(picstruct *field, picstruct *wfield, int wscale_flag)
         {
         if (bufsize2>size)
           bufsize2 = size;
+
         read_body(field->tab, buf, bufsize2);
+
         if (wfield)
           {
-          read_body(wfield->tab, wbuf, bufsize2);
+
+            read_body(wfield->tab, wbuf, bufsize2);
+
           weight_to_var(wfield, wbuf, bufsize2);
           }
         backhisto(backmesh, wbackmesh, buf, wbuf, bufsize2, nx, w, bw,
@@ -284,8 +312,13 @@ void	makeback(picstruct *field, picstruct *wfield, int wscale_flag)
 
 /* Go back to the original position */
   QFSEEK(field->file, fcurpos, SEEK_SET, field->filename);
-  if (wfield)
+  field->tab->currentElement = fcurpos; // CFITSIO
+
+  if (wfield) {
     QFSEEK(wfield->file, wfcurpos, SEEK_SET, wfield->filename);
+    wfield->tab->currentElement = (wfcurpos == 0) ? 1 : wfcurpos; // CFITSIO
+
+  }
 
 /* Median-filter and check suitability of the background map */
   NFPRINTF(OUTPUT, "Filtering background map(s)");
