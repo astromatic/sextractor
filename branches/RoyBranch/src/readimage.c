@@ -182,7 +182,6 @@ void	*loadstrip(picstruct *field, picstruct *wfield)
         copydata(field, field->stripylim*w, w);
       else {
 
-        tab->currentElement = 1;
         read_body(tab, data, w);
 
         //printf("read 2: data[0] = %f %f %f %f %f %f\n", data[0], data[1], data[222], data[777], data[field->width-1], data[w-1]);
