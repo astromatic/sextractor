@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		13/02/2013
+*	Last modified:		17/08/2013
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -57,7 +57,11 @@
 
 static int		selectext(char *filename);
 time_t			thetimet, thetimet2;
+#ifdef USE_MODEL
 extern profitstruct	*theprofit,*thedprofit, *thepprofit,*theqprofit;
+#else
+profitstruct	*theprofit,*thedprofit, *thepprofit,*theqprofit;
+#endif
 extern char		profname[][32];
 double			dtime;
 
@@ -477,6 +481,7 @@ void	makeit()
           thepsf = psf_load(prefs.psf_name[0], nok); 
         }
 
+#ifdef USE_MODEL
       if (prefs.prof_flag)
         {
 /*------ Create profiles at full resolution */
@@ -500,6 +505,7 @@ void	makeit()
           theqprofit = profit_init(thepsf, MODEL_EXPONENTIAL);
           }
         }
+#endif
       }
 
 /*-- Initialize PSF contexts and workspace */
