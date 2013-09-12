@@ -22,7 +22,7 @@
 #	You should have received a copy of the GNU General Public License
 #	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 #
-#	Last modified:		17/08/2013
+#	Last modified:		12/09/2013
 #
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -31,7 +31,7 @@ define([AC_CACHE_LOAD],)
 define([AC_CACHE_SAVE],)
 
 # This is your standard Bertin source code...
-AC_INIT(sextractor, 2.19.2, [bertin@iap.fr])
+AC_INIT(sextractor, 2.19.3, [bertin@iap.fr])
 AC_CONFIG_SRCDIR(src/makeit.c)
 AC_CONFIG_AUX_DIR(autoconf)
 AC_CONFIG_HEADERS(config.h)
@@ -89,7 +89,7 @@ AC_ARG_ENABLE(mkl,
 AC_LANG(C)
 
 AC_SEARCH_LIBS([strerror],[cposix])
-if test "$enable_auto_flags" = "yes"; then
+if test x$enable_auto_flags = xyes; then
   CFLAGS=""
   LDFLAGS=""
   ACX_PROG_CC_OPTIM
@@ -105,7 +105,7 @@ AC_HEADER_STDC
 AC_CHECK_HEADERS([fcntl.h limits.h malloc.h stdlib.h string.h sys/mman.h \
 		sys/types.h unistd.h])
 # Checks for INTEL math header files.
-if test "$enable_icc" = "yes"; then
+if test x$enable_icc = xyes; then
   AC_CHECK_HEADERS(mathimf.h)
 fi
 
@@ -161,11 +161,15 @@ AC_ARG_WITH(xsl_url,
 AC_DEFINE_UNQUOTED([XSL_URL], "$with_xsl_url",[Default URL of the XSLT filter])
 
 # Provide special option to disable model-fitting (enabled by default)
-AC_MSG_CHECKING([if model-fitting should be enabled])
+AC_MSG_CHECKING([if model-fitting should be disabled])
 AC_ARG_ENABLE([model-fitting],
-	[AS_HELP_STRING([--enable-model-fitting],
-	[Enable model-fitting and library dependencies (default = yes)])],
-	AC_MSG_RESULT([yes]),
+	[AS_HELP_STRING([--disable-model-fitting],
+	[Disable model-fitting and library dependencies])],
+	if test x$enable_model_fitting = xno; then
+	  AC_MSG_RESULT([yes])
+	else
+	  AC_MSG_RESULT([no])
+	fi,
 	AC_MSG_RESULT([no]))
 
 # Set flags for multithreading
@@ -173,11 +177,11 @@ n_pthreads=16
 AC_ARG_ENABLE(threads,
         [AS_HELP_STRING([--enable-threads@<:@=<max_number_of_threads>@:>@],
 	[Enable multhreading (on with up to 16 threads by default)])],
-    if test "$enableval" = "no"; then
+    if test x$enableval = xno; then
       use_pthreads="no"
     else
       use_pthreads="yes"
-      if test "$enableval" != "yes"; then
+      if test x$enableval != xyes; then
         n_pthreads=$enableval
       fi
     fi,
@@ -203,19 +207,10 @@ the executable as portable as possible (off by default)])],
 	AC_MSG_RESULT([yes]),
 	AC_MSG_RESULT([no]))
 
-############# Actions to complete if model-fitting is activated ##############
-AC_MSG_CHECKING([for model-fitting configure option])
-if test "$enable_model_fitting" = "yes"; then
-  AC_MSG_RESULT([enabled])
-  AC_DEFINE(USE_MODEL, 1, [Triggers model-fitting and linking with ATLAS/FFTW])
-else
-  AC_MSG_RESULT([disabled])
-fi
-AM_CONDITIONAL(USE_MODEL, [test $enable_model_fitting = "yes"])
 
 ################# Actions to complete in case of multhreading ################
 AC_DEFINE_UNQUOTED(THREADS_NMAX, $n_pthreads,[Maximum number of POSIX threads])
-if test "$use_pthreads" = "yes"; then
+if test x$use_pthreads = xyes; then
   AC_MSG_CHECKING([for multithreading])
   AC_MSG_RESULT([maximum of $n_pthreads thread(s)])
   AC_DEFINE(USE_THREADS, 1, [Triggers multhreading])
@@ -225,14 +220,16 @@ if test "$use_pthreads" = "yes"; then
   [AM_CFLAGS="$AM_CFLAGS $PTHREAD_CFLAGS -D_REENTRANT"]
   LIBS="$PTHREAD_LIBS $LIBS"
 fi
-AM_CONDITIONAL(USE_THREADS, [test $use_pthreads = "yes"])
+AM_CONDITIONAL(USE_THREADS, [test x$use_pthreads = xyes])
 
-if test "$enable_model_fitting" = "yes"; then
+############# Actions to complete if model-fitting is activated ##############
+if test x$enable_model_fitting != xno; then
+  AC_DEFINE(USE_MODEL, 1, [Triggers model-fitting])
 ############ handle the INTEL MKL library (FFTW + LAPACK) ###########
-  if test "$enable_mkl" = "yes"; then
+  if test x$enable_mkl = xyes; then
     convlibs="${srcdir}/wcs/libwcs_c.a,${srcdir}/levmar/liblevmar.a"
     ACX_MKL($with_mkl_dir,,$enable_best_link,$convlibs)
-    if test "$MKL_WARN" != ""; then
+    if test x$MKL_WARN != x; then
       AC_MSG_WARN([$MKL_WARN])
     fi
     AM_CFLAGS="$AM_CFLAGS $MKL_CFLAGS "
@@ -242,23 +239,24 @@ if test "$enable_model_fitting" = "yes"; then
 ################ handle the FFTW library (Fourier transforms) ################
     ACX_FFTW($with_fftw_libdir,$with_fftw_incdir,$use_pthreads,yes,
 	LIBS="$FFTW_LIBS $LIBS"
-	if test "$FFTW_WARN" != ""; then
+	if test x$FFTW_WARN != x; then
 	  AC_MSG_WARN([$FFTW_WARN])
 	fi,
 	AC_MSG_ERROR([$FFTW_ERROR Exiting.]))
 ################## handle the ATLAS library(linear algebra) ##################
     ACX_ATLAS($with_atlas_libdir,$with_atlas_incdir,$use_pthreads,
 	LIBS="$ATLAS_LIBS $LIBS"
-	if test "$ATLAS_WARN" != ""; then
+	if test x$ATLAS_WARN != x; then
 	  AC_MSG_WARN([$ATLAS_WARN])
 	fi,
 	AC_MSG_ERROR([$ATLAS_ERROR Exiting.]))
   fi
 fi
+AM_CONDITIONAL(USE_MODEL, [test x$enable_model_fitting != xno])
 
 # Compile with profiling option
-if test "$enable_profiling" = "yes"; then
-  if test "$enable_icc" = "yes"; then
+if test x$enable_profiling = xyes; then
+  if test x$enable_icc = xyes; then
     AM_CFLAGS="$AM_CFLAGS -pq"
   else
     AM_CFLAGS="$AM_CFLAGS -pg"
@@ -267,8 +265,8 @@ if test "$enable_profiling" = "yes"; then
 fi
 
 # "Best" linking option
-if test "$enable_best_link" = "yes"; then
-  if test "$enable_icc" = "yes"; then
+if test x$enable_best_link = xyes; then
+  if test x$enable_icc = xyes; then
     AM_LDFLAGS="-static-intel -openmp-link static -shared-libgcc \
 	-static-libtool-libs -no-intel-extensions -avoid-version $AM_LDFLAGS"
   else
