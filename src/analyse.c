@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		02/11/2011
+*	Last modified:		12/09/2013
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -829,6 +829,9 @@ void	endobject(picstruct *field, picstruct *dfield, picstruct *wfield,
       free(obj->dblank);
       }
     }
+
+  /* Clean (zero) all measurements */
+  zerocat();
 
   return;
   }
