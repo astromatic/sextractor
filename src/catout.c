@@ -933,6 +933,8 @@ void	reinitcat(picstruct *field)
     init_writeobj(fitscat, objtab, &buf);
     }
 
+  zerocat();
+
   return;
   }
 
