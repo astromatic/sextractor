@@ -87,6 +87,7 @@ picstruct	*newfield(char *filename, int flags, int ext)
     }
   if (!nok)
     error(EXIT_FAILURE, "Not a valid FITS image in ",filename);
+
   field->tab = tab;
   if (ntab<0)
     error(EXIT_FAILURE, "Not enough valid FITS image extensions in ",filename);

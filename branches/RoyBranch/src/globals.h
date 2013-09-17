@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/10/2010
+*	Last modified:		12/09/2013
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -85,7 +85,8 @@ extern void	alloccatparams(void),
 		useprefs(void),
 		writecat(int, objliststruct *),
 		write_error(char *msg1, char *msg2),
-		write_vo_fields(FILE *file);
+		write_vo_fields(FILE *file),
+		zerocat(void);
 
 extern double	counter_seconds(void);
 

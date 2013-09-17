@@ -389,7 +389,6 @@ void	read_body(tabstruct *tab, PIXTYPE *ptr, size_t size)
         }
         else
         QFREAD(bufdata, spoonful*tab->bytepix, cat->file, cat->filename);
-
         switch(tab->bitpix)
           {
           case BP_BYTE:
@@ -665,8 +664,6 @@ void	read_body(tabstruct *tab, PIXTYPE *ptr, size_t size)
     default:
       error(EXIT_FAILURE,"*Internal Error*: unknown compression mode in ",
                                 "read_body()");
-
-
     }
 
   //printf("SSSS %f %f %f %f %f\n", bufdata[0], bufdata[10], bufdata[100], bufdata[1000], bufdata[spoonful-1]);
@@ -976,7 +973,6 @@ void	write_body(tabstruct *tab, PIXTYPE *ptr, size_t size)
 #pragma ivdep
             for (i=spoonful; i--;)
               *(bufdata++) = (*(ptr++)-bz)/bs;
-
 
             // CFITSIO - only perform byte-swap if we are NOT writing a tile-compressed format using cfitsio
             if (0 && tab->infptr == NULL) // TODO
