@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		05/07/2013
+*	Last modified:		12/09/2013
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -933,6 +933,8 @@ void	reinitcat(picstruct *field)
     init_writeobj(fitscat, objtab, &buf);
     }
 
+  zerocat();
+
   return;
   }
 
@@ -1099,5 +1101,23 @@ void	reendcat()
 
   return;
   }
+
+
+/********************************** zerocat **********************************/
+/*
+Reset to 0 all measurements in the current catalog.
+*/
+void	zerocat(void)
+  {
+   keystruct	*key;
+   int		i;
+
+  key = objtab->key;
+  for (i=objtab->nkey; i--; key=key->nextkey)
+    memset(key->ptr, 0, key->nbytes);
+
+  return;
+  }
+
 
 

@@ -294,7 +294,6 @@ void	readimagehead(picstruct *field)
 
   QFSEEK(field->file, tab->bodypos, SEEK_SET, field->filename);
 
-
   return;
 
 #undef FITSREADS
