@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		05/07/2013
+*	Last modified:		23/09/2013
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -102,66 +102,61 @@ INPUT	Pointer to the check-image,
 	thumbnail height,
 	thumbnail center x coordinate,
 	thumbnail center y coordinate,
-	zoom factor,
+	inverse zoom factor,
 	flux scaling factor.
 OUTPUT	-.
 NOTES	Outside boundaries are taken into account.
 AUTHOR	E. Bertin (IAP)
-VERSION	26/02/2013
+VERSION	23/09/2013
  ***/
 void	addcheck_resample(checkstruct *check, float *thumb, int w, int h,
-			int ix, int iy, float step2, float amplitude)
+			int ix, int iy, float step1, float amplitude)
   {
    float	interpm[CHECKINTERPW*CHECKINTERPW],
 		*pix2, *mask,*maskt,*pix12, *pixin,*pixin0, *pixout,*pixout0,
-		xc1,xc2,yc1,yc2, xs1,ys1, x1,y1, x,y, dxm,dym, val, norm, dx,dy;
+		xs1,ys1, x1,y1, x,y, dxm,dym, val, norm, step2;
    int		i,j,k,n,t, *start,*startt, *nmask,*nmaskt,
 		ixs2,iys2, ix2,iy2, dix2,diy2, nx2,ny2, iys1a, ny1, hmw,hmh,
 		ixs,iys, ix1,iy1, w2,h2;
 
+  step2 = 1.0/step1;
   pix2 = check->pix;
   w2 = check->width;
   h2 = check->height;
-  dx = 0.5*(1.0 - step2);
-  dy = 0.5*(1.0 - step2);
 
-  xc1 = (float)(w/2);	/* Im1 center x-coord*/
-  xc2 = (float)ix;	/* Im2 center x-coord*/
-  xs1 = xc1 + dx - xc2*step2;	/* Im1 start x-coord */
-
+  xs1 = -0.5 - ((float)ix - (int)(w*step1)/2 - 0.5)*step2; /* Im1 start coord */
   if ((int)xs1 >= w)
     return;
   ixs2 = 0;			/* Int part of Im2 start x-coord */
   if (xs1<0.0)
     {
-    dix2 = (int)(1-xs1/step2);
+    dix2 = (int)(1-xs1*step1);
 /*-- Simply leave here if the images do not overlap in x */
     if (dix2 >= w2)
       return;
     ixs2 += dix2;
     xs1 += dix2*step2;
     }
-  nx2 = (int)((w-1-xs1)/step2+1);/* nb of interpolated Im2 pixels along x */
+  nx2 = (int)((w-1-xs1)*step1+1);/* nb of interpolated Im2 pixels along x */
   if (nx2>(ix2=w2-ixs2))
     nx2 = ix2;
   if (nx2<=0)
     return;
-  yc1 = (float)(h/2);	/* Im1 center y-coord */
-  yc2 = (float)iy;	/* Im2 center y-coord */
-  ys1 = yc1 + dy - yc2*step2;	/* Im1 start y-coord */
+
+  ys1 = -0.5 - ((float)iy - (int)(h*step1)/2 - 0.5)*step2; /* Im1 start coord */
   if ((int)ys1 >= h)
     return;
   iys2 = 0;			/* Int part of Im2 start y-coord */
   if (ys1<0.0)
     {
-    diy2 = (int)(1-ys1/step2);
+    diy2 = (int)(1-ys1*step1);
 /*-- Simply leave here if the images do not overlap in y */
     if (diy2 >= h2)
       return;
     iys2 += diy2;
     ys1 += diy2*step2;
     }
-  ny2 = (int)((h-1-ys1)/step2+1);/* nb of interpolated Im2 pixels along y */
+  ny2 = (int)((h-1-ys1)*step1+1);/* nb of interpolated Im2 pixels along y */
   if (ny2>(iy2=h2-iys2))
     ny2 = iy2;
   if (ny2<=0)
