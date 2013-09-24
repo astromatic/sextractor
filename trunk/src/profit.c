@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		17/07/2013
+*	Last modified:		23/09/2013
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -168,7 +168,7 @@ OUTPUT	Pointer to an allocated fit structure (containing details about the
 	fit).
 NOTES	It is a modified version of the lm_minimize() of lmfit.
 AUTHOR	E. Bertin (IAP)
-VERSION	05/07/2013
+VERSION	23/09/2013
  ***/
 void	profit_fit(profitstruct *profit,
 		picstruct *field, picstruct *wfield,
@@ -365,7 +365,7 @@ profit->niter = profit_minimize(profit, PROFIT_MAXITER);
     if (profit->subsamp>1.0)
       addcheck_resample(check, profit->lmodpix,
 		profit->objnaxisn[0],profit->objnaxisn[1],
-		profit->ix,profit->iy, 1.0/profit->subsamp,
+		profit->ix,profit->iy, profit->subsamp,
 		1.0/(profit->subsamp*profit->subsamp));
     else
       addcheck(check, profit->lmodpix,
@@ -379,7 +379,7 @@ profit->niter = profit_minimize(profit, PROFIT_MAXITER);
     if (profit->subsamp>1.0)
       addcheck_resample(check, profit->lmodpix,
 		profit->objnaxisn[0],profit->objnaxisn[1],
-		profit->ix,profit->iy, 1.0/profit->subsamp,
+		profit->ix,profit->iy, profit->subsamp,
 		-1.0/(profit->subsamp*profit->subsamp));
     else
       addcheck(check, profit->lmodpix,
@@ -400,7 +400,7 @@ profit->niter = profit_minimize(profit, PROFIT_MAXITER);
     if (profit->subsamp>1.0)
       addcheck_resample(check, profit->lmodpix,
 		profit->objnaxisn[0],profit->objnaxisn[1],
-		profit->ix,profit->iy, 1.0/profit->subsamp,
+		profit->ix,profit->iy, profit->subsamp,
 		1.0/(profit->subsamp*profit->subsamp));
     else
       addcheck(check, profit->lmodpix,
@@ -421,7 +421,7 @@ profit->niter = profit_minimize(profit, PROFIT_MAXITER);
     if (profit->subsamp>1.0)
       addcheck_resample(check, profit->lmodpix,
 		profit->objnaxisn[0],profit->objnaxisn[1],
-		profit->ix,profit->iy, 1.0/profit->subsamp,
+		profit->ix,profit->iy, profit->subsamp,
 		-1.0/(profit->subsamp*profit->subsamp));
     else
       addcheck(check, profit->lmodpix,
@@ -442,7 +442,7 @@ profit->niter = profit_minimize(profit, PROFIT_MAXITER);
     if (profit->subsamp>1.0)
       addcheck_resample(check, profit->lmodpix,
 		profit->objnaxisn[0],profit->objnaxisn[1],
-		profit->ix,profit->iy, 1.0/profit->subsamp,
+		profit->ix,profit->iy, profit->subsamp,
 		1.0/(profit->subsamp*profit->subsamp));
     else
       addcheck(check, profit->lmodpix,
@@ -463,7 +463,7 @@ profit->niter = profit_minimize(profit, PROFIT_MAXITER);
     if (profit->subsamp>1.0)
       addcheck_resample(check, profit->lmodpix,
 		profit->objnaxisn[0],profit->objnaxisn[1],
-		profit->ix,profit->iy, 1.0/profit->subsamp,
+		profit->ix,profit->iy, profit->subsamp,
 		-1.0/(profit->subsamp*profit->subsamp));
     else
       addcheck(check, profit->lmodpix,
