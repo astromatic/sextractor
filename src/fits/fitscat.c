@@ -166,6 +166,25 @@ int	close_cat(catstruct *cat)
   }
 
 
+int	close_cfitsio(catstruct *cat)
+{
+
+	if (cat->tab->infptr) {
+
+		int status = 0; fits_close_file(cat->tab->infptr, &status);
+		if (status != 0) {
+			fits_report_error(stderr, status);
+			printf("ERROR could not close FITS file with cfitsio: %s\n", cat->filename);
+		}
+		else {
+			//printf("SUCCESS CFITSIO CLOSE\n\n");
+			cat->tab->infptr == NULL;
+		}
+
+	}
+	//printf("NO CFITSIO FILE TO CLOSE\n");
+}
+
 /****** free_cat ***************************************************************
 PROTO	void free_cat(catstruct **cat, int ncat)
 PURPOSE	Free all structures allocated for one or several FITS catalog.
@@ -346,7 +365,9 @@ int	map_cat(catstruct *cat)
     tab->infptr = infptr;
     status = 0; fits_movabs_hdu(tab->infptr, tab->hdunum, &hdutype, &status);
     if (status != 0) printf("ERROR could not move to hdu %d in file %s\n", tab->hdunum, cat->filename);
-    tab->tabsize = infptr->Fptr->rowlength;
+    //tab->tabsize = infptr->Fptr->rowlength;
+
+    //printf("TABSIZE = %ld\n", tab->tabsize);
 
     if (tab->tabsize) {
 
