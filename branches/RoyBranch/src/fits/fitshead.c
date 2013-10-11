@@ -168,6 +168,10 @@ void	readbasic_head(tabstruct *tab)
 /*random groups parameters (optional)*/
   tab->pcount = 0;
   fitsread(tab->headbuf, "PCOUNT  ", &tab->pcount, H_INT, T_LONG);
+
+  // CFITSIO TODO HACK
+  if (tab->isTileCompressed) tab->pcount = 0;
+
   tab->gcount = 1;
   fitsread(tab->headbuf, "GCOUNT  ", &tab->gcount, H_INT, T_LONG);
 
