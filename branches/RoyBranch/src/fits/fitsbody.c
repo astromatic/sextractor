@@ -1009,7 +1009,7 @@ void	write_body(tabstruct *tab, PIXTYPE *ptr, size_t size)
 
 
             // TODO not yet writing CFitsIO from SExtractor. CFITSIO - only perform byte-swap if we are NOT writing a tile-compressed format using cfitsio
-            if (0 && tab->infptr == NULL) // TODO
+            // if (tab->infptr == NULL) // TODO
             if (bswapflag)
               swapbytes(cbufdata0, 4, spoonful);
             }
