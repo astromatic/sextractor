@@ -311,13 +311,13 @@ void  growth_aver(fieldstruct **fields, fieldstruct **wfields, int nfield,
       *(fgrowth++) = pix>0.0?(prefs.mag_zeropoint-2.5*log10(pix)):99.0;
       }
     }
-
+*/
   if (FLAG(obj2.flux_radius))
     {
     n = ngrowth-1;
     for (j=0; j<prefs.nflux_frac; j++)
       {
-      tv = prefs.flux_frac[j]*obj2->flux_auto;
+      tv = prefs.flux_frac[j]*obj2->flux_auto[0];
       growtht = growth-1;
       for (i=0; i<n && *(++growtht)<tv; i++);
       obj2->flux_radius[j] = step
@@ -329,7 +329,7 @@ void  growth_aver(fieldstruct **fields, fieldstruct **wfields, int nfield,
         obj2->flux_radius[j] = rlim;
       }
     }
-*/
+
 /* Specific to Half-light radius used by other parameters */
   if (FLAG(obj2.hl_radius))
     {

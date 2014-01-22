@@ -16,7 +16,7 @@
 #
 #	This file part of:	SExtractor
 #
-#	Copyright:		(C) 2005-2010 Emmanuel Bertin - IAP/CNRS/UPMC
+#	Copyright:		(C) 2005-2013 Emmanuel Bertin - IAP/CNRS/UPMC
 #
 #	License:		GNU General Public License
 #
@@ -31,7 +31,7 @@
 #	You should have received a copy of the GNU General Public License
 #	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 #
-#	Last modified:		11/10/2010
+#	Last modified:		27/04/2013
 #
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
 
@@ -517,7 +517,21 @@
      <xsl:for-each select="PARAM[position()>2]">
       <tr >
        <td><el><xsl:value-of select="@name"/></el></td>
-       <td><el><xsl:value-of select="@value"/></el></td>
+       <xsl:choose>
+         <xsl:when test="@datatype != 'boolean' ">
+           <td><el><xsl:value-of select="@value"/></el></td>
+         </xsl:when>
+         <xsl:otherwise>
+           <xsl:choose>
+             <xsl:when test="@value = 'T' ">
+               <td><el>Y</el></td>
+             </xsl:when>
+             <xsl:otherwise>
+               <td><el>N</el></td>
+             </xsl:otherwise>
+           </xsl:choose>
+         </xsl:otherwise>
+       </xsl:choose>
       </tr>
      </xsl:for-each>
     </TABLE>

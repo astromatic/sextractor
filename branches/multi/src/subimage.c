@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2014 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		07/05/2012
+*	Last modified:		03/01/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -43,6 +43,57 @@
 #include	"fitswcs.h"
 #include	"image.h"
 #include	"subimage.h"
+
+/****** subimage_new ********************************************************
+PROTO	subimagestruct *subimage_new(fieldstruct *field, fieldstruct *wfield,
+			int xmin, int xmax, int ymin, int ymax)
+PURPOSE	Create a sub-image.
+INPUT	Pointer to the image field,
+	pointer to the weight-map field,
+	lower frame limit in x (included),
+	upper frame limit in x (excluded),
+	lower frame limit in y (included),
+	upper frame limit in y (excluded).
+OUTPUT	Pointer to a new malloc'ed subimage structure.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	03/01/2014
+ ***/
+subimagestruct	*subimage_new(fieldstruct *field, fieldstruct *wfield,
+			int xmin, int xmax, int ymin, int ymax)
+
+  {
+   subimagestruct	*subimage;
+
+
+/* Initialize sub-image */
+  QMALLOC(subimage, subimagestruct, 1);
+  subimage->dscale = 1.0;
+  subimage->immin[0] = xmin;
+  subimage->immin[1] = ymin;
+  subimage->immax[0] = xmax;
+  subimage->immax[1] = ymax;
+  subimage->imsize[0] = xmax - xmin;
+  subimage->imsize[1] = ymax - ymin;
+  subimage->ipos[0] = subimage->immin[0] + subimage->imsize[0]/2;
+  subimage->ipos[1] = subimage->immin[1] + subimage->imsize[1]/2;
+
+  subimage->field = field;
+  subimage->wfield = wfield;
+
+  QMALLOC(subimage->image, PIXTYPE, subimage->imsize[0]*subimage->imsize[1]);
+  if (subimage->wfield)
+    {
+    QMALLOC(subimage->weight, PIXTYPE,
+		subimage->imsize[0]*subimage->imsize[1]);
+    }
+  else
+    subimage->weight = NULL;
+  subimage->bkg = 0.0;
+ 
+  return subimage;
+  }
+
 
 /****** subimage_getall ******************************************************
 PROTO	subimagestruct *subimage_getall(fieldstruct **fields,
@@ -208,13 +259,31 @@ void	subimage_init(subimagestruct *subimage,
   }
 
 
+/****** subimage_end ********************************************************
+PROTO	void subimage_endall(subimagestruct *subimage)
+PURPOSE	Free resources related to asub-image.
+INPUT	Pointer to a subimage structure.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	03/01/2014
+ ***/
+void	subimage_end(subimagestruct *subimage)
+
+  {
+  free(subimage->image);
+  free(subimage->weight);
+
+  return;
+  }
+
+
 /****** subimage_endall ******************************************************
 PROTO	void subimage_endall(obj2struct *obj2)
 PURPOSE	Free resources related to an array of sub-images.
 INPUT	Pointer to an obj2 "object" structure.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	29/03/2012
+VERSION	03/01/2014
  ***/
 void	subimage_endall(obj2struct *obj2)
 
@@ -224,10 +293,7 @@ void	subimage_endall(obj2struct *obj2)
 
   subimage = obj2->subimage;
   for (s=obj2->nsubimage; s--; subimage++)
-    {
-    free(subimage->image);
-    free(subimage->weight);
-    }
+    subimage_end(subimage);
 
   QFREE(obj2->subimage);
   obj2->nsubimage = 0;

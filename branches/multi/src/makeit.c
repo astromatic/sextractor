@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2013 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		09/05/2012
+*	Last modified:		18/09/2013
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -64,6 +64,8 @@ time_t			thetimet, thetimet2;
 extern char		profname[][32];
 double			dtime;
 
+int			_count_imext(char *filename);
+
 /****** makeit ***************************************************************
 PROTO	void main(void)
 PURPOSE	Manage the whole processing.
@@ -71,7 +73,7 @@ INPUT	-.
 OUTPUT	-.
 NOTES	Global preferences are used.
 AUTHOR	E. Bertin (IAP)
-VERSION	09/05/2012
+VERSION	30/08/2013
  ***/
 void	makeit(void)
   {
@@ -80,21 +82,20 @@ void	makeit(void)
    fieldstruct		**fields,**wfields,**ffields,
 			**efields,**wefields,**fefields,
 			*field,*wfield,*ffield, *dfield,*dwfield;
-   catstruct		*imacat;
-   tabstruct		*imatab;
    patternstruct	*pattern;
    psfstruct		**psfs;
    somstruct		*som;
    static time_t        thetime1, thetime2;
    struct tm		*tm;
    PIXTYPE		interpthresh;
-   char			str[82];
+   char			str[82],
+			*imatypestr;
    int			ext_fimage[MAXFLAG],ext_image[MAXIMAGE],
 			ext_wimage[MAXIMAGE], nparam2[2],
-			*file_index,*wfile_index,*ffile_index,*file_next,
+			*file_index,*ffile_index,*file_next,
 			*ffile_next,
-			e,e2,i,j,t, nok, ntab, previndex, ne,ext,
-			next,next0,nfext, forcextflag, npat, nmodels,
+			e,e2,i,j,t, nok, ntab, deti,previ, we, ne,ext,
+			next,ndext,nwext,nfext, forcextflag, npat, nmodels,
 			nfield,nffield, nfieldmax,nffieldmax, nimage,nfimage;
 
 /* Install error logging */
@@ -129,79 +130,69 @@ void	makeit(void)
     getfilter(prefs.filter_name);	/* get the detection filter */
     }
 
-
 /* Read extension numbers and remove them from the filenames if present */
+ deti = 0;
  for (i=0; i<prefs.nimage; i++)
-   ext_image[i] = selectext(prefs.image_name[i]);
- for (i=0; i<prefs.nwimage; i++)
-   ext_wimage[i] = selectext(prefs.wimage_name[i]);
- for (i=0; i<prefs.nfimage; i++)
-   ext_fimage[i] = selectext(prefs.fimage_name[i]);
+   {
+   if (prefs.image_flags[i]&DETECT_FIELD)
+     deti = i;
+   }
 
 /* Use the first image to probe the number of extensions to analyse */
-  forcextflag = ext_image[0] == RETURN_ERROR? 0 : 1;
-  next = 1;
-
-  if (!(imacat = read_cat(prefs.image_name[0])))
-    error(EXIT_FAILURE, "*Error*: cannot open ", prefs.image_name[0]);
-  close_cat(imacat);
-  imatab = imacat->tab;
-
-/* Examine all extensions of all input images */
+ 
+/* Examine all extensions of all measurement images ... */
+/* ... and loads only those that overlap a detection image */
   nfieldmax = nimage = prefs.nimage;
   QMALLOC(fields, fieldstruct *, nfieldmax);
   QMALLOC(wfields, fieldstruct *, nfieldmax);
   QMALLOC(file_index, int, nimage);
-  QMALLOC(wfile_index, int, nimage);
   QMALLOC(file_next, int, nimage);
   ext = 0;
-  previndex = -1;
+  previ = -1;
   if ((prefs.multigrids_flag))
     QPRINTF(OUTPUT, "Multi-grid mode activated\n");
 
   for (i=0; i<nimage; i++, ext+=next)
     {
-    if (!(imacat = read_cat(prefs.image_name[i])))
-      error(EXIT_FAILURE, "*Error*: cannot open ", prefs.image_name[i]);
-    if (!forcextflag)
-      {
-/*---- Compute the number of valid input extensions */
-      next = 0;
-      for (ntab = 0 ; ntab<imacat->ntab; ntab++, imatab = imatab->nexttab)
-        {
-/*------ Check for the next valid image extension */
-        if ((imatab->naxis < 2)
-		|| !strncmp(imatab->xtension, "BINTABLE", 8)
-		|| !strncmp(imatab->xtension, "ASCTABLE", 8))
-          continue;
-        next++;
-        }
-      }
+    ext_image[i] = selectext(prefs.image_name[i]);
+
+    next = ext_image[i]==RETURN_ERROR? _count_imext(prefs.image_name[i]) : 1;
+
     if (ext+next>nfieldmax)
       {
       nfieldmax = (ext+next)*2;
       QREALLOC(fields, fieldstruct *, nfieldmax);
       QREALLOC(wfields, fieldstruct *, nfieldmax);
       }
+
+    if (!prefs.multigrid_flag[i] && previ>=0 && next != file_next[previ])
+      error(EXIT_FAILURE,
+	"*Error*: Inconsistent number of image extensions in ",
+	prefs.image_name[i]);
+
     for (e=0; e<next; e++)
       {
       ne = ext+e;
+      imatypestr = (prefs.image_flags[i]&DETECT_FIELD) ?
+		((prefs.image_flags[i]&MEASURE_FIELD) ?
+		"Detection+Measurement:" : "Detection:") : "Measurement:";
       if (next>1)
-        sprintf(str, "Examining %s %.40s[%d/%d]...",
-		i? "measurement image":"detection image",
+        sprintf(str, "Examining %s %.40s[%d/%d]...", imatypestr,
 		prefs.image_name[i], e+1,next);
+      else if (ext_image[i] != RETURN_ERROR)
+        sprintf(str, "Examining %s %.40s[%d]...", imatypestr,
+		prefs.image_name[i], e);
       else
-        sprintf(str, "Examining %s %.40s...",
-		i? "measurement image":"detection image",
+        sprintf(str, "Examining %s %.40s...", imatypestr,
 		prefs.image_name[i]);
       NFPRINTF(OUTPUT, str);
       field = fields[ne] = field_init(prefs.image_name[i], i,
-		forcextflag? ext_image[i]:e,
-		i? MEASURE_FIELD|(prefs.multigrid_flag[i]*MULTIGRID_FIELD)
-		: DETECT_FIELD|MEASURE_FIELD);
-        
-      if (previndex>=0 && (field->width != fields[previndex+e]->width
-		|| field->height != fields[previndex+e]->height))
+		ext_image[i]==RETURN_ERROR? e : ext_image[i],
+		prefs.image_flags[i]);
+/*---- Check that images in non-multigrid mode have consistent dimensions */
+      if (!prefs.multigrid_flag[i] && previ>=0
+		&& (field->width != fields[previ+e]->width
+		|| field->height != fields[previ+e]->height))
         error(EXIT_FAILURE, "*Error*: unexpected image size in ",
 		prefs.image_name[i]);
 /*---- Prepare image interpolation */
@@ -209,18 +200,36 @@ void	makeit(void)
         {
         if (prefs.interp_type[i] == INTERP_ALL)
           init_interpolate(fields[ne], -1, -1);
-        if (next>1)
+        ext_wimage[i] = selectext(prefs.wimage_name[i]);
+	if (ext_wimage[i]==RETURN_ERROR)
+          {
+          we = 0;
+          nwext = _count_imext(prefs.wimage_name[i]);
+          }
+        else
+          {
+          we = ext_wimage[i];
+          nwext = 1;
+          }
+        if (nwext != next)
+          error(EXIT_FAILURE,
+		"*Error*: Inconsistent number of image extensions in ",
+		prefs.wimage_name[i]);
+        if (nwext>1)
           sprintf(str, "Examining %s %.40s[%d/%d]...",
 		"weight image",
-		prefs.wimage_name[i], e+1,next);
+		prefs.wimage_name[i], e+1,nwext);
+        else if (ext_wimage[i] != RETURN_ERROR)
+          sprintf(str, "Examining %s %.40s[%d]...", imatypestr,
+		prefs.wimage_name[i], we);
         else
           sprintf(str, "Examining %s %.40s...",
 		"weight image",
 		prefs.wimage_name[i]);
         NFPRINTF(OUTPUT, str);
-        wfield = wfields[ne] = weight_init(prefs.wimage_name[i], field, i,
-		forcextflag? ext_wimage[i]:e,
-		prefs.weight_type[i]);
+
+        wfield = wfields[ne] = weight_init(prefs.wimage_name[i], field,
+		i, we, prefs.weight_type[i]);
         interpthresh = prefs.weight_thresh[i];
 /*------ Convert the interpolation threshold to variance units */
         weight_to_var(wfield, &interpthresh, 1);
@@ -233,11 +242,13 @@ void	makeit(void)
         wfields[ne] = NULL;
       }
 
-    previndex = wfile_index[i] = file_index[i] = ext;
+    file_index[i] = ext;
     file_next[i] = next;
+    if (!prefs.multigrid_flag[i])
+      previ = i;
     }
 
-  thecat.next = next0 = file_next[0];
+  ndext = thecat.next = file_next[deti];
   QMALLOC(efields, fieldstruct *, nfieldmax);
   QMALLOC(wefields, fieldstruct *, nfieldmax);
 
@@ -251,7 +262,7 @@ void	makeit(void)
   if ((prefs.imaflags_flag))
     {
     nffieldmax = nfimage = prefs.nfimage;
-    nfext = next0;
+    nfext = ndext;
     if ((nfimage))
       {
       QMALLOC(fefields, fieldstruct *, nffieldmax)
@@ -262,25 +273,12 @@ void	makeit(void)
     else
       fefields = ffields = NULL;
     ext = 0;
-    previndex = -1;
+    previ = -1;
     for (i=0; i<nfimage; i++, ext+=nfext)
       {
-      if (!(imacat = read_cat(prefs.fimage_name[i])))
-        error(EXIT_FAILURE, "*Error*: cannot open ", prefs.fimage_name[i]);
+      ext_fimage[i] = selectext(prefs.fimage_name[i]);
       if (!forcextflag)
-        {
-/*------ Compute the number of valid input extensions */
-        nfext = 0;
-        for (ntab = 0 ; ntab<imacat->ntab; ntab++, imatab = imatab->nexttab)
-          {
-/*-------- Check for the next valid image extension */
-          if ((imatab->naxis < 2)
-		|| !strncmp(imatab->xtension, "BINTABLE", 8)
-		|| !strncmp(imatab->xtension, "ASCTABLE", 8))
-            continue;
-          nfext++;
-          }
-        }
+        nfext = _count_imext(prefs.fimage_name[i]);
       if (ext+nfext>nffieldmax)
         {
         nffieldmax *= 2;
@@ -300,8 +298,8 @@ void	makeit(void)
         NFPRINTF(OUTPUT, str);
         ffield = ffields[ne] = field_init(prefs.fimage_name[i], i,
 		forcextflag? ext_fimage[i]:e, FLAG_FIELD);
-        if ((previndex>=0) && (ffield->width != ffields[previndex+e]->width
-		|| ffield->height != ffields[previndex+e]->height))
+        if ((previ>=0) && (ffield->width != ffields[previ+e]->width
+		|| ffield->height != ffields[previ+e]->height))
           {
           sprintf(str, "*Error*: %s does not match detection image size\n",
 			prefs.fimage_name[i]);
@@ -309,7 +307,7 @@ void	makeit(void)
 		"         You might want to set MULTIGRID to Y");
           }
         }
-      previndex = ffile_index[i] = ext;
+      previ = ffile_index[i] = ext;
       ffile_next[i] = nfext;
       }
 
@@ -329,7 +327,7 @@ void	makeit(void)
            error(EXIT_FAILURE,"*Error*: 2 CHECK_IMAGEs cannot have the same ",
 			" CHECK_IMAGE_TYPE");
         prefs.check[c] = check_init(prefs.check_name[i], prefs.check_type[i],
-			next0, nimage);
+			ndext, nimage);
         }
     }
 
@@ -466,7 +464,7 @@ void	makeit(void)
 /* Initialize XML data */
   NFPRINTF(OUTPUT, "Initializing XML output...");
   if (prefs.xml_flag || prefs.cat_type==ASCII_VO)
-    xml_init(next0);
+    xml_init(ndext);
 
 /* Initial time measurement*/
   time(&thetime1);
@@ -477,7 +475,7 @@ void	makeit(void)
       {
       next = file_next[i];
       field = fields[file_index[i]];
-      wfield = wfields[wfile_index[i]];
+      wfield = wfields[file_index[i]];
       for (e=0; e<next; e++, field++, wfield++)
         {
         if (next>1)
@@ -507,7 +505,7 @@ void	makeit(void)
       }
 
 /* Process one extension at a time */
-  for (e=0; e<next0; e++)
+  for (e=0; e<ndext; e++)
     {
     dfield = fields[e];
     dwfield = wfields[e];
@@ -517,14 +515,14 @@ void	makeit(void)
       nfield = nimage;
       for (i=0; i<nimage; i++)
         {
-        field = efields[i] = fields[i*next0+e];
-        wfield = wefields[i] = wfields[i*next0+e];
-        if (next0>1)
-          sprintf(str, "[%d/%d]", e+1, next0);
+        field = efields[i] = fields[i*ndext+e];
+        wfield = wefields[i] = wfields[i*ndext+e];
+        if (ndext>1)
+          sprintf(str, "[%d/%d]", e+1, ndext);
         NFPRINTF(OUTPUT, "");
         QPRINTF(OUTPUT, " \n");
         QPRINTF(OUTPUT, "----- Image %.60s%s:\n",
-		field->rfilename, next0>1? str:"");
+		field->rfilename, ndext>1? str:"");
         field_printinfo(field, wfield);
         back_map(field, wfield, prefs.wscale_flag[i]);
         if ((i))
@@ -580,23 +578,23 @@ void	makeit(void)
         else
           {
 /*-------- Basic (unique) extension selection */
-          efields[j] = fields[i*next0+e];
-          wefields[j++] = wfields[i*next0+e];
+          efields[j] = fields[i*ndext+e];
+          wefields[j++] = wfields[i*ndext+e];
           }
         }
       nfield = j;
-      if (next0>1)
-        sprintf(str, "[%d/%d]", e+1, next0);
+      if (ndext>1)
+        sprintf(str, "[%d/%d]", e+1, ndext);
       NFPRINTF(OUTPUT, "");
       QPRINTF(OUTPUT, " \n");
       QPRINTF(OUTPUT, "----- Image %.60s%s:\n",
-	fields[e]->rfilename, next0>1? str:"");
+	fields[e]->rfilename, ndext>1? str:"");
       }
 
 /*-- Flag maps */
     if ((prefs.imaflags_flag))
       for (i=0; i<nfimage; i++)
-        fefields[i]= ffields[i*next0+e];
+        fefields[i]= ffields[i*ndext+e];
 
 /*-- Prepare learn and/or associations */
     if (prefs.assoc_flag)
@@ -664,7 +662,6 @@ void	makeit(void)
   free(fields);
   free(wfields);
   free(file_index);
-  free(wfile_index);
   free(file_next);
   if ((nfimage))
     {
@@ -675,7 +672,6 @@ void	makeit(void)
   if (thecat.currext==0)
     error(EXIT_FAILURE, "Not enough valid FITS image extensions in ",
 	prefs.image_name[0]);
-  free_cat(&imacat, 1);
 
   NFPRINTF(OUTPUT, "Closing files");
 
@@ -745,6 +741,45 @@ void	makeit(void)
 
   return;
   }
+
+
+
+/****** _count_imext *********************************************************
+PROTO	int _count_imext(char *filename)
+PURPOSE	Count the number of valid image extensions in a FITS file.
+INPUT	FITS filename.
+OUTPUT	Number of valid image extensions (or 1 for basic FITS).
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	18/09/2013
+ ***/
+int	_count_imext(char *filename)
+
+  {
+   catstruct	*cat;
+   tabstruct	*tab;
+   int		ntab, nim;
+
+  if (!(cat = read_cat(filename)))
+    error(EXIT_FAILURE, "*Error*: cannot open ", filename);
+
+  nim = 0;
+  tab = cat->tab;
+  for (ntab=cat->ntab; ntab--; tab=tab->nexttab)
+    {
+    if ((tab->naxis < 2)
+	|| !strncmp(tab->xtension, "BINTABLE", 8)
+	|| !strncmp(tab->xtension, "ASCTABLE", 8))
+      continue;
+    nim++;
+    }
+  free_cat(&cat, 1);
+  if (nim==0)
+    error(EXIT_FAILURE, "No valid FITS image in ", filename);
+
+  return nim;
+  }
+
 
 
 /****** write_error ********************************************************

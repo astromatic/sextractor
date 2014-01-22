@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 2006-2013 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 2006-2014 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		24/04/2013
+*	Last modified:		03/01/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -53,8 +53,14 @@
 #define		MODEL_BAR		0x0040
 #define		MODEL_INRING		0x0080
 #define		MODEL_OUTRING		0x0100
-#define		MODEL_TABULATED		0x0200
-#define		MODEL_NMAX		11
+#define		MODEL_MOFFAT		0x0200
+#define		MODEL_TABULATED		0x0400
+#define		MODEL_NMAX		12
+
+/*--------------------------- convolution flag ------------------------------*/
+
+#define		PROFIT_NOCONV		0
+#define		PROFIT_CONV		1
 
 /*--------------------------- fitting flags ---------------------------------*/
 
@@ -89,7 +95,7 @@
 #define PROFIT_MAXSMODSIZE 64	/* Number of model planes */
 #define	PROFIT_MAXOBJSIZE  512	/* Maximum size allowed for the object raster */
 #define	PROFIT_BARXFADE	0.1	/* Fract. of bar length crossfaded with arms */
-#define	PROFIT_MAXEXTRA	2	/* Max. nb of extra free params of profiles */
+#define	PROFIT_MAXEXTRA	3	/* Max. nb of extra free params of profiles */
 #define INTERP_MAXKERNELWIDTH	8	/* Max. range of kernel (pixels) */
 #define	PROFIT_MAXNBAND	5
 /* NOTES:
@@ -119,6 +125,9 @@ typedef enum	{PARAM_BACK,
 		PARAM_BAR_FLUX, PARAM_BAR_ASPECT, PARAM_BAR_POSANG,
 		PARAM_INRING_FLUX, PARAM_INRING_WIDTH, PARAM_INRING_ASPECT,
 		PARAM_OUTRING_FLUX, PARAM_OUTRING_START, PARAM_OUTRING_WIDTH,
+		PARAM_MOFFAT_FLUX, PARAM_MOFFAT_ALPHA, PARAM_MOFFAT_ASPECT,
+		PARAM_MOFFAT_POSANG, PARAM_MOFFAT_BETA,
+		PARAM_MOFFAT_MINKP,PARAM_MOFFAT_OFFSET,
 		PARAM_NPARAM}	paramenum;
 
 typedef enum 	{PARFIT_FIXED, PARFIT_UNBOUND, PARFIT_LINBOUND,
@@ -184,6 +193,7 @@ typedef struct profit
   float		paraminit[PARAM_NPARAM];/* Parameter initial guesses */
   float		parammin[PARAM_NPARAM];	/* Parameter lower limits */
   float		parammax[PARAM_NPARAM];	/* Parameter upper limits */
+  int		paramsize[PARAM_NPARAM]; /* Parameter vector size */
   int		nlimmin;	/* # of parameters that hit the min limit */
   int		nlimmax;	/* # of parameters that hit the max limit */
   float		paramerr[PARAM_NPARAM];	/* Std deviations of parameters */
@@ -200,6 +210,7 @@ typedef struct profit
 /* Buffers */
   double	dparam[PARAM_NPARAM];
   int		flag;		/* Model fitting flag */
+  int		conv_flag;	/* Convolution flag */
   }	profitstruct;
 
 typedef struct subprofit
@@ -242,7 +253,8 @@ typedef struct subprofit
 /*----------------------------- Global variables ----------------------------*/
 /*-------------------------------- functions --------------------------------*/
 
-profitstruct	*profit_init(obj2struct *obj2, unsigned int modeltype);
+profitstruct	*profit_init(obj2struct *obj2, unsigned int modeltype,
+			int conv_flag);
 
 profstruct	*prof_init(profitstruct *profit, unsigned int modeltype);
 
@@ -296,8 +308,9 @@ void		prof_end(profstruct *prof),
 		profit_resetparams(profitstruct *profit),
 		profit_spread(profitstruct *profit,  fieldstruct *field,
 			fieldstruct *wfield, obj2struct *obj2),
-		subprofit_submodpix(subprofitstruct *subprofitobj,
-			subprofitstruct *subprofitmod, float fac),
+		subprofit_submodpix(subprofitstruct *subprofitmod,
+			PIXTYPE *pixout, int ix, int iy, int width, int height,
+			float oversamp, float fac),
 		subprofit_surface(profitstruct *profit,
 			subprofitstruct *subprofit, obj2struct *obj2),
 		subprofit_end(subprofitstruct *subprofit);

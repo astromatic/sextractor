@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2013 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		01/08/2012
+*	Last modified:		18/09/2013
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -55,6 +55,7 @@
 #include	"define.h"
 #include	"globals.h"
 #include	"back.h"
+#include	"field.h"
 #include	"prefs.h"
 #include	"preflist.h"
 #include	"fits/fitscat.h"
@@ -599,15 +600,13 @@ INPUT	-.
 OUTPUT	-.
 NOTES	Global preferences are used.
 AUTHOR	E. Bertin (IAP)
-VERSION	08/05/2012
+VERSION	18/09/2013
  ***/
 void	prefs_use(void)
 
   {
    int			i,j, last, margin;
    char			*pstr;
-
-/*--------------------------------- Images ---------------------------------*/
 
 /*-------------------------------- Extracting ------------------------------*/
   if (prefs.nthresh_type<2)
@@ -639,6 +638,12 @@ void	prefs_use(void)
     prefs.nmultigrid_flag = prefs.nimage;
     }
 
+/*------------------------------ Image flags -------------------------------*/
+/* TODO: make detection/measurement image selection more flexible */
+  for (i=0; i<prefs.nimage; i++)
+    prefs.image_flags[i] = MEASURE_FIELD
+	| prefs.multigrid_flag[i]*MULTIGRID_FIELD;
+  prefs.image_flags[0] |= DETECT_FIELD;
 
 /*-------------------------------- Deblending ------------------------------*/
   prefs.deb_maxarea = (prefs.ext_minarea<MAXDEBAREA ?
