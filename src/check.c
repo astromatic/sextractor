@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		24/04/2013
+*	Last modified:		23/09/2013
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -96,6 +96,12 @@ void	check_add(checkstruct *check, float *thumb, int w, int h,
     pix = (float *)check->pix+y*check->width+xmin;
     for (x=w2; x--;)
       *(pix++) += amplitude**(thumb++);
+//{
+//*pix += (amplitude**thumb * amplitude**thumb)*0.05;
+//*pix *= 1.0/(0.05*fabs(amplitude**thumb)+1.0);
+//pix++;
+//thumb++;
+//}
     }
 
   return;
@@ -113,34 +119,30 @@ INPUT	Pointer to the check-image,
 	thumbnail height,
 	thumbnail center x coordinate,
 	thumbnail center y coordinate,
-	zoom factor,
+	inverse zoom factor,
 	flux scaling factor.
 OUTPUT	-.
 NOTES	Outside boundaries are taken into account.
 AUTHOR	E. Bertin (IAP)
-VERSION	24/04/2013
+VERSION	23/09/2013
  ***/
 void	check_addresample(checkstruct *check, float *thumb, int w, int h,
-			int ix, int iy, float step2, float amplitude)
+			int ix, int iy, float step1, float amplitude)
   {
    PIXTYPE	interpm[CHECKINTERPW*CHECKINTERPW],
 		*pix2, *mask,*maskt,*pix12, *pixin,*pixin0, *pixout,*pixout0,
 		val,norm;
-   float	xc1,xc2,yc1,yc2, xs1,ys1, x1,y1, x,y, dxm,dym, dx,dy;
+   float	xs1,ys1, x1,y1, x,y, dxm,dym, step2;
    int		i,j,k,n,t, *start,*startt, *nmask,*nmaskt,
 		ixs2,iys2, ix2,iy2, dix2,diy2, nx2,ny2, iys1a, ny1, hmw,hmh,
 		ixs,iys, ix1,iy1, w2,h2;
 
+  step2 = 1.0/step1;
   pix2 = check->pix;
   w2 = check->width;
   h2 = check->height;
-  dx = 0.5*(1.0 - step2);
-  dy = 0.5*(1.0 - step2);
 
-  xc1 = (float)(w/2);	/* Im1 center x-coord*/
-  xc2 = (float)ix;	/* Im2 center x-coord*/
-  xs1 = xc1 + dx - xc2*step2;	/* Im1 start x-coord */
-
+  xs1 = -0.5 - ((float)ix - (int)(w*step1)/2 - 0.5)*step2; /* Im1 start coord */
   if ((int)xs1 >= w)
     return;
   ixs2 = 0;			/* Int part of Im2 start x-coord */
@@ -158,9 +160,8 @@ void	check_addresample(checkstruct *check, float *thumb, int w, int h,
     nx2 = ix2;
   if (nx2<=0)
     return;
-  yc1 = (float)(h/2);	/* Im1 center y-coord */
-  yc2 = (float)iy;	/* Im2 center y-coord */
-  ys1 = yc1 + dy - yc2*step2;	/* Im1 start y-coord */
+
+  ys1 = -0.5 - ((float)iy - (int)(h*step1)/2 - 0.5)*step2; /* Im1 start coord */
   if ((int)ys1 >= h)
     return;
   iys2 = 0;			/* Int part of Im2 start y-coord */

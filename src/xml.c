@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 2006-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 2006-2013 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		24/02/2012
+*	Last modified:		12/06/2013
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -635,7 +635,7 @@ INPUT	Output stream (file) pointer,
 OUTPUT	RETURN_OK if the keyword exists, RETURN_ERROR otherwise.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	24/02/2012
+VERSION	12/06/2013
  ***/
 int	xml_write_configparam(FILE *file, char *name, char *unit,
 		 char *ucd, char *format)
@@ -748,7 +748,7 @@ int	xml_write_configparam(FILE *file, char *name, char *unit,
         for (j=1; j<n; j++)
           {
           strcpy(value, ((char **)key[i].ptr)[j]);
-          fprintf(file, ",%s", value);
+          fprintf(file, ",%s", *value? value: " ");
           }
         fprintf(file, "\"/>\n");
         }

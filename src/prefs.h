@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		26/03/2012
+*	Last modified:		18/09/2013
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -39,6 +39,7 @@
 
 /*----------------------------- Internal constants --------------------------*/
 
+#define	MAXDIMAGE	1		/* max. nb of detection images */
 #define	MAXCHARL	16384		/* max. nb of chars in a string list */
 #define	MAXLIST		2048		/* max. nb of list members */
 #define	MAXLISTSIZE	2000000		/* max size of list */
@@ -57,6 +58,8 @@ typedef struct
   char		prefs_name[MAXCHAR];			/* prefs filename*/
   char		*image_name[MAXIMAGE];			/* image filenames */
   int		nimage;					/* nb of images */
+  int		image_flags[MAXIMAGE];			/* image flags */
+  int		ndimage;				/* nb of detec. images*/
   char		cat_name[MAXCHAR];			/* catalog filename*/
   char		head_suffix[MAXCHAR];			/* ext. header suffix */
 /*----- catalog output */

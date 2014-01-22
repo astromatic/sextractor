@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2014 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		19/03/2012
+*	Last modified:		01/01/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -666,10 +666,10 @@ keystruct	obj2key[] = {
 	"phys.angSize;instr.det.psf", "deg", 1, &prefs.nimage},
   {"ELONGATION", "A_IMAGE/B_IMAGE",
 	&flagobj2.elong, H_FLOAT, T_FLOAT, "%8.3f", "",
-	"src.ellipticity;arith.ratio;instr.det", "", 1, &prefs.nimage},
+	"src.ellipticity;arith.ratio;instr.det", ""},
   {"ELLIPTICITY", "1 - B_IMAGE/A_IMAGE",
 	&flagobj2.ellip, H_FLOAT, T_FLOAT, "%8.3f", "",
-	"src.ellipticity;instr.det	", "", 1, &prefs.nimage},
+	"src.ellipticity;instr.det	", ""},
   {"POLAR_IMAGE", "(A_IMAGE^2 - B_IMAGE^2)/(A_IMAGE^2 + B_IMAGE^2)",
 	&flagobj2.polar, H_FLOAT, T_FLOAT, "%7.5f", "",
 	"src.ellipticity;instr.det", "", 1, &prefs.nimage},

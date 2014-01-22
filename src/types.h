@@ -575,6 +575,13 @@ typedef struct
   int		nkeys;			/* number of keys per obj2 */
   }	obj2liststruct;
 
+typedef struct
+  {
+  obj2struct	*obj2;			/* pointer to the first object */
+  struct subimage	*subimage;	/* Detection sub-image */
+  int		done_flag;		/* Set if group ready to save */  
+  }	obj2groupstruct;
+
 
 /*-------------------------------- catalog  ---------------------------------*/
 

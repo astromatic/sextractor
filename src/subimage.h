@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2014 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		03/04/2012
+*	Last modified:		03/01/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -54,9 +54,12 @@ typedef struct subimage
 /*------------------------------- functions ---------------------------------*/
 
 subimagestruct	*subimage_getall(fieldstruct **fields, fieldstruct **wfields,
-				int nfield, obj2struct *obj2);
+				int nfield, obj2struct *obj2),
+		*subimage_new(fieldstruct *field, fieldstruct *wfield,
+			int xmin, int xmax, int ymin, int ymax);
 
-void		subimage_endall(obj2struct *obj2),
+void		subimage_end(subimagestruct *subimage),
+		subimage_endall(obj2struct *obj2),
 		subimage_init(subimagestruct *subimage,
 				fieldstruct *field, fieldstruct *wfield,
 				obj2struct *obj2, subimagestruct *dsubimage);

@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 2011-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 2011-2014 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		02/08/2012
+*	Last modified:		03/01/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -31,7 +31,7 @@
 
 /*----------------------------- Internal constants --------------------------*/
 
-#define	ANALYSE_NMULTITER	5	/* number of multi-model iterations */
+#define	ANALYSE_NMULTITER	10	/* number of multi-model iterations */
 
 /*--------------------------------- typedefs --------------------------------*/
 /*------------------------------ Prototypes ---------------------------------*/
@@ -43,20 +43,20 @@ int		analyse_full(fieldstruct **fields, fieldstruct **wfields,
 		analyse_overlapness(objliststruct *objlist, int iobj);
 
 void		analyse_end(fieldstruct **fields, fieldstruct **wfields,
-			int nfield, obj2struct *fobj2),
+			int nfield, obj2groupstruct *group2),
 		analyse_final(fieldstruct **fields, fieldstruct **wfields,
 			int nfield, objliststruct *objlist, int iobj),
 		analyse_group(fieldstruct **fields, fieldstruct **wfields,
-			int nfield, obj2struct *fobj2),
+			int nfield, obj2groupstruct *group2),
 		analyse_iso(fieldstruct **fields, fieldstruct **wfields,
 			int nfield, objliststruct *objlist, int n);
 
 #ifdef	USE_THREADS
-void		*pthread_analyse_obj2(void *arg),
-		pthread_add_obj2(obj2struct *obj2),
-		pthread_end_obj2(void),
-		pthread_init_obj2(fieldstruct **fields, fieldstruct **wfields,
-			int nfield, int nthreads);
+void		*pthread_analyse_group2(void *arg),
+		pthread_add_obj2group(obj2groupstruct group2),
+		pthread_end_obj2group(void),
+		pthread_init_obj2group(fieldstruct **fields,
+			fieldstruct **wfields, int nfield, int nthreads);
 
 pthread_mutex_t	pthread_countobj2mutex;
 #endif
