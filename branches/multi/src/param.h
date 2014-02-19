@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		01/01/2014
+*	Last modified:		17/02/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -600,7 +600,7 @@ keystruct	obj2key[] = {
 	&flagobj2.winpos_niter, H_INT, T_SHORT, "%3d", "",
 	"meta.number", "", 1, &prefs.nimage},
 
-  {"MU_THRESHOLD", "Detection threshold above background",
+  {"MU_THRESHOLD", "Analysis threshold above background",
 	&flagobj2.threshmu, H_FLOAT, T_FLOAT, "%8.4f", "mag * arcsec**(-2)",
 	"instr.sensitivity;phot.mag.sb", "mag.arcsec-2"},
   {"MU_MAX", "Peak surface brightness above background",

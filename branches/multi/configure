@@ -12979,8 +12979,6 @@ else
 
 fi
 
-# Deactivate multithreading for now
-use_pthreads="no"
 
 # Provide special option for profiling
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for profiler mode" >&5
