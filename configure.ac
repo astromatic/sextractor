@@ -187,8 +187,6 @@ AC_ARG_ENABLE(threads,
     fi,
     use_pthreads=yes
     )
-# Deactivate multithreading for now
-use_pthreads="no"
 
 # Provide special option for profiling
 AC_MSG_CHECKING([for profiler mode])
