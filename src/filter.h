@@ -51,8 +51,12 @@ void		convolve(fieldstruct *, PIXTYPE *, int y),
 				float *vig2, int width, int height),
 		filter(fieldstruct *, PIXTYPE *, int y),
 		neurfilter(fieldstruct *, PIXTYPE *, int y),
-		endfilter(void),
-		getfilter(char *filename);
+		endfilter(void);
 
-int		getconv(char *filename),
-		getneurfilter(char *filename);
+
+extern int  getneurfilter(const char *filename);
+extern void getfilter(const char *filename);
+extern int	getconv(const char *filename);
+extern int  getASCIIconv(const char *filename);
+extern int  getPSFExconv(const char *filename);
+extern void getImageStats(const float *pix, const int width, const int height, float stats[]);

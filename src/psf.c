@@ -305,6 +305,38 @@ void	psf_readcontext(psfstruct *psf, fieldstruct *field)
   return;
   }
 
+void psf_print(const psfstruct *psf, const int printdata, const int printloc){
+	int index, ndim;
+	QPRINTF(OUTPUT, "PSF name: %s\n", psf->name);
+	QPRINTF(OUTPUT, "maskdim: %i\n", psf->maskdim);
+	for (index=0; index < psf->maskdim; index++)
+		QPRINTF(OUTPUT, "masksize[%i]: %i\n", index, psf->masksize[index]);
+	ndim = psf->poly->ndim;
+	QPRINTF(OUTPUT, "number of dimensions: %i\n", ndim);
+	for (index=0; index < ndim; index++){
+		if (!psf->context[index]){
+			QPRINTF(OUTPUT, "context[%i] not (yet) defined!\n", index);
+		}
+		else{
+			QPRINTF(OUTPUT, "context[i].name:   %s\n", psf->contextname[index]);
+			QPRINTF(OUTPUT, "context[i].offset: %.3g\n", psf->contextoffset[index]);
+			QPRINTF(OUTPUT, "context[i].scale:  %.3g\n", psf->contextscale[index]);
+		}
+	}
+	if (printdata) {
+		QPRINTF(OUTPUT, "masknpix: %i\n", psf->masknpix);
+		for (index=0; index < psf->masknpix; index++)
+			QPRINTF(OUTPUT, " %.4g", psf->maskcomp[index]);
+	}
+	QPRINTF(OUTPUT, "\nFWHM: %.3g\n", psf->fwhm);
+	QPRINTF(OUTPUT, "pixstep: %.3g\n", psf->pixstep);
+	QPRINTF(OUTPUT, "build_flag: %i\n", psf->build_flag);
+	if (printloc && psf->build_flag){
+		QPRINTF(OUTPUT, "local psf:\n");
+		for (index=0; index<psf->masksize[0]*psf->masksize[1]; index++)
+			QPRINTF(OUTPUT, " %.4g", psf->maskloc[index]);
+	}
+}
 
 /******************************** psf_fit ***********************************/
 /*                   standard PSF fit for one component                     */
@@ -336,7 +368,7 @@ void	psf_fit(psfstruct *psf, fieldstruct *field, fieldstruct *wfield,
 			width, height, pwidth,pheight, x,y,
 			xmax,ymax, wbad, gainflag, convflag, npsfflag,
 			ival,kill=0;
-  
+    
   dx = dy = 0.0;
   niter = 0;
   npsfmax = prefs.psf_npsfmax;
@@ -1093,6 +1125,49 @@ void	psf_build(psfstruct *psf, obj2struct *obj2)
 
   return;
   }
+
+/******************************* psf_buildpos **********************************/
+/*
+Build the local PSF (function of "context").
+ */
+void	psf_buildpos(psfstruct *psf, double *pos, const int inndim)
+{
+	double	*basis, fac;
+	float	*ppc, *pl;
+	int		n, p, npix;
+
+	// looks like this can only
+	// be un-set from the 'outside'
+	if (psf->build_flag)
+		return;
+
+	// assure the dimensions match
+	if (inndim != psf->poly->ndim)
+		error(EXIT_FAILURE, "*Error*: the dimensions differ ", "for the PSF!");
+
+	// compute the number of pixels and reset the Local PSF mask
+	npix = psf->masksize[0]*psf->masksize[1];
+	memset(psf->maskloc, 0, npix*sizeof(float));
+
+	// evaluate the polynomial
+	poly_func(psf->poly, pos);
+	basis = psf->poly->basis;
+
+	// Sum each component
+	ppc = psf->maskcomp;
+	for (n = (psf->maskdim>2?psf->masksize[2]:1); n--;)
+	{
+		pl = psf->maskloc;
+		fac = *(basis++);
+		for (p=npix; p--;)
+			*(pl++) +=  fac**(ppc++);
+	}
+
+	// set the build flag
+	psf->build_flag = 1;
+
+	return;
+}
 
 
 /******************************** psf_fwhm **********************************/
