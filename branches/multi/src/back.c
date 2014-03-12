@@ -406,6 +406,7 @@ INPUT	Pointer to background image mesh structure,
 	pointer to image buffer,
 	pointer to variance buffer,
 	buffer size (number of pixels),
+	number of meshes
 	frame width (pixels),
 	mesh width (pixels),
 	weight threshold.
@@ -629,7 +630,7 @@ void	back_histo(backstruct *backmesh, backstruct *wbackmesh,
           bin = (int)(*(buft++)/qscale + cste);
           if ((wpix = *(wbuft++))<wthresh && bin<nlevels && bin>=0)
             {
-            (*(histo+bin))++;
+        	(*(histo+bin))++;
             bin = (int)(wpix/wqscale + wcste);
             if (bin>=0 && bin<wnlevels)
               (*(whisto+bin))++;
@@ -644,7 +645,7 @@ void	back_histo(backstruct *backmesh, backstruct *wbackmesh,
           {
           bin = (int)(*(buft++)/qscale + cste);
           if (bin>=0 && bin<nlevels)
-            (*(histo+bin))++;
+        	(*(histo+bin))++;
           }
     }
 
@@ -1433,4 +1434,41 @@ void	back_end(fieldstruct *field)
   return;
   }
 
+/****** back_printmeshs ******************************************************
+PROTO	void back_printmeshs(const backstruct *backmesh, const int nmeshs)
+PURPOSE Print info on a mesh structure.
+INPUT	Pointer to a  mesh structure, number of meshes
+OUTPUT	-.
+NOTES	-.
+AUTHOR	M. Kuemmel (LMU)
+VERSION	12/02/2014
+ ***/
+void	back_printmeshs(const backstruct *backmesh, const int nmeshs)
+  {
+	int index=0;
+	// go over the meshes
+	for (index=0; index<nmeshs; index++)
+		// print one mesh
+		back_printmesh(&backmesh[index]);
+  }
+
+/****** back_printmesh ******************************************************
+PROTO	void back_printmesh(const backstruct *backmesh)
+PURPOSE Print info on a mesh structure.
+INPUT	Pointer to a  mesh structure
+OUTPUT	-.
+NOTES	-.
+AUTHOR	M. Kuemmel (LMU)
+VERSION	12/02/2014
+ ***/
+void	back_printmesh(const backstruct *backmesh)
+  {
+	int index;
+	QPRINTF(OUTPUT, "  Mode: %.5g, Mean: %.5g, Sigma: %.5g, Npixel: %i\n", backmesh->mode, backmesh->mean, backmesh->sigma, backmesh->npix);
+	QPRINTF(OUTPUT, "  Lcut: %.5g, Hcut: %.5g, Qzero: %.5g Qscale: %.5g\n", backmesh->lcut, backmesh->hcut, backmesh->qzero, backmesh->qscale);
+	QPRINTF(OUTPUT, "  Nlevels: %i, \n", backmesh->nlevels);
+	for (index=0; index<backmesh->nlevels; index++)
+		if (backmesh->histo[index])
+			QPRINTF(OUTPUT, " Value: %.5g, Nhisto: %i", backmesh->qzero+(float)index*backmesh->qscale, backmesh->histo[index]);
+  }
 

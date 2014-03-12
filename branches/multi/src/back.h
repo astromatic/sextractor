@@ -71,7 +71,9 @@ void		back_histo(backstruct *backmesh, backstruct *wbackmesh,
 		back_map(fieldstruct *field, fieldstruct *wfield,
 			int wscale_flag),
 		back_subline(fieldstruct *field, int y, int xmin, int width,
-			PIXTYPE *line);
+			PIXTYPE *line),
+		back_printmeshs(const backstruct *backmesh, const int nmeshs),
+		back_printmesh(const backstruct *backmesh);
 
 float		*back_makespline(fieldstruct *, float *),
 		back_guess(backstruct *bkg, float *mean, float *sigma),

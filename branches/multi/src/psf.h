@@ -95,6 +95,7 @@ extern void	compute_pos(int *pnpsf,int *pconvflag,int *pnpsfflag,
 		svdfit(double *a, float *b, int m, int n, double *sol,
 			double *vmat, double *wmat),
 		svdvar(double *vmat, double *wmat, int n, double *covmat);
+void	psf_buildpos(psfstruct *psf, double *pos, const int ndim);
 
 extern double	*compute_gradient (float *weight,int width, int height,
 			float *masks, float *maskx, float *masky,
@@ -111,5 +112,7 @@ extern void	double_psf_fit(psfstruct *psf, fieldstruct *field,
 		psf_fit(psfstruct *psf, fieldstruct *field, fieldstruct *wfield,
 		obj2struct *obj2),
 		psf_readcontext(psfstruct *psf, fieldstruct *field);
+
+extern void psf_print(const psfstruct *psf, const int printdata, const int printloc);
 
 #endif

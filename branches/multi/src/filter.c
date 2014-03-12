@@ -42,6 +42,8 @@
 #include	"fits/fitscat.h"
 #include	"bpro.h"
 #include	"filter.h"
+#include	"psf.h"
+#include	"wcs/poly.h"
 #include	"image.h"
 
 /******************************** convolve ***********************************/
@@ -55,35 +57,48 @@ void	convolve(fieldstruct *field, PIXTYPE *mscan, int y)
    float	*mask;
    PIXTYPE	*mscane, *s,*s0, *d,*de, mval;
 
-  sw = field->width;
-  sh = field->stripheight;
-  mw = thefilter->convw;
+  sw = field->width;        // looks like the width of the image
+  sh = field->stripheight;  // looks like the height of the data available
+  mw = thefilter->convw;    // certainly the width of the filter
   mw2 = mw/2;
   mscane = mscan+sw;
-  y0 = y - (thefilter->convh/2);
-  if ((dy = field->ymin-y0) > 0)
+
+  y0 = y - (thefilter->convh/2);  // the row index where the convolution needs to start
+  if ((dy = field->ymin-y0) > 0)  // check whether the starting row index is available (could be outside the image/interval)
     {
-    m0 = mw*dy;
-    y0 = field->ymin;
+    m0 = mw*dy;                   // ??? pointer arithmetic???
+    y0 = field->ymin;             // the true start index is not available, start as low as possible
     }
   else
-    m0 = 0;
+    m0 = 0;                       // ??? pointer arithmetic???
 
-  if ((dy = field->ymax - y0) < thefilter->convh)
-    me = mw*dy;
+  if ((dy = field->ymax - y0) < thefilter->convh) // is the entire convolution possible
+    me = mw*dy;                                   // upper edge is too close
   else
-    me = mw*thefilter->convh;
+    me = mw*thefilter->convh;                     // normal branch
 
+  // m0 and me mark the pointer indices in
+  // the convolution filter that can be used
+
+  // re-set the resulting vector
   memset(mscan, 0, sw*sizeof(PIXTYPE));
   s0 = NULL;				/* To avoid gcc -Wall warnings */
+
+  // set mask to the start of the filter
   mask = thefilter->conv+m0;
   for (m = m0, mx = 0; m<me; m++, mx++)
     {
+	// check for a new row
+	// in the convolution kernel
     if (mx==mw)
       mx = 0;
+    // jump to a new row in the
+    // image data
     if (!mx)
       s0 = field->strip+sw*((y0++)%sh);
 
+    // make reasonable start
+    // and end values
     if ((dmx = mx-mw2)>=0)
       {
       s = s0 + dmx;
@@ -97,7 +112,12 @@ void	convolve(fieldstruct *field, PIXTYPE *mscan, int y)
       de = mscane;
       }
 
+    // fix a mask value
     mval = *(mask++);
+
+    // go over the row
+    // and add the contribution
+    // to the result vector
     while (d<de)
       *(d++) += mval**(s++);
     }
@@ -106,11 +126,40 @@ void	convolve(fieldstruct *field, PIXTYPE *mscan, int y)
   }
 
 
-/********************************* getconv **********************************/
-/*
-Read the convolution mask from a file.
-*/
-int	getconv(char *filename)
+/**
+ * Function: getconv
+ *
+ * Read the convolution filter from a file. Accepted file formats are an ASCII
+ * filter or a PSFEx file.
+ *
+ * @param[in] filename the filename
+ *
+ * @return flag indicating success or error
+ */
+int	getconv(const char *filename)
+{
+	// check whether the filename ends with ".psf"
+	if(strlen(filename) > 4 && !strcmp(filename + strlen(filename) - 4, ".psf"))
+		// load the convolution filter from a psf file
+		return getPSFExconv(filename);
+	else
+		// load the convolution filter from an ASCII
+		return getASCIIconv(filename);
+
+	// it should NEVER arrive here
+	return RETURN_ERROR;
+}
+
+/**
+ * Function: getASCIIconv
+ *
+ * Read the convolution mask from an ASCII file.
+ *
+ * @param[in] filename the filename
+ *
+ * @return flag indicating success or error
+ */
+int	getASCIIconv(const char *filename)
 
   {
   FILE		*file;
@@ -132,6 +181,7 @@ int	getconv(char *filename)
     return RETURN_ERROR;
     }
 
+  // set the flag for normalization
   if (strstr(str,"NORM"))
     normflag = strstr(str,"NONORM")?0:1;
   else
@@ -140,6 +190,7 @@ int	getconv(char *filename)
 	"> => I will assume you want the mask to be normalized...");
     normflag = 1;
     }
+
 /* Allocate memory for storing mask elements */
   QMALLOC(thefilter->conv, float, MAXMASK);
 
@@ -197,28 +248,228 @@ int	getconv(char *filename)
   return RETURN_OK;
   }
 
+/**
+ * Function: getPSFExconv
+ *
+ * Read the convolution mask a PSFEx file
+ *
+ * @param[in] filename the filename
+ *
+ * @return flag indicating success or error
+ */
+int getPSFExconv(const char *filename){
+	psfstruct *psf;
+	int ndim, index, posx, posy;
+	char *ctxname;
+	double pos[POLY_MAXDIM];
+	int w2, h2, ixmean, iymean;
+	float pixstep, *pix2, stats[4];
+	int xstart, xend, ii, ystart, yend, jj, icent;
+	float *rpos, *actpos, *fpos, sum;
+	float FRAC=0.95;
 
-/********************************* getfilter *********************************/
-/*
-Read either a convolution mask or an ANN file.
-*/
-void	getfilter(char *filename)
+	// load the psf file
+	psf=psf_load(filename);
 
+	// make sure there are at most two dimensions
+	ndim = psf->poly->ndim;
+	if (ndim>2)
+		error(EXIT_FAILURE, "*Error*: more than two dimensions in: ", filename);
+
+	// make sure the context variables
+	// mark positions by checking the names
+	posx=-1;
+	posy=-1;
+	for (index=0; index<ndim; index++){
+		ctxname = psf->contextname[index];
+
+		// make sure the context name ends with "_IMAGE"
+		if(strlen(ctxname) < 6 || strcmp(ctxname + strlen(ctxname) - 6, "_IMAGE"))
+			error(EXIT_FAILURE, "*Error*: no image coordinate in context: ", ctxname);
+
+		// check for the allowed x-values; make sure only one context points to x
+		if (!strncmp(ctxname, "X", 1) || !strncmp(ctxname, "XMIN", 4) || !strncmp(ctxname, "XMAX", 4) || !strncmp(ctxname, "XPEAK", 5))
+			if (posx>-1)
+				error(EXIT_FAILURE, "*Error*: two context parameters point to X, the last being: ", ctxname);
+			else
+				posx=index;
+
+		// check for the allowed y-values; make sure only one context points to y
+		if (!strncmp(ctxname, "Y", 1) || !strncmp(ctxname, "YMIN", 4) || !strncmp(ctxname, "YMAX", 4) || !strncmp(ctxname, "YPEAK", 5))
+			if (posy>-1)
+				error(EXIT_FAILURE, "*Error*: two context parameters point to Y the last being: ", ctxname);
+			else
+				posy=index;
+	}
+
+	// build the psf at the offset position,
+	// which is in the middle of the field
+	for (index=0; index < ndim; index++)
+		pos[index] = psf->contextoffset[index];
+	psf_buildpos(psf, pos, ndim);
+
+	// get something onto the screen
+	//psf_print(psf, 1, 1);
+
+	// compute the center of gravity
+	getImageStats(psf->maskloc, psf->masksize[0], psf->masksize[1], stats);
+	// print the stats
+	//QPRINTF(OUTPUT, "\n sum: %.6g", stats[0]);
+	//QPRINTF(OUTPUT, "\n cogx %.6g", stats[1]);
+	//QPRINTF(OUTPUT, "\n cogy %.6g\n", stats[2]);
+
+	// compute a reasonable size for the re-sampled image;
+	// force odd axis lengths
+	// allocate memory for the re-sampled image;
+	// re-sample the image at the new center and the 'true' pixel size
+	// REMARK: not sure whether the parameters are correct...
+	//w2=psf->masksize[0];
+	//h2=psf->masksize[1];
+	w2=(int)ceil((double)psf->masksize[0]*psf->pixstep+1.0);
+	h2=(int)ceil((double)psf->masksize[1]*psf->pixstep+1.0);
+	w2 = !(w2 % 2) ? w2+1 : w2;
+	h2 = !(h2 % 2) ? h2+1 : h2;
+	pixstep=1./psf->pixstep;
+	QMALLOC(pix2, float, w2*h2);
+	vignet_resample(psf->maskloc, psf->masksize[0], psf->masksize[1], pix2, w2, h2, (stats[1]-(float)(psf->masksize[0]/2))*pixstep, (stats[2]-(float)(psf->masksize[1]/2))*pixstep, pixstep);
+	//vignet_resample(
+	// float *pix1, data for input image
+	// int    w1,   width of input image
+	// int    h1,   height of input image
+	// float *pix2, data of  re-sampled image NEEDS TO BE ALLOCATED
+	// int    w2,   width of re-sampled image;   the cutout starts from the middle!!
+	// int    h2,   height of re-sampled image;  the cutout starts from the middle!!
+	// float  dx,   x-shift, but what shift??
+	// float  dy,   y-shift, but what shift??
+	// float step2  old vs new steps?? used as "1.0/psf->pixstep"
+	// )
+
+
+
+	// print the stats again
+	//QPRINTF(OUTPUT, "\n\nre-centered psf: %ix%i", w2,h2);
+	getImageStats(pix2, w2, h2, stats);
+	//QPRINTF(OUTPUT, "\n sum: %.6g", stats[0]);
+	//QPRINTF(OUTPUT, "\n cogx %.6g", stats[1]);
+	//QPRINTF(OUTPUT, "\n cogy %.6g\n", stats[2]);
+
+	// compute the center pixel
+	// take the target values from the re-sampling
+	ixmean = w2/2;
+	iymean = h2/2;
+
+	// get the bigger of the x/y center index;
+	// define a progressively larger area around
+	// the center and sum up the pixel values
+	icent = ixmean > iymean ? ixmean : iymean;
+	index=0;
+	sum=0.0;
+	while (index<=icent && sum/stats[0]<FRAC){
+		// set the start and end values for x/y
+		xstart = ixmean-index < 0 ? 0 : ixmean-index;
+		ystart = iymean-index < 0 ? 0 : iymean-index;
+		xend = ixmean+index+1 < w2 ? ixmean+index+1 : w2;
+		yend = iymean+index+1 < h2 ? iymean+index+1 : h2;
+
+		// sum up the psf values
+		sum=0.0;
+		for (jj=ystart, rpos=pix2+(ystart*w2); jj<yend; jj++, rpos+=w2)
+			for (ii=xstart, actpos=rpos+xstart; ii<xend; ii++, actpos++)
+				sum += *actpos;
+		//QPRINTF(OUTPUT, "index=%i, npix=%i, %i<=x<%i, %i<=y<%i, sum=%.6g\n", index, 2*index+1, xstart, xend, ystart, yend, sum/stats[0]);
+
+		index+=1;
+	}
+
+	// set some filter parameters
+	// (sum, xstart, xend, ystar, yend are still valid)
+	thefilter->convw = xend-xstart;
+	thefilter->convh = yend-ystart;
+	thefilter->nconv = thefilter->convw*thefilter->convh;
+
+	// allocate memory, copy the normalized values
+	// from the psf to the filter
+	QMALLOC(thefilter->conv, float, thefilter->nconv);
+	fpos = thefilter->conv;
+	for (jj=ystart, rpos=pix2+(ystart*w2); jj<yend; jj++, rpos+=w2)
+		for (ii=xstart, actpos=rpos+xstart; ii<xend; ii++, actpos++)
+			*(fpos++) = *actpos / sum;
+
+	// compute the center of gravity;
+	// print the stats
+	//getImageStats(thefilter->conv, thefilter->convw, thefilter->convh, stats);
+	//QPRINTF(OUTPUT, "\n sum: %.6g", stats[0]);
+	//QPRINTF(OUTPUT, "\n cogx %.6g", stats[1]);
+	//QPRINTF(OUTPUT, "\n cogy %.6g\n", stats[2]);
+
+	// release memory
+	psf_end(psf, NULL);
+	free(pix2);
+
+	return RETURN_OK;
+}
+
+/**
+ * Function: getImageStats
+ *
+ * Read the convolution mask a PSFEx file
+ *
+ * @param[in]  pix    the pointer to the pixekl values
+ * @param[in]  width  the width of the array
+ * @param[in]  height the height of the array
+ * @param[out] stats  vector for the stat values
+ *
+ */
+void getImageStats(const float *pix, const int width, const int height, float stats[]){
+	long nx, ny, index;
+	float *actpix;
+
+	// iterate over pixels
+	actpix =  pix;
+	stats[0]=0.0;
+	stats[1]=0.0;
+	stats[2]=0.0;
+	for (index=0; index<(long)(width*height); index++){
+		// compute nx and ny
+		ny = index / width;
+		nx = index - ny*width;
+
+		// update the fields
+		stats[0] += *actpix;
+		stats[1] += (float)nx* *actpix;
+		stats[2] += (float)ny* *(actpix++);
+	}
+	// normalize the COG
+	stats[1] =  stats[1] / stats[0];
+	stats[2] =  stats[2] / stats[0];
+}
+
+
+/**
+ * Function: getfilter
+ *
+ * Reads in filter. This can be either a convolution mask or an ANN file
+ *
+ * @param[in] filename the filename of the filter
+ */
+void	getfilter(const char *filename)
   {
   QCALLOC(thefilter, filterstruct, 1);
   if (getconv(filename) != RETURN_OK && getneurfilter(filename) != RETURN_OK)
     error(EXIT_FAILURE, "*Error*: not a suitable filter in ", filename);
-
   return;
   }
 
-
-/******************************** getneurfilter ******************************/
-/*
-Read an ANN RETINA-filter file.
-*/
-int	getneurfilter(char *filename)
-
+/**
+ * Function: getneurfilter
+ *
+ * Read an ANN RETINA-filter file.
+ *
+ * @param[in] filename the ANN RETINA-filter filter
+ *
+ * @return flag indicating success or error
+ */
+int	getneurfilter(const char *filename)
   {
 #define	FILTEST(x) \
         if (x != RETURN_OK) \
@@ -253,12 +504,14 @@ int	getneurfilter(char *filename)
   }
 
 
-/********************************* endfilter *********************************/
-/*
-Terminate filtering procedures.
-*/
+/**
+ * Function: endfilter
+ *
+ * Terminate filtering or convolution procedures by releasing memory allocated
+ * in the global variable 'thefilter'.
+ *
+ */
 void	endfilter()
-
   {
   QFREE(thefilter->conv);
   if (thefilter->bpann)
