@@ -206,7 +206,7 @@ void	scan_extract(fieldstruct *dfield, fieldstruct *dwfield,
 #ifdef USE_THREADS
 /*Setup measurement threads as we meet the 1st object; leave 1 for extraction */
   if (prefs.nthreads>1)
-    pthread_init_obj2(fields, wfields, nfield, prefs.nthreads);
+    pthread_init_obj2group(fields, wfields, nfield, prefs.nthreads);
 #endif
 
 /*----- Here we go */
@@ -647,7 +647,7 @@ void	scan_extract(fieldstruct *dfield, fieldstruct *dwfield,
 
 #ifdef	USE_THREADS
   if (prefs.nthreads>1)
-    pthread_end_obj2();
+    pthread_end_obj2group();
 #endif
 
   return;

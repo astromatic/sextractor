@@ -52,7 +52,7 @@ void		analyse_end(fieldstruct **fields, fieldstruct **wfields,
 			int nfield, objliststruct *objlist, int n);
 
 #ifdef	USE_THREADS
-void		*pthread_analyse_group2(void *arg),
+void		*pthread_analyse_obj2group(void *arg),
 		pthread_add_obj2group(obj2groupstruct group2),
 		pthread_end_obj2group(void),
 		pthread_init_obj2group(fieldstruct **fields,

@@ -14386,17 +14386,23 @@ _ACEOF
 fi
 
 
+if test -f /etc/debian_version; then
+  lapack_lib="lapack_atlas"
+else
+  lapack_lib="lapack"
+fi
 if test x$acx_atlas_ok = xyes; then
   OLIBS="$LIBS"
   LIBS=""
   if test x$with_atlas_libdir = x; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for clapack_dpotrf in -llapack" >&5
-$as_echo_n "checking for clapack_dpotrf in -llapack... " >&6; }
-if ${ac_cv_lib_lapack_clapack_dpotrf+:} false; then :
+    as_ac_Lib=`$as_echo "ac_cv_lib_$lapack_lib''_clapack_dpotrf" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for clapack_dpotrf in -l$lapack_lib" >&5
+$as_echo_n "checking for clapack_dpotrf in -l$lapack_lib... " >&6; }
+if eval \${$as_ac_Lib+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   ac_check_lib_save_LIBS=$LIBS
-LIBS="-llapack -lcblas -latlas -lm $LIBS"
+LIBS="-l$lapack_lib -lcblas -latlas -lm $LIBS"
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -14416,22 +14422,23 @@ return clapack_dpotrf ();
 }
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_lapack_clapack_dpotrf=yes
+  eval "$as_ac_Lib=yes"
 else
-  ac_cv_lib_lapack_clapack_dpotrf=no
+  eval "$as_ac_Lib=no"
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 LIBS=$ac_check_lib_save_LIBS
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_lapack_clapack_dpotrf" >&5
-$as_echo "$ac_cv_lib_lapack_clapack_dpotrf" >&6; }
-if test "x$ac_cv_lib_lapack_clapack_dpotrf" = xyes; then :
+eval ac_res=\$$as_ac_Lib
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_Lib"\" = x"yes"; then :
   cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBLAPACK 1
+#define `$as_echo "HAVE_LIB$lapack_lib" | $as_tr_cpp` 1
 _ACEOF
 
-  LIBS="-llapack $LIBS"
+  LIBS="-l$lapack_lib $LIBS"
 
 else
   acx_atlas_ok=no
@@ -14489,15 +14496,17 @@ fi
     else
       atlas_def=/usr/local/atlas
       unset ac_cv_lib_lapack_clapack_dpotrf
+      unset ac_cv_lib_lapack_atlas_clapack_dpotrf
       unset ac_cv_lib_cblas_cblas_dgemm
       acx_atlas_ok=yes
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for clapack_dpotrf in -llapack" >&5
-$as_echo_n "checking for clapack_dpotrf in -llapack... " >&6; }
-if ${ac_cv_lib_lapack_clapack_dpotrf+:} false; then :
+      as_ac_Lib=`$as_echo "ac_cv_lib_$lapack_lib''_clapack_dpotrf" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for clapack_dpotrf in -l$lapack_lib" >&5
+$as_echo_n "checking for clapack_dpotrf in -l$lapack_lib... " >&6; }
+if eval \${$as_ac_Lib+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   ac_check_lib_save_LIBS=$LIBS
-LIBS="-llapack -L$atlas_def/lib -lcblas -latlas -lm $LIBS"
+LIBS="-l$lapack_lib -L$atlas_def/lib -lcblas -latlas -lm $LIBS"
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -14517,22 +14526,23 @@ return clapack_dpotrf ();
 }
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_lapack_clapack_dpotrf=yes
+  eval "$as_ac_Lib=yes"
 else
-  ac_cv_lib_lapack_clapack_dpotrf=no
+  eval "$as_ac_Lib=no"
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 LIBS=$ac_check_lib_save_LIBS
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_lapack_clapack_dpotrf" >&5
-$as_echo "$ac_cv_lib_lapack_clapack_dpotrf" >&6; }
-if test "x$ac_cv_lib_lapack_clapack_dpotrf" = xyes; then :
+eval ac_res=\$$as_ac_Lib
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_Lib"\" = x"yes"; then :
   cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBLAPACK 1
+#define `$as_echo "HAVE_LIB$lapack_lib" | $as_tr_cpp` 1
 _ACEOF
 
-  LIBS="-llapack $LIBS"
+  LIBS="-l$lapack_lib $LIBS"
 
 else
   acx_atlas_ok=no
@@ -14590,15 +14600,17 @@ fi
       else
         atlas_def=/usr/lib64/atlas
         unset ac_cv_lib_lapack_clapack_dpotrf
+        unset ac_cv_lib_lapack_atlas_clapack_dpotrf
         unset ac_cv_lib_cblas_cblas_dgemm
         acx_atlas_ok=yes
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for clapack_dpotrf in -llapack" >&5
-$as_echo_n "checking for clapack_dpotrf in -llapack... " >&6; }
-if ${ac_cv_lib_lapack_clapack_dpotrf+:} false; then :
+        as_ac_Lib=`$as_echo "ac_cv_lib_$lapack_lib''_clapack_dpotrf" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for clapack_dpotrf in -l$lapack_lib" >&5
+$as_echo_n "checking for clapack_dpotrf in -l$lapack_lib... " >&6; }
+if eval \${$as_ac_Lib+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   ac_check_lib_save_LIBS=$LIBS
-LIBS="-llapack -L$atlas_def -lcblas -latlas -lm $LIBS"
+LIBS="-l$lapack_lib -L$atlas_def -lcblas -latlas -lm $LIBS"
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -14618,22 +14630,23 @@ return clapack_dpotrf ();
 }
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_lapack_clapack_dpotrf=yes
+  eval "$as_ac_Lib=yes"
 else
-  ac_cv_lib_lapack_clapack_dpotrf=no
+  eval "$as_ac_Lib=no"
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 LIBS=$ac_check_lib_save_LIBS
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_lapack_clapack_dpotrf" >&5
-$as_echo "$ac_cv_lib_lapack_clapack_dpotrf" >&6; }
-if test "x$ac_cv_lib_lapack_clapack_dpotrf" = xyes; then :
+eval ac_res=\$$as_ac_Lib
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_Lib"\" = x"yes"; then :
   cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBLAPACK 1
+#define `$as_echo "HAVE_LIB$lapack_lib" | $as_tr_cpp` 1
 _ACEOF
 
-  LIBS="-llapack $LIBS"
+  LIBS="-l$lapack_lib $LIBS"
 
 else
   acx_atlas_ok=no
@@ -14691,15 +14704,17 @@ fi
         else
           atlas_def=/usr/lib/atlas
           unset ac_cv_lib_lapack_clapack_dpotrf
+          unset ac_cv_lib_lapack_atlas_clapack_dpotrf
           unset ac_cv_lib_cblas_cblas_dgemm
           acx_atlas_ok=yes
-          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for clapack_dpotrf in -llapack" >&5
-$as_echo_n "checking for clapack_dpotrf in -llapack... " >&6; }
-if ${ac_cv_lib_lapack_clapack_dpotrf+:} false; then :
+          as_ac_Lib=`$as_echo "ac_cv_lib_$lapack_lib''_clapack_dpotrf" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for clapack_dpotrf in -l$lapack_lib" >&5
+$as_echo_n "checking for clapack_dpotrf in -l$lapack_lib... " >&6; }
+if eval \${$as_ac_Lib+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   ac_check_lib_save_LIBS=$LIBS
-LIBS="-llapack -L$atlas_def -lcblas -latlas -lm $LIBS"
+LIBS="-l$lapack_lib -L$atlas_def -lcblas -latlas -lm $LIBS"
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -14719,22 +14734,23 @@ return clapack_dpotrf ();
 }
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_lapack_clapack_dpotrf=yes
+  eval "$as_ac_Lib=yes"
 else
-  ac_cv_lib_lapack_clapack_dpotrf=no
+  eval "$as_ac_Lib=no"
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 LIBS=$ac_check_lib_save_LIBS
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_lapack_clapack_dpotrf" >&5
-$as_echo "$ac_cv_lib_lapack_clapack_dpotrf" >&6; }
-if test "x$ac_cv_lib_lapack_clapack_dpotrf" = xyes; then :
+eval ac_res=\$$as_ac_Lib
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_Lib"\" = x"yes"; then :
   cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBLAPACK 1
+#define `$as_echo "HAVE_LIB$lapack_lib" | $as_tr_cpp` 1
 _ACEOF
 
-  LIBS="-llapack $LIBS"
+  LIBS="-l$lapack_lib $LIBS"
 
 else
   acx_atlas_ok=no
@@ -14792,15 +14808,17 @@ fi
           else
             atlas_def=/usr/atlas
             unset ac_cv_lib_lapack_clapack_dpotrf
+            unset ac_cv_lib_lapack_atlas_clapack_dpotrf
             unset ac_cv_lib_cblas_cblas_dgemm
             acx_atlas_ok=yes
-            { $as_echo "$as_me:${as_lineno-$LINENO}: checking for clapack_dpotrf in -llapack" >&5
-$as_echo_n "checking for clapack_dpotrf in -llapack... " >&6; }
-if ${ac_cv_lib_lapack_clapack_dpotrf+:} false; then :
+            as_ac_Lib=`$as_echo "ac_cv_lib_$lapack_lib''_clapack_dpotrf" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for clapack_dpotrf in -l$lapack_lib" >&5
+$as_echo_n "checking for clapack_dpotrf in -l$lapack_lib... " >&6; }
+if eval \${$as_ac_Lib+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   ac_check_lib_save_LIBS=$LIBS
-LIBS="-llapack -L$atlas_def/lib -lcblas -latlas -lm $LIBS"
+LIBS="-l$lapack_lib -L$atlas_def/lib -lcblas -latlas -lm $LIBS"
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -14820,22 +14838,23 @@ return clapack_dpotrf ();
 }
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_lapack_clapack_dpotrf=yes
+  eval "$as_ac_Lib=yes"
 else
-  ac_cv_lib_lapack_clapack_dpotrf=no
+  eval "$as_ac_Lib=no"
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 LIBS=$ac_check_lib_save_LIBS
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_lapack_clapack_dpotrf" >&5
-$as_echo "$ac_cv_lib_lapack_clapack_dpotrf" >&6; }
-if test "x$ac_cv_lib_lapack_clapack_dpotrf" = xyes; then :
+eval ac_res=\$$as_ac_Lib
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_Lib"\" = x"yes"; then :
   cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBLAPACK 1
+#define `$as_echo "HAVE_LIB$lapack_lib" | $as_tr_cpp` 1
 _ACEOF
 
-  LIBS="-llapack $LIBS"
+  LIBS="-l$lapack_lib $LIBS"
 
 else
   acx_atlas_ok=no
@@ -14898,13 +14917,14 @@ fi
       fi
     fi
   else
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for clapack_dpotrf in -llapack" >&5
-$as_echo_n "checking for clapack_dpotrf in -llapack... " >&6; }
-if ${ac_cv_lib_lapack_clapack_dpotrf+:} false; then :
+    as_ac_Lib=`$as_echo "ac_cv_lib_$lapack_lib''_clapack_dpotrf" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for clapack_dpotrf in -l$lapack_lib" >&5
+$as_echo_n "checking for clapack_dpotrf in -l$lapack_lib... " >&6; }
+if eval \${$as_ac_Lib+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   ac_check_lib_save_LIBS=$LIBS
-LIBS="-llapack -L$with_atlas_libdir -lcblas -latlas -lm $LIBS"
+LIBS="-l$lapack_lib -L$with_atlas_libdir -lcblas -latlas -lm $LIBS"
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -14924,22 +14944,23 @@ return clapack_dpotrf ();
 }
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_lapack_clapack_dpotrf=yes
+  eval "$as_ac_Lib=yes"
 else
-  ac_cv_lib_lapack_clapack_dpotrf=no
+  eval "$as_ac_Lib=no"
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 LIBS=$ac_check_lib_save_LIBS
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_lapack_clapack_dpotrf" >&5
-$as_echo "$ac_cv_lib_lapack_clapack_dpotrf" >&6; }
-if test "x$ac_cv_lib_lapack_clapack_dpotrf" = xyes; then :
+eval ac_res=\$$as_ac_Lib
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_Lib"\" = x"yes"; then :
   cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBLAPACK 1
+#define `$as_echo "HAVE_LIB$lapack_lib" | $as_tr_cpp` 1
 _ACEOF
 
-  LIBS="-llapack $LIBS"
+  LIBS="-l$lapack_lib $LIBS"
 
 else
   acx_atlas_ok=no
@@ -14996,15 +15017,17 @@ fi
       ATLAS_LIBPATH="-L$with_atlas_libdir"
     else
       unset ac_cv_lib_lapack_clapack_dpotrf
+      unset ac_cv_lib_lapack_atlas_clapack_dpotrf
       unset ac_cv_lib_cblas_cblas_dgemm
       acx_atlas_ok=yes
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for clapack_dpotrf in -llapack" >&5
-$as_echo_n "checking for clapack_dpotrf in -llapack... " >&6; }
-if ${ac_cv_lib_lapack_clapack_dpotrf+:} false; then :
+      as_ac_Lib=`$as_echo "ac_cv_lib_$lapack_lib''_clapack_dpotrf" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for clapack_dpotrf in -l$lapack_lib" >&5
+$as_echo_n "checking for clapack_dpotrf in -l$lapack_lib... " >&6; }
+if eval \${$as_ac_Lib+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   ac_check_lib_save_LIBS=$LIBS
-LIBS="-llapack -L$with_atlas_libdir/lib -lcblas -latlas -lm $LIBS"
+LIBS="-l$lapack_lib -L$with_atlas_libdir/lib -lcblas -latlas -lm $LIBS"
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -15024,22 +15047,23 @@ return clapack_dpotrf ();
 }
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_lapack_clapack_dpotrf=yes
+  eval "$as_ac_Lib=yes"
 else
-  ac_cv_lib_lapack_clapack_dpotrf=no
+  eval "$as_ac_Lib=no"
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 LIBS=$ac_check_lib_save_LIBS
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_lapack_clapack_dpotrf" >&5
-$as_echo "$ac_cv_lib_lapack_clapack_dpotrf" >&6; }
-if test "x$ac_cv_lib_lapack_clapack_dpotrf" = xyes; then :
+eval ac_res=\$$as_ac_Lib
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_Lib"\" = x"yes"; then :
   cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBLAPACK 1
+#define `$as_echo "HAVE_LIB$lapack_lib" | $as_tr_cpp` 1
 _ACEOF
 
-  LIBS="-llapack $LIBS"
+  LIBS="-l$lapack_lib $LIBS"
 
 else
   acx_atlas_ok=no
@@ -15153,7 +15177,7 @@ else
 fi
 
     if test x$acx_atlast_ok = xyes; then
-      ATLAS_LIBS="$ATLAS_LIBPATH -llapack -lptcblas -lcblas -latlas"
+      ATLAS_LIBS="$ATLAS_LIBPATH -l$lapack_lib -lptcblas -lcblas -latlas"
       LIBS="$OLIBS"
 
 
@@ -15165,7 +15189,7 @@ $as_echo "#define HAVE_ATLAS_MP 1" >>confdefs.h
 $as_echo "$as_me: WARNING: $ATLAS_WARN" >&2;}
 	fi
     else
-      ATLAS_LIBS="$ATLAS_LIBPATH -llapack -lcblas -latlas"
+      ATLAS_LIBS="$ATLAS_LIBPATH -l$lapack_lib -lcblas -latlas"
       LIBS="$OLIBS"
 
       ATLAS_WARN="CBLAS/LAPack was compiled without multithreading support!"
@@ -15177,7 +15201,7 @@ $as_echo "$as_me: WARNING: $ATLAS_WARN" >&2;}
 	fi
     fi
   else
-    ATLAS_LIBS="$ATLAS_LIBPATH -llapack -lcblas -latlas"
+    ATLAS_LIBS="$ATLAS_LIBPATH -l$lapack_lib -lcblas -latlas"
     LIBS="$OLIBS"
 
     LIBS="$ATLAS_LIBS $LIBS"
