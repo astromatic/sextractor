@@ -67,10 +67,10 @@
 
 pthread_t	*pthread_thread;
 pthread_attr_t	pthread_attr;
-pthread_mutex_t	pthread_group2mutex, pthread_freegroup2mutex;
-pthread_cond_t	pthread_group2addcond, pthread_group2savecond;
+pthread_mutex_t	pthread_group2mutex, pthread_freeobj2mutex;
+pthread_cond_t	pthread_group2addcond, pthread_obj2savecond;
 fieldstruct	**pthread_fields,**pthread_wfields;
-obj2struct	**pthread_group2;
+obj2groupstruct	*pthread_group2;
 int		pthread_ngroup2, pthread_group2addindex,pthread_group2procindex,
 		pthread_group2saveindex, pthread_nfield, pthread_nthreads,
 		pthread_endflag;
@@ -1202,15 +1202,15 @@ void	analyse_end(fieldstruct **fields, fieldstruct **wfields,
   for (obj2=fobj2; obj2->nextobj2; obj2=obj2->nextobj2);
 #ifdef USE_THREADS
   if (prefs.nthreads>1)
-    QPTHREAD_MUTEX_LOCK(&pthread_freegroup2mutex);
+    QPTHREAD_MUTEX_LOCK(&pthread_freeobj2mutex);
 #endif
   obj2->nextobj2 = obj2list->freeobj2;
   obj2list->freeobj2->prevobj2 = obj2->nextobj2;
   obj2list->freeobj2 = fobj2;
 #ifdef USE_THREADS
-  QPTHREAD_COND_BROADCAST(&pthread_group2savecond);
+  QPTHREAD_COND_BROADCAST(&pthread_obj2savecond);
   if (prefs.nthreads>1)
-    QPTHREAD_MUTEX_UNLOCK(&pthread_freegroup2mutex);
+    QPTHREAD_MUTEX_UNLOCK(&pthread_freeobj2mutex);
 #endif
 
   return;
@@ -1246,9 +1246,9 @@ void	pthread_init_obj2group(fieldstruct **fields, fieldstruct **wfields,
   QMALLOC(pthread_thread, pthread_t, nthreads);
   QCALLOC(pthread_group2, obj2groupstruct, pthread_ngroup2);
   QPTHREAD_COND_INIT(&pthread_group2addcond, NULL);
-  QPTHREAD_COND_INIT(&pthread_group2savecond, NULL);
+  QPTHREAD_COND_INIT(&pthread_obj2savecond, NULL);
   QPTHREAD_MUTEX_INIT(&pthread_group2mutex, NULL);
-  QPTHREAD_MUTEX_INIT(&pthread_freegroup2mutex, NULL);
+  QPTHREAD_MUTEX_INIT(&pthread_freeobj2mutex, NULL);
   QPTHREAD_MUTEX_INIT(&pthread_countobj2mutex, NULL);
   QPTHREAD_ATTR_INIT(&pthread_attr);
   QPTHREAD_ATTR_SETDETACHSTATE(&pthread_attr, PTHREAD_CREATE_JOINABLE);
@@ -1289,11 +1289,11 @@ void	pthread_end_obj2group(void)
     QPTHREAD_JOIN(pthread_thread[p], NULL);
 
   QPTHREAD_MUTEX_DESTROY(&pthread_group2mutex);
-  QPTHREAD_MUTEX_DESTROY(&pthread_freegroup2mutex);
+  QPTHREAD_MUTEX_DESTROY(&pthread_freeobj2mutex);
   QPTHREAD_MUTEX_DESTROY(&pthread_countobj2mutex);
   QPTHREAD_ATTR_DESTROY(&pthread_attr);
   QPTHREAD_COND_DESTROY(&pthread_group2addcond);
-  QPTHREAD_COND_DESTROY(&pthread_group2savecond);
+  QPTHREAD_COND_DESTROY(&pthread_obj2savecond);
 
   free(pthread_thread);
   free(pthread_group2);
@@ -1311,19 +1311,20 @@ NOTES	-.
 AUTHOR	E. Bertin (IAP)
 VERSION	03/01/2014
  ***/
-void	pthread_add_group2(obj2groupstruct group2)
+void	pthread_add_obj2group(obj2groupstruct group2)
   {
 
   QPTHREAD_MUTEX_LOCK(&pthread_group2mutex);
   while (pthread_group2addindex>=pthread_group2saveindex+pthread_ngroup2)
 /*-- Wait for stack to flush if limit on the number of stored obj2s is reached*/
-    QPTHREAD_COND_WAIT(&pthread_group2savecond, &pthread_group2mutex);
+    QPTHREAD_COND_WAIT(&pthread_obj2savecond, &pthread_group2mutex);
   pthread_group2[pthread_group2addindex++%pthread_ngroup2] = group2;
   QPTHREAD_COND_BROADCAST(&pthread_group2addcond);
   QPTHREAD_MUTEX_UNLOCK(&pthread_group2mutex);
 
   return;
   }
+
 
 /****** pthread_analyse_obj2group *********************************************
 PROTO	void *pthread_analyse_obj2group(void *arg)
