@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2014 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		08/06/2011
+*	Last modified:		17/02/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -633,7 +633,7 @@ keystruct	objkey[] = {
 	&outobj2.winpos_niter, H_INT, T_SHORT, "%3d", "",
 	"meta.number", ""},
 
-  {"MU_THRESHOLD", "Detection threshold above background",
+  {"MU_THRESHOLD", "Analysis threshold above background",
 	&outobj2.threshmu, H_FLOAT, T_FLOAT, "%8.4f", "mag * arcsec**(-2)",
 	"instr.sensitivity;phot.mag.sb", "mag.arcsec-2"},
   {"MU_MAX", "Peak surface brightness above background",

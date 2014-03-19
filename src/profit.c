@@ -626,15 +626,6 @@ profit->niter = profit_minimize(profit, PROFIT_MAXITER);
 /* Spheroid */
   if (FLAG(obj2.prof_spheroid_flux))
     {
-    if ((aspect = *profit->paramlist[PARAM_SPHEROID_ASPECT]) > 1.0)
-      {
-      *profit->paramlist[PARAM_SPHEROID_REFF] *= aspect;
-      profit->paramerr[profit->paramindex[PARAM_SPHEROID_REFF]] *= aspect;
-      profit->paramerr[profit->paramindex[PARAM_SPHEROID_ASPECT]]
-			/= (aspect*aspect);
-      *profit->paramlist[PARAM_SPHEROID_ASPECT] = 1.0 / aspect;
-      *profit->paramlist[PARAM_SPHEROID_POSANG] += 90.0;
-      }
     obj2->prof_spheroid_flux = *profit->paramlist[PARAM_SPHEROID_FLUX];
     obj2->prof_spheroid_fluxerr =
 		profit->paramerr[profit->paramindex[PARAM_SPHEROID_FLUX]];
@@ -648,6 +639,14 @@ profit->niter = profit_minimize(profit, PROFIT_MAXITER);
 			fmod_m90_p90(*profit->paramlist[PARAM_SPHEROID_POSANG]);
     obj2->prof_spheroid_thetaerr = 
 		profit->paramerr[profit->paramindex[PARAM_SPHEROID_POSANG]];
+    if ((aspect = obj2->prof_spheroid_aspect) > 1.0)
+      {
+      obj2->prof_spheroid_aspect = 1.0 / aspect;
+      obj2->prof_spheroid_aspecterr /= (aspect*aspect);
+      obj2->prof_spheroid_reff *= aspect;
+      obj2->prof_spheroid_refferr *= aspect;
+      obj2->prof_spheroid_theta = fmod_m90_p90(obj2->prof_spheroid_theta+90.0);
+      }
     if (FLAG(obj2.prof_spheroid_sersicn))
       {
       obj2->prof_spheroid_sersicn = *profit->paramlist[PARAM_SPHEROID_SERSICN];
@@ -696,15 +695,6 @@ profit->niter = profit_minimize(profit, PROFIT_MAXITER);
 /* Disk */
   if (FLAG(obj2.prof_disk_flux))
     {
-    if ((aspect = *profit->paramlist[PARAM_DISK_ASPECT]) > 1.0)
-      {
-      *profit->paramlist[PARAM_DISK_SCALE] *= aspect;
-      profit->paramerr[profit->paramindex[PARAM_DISK_SCALE]] *= aspect;
-      profit->paramerr[profit->paramindex[PARAM_DISK_ASPECT]]
-			/= (aspect*aspect);
-      *profit->paramlist[PARAM_DISK_ASPECT] = 1.0 / aspect;
-      *profit->paramlist[PARAM_DISK_POSANG] += 90.0;
-      }
     obj2->prof_disk_flux = *profit->paramlist[PARAM_DISK_FLUX];
     obj2->prof_disk_fluxerr =
 		profit->paramerr[profit->paramindex[PARAM_DISK_FLUX]];
@@ -717,6 +707,14 @@ profit->niter = profit_minimize(profit, PROFIT_MAXITER);
     obj2->prof_disk_theta = fmod_m90_p90(*profit->paramlist[PARAM_DISK_POSANG]);
     obj2->prof_disk_thetaerr =
 		profit->paramerr[profit->paramindex[PARAM_DISK_POSANG]];
+    if ((aspect = obj2->prof_disk_aspect) > 1.0)
+      {
+      obj2->prof_disk_aspect = 1.0 / aspect;
+      obj2->prof_disk_aspecterr /= (aspect*aspect);
+      obj2->prof_disk_scale *= aspect;
+      obj2->prof_disk_scaleerr *= aspect;
+      obj2->prof_disk_theta = fmod_m90_p90(obj2->prof_spheroid_theta+90.0);
+      }
     if (FLAG(obj2.prof_disk_inclination))
       {
       obj2->prof_disk_inclination = acos(obj2->prof_disk_aspect) / DEG;
