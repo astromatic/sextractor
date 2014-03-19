@@ -1,0 +1,67 @@
+Stéphane Arnouts <Stephane.Arnouts@oamp.fr>
+	Suggestions and extensive testing
+Marta Arroyo <marta.arroyo@alumnos.unican.es>
+	For her preparatory work on galaxy model-fitting
+Pierre Astier <pierre.astier@in2p3.fr>
+	Suggestions and bug fixes
+Eric Aubourg <Eric.Aubourg@cea.fr>
+	Hints about how to optimize a C code
+Anthony Baillard <baillard@iap.fr>
+	Testing of model-fitting
+Gary Bernstein <garyb@physics.upenn.edu>
+	Helping with error estimates
+Mark Calabretta <mcalabre@atnf.csiro.au>
+	SExtractor uses an early version of his great WCS library
+Philippe Delorme <pdelorme@obs.ujf-grenoble.fr>
+	Debugging and improving PSF-fitting
+Akim Demaille <akim@lrde.epita.fr>
+	for solving the $datarootdir issue and providing the URBI_RESOLVE_DIR()
+	function.
+Shantanu Desai <shantanu@astro.illinois.edu>
+	Finding well-hidden bugs.
+Pascal Fouqué <pfouque@eso.org>
+	Suggestions and testing
+Raphaël Gavazzi <gavazzi@iap.fr>
+	Checking shape measurements
+Delphine Hardin <hardin@in2p3.fr>
+	Suggestions and bug fixes
+Benne Holwerda <holwerda@stsci.edu>
+	For making his cookbook available
+Jean-Paul Kneib <kneib@omp.fr>, Ian Smail <Ian.Smail@durham.ac.uk>
+	Suggestions and spreading the software back in the early days! 
+Jan Kohnert <jan.kohnert@nexgo.de>
+	Helping SExtractor users
+Ville Laurikari	<vl@iki.fi>
+	For his VL_PROG_CC_WARNINGS (modified to ACX_PROG_CC_OPTIM)
+Valérie de Lapparent <lapparen@iap.fr>
+	Suggestions and testing of model-fitting
+Manolis Lourakis <lourakis@ics.forth.gr>
+	For his implementation of the Levenberg-Marquardt algorithm
+Chiara Marmo <marmo@iap.fr>
+	For providing the VOTable to HTML XSLT filter and testing.
+Joe Mohr <jmohr@illinois.edu>
+	Suggestions and testing
+Sergio Pascual <sergiopr@astrax.fis.ucm.es>
+	Helping with autoconfig and packaging
+Nacho Sevilla <nsevilla@gmail.com>
+	Testing star/galaxy classification
+Víctor Terrón <vterron@iaa.es>
+	Suggesting and documenting DETECT_MAXAREA
+Patrick Tisserand <tisseran@mso.anu.edu.au>
+	Testing PSF-fitting
+Gérard Tissier <tissier@iap.fr>
+	Preliminary implementation of the VOTable output
+
+Institut d'Astrophysique de Paris
+DeNIS project
+European Southern Observatory
+Sterrewacht Leiden
+TERAPIX project
+French Ministry of Research Grant 04-5500 (“ACI masse de donn´ees”)
+University of Illinois
+Dark Energy Survey data management project
+	Financial and technical support
+
+Too many people to list
+	Help in discovering bugs or bringing suggestions
+

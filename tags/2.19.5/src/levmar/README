@@ -1,0 +1,4 @@
+The levmar v2.6 library has been included in this package untouched, except for
+three warnings removed, LU decomposition replaced with calls to ATLAS-Lapack
+routines, Hessian matrix inversion done with SVD, and an AutoMakefile added.
+			Emmanuel Bertin <bertin@iap.fr>

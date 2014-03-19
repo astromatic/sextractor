@@ -1,0 +1,54 @@
+.TH SEXTRACTOR "1" "@DATE3@" "SExtractor @PACKAGE_VERSION@" "User Commands"
+.SH NAME
+sex \- extract a source catalogue from an astronomical FITS image
+.SH SYNOPSIS
+.B sex \fIimage\fR [\fI-c configuration-file\fR]
+.RS
+[\fI-parameter1 value1 -parameter2 value2 ...\fR]
+.RE
+.TP
+.B sex \fIimage\_detect\fR \fIimage_measure\fR [\fI-c configuration-file\fR]
+.RS
+[\fI-parameter1 value1 -parameter2 value2 ...\fR]
+.RE
+.TP
+.B sex \fI-d\fR
+.SH DESCRIPTION
+SExtractor is a program that builds a catalogue of objects from an astronomical
+image. Although it is particularly oriented towards reduction of large scale
+galaxy-survey data, it performs rather well on moderately crowded star fields.
+.RE
+See http://astromatic.net/software/sextractor for more details.
+.SS "Operation modes:"
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+print this help, then exit
+.TP
+\fB\-V\fR, \fB\-\-version\fR
+print version number, then exit
+.TP
+\fB\-d\fR, \fB\-\-dump\fR
+dump a default configuration file
+.SH MANUAL
+The full documentation for
+.B SExtractor
+is maintained as a PDF manual available at
+.B http://astromatic.net/software/sextractor
+.SH "REPORTING BUGS"
+Please report bugs to the SExtractor software forum at
+http://astromatic.net/forum.
+.SH "SEE ALSO"
+.BR
+eye(1), missfits(1), psfex(1), scamp(1), sky(1), stiff(1), stuff(1), swarp (1),
+ww(1)
+.SH AUTHORS
+Written by Emmanuel Bertin (Institut d'Astrophysique de Paris)
+.PP
+.SH LICENSE
+SExtractor is licensed under the terms of the General Public License (GPL),
+version 3.
+.SH COPYRIGHT
+.PP
+This is free software; see the source for copying conditions.  There is NO
+warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
