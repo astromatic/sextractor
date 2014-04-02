@@ -1130,8 +1130,9 @@ void	psf_build(psfstruct *psf, obj2struct *obj2)
 /*
 Build the local PSF (function of "context").
  */
-void	psf_buildpos(psfstruct *psf, double *pos, const int inndim)
+void	psf_buildpos(psfstruct *psf, const double *posin, const int inndim)
 {
+	double	pos[POLY_MAXDIM];
 	double	*basis, fac;
 	float	*ppc, *pl;
 	int		n, p, npix;
@@ -1148,6 +1149,10 @@ void	psf_buildpos(psfstruct *psf, double *pos, const int inndim)
 	// compute the number of pixels and reset the Local PSF mask
 	npix = psf->masksize[0]*psf->masksize[1];
 	memset(psf->maskloc, 0, npix*sizeof(float));
+
+	// normalize the positional values
+	for (n=0; n<psf->poly->ndim; n++)
+		pos[n] = (posin[n] - psf->contextoffset[n]) / psf->contextscale[n];
 
 	// evaluate the polynomial
 	poly_func(psf->poly, pos);
