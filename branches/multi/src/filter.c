@@ -46,84 +46,121 @@
 #include	"wcs/poly.h"
 #include	"image.h"
 
-/******************************** convolve ***********************************/
-/*
-Convolve a scan line with an array.
-*/
-void	convolve(fieldstruct *field, PIXTYPE *mscan, int y)
+/**
+ * Function: convolve
+ *
+ * Convolves a scan line with an array. The row number to convole is given
+ * as input. The convoluted line is returned, hence it does NOT work
+ * in place.
+ * The main iteration is NOT over the image pixels but over the filter
+ * values.
+ *
+ * @param[in]  field  structure with the scan data
+ * @param[out] mscan the convolved image line
+ * @param[in]  y     image row to convolve
+ *
+ */
+void convolve(fieldstruct *field, PIXTYPE *mscan, int y)
 
-  {
-   int		mw,mw2,m0,me,m,mx,dmx, y0, dy, sw,sh;
-   float	*mask;
-   PIXTYPE	*mscane, *s,*s0, *d,*de, mval;
+{
+        int             mw,mw2,m0,me,m,mx,dmx, y0, dy, sw,sh;
+        float   *mask;
+        PIXTYPE *mscane, *s,*s0, *d,*de, mval;
 
-  sw = field->width;        // looks like the width of the image
-  sh = field->stripheight;  // looks like the height of the data available
-  mw = thefilter->convw;    // certainly the width of the filter
-  mw2 = mw/2;
-  mscane = mscan+sw;
+        sw = field->width;        // width of the image
+        sh = field->stripheight;  // height of the data available
+        mw = thefilter->convw;    // certainly the width of the kernel
+        mw2 = mw/2;               // half width of the kernel
+        mscane = mscan+sw;        // the end of the result vector
 
-  y0 = y - (thefilter->convh/2);  // the row index where the convolution needs to start
-  if ((dy = field->ymin-y0) > 0)  // check whether the starting row index is available (could be outside the image/interval)
-    {
-    m0 = mw*dy;                   // ??? pointer arithmetic???
-    y0 = field->ymin;             // the true start index is not available, start as low as possible
-    }
-  else
-    m0 = 0;                       // ??? pointer arithmetic???
+        // fix the y-value to start the convolution
+        y0 = y - (thefilter->convh/2);
 
-  if ((dy = field->ymax - y0) < thefilter->convh) // is the entire convolution possible
-    me = mw*dy;                                   // upper edge is too close
-  else
-    me = mw*thefilter->convh;                     // normal branch
+        // check whether the starting
+        // y-value is available
+        if ((dy = field->ymin-y0) > 0)
+        {
+                // fix the smallest available y-value
+                y0 = field->ymin;
 
-  // m0 and me mark the pointer indices in
-  // the convolution filter that can be used
+                // restrict the convolution kernel
+                // to the usable area.
+                // NOTE: the lower part of y in the image corresponds
+                //       to the upper end in the kernel, hence the
+                //       upper end needs to be adjusted
+                me = mw*(thefilter->convh-dy);
+        }
+        else
+                // us the entire kernel as default
+                me = mw*thefilter->convh;
 
-  // re-set the resulting vector
-  memset(mscan, 0, sw*sizeof(PIXTYPE));
-  s0 = NULL;				/* To avoid gcc -Wall warnings */
+        // check whether the upper
+        // y-value is available
+        if ((dy = field->ymax - y0) < thefilter->convh){
+                // if the high y-values are not available,
+                // restrict the convolution kernel to the usable area.
+                // NOTE: the upper part of y in the image corresponds
+                //       to the lower part in the kernel, hence the
+                //       lower end needs to be adjusted
+                m0 = mw*(thefilter->convh-dy);
+        }
+        else
+                // us the entire kernel as default
+                m0 = 0;
 
-  // set mask to the start of the filter
-  mask = thefilter->conv+m0;
-  for (m = m0, mx = 0; m<me; m++, mx++)
-    {
-	// check for a new row
-	// in the convolution kernel
-    if (mx==mw)
-      mx = 0;
-    // jump to a new row in the
-    // image data
-    if (!mx)
-      s0 = field->strip+sw*((y0++)%sh);
+        // m0 and me mark the pointer indices in
+        // the convolution kernel that can be used
 
-    // make reasonable start
-    // and end values
-    if ((dmx = mx-mw2)>=0)
-      {
-      s = s0 + dmx;
-      d = mscan;
-      de = mscane - dmx;
-      }
-    else
-      {
-      s = s0;
-      d = mscan - dmx;
-      de = mscane;
-      }
+        // initialize the resulting vector
+        memset(mscan, 0, sw*sizeof(PIXTYPE));
+        s0 = NULL;                              /* To avoid gcc -Wall warnings */
 
-    // fix a mask value
-    mval = *(mask++);
+        // set mask to the end of the kernel
+        mask = thefilter->conv+me;
 
-    // go over the row
-    // and add the contribution
-    // to the result vector
-    while (d<de)
-      *(d++) += mval**(s++);
-    }
+        // iterate over all usable filter
+        // values; for each value add its
+        // contribution to the corresponding
+        // value of the filtered array
+        for (m = m0, mx = 0; m<me; m++, mx++)
+        {
+                // check for a new row
+                // in the convolution kernel
+                if (mx==mw)
+                        mx = 0;
 
-  return;
-  }
+                // jump to a new row in the
+                // image data
+                if (!mx)
+                        s0 = field->strip+sw*((y0++)%sh);
+
+                // make reasonable start
+                // and end values
+                if ((dmx = mx-mw2)>=0)
+                {
+                        s = s0 + dmx;
+                        d = mscan;
+                        de = mscane - dmx;
+                }
+                else
+                {
+                        s = s0;
+                        d = mscan - dmx;
+                        de = mscane;
+                }
+
+                // get the kernel value
+                mval = *(--mask);
+
+                // go over the row
+                // and add the contribution
+                // to the result vector
+                while (d<de)
+                        *(d++) += mval**(s++);
+        }
+
+        return;
+}
 
 
 /**
