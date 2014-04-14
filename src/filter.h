@@ -29,34 +29,53 @@
 /*------------------------------- definitions -------------------------------*/
 
 #define	MAXMASK		1024	/* Maximum number of mask elements (=32x32) */
+#define POLY_MAXDIM        4    /* Max dimensionality of polynom (from poly.h)*/
 
 /*------------------------------- structures --------------------------------*/
 
+/** @struct varconv
+ *  @brief Structure for a 2D variable convolution
+ */
+typedef struct convvar
+  {
+    double    pos[POLY_MAXDIM]; /**< member pos[] the independent coords for psf in the right order */
+    double    *xpos;            /**< member xpos  points to the correct location of x in pos[] */
+    double    *ypos;            /**< member ypos  points to the correct location of y in pos[] */
+    psfstruct *psf;             /**< member psf   the psf structure */
+    double    *basis;           /**< member basis pointer to store the polynomial coefficients for an image row */
+  } varconv;
+
+  /** @struct filterstruct
+   *  @brief Structure for the convolution filter
+   */
 typedef struct structfilter
   {
-/*---- convolution */
-  float		*conv;		/* pointer to the convolution mask */
-  int		nconv;		/* total number of elements */
-  int		convw, convh;	/* x,y size of the mask */
-  float		varnorm;
-/*---- neural filtering */
-  struct structbpann	*bpann;
+  float	  *conv;		 /**< member conv pointer to the convolution mask */
+  int	  nconv;		 /**< member nconv total number of elements */
+  int     convw;	         /**< member convw width of the mask */
+  int     convh;                 /**< member convw height of the mask */
+  float   varnorm;
+  varconv *varpsf;               /**< member varpsf for 2D variable convolution */
+  struct  structbpann	*bpann;  /**< member structbpann  neural filtering */
+  void    (*filterFunc)(fieldstruct *, PIXTYPE *, int y); /**< member filterFunc */
   }	filterstruct;
-
-filterstruct	*thefilter;
+filterstruct *thefilter;
 
 /*------------------------------- functions ---------------------------------*/
-void		convolve(fieldstruct *, PIXTYPE *, int y),
-		convolve_image(fieldstruct *field, float *vig1,
-				float *vig2, int width, int height),
-		filter(fieldstruct *, PIXTYPE *, int y),
-		neurfilter(fieldstruct *, PIXTYPE *, int y),
-		endfilter(void);
+void  convolve(fieldstruct *, PIXTYPE *, int y);
+void  convolve_var(fieldstruct *, PIXTYPE *, int y);
+void  convolve_image(fieldstruct *field, float *vig1, float *vig2, int width, int height);
+void  filter(fieldstruct *, PIXTYPE *, int y);
+void  neurfilter(fieldstruct *, PIXTYPE *, int y);
+void  endfilter(void);
 
 
 extern int  getneurfilter(const char *filename);
 extern void getfilter(const char *filename);
-extern int	getconv(const char *filename);
+extern int  getconv(const char *filename);
 extern int  getASCIIconv(const char *filename);
-extern int  getPSFExconv(const char *filename);
+extern int  getConstPSFExConv(const char *filename);
+extern int  getPSFExConv(const char *filename);
+extern int  optPSFExSize(const psfstruct *psf, int *size);
+extern void optPSFExSizeOld(const psfstruct *psf);
 extern void getImageStats(const float *pix, const int width, const int height, float stats[]);

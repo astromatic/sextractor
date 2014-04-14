@@ -44,10 +44,16 @@
 #include	"filter.h"
 #include	"image.h"
 #include	"wcs/poly.h"
-#include	"psf.h"
 #include	"subimage.h"
+#include	"psf.h"
+
+static float	interpolate_pix(float *posin, float *pix, int *naxisn,
+		interpenum interptype);
+
+static void	make_kernel(float pos, float *kernel, interpenum interptype);
 
 /*------------------------------- variables ---------------------------------*/
+const int	interp_kernwidth_psf[5]={1,2,4,6,8};
 
 
 extern keystruct	obj2key[];
@@ -108,11 +114,16 @@ void	psf_end(psfstruct *psf, psfitstruct *psfit)
   return;
   }
 
-
-/********************************* psf_load *********************************/
-/*
-Read the PSF data from a FITS file.
-*/
+/****************************psf_load*****************************************/
+/**
+ * Function: psf_load
+ *
+ * Read the PSF data from a FITS file in the PSFEx format.
+ *
+ * @param[in] filename name of the PSFEx file
+ *
+ * @return the generated PSF structure
+ */
 psfstruct	*psf_load(char *filename)
   {
    static obj2struct	saveobj2;
@@ -305,37 +316,315 @@ void	psf_readcontext(psfstruct *psf, fieldstruct *field)
   return;
   }
 
+/*****************************psf_print***************************************/
+/**
+ *
+ * Function: psf_print
+ *
+ * Prints information on a PSFEx structure. Depending on the input only
+ * metadata or also the polynomial data and, if available, the evaluated
+ * PSF in the storage is printed.
+ *
+ * @author MK
+ * @date   April 2014
+ *
+ * @param[in] psf        the PSF struct
+ * @param[in] printdata  print the polynomial data?
+ * @param[in] printloc   print the evaluated psf?
+ *
+ */
 void psf_print(const psfstruct *psf, const int printdata, const int printloc){
-	int index, ndim;
-	QPRINTF(OUTPUT, "PSF name: %s\n", psf->name);
-	QPRINTF(OUTPUT, "maskdim: %i\n", psf->maskdim);
-	for (index=0; index < psf->maskdim; index++)
-		QPRINTF(OUTPUT, "masksize[%i]: %i\n", index, psf->masksize[index]);
-	ndim = psf->poly->ndim;
-	QPRINTF(OUTPUT, "number of dimensions: %i\n", ndim);
-	for (index=0; index < ndim; index++){
-		if (!psf->context[index]){
-			QPRINTF(OUTPUT, "context[%i] not (yet) defined!\n", index);
+  int index, ndim, ngroup;
+  QPRINTF(OUTPUT, "PSF name: %s\n", psf->name);
+  QPRINTF(OUTPUT, "maskdim: %i\n", psf->maskdim);
+  for (index=0; index < psf->maskdim; index++)
+    QPRINTF(OUTPUT, "masksize[%i]: %i\n", index, psf->masksize[index]);
+  ndim   = psf->poly->ndim;
+  ngroup = psf->poly->ngroup;
+  QPRINTF(OUTPUT, "number of dimensions: %i\n", ndim);
+  for (index=0; index < ndim; index++){
+      if (!psf->context[index]){
+          QPRINTF(OUTPUT, "context[%i] not (yet) defined!\n", index);
+      }
+      else{
+          QPRINTF(OUTPUT, "context[i].name:   %s\n", psf->contextname[index]);
+          QPRINTF(OUTPUT, "context[i].offset: %.3g\n", psf->contextoffset[index]);
+          QPRINTF(OUTPUT, "context[i].scale:  %.3g\n", psf->contextscale[index]);
+      }
+  }
+
+  for (index=0; index < ndim; index++){
+      QPRINTF(OUTPUT, "group index %i:   %i\n", index, psf->poly->group[index]);
+  }
+
+  for (index=0; index < ngroup; index++){
+      QPRINTF(OUTPUT, "degree index %i:   %i\n", index, psf->poly->degree[index]);
+  }
+
+  if (printdata) {
+      QPRINTF(OUTPUT, "masknpix: %i\n", psf->masknpix);
+      for (index=0; index < psf->masknpix; index++)
+        QPRINTF(OUTPUT, " %.4g", psf->maskcomp[index]);
+  }
+  QPRINTF(OUTPUT, "\nFWHM: %.3g\n", psf->fwhm);
+  QPRINTF(OUTPUT, "pixstep: %.3g\n", psf->pixstep);
+  QPRINTF(OUTPUT, "build_flag: %i\n", psf->build_flag);
+  if (printloc && psf->build_flag){
+      QPRINTF(OUTPUT, "local psf:\n");
+      for (index=0; index<psf->masksize[0]*psf->masksize[1]; index++)
+        QPRINTF(OUTPUT, " %.4g", psf->maskloc[index]);
+  }
+}
+
+
+/******************************psf_resample***********************************/
+/**
+ *
+ * Function: psf_resample
+ *
+ * "factor" is the ratio of the new pixel size over the old pixel size, meaning
+ * "factor>1.0" means the first two dimension of the new PSF struct get smaller,
+ * "factor<1.0" means the first two dimension of the new PSF struct get bigger!
+ * As a consequence, "factor=1.0/psf->pixstep" re-samples the PSF to the pixel
+ * size of the image it was derived from.
+ *
+ * @author MK
+ * @date   April 2014
+ *
+ * @param[in] psf     the PSF structure
+ * @param[in] factor  the re-sampling factor
+ *
+ * @return re-sampled PSF structure
+ */
+psfstruct *psf_resample(const psfstruct *psf, const float factor){
+  psfstruct *res_psf;
+  int w2, h2;
+  float xcin, ycin, xcout, ycout;
+  float *pix1, *pix2, flux, factorsquare;
+  float	posin[2], posout[2], dnaxisn[2];
+  int d, i, index, ii;
+  int	deg[POLY_MAXDIM], group[POLY_MAXDIM], ndim, ngroup;
+
+  // square of the resample factor
+  factorsquare = factor*factor;
+
+  // determine the new size
+  w2=(int)ceil((double)psf->masksize[0]/factor);
+  h2=(int)ceil((double)psf->masksize[1]/factor);
+  w2 = !(w2 % 2) ? w2+1 : w2;
+  h2 = !(h2 % 2) ? h2+1 : h2;
+  //QPRINTF(OUTPUT, "size1: (%i,%i) --> size2: (%i,%i)\n\n", psf->masksize[0], psf->masksize[1], w2, h2);
+
+  // compute the image centers using FITS convention
+  xcout = (float)(w2/2) + 1.0;	/* FITS convention */
+  ycout = (float)(h2/2) + 1.0;	/* FITS convention */
+  xcin = (float)(psf->masksize[0]/2) + 1.0;			/* FITS convention */
+  ycin = (float)(psf->masksize[1]/2) + 1.0;			/* FITS convention */
+
+  // allocate memory for the PSF structure itself
+  QCALLOC(res_psf, psfstruct, 1);
+
+  // define and set the dimensions
+  // in the new PSF
+  res_psf->maskdim = psf->maskdim;
+  QMALLOC(res_psf->masksize, int, res_psf->maskdim);
+  res_psf->masksize[0]=w2;
+  res_psf->masksize[1]=h2;
+  res_psf->masksize[2]=psf->masksize[2];
+  res_psf->masknpix = res_psf->masksize[0]*res_psf->masksize[1]*res_psf->masksize[2];
+
+  // allocate memory for the data arrays
+  QCALLOC(res_psf->maskcomp, float, res_psf->masknpix);
+  QCALLOC(res_psf->maskloc, float, res_psf->masksize[0]*res_psf->masksize[1]);
+
+  // copy some static metadata over
+  strcpy(res_psf->name, "<REBIN>");
+  strcat(res_psf->name, psf->name);
+  res_psf->pixstep    = factor*psf->pixstep;
+  res_psf->fwhm       = psf->fwhm/factor;
+  res_psf->build_flag = 0;
+
+  // allocate memory for dynamic metadata
+  ndim   = psf->poly->ndim;
+  ngroup = psf->poly->ngroup;
+  QMALLOC(res_psf->contextname, char *, ndim);
+  QMALLOC(res_psf->context, double *, ndim);
+  QMALLOC(res_psf->contexttyp, t_type, ndim);
+  QMALLOC(res_psf->contextoffset, double, ndim);
+  QMALLOC(res_psf->contextscale, double, ndim);
+
+  // copy over the dynamic metadata
+  for (index=0; index<ndim; index++){
+      // copy context names
+      QMALLOC(res_psf->contextname[index], char, 80);
+      strcpy(res_psf->contextname[index], psf->contextname[index]);
+
+      // not sure whether it is so easy
+      res_psf->context[index]       = psf->context[index];
+      res_psf->contexttyp[index]    = psf->contexttyp[index];
+
+      // copy offsets and scales
+      res_psf->contextoffset[index] = psf->contextoffset[index];
+      res_psf->contextscale[index]  = psf->contextscale[index];
+
+      // copy group numbers
+      // the "+1" is necessary since there i "-1"
+      // in "poly_init()" down
+      group[index] = psf->poly->group[index]+1;
+  }
+
+  // copy degree numbers
+  for (index=0; index<ngroup; index++)
+    deg[index] = psf->poly->degree[index];
+
+  // initialize the polynomials
+  res_psf->poly = poly_init(group, ndim, deg, ngroup);
+
+  pix1 = psf->maskcomp;
+  pix2 = res_psf->maskcomp;
+  for (ii=0; ii<res_psf->masksize[2]; ii++, pix1+=psf->masksize[0]*psf->masksize[1]){
+      for (posout[1]=1.0; posout[1] < (float)res_psf->masksize[1]+0.5; posout[1]+=1.0){
+          for (posout[0]=1.0; posout[0] < (float)res_psf->masksize[0]+0.5; posout[0]+=1.0){
+              //for (i=w2*h2; i--;){
+              //QPRINTF(OUTPUT, " (%.5g,%.5g)", posout[0], posout[1]);
+
+              posin[0] = (posout[0] - xcout)*factor + xcin;
+              posin[1] = (posout[1] - ycout)*factor + ycin;
+              //QPRINTF(OUTPUT, " (%.5g,%.5g)<->(%.5g,%.5g)", posout[0], posout[1], posin[0], posin[1]);
+              //flux += ((*(pixout++) = interpolate_pix(posin, psf->maskloc, psf->masksize, INTERP_LANCZOS3)));
+              //flux += ((*(pix2++) = interpolate_pix(posin, psf->maskcomp, psf->masksize, INTERP_LANCZOS3)));
+              //*(pix2++) = interpolate_pix(posin, psf->maskcomp, psf->masksize, INTERP_LANCZOS3);
+
+              // fill in with the Lanczos-resampled value times factor^2 to preserve normalization
+              *(pix2++) = interpolate_pix(posin, pix1, psf->masksize, INTERP_LANCZOS3)*factorsquare;
+
+              // for (posout[0],posout[1])=(x,y) iterates over all x,y values,
+              // varying over x more rapidly:
+              // (posout[0],posout[1]) = (1,1), (2,1), (3,1),....., (2,1), (2,2), ...
+              //    for (d=0; d<2; d++)
+              //      if ((posout[d]+=1.0) < dnaxisn[d])
+              //        break;
+              //      else
+              //        posout[d] = 1.0;
+              //}
+          }
+      }
+  }
+
+  return res_psf;
+}
+
+
+/******************************psf_trim***************************************/
+/**
+ *
+ * Function: psf_trim
+ *
+ * Trim the part of a psf-struct, leaving the center where
+ * most of the signal is. Adjust the other metadata of the
+ * structure as well.
+ * The definitions on how to compute the trimmed dimensions
+ * from "optsize" follow "filter.c:optPSFExSize()"
+ *
+ * @author MK
+ * @date   April 2014
+ *
+ * @param[in,out] psf     the PSF structure
+ * @param[in]     optsize  the desired size
+ */
+void psf_trim(psfstruct *psf, const int optsize){
+	int xstart, ystart, xend, yend;
+	int xnewsize, ynewsize;
+	int ii, jj, kk;
+	float *pix1, *pix2, *pix2save, *rowpos, *actpos;
+
+	// set the start and end values for x/y
+	xstart = psf->masksize[0]/2-optsize < 0 ? 0 : psf->masksize[0]/2-optsize;
+	ystart = psf->masksize[1]/2-optsize < 0 ? 0 : psf->masksize[1]/2-optsize;
+	xend   = psf->masksize[0]/2+optsize+1 < psf->masksize[0] ? psf->masksize[0]/2+optsize+1 : psf->masksize[0];
+	yend   = psf->masksize[1]/2+optsize+1 < psf->masksize[1] ? psf->masksize[1]/2+optsize+1 : psf->masksize[1];
+
+	// return if there is nothing to do
+	if (xstart==0 && ystart==0 && xend==psf->masksize[0] && yend==psf->masksize[1]){
+		return;
+	}
+
+	// determine the old and new sizes
+	xnewsize = xend-xstart;
+	ynewsize = yend-ystart;
+
+	// allocate memory for the new data vector
+	QMALLOC(pix2, float, xnewsize*ynewsize*psf->masksize[2]);
+
+	// transfer the pixel values
+	pix1 = psf->maskcomp;
+	pix2save = pix2;
+	for (kk=0, pix1=psf->maskcomp; kk<psf->masksize[2]; kk++, pix1+=psf->masksize[0]*psf->masksize[1]){
+		for (jj=ystart, rowpos=pix1+(ystart*psf->masksize[1]); jj<yend; jj++, rowpos+=psf->masksize[1]){
+			for (ii=xstart, actpos=rowpos+xstart; ii<xend; ii++){
+				*(pix2++) = *(actpos++);
+			}
 		}
-		else{
-			QPRINTF(OUTPUT, "context[i].name:   %s\n", psf->contextname[index]);
-			QPRINTF(OUTPUT, "context[i].offset: %.3g\n", psf->contextoffset[index]);
-			QPRINTF(OUTPUT, "context[i].scale:  %.3g\n", psf->contextscale[index]);
-		}
 	}
-	if (printdata) {
-		QPRINTF(OUTPUT, "masknpix: %i\n", psf->masknpix);
-		for (index=0; index < psf->masknpix; index++)
-			QPRINTF(OUTPUT, " %.4g", psf->maskcomp[index]);
-	}
-	QPRINTF(OUTPUT, "\nFWHM: %.3g\n", psf->fwhm);
-	QPRINTF(OUTPUT, "pixstep: %.3g\n", psf->pixstep);
-	QPRINTF(OUTPUT, "build_flag: %i\n", psf->build_flag);
-	if (printloc && psf->build_flag){
-		QPRINTF(OUTPUT, "local psf:\n");
-		for (index=0; index<psf->masksize[0]*psf->masksize[1]; index++)
-			QPRINTF(OUTPUT, " %.4g", psf->maskloc[index]);
-	}
+
+	// transfer the memory to
+	// the structure
+	free(psf->maskcomp);
+	psf->maskcomp = pix2save;
+
+	// set the new size
+	psf->masksize[0] = xnewsize;
+	psf->masksize[1] = ynewsize;
+	psf->masknpix = psf->masksize[0]*psf->masksize[1]*psf->masksize[2];
+
+	// re-set the local storage
+	free(psf->maskloc);
+	QMALLOC(psf->maskloc, float, psf->masksize[0]*psf->masksize[1]);
+	memset(psf->maskloc, psf->masksize[0]*psf->masksize[1], sizeof(float));
+
+	// mark as empty
+	psf->build_flag=0;
+}
+
+/******************************psf_normalize**********************************/
+/**
+ *
+ * Function: psf_normalize
+ *
+ * Normalize a psf structure. This is done by evaluating the psf at
+ * the offset position, summing over the local psf and then dividing
+ * all components by that sum.
+ *
+ * @author MK
+ * @date   April 2014
+ *
+ * @param[in,out] psf     the PSF structure
+ */
+void psf_normalize(psfstruct *psf){
+  double pos[POLY_MAXDIM];
+  float *actpix;
+  float sum=0.0;
+  int index=0;
+
+  // build the psf at the offset position,
+  // which is in the middle of the field
+  for (index=0; index < psf->poly->ndim; index++){
+    pos[index] = psf->contextoffset[index];
+  }
+  psf->build_flag=0;
+  psf_buildpos(psf, pos, psf->poly->ndim);
+
+  // sum up the evaluated psf
+  actpix = psf->maskloc;
+  for (index=0; index<psf->masksize[0]*psf->masksize[1]; index++){
+      sum += *(actpix++);
+  }
+
+  // normalize the data values
+  actpix = psf->maskcomp;
+  for (index=0; index<psf->masknpix; index++){
+      *(actpix++) /= sum;
+  }
 }
 
 /******************************** psf_fit ***********************************/
@@ -1126,52 +1415,65 @@ void	psf_build(psfstruct *psf, obj2struct *obj2)
   return;
   }
 
-/******************************* psf_buildpos **********************************/
-/*
-Build the local PSF (function of "context").
+/**************************psf_buildpos***************************************/
+/**
+ * Function: psf_buildpos
+ *
+ * Evaluates the PSF struct at a given position. The PSF values
+ * are written to the local storage of the PSF struct.
+ *
+ * @author MK
+ * @date   April 2014
+ *
+ * @param[in,out] psf    the PSF struct
+ * @param[in]     pos    position to evaluate the PSF struct
+ * @param[in]     inndim number of dimensions/values in 'pos'
+ *
  */
-void	psf_buildpos(psfstruct *psf, const double *posin, const int inndim)
+void psf_buildpos(psfstruct *psf, const double *posin, const int inndim)
 {
-	double	pos[POLY_MAXDIM];
-	double	*basis, fac;
-	float	*ppc, *pl;
-	int		n, p, npix;
+  double	pos[POLY_MAXDIM];
+  double	*basis, fac;
+  float	*ppc, *pl;
+  int		n, p, npix;
 
-	// looks like this can only
-	// be un-set from the 'outside'
-	if (psf->build_flag)
-		return;
+  // looks like this can only
+  // be un-set from the 'outside'
+  if (psf->build_flag){
+      QPRINTF(OUTPUT, "nothing to do, build-flag is: %i\n", psf->build_flag);
+      return;
+  }
+  // assure the dimensions match
+  if (inndim != psf->poly->ndim){
+      error(EXIT_FAILURE, "*Error*: the dimensions differ ", "for the PSF!");
+  }
 
-	// assure the dimensions match
-	if (inndim != psf->poly->ndim)
-		error(EXIT_FAILURE, "*Error*: the dimensions differ ", "for the PSF!");
+  // compute the number of pixels and reset the Local PSF mask
+  npix = psf->masksize[0]*psf->masksize[1];
+  memset(psf->maskloc, 0, npix*sizeof(float));
 
-	// compute the number of pixels and reset the Local PSF mask
-	npix = psf->masksize[0]*psf->masksize[1];
-	memset(psf->maskloc, 0, npix*sizeof(float));
+  // normalize the positional values
+  for (n=0; n<psf->poly->ndim; n++){
+      pos[n] = (posin[n] - psf->contextoffset[n]) / psf->contextscale[n];
+  }
 
-	// normalize the positional values
-	for (n=0; n<psf->poly->ndim; n++)
-		pos[n] = (posin[n] - psf->contextoffset[n]) / psf->contextscale[n];
+  // evaluate the polynomial
+  poly_func(psf->poly, pos);
+  basis = psf->poly->basis;
 
-	// evaluate the polynomial
-	poly_func(psf->poly, pos);
-	basis = psf->poly->basis;
+  // Sum each component
+  ppc = psf->maskcomp;
+  for (n = (psf->maskdim>2?psf->masksize[2]:1); n--;){
+      pl = psf->maskloc;
+      fac = *(basis++);
+      for (p=npix; p--;)
+        *(pl++) +=  fac**(ppc++);
+  }
 
-	// Sum each component
-	ppc = psf->maskcomp;
-	for (n = (psf->maskdim>2?psf->masksize[2]:1); n--;)
-	{
-		pl = psf->maskloc;
-		fac = *(basis++);
-		for (p=npix; p--;)
-			*(pl++) +=  fac**(ppc++);
-	}
+  // set the build flag
+  psf->build_flag = 1;
 
-	// set the build flag
-	psf->build_flag = 1;
-
-	return;
+  return;
 }
 
 
@@ -1744,3 +2046,225 @@ void svdvar(double *v, double *w, int n, double *cov)
   return;
   }
 
+/****** interpolate_pix ******************************************************
+PROTO	void interpolate_pix(float *posin, float *pix, int naxisn,
+		interpenum interptype)
+PURPOSE	Interpolate a model profile at a given position.
+INPUT	Profile structure,
+	input position vector,
+	input pixmap dimension vector,
+	interpolation type.
+OUTPUT	-.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	07/12/2006
+ ***/
+static float	interpolate_pix(float *posin, float *pix, int *naxisn,
+			interpenum interptype)
+  {
+   float	buffer[INTERP_MAXKERNELWIDTH],
+		kernel[INTERP_MAXKERNELWIDTH], dpos[2],
+		*kvector, *pixin, *pixout,
+		val;
+   int		fac, ival, kwidth, start, width, step,
+		i,j, n;
+
+  kwidth = interp_kernwidth_psf[interptype];
+  start = 0;
+  fac = 1;
+  for (n=0; n<2; n++)
+    {
+    val = *(posin++);
+    width = naxisn[n];
+/*-- Get the integer part of the current coordinate or nearest neighbour */
+    ival = (interptype==INTERP_NEARESTNEIGHBOUR)? (int)(val-0.50001):(int)val;
+/*-- Store the fractional part of the current coordinate */
+    dpos[n] = val - ival;
+/*-- Check if interpolation start/end exceed image boundary... */
+    ival-=kwidth/2;
+    if (ival<0 || ival+kwidth<=0 || ival+kwidth>width)
+      return 0.0;
+/*-- Update starting pointer */
+    start += ival*fac;
+/*-- Update step between interpolated regions */
+    fac *= width;
+    }
+
+/* First step: interpolate along NAXIS1 from the data themselves */
+  make_kernel(dpos[0], kernel, interptype);
+  step = naxisn[0]-kwidth;
+  pixin = pix+start;
+  pixout = buffer;
+  for (j=kwidth; j--;)
+    {
+    val = 0.0;
+    kvector = kernel;
+    for (i=kwidth; i--;)
+      val += *(kvector++)**(pixin++);
+    *(pixout++) = val;
+    pixin += step;
+    }
+
+/* Second step: interpolate along NAXIS2 from the interpolation buffer */
+  make_kernel(dpos[1], kernel, interptype);
+  pixin = buffer;
+  val = 0.0;
+  kvector = kernel;
+  for (i=kwidth; i--;)
+    val += *(kvector++)**(pixin++);
+
+  return val;
+  }
+
+
+/****** make_kernel **********************************************************
+PROTO	void make_kernel(float pos, float *kernel, interpenum interptype)
+PURPOSE	Conpute interpolation-kernel data
+INPUT	Position,
+	Pointer to the output kernel data,
+	Interpolation method.
+OUTPUT	-.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	25/07/2011
+ ***/
+void	make_kernel(float pos, float *kernel, interpenum interptype)
+  {
+   float	x, val, sinx1,sinx2,sinx3,cosx1;
+
+  if (interptype == INTERP_NEARESTNEIGHBOUR)
+    *kernel = 1;
+  else if (interptype == INTERP_BILINEAR)
+    {
+    *(kernel++) = 1.0-pos;
+    *kernel = pos;
+    }
+  else if (interptype == INTERP_LANCZOS2)
+    {
+    if (pos<1e-5 && pos>-1e-5)
+      {
+      *(kernel++) = 0.0;
+      *(kernel++) = 1.0;
+      *(kernel++) = 0.0;
+      *kernel = 0.0;
+      }
+    else
+      {
+      x = -PI/2.0*(pos+1.0);
+#ifdef HAVE_SINCOSF
+      sincosf(x, &sinx1, &cosx1);
+#else
+      sinx1 = sinf(x);
+      cosx1 = cosf(x);
+#endif
+      val = (*(kernel++) = sinx1/(x*x));
+      x += PI/2.0;
+      val += (*(kernel++) = -cosx1/(x*x));
+      x += PI/2.0;
+      val += (*(kernel++) = -sinx1/(x*x));
+      x += PI/2.0;
+      val += (*kernel = cosx1/(x*x));
+      val = 1.0/val;
+      *(kernel--) *= val;
+      *(kernel--) *= val;
+      *(kernel--) *= val;
+      *kernel *= val;
+      }
+    }
+  else if (interptype == INTERP_LANCZOS3)
+    {
+    if (pos<1e-5 && pos>-1e-5)
+      {
+      *(kernel++) = 0.0;
+      *(kernel++) = 0.0;
+      *(kernel++) = 1.0;
+      *(kernel++) = 0.0;
+      *(kernel++) = 0.0;
+      *kernel = 0.0;
+      }
+    else
+      {
+      x = -PI/3.0*(pos+2.0);
+#ifdef HAVE_SINCOSF
+      sincosf(x, &sinx1, &cosx1);
+#else
+      sinx1 = sinf(x);
+      cosx1 = cosf(x);
+#endif
+      val = (*(kernel++) = sinx1/(x*x));
+      x += PI/3.0;
+      val += (*(kernel++) = (sinx2=-0.5*sinx1-0.866025403785*cosx1)
+				/ (x*x));
+      x += PI/3.0;
+      val += (*(kernel++) = (sinx3=-0.5*sinx1+0.866025403785*cosx1)
+				/(x*x));
+      x += PI/3.0;
+      val += (*(kernel++) = sinx1/(x*x));
+      x += PI/3.0;
+      val += (*(kernel++) = sinx2/(x*x));
+      x += PI/3.0;
+      val += (*kernel = sinx3/(x*x));
+      val = 1.0/val;
+      *(kernel--) *= val;
+      *(kernel--) *= val;
+      *(kernel--) *= val;
+      *(kernel--) *= val;
+      *(kernel--) *= val;
+      *kernel *= val;
+      }
+    }
+  else if (interptype == INTERP_LANCZOS4)
+    {
+    if (pos<1e-5 && pos>-1e-5)
+      {
+      *(kernel++) = 0.0;
+      *(kernel++) = 0.0;
+      *(kernel++) = 0.0;
+      *(kernel++) = 1.0;
+      *(kernel++) = 0.0;
+      *(kernel++) = 0.0;
+      *(kernel++) = 0.0;
+      *kernel = 0.0;
+      }
+    else
+      {
+      x = -PI/4.0*(pos+3.0);
+#ifdef HAVE_SINCOSF
+      sincosf(x, &sinx1, &cosx1);
+#else
+      sinx1 = sinf(x);
+      cosx1 = cosf(x);
+#endif
+      val = (*(kernel++) = sinx1/(x*x));
+      x += PI/4.0;
+      val +=(*(kernel++) = -(sinx2=0.707106781186*(sinx1+cosx1))
+				/(x*x));
+      x += PI/4.0;
+      val += (*(kernel++) = cosx1/(x*x));
+      x += PI/4.0;
+      val += (*(kernel++) = -(sinx3=0.707106781186*(cosx1-sinx1))/(x*x));
+      x += PI/4.0;
+      val += (*(kernel++) = -sinx1/(x*x));
+      x += PI/4.0;
+      val += (*(kernel++) = sinx2/(x*x));
+      x += PI/4.0;
+      val += (*(kernel++) = -cosx1/(x*x));
+      x += PI/4.0;
+      val += (*kernel = sinx3/(x*x));
+      val = 1.0/val;
+      *(kernel--) *= val;
+      *(kernel--) *= val;
+      *(kernel--) *= val;
+      *(kernel--) *= val;
+      *(kernel--) *= val;
+      *(kernel--) *= val;
+      *(kernel--) *= val;
+      *kernel *= val;
+      }
+    }
+  else
+    error(EXIT_FAILURE, "*Internal Error*: Unknown interpolation type in ",
+		"make_kernel()");
+
+  return;
+  }

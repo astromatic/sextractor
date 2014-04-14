@@ -114,5 +114,8 @@ extern void	double_psf_fit(psfstruct *psf, fieldstruct *field,
 		psf_readcontext(psfstruct *psf, fieldstruct *field);
 
 extern void psf_print(const psfstruct *psf, const int printdata, const int printloc);
+extern psfstruct *psf_resample(const psfstruct *psf, const float factor);
+extern void psf_trim(psfstruct *psfm, const int optsize);
+extern void psf_normalize(psfstruct *psf);
 
 #endif
