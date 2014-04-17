@@ -1,0 +1,19 @@
+/**
+ * @mainpage SExtractor 3 source code documentation
+ *
+ *
+ * SExtractor stands for ``Source Extractor'': a software for making
+ * catalog of sources from astronomical images.
+ * The SExtractor homepage is at:<br/>
+ * http://astromatic.net/software/sextractor
+ * <p>
+ * In case of problems, questions or suggestions related to the software, please
+ * refer to the SExtractor forum:<br/>
+ * http://astromatic.net/forum
+ * <p>
+ *
+ * @date April 2014
+ * 
+ * @author Emmanuel Bertin <bertin@iap.fr>
+ *
+ */
