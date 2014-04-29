@@ -47,8 +47,10 @@
 #include	"subimage.h"
 #include	"psf.h"
 
-static float	interpolate_pix(float *posin, float *pix, int *naxisn,
+static float	interpolate_pixZERO(float *posin, float *pix, int *naxisn,
 		interpenum interptype);
+static float    interpolate_pix(float *posin, float *pix, int *naxisn,
+                interpenum interptype);
 
 static void	make_kernel(float pos, float *kernel, interpenum interptype);
 
@@ -490,13 +492,14 @@ psfstruct *psf_resample(const psfstruct *psf, const float factor){
 
               posin[0] = (posout[0] - xcout)*factor + xcin;
               posin[1] = (posout[1] - ycout)*factor + ycin;
-              //QPRINTF(OUTPUT, " (%.5g,%.5g)<->(%.5g,%.5g)", posout[0], posout[1], posin[0], posin[1]);
+              //QPRINTF(OUTPUT, " (%.5g,%.5g)<->(%.5g,%.5g %.2g)", posout[0], posout[1], posin[0], posin[1], factor);
               //flux += ((*(pixout++) = interpolate_pix(posin, psf->maskloc, psf->masksize, INTERP_LANCZOS3)));
               //flux += ((*(pix2++) = interpolate_pix(posin, psf->maskcomp, psf->masksize, INTERP_LANCZOS3)));
               //*(pix2++) = interpolate_pix(posin, psf->maskcomp, psf->masksize, INTERP_LANCZOS3);
 
               // fill in with the Lanczos-resampled value times factor^2 to preserve normalization
-              *(pix2++) = interpolate_pix(posin, pix1, psf->masksize, INTERP_LANCZOS3)*factorsquare;
+              //*(pix2++) = interpolate_pix(posin, pix1, psf->masksize, INTERP_LANCZOS3)*factorsquare;
+              *(pix2++) = interpolate_pixZERO(posin, pix1, psf->masksize, INTERP_LANCZOS3)*factorsquare;
 
               // for (posout[0],posout[1])=(x,y) iterates over all x,y values,
               // varying over x more rapidly:
@@ -2046,28 +2049,130 @@ void svdvar(double *v, double *w, int n, double *cov)
   return;
   }
 
+
+/******************************interpolate_pixZERO****************************/
+/**
+ *
+ * Function: interpolate_pixZERO
+ *
+ * Basically a copy of 'interpolate_pix()', but with a different boundary
+ * condition: here the grid given in 'pix' is extrapolated with values 0.0.
+ * 'interpolate_pix()' only interpolates positions which don't have outside
+ * positions within the kernel area.
+ *
+ * @author EB, MK
+ * @date   April 2014
+ *
+ * @param[in] posin      - the position to get the value for
+ * @param[in] pix        - the interpolation matrix
+ * @param[in] naxisn     - the axes length of the interp. matrix
+ * @param[in] interptype - the type of interpolation
+ *
+ * @return the interpolated value
+ */
+static float    interpolate_pixZERO(float *posin, float *pix, int *naxisn,
+    interpenum interptype)
+{
+  float        buffer[INTERP_MAXKERNELWIDTH],
+  kernel[INTERP_MAXKERNELWIDTH], dpos[2],
+  *kvector, *pixin, *pixout,
+  val;
+  int          kwidth, i,j, n, ijstart[2], iact, jact;
+
+  // get the characteristic kernel length
+  kwidth = interp_kernwidth_psf[interptype];
+
+  // go over all dimension
+  for (n=0; n<2; n++)
+    {
+      // get the in-value
+      val = *(posin++);
+
+      //get the integer part of the current coordinate or nearest neighbour
+      ijstart[n] = (interptype==INTERP_NEARESTNEIGHBOUR)? (int)(val-0.50001):(int)val;
+
+      // store the fractional part of the current coordinate
+      dpos[n] = val - ijstart[n];
+
+      // store the starting index
+      ijstart[n]-=kwidth/2;
+    }
+
+  // compute the interpolation kernel for x
+  make_kernel(dpos[0], kernel, interptype);
+
+  // first step: interpolate along NAXIS1 from the data themselves
+  // go over all y-values
+  pixout = buffer;
+  for (j=kwidth, jact=ijstart[1]; j--; jact++)
+    {
+      // outside pixels do not contribute (have value=0.0)
+      if (jact<0 || jact>=naxisn[1]){
+          // enhance the pointer
+          *(pixout++) = 0.0;
+      }
+      else {
+          // go over all x-values
+          val = 0.0;
+          kvector = kernel;
+          for (i=kwidth, iact=ijstart[0]; i--; iact++){
+
+              // outside pixels do not contribute (have value=0.0)
+              if (iact<0 || iact>=naxisn[0]){
+                  // enhance the pointer
+                  kvector++;
+              }
+              else {
+                  // add the contribution
+                  val += *(kvector++)*pix[jact*naxisn[0]+iact];
+              }
+          }
+          // transfer the final value
+          *(pixout++) = val;
+      }
+    }
+
+  // as of now, buffer contains the values interpolated at
+  // the correct x-value for all relevant y-values
+
+  // compute the interpolation kernel for y
+  make_kernel(dpos[1], kernel, interptype);
+
+  // apply the kernel y-kernel values
+  // to the values stored in buffer
+  pixin = buffer;
+  val = 0.0;
+  kvector = kernel;
+  for (i=kwidth; i--;){
+      val += *(kvector++)**(pixin++);
+  }
+
+  // return the interpolated value
+  return val;
+}
+
 /****** interpolate_pix ******************************************************
-PROTO	void interpolate_pix(float *posin, float *pix, int naxisn,
-		interpenum interptype)
-PURPOSE	Interpolate a model profile at a given position.
-INPUT	Profile structure,
-	input position vector,
-	input pixmap dimension vector,
-	interpolation type.
-OUTPUT	-.
-NOTES	-.
-AUTHOR	E. Bertin (IAP)
-VERSION	07/12/2006
+PROTO   void interpolate_pix(float *posin, float *pix, int naxisn,
+                interpenum interptype)
+PURPOSE Interpolate a model profile at a given position.
+INPUT   Profile structure,
+        input position vector,
+        input pixmap dimension vector,
+        interpolation type.
+OUTPUT  -.
+NOTES   -.
+AUTHOR  E. Bertin (IAP)
+VERSION 07/12/2006
  ***/
-static float	interpolate_pix(float *posin, float *pix, int *naxisn,
-			interpenum interptype)
+static float    interpolate_pix(float *posin, float *pix, int *naxisn,
+                        interpenum interptype)
   {
-   float	buffer[INTERP_MAXKERNELWIDTH],
-		kernel[INTERP_MAXKERNELWIDTH], dpos[2],
-		*kvector, *pixin, *pixout,
-		val;
-   int		fac, ival, kwidth, start, width, step,
-		i,j, n;
+   float        buffer[INTERP_MAXKERNELWIDTH],
+                kernel[INTERP_MAXKERNELWIDTH], dpos[2],
+                *kvector, *pixin, *pixout,
+                val;
+   int          fac, ival, kwidth, start, width, step,
+                i,j, n;
 
   kwidth = interp_kernwidth_psf[interptype];
   start = 0;

@@ -556,7 +556,7 @@ int getPSFExConv(const char *filename){
       }
 
       // check for the allowed x-values; make sure only one context points to x
-      if (!strncmp(ctxname, "X", 1) || !strncmp(ctxname, "XMIN", 4) || !strncmp(ctxname, "XMAX", 4) || !strncmp(ctxname, "XPEAK", 5)){
+      if (!strncmp(ctxname, "X_", 2) ||!strncmp(ctxname, "XWIN_", 5) || !strncmp(ctxname, "XMIN_", 5) || !strncmp(ctxname, "XMAX_", 5) || !strncmp(ctxname, "XPEAK_", 6)){
         if (posx<2) {
           error(EXIT_FAILURE, "*Error*: two context parameters point to X, the last being: ", ctxname);
         }
@@ -564,9 +564,8 @@ int getPSFExConv(const char *filename){
           posx=index;
         }
       }
-
       // check for the allowed y-values; make sure only one context points to y
-      if (!strncmp(ctxname, "Y", 1) || !strncmp(ctxname, "YMIN", 4) || !strncmp(ctxname, "YMAX", 4) || !strncmp(ctxname, "YPEAK", 5)){
+      else if (!strncmp(ctxname, "Y_", 2) ||!strncmp(ctxname, "YWIN_", 5) || !strncmp(ctxname, "YMIN_", 5) || !strncmp(ctxname, "YMAX_", 5) || !strncmp(ctxname, "YPEAK_", 6)){
         if (posy<2) {
           error(EXIT_FAILURE, "*Error*: two context parameters point to Y the last being: ", ctxname);
         }
@@ -574,10 +573,16 @@ int getPSFExConv(const char *filename){
           posy=index;
         }
       }
+      else{
+          // any other dependency "*_IMAGE" is NOT allowed
+          error(EXIT_FAILURE, "*Error*: this context parameter is not allowed to express a x/y dependency: ", ctxname);
+      }
   }
 
   // re-sample the psf to the image pixels size
+  //psf_print(psf, 0,0);
   res_psf = psf_resample(psf, 1./psf->pixstep);
+  //psf_print(res_psf, 0,0);
 
   // get the maximum scale at all dimensions
   for (index=0; index < ndim; index++)
