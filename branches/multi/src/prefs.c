@@ -789,28 +789,31 @@ void	prefs_use(void)
 		" are not in equal number");
 
 /*-------------------------------- WEIGHTs ----------------------------------*/
+
+  // check whether any weights are involved
   prefs.weights_flag = 0;
   for (i=0; i<prefs.nweight_type; i++)
-    prefs.weights_flag |= (prefs.weight_type[1]!= WEIGHT_NONE);
+    prefs.weights_flag |= (prefs.weight_type[i]!= WEIGHT_NONE);
 
 /* If Weights are needed... */
   if (prefs.weights_flag)
     {
 /*-- Weight types */
-    if (prefs.nweight_type != prefs.nimage)
-      {
-      last = prefs.nweight_type-1;
-      for (i=prefs.nweight_type; i<prefs.nimage; i++)
-        prefs.weight_type[i] = prefs.weight_type[last];
-      prefs.nweight_type = prefs.nimage;
-      }
+      if (prefs.nweight_type != prefs.nimage)
+        {
+          // replicate the last specified weight type
+          // for all images that have no explicit weight type
+          last = prefs.nweight_type-1;
+          for (i=prefs.nweight_type; i<prefs.nimage; i++)
+            prefs.weight_type[i] = prefs.weight_type[last];
+          prefs.nweight_type = prefs.nimage;
+        }
 
 /*-- Weight flags (new) */
-    if (!prefs.weight_flag)
-      {
+
+      // set the weight flag for each image
       for (i=0; i<prefs.nimage; i++)
         prefs.weight_flag[i] = (prefs.weight_type[i]!= WEIGHT_NONE);
-      }
 
 /*-- Weight rescaling flag */
     if (prefs.nwscale_flag != prefs.nimage)
