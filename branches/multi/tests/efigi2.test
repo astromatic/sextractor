@@ -4,4 +4,4 @@
 # Basic test using psf-file for convolution. It should be noted that no other
 # adjustments to the configuration files have been made. Hence this is rather
 # a run test than testing a good extraction of objects! 
-../src/sex galaxiesMod.fits -WEIGHT_IMAGE galaxies.weight.fits -CATALOG_NAME galaxies2.cat -FILTER_NAME default.psf
+../src/sex galaxies.fits -WEIGHT_IMAGE galaxies.weight.fits -CATALOG_NAME galaxies2.cat -FILTER_NAME default.psf
