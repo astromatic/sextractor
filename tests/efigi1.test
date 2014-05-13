@@ -2,4 +2,4 @@
 # Copyright (C) 2007 Emmanuel Bertin.
 #
 # basic test developed on some CFHT data
-../src/sex galaxies.fits -WEIGHT_IMAGE galaxies.weight.fits -CATALOG_NAME galaxies.cat
+../src/sex galaxies.fits -CATALOG_NAME galaxies.cat
