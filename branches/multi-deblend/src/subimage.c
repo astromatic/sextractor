@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		03/01/2014
+*	Last modified:		15/05/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -42,7 +42,100 @@
 #include	"field.h"
 #include	"fitswcs.h"
 #include	"image.h"
+#include	"plist.h"
 #include	"subimage.h"
+
+/****** subimage_fromplist ****************************************************
+PROTO	subimagestruct *subimage_fromplist(fieldstruct *field,
+		fieldstruct *wfield,
+		objstruct *obj, pliststruct *plist)
+PURPOSE	Create a sub-image from an object and a pixel list, without any margin.
+INPUT	Pointer to the image field,
+	pointer to the weight-map field,
+	lower frame limit in x (included),
+	upper frame limit in x (excluded),
+	lower frame limit in y (included),
+	upper frame limit in y (excluded).
+OUTPUT	Pointer to a new malloc'ed subimage structure.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	15/05/2014
+ ***/
+subimagestruct	*subimage_fromplist(fieldstruct *field, fieldstruct *wfield,
+			objstruct *obj, pliststruct *plist)
+
+  {
+   subimagestruct	*subimage;
+   pliststruct	*plistt;
+   PIXTYPE	*pix,*wpix;
+   long		pos;
+   int		i, n, xmin,ymin, w;
+
+
+  for (i=obj->firstpix; i!=-1; i=PLIST(pixt,nextpix))
+    {
+    plistt = plist+i;
+    *(pix+(PLIST(plistt,x)-xmin) + (PLIST(plistt,y)-ymin)*w) =
+		PLISTPIX(plistt,cvalue);
+    }
+
+
+/* Initialize sub-image */
+  QMALLOC(subimage, subimagestruct, 1);
+  subimage->dscale = 1.0;
+  subimage->immin[0] = xmin = obj->xmin;
+  subimage->immin[1] = ymin = obj->ymin;
+  subimage->immax[0] = obj->xmax + 1;
+  subimage->immax[1] = obj->ymax + 1;
+  subimage->imsize[0] = w = xmax - xmin;
+  subimage->imsize[1] = ymax - ymin;
+  subimage->ipos[0] = subimage->immin[0] + subimage->imsize[0]/2;
+  subimage->ipos[1] = subimage->immin[1] + subimage->imsize[1]/2;
+  subimage->field = field;
+  subimage->wfield = wfield;
+  subimage->bkg = 0.0;
+
+  npix = subimage->imsize[0]*subimage->imsize[1];
+  pix = subimage->image;
+  for (i=npix; i--;)
+    *(pix++) = -BIG;
+
+  if (!(subimage->image = (PIXTYPE *)malloc(npix*sizeof(PIXTYPE))))
+    {
+    free(subimage);
+    return NULL;
+    }
+
+  if (subimage->wfield)
+    {
+    if (!(subimage->weight = (PIXTYPE *)malloc(npix*sizeof(PIXTYPE))))
+      {
+      free(subimage->image);
+      free(subimage);
+      return NULL;
+      }
+    wpix = subimage->weight;
+    for (i=npix; i--;)
+      *(wpix++) = BIG;
+    }
+  else
+    subimage->weight = NULL;
+
+
+  pix = subimage->image;
+  wpix = subimage->weight;
+  for (i=obj->firstpix; i!=-1; i=PLIST(pixt,nextpix))
+    {
+    plistt = plist+i;
+    pos = (PLIST(plistt,x)-xmin) + (PLIST(plistt,y)-ymin)*w;
+    *(pix+pos) = PLISTPIX(plistt,cvalue);
+    if (wpix)
+      *(wpix+pos) = PLISTPIX(plistt,var);
+    }
+
+  return subimage;
+  }
+
 
 /****** subimage_new ********************************************************
 PROTO	subimagestruct *subimage_new(fieldstruct *field, fieldstruct *wfield,

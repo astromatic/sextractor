@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2014 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		21/02/2012
+*	Last modified:		14/05/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -78,47 +78,6 @@ int	createblank(objliststruct *objlist, int no)
     pixt = pixel+i;
     pos = (PLIST(pixt,x)-xmin) + (PLIST(pixt,y)-ymin)*w;
     *(pix+pos) = PLIST(pixt, value);
-    }
-
-  return RETURN_OK;
-  }
-
-
-/******************************** createsubmap *******************************
-PROTO   int createpixmap(int no, objliststruct *objlist)
-PURPOSE Create pixel-index submap for deblending.
-INPUT   objlist number,
-        objlist pointer,
-OUTPUT  RETURN_OK if success, RETURN_FATAL_ERROR otherwise (memory overflow).
-NOTES   -.
-AUTHOR  E. Bertin (IAP & Leiden & ESO)
-VERSION 08/10/97
- ***/
-int	createsubmap(objliststruct *objlist, int no)
-
-  {
-   objstruct	*obj;
-   pliststruct	*pixel, *pixt;
-   int		i, n, xmin,ymin, w, *pix, *pt;
-
-  obj = objlist->obj+no;
-  pixel = objlist->plist;
-
-  obj->subx = xmin = obj->xmin;
-  obj->suby = ymin = obj->ymin;
-  obj->subw = w = obj->xmax - xmin + 1;
-  obj->subh = obj->ymax - ymin + 1;
-  n = w*obj->subh;
-  if (!(obj->submap = pix = (int *)malloc(n*sizeof(int))))
-    return RETURN_FATAL_ERROR;
-  pt = pix;
-  for (i=n; i--;)
-    *(pt++) = -1;
-
-  for (i=obj->firstpix; i!=-1; i=PLIST(pixt,nextpix))
-    {
-    pixt = pixel+i;
-    *(pix+(PLIST(pixt,x)-xmin) + (PLIST(pixt,y)-ymin)*w) = i;
     }
 
   return RETURN_OK;

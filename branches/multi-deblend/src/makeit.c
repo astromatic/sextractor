@@ -440,7 +440,7 @@ void	makeit(void)
   catout_allocparams(thecat.obj2list);
 /* Allocate memory for other arrays (not catalogue measurements) */
 /* Sky background */
-  catout_allocother(thecat.obj2list, &flagobj2.dbkg, nimage*sizeof(float));
+  catout_allocother(thecat.obj2list, &flagobj2.diffbkg, nimage*sizeof(float));
   catout_allocother(thecat.obj2list, &flagobj2.sigbkg, nimage*sizeof(float));
 /* Flux combination */
   catout_allocother(thecat.obj2list, &flagobj2.cflux,
@@ -724,7 +724,7 @@ void	makeit(void)
     xml_write(prefs.xml_name);
 
 /* Free memory allocated for arrays that are not catalogue measurements */
-  catout_freeother(thecat.obj2list, &flagobj2.dbkg);
+  catout_freeother(thecat.obj2list, &flagobj2.diffbkg);
   catout_freeother(thecat.obj2list, &flagobj2.sigbkg);
   catout_freeother(thecat.obj2list, &flagobj2.cflux);
   catout_freeother(thecat.obj2list, &flagobj2.cfluxw);
