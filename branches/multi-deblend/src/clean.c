@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		15/03/2012
+*	Last modified:		16/05/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -54,16 +54,14 @@ INPUT   -.
 OUTPUT  -.
 NOTES   -.
 AUTHOR  E. Bertin (IAP)
-VERSION 21/12/2011
+VERSION 16/05/2014
  ***/
 void	clean_init(void)
   {
   if (prefs.clean_flag)
     QMALLOC(cleanvictim, LONG, prefs.clean_stacksize);
-  QMALLOC(cleanobjlist, objliststruct, 1);
-  cleanobjlist->obj = NULL;
-  cleanobjlist->plist = NULL;
-  cleanobjlist->nobj = cleanobjlist->npix = 0;
+
+  cleanobjlist = objlist_new(0);
 
   return;
   }
@@ -82,7 +80,7 @@ void	clean_end(void)
   {
   if (prefs.clean_flag)
     free(cleanvictim);
-  free(cleanobjlist);
+  objlist_end(cleanobjlist);
 
   return;
   }
@@ -185,28 +183,13 @@ INPUT   Pointer to object.
 OUTPUT  -.
 NOTES   -.
 AUTHOR  E. Bertin (IAP)
-VERSION 21/12/2011
+VERSION 16/05/2014
  ***/
 void	clean_add(objstruct *objin)
 
   {
-   objstruct	*cobj;
    int		margin, y;
    float	hh1,hh2;
-
-/* Update the object list */
-  if (cleanobjlist->nobj)
-    {
-    if (!(cleanobjlist->obj = (objstruct *)realloc(cleanobjlist->obj,
-		    (++cleanobjlist->nobj) * sizeof(objstruct))))
-      error(EXIT_FAILURE, "Not enough memory for ", "CLEANing");
-    }
-  else
-    {
-    if (!(cleanobjlist->obj = (objstruct *)malloc((++cleanobjlist->nobj)
-		    * sizeof(objstruct))))
-      error(EXIT_FAILURE, "Not enough memory for ", "CLEANing");
-    }
 
 /* Compute the max. vertical extent of the object: */
 /* First from 2nd order moments, compute y-limit of the 3-sigma ellips... */
@@ -223,9 +206,8 @@ void	clean_add(objstruct *objin)
   if ((y=(int)(objin->my+0.49999)-prefs.cleanmargin)<objin->ycmin)
     objin->ycmin = y;
 
-  cobj = &cleanobjlist->obj[cleanobjlist->nobj-1];
-  *cobj = *objin;
-  cobj->prev = cobj->next = -1;
+  if (objlist_addobj(cleanobjlist, objin) != RETURN_OK)
+    error(EXIT_FAILURE, "Not enough memory for ", "CLEANing");
 
   return;
   }
@@ -303,31 +285,18 @@ NOTES   -.
 AUTHOR  E. Bertin (IAP)
 VERSION 21/12/2011
  ***/
-void	clean_sub(int objnb)
+void	clean_sub(int objindex)
   {
-   int prev, next;
+   int	code;
+
+  code = objlist_subobj(cleanobjlist, objindex);
 
 /* Update the object list */
-  if (objnb>=cleanobjlist->nobj)
+  if (code == RETURN_ERROR)
     error(EXIT_FAILURE, "*Internal Error*: no CLEAN object to remove ",
 	"in clean_sub()");
-
-  if (--cleanobjlist->nobj)
-    {
-    if (cleanobjlist->nobj != objnb)
-      {
-      cleanobjlist->obj[objnb] = cleanobjlist->obj[cleanobjlist->nobj];
-      if ((prev=cleanobjlist->obj[objnb].prev)>=0 && prev!=objnb)
-        cleanobjlist->obj[prev].next = objnb;
-      if ((next=cleanobjlist->obj[objnb].next)>=0 && next<cleanobjlist->nobj)
-        cleanobjlist->obj[next].prev = objnb;
-      }
-    if (!(cleanobjlist->obj = (objstruct *)realloc(cleanobjlist->obj,
-		    cleanobjlist->nobj * sizeof(objstruct))))
-      error(EXIT_FAILURE, "Not enough memory for ", "CLEANing");
-    }
-  else
-    free(cleanobjlist->obj);
+  else if (code == RETURN_FATAL_ERROR)
+    error(EXIT_FAILURE, "Not enough memory for ", "CLEANing");
 
   return;
   }
