@@ -1,7 +1,7 @@
 /**
-* @file		group.h
-* @brief	Include file for group.c.
-* @date		28/03/2014
+* @file		objlist.h
+* @brief	Include file for objlist.c.
+* @date		16/05/2014
 * @copyright
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 *
@@ -24,24 +24,50 @@
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-#ifndef _GROUP_H_
-#define _GROUP_H_
+#ifndef _SUBIMAGE_H_
+#include "subimage.h"
+#endif
+
+#ifndef _PLIST_H_
+#include "plist.h"
+#endif
+
+#ifndef _OBJLIST_H_
+#define _OBJLIST_H_
 
 /*----------------------------- Internal constants --------------------------*/
 
-#define	GROUP_NDEBLENDITER	10	/** number of deblending iterations */
-#define	GROUP_NMULTITER		10	/** number of multi-model iterations */
+#define	OBJLIST_NOBJMAXINC	16	/// memory allocation increment */
+#define	GROUP_NDEBLENDITER	10	/// number of deblending iterations
+#define	GROUP_NMULTITER		10	/// number of multi-model iterations
 
 /*--------------------------------- typedefs --------------------------------*/
+typedef struct
+  {
+  int		nobj;			/* number of objects in list */
+  int		nobjmax;		/* number of allocated slots in list */
+  objstruct	*obj;			/* pointer to the object array */
+  int		npix;			/* number of pixels in pixel-list */
+  struct subimage	*subimage;	/* Array of sub-images */
+  pliststruct	*plist;			/* pointer to the pixel-list */
+  PIXTYPE	dthresh;		/* detection threshold */
+  PIXTYPE	thresh;			/* analysis threshold */
+  }	objliststruct;
+
 /*------------------------------ Prototypes ---------------------------------*/
+
+objliststruct	*objlist_new(void);
 
 obj2struct	*analyse_obj2obj2(fieldstruct **fields, fieldstruct **wfields,
 			int nfield, objstruct *obj, obj2liststruct *obj2list);
-int		analyse_full(fieldstruct **fields, fieldstruct **wfields,
+int		objlist_add(objliststruct *objlist, objstruct *obj),
+		objlist_sub(objliststruct *objlist, int objindex),
+		analyse_full(fieldstruct **fields, fieldstruct **wfields,
 			int nfield, obj2struct *obj2),
 		analyse_overlapness(objliststruct *objlist, int iobj);
 
-void		analyse_end(fieldstruct **fields, fieldstruct **wfields,
+void		objlist_end(objliststruct *objlist),
+		analyse_end(fieldstruct **fields, fieldstruct **wfields,
 			int nfield, obj2groupstruct *group2),
 		analyse_final(fieldstruct **fields, fieldstruct **wfields,
 			int nfield, objliststruct *objlist, int iobj),

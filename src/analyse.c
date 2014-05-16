@@ -553,11 +553,7 @@ objliststruct *analyse_overlapness(objliststruct *objlist, objstruct *fobj)
   cobj = fobj;
   for (i=0; i<nobj; i++, obj++)
     if (obj->blend == blend && obj!=fobj)
-      {
-      overobj[nover++] = obj;
-      }
-
-  cobj->next = -1;
+      objlist_add(overobjlist, obj);
 
   return nblend;
   }

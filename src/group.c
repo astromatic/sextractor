@@ -1,7 +1,7 @@
 /**
 * @file		group.c
 * @brief	Manage groups of detection (advanced deblending)
-* @date		28/03/2014
+* @date		16/05/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 *
@@ -74,6 +74,99 @@ int		pthread_ngroup, pthread_groupaddindex,pthread_groupprocindex,
 		pthread_endflag;
 
 #endif
+
+/****** objlist_new *******************************************************//**
+Create a new, empty objlist.
+@param[out] 		Pointer to a new empty objlist.
+
+@author 		E. Bertin (IAP)
+@date			16/05/2014
+ ***/
+objliststruct	*objlist_new(void) {
+
+  QCALLOC(objlist, objliststruct, 1);
+
+  return objlist;
+}
+
+
+/****** objlist_end *******************************************************//**
+Free resources allocated to an objlist
+@param[in] 		Pointer to the objlist.
+
+@author 		E. Bertin (IAP)
+@date			16/05/2014
+ ***/
+void	objlist_end(objliststruct *objlist) {
+
+  free(objlist->obj);
+  free(objlist);
+}
+
+
+/****** objlist_addobj ****************************************************//**
+Add an object to an objlist.
+@param[in] objlist	Pointer to the objlist
+@param[in] wfields	Pointer to the object to be added
+@param[out] 		RETURN_FATAL_ERROR if a memory (re-)allocation issue
+			happened,
+			RETURN_OK otherwise.
+
+@author 		E. Bertin (IAP)
+@date			16/05/2014
+ ***/
+int	objlist_addobj(objliststruct *objlist, *objstruct obj) {
+
+// Check if memory (re-)allocation is necessary.
+  if (objlist->nobj >= objlist->nobjmax) {
+    objlist->nobjmax += OBJLIST_NOBJMAXINC;
+    if (objlist->nobjmax && !(objlist->obj = (objstruct *)realloc(objlist->obj,
+		objlist->nobjmax * sizeof(objstruct))))
+      return RETURN_FATAL_ERROR;
+    else if (!(objlist->obj = (objstruct *)malloc(objlist->nobjmax
+	 * sizeof(objstruct))))
+      return RETURN_FATAL_ERROR;
+  }
+
+// Copy the content of the input object
+  objlist->obj[objlist->nobj] = *obj;
+  objlist->nobj++;
+
+  return RETURN_OK
+}
+
+
+/****** objlist_subobj ****************************************************//**
+Remove an object from an objlist.
+@param[in] objlist	Pointer to the objlist
+@param[in] wfields	Index of the object to be removed
+@param[out] 		RETURN_ERROR if the objlist is empty,
+			RETURN_FATAL_ERROR if a memory (re-)allocation issue
+			happened,
+			RETURN_OK otherwise.
+
+@author 		E. Bertin (IAP)
+@date			16/05/2014
+ ***/
+int	objlist_subobj(objliststruct *objlist, int objindex) {
+  if (--objlist->nobj) {
+    if (objlist->nobj != objindex)
+      objlist->obj[objindex] = objlist->obj[objlist->nobj];
+    nobjmax = objlist->nobjmax;
+    while (nobjmax - OBJLIST_NOBJMAXINC > objlist->nobj)
+      nobjmax -= OBJLIST_NOBJMAXINC;
+    if (nobjmax != objlist->nobjmax
+	&& !(objlist->obj = (objstruct *)realloc(objlist->obj,
+	    (objlist->nobjmax = nobjmax) * sizeof(objstruct))))
+      return RETURN_ERROR;
+  } else {
+    QFREE(objlist->obj);
+    objlist->nobjmax = 0;
+  }
+
+  return RETURN_OK
+}
+
 
 /****** group_analyse *****************************************************//**
 Perform measurements on a group of detections.

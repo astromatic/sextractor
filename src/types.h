@@ -558,17 +558,6 @@ typedef struct obj2
 /*----------------------------- lists of objects ----------------------------*/
 typedef struct
   {
-  int		nobj;			/* number of objects in list */
-  objstruct	*obj;			/* pointer to the object array */
-  int		npix;			/* number of pixels in pixel-list */
-  struct subimage	*subimage;	/* Array of sub-images */
-  pliststruct	*plist;			/* pointer to the pixel-list */
-  PIXTYPE	dthresh;		/* detection threshold */
-  PIXTYPE	thresh;			/* analysis threshold */
-  }	objliststruct;
-
-typedef struct
-  {
   obj2struct	*obj2;			/* pointer to the object array */
   obj2struct	*freeobj2;		/* pointer to the first free obj2 */
   int		nobj2;			/* number of objects in list */
