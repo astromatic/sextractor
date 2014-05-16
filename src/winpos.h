@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 2005-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 2005-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,9 +22,17 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/10/2010
+*	Last modified:		02/04/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
+
+/*--------------------------- WINPOS flags ---------------------------------*/
+
+#define	WINFLAG_SINGULAR	0x0001	/* Singularity in WINdowed light dist.*/
+#define	WINFLAG_NEGMOMENT	0x0002	/* Negative WINdowed light 2nd moments*/
+#define	WINFLAG_NEGFLUX		0x0004	/* Negative WINdowed integrated flux */
+#define	WINFLAG_APERT_PB	0x0008	/* Window area incomplete or truncated*/
+#define	WINFLAG_NOTCOVERED	0x0010	/* Field does not include object */
 
 /*----------------------------- Internal constants --------------------------*/
 
@@ -41,5 +49,5 @@ One must have:
 */
 
 /*------------------------------- functions ---------------------------------*/
-extern void	compute_winpos(picstruct *field, picstruct *wfield,
-			       objstruct *obj);
+extern void	win_pos(fieldstruct **fields, fieldstruct **wfields,
+				int nfield, obj2struct *obj2);

@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 2006-2013 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 2006-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		25/04/2013
+*	Last modified:		24/02/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -61,15 +61,14 @@ typedef struct
 
 /*------------------------------- functions ---------------------------------*/
 
-extern int		end_xml(void),
-			init_xml(int next),
-			update_xml(sexcatstruct *sexcat, picstruct *dfield, 
-				picstruct *field, picstruct *dwfield,
-				picstruct *wfield),
-			write_xml(char *filename),
-			write_xml_header(FILE *file),
-			write_xml_meta(FILE *file, char *error),
-			write_xmlconfigparam(FILE *file, char *name, char *unit,
-				char *ucd, char *format);
+extern int		xml_end(void),
+			xml_init(int next),
+			xml_update(sexcatstruct *sexcat, fieldstruct **fields,
+			fieldstruct **wfields),
+			xml_write(char *filename),
+			xml_write_configparam(FILE *file, char *name,
+				char *unit, char *ucd, char *format),
+			xml_write_header(FILE *file),
+			xml_write_meta(FILE *file, char *error);
 
-extern void		write_xmlerror(char *filename, char *error);
+extern void		xml_write_error(char *filename, char *error);

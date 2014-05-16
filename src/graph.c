@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/10/2010
+*	Last modified:		23/11/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -36,14 +36,19 @@
 #include	"define.h"
 #include	"globals.h"
 
-double	sexx1, sexy1;
+float	sexx1, sexy1;
 
-/********************************* sexmove **********************************/
-/*
-Move function (related to sexdraw)..
-*/
-void	sexmove(double x, double y)
-
+/****** sexmove **************************************************************
+PROTO	void sexmove(double x, double y)
+PURPOSE	Move graphic pointer in a PIXTYPE image raster.
+INPUT	Input pixel coordinate on FITS AXIS1,
+	input pixel coordinate on FITS AXIS2.
+OUTPUT	-.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	23/11/2011
+ ***/
+void	sexmove(float x, float y)
   {
   sexx1 = x;
   sexy1 = y;
@@ -52,24 +57,33 @@ void	sexmove(double x, double y)
   }
 
 
-/********************************* sexdraw **********************************/
-/*
-Draw a line in a PIXTYPE bitmap.
-*/
-void	sexdraw(PIXTYPE *bmp, int w, int h, double sexx2, double sexy2,
+/****** sexdraw *************************************************************
+PROTO	void sexdraw(PIXTYPE *raster, int w, int h, float x, float y,
 		PIXTYPE val)
-
+PURPOSE	Draw a line in a PIXTYPE image raster.
+INPUT	Pointer to a PIXTYPE image raster,
+	image width [pixels],
+	image height [pixels],
+	destination pixel coordinate on FITS AXIS1,
+	destination pixel coordinate on FITS AXIS2,
+	line grey level.
+OUTPUT	-.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	23/11/2011
+ ***/
+void	sexdraw(PIXTYPE *raster, int w, int h, double x, double y, PIXTYPE val)
   {
-   double	dx,dy, slope;
+   float	dx,dy, slope;
    int		ix1,iy1, ix2,iy2, ix,iy;
 
-  dx = sexx2-sexx1;
-  dy = sexy2-sexy1;
+  dx = x - sexx1;
+  dy = y - sexy1;
   if (fabs(dx) > fabs(dy))
     {
     slope = dy/dx;
     ix1 = RINT(sexx1);
-    ix2 = RINT(sexx2);
+    ix2 = RINT(x);
     if (ix2>ix1)
       {
       for (ix=ix1+1; ix<=ix2; ix++)
@@ -77,7 +91,7 @@ void	sexdraw(PIXTYPE *bmp, int w, int h, double sexx2, double sexy2,
           {
           iy = RINT(sexy1+(ix-sexx1)*slope);
           if (iy>=0 && iy<h)
-            bmp[ix+w*iy] += val;
+            raster[ix+w*iy] += val;
           }
       }
     else
@@ -87,7 +101,7 @@ void	sexdraw(PIXTYPE *bmp, int w, int h, double sexx2, double sexy2,
           {
           iy = RINT(sexy1+(ix-sexx1)*slope);
           if (iy>=0 && iy<h)
-            bmp[ix+w*iy] += val;
+            raster[ix+w*iy] += val;
           }
       }
     }
@@ -95,7 +109,7 @@ void	sexdraw(PIXTYPE *bmp, int w, int h, double sexx2, double sexy2,
     {
     slope = dx/(dy == 0.0? 1.0:dy);
     iy1 = RINT(sexy1);
-    iy2 = RINT(sexy2);
+    iy2 = RINT(y);
     if (iy2>iy1)
       {
       for (iy=iy1+1; iy<=iy2; iy++)
@@ -103,7 +117,7 @@ void	sexdraw(PIXTYPE *bmp, int w, int h, double sexx2, double sexy2,
           {
           ix = RINT(sexx1+(iy-sexy1)*slope);
           if (ix>=0 && ix<w)
-            bmp[ix+w*iy] += val;
+            raster[ix+w*iy] += val;
           }
       }
     else
@@ -113,58 +127,106 @@ void	sexdraw(PIXTYPE *bmp, int w, int h, double sexx2, double sexy2,
           {
           ix = RINT(sexx1+(iy-sexy1)*slope);
           if (ix>=0 && ix<w)
-            bmp[ix+w*iy] += val;
+            raster[ix+w*iy] += val;
           }
         }
     }
 
-  sexx1 = sexx2;
-  sexy1 = sexy2;
+  sexx1 = x;
+  sexy1 = y;
+
   return;
   }
 
 
-/******************************** sexcircle *********************************/
-/*
-Draw a circle in a PIXTYPE bitmap.
-*/
-void	sexcircle(PIXTYPE *bmp, int w, int h, double x, double y, double r,
+/****** sexcircle ***********************************************************
+PROTO	void sexcircle(PIXTYPE *raster, int w, int h, float x, float y,
+		float radius, PIXTYPE val)
+PURPOSE	Draw a circle in a PIXTYPE image raster.
+INPUT	Pointer to a PIXTYPE image raster,
+	image width [pixels],
+	image height [pixels],
+	destination pixel coordinate on FITS AXIS1,
+	destination pixel coordinate on FITS AXIS2,
+	circle radius [pixels],
+	circle grey level.
+OUTPUT	-.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	23/11/2011
+ ***/
+void	sexcircle(PIXTYPE *raster, int w,int h, float x, float y, float radius,
 		PIXTYPE val)
-
   {
-   int i;
+   float	alpha, cta,sta;
+   int		i;
 
-  sexmove(x+r, y);
-  for (i=0; i<37; i++)
-    sexdraw(bmp,w,h, x+r*ctg[i], y+r*stg[i], val);
+  sexmove(x+radius, y);
+
+  for (i=1; i<37; i++)
+    {
+    alpha = i*PI/18.0;
+#ifdef HAVE_SINCOSF
+    sincosf(alpha, &sta, &cta);
+#else
+    sta = sinf(alpha);
+    cta = cosf(alpha);
+#endif
+    sexdraw(raster,w,h, x + radius*cta, y + radius*sta, val);
+    }
 
   return;
   }
 
 
-/******************************** sexellips *********************************/
-/*
-Draw an ellips in a PIXTYPE bitmap.
-*/
-void	sexellips(PIXTYPE *bmp, int w, int h, double x, double y, double a,
-		double b, double theta, PIXTYPE val, int dotflag)
+/****** sexellipse ***********************************************************
+PROTO	void sexellipse(PIXTYPE *raster, int w, int h, float x, float y,
+		float a, float b, float theta, PIXTYPE val)
+PURPOSE	Draw an ellipse in a PIXTYPE image raster.
+INPUT	Pointer to a PIXTYPE image raster,
+	image width [pixels],
+	image height [pixels],
+	destination pixel coordinate on FITS AXIS1,
+	destination pixel coordinate on FITS AXIS2,
+	ellipse semi-major axis length [pixels],
+	ellipse semi-minor axis length [pixels],
+	ellipse position angle from FITS AXIS1 towards FITS AXIS2 [degrees],
+	ellipse grey level.
+OUTPUT	-.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	23/11/2011
+ ***/
+void	sexellipse(PIXTYPE *raster, int w, int h, float x, float y, float a,
+		float b, float theta, PIXTYPE val, int dotflag)
 
   {
+   float	alpha, ct,st, cta,sta;
    int		i;
-   double	ct, st;
 
-  ct = cos(PI*theta/180);
-  st = sin(PI*theta/180);
+  ct = cosf(PI*theta/180);
+  st = sinf(PI*theta/180);
 
   sexmove(x+a*ct, y+a*st);
+
   for (i=1; i<37; i++)
+    {
+    alpha = i*PI/18.0;
+#ifdef HAVE_SINCOSF
+    sincosf(alpha, &sta, &cta);
+#else
+    sta = sinf(alpha);
+    cta = cosf(alpha);
+#endif
+    sta *= b;
+    cta *= a;
     if (dotflag && !(i&1))
-      sexmove(x + a*ctg[i]*ct - b*stg[i]*st,
-		y + a*ctg[i]*st + b*stg[i]*ct);
+      sexmove(x + cta*ct - sta*st, y + cta*st + sta*ct);
     else
-      sexdraw(bmp,w,h, x + a*ctg[i]*ct - b*stg[i]*st,
-		y + a*ctg[i]*st + b*stg[i]*ct, val);
+      sexdraw(raster,w,h, x + cta*ct - sta*st, y + cta*st + sta*ct, val);
+    }
 
   return;
   }
+
 

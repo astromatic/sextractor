@@ -1,13 +1,13 @@
 /*
-*				flag.h
+*				readimage.h
 *
-* Include file for flag.c.
+* Include file for readimage.c.
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1997-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 2010-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,16 +22,15 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		21/02/2012
+*	Last modified:		27/03/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-/*--------------------------- Internal constants ----------------------------*/
-
-#define	FLAG_BUFSIZE	32	/* Flag-stacksize at start */
+#ifndef _FIELD_H_
+#include "field.h"
+#endif
 
 /*------------------------------- functions ---------------------------------*/
-
-void	flag_get(objstruct *obj, pliststruct *pixel),
-	flag_merge(objstruct *objmaster, objstruct *objslave);
+extern void	readimage_copydata(fieldstruct *field, int offset, int size),
+		*readimage_loadstrip(fieldstruct *field, fieldstruct *wfield);
 

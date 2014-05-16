@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/10/2010
+*	Last modified:		11/01/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -37,11 +37,11 @@ objliststruct	*cleanobjlist;		/* laconic, isn't it? */
 
 /*------------------------------- functions ---------------------------------*/
 
-extern void	addcleanobj(objstruct *),
-		endclean(void),
-		initclean(void),
-		subcleanobj(int);
+extern void	clean_add(objstruct *objin),
+		clean_end(void),
+		clean_init(void),
+		clean_merge(objstruct *objin, objstruct *objout),
+		clean_sub(int);
 
-extern int	clean(picstruct *field, picstruct *dfield,
-			int, objliststruct *);
+extern int	clean_process(fieldstruct *field, objstruct *objin);
 

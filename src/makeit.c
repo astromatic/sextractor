@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		17/08/2013
+*	Last modified:		18/09/2013
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -42,47 +42,61 @@
 #include	"fits/fitscat.h"
 #include	"assoc.h"
 #include	"back.h"
+#include	"catout.h"
 #include	"check.h"
 #include	"fft.h"
 #include	"field.h"
 #include	"filter.h"
 #include	"growth.h"
 #include	"interpolate.h"
+#include	"misc.h"
+#include	"neurro.h"
 #include	"pattern.h"
+#include	"photom.h"
 #include	"psf.h"
 #include	"profit.h"
+#include	"scan.h"
 #include	"som.h"
 #include	"weight.h"
 #include	"xml.h"
 
-static int		selectext(char *filename);
 time_t			thetimet, thetimet2;
-#ifdef USE_MODEL
-extern profitstruct	*theprofit,*thedprofit, *thepprofit,*theqprofit;
-#else
-profitstruct	*theprofit,*thedprofit, *thepprofit,*theqprofit;
-#endif
 extern char		profname[][32];
 double			dtime;
 
-/******************************** makeit *************************************/
-/*
-Manage the whole stuff.
-*/
-void	makeit()
+int			_count_imext(char *filename);
 
+/****** makeit ***************************************************************
+PROTO	void main(void)
+PURPOSE	Manage the whole processing.
+INPUT	-.
+OUTPUT	-.
+NOTES	Global preferences are used.
+AUTHOR	E. Bertin (IAP)
+VERSION	30/08/2013
+ ***/
+void	makeit(void)
   {
+   profitstruct		*profit;
    checkstruct		*check;
-   picstruct		*dfield, *field,*pffield[MAXFLAG], *wfield,*dwfield;
-   catstruct		*imacat;
-   tabstruct		*imatab;
+   fieldstruct		**fields,**wfields,**ffields,
+			**efields,**wefields,**fefields,
+			*field,*wfield,*ffield, *dfield,*dwfield;
    patternstruct	*pattern;
+   psfstruct		**psfs;
+   somstruct		*som;
    static time_t        thetime1, thetime2;
    struct tm		*tm;
-   unsigned int		modeltype;
-   int			nflag[MAXFLAG], nparam2[2],
-			i, nok, ntab, next, ntabmax, forcextflag,
-			nima0,nima1, nweight0,nweight1, npsf0,npsf1, npat,npat0;
+   PIXTYPE		interpthresh;
+   char			str[82],
+			*imatypestr;
+   int			ext_fimage[MAXFLAG],ext_image[MAXIMAGE],
+			ext_wimage[MAXIMAGE], nparam2[2],
+			*file_index,*ffile_index,*file_next,
+			*ffile_next,
+			e,e2,i,j,t, nok, ntab, deti,previ, we, ne,ext,
+			next,ndext,nwext,nfext, forcextflag, npat, nmodels,
+			nfield,nffield, nfieldmax,nffieldmax, nimage,nfimage;
 
 /* Install error logging */
   error_installfunc(write_error);
@@ -105,119 +119,10 @@ void	makeit()
 		prefs.nthreads,
 		prefs.nthreads>1? "s":"");
 
-/* Initialize globals variables */
-  initglob();
-
   NFPRINTF(OUTPUT, "Setting catalog parameters");
-  readcatparams(prefs.param_name);
-  useprefs();			/* update things accor. to prefs parameters */
-
-/* Check if a specific extension should be loaded */
-  if ((nima0=selectext(prefs.image_name[0])) != RETURN_ERROR)
-    {
-    forcextflag = 1;
-    ntabmax = next = 1;
-    }
-  else
-    forcextflag = 0;
-
-/* Do the same for other data (but do not force single extension mode) */
-  nima1 = selectext(prefs.image_name[1]);
-  nweight0 = selectext(prefs.wimage_name[0]);
-  nweight1 = selectext(prefs.wimage_name[1]);
-  if (prefs.dpsf_flag)
-    {
-    npsf0 = selectext(prefs.psf_name[0]);
-    npsf1 = selectext(prefs.psf_name[1]);
-    }
-  else
-    npsf0 = selectext(prefs.psf_name[0]);
-  for (i=0; i<prefs.nfimage_name; i++)
-    nflag[i] = selectext(prefs.fimage_name[i]);
-
-  if (prefs.psf_flag)
-    {
-/*-- Read the first PSF extension to set up stuff such as context parameters */
-    NFPRINTF(OUTPUT, "Reading PSF information");
-    if (prefs.dpsf_flag)
-      {
-      thedpsf = psf_load(prefs.psf_name[0],nima0<0? 1 :(npsf0<0? 1:npsf0)); 
-      thepsf = psf_load(prefs.psf_name[1], nima1<0? 1 :(npsf1<0? 1:npsf1));
-      }
-    else
-      thepsf = psf_load(prefs.psf_name[0], nima0<0? 1 :(npsf0<0? 1:npsf0)); 
- /*-- Need to check things up because of PSF context parameters */
-    updateparamflags();
-    useprefs();
-    }
-
-  if (prefs.prof_flag)
-    {
-#ifdef USE_MODEL
-    fft_init(prefs.nthreads);
-/* Create profiles at full resolution */
-    NFPRINTF(OUTPUT, "Preparing profile models");
-    modeltype = (FLAG(obj2.prof_offset_flux)? MODEL_BACK : MODEL_NONE)
-	|(FLAG(obj2.prof_dirac_flux)? MODEL_DIRAC : MODEL_NONE)
-	|(FLAG(obj2.prof_spheroid_flux)?
-		(FLAG(obj2.prof_spheroid_sersicn)?
-			MODEL_SERSIC : MODEL_DEVAUCOULEURS) : MODEL_NONE)
-	|(FLAG(obj2.prof_disk_flux)? MODEL_EXPONENTIAL : MODEL_NONE)
-	|(FLAG(obj2.prof_bar_flux)? MODEL_BAR : MODEL_NONE)
-	|(FLAG(obj2.prof_arms_flux)? MODEL_ARMS : MODEL_NONE);
-    theprofit = profit_init(thepsf, modeltype);
-    changecatparamarrays("VECTOR_MODEL", &theprofit->nparam, 1);
-    changecatparamarrays("VECTOR_MODELERR", &theprofit->nparam, 1);
-    nparam2[0] = nparam2[1] = theprofit->nparam;
-    changecatparamarrays("MATRIX_MODELERR", nparam2, 2);
-    if (prefs.dprof_flag)
-      thedprofit = profit_init(thedpsf, modeltype);
-    if (prefs.pattern_flag)
-      {
-      npat0 = prefs.prof_disk_patternvectorsize;
-      if (npat0<prefs.prof_disk_patternmodvectorsize)
-        npat0 = prefs.prof_disk_patternmodvectorsize;
-      if (npat0<prefs.prof_disk_patternargvectorsize)
-        npat0 = prefs.prof_disk_patternargvectorsize;
-/*---- Do a copy of the original number of pattern components */
-      prefs.prof_disk_patternncomp = npat0;
-      pattern = pattern_init(theprofit, prefs.pattern_type, npat0);
-      if (FLAG(obj2.prof_disk_patternvector))
-        {
-        npat = pattern->size[2];
-        changecatparamarrays("DISK_PATTERN_VECTOR", &npat, 1);
-        }
-      if (FLAG(obj2.prof_disk_patternmodvector))
-        {
-        npat = pattern->ncomp*pattern->nfreq;
-        changecatparamarrays("DISK_PATTERNMOD_VECTOR", &npat, 1);
-        }
-      if (FLAG(obj2.prof_disk_patternargvector))
-        {
-        npat = pattern->ncomp*pattern->nfreq;
-        changecatparamarrays("DISK_PATTERNARG_VECTOR", &npat, 1);
-        }
-      pattern_end(pattern);
-      }
-    QPRINTF(OUTPUT, "Fitting model: ");
-    for (i=0; i<theprofit->nprof; i++)
-      {
-      if (i)
-        QPRINTF(OUTPUT, "+");
-      QPRINTF(OUTPUT, "%s", theprofit->prof[i]->name);
-      }
-    QPRINTF(OUTPUT, "\n");
-    if (FLAG(obj2.prof_concentration)|FLAG(obj2.prof_concentration))
-      {
-      thepprofit = profit_init(thepsf, MODEL_DIRAC);
-      theqprofit = profit_init(thepsf, MODEL_EXPONENTIAL);
-      }
-#else
-    error(EXIT_FAILURE,
-		"*Error*: model-fitting is not supported in this build.\n",
-			" Please check your configure options");
-#endif
-    }
+  thecat.obj2list = catout_readparams(prefs.param, prefs.nparam,
+					prefs.obj2_stacksize);
+  prefs_use();	/* update things a first time according to prefs parameters */
 
   if (prefs.filter_flag)
     {
@@ -225,329 +130,497 @@ void	makeit()
     getfilter(prefs.filter_name);	/* get the detection filter */
     }
 
-  if (FLAG(obj2.sprob))
-    {
-    NFPRINTF(OUTPUT, "Initializing Neural Network");
-    neurinit();
-    NFPRINTF(OUTPUT, "Reading Neural Network Weights");
-    getnnw(); 
-    }
+/* Read extension numbers and remove them from the filenames if present */
+ deti = 0;
+ for (i=0; i<prefs.nimage; i++)
+   {
+   if (prefs.image_flags[i]&DETECT_FIELD)
+     deti = i;
+   }
 
-  if (prefs.somfit_flag)
-    {
-     int	margin;
+/* Use the first image to probe the number of extensions to analyse */
+ 
+/* Examine all extensions of all measurement images ... */
+/* ... and loads only those that overlap a detection image */
+  nfieldmax = nimage = prefs.nimage;
+  QMALLOC(fields, fieldstruct *, nfieldmax);
+  QMALLOC(wfields, fieldstruct *, nfieldmax);
+  QMALLOC(file_index, int, nimage);
+  QMALLOC(file_next, int, nimage);
+  ext = 0;
+  previ = -1;
+  if ((prefs.multigrids_flag))
+    QPRINTF(OUTPUT, "Multi-grid mode activated\n");
 
-    thesom = som_load(prefs.som_name);
-    if ((margin=(thesom->inputsize[1]+1)/2) > prefs.cleanmargin)
-      prefs.cleanmargin = margin;
-    if (prefs.somfit_vectorsize>thesom->neurdim)
+  for (i=0; i<nimage; i++, ext+=next)
+    {
+    ext_image[i] = selectext(prefs.image_name[i]);
+
+    next = ext_image[i]==RETURN_ERROR? _count_imext(prefs.image_name[i]) : 1;
+
+    if (ext+next>nfieldmax)
       {
-      prefs.somfit_vectorsize = thesom->neurdim;
-      sprintf(gstr,"%d", prefs.somfit_vectorsize);
-      warning("Dimensionality of the SOM-fit vector limited to ", gstr);
+      nfieldmax = (ext+next)*2;
+      QREALLOC(fields, fieldstruct *, nfieldmax);
+      QREALLOC(wfields, fieldstruct *, nfieldmax);
       }
-    }
 
-/* Prepare growth-curve buffer */
-  if (prefs.growth_flag)
-    initgrowth();
+    if (!prefs.multigrid_flag[i] && previ>=0 && next != file_next[previ])
+      error(EXIT_FAILURE,
+	"*Error*: Inconsistent number of image extensions in ",
+	prefs.image_name[i]);
 
-/* Allocate memory for multidimensional catalog parameter arrays */
-  alloccatparams();
-  useprefs();
-
-  if (!(imacat = read_cat(prefs.image_name[0])))
-    error(EXIT_FAILURE, "*Error*: cannot open ", prefs.image_name[0]);
-  close_cat(imacat);
-  imatab = imacat->tab;
-
-  if (!forcextflag)
-    {
-    ntabmax = imacat->ntab;
-/*-- Compute the number of valid input extensions */
-    next = 0;
-    for (ntab = 0 ; ntab<imacat->ntab; ntab++, imatab = imatab->nexttab)
+    for (e=0; e<next; e++)
       {
-/*---- Check for the next valid image extension */
-      if ((imatab->naxis < 2)
-	|| !strncmp(imatab->xtension, "BINTABLE", 8)
-	|| !strncmp(imatab->xtension, "ASCTABLE", 8))
-        continue;
-      next++;
+      ne = ext+e;
+      imatypestr = (prefs.image_flags[i]&DETECT_FIELD) ?
+		((prefs.image_flags[i]&MEASURE_FIELD) ?
+		"Detection+Measurement:" : "Detection:") : "Measurement:";
+      if (next>1)
+        sprintf(str, "Examining %s %.40s[%d/%d]...", imatypestr,
+		prefs.image_name[i], e+1,next);
+      else if (ext_image[i] != RETURN_ERROR)
+        sprintf(str, "Examining %s %.40s[%d]...", imatypestr,
+		prefs.image_name[i], e);
+      else
+        sprintf(str, "Examining %s %.40s...", imatypestr,
+		prefs.image_name[i]);
+      NFPRINTF(OUTPUT, str);
+      field = fields[ne] = field_init(prefs.image_name[i], i,
+		ext_image[i]==RETURN_ERROR? e : ext_image[i],
+		prefs.image_flags[i]);
+/*---- Check that images in non-multigrid mode have consistent dimensions */
+      if (!prefs.multigrid_flag[i] && previ>=0
+		&& (field->width != fields[previ+e]->width
+		|| field->height != fields[previ+e]->height))
+        error(EXIT_FAILURE, "*Error*: unexpected image size in ",
+		prefs.image_name[i]);
+/*---- Prepare image interpolation */
+      if (prefs.weight_flag[i])
+        {
+        if (prefs.interp_type[i] == INTERP_ALL)
+          init_interpolate(fields[ne], -1, -1);
+        ext_wimage[i] = selectext(prefs.wimage_name[i]);
+	if (ext_wimage[i]==RETURN_ERROR)
+          {
+          we = 0;
+          nwext = _count_imext(prefs.wimage_name[i]);
+          }
+        else
+          {
+          we = ext_wimage[i];
+          nwext = 1;
+          }
+        if (nwext != next)
+          error(EXIT_FAILURE,
+		"*Error*: Inconsistent number of image extensions in ",
+		prefs.wimage_name[i]);
+        if (nwext>1)
+          sprintf(str, "Examining %s %.40s[%d/%d]...",
+		"weight image",
+		prefs.wimage_name[i], e+1,nwext);
+        else if (ext_wimage[i] != RETURN_ERROR)
+          sprintf(str, "Examining %s %.40s[%d]...", imatypestr,
+		prefs.wimage_name[i], we);
+        else
+          sprintf(str, "Examining %s %.40s...",
+		"weight image",
+		prefs.wimage_name[i]);
+        NFPRINTF(OUTPUT, str);
+
+        wfield = wfields[ne] = weight_init(prefs.wimage_name[i], field,
+		i, we, prefs.weight_type[i]);
+        interpthresh = prefs.weight_thresh[i];
+/*------ Convert the interpolation threshold to variance units */
+        weight_to_var(wfield, &interpthresh, 1);
+        wfield->weight_thresh = interpthresh;
+          if (prefs.interp_type[i] != INTERP_NONE)
+            init_interpolate(wfield, prefs.interp_xtimeout[i],
+				prefs.interp_ytimeout[i]);
+        }
+      else
+        wfields[ne] = NULL;
       }
+
+    file_index[i] = ext;
+    file_next[i] = next;
+    if (!prefs.multigrid_flag[i])
+      previ = i;
     }
 
-  thecat.next = next;
+  ndext = thecat.next = file_next[deti];
+  QMALLOC(efields, fieldstruct *, nfieldmax);
+  QMALLOC(wefields, fieldstruct *, nfieldmax);
 
-/*-- Init the CHECK-images */
+  NFPRINTF(OUTPUT,"");
+
+  nfield = ext;
+  photom_printinstruinfo();
+
+/* Init the FLAG-images */
+  nfimage = 0;
+  if ((prefs.imaflags_flag))
+    {
+    nffieldmax = nfimage = prefs.nfimage;
+    nfext = ndext;
+    if ((nfimage))
+      {
+      QMALLOC(fefields, fieldstruct *, nffieldmax)
+      QMALLOC(ffields, fieldstruct *, nfimage);
+      QMALLOC(ffile_index, int, nfimage);
+      QMALLOC(ffile_next, int, nfimage);
+      }
+    else
+      fefields = ffields = NULL;
+    ext = 0;
+    previ = -1;
+    for (i=0; i<nfimage; i++, ext+=nfext)
+      {
+      ext_fimage[i] = selectext(prefs.fimage_name[i]);
+      if (!forcextflag)
+        nfext = _count_imext(prefs.fimage_name[i]);
+      if (ext+nfext>nffieldmax)
+        {
+        nffieldmax *= 2;
+        QREALLOC(ffields, fieldstruct *, nffieldmax);
+        }
+      for (e=0; e<nfext; e++)
+        {
+        ne = ext+e;
+        if (nfext>1)
+          sprintf(str, "Examining %s %.40s[%d/%d]...",
+		"flag image",
+		prefs.fimage_name[i], e+1,nfext);
+        else
+          sprintf(str, "Examining %s %.40s...",
+		"flag image",
+		prefs.fimage_name[i]);
+        NFPRINTF(OUTPUT, str);
+        ffield = ffields[ne] = field_init(prefs.fimage_name[i], i,
+		forcextflag? ext_fimage[i]:e, FLAG_FIELD);
+        if ((previ>=0) && (ffield->width != ffields[previ+e]->width
+		|| ffield->height != ffields[previ+e]->height))
+          {
+          sprintf(str, "*Error*: %s does not match detection image size\n",
+			prefs.fimage_name[i]);
+          error(EXIT_FAILURE, str,
+		"         You might want to set MULTIGRID to Y");
+          }
+        }
+      previ = ffile_index[i] = ext;
+      ffile_next[i] = nfext;
+      }
+
+    nffield = ext;
+    }
+
+/*-- Initialize the CHECK-images */
   if (prefs.check_flag)
     {
      checkenum	c;
 
-    NFPRINTF(OUTPUT, "Initializing check-image(s)");
+    NFPRINTF(OUTPUT, "Initializing check-image(s)...");
     for (i=0; i<prefs.ncheck_type; i++)
       if ((c=prefs.check_type[i]) != CHECK_NONE)
         {
         if (prefs.check[c])
            error(EXIT_FAILURE,"*Error*: 2 CHECK_IMAGEs cannot have the same ",
 			" CHECK_IMAGE_TYPE");
-        prefs.check[c] = initcheck(prefs.check_name[i], prefs.check_type[i],
-			next);
+        prefs.check[c] = check_init(prefs.check_name[i], prefs.check_type[i],
+			ndext, nimage);
         }
     }
 
-  NFPRINTF(OUTPUT, "Initializing catalog");
-  initcat();
+  if (prefs.psf_flag)
+    {
+    NFPRINTF(OUTPUT, "Reading PSF information...");
+    QCALLOC(psfs, psfstruct *, prefs.npsf_name);
+    for (i=0; i<prefs.npsf_name; i++)
+     psfs[i] = psf_load(prefs.psf_name[i]);
+ /*-- Need to check things up because of PSF context parameters */
+    catout_updateparamflags();
+    prefs_use();
+    }
+
+  if (prefs.prof_flag)
+    {
+#ifdef USE_MODEL
+    fft_init(prefs.nthreads);
+/* Create profiles at full resolution */
+    NFPRINTF(OUTPUT, "Preparing profile models...");
+    prefs.prof_modelflags = 
+	 (FLAG(obj2.prof_offset_flux)? MODEL_BACK : MODEL_NONE)
+	|(FLAG(obj2.prof_dirac_flux)? MODEL_DIRAC : MODEL_NONE)
+	|(FLAG(obj2.prof_spheroid_flux)?
+		(FLAG(obj2.prof_spheroid_sersicn)?
+			MODEL_SERSIC : MODEL_DEVAUCOULEURS) : MODEL_NONE)
+	|(FLAG(obj2.prof_disk_flux)? MODEL_EXPONENTIAL : MODEL_NONE)
+	|(FLAG(obj2.prof_bar_flux)? MODEL_BAR : MODEL_NONE)
+	|(FLAG(obj2.prof_arms_flux)? MODEL_ARMS : MODEL_NONE);
+
+/*-- Setup a minimum profit structure for component names and number of params*/
+    QCALLOC(profit, profitstruct, 1);
+    QCALLOC(profit->subprofit, subprofitstruct, 1);
+    QMALLOC(profit->prof, profstruct *, MODEL_NMAX);
+    nmodels = 0;
+    QPRINTF(OUTPUT, "Fitting model: ");
+    for (t=1; t<(1<<MODEL_NMAX); t<<=1)
+      if (prefs.prof_modelflags&t)
+        {
+        profit->prof[nmodels] = prof_init(profit, t);
+        if (nmodels)
+          QPRINTF(OUTPUT, " + ");
+        QPRINTF(OUTPUT, "%s", profit->prof[nmodels]->name);
+        nmodels++;
+        }
+    QPRINTF(OUTPUT, "\n");
+    catout_changeparamsize("VECTOR_MODEL", &profit->nparam, 1);
+    catout_changeparamsize("VECTOR_MODELERR", &profit->nparam, 1);
+    nparam2[0] = nparam2[1] = profit->nparam;
+    catout_changeparamsize("MATRIX_MODELERR", nparam2, 2);
+    if (prefs.pattern_flag)
+      {
+      npat = prefs.prof_disk_patternvectorsize;
+      if (npat<prefs.prof_disk_patternmodvectorsize)
+        npat = prefs.prof_disk_patternmodvectorsize;
+      if (npat<prefs.prof_disk_patternargvectorsize)
+        npat = prefs.prof_disk_patternargvectorsize;
+/*---- Do a copy of the original number of pattern components */
+      prefs.prof_disk_patternncomp = npat;
+      pattern = pattern_init(profit, prefs.pattern_type, npat);
+      if (FLAG(obj2.prof_disk_patternvector))
+        {
+        npat = pattern->size[2];
+        catout_changeparamsize("DISK_PATTERN_VECTOR", &npat, 1);
+        }
+      if (FLAG(obj2.prof_disk_patternmodvector))
+        {
+        npat = pattern->ncomp*pattern->nfreq;
+        catout_changeparamsize("DISK_PATTERNMOD_VECTOR", &npat, 1);
+        }
+      if (FLAG(obj2.prof_disk_patternargvector))
+        {
+        npat = pattern->ncomp*pattern->nfreq;
+        catout_changeparamsize("DISK_PATTERNARG_VECTOR", &npat, 1);
+        }
+      pattern_end(pattern);
+      }
+    profit_end(profit);
+#else
+    error(EXIT_FAILURE,
+		"*Error*: model-fitting is not supported in this build.\n",
+			" Please check your configure options");
+#endif
+    }
+
+  if (FLAG(obj2.sprob))
+    {
+    NFPRINTF(OUTPUT, "Initializing classification neural network...");
+    neur_init();
+    NFPRINTF(OUTPUT, "Reading neural network weights...");
+    neur_getnnw(prefs.nnw_name); 
+    }
+
+  if (prefs.somfit_flag)
+    {
+     int	margin;
+
+    som = som_load(prefs.som_name);
+    if ((margin=(som->inputsize[1]+1)/2) > prefs.cleanmargin)
+      prefs.cleanmargin = margin;
+    if (prefs.somfit_vector_size[0]>som->neurdim)
+      {
+      prefs.somfit_vector_size[0] = som->neurdim;
+      sprintf(gstr,"%d", prefs.somfit_vector_size[0]);
+      warning("Dimensionality of the SOM-fit vector limited to ", gstr);
+      }
+    }
+
+/* Allocate memory for multidimensional catalog parameter arrays */
+  catout_allocparams(thecat.obj2list);
+/* Allocate memory for other arrays (not catalogue measurements) */
+/* Sky background */
+  catout_allocother(thecat.obj2list, &flagobj2.dbkg, nimage*sizeof(float));
+  catout_allocother(thecat.obj2list, &flagobj2.sigbkg, nimage*sizeof(float));
+/* Flux combination */
+  catout_allocother(thecat.obj2list, &flagobj2.cflux,
+		prefs.nphotinstru*sizeof(double));
+  catout_allocother(thecat.obj2list, &flagobj2.cfluxw,
+		prefs.nphotinstru*sizeof(double));
+/* Position combination */
+  catout_allocother(thecat.obj2list, &flagobj2.cposx,
+		prefs.nphotinstru*sizeof(double));
+  catout_allocother(thecat.obj2list, &flagobj2.cposy,
+		prefs.nphotinstru*sizeof(double));
+  catout_allocother(thecat.obj2list, &flagobj2.cposw,
+		prefs.nphotinstru*sizeof(double));
+  prefs_use();
+
+
+/* Initialize catalog output */
+  NFPRINTF(OUTPUT, "Initializing catalogue...");
+  catout_init();
 
 /* Initialize XML data */
+  NFPRINTF(OUTPUT, "Initializing XML output...");
   if (prefs.xml_flag || prefs.cat_type==ASCII_VO)
-    init_xml(next);
+    xml_init(ndext);
 
-/* Go through all images */
-  nok = 0;
-  for (ntab = 0 ; ntab<ntabmax; ntab++, imatab = imatab->nexttab)
-    {
-/*--  Check for the next valid image extension */
-    if (!forcextflag && ((imatab->naxis < 2)
-	|| !strncmp(imatab->xtension, "BINTABLE", 8)
-	|| !strncmp(imatab->xtension, "ASCTABLE", 8)))
-      continue;
+/* Initial time measurement*/
+  time(&thetime1);
 
-    nok++;
-
-/*-- Initial time measurement*/
-    time(&thetime1);
-    thecat.currext = nok;
-
-    dfield = field = wfield = dwfield = NULL;
-
-    if (prefs.dimage_flag)
+/* Pre-process background subtraction in multigrid mode */
+  if ((prefs.multigrids_flag))
+    for (i=0; i<nimage; i++)
       {
-/*---- Init the Detection and Measurement-images */
-      dfield = newfield(prefs.image_name[0], DETECT_FIELD,
-	nima0<0? ntab:nima0);
-      field = newfield(prefs.image_name[1], MEASURE_FIELD,
-	nima1<0? ntab:nima1);
-      if ((field->width!=dfield->width) || (field->height!=dfield->height))
-        error(EXIT_FAILURE, "*Error*: Frames have different sizes","");
-/*---- Prepare interpolation */
-      if (prefs.dweight_flag && prefs.interp_type[0] == INTERP_ALL)
-        init_interpolate(dfield, -1, -1);
-      if (prefs.interp_type[1] == INTERP_ALL)
-        init_interpolate(field, -1, -1);
+      next = file_next[i];
+      field = fields[file_index[i]];
+      wfield = wfields[file_index[i]];
+      for (e=0; e<next; e++, field++, wfield++)
+        {
+        if (next>1)
+          sprintf(str, "[%d/%d]", e+1, next);
+        NFPRINTF(OUTPUT, "");
+        QPRINTF(OUTPUT, " \n");
+        QPRINTF(OUTPUT, "----- Image %.60s%s:\n",
+		field->rfilename, next>1? str:"");
+        field_printinfo(field, wfield);
+        back_map(field, wfield, prefs.wscale_flag[i]);
+        if ((i))
+          {
+          QPRINTF(OUTPUT,
+		"    Background: %.6g   RMS: %.5g"
+		"   Analysis threshold: %.5g \n",
+		field->backmean, field->backsig, field->thresh);
+          }
+        else
+          {
+          QPRINTF(OUTPUT,
+		"    Background: %.6g   RMS: %.5g   Analysis threshold: %.5g"
+		"   Detection threshold: %.5g \n",
+		field->backmean, field->backsig,
+		field->thresh, field->dthresh);
+          }
+        }
+      }
+
+/* Process one extension at a time */
+  for (e=0; e<ndext; e++)
+    {
+    dfield = fields[e];
+    dwfield = wfields[e];
+    if (!(prefs.multigrids_flag))
+      {
+/*---- Multigrid is off: select only one extension from every file */
+      nfield = nimage;
+      for (i=0; i<nimage; i++)
+        {
+        field = efields[i] = fields[i*ndext+e];
+        wfield = wefields[i] = wfields[i*ndext+e];
+        if (ndext>1)
+          sprintf(str, "[%d/%d]", e+1, ndext);
+        NFPRINTF(OUTPUT, "");
+        QPRINTF(OUTPUT, " \n");
+        QPRINTF(OUTPUT, "----- Image %.60s%s:\n",
+		field->rfilename, ndext>1? str:"");
+        field_printinfo(field, wfield);
+        back_map(field, wfield, prefs.wscale_flag[i]);
+        if ((i))
+          {
+          QPRINTF(OUTPUT,
+		"    Background: %.6g   RMS: %.5g"
+		"   Analysis threshold: %.5g \n",
+		field->backmean, field->backsig, field->thresh);
+          }
+        else
+          {
+          QPRINTF(OUTPUT,
+		"    Background: %.6g   RMS: %.5g   Analysis threshold: %.5g"
+		"   Detection threshold: %.5g \n",
+		field->backmean, field->backsig,
+		field->thresh, field->dthresh);
+          }
+
+/*------ For interpolated weight-maps, copy the background structure */
+        if (wfield && wfield->flags&(INTERP_FIELD|BACKRMS_FIELD))
+          back_copy(wfield->reffield, wfield);
+
+/*------ Initialize PSF contexts and workspace */
+        if (prefs.psf_flag)
+          if (psfs[i])
+            {
+            psf_readcontext(psfs[i], field);
+            psf_init(psfs[i]);
+            fields[i]->psf = psfs[i];
+            }
+        }
       }
     else
       {
-      field = newfield(prefs.image_name[0], DETECT_FIELD | MEASURE_FIELD,
-		nima0<0? ntab:nima0);
-
-/*---- Prepare interpolation */
-      if ((prefs.dweight_flag || prefs.weight_flag)
-	&& prefs.interp_type[0] == INTERP_ALL)
-      init_interpolate(field, -1, -1);       /* 0.0 or anything else */
-      }
-
-/*-- Init the WEIGHT-images */
-    if (prefs.dweight_flag || prefs.weight_flag) 
-      {
-       weightenum	wtype;
-       PIXTYPE	interpthresh;
-
-      if (prefs.nweight_type>1)
+/*---- Multigrid is on: hybrid selection of fields */
+      j=0;
+      for (i=0; i<nimage; i++)
         {
-/*------ Double-weight-map mode */
-        if (prefs.weight_type[1] != WEIGHT_NONE)
+        if (i && prefs.multigrid_flag[i])
           {
-/*-------- First: the "measurement" weights */
-          wfield = newweight(prefs.wimage_name[1],field,prefs.weight_type[1],
-		(nima1<0 && prefs.image_name[1])?
-			ntab : (nweight1<0?1:nweight1));
-          wtype = prefs.weight_type[1];
-          interpthresh = prefs.weight_thresh[1];
-/*-------- Convert the interpolation threshold to variance units */
-          weight_to_var(wfield, &interpthresh, 1);
-          wfield->weight_thresh = interpthresh;
-          if (prefs.interp_type[1] != INTERP_NONE)
-            init_interpolate(wfield,
-		prefs.interp_xtimeout[1], prefs.interp_ytimeout[1]);
+/*-------- Identify extensions overlapping current detection extension */
+          field = fields[file_index[i]];
+          wfield = wfields[file_index[i]];
+          for (e2=file_next[i]; e2--; field++, wfield++)
+            {
+            if ((frame_wcs(field->wcs, dfield->wcs)))
+              {
+              efields[j] = field;
+              wefields[j++] = wfield;
+              }
+            }
           }
-/*------ The "detection" weights */
-        if (prefs.weight_type[0] != WEIGHT_NONE)
+        else
           {
-          interpthresh = prefs.weight_thresh[0];
-          if (prefs.weight_type[0] == WEIGHT_FROMINTERP)
-            {
-            dwfield=newweight(prefs.wimage_name[0],wfield,prefs.weight_type[0],
-		nima0<0? ntab : (nweight0<0? 1 :nweight0));
-            weight_to_var(wfield, &interpthresh, 1);
-            }
-          else
-            {
-            dwfield = newweight(prefs.wimage_name[0], dfield?dfield:field,
-		prefs.weight_type[0], nima0<0? ntab : (nweight0<0?1:nweight0));
-            weight_to_var(dwfield, &interpthresh, 1);
-            }
-          dwfield->weight_thresh = interpthresh;
-          if (prefs.interp_type[0] != INTERP_NONE)
-            init_interpolate(dwfield,
-		prefs.interp_xtimeout[0], prefs.interp_ytimeout[0]);
+/*-------- Basic (unique) extension selection */
+          efields[j] = fields[i*ndext+e];
+          wefields[j++] = wfields[i*ndext+e];
           }
         }
-      else
-        {
-/*------ Single-weight-map mode */
-        wfield = newweight(prefs.wimage_name[0], dfield?dfield:field,
-		prefs.weight_type[0], nima0<0? ntab : (nweight0<0?1:nweight0));
-        wtype = prefs.weight_type[0];
-        interpthresh = prefs.weight_thresh[0];
-/*------ Convert the interpolation threshold to variance units */
-        weight_to_var(wfield, &interpthresh, 1);
-        wfield->weight_thresh = interpthresh;
-        if (prefs.interp_type[0] != INTERP_NONE)
-          init_interpolate(wfield,
-		prefs.interp_xtimeout[0], prefs.interp_ytimeout[0]);
-        }
+      nfield = j;
+      if (ndext>1)
+        sprintf(str, "[%d/%d]", e+1, ndext);
+      NFPRINTF(OUTPUT, "");
+      QPRINTF(OUTPUT, " \n");
+      QPRINTF(OUTPUT, "----- Image %.60s%s:\n",
+	fields[e]->rfilename, ndext>1? str:"");
       }
 
-/*-- Init the FLAG-images */
-    for (i=0; i<prefs.nimaflag; i++)
-      {
-      pffield[i] = newfield(prefs.fimage_name[i], FLAG_FIELD,
-		nima0<0? ntab : (nflag[i]<0?1:nflag[i]));
-      if ((pffield[i]->width!=field->width)
-	|| (pffield[i]->height!=field->height))
-        error(EXIT_FAILURE,
-	"*Error*: Incompatible FLAG-map size in ", prefs.fimage_name[i]);
-      }
-
-/*-- Compute background maps for `standard' fields */
-    QPRINTF(OUTPUT, dfield? "Measurement image:"
-			: "Detection+Measurement image: ");
-    makeback(field, wfield, prefs.wscale_flag[1]);
-    QPRINTF(OUTPUT, (dfield || (dwfield&&dwfield->flags^INTERP_FIELD))? "(M)   "
-		"Background: %-10g RMS: %-10g / Threshold: %-10g \n"
-		: "(M+D) "
-		"Background: %-10g RMS: %-10g / Threshold: %-10g \n",
-	field->backmean, field->backsig, (field->flags & DETECT_FIELD)?
-	field->dthresh: field->thresh);
-    if (dfield)
-      {
-      QPRINTF(OUTPUT, "Detection image: ");
-      makeback(dfield, dwfield? dwfield
-			: (prefs.weight_type[0] == WEIGHT_NONE?NULL:wfield),
-		prefs.wscale_flag[0]);
-      QPRINTF(OUTPUT, "(D)   "
-		"Background: %-10g RMS: %-10g / Threshold: %-10g \n",
-	dfield->backmean, dfield->backsig, dfield->dthresh);
-      }
-    else if (dwfield && dwfield->flags^INTERP_FIELD)
-      {
-      makeback(field, dwfield, prefs.wscale_flag[0]);
-      QPRINTF(OUTPUT, "(D)   "
-		"Background: %-10g RMS: %-10g / Threshold: %-10g \n",
-	field->backmean, field->backsig, field->dthresh);
-      }
-
-/*-- For interpolated weight-maps, copy the background structure */
-    if (dwfield && dwfield->flags&(INTERP_FIELD|BACKRMS_FIELD))
-      copyback(dwfield->reffield, dwfield);
-    if (wfield && wfield->flags&(INTERP_FIELD|BACKRMS_FIELD))
-      copyback(wfield->reffield, wfield);
+/*-- Flag maps */
+    if ((prefs.imaflags_flag))
+      for (i=0; i<nfimage; i++)
+        fefields[i]= ffields[i*ndext+e];
 
 /*-- Prepare learn and/or associations */
     if (prefs.assoc_flag)
-      init_assoc(field);                  /* initialize assoc tasks */
+      init_assoc(dfield);
 
-/*-- Update the CHECK-images */
+/*-- Update CHECK-images */
     if (prefs.check_flag)
       for (i=0; i<MAXCHECK; i++)
         if ((check=prefs.check[i]))
-          reinitcheck(field, check);
+          check_reinit(dfield, check);		/* FIX */
 
-    if (!forcextflag && nok>1)
-      {
-      if (prefs.psf_flag)
-        {
-/*------ Read other PSF extensions */
-        NFPRINTF(OUTPUT, "Reading PSF information");
-        psf_end(thepsf, thepsfit);
-        if (prefs.dpsf_flag)
-          {
-          psf_end(thedpsf, thedpsfit);
-          thedpsf = psf_load(prefs.psf_name[0], nok);
-          thepsf = psf_load(prefs.psf_name[1], nok);
-          }
-        else
-          thepsf = psf_load(prefs.psf_name[0], nok); 
-        }
-
-#ifdef USE_MODEL
-      if (prefs.prof_flag)
-        {
-/*------ Create profiles at full resolution */
-        profit_end(theprofit);
-        theprofit = profit_init(thepsf, modeltype);
-        if (prefs.dprof_flag)
-          {
-          profit_end(thedprofit);
-          thedprofit = profit_init(thedpsf, modeltype);
-          }
-        if (prefs.pattern_flag)
-          {
-          pattern = pattern_init(theprofit, prefs.pattern_type, npat0);
-          pattern_end(pattern);
-          }
-        if (FLAG(obj2.prof_concentration)|FLAG(obj2.prof_concentration))
-          {
-          profit_end(thepprofit);
-          profit_end(theqprofit);
-          thepprofit = profit_init(thepsf, MODEL_DIRAC);
-          theqprofit = profit_init(thepsf, MODEL_EXPONENTIAL);
-          }
-        }
-#endif
-      }
-
-/*-- Initialize PSF contexts and workspace */
-    if (prefs.psf_flag)
-      {
-      psf_readcontext(thepsf, field);
-      psf_init();
-      if (prefs.dpsf_flag)
-        {
-        psf_readcontext(thepsf, dfield);
-        psf_init();
-        }
-      }
-
-/*-- Copy field structures to static ones (for catalog info) */
-    if (dfield)
-      {
-      thefield1 = *field;
-      thefield2 = *dfield;
-      }
-    else
-      thefield1 = thefield2 = *field;
-
-    if (wfield)
-      {
-      thewfield1 = *wfield;
-      thewfield2 = dwfield? *dwfield: *wfield;
-      }
-    else if (dwfield)
-      thewfield2 = *dwfield;
-
-    reinitcat(field);
+    thecat.currext++;
+    catout_initext(dfield);
 
 /*-- Start the extraction pipeline */
     NFPRINTF(OUTPUT, "Scanning image");
-    scanimage(field, dfield, pffield, prefs.nimaflag, wfield, dwfield);
+    scan_extract(dfield,dwfield, efields,wefields,nfield, fefields,nfimage);
+
+    thecat.ntotalsum += thecat.ntotal;
+    thecat.nlinesum += dfield->height;
 
 /*-- Finish the current CHECK-image processing */
     if (prefs.check_flag)
       for (i=0; i<MAXCHECK; i++)
         if ((check=prefs.check[i]))
-          reendcheck(field, check);
+          check_reend(dfield, check);
 
 /*-- Final time measurements*/
     if (time(&thetime2)!=-1)
@@ -559,35 +632,46 @@ void	makeit()
       thecat.ext_elapsed = difftime(thetime2, thetime1);
       }
 
-    reendcat();
+    catout_endext();
 
-/* Update XML data */
+/* --Update XML data */
     if (prefs.xml_flag || prefs.cat_type==ASCII_VO)
-      update_xml(&thecat, dfield? dfield:field, field,
-	dwfield? dwfield:wfield, wfield);
+      xml_update(&thecat, efields, wefields);
 
 
 /*-- Close ASSOC routines */
-    end_assoc(field);
+    end_assoc(dfield);
 
-    for (i=0; i<prefs.nimaflag; i++)
-      endfield(pffield[i]);
-    endfield(field);
-    if (dfield)
-      endfield(dfield);
-    if (wfield)
-      endfield(wfield);
-    if (dwfield)
-      endfield(dwfield);
-
-    QPRINTF(OUTPUT, "      Objects: detected %-8d / sextracted %-8d        \n\n",
+/*-- End flag-images */
+    if ((nfimage))
+      for (i=0; i<nfimage; i++)
+        field_end(fefields[i]);
+/*-- End science images and weight maps */
+    for (i=0; i<nimage; i++)
+      {
+      field_end(efields[i]);
+      if (wefields[i])
+        field_end(wefields[i]);
+      }
+    QPRINTF(OUTPUT,"      Objects: detected %-8d / sextracted %-8d        \n\n",
 	thecat.ndetect, thecat.ntotal);
     }
 
-  if (nok<=0)
+  free(efields);
+  free(wefields);
+  free(fields);
+  free(wfields);
+  free(file_index);
+  free(file_next);
+  if ((nfimage))
+    {
+    free(fefields);
+    free(ffile_next);
+    }
+
+  if (thecat.currext==0)
     error(EXIT_FAILURE, "Not enough valid FITS image extensions in ",
 	prefs.image_name[0]);
-  free_cat(&imacat, 1);
 
   NFPRINTF(OUTPUT, "Closing files");
 
@@ -596,42 +680,35 @@ void	makeit()
     for (i=0; i<MAXCHECK; i++)
       {
       if ((check=prefs.check[i]))
-        endcheck(check);
+        check_end(check);
       prefs.check[i] = NULL;
       }
 
+/* End detection filter */
   if (prefs.filter_flag)
     endfilter();
 
+/* End som-fitting */
   if (prefs.somfit_flag)
-    som_end(thesom);
-
-  if (prefs.growth_flag)
-    endgrowth();
+    som_end(som);
 
 #ifdef USE_MODEL
   if (prefs.prof_flag)
-    {
-    profit_end(theprofit);
-    if (prefs.dprof_flag)
-      profit_end(thedprofit);
-    if (FLAG(obj2.prof_concentration)|FLAG(obj2.prof_concentration))
-      {
-      profit_end(thepprofit);
-      profit_end(theqprofit);
-      }
     fft_end();
-    }
 #endif
 
+/* End PSFs */
   if (prefs.psf_flag)
-    psf_end(thepsf, thepsfit);
+    {
+    for (i=0; i<nfield; i++)
+      if (psfs[i])
+        psf_end(psfs[i], NULL);
+    free(psfs);
+    }
 
-  if (prefs.dpsf_flag)
-    psf_end(thedpsf, thedpsfit);
-
+/* End classification neural network */
   if (FLAG(obj2.sprob))
-    neurclose();
+    neur_end();
 
 /* Processing end date and time */
   thetimet2 = time(NULL);
@@ -644,62 +721,65 @@ void	makeit()
 
 /* Write XML */
   if (prefs.xml_flag)
-    write_xml(prefs.xml_name);
+    xml_write(prefs.xml_name);
 
-  endcat((char *)NULL);
+/* Free memory allocated for arrays that are not catalogue measurements */
+  catout_freeother(thecat.obj2list, &flagobj2.dbkg);
+  catout_freeother(thecat.obj2list, &flagobj2.sigbkg);
+  catout_freeother(thecat.obj2list, &flagobj2.cflux);
+  catout_freeother(thecat.obj2list, &flagobj2.cfluxw);
+  catout_freeother(thecat.obj2list, &flagobj2.cposx);
+  catout_freeother(thecat.obj2list, &flagobj2.cposy);
+  catout_freeother(thecat.obj2list, &flagobj2.cposw);
+
+/* End catalog */
+  catout_end((char *)NULL);
+
 
   if (prefs.xml_flag || prefs.cat_type==ASCII_VO)
-    end_xml();
+    xml_end();
 
   return;
   }
 
 
-/******************************** initglob ***********************************/
-/*
-Initialize a few global variables
-*/
-void	initglob()
-  {
-   int	i;
 
-  for (i=0; i<37; i++)
-    {
-    ctg[i] = cos(i*PI/18);
-    stg[i] = sin(i*PI/18);
-    }
-
-
-  return;
-  }
-
-
-/****** selectext ************************************************************
-PROTO	int selectext(char *filename)
-PURPOSE	Return the user-selected extension number [%d] from the file name.
-INPUT	Filename character string.
-OUTPUT	Extension number, or RETURN_ERROR if nos extension specified.
-NOTES	The bracket and its extension number are removed from the filename if
-	found.
-AUTHOR  E. Bertin (IAP)
-VERSION 08/10/2007
+/****** _count_imext *********************************************************
+PROTO	int _count_imext(char *filename)
+PURPOSE	Count the number of valid image extensions in a FITS file.
+INPUT	FITS filename.
+OUTPUT	Number of valid image extensions (or 1 for basic FITS).
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	18/09/2013
  ***/
-static int	selectext(char *filename)
+int	_count_imext(char *filename)
+
   {
-   char	*bracl,*bracr;
-   int	next;
+   catstruct	*cat;
+   tabstruct	*tab;
+   int		ntab, nim;
 
-  if (filename && (bracl=strrchr(filename, '[')))
+  if (!(cat = read_cat(filename)))
+    error(EXIT_FAILURE, "*Error*: cannot open ", filename);
+
+  nim = 0;
+  tab = cat->tab;
+  for (ntab=cat->ntab; ntab--; tab=tab->nexttab)
     {
-    *bracl = '\0';
-    if ((bracr=strrchr(bracl+1, ']')))
-      *bracr = '\0';
-    next = strtol(bracl+1, NULL, 0);
-    return next;
+    if ((tab->naxis < 2)
+	|| !strncmp(tab->xtension, "BINTABLE", 8)
+	|| !strncmp(tab->xtension, "ASCTABLE", 8))
+      continue;
+    nim++;
     }
+  free_cat(&cat, 1);
+  if (nim==0)
+    error(EXIT_FAILURE, "No valid FITS image in ", filename);
 
-  return RETURN_ERROR;
+  return nim;
   }
+
 
 
 /****** write_error ********************************************************
@@ -710,7 +790,7 @@ INPUT	a character string,
 OUTPUT	RETURN_OK if everything went fine, RETURN_ERROR otherwise.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	14/07/2006
+VERSION	24/02/2012
  ***/
 void	write_error(char *msg1, char *msg2)
   {
@@ -718,12 +798,12 @@ void	write_error(char *msg1, char *msg2)
 
   sprintf(error, "%s%s", msg1,msg2);
   if (prefs.xml_flag)
-    write_xmlerror(prefs.xml_name, error);
+    xml_write_error(prefs.xml_name, error);
 
 /* Also close existing catalog */
-  endcat(error);
+  catout_end(error);
 
-  end_xml();
+  xml_end();
 
   return;
   }

@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2014 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		12/09/2013
+*	Last modified:		03/01/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -39,97 +39,93 @@
 #include	"globals.h"
 #include	"prefs.h"
 #include	"fits/fitscat.h"
+#include	"analyse.h"
 #include	"back.h"
+#include	"catout.h"
+#include	"clean.h"
 #include	"check.h"
 #include	"assoc.h"
 #include	"astrom.h"
 #include	"plist.h"
 #include	"flag.h"
+#include	"graph.h"
 #include	"growth.h"
 #include	"image.h"
+#include	"misc.h"
+#include	"neurro.h"
 #include	"photom.h"
 #include	"psf.h"
 #include	"profit.h"
 #include	"retina.h"
 #include	"som.h"
+#include	"subimage.h"
 #include	"weight.h"
 #include	"winpos.h"
 
-static obj2struct	*obj2 = &outobj2;
-extern profitstruct	*theprofit,*thedprofit;
+#ifdef USE_THREADS
+#include	"threads.h"
 
-/********************************* analyse ***********************************/
-void  analyse(picstruct *field, picstruct *dfield, int objnb,
-		objliststruct *objlist)
+pthread_t	*pthread_thread;
+pthread_attr_t	pthread_attr;
+pthread_mutex_t	pthread_group2mutex, pthread_freeobj2mutex;
+pthread_cond_t	pthread_group2addcond, pthread_obj2savecond;
+fieldstruct	**pthread_fields,**pthread_wfields;
+obj2groupstruct	*pthread_group2;
+int		pthread_ngroup2, pthread_group2addindex,pthread_group2procindex,
+		pthread_group2saveindex, pthread_nfield, pthread_nthreads,
+		pthread_endflag;
 
+#endif
+
+/****** analyse_iso *********************************************************
+PROTO	void analyse_iso(fieldstruct **fields, fieldstruct **wfields,
+			int nfield, objliststruct *objlist, int n)
+PURPOSE	Do (isophotal) measurements on pixel lists.
+INPUT	Pointer to an array of image field pointers,
+	pointer to an array of weight-map field pointers,
+	number of images,
+	pointer to the objlist,
+	object index in the objlist.
+OUTPUT	-.
+NOTES	Requires access to the global preferences.
+AUTHOR	E. Bertin (IAP)
+VERSION	03/10/2012
+ ***/
+void  analyse_iso(fieldstruct **fields, fieldstruct **wfields, int nfield,
+			objliststruct *objlist, int n)
   {
-   objstruct	*obj = objlist->obj+objnb;
-
-/* Do photometry on the detection image if no other image available */
-  obj->number = ++thecat.ndetect;
-  obj->bkg = (float)back(field, (int)(obj->mx+0.5), (int)(obj->my+0.5));
-  obj->dbkg = 0.0;
-  if (prefs.pback_type == LOCAL)
-    localback(field, obj);
-  else
-    obj->sigbkg = field->backsig;
-  obj->dsigbkg = dfield? dfield->backsig : field->backsig;
-
-  examineiso(field, dfield, obj, objlist->plist);
-
-/*&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&*/
-/* Put here your calls to custom functions related to isophotal measurements.
-Ex:
-
-compute_myparams(obj); 
-
-*/
-
-/*&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&*/
-
-
-  return;
-  }
-
-
-/***************************** examineiso ********************************/
-/*
-compute some isophotal parameters IN THE MEASUREMENT image.
-*/
-void  examineiso(picstruct *field, picstruct *dfield, objstruct *obj,
-		pliststruct *pixel)
-
-  {
+   fieldstruct		*field, *wfield;
    checkstruct		*check;
-   pliststruct		*pixt;
-   int			i,j,k,h, photoflag,area,errflag, cleanflag,
-			pospeakflag, minarea, gainflag;
+   objstruct		*obj;
+   pliststruct		*pixel, *pixt;
+   PIXTYPE		threshs[NISO],
+			pix, cdpix, tpix, peak,cdpeak, thresh,dthresh,minthresh;
    double		tv,sigtv, ngamma,
 			esum, emx2,emy2,emxy, err,gain,backnoise2,dbacknoise2,
 			xm,ym, x,y,var,var2, threshfac;
    float		*heap,*heapt,*heapj,*heapk, swap;
-   PIXTYPE		pix, cdpix, tpix, peak,cdpeak, thresh,dthresh,minthresh;
-   static PIXTYPE	threshs[NISO];
+   int			i,j,k,h, photoflag,area,errflag, cleanflag,
+			pospeakflag, minarea, gainflag;
 
 
-  if (!dfield)
-    dfield = field;
-
+  obj = objlist->obj+n;
+  pixel = objlist->plist;
+  field = fields[0];
 /* Prepare computation of positional error */
   esum = emx2 = emy2 = emxy = 0.0;
-  if ((errflag=FLAG(obj.poserr_mx2)))
+  if ((errflag=FLAG(obj2.poserr_mx2)))
     {
-    dbacknoise2 = dfield->backsig*dfield->backsig;
+    dbacknoise2 = field->backsig*field->backsig;
     xm = obj->mx;
     ym = obj->my;
     }
   else
     xm = ym = dbacknoise2 = 0.0;	/* to avoid gcc -Wall warnings */
 
-  pospeakflag = FLAG(obj.peakx);
+  pospeakflag = FLAG(obj2.peakx);
   gain = field->gain;
   ngamma = field->ngamma;
-  photoflag = (prefs.detect_type==PHOTO);
+  photoflag = (field->detector_type==DETECTOR_PHOTO);
   gainflag = PLISTEXIST(var) && prefs.weightgain_flag;
 
   h = minarea = prefs.ext_minarea;
@@ -164,7 +160,7 @@ void  examineiso(picstruct *field, picstruct *dfield, objstruct *obj,
   thresh = field->thresh;
   minthresh = (PLISTEXIST(var))? BIG : thresh;
   threshfac = field->backsig > 0.0 ? field->thresh / field->backsig : 1.0;
-  dthresh = dfield->dthresh;
+dthresh = field->dthresh;
   area = 0;
   for (pixt=pixel+obj->firstpix; pixt>=pixel; pixt=pixel+PLIST(pixt,nextpix))
     {
@@ -172,12 +168,12 @@ void  examineiso(picstruct *field, picstruct *dfield, objstruct *obj,
     if (pix>peak)
       peak = pix;
 
-    cdpix=PLISTPIX(pixt,cdvalue);
+    cdpix=PLISTPIX(pixt,cvalue);
     if (pospeakflag && cdpix>cdpeak)
       {
       cdpeak=cdpix;
-      obj->peakx =  PLIST(pixt,x) + 1;
-      obj->peaky =  PLIST(pixt,y) + 1;
+      obj->dpeakx =  PLIST(pixt,x) + 1;
+      obj->dpeaky =  PLIST(pixt,y) + 1;
       }
     if (PLISTEXIST(var))
       {
@@ -218,7 +214,7 @@ void  examineiso(picstruct *field, picstruct *dfield, objstruct *obj,
 /*-- Find the minareath pixel in decreasing intensity for CLEANing */
     if (cleanflag)
       {
-      tpix = PLISTPIX(pixt, cdvalue) - (PLISTEXIST(dthresh)?
+      tpix = PLISTPIX(pixt, cvalue) - (PLISTEXIST(dthresh)?
 		PLISTPIX(pixt, dthresh):dthresh);
       if (h>0)
         *(heapt++) = (float)tpix;
@@ -252,7 +248,7 @@ void  examineiso(picstruct *field, picstruct *dfield, objstruct *obj,
 
 /* Flagging from the flag-map */
   if (PLISTEXIST(flag))
-    getflags(obj, pixel);
+    flag_get(obj, pixel);
 
 /* Flag and count pixels with a low weight */
   if (PLISTEXIST(wflag))
@@ -300,28 +296,28 @@ void  examineiso(picstruct *field, picstruct *dfield, objstruct *obj,
     }
 
   obj->npix = area;
-  obj->flux = tv;
-  obj->fluxerr = sigtv;
-  obj->peak = peak;
+  obj->dflux = tv;
+  obj->dfluxerr = sigtv;
+  obj->dpeak = peak;
   obj->thresh = minthresh - obj->dbkg;
-  obj->peak -= obj->dbkg;
+  obj->dpeak -= obj->dbkg;
 
 /* Initialize isophotal thresholds so as to sample optimally the full profile*/
 
-  if (FLAG(obj.iso[0]))
+  if (FLAG(obj2.iso[0]))
     {
      int	*iso;
      PIXTYPE	*thresht;
 
     memset(obj->iso, 0, NISO*sizeof(int));
-    if (prefs.detect_type == PHOTO)
+    if (field->detector_type == DETECTOR_PHOTO)
       for (i=0; i<NISO; i++)
-        threshs[i] = obj->thresh + (obj->peak-obj->thresh)*i/NISO;
+        threshs[i] = obj->thresh + (obj->dpeak-obj->thresh)*i/NISO;
     else
       {
-      if (obj->peak>0.0 && obj->thresh>0.0)
+      if (obj->dpeak>0.0 && obj->thresh>0.0)
         for (i=0; i<NISO; i++)
-          threshs[i] = obj->thresh*pow(obj->peak/obj->thresh, (double)i/NISO);
+          threshs[i] = obj->thresh*pow(obj->dpeak/obj->thresh, (double)i/NISO);
       else
         for (i=0; i<NISO; i++)
           threshs[i] = 0.0;
@@ -337,7 +333,7 @@ void  examineiso(picstruct *field, picstruct *dfield, objstruct *obj,
   if ((check = prefs.check[CHECK_SEGMENTATION]))
     for (pixt=pixel+obj->firstpix; pixt>=pixel; pixt=pixel+PLIST(pixt,nextpix))
       ((ULONG *)check->pix)[check->width*PLIST(pixt,y)+PLIST(pixt,x)]
-		= (ULONG)obj->number;
+		= -(ULONG)obj->number;
 
   if ((check = prefs.check[CHECK_OBJECTS]))
     for (pixt=pixel+obj->firstpix; pixt>=pixel; pixt=pixel+PLIST(pixt,nextpix))
@@ -345,11 +341,11 @@ void  examineiso(picstruct *field, picstruct *dfield, objstruct *obj,
 		= PLIST(pixt,value);
 
 /* Compute the FWHM of the object */
-  if (FLAG(obj.fwhm))
+  if (FLAG(obj2.fwhm))
     {
      PIXTYPE	thresh0;
 
-    thresh0 = obj->peak/5.0;
+    thresh0 = obj->dpeak/5.0;
     if (thresh0<obj->thresh)
       thresh0 = obj->thresh;
     if (thresh0>0.0)
@@ -401,114 +397,560 @@ void  examineiso(picstruct *field, picstruct *dfield, objstruct *obj,
   }
 
 
-/******************************* endobject **********************************/
-/*
-Final processing of object data, just before saving it to the catalog.
-*/
-void	endobject(picstruct *field, picstruct *dfield, picstruct *wfield,
-		picstruct *dwfield, int n, objliststruct *objlist)
+/****** analyse_final *******************************************************
+PROTO	void analyse_final(fieldstruct **fields, fieldstruct **wfields,
+			int nfield, objliststruct *objlist, int iobj)
+PURPOSE Do the final analysis based on a list of detections and a detection
+	index.
+INPUT	Pointer to an array of image field pointers,
+	pointer to an array of weight-map field pointers,
+	number of images,
+	objlist pointer,
+	obj index.
+OUTPUT  -.
+NOTES   Global preferences are used.
+AUTHOR  E. Bertin (IAP)
+VERSION 03/01/2014
+ ***/
+void analyse_final(fieldstruct **fields, fieldstruct **wfields,
+			int nfield, objliststruct *objlist, int objindex)
   {
+   fieldstruct		*field;
+   obj2groupstruct	group2;
+   obj2liststruct	*obj2list;
    objstruct		*obj;
+   obj2struct		*obj2, *prevobj2, *firstobj2;
+   subimagestruct	*objsubimage, *groupsubimage;
+   int			i, ycmax, nextiobj, noverlap, iobj,
+			xmin,xmax,ymin,ymax;
+
+  obj2list = thecat.obj2list;
+
+/* field is the detection field */
+  field = fields[0];
+/* Find overlapping detections and link them */
+  noverlap = analyse_overlapness(cleanobjlist, objindex);
+
+  xmax = ymax = -(xmin = ymin = 2000000);
+  iobj = objindex;
+  for (i=noverlap; i--;)
+    {
+    obj = &objlist->obj[iobj];
+    if (obj->xmin < xmin)
+      xmin = obj->xmin;
+    if (obj->xmax > xmax)
+      xmax = obj->xmax;
+    if (obj->ymin < ymin)
+      ymin = obj->ymin;
+    if (obj->ymax > ymax)
+      ymax = obj->ymax;
+    iobj = obj->next;
+    }
+
+  group2.subimage = subimage_new(field, wfields? wfields[0] : NULL,
+		xmin, xmax, ymin, ymax);
+
+/* Convert every linked detection to a linked obj2 */
+  prevobj2 = NULL;
+  iobj = objindex;
+  for (i=noverlap; i--;)
+    {
+    obj = &objlist->obj[iobj];
+/*-- Warn if there is a possibility for any aperture to be truncated */
+    if ((ycmax=obj->ycmax) > field->ymax)
+      {
+      sprintf(gstr, "Object at position %.0f,%.0f ", obj->mx+1, obj->my+1);
+      QWARNING(gstr, "may have some apertures truncated:\n"
+		"          You might want to increase MEMORY_BUFSIZE");
+      }
+    else if (ycmax>field->yblank && prefs.blank_flag)
+      {
+      sprintf(gstr, "Object at position %.0f,%.0f ", obj->mx+1, obj->my+1);
+      QWARNING(gstr, "may have some unBLANKed neighbours:\n"
+		"          You might want to increase MEMORY_PIXSTACK");
+      }
+    obj2 = analyse_obj2obj2(fields, wfields, nfield, obj, obj2list);
+    if (!obj2)
+      error(EXIT_FAILURE, "*Error*: ", "obj2 stack full");
+    obj2->nextobj2 = NULL;
+    if (prevobj2)
+      {
+      prevobj2->nextobj2 = obj2;
+      obj2->prevobj2 = prevobj2;
+      }
+    else
+      {
+      obj2->prevobj2 = NULL;
+      firstobj2 = obj2;
+      }
+    prevobj2 = obj2;
+
+    objsubimage = obj2->subimage;
+    groupsubimage = group2.subimage;
+    deblankimage(objsubimage->image,
+		objsubimage->imsize[0], objsubimage->imsize[1],
+		groupsubimage->image,
+		groupsubimage->imsize[0],groupsubimage->imsize[1],
+		objsubimage->immin[0] - groupsubimage->immin[0],
+		objsubimage->immin[1] - groupsubimage->immin[1]);
+
+    nextiobj = obj->next;
+/*-- Take care of next obj that might be swapped by clean_sub! */
+    if (nextiobj == objlist->nobj-1)
+      nextiobj = iobj;
+    clean_sub(iobj);
+    iobj = nextiobj;
+    }
+
+  group2.obj2 = firstobj2;
+
+#ifdef USE_THREADS
+  if (prefs.nthreads>1)
+/*-- Push in obj2 */
+    pthread_add_obj2group(group2);
+  else
+    {
+/*-- 1 single thread: don't bother with independent measurement threads */
+/*-- Analyse the group of obj2s */
+    analyse_group(fields, wfields, nfield, &group2);
+/*-- Write to catalogue and terminate the group of obj2s */
+    analyse_end(fields, wfields, nfield, &group2);
+    }
+#else
+/* Analyse the group of obj2s */
+  analyse_group(fields, wfields, nfield, &group2);
+/* Write to catalogue and terminate the group of obj2s */
+  analyse_end(fields, wfields, nfield, &group2);
+#endif
+
+  return;
+  }
+
+
+/****** analyse_overlapness ***************************************************
+PROTO	int analyse_overlapness(objliststruct *objlist, int iobj)
+PURPOSE Link together overlapping detections.
+INPUT   objliststruct pointer,
+	obj index.
+OUTPUT  -.
+NOTES   -.
+AUTHOR  E. Bertin (IAP)
+VERSION 07/10/2011
+ ***/
+int analyse_overlapness(objliststruct *objlist, int iobj)
+  {
+   objstruct	*obj,*cobj,*fobj;
+   int		i, blend, nblend,nobj;
+
+  nblend = 1;
+  nobj = objlist->nobj;
+  obj = objlist->obj;
+  fobj = &obj[iobj];
+  fobj->prev = -1;
+  blend = fobj->blend;
+  cobj = fobj;
+  for (i=0; i<nobj; i++, obj++)
+    if (obj->blend == blend && obj!=fobj)
+      {
+      cobj->next = i;
+      obj->prev = iobj;
+      cobj = obj;
+      iobj = i;
+      nblend++;
+      }
+
+  cobj->next = -1;
+
+  return nblend;
+  }
+
+
+/****** analyse_obj2obj2 ******************************************************
+PROTO	obj2struct *analyse_obj2obj2(fieldstruct **fields,
+			fieldstruct **wfields, int nfield,
+			objstruct *obj, obj2liststruct *obj2list)
+PURPOSE Move object data from obj to obj2 structure.
+INPUT	Pointer to an array of image field pointers,
+	pointer to an array of weight-map field pointers,
+	number of images,
+	obj pointer,
+	obj2list pointer,
+OUTPUT  New obj2 pointer.
+NOTES   -.
+AUTHOR  E. Bertin (IAP)
+VERSION 03/10/2012
+ ***/
+obj2struct	*analyse_obj2obj2(fieldstruct **fields, fieldstruct **wfields,
+			int nfield, objstruct *obj, obj2liststruct *obj2list)
+  {
+   checkstruct		*check;
+   fieldstruct		*field;
+   subimagestruct	*subimage;
+   obj2struct		*obj2;
+   float		sigbkg;
+   static int		number;
+   int			f, idx,idy;
+
+#ifdef USE_THREADS
+  if (prefs.nthreads>1)
+    QPTHREAD_MUTEX_LOCK(&pthread_freeobj2mutex);
+#endif
+  while (!(obj2list->freeobj2->nextobj2))
+    {
+#ifdef USE_THREADS
+    if (prefs.nthreads>1)
+      QPTHREAD_COND_WAIT(&pthread_obj2savecond, &pthread_freeobj2mutex)
+    else
+      {
+      QPTHREAD_MUTEX_UNLOCK(&pthread_freeobj2mutex);
+#endif
+      return NULL;
+#ifdef USE_THREADS
+      }
+#endif
+    }
+
+  obj2 = obj2list->freeobj2;
+  obj2list->freeobj2 = obj2->nextobj2;
+#ifdef USE_THREADS
+  if (prefs.nthreads>1)
+    QPTHREAD_MUTEX_UNLOCK(&pthread_freeobj2mutex);
+#endif
+  obj2->nextobj2 = obj2->prevobj2 = NULL;
+
+/*-- Local backgrounds */
+  for (f=0; f<nfield; f++)
+    {
+    field = fields[f];
+    if (FLAG(obj2.bkg))
+      obj2->bkg[f] = (float)back_interpolate(field, obj->mx, obj->my);
+    obj2->dbkg[f] = 0.0;
+    if (prefs.pback_type == LOCAL)
+      {
+      obj2->dbkg[f] = back_local(field, obj, &sigbkg);
+      if (FLAG(obj2.bkg))
+        obj2->bkg[f] += obj2->dbkg[f];
+      obj2->sigbkg[f] = sigbkg<0.0? field->backsig : sigbkg;          
+      }
+    else
+      obj2->sigbkg[f] = field->backsig;
+    if (FLAG(obj2.wflag))
+      obj2->wflag[f] = obj->wflag;
+    }
+
+/* Copy main data */
+
+  obj2->number = ++number;
+  obj2->fdnpix = obj->fdnpix;
+  obj2->dnpix = obj->dnpix;
+  obj2->npix = obj->npix;
+  obj2->nzdwpix = obj->nzdwpix;
+  obj2->nzwpix = obj->nzwpix;
+  obj2->dflux = obj->dflux;
+  obj2->dfluxerr = obj->dfluxerr;
+  obj2->fdpeak = obj->fdpeak;
+  obj2->peak = obj->dpeak;
+  obj2->peakx = obj->dpeakx;
+  obj2->peaky = obj->dpeaky;
+  obj2->mx = obj->mx;
+  obj2->my = obj->my;
+/* Integer coordinates */
+  obj2->ix=(int)(obj2->mx+0.49999);		/* Integer coordinates */
+  obj2->iy=(int)(obj2->my+0.49999);
+  obj2->posx[0] = obj2->mx+1.0;			/* That's standard FITS */
+  obj2->posy[0] = obj2->my+1.0;
+  obj2->poserr_mx2 = obj->poserr_mx2;
+  obj2->poserr_my2 = obj->poserr_my2;
+  obj2->poserr_mxy = obj->poserr_mxy;
+  obj2->xmin = obj->xmin;
+  obj2->xmax = obj->xmax;
+  obj2->ymin = obj->ymin;
+  obj2->ymax = obj->ymax;
+  obj2->flags = obj->flag;
+  obj2->singuflag = obj->singuflag;
+  if (FLAG(obj2.imaflags))
+    {
+    memcpy(obj2->imaflags, obj->imaflags, prefs.nfimage*sizeof(FLAGTYPE));
+    memcpy(obj2->imanflags, obj->imanflags, prefs.nfimage*sizeof(int));
+    }
+  obj2->mx2 = obj->mx2;
+  obj2->my2 = obj->my2;
+  obj2->mxy = obj->mxy;
+  obj2->a = obj->a;
+  obj2->b = obj->b;
+  obj2->theta = obj->theta;
+  obj2->abcor = obj->abcor;
+  obj2->cxx = obj->cxx;
+  obj2->cyy = obj->cyy;
+  obj2->cxy = obj->cxy;
+  obj2->thresh = obj->thresh;
+  obj2->dthresh = obj->dthresh;
+  obj2->mthresh = obj->mthresh;
+  memcpy(obj2->iso, obj->iso, NISO*sizeof(int));
+  obj2->fwhm = obj->fwhm;
+
+/* Copy image data around current object */
+  subimage_getall(fields, wfields, nfield, obj2);
+
+/* if BLANKing is on, paste back the object pixels in the image*/
+  if (prefs.blank_flag && obj->blank)
+    {
+    subimage = obj2->subimage;
+    deblankimage(obj->blank, obj->subw, obj->subh,
+		subimage->image, subimage->imsize[0],subimage->imsize[1],
+		obj->subx - subimage->immin[0], obj->suby - subimage->immin[1]);
+    free(obj->blank);
+    }
+
+  if ((check=prefs.check[CHECK_SEGMENTATION]))
+    {
+/*-- Re-number segmentation map */
+     ULONG	*pix;
+     ULONG	oldsnumber=-obj->number, newsnumber=obj2->number;
+     int	dx,dx0,dy,dpix;
+
+    pix = (ULONG *)check->pix + check->width*obj->ymin + obj->xmin;
+    dx0 = obj->xmax-obj->xmin+1;
+    dpix = check->width-dx0;
+    for (dy=obj->ymax-obj->ymin+1; dy--; pix += dpix)
+      for (dx=dx0; dx--; pix++)
+        if (*pix==oldsnumber)
+          *pix = newsnumber;
+    }
+
+  return obj2;
+  }
+
+
+/****** analyse_group ********************************************************
+PROTO	void analyse_group(fieldstruct **fields, fieldstruct **wfields,
+			int nfield, obj2groupstruct *group2)
+PURPOSE Perform measurements on a group of detections.
+INPUT   Pointer to an array of image field pointers,
+	pointer to an array of weight-map field pointers,
+	number of images,
+	Pointer to obj2group.
+OUTPUT  -.
+NOTES   -.
+AUTHOR  E. Bertin (IAP)
+VERSION 02/08/2012
+ ***/
+void	analyse_group(fieldstruct **fields, fieldstruct **wfields,
+			int nfield, obj2groupstruct *group2)
+  {
+   fieldstruct		*field, *wfield;
+   subprofitstruct	*subprofit,*modsubprofit;
+   subimagestruct	*subimage;
+   obj2struct		*obj2, *modobj2, *fobj2;
+   int			i,s;
+
+/* field is the detection field */
+  field = fields[0];
+  wfield = wfields? wfields[0]:NULL;
+
+  fobj2 = group2->obj2;
+
+  if (prefs.prof_flag)
+    {
+/*-- Setup model fitting for this group */
+    for (obj2=fobj2; obj2; obj2=obj2->nextobj2)
+      {
+      photom_auto(fields, wfields, nfield, obj2);
+      growth_aver(fields, wfields, nfield, obj2);
+      obj2->profit = profit_init(obj2, MODEL_MOFFAT, PROFIT_NOCONV);
+      }
+    if (fobj2->nextobj2)
+      {
+/*---- Iterative multiple fit if several sources overlap */
+      for (i=0; i<ANALYSE_NMULTITER; i++)
+        {
+        for (obj2=fobj2; obj2; obj2=obj2->nextobj2)
+          profit_fit(obj2->profit, obj2);
+        for (obj2=fobj2; obj2; obj2=obj2->nextobj2)
+          {
+          if (i)
+            {
+            subprofit = obj2->profit->subprofit;
+            subimage = obj2->subimage;
+            for (s=nfield; s--;)
+              subprofit_copyobjpix(subprofit++, subimage++);
+            }
+          for (modobj2=fobj2; modobj2; modobj2=modobj2->nextobj2)
+            if (modobj2 != obj2)
+              {
+              subprofit = obj2->profit->subprofit;
+              modsubprofit = modobj2->profit->subprofit;
+              for (s=nfield; s--;)
+                {
+                subprofit_submodpix(modsubprofit++, subprofit->objpix,
+			subprofit->ix, subprofit->iy,
+			subprofit->objnaxisn[0], subprofit->objnaxisn[1],
+			subprofit->subsamp, 0.95);
+                subprofit++;
+                }
+              }
+          }
+        }
+      }
+    else
+/*---- One single source */
+      profit_fit(fobj2->profit, fobj2);
+    }
+
+/* Subtract current best-fitting models from group sub-image */
+  subimage = group2->subimage;
+  for (obj2=fobj2; obj2; obj2=obj2->nextobj2)
+    {
+    subprofit = obj2->profit->subprofit;
+    subprofit_submodpix(subprofit, subimage->image,
+			subimage->ipos[0], subimage->ipos[1],
+			subimage->imsize[0], subimage->imsize[1],
+			subprofit->subsamp, 1.0);
+    }
+
+/* Full source analysis and decide if detection should be written to catalogue*/
+  for (obj2=fobj2; obj2; obj2=obj2->nextobj2)
+    obj2->writable_flag =
+		(analyse_full(fields, wfields, nfield, obj2) == RETURN_OK);
+/* Deallocate memory used for model-fitting */
+  if (prefs.prof_flag)
+    for (obj2=fobj2; obj2; obj2=obj2->nextobj2)
+      profit_end(obj2->profit);
+
+/* Free the group of obj2s */
+  for (obj2=fobj2; obj2; obj2=obj2->nextobj2)
+    subimage_endall(obj2);
+
+  subimage_end(group2->subimage);
+
+#ifdef USE_THREADS
+  if (prefs.nthreads>1)
+    {
+/*-- Flag group2s as done */
+    QPTHREAD_MUTEX_LOCK(&pthread_group2mutex);
+    group2->done_flag = 1;
+    QPTHREAD_MUTEX_UNLOCK(&pthread_group2mutex);
+    }
+#endif
+
+  return;
+  }
+
+
+/****** analyse_full *********************************************************
+PROTO	int analyse_full(fieldstruct **fields, fieldstruct **wfields,
+			int nfield, obj2struct *obj2)
+PURPOSE Final analysis of object data.
+INPUT   Pointer to an array of image field pointers,
+	pointer to an array of weight-map field pointers,
+	number of images,
+	obj2struct pointer.
+OUTPUT  RETURN_OK if the object has been processed, RETURN_ERROR otherwise.
+NOTES   -.
+AUTHOR  E. Bertin (IAP)
+VERSION 02/08/2012
+ ***/
+int	analyse_full(fieldstruct **fields, fieldstruct **wfields,
+			int nfield, obj2struct *obj2)
+  {
+fieldstruct *field, *dfield, *dwfield, *wfield;
    checkstruct		*check;
    double		rawpos[NAXIS],
 			analtime1;
-   int			i,j, ix,iy,selecflag, newnumber,nsub;
-
-   if (prefs.psf_flag)
-     thepsf->build_flag = 0;	/* Reset PSF building flag */
-   if (prefs.dpsf_flag)
-     thedpsf->build_flag = 0;	/* Reset PSF building flag */
+   int			i,j, ix,iy, idx,idy, selecflag, newnumber,nsub;
 
   if (FLAG(obj2.analtime))
     analtime1 = counter_seconds();
   else
     analtime1 = 0.0;		/* To avoid gcc -Wall warnings */
 
-  obj = &objlist->obj[n];
+/* field is the detection field */
+  field = fields[0];
 
-/* Current FITS extension */
-  obj2->ext_number = thecat.currext;
+dfield = dwfield = wfield = NULL;
+   if (prefs.psf_flag)
+     obj2->psf_flag = 0;	/* Reset PSF building flag */
+   if (prefs.dpsf_flag)
+     obj2->dpsf_flag = 0;	/* Reset PSF building flag */
 
-/* Source position */
-  obj2->sposx = (float)(obj2->posx = obj->mx+1.0); /* That's standard FITS */
-  obj2->sposy = (float)(obj2->posy = obj->my+1.0);
-
-/* Integer coordinates */
-  ix=(int)(obj->mx+0.49999);
-  iy=(int)(obj->my+0.49999);
-
-/* Association */
+/*------------------------------ Association ------------------------------*/
   if (prefs.assoc_flag)
-    obj2->assoc_number = do_assoc(field, obj2->posx, obj2->posy);
-
-  if (prefs.assoc_flag && prefs.assocselec_type!=ASSOCSELEC_ALL)
-    selecflag = (prefs.assocselec_type==ASSOCSELEC_MATCHED)?
-		obj2->assoc_number:!obj2->assoc_number;
-  else
-    selecflag = 1;
-
-  if (selecflag)
     {
-/*-- Paste back to the image the object's pixels if BLANKing is on */
-    if (prefs.blank_flag)
+    obj2->assoc_number = do_assoc(field, obj2->posx[0],obj2->posy[0],
+			obj2->assoc);
+    if ((prefs.assocselec_type==ASSOCSELEC_MATCHED && !(obj2->assoc_number))
+	||
+	(prefs.assocselec_type==ASSOCSELEC_NOMATCHED && (obj2->assoc_number)))
       {
-      pasteimage(field, obj->blank, obj->subw, obj->subh,
-		obj->subx, obj->suby);
-      if (obj->dblank)
-        pasteimage(dfield, obj->dblank, obj->subw, obj->subh,
-		obj->subx, obj->suby);
+/*---- Treatment of discarded detections */
+/*---- update segmentation map  and exit */
+      if ((check=prefs.check[CHECK_SEGMENTATION]))
+        {
+         ULONG	*pix;
+         ULONG	oldsnumber = obj2->number;
+         int	dx,dx0,dy,dpix;
+
+        pix = (ULONG *)check->pix + check->width*obj2->ymin + obj2->xmin;
+        dx0 = obj2->xmax-obj2->xmin+1;
+        dpix = check->width-dx0;
+        for (dy=obj2->ymax-obj2->ymin+1; dy--; pix += dpix)
+          for (dx=dx0; dx--; pix++)
+            if (*pix==oldsnumber)
+              *pix = 0;
+        }
+      return RETURN_ERROR;
       }
+    }
 
 /*------------------------- Error ellipse parameters ------------------------*/
-    if (FLAG(obj2.poserr_a))
-      {
-       double	pmx2,pmy2,temp,theta;
+  if (FLAG(obj2.poserr_a))
+    {
+     double	pmx2,pmy2,temp,theta;
 
-      if (fabs(temp=obj->poserr_mx2-obj->poserr_my2) > 0.0)
-        theta = atan2(2.0 * obj->poserr_mxy,temp) / 2.0;
-      else
-        theta = PI/4.0;
+    if (fabs(temp=obj2->poserr_mx2-obj2->poserr_my2) > 0.0)
+      theta = atan2(2.0 * obj2->poserr_mxy,temp) / 2.0;
+    else
+      theta = PI/4.0;
 
-      temp = sqrt(0.25*temp*temp+obj->poserr_mxy*obj->poserr_mxy);
-      pmy2 = pmx2 = 0.5*(obj->poserr_mx2+obj->poserr_my2);
-      pmx2+=temp;
-      pmy2-=temp;
+    temp = sqrt(0.25*temp*temp+obj2->poserr_mxy*obj2->poserr_mxy);
+    pmy2 = pmx2 = 0.5*(obj2->poserr_mx2+obj2->poserr_my2);
+    pmx2+=temp;
+    pmy2-=temp;
 
-      obj2->poserr_a = (float)sqrt(pmx2);
-      obj2->poserr_b = (float)sqrt(pmy2);
-      obj2->poserr_theta = theta*180.0/PI;
-      }
+    obj2->poserr_a = (float)sqrt(pmx2);
+    obj2->poserr_b = (float)sqrt(pmy2);
+    obj2->poserr_theta = theta*180.0/PI;
+    }
 
-    if (FLAG(obj2.poserr_cxx))
-      {
-       double	xm2,ym2, xym, temp;
+  if (FLAG(obj2.poserr_cxx))
+    {
+     double	xm2,ym2, xym, temp;
 
-      xm2 = obj->poserr_mx2;
-      ym2 = obj->poserr_my2;
-      xym = obj->poserr_mxy;
-      obj2->poserr_cxx = (float)(ym2/(temp=xm2*ym2-xym*xym));
-      obj2->poserr_cyy = (float)(xm2/temp);
-      obj2->poserr_cxy = (float)(-2*xym/temp);
-      }
+    xm2 = obj2->poserr_mx2;
+    ym2 = obj2->poserr_my2;
+    xym = obj2->poserr_mxy;
+    obj2->poserr_cxx = (float)(ym2/(temp=xm2*ym2-xym*xym));
+    obj2->poserr_cyy = (float)(xm2/temp);
+    obj2->poserr_cxy = (float)(-2*xym/temp);
+    }
 
-/* ---- Aspect ratio */
+/* Aspect ratio */
+  if (FLAG(obj2.elong))
+    obj2->elong = obj2->a/obj2->b;
 
-    if (FLAG(obj2.elong))
-      obj2->elong = obj->a/obj->b;
+  if (FLAG(obj2.ellip))
+    obj2->ellip = 1-obj2->b/obj2->a;
 
-    if (FLAG(obj2.ellip))
-      obj2->ellip = 1-obj->b/obj->a;
+  if (FLAG(obj2.polar))
+    obj2->polar = (obj2->a*obj2->a-obj2->b*obj2->b)
+		/ (obj2->a*obj2->a+obj2->b*obj2->b);
 
-    if (FLAG(obj2.polar))
-      obj2->polar = (obj->a*obj->a - obj->b*obj->b)
-		/ (obj->a*obj->a + obj->b*obj->b);
+/* Express positions in FOCAL or WORLD coordinates */
+  if (FLAG(obj2.posxf) || FLAG(obj2.posxw))
+    astrom_pos(fields, nfield, obj2);
 
-/*-- Express positions in FOCAL or WORLD coordinates */
-    if (FLAG(obj2.mxf) || FLAG(obj2.mxw))
-      astrom_pos(field, obj);
-
-    obj2->pixscale2 = 0.0;	/* To avoid gcc -Wall warnings */
-    if (FLAG(obj2.mx2w)
+  obj2->pixscale2 = 0.0;	/* To avoid gcc -Wall warnings */
+  if (FLAG(obj2.mx2w)
 	|| FLAG(obj2.win_mx2w)
 	|| FLAG(obj2.poserr_mx2w)
 	|| FLAG(obj2.winposerr_mx2w)
@@ -517,231 +959,125 @@ void	endobject(picstruct *field, picstruct *dfield, picstruct *wfield,
 	|| FLAG(obj2.prof_flagw)
 	|| ((!prefs.pixel_scale) && FLAG(obj2.area_flagw))
 	|| ((!prefs.pixel_scale) && FLAG(obj2.fwhmw_psf)))
-      {
-      rawpos[0] = obj2->posx;
-      rawpos[1] = obj2->posy;
-      obj2->pixscale2 = wcs_jacobian(field->wcs, rawpos, obj2->jacob);
-      }
+    {
+    rawpos[0] = obj2->posx[0];
+    rawpos[1] = obj2->posy[0];
+    obj2->pixscale2 = wcs_jacobian(field->wcs, rawpos, obj2->jacob);
+    }
 
-/*-- Express shape parameters in the FOCAL or WORLD frame */
-    if (FLAG(obj2.mx2w))
-      astrom_shapeparam(field, obj);
-/*-- Express position error parameters in the FOCAL or WORLD frame */
-    if (FLAG(obj2.poserr_mx2w))
-      astrom_errparam(field, obj);
+/* Express shape parameters in the FOCAL or WORLD frame */
+  if (FLAG(obj2.mx2w))
+    astrom_shapeparam(field, obj2);
+/* Express position error parameters in the FOCAL or WORLD frame */
+  if (FLAG(obj2.poserr_mx2w))
+    astrom_errparam(field, obj2);
 
-    if (FLAG(obj2.npixw))
-      obj2->npixw = obj->npix * (prefs.pixel_scale?
+  if (FLAG(obj2.npixw))
+    obj2->npixw = obj2->npix * (prefs.pixel_scale?
 	field->pixscale/3600.0*field->pixscale/3600.0 : obj2->pixscale2);
-    if (FLAG(obj2.fdnpixw))
-      obj2->fdnpixw = obj->fdnpix * (prefs.pixel_scale?
+  if (FLAG(obj2.fdnpixw))
+    obj2->fdnpixw = obj2->fdnpix * (prefs.pixel_scale?
 	field->pixscale/3600.0*field->pixscale/3600.0 : obj2->pixscale2);
 
-    if (FLAG(obj2.fwhmw))
-      obj2->fwhmw = obj->fwhm * (prefs.pixel_scale?
+  if (FLAG(obj2.fwhmw))
+    obj2->fwhmw = obj2->fwhm * (prefs.pixel_scale?
 	field->pixscale/3600.0 : sqrt(obj2->pixscale2));
 
 /*------------------------------- Photometry -------------------------------*/
 
-/*-- Convert the father of photom. error estimates from variance to RMS */
-    obj2->flux_iso = obj->flux;
-    obj2->fluxerr_iso = sqrt(obj->fluxerr);
+/* Convert the father of photom. error estimates from variance to RMS */
+  obj2->flux_iso = obj2->dflux;
+  obj2->fluxerr_iso = sqrt(obj2->dfluxerr);
 
-    if (FLAG(obj2.flux_isocor))
-      computeisocorflux(field, obj);
+  if (FLAG(obj2.flux_isocor))
+    photom_isocor(field, obj2);
 
+  if (FLAG(obj2.flux_aper))
+    for (i=0; i<prefs.naper; i++)
+      photom_aper(field, wfield, obj2, i);
+
+  if ((prefs.auto_flag) && !prefs.prof_flag)
+    photom_auto(fields, wfields, nfield, obj2);
+
+  if (FLAG(obj2.flux_petro))
+    photom_petro(field, dfield, wfield, dwfield, obj2);
+
+/*------------------------------ Astrometry -------------------------------*/
+/* Express positions in FOCAL or WORLD coordinates */
+  if (FLAG(obj2.peakxf) || FLAG(obj2.peakxw))
+    astrom_peakpos(field, obj2);
+  if (obj2->peak+obj2->bkg[0] >= field->satur_level)
+      obj2->flags |= OBJ_SATUR;
+
+/* Estimate of shape */
+  growth_aver(fields, wfields, nfield, obj2);
+/* Get a good estimate of position and flux */
+  if ((prefs.win_flag))
+    win_pos(fields, wfields, nfield, obj2);
+/* Express positions in FOCAL or WORLD coordinates */
+  if (FLAG(obj2.winpos_xf) || FLAG(obj2.winpos_xw))
+    astrom_winpos(fields, nfield, obj2);
+/* Express shape parameters in the FOCAL or WORLD frame */
+  if (FLAG(obj2.win_mx2w))
+    astrom_winshapeparam(fields, nfield, obj2);
+/* Express position error parameters in the FOCAL or WORLD frame */
+  if (FLAG(obj2.winposerr_mx2w))
+    astrom_winerrparam(fields, nfield, obj2);
+
+/* Check-image CHECK_APERTURES option */
+  if ((check = prefs.check[CHECK_APERTURES]))
+    {
     if (FLAG(obj2.flux_aper))
       for (i=0; i<prefs.naper; i++)
-        computeaperflux(field, wfield, obj, i);
+        sexcircle(check->pix, check->width, check->height,
+		obj2->mx, obj2->my, prefs.apert[i]/2.0, check->overlay);
 
     if (FLAG(obj2.flux_auto))
-      computeautoflux(field, dfield, wfield, dwfield, obj);
+      sexellipse(check->pix, check->width, check->height,
+		obj2->mx, obj2->my, obj2->a*obj2->auto_kronfactor,
+		obj2->b*obj2->auto_kronfactor, obj2->theta,
+		check->overlay, obj2->flags&OBJ_CROWDED);
 
     if (FLAG(obj2.flux_petro))
-      computepetroflux(field, dfield, wfield, dwfield, obj);
+      sexellipse(check->pix, check->width, check->height,
+		obj2->mx, obj2->my, obj2->a*obj2->petrofactor,
+		obj2->b*obj2->petrofactor, obj2->theta,
+		check->overlay, obj2->flags&OBJ_CROWDED);
+    }
 
-/*-- Growth curve */
-    if (prefs.growth_flag)
-      makeavergrowth(field, wfield, obj);
-
-/*--------------------------- Windowed barycenter --------------------------*/
-    if (FLAG(obj2.winpos_x))
-      {
-      compute_winpos(field, wfield, obj);
-/*---- Express positions in FOCAL or WORLD coordinates */
-      if (FLAG(obj2.winpos_xf) || FLAG(obj2.winpos_xw))
-        astrom_winpos(field, obj);
-/*---- Express shape parameters in the FOCAL or WORLD frame */
-      if (FLAG(obj2.win_mx2w))
-        astrom_winshapeparam(field, obj);
-/*---- Express position error parameters in the FOCAL or WORLD frame */
-      if (FLAG(obj2.winposerr_mx2w))
-        astrom_winerrparam(field, obj);
-      }
-
-/*---------------------------- Peak information ----------------------------*/
-    if (obj->peak+obj->bkg >= field->satur_level)
-      obj->flag |= OBJ_SATUR;
+/*----------------------------- Model fitting -----------------------------*/
+  if (prefs.prof_flag)
+    {
+/*-- Perform measurements on the fitted models */
+    profit_measure(obj2->profit, obj2);
 /*-- Express positions in FOCAL or WORLD coordinates */
-    if (FLAG(obj2.peakxf) || FLAG(obj2.peakxw))
-      astrom_peakpos(field, obj);
+    if (FLAG(obj2.xf_prof) || FLAG(obj2.xw_prof))
+      astrom_profpos(field, obj2);
+/*-- Express shape parameters in the FOCAL or WORLD frame */
+    if (FLAG(obj2.prof_flagw))
+      astrom_profshapeparam(field, obj2);
+/*-- Express position error parameters in the FOCAL or WORLD frame */
+    if (FLAG(obj2.poserrmx2w_prof))
+      astrom_proferrparam(field, obj2);
+/*-- PSF- and model-guided star/galaxy separation */
+    if (FLAG(obj2.prof_class_star) || FLAG(obj2.prof_concentration))
+      profit_spread(obj2->profit, field, wfield, obj2);
+    }
 
-/*-- Check-image CHECK_APERTURES option */
-
-    if ((check = prefs.check[CHECK_APERTURES]))
-      {
-      if (FLAG(obj2.flux_aper))
-        for (i=0; i<prefs.naper; i++)
-          sexcircle(check->pix, check->width, check->height,
-		obj->mx, obj->my, prefs.apert[i]/2.0, check->overlay);
-
-      if (FLAG(obj2.flux_auto))
-        sexellips(check->pix, check->width, check->height,
-	obj->mx, obj->my, obj->a*obj2->kronfactor,
-	obj->b*obj2->kronfactor, obj->theta,
-	check->overlay, obj->flag&OBJ_CROWDED);
-
-      if (FLAG(obj2.flux_petro))
-        sexellips(check->pix, check->width, check->height,
-	obj->mx, obj->my, obj->a*obj2->petrofactor,
-	obj->b*obj2->petrofactor, obj->theta,
-	check->overlay, obj->flag&OBJ_CROWDED);
-      }
-
-/* ---------------------- Star/Galaxy classification -----------------------*/
-    if (FLAG(obj2.fwhm_psf) || (FLAG(obj2.sprob) && prefs.seeing_fwhm==0.0))
-      {
-      obj2->fwhm_psf = (prefs.seeing_fwhm==0.0)?
-				psf_fwhm(thepsf)*field->pixscale
-				: prefs.seeing_fwhm;
-      if (FLAG(obj2.fwhmw_psf))
-        obj2->fwhmw_psf = obj2->fwhm_psf * (prefs.pixel_scale?
-		field->pixscale/3600.0 : sqrt(obj2->pixscale2));
-      }
-
-    if (FLAG(obj2.sprob))
-      {
-       double	fac2, input[10], output, fwhm;
-
-      fwhm = (prefs.seeing_fwhm==0.0)? obj2->fwhm_psf : prefs.seeing_fwhm;
-
-      fac2 = fwhm/field->pixscale;
-      fac2 *= fac2;
-      input[j=0] = log10(obj->iso[0]? obj->iso[0]/fac2: 0.01);
-      input[++j] = field->thresh>0.0?
-		  log10(obj->peak>0.0? obj->peak/field->thresh: 0.1)
-		 :-1.0;
-      for (i=1; i<NISO; i++)
-        input[++j] = log10(obj->iso[i]? obj->iso[i]/fac2: 0.01);
-      input[++j] = log10(fwhm);
-      neurresp(input, &output);
-      obj2->sprob = (float)output;
-      }
-
-/*&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&*/
-/*-- Put here your calls to "BLIND" custom functions. Ex:
-
-    compute_myotherparams(obj); 
-
---*/
-
-/*&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&*/
-
-    newnumber = ++thecat.ntotal;
-/*-- update segmentation map */
-    if ((check=prefs.check[CHECK_SEGMENTATION]))
-      {
-       ULONG	*pix;
-       ULONG	newsnumber = newnumber,
-		oldsnumber = obj->number;
-       int	dx,dx0,dy,dpix;
-
-      pix = (ULONG *)check->pix + check->width*obj->ymin + obj->xmin;
-      dx0 = obj->xmax-obj->xmin+1;
-      dpix = check->width-dx0;
-      for (dy=obj->ymax-obj->ymin+1; dy--; pix += dpix)
-        for (dx=dx0; dx--; pix++)
-          if (*pix==oldsnumber)
-            *pix = newsnumber;
-      }
-    obj->number = newnumber;
-
-/*-- SOM fitting */
-    if (prefs.somfit_flag)
-      {
-       float    *input;
-
-      input = thesom->input;
-      copyimage(field,input,thesom->inputsize[0],thesom->inputsize[1],ix,iy);
-
-      if (thesom->nextrainput)
-        {
-        input += thesom->ninput-thesom->nextrainput;
-        *(input) = (obj->mx+1)/field->width;
-        *(input+1) = (obj->my+1)/field->height;
-        }
-
-      som_phot(thesom, obj->bkg, field->backsig,
-        (float)field->gain, obj->mx-ix, obj->my-iy,
-        FLAG(obj2.vector_somfit)?outobj2.vector_somfit:NULL, -1.0);
-      obj2->stderr_somfit = thesom->stderror;
-      obj2->flux_somfit = thesom->amp;
-      outobj2.fluxerr_somfit = thesom->sigamp;
-      }
-
-    if (FLAG(obj2.vignet))
-      copyimage(field,outobj2.vignet,prefs.vignetsize[0],prefs.vignetsize[1],
-	ix,iy);
-
-    if (FLAG(obj2.vigshift))
-      copyimage_center(field, outobj2.vigshift, prefs.vigshiftsize[0],
-		prefs.vigshiftsize[1], obj->mx, obj->my);
-
-/*------------------------------- PSF fitting ------------------------------*/
-    nsub = 1;
-    if (prefs.psffit_flag)
+/*------------------------------- PSF fitting ------------------------------
+  nsub = 1;
+  if (prefs.psffit_flag)
       {
       if (prefs.dpsffit_flag)
-        double_psf_fit(thepsf, field, wfield, obj, thedpsf, dfield, dwfield);
+        double_psf_fit(ppsf, field, wfield, obj2, thepsf, dfield, dwfield);
       else
-        psf_fit(thepsf, field, wfield, obj);
+        psf_fit(thepsf, field, wfield, obj2);
       obj2->npsf = thepsfit->npsf;
       nsub = thepsfit->npsf;
       if (nsub<1)
         nsub = 1;
       }
 
-/*----------------------------- Profile fitting -----------------------------*/
-#ifdef USE_MODEL
-    if (prefs.prof_flag)
-      {
-      profit_fit(theprofit, field, wfield, obj, obj2);
-/*---- Express positions in FOCAL or WORLD coordinates */
-      if (FLAG(obj2.xf_prof) || FLAG(obj2.xw_prof))
-        astrom_profpos(field, obj);
-/*---- Express shape parameters in the FOCAL or WORLD frame */
-      if (FLAG(obj2.prof_flagw))
-        astrom_profshapeparam(field, obj);
-/*---- Express position error parameters in the FOCAL or WORLD frame */
-      if (FLAG(obj2.poserrmx2w_prof))
-        astrom_proferrparam(field, obj);
-      if (prefs.dprof_flag)
-        profit_dfit(theprofit, thedprofit, field, dfield, wfield, dwfield, obj,
-		obj2);
-      }
-#endif
-/*--- Express everything in magnitude units */
-    computemags(field, obj);
-
-/*-------------------------------- Astrometry ------------------------------*/
-
-/*-- Edit min and max coordinates to follow the FITS conventions */
-    obj->xmin += 1;
-    obj->ymin += 1;
-    obj->xmax += 1;
-    obj->ymax += 1;
-
-/*-- Go through each newly identified component */
     for (j=0; j<nsub; j++)
       {
       if (prefs.psffit_flag)
@@ -749,12 +1085,12 @@ void	endobject(picstruct *field, picstruct *dfield, picstruct *wfield,
         obj2->x_psf = thepsfit->x[j];
         obj2->y_psf = thepsfit->y[j];
         if (FLAG(obj2.xf_psf) || FLAG(obj2.xw_psf))
-          astrom_psfpos(field, obj);
-/*------ Express position error parameters in the FOCAL or WORLD frame */
+          astrom_psfpos(field, obj2);
+*------ Express position error parameters in the FOCAL or WORLD frame *
         if (FLAG(obj2.poserrmx2w_psf))
-          astrom_psferrparam(field, obj);
+          astrom_psferrparam(field, obj2);
         if (FLAG(obj2.flux_psf))
-          obj2->flux_psf = thepsfit->flux[j]>0.0? thepsfit->flux[j]:0.0; /*?*/
+          obj2->flux_psf = thepsfit->flux[j]>0.0? thepsfit->flux[j]:0.0; *?*
         if (FLAG(obj2.mag_psf))
           obj2->mag_psf = thepsfit->flux[j]>0.0?
 		prefs.mag_zeropoint -2.5*log10(thepsfit->flux[j]) : 99.0;
@@ -762,77 +1098,274 @@ void	endobject(picstruct *field, picstruct *dfield, picstruct *wfield,
           obj2->fluxerr_psf= thepsfit->fluxerr[j];
         if (FLAG(obj2.magerr_psf))
           obj2->magerr_psf =
-		(thepsfit->flux[j]>0.0 && thepsfit->fluxerr[j]>0.0) ? /*?*/
+		(thepsfit->flux[j]>0.0 && thepsfit->fluxerr[j]>0.0) ? *?*
 			1.086*thepsfit->fluxerr[j]/thepsfit->flux[j] : 99.0;
-        if (j)
-          obj->number = ++thecat.ntotal;
         }
-
-      if (FLAG(obj2.analtime) && !j)
-        obj2->analtime = (float)(counter_seconds() - analtime1);
-
-      FPRINTF(OUTPUT, "%8d %6.1f %6.1f %5.1f %5.1f %12g "
-			"%c%c%c%c%c%c%c%c\n",
-	obj->number, obj->mx+1.0, obj->my+1.0,
-	obj->a, obj->b,
-	obj->flux,
-	obj->flag&OBJ_CROWDED?'C':'_',
-	obj->flag&OBJ_MERGED?'M':'_',
-	obj->flag&OBJ_SATUR?'S':'_',
-	obj->flag&OBJ_TRUNC?'T':'_',
-	obj->flag&OBJ_APERT_PB?'A':'_',
-	obj->flag&OBJ_ISO_PB?'I':'_',
-	obj->flag&OBJ_DOVERFLOW?'D':'_',
-	obj->flag&OBJ_OVERFLOW?'O':'_');
-      writecat(n, objlist);
       }
+*/
+
+/* Express everything in magnitude units */
+  photom_mags(field, obj2);
+
+/*--------------------------------- "Vignets" ------------------------------*/
+  if (FLAG(obj2.vignet))
+    copyimage(field,obj2->vignet,prefs.vignet_size[0],prefs.vignet_size[1],
+	obj2->ix, obj2->iy);
+
+  if (FLAG(obj2.vigshift))
+    copyimage_center(field, obj2->vigshift, prefs.vigshift_size[0],
+		prefs.vigshift_size[1], obj2->mx, obj2->my);
+
+/* Edit min and max coordinates to follow the FITS conventions */
+  obj2->xmin += 1;
+  obj2->ymin += 1;
+  obj2->xmax += 1;
+  obj2->ymax += 1;
+
+/* Count source */
+#ifdef USE_THREADS
+  if (prefs.nthreads>1)
+    {
+    QPTHREAD_MUTEX_LOCK(&pthread_countobj2mutex);
+    thecat.ntotal++;
+     if (((prefs.prof_flag) && !(thecat.ntotal%(10*pthread_nthreads)))
+		|| !(thecat.ntotal%(100*pthread_nthreads)))
+      NPRINTF(OUTPUT, "\33[1M> Line:%5d  "
+	"Objects: %8d detected / %8d sextracted\n\33[1A",
+	thecat.nline, thecat.ndetect, thecat.ntotal);
+    QPTHREAD_MUTEX_UNLOCK(&pthread_countobj2mutex);
     }
   else
+#endif
     {
-/*-- Treatment of discarded detections */
-/*-- update segmentation map */
-    if ((check=prefs.check[CHECK_SEGMENTATION]))
-      {
-       ULONG	*pix;
-       ULONG	oldsnumber = obj->number;
-       int	dx,dx0,dy,dpix;
+    thecat.ntotal++;
+    if (((prefs.prof_flag) && !(thecat.ntotal%10)) || !(thecat.ntotal%100))
+      NPRINTF(OUTPUT, "\33[1M> Line:%5d  "
+	"Objects: %8d detected / %8d sextracted\n\33[1A",
+	thecat.nline, thecat.ndetect, thecat.ntotal);
+    }
 
-      pix = (ULONG *)check->pix + check->width*obj->ymin + obj->xmin;
-      dx0 = obj->xmax-obj->xmin+1;
-      dpix = check->width-dx0;
-      for (dy=obj->ymax-obj->ymin+1; dy--; pix += dpix)
-        for (dx=dx0; dx--; pix++)
-          if (*pix==oldsnumber)
-            *pix = 0;
+/* Processing time */
+  obj2->analtime = (float)(counter_seconds() - analtime1);
+
+  return RETURN_OK;
+  }
+
+
+/****** analyse_end *********************************************************
+PROTO	void analyse_end(fieldstruct **fields, fieldstruct **wfields,
+			int nfield, obj2groupstruct *obj2group)
+PURPOSE Write to catalogue measurements made on a group of detections and
+	release objects.
+INPUT   Pointer to an array of image field pointers,
+	pointer to an array of weight-map field pointers,
+	number of images,
+	obj2groupstruct pointer.
+OUTPUT  -.
+NOTES   -.
+AUTHOR  E. Bertin (IAP)
+VERSION 03/01/2014
+ ***/
+void	analyse_end(fieldstruct **fields, fieldstruct **wfields,
+			int nfield, obj2groupstruct *group2)
+  {
+   obj2liststruct	*obj2list;
+   obj2struct		*obj2, *fobj2;
+
+  obj2list = thecat.obj2list;
+  fobj2 = group2->obj2;
+
+  for (obj2=fobj2; obj2; obj2=obj2->nextobj2)
+    {
+    if ((obj2->writable_flag))
+      {
+/*---- Catalogue output */
+      FPRINTF(OUTPUT, "%8d %6.1f %6.1f %5.1f %5.1f %12g "
+			"%c%c%c%c%c%c%c%c\n",
+	obj2->number, obj2->mx+1.0, obj2->my+1.0,
+	obj2->a, obj2->b,
+	obj2->dflux,
+	obj2->flags&OBJ_CROWDED?'C':'_',
+	obj2->flags&OBJ_MERGED?'M':'_',
+	obj2->flags&OBJ_SATUR?'S':'_',
+	obj2->flags&OBJ_TRUNC?'T':'_',
+	obj2->flags&OBJ_APERT_PB?'A':'_',
+	obj2->flags&OBJ_ISO_PB?'I':'_',
+	obj2->flags&OBJ_DOVERFLOW?'D':'_',
+	obj2->flags&OBJ_OVERFLOW?'O':'_');
+      catout_writeobj(obj2);
       }
     }
 
-/* Remove again from the image the object's pixels if BLANKing is on ... */
-/*-- ... and free memory */
+  group2->done_flag = 0;
 
-  if (prefs.blank_flag && obj->blank)
-    {
-    if (selecflag)
-      {
-      if (prefs.somfit_flag && (check=prefs.check[CHECK_MAPSOM]))
-        blankcheck(check, obj->blank, obj->subw, obj->subh,
-		obj->subx, obj->suby, (PIXTYPE)*(obj2->vector_somfit));
-
-      }
-    blankimage(field, obj->blank, obj->subw, obj->subh,
-		obj->subx, obj->suby, -BIG);
-    free(obj->blank);
-    if (obj->dblank)
-      {
-      blankimage(dfield, obj->dblank, obj->subw, obj->subh,
-		obj->subx, obj->suby, -BIG);
-      free(obj->dblank);
-      }
-    }
-
-  /* Clean (zero) all measurements */
-  zerocat();
+  for (obj2=fobj2; obj2->nextobj2; obj2=obj2->nextobj2);
+#ifdef USE_THREADS
+  if (prefs.nthreads>1)
+    QPTHREAD_MUTEX_LOCK(&pthread_freeobj2mutex);
+#endif
+  obj2->nextobj2 = obj2list->freeobj2;
+  obj2list->freeobj2->prevobj2 = obj2->nextobj2;
+  obj2list->freeobj2 = fobj2;
+#ifdef USE_THREADS
+  QPTHREAD_COND_BROADCAST(&pthread_obj2savecond);
+  if (prefs.nthreads>1)
+    QPTHREAD_MUTEX_UNLOCK(&pthread_freeobj2mutex);
+#endif
 
   return;
   }
+
+
+#ifdef USE_THREADS
+
+/****** pthread_init_obj2group ************************************************
+PROTO	void pthread_init_obj2group(fieldstruct **fields, fieldstruct **wfields,
+			int nfield, int nthreads)
+PURPOSE	Setup threads, mutexes and semaphores for multhreaded obj2 group
+	processing.
+INPUT	Pointer to an array of image field pointers,
+	pointer to an array of weight-map field pointers,
+	number of images,
+	number of threads.
+OUTPUT	-.
+NOTES	Relies on some global variables.
+AUTHOR	E. Bertin (IAP)
+VERSION	03/01/2013
+ ***/
+void	pthread_init_obj2group(fieldstruct **fields, fieldstruct **wfields,
+			int nfield, int nthreads)
+  {
+   int	n,p;
+
+  pthread_fields = fields;
+  pthread_wfields = wfields;
+  pthread_nfield = nfield;
+  pthread_nthreads = nthreads;
+  pthread_ngroup2 = prefs.obj2_stacksize;
+  QMALLOC(pthread_thread, pthread_t, nthreads);
+  QCALLOC(pthread_group2, obj2groupstruct, pthread_ngroup2);
+  QPTHREAD_COND_INIT(&pthread_group2addcond, NULL);
+  QPTHREAD_COND_INIT(&pthread_obj2savecond, NULL);
+  QPTHREAD_MUTEX_INIT(&pthread_group2mutex, NULL);
+  QPTHREAD_MUTEX_INIT(&pthread_freeobj2mutex, NULL);
+  QPTHREAD_MUTEX_INIT(&pthread_countobj2mutex, NULL);
+  QPTHREAD_ATTR_INIT(&pthread_attr);
+  QPTHREAD_ATTR_SETDETACHSTATE(&pthread_attr, PTHREAD_CREATE_JOINABLE);
+  pthread_group2addindex = pthread_group2procindex = pthread_group2saveindex= 0;
+  pthread_endflag = 0;
+
+/* Start the measurement/write_to_catalog threads */
+  for (p=0; p<nthreads; p++)
+    QPTHREAD_CREATE(&pthread_thread[p], &pthread_attr,
+		&pthread_analyse_obj2group, (void *)p);
+
+  return;
+  }
+
+
+/****** pthread_end_obj2group *************************************************
+PROTO	void pthread_end_obj2group(void)
+PURPOSE	Terminate threads, mutexes and semaphores set for multhreaded obj2
+	group processing.
+INPUT	-.
+OUTPUT	-.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	03/01/2014
+ ***/
+void	pthread_end_obj2group(void)
+  {
+   int	p;
+
+  QPTHREAD_MUTEX_LOCK(&pthread_group2mutex);
+/* Call all threads to exit */
+  pthread_endflag = 1;
+  QPTHREAD_COND_BROADCAST(&pthread_group2addcond);
+  QPTHREAD_COND_BROADCAST(&pthread_group2addcond);
+  QPTHREAD_MUTEX_UNLOCK(&pthread_group2mutex);
+
+  for (p=0; p<pthread_nthreads; p++)
+    QPTHREAD_JOIN(pthread_thread[p], NULL);
+
+  QPTHREAD_MUTEX_DESTROY(&pthread_group2mutex);
+  QPTHREAD_MUTEX_DESTROY(&pthread_freeobj2mutex);
+  QPTHREAD_MUTEX_DESTROY(&pthread_countobj2mutex);
+  QPTHREAD_ATTR_DESTROY(&pthread_attr);
+  QPTHREAD_COND_DESTROY(&pthread_group2addcond);
+  QPTHREAD_COND_DESTROY(&pthread_obj2savecond);
+
+  free(pthread_thread);
+  free(pthread_group2);
+
+  return;
+  }
+
+
+/****** pthread_add_obj2group *************************************************
+PROTO	void pthread_addobj2group(obj2groupstruct *group2)
+PURPOSE	Add an object to the list of obj2 groups that need to be processed.
+INPUT	Pointer to the obj2group to be processed.
+OUTPUT	-.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	03/01/2014
+ ***/
+void	pthread_add_obj2group(obj2groupstruct group2)
+  {
+
+  QPTHREAD_MUTEX_LOCK(&pthread_group2mutex);
+  while (pthread_group2addindex>=pthread_group2saveindex+pthread_ngroup2)
+/*-- Wait for stack to flush if limit on the number of stored obj2s is reached*/
+    QPTHREAD_COND_WAIT(&pthread_obj2savecond, &pthread_group2mutex);
+  pthread_group2[pthread_group2addindex++%pthread_ngroup2] = group2;
+  QPTHREAD_COND_BROADCAST(&pthread_group2addcond);
+  QPTHREAD_MUTEX_UNLOCK(&pthread_group2mutex);
+
+  return;
+  }
+
+
+/****** pthread_analyse_obj2group *********************************************
+PROTO	void *pthread_analyse_obj2group(void *arg)
+PURPOSE	thread that takes care of measuring and saving obj2 groups.
+INPUT	Pointer to the thread number.
+OUTPUT	-.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	03/01/2014
+ ***/
+void	*pthread_analyse_obj2group(void *arg)
+  {
+   obj2groupstruct	*group2;
+
+  while (1)
+    {
+    QPTHREAD_MUTEX_LOCK(&pthread_group2mutex);
+/*-- Flush objects for which measurements have been completed */
+    while (pthread_group2saveindex<pthread_group2procindex
+		&& (pthread_group2[pthread_group2saveindex].done_flag))
+      analyse_end(pthread_fields, pthread_wfields, pthread_nfield,
+		&pthread_group2[pthread_group2saveindex++]);
+    while (pthread_group2procindex>=pthread_group2addindex)
+/*---- Wait for more objects to be pushed in stack */
+      {
+      if ((pthread_endflag))
+        {
+        QPTHREAD_MUTEX_UNLOCK(&pthread_group2mutex);
+        pthread_exit(NULL);
+        }
+      QPTHREAD_COND_WAIT(&pthread_group2addcond, &pthread_group2mutex);
+      }
+    group2 = &pthread_group2[pthread_group2procindex++%pthread_ngroup2];
+    QPTHREAD_MUTEX_UNLOCK(&pthread_group2mutex);
+    analyse_group(pthread_fields, pthread_wfields, pthread_nfield, group2);
+    }
+
+  return (void *)NULL;
+  }
+
+#endif
+
+
 

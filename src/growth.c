@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1995-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1995-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/10/2010
+*	Last modified:		29/03/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -38,87 +38,63 @@
 #include	"define.h"
 #include	"globals.h"
 #include	"prefs.h"
+#include	"field.h"
 #include	"growth.h"
+#include	"subimage.h"
 
-/*------------------------------- variables ---------------------------------*/
-
-static double	*growth;
-static int	ngrowth;
-static obj2struct	*obj2 = &outobj2;
-
-/******************************** initgrowth *********************************/
-/*
-Allocate memory for growth curve stuff.
-*/
-void	initgrowth()
-  {
-
-  QMALLOC(growth, double, GROWTH_NSTEP);
-/* Quick (and dirty) fix to allow FLUX_RADIUS support */
-  if (FLAG(obj2.flux_radius) && !prefs.flux_radiussize)
-    {
-    QCALLOC(obj2->flux_radius, float, 1);
-    }
-
-  return;
-  }  
-
-
-/******************************** endgrowth **********************************/
-/*
-Free memory occupied by growth curve stuff.
-*/
-void	endgrowth()
-  {
-  free(growth);	
-  if (FLAG(obj2.flux_radius) && !prefs.flux_radiussize)
-    free(obj2->flux_radius);
-
-  return;
-  }
-
-
-/****************************** makeavergrowth *******************************/
-/*
-Build growth curve based on averages.
-*/
-void	makeavergrowth(picstruct *field, picstruct *wfield, objstruct *obj)
+/****** growth_aver *********************************************************
+PROTO	void growth_aver(fieldstruct **fields, fieldstruct **wfields,
+			int nfield, obj2struct *obj2)
+PURPOSE	Build an average growth curve.
+INPUT   Pointer to an array of image field pointers,
+	pointer to an array of weight-map field pointers,
+	number of images,
+	pointer to the obj2 structure.
+OUTPUT	-.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	29/03/2012
+ ***/
+void  growth_aver(fieldstruct **fields, fieldstruct **wfields, int nfield,
+			obj2struct *obj2)
 
   {
+   fieldstruct		*field, *wfield;
+   subimagestruct	*subimage;
    float		*fgrowth;
-   double		*growtht,
+   double		*growth, *growtht,
 			dx,dx1,dy,dy2,mx,my, r2,r,rlim, d, rextlim2, raper,
 			offsetx,offsety,scalex,scaley,scale2, ngamma, locarea,
 			tv, sigtv, area, pix, var, gain, dpos,step,step2, dg,
 			stepdens, backnoise2, prevbinmargin, nextbinmargin;
    int			i,j,n, x,y, x2,y2, xmin,xmax,ymin,ymax, sx,sy, w,h,
-			fymin,fymax, pflag,corrflag, ipos;
+			pflag,corrflag, ipos, ngrowth;
    LONG			pos;
-   PIXTYPE		*strip,*stript, *wstrip,*wstript,
+   PIXTYPE		*image,*imaget, *weight,*weightt,
 			pdbkg, wthresh;
   
-
+/* field is the detection field */
+  field = fields[0];
+  wfield = (wfields && wfields[0])? wfields[0] : NULL;
   if (wfield)
     wthresh = wfield->weight_thresh;
   else
     wthresh = 0.0;		/* To avoid gcc -Wall warnings */
 
-/* Clear the growth-curve buffer */
-  memset(growth, 0, (size_t)(GROWTH_NSTEP*sizeof(double)));
-
-  mx = obj->mx;
-  my = obj->my;
-  w = field->width;
-  h = field->stripheight;
-  fymin = field->ymin;
-  fymax = field->ymax;
-  pflag = (prefs.detect_type==PHOTO)? 1:0;
+/* Allocate the growth-curve buffer */
+  QCALLOC(growth, double, GROWTH_NSTEP);
+  subimage = obj2->subimage;
+  mx = subimage->dpos[0] - subimage->immin[0];
+  my = subimage->dpos[1] - subimage->immin[1];
+  w = subimage->imsize[0];
+  h = subimage->imsize[1];
+  pflag = (field->detector_type==DETECTOR_PHOTO)? 1:0;
   corrflag = (prefs.mask_type==MASK_CORRECT);
   var = backnoise2 = field->backsig*field->backsig;
   gain = field->gain;
 
 /* Integration radius */
-  rlim = GROWTH_NSIG*obj->a;
+  rlim = GROWTH_NSIG*obj2->a;
   if (rlim<prefs.autoaper[0])
     rlim = prefs.autoaper[0];
   raper = rlim+1.5;		/* margin for interpolation */
@@ -143,7 +119,7 @@ void	makeavergrowth(picstruct *field, picstruct *wfield, objstruct *obj)
   if (pflag)
     {
     ngamma = field->ngamma;
-    pdbkg = exp(obj->dbkg/ngamma);
+    pdbkg = exp(obj2->dbkg[0]/ngamma);
     }
   else
     {
@@ -163,34 +139,34 @@ void	makeavergrowth(picstruct *field, picstruct *wfield, objstruct *obj)
   if (xmin < 0)
     {
     xmin = 0;
-    obj->flag |= OBJ_APERT_PB;
+    obj2->flags |= OBJ_APERT_PB;
     }
   if (xmax > w)
     {
     xmax = w;
-    obj->flag |= OBJ_APERT_PB;
+    obj2->flags |= OBJ_APERT_PB;
     }
-  if (ymin < fymin)
+  if (ymin < 0)
     {
-    ymin = fymin;
-    obj->flag |= OBJ_APERT_PB;
+    ymin = 0;
+    obj2->flags |= OBJ_APERT_PB;
     }
-  if (ymax > fymax)
+  if (ymax > h)
     {
-    ymax = fymax;
-    obj->flag |= OBJ_APERT_PB;
+    ymax = h;
+    obj2->flags |= OBJ_APERT_PB;
     }
 
-  strip = field->strip;
-  wstrip = wstript = NULL;		/* To avoid gcc -Wall warnings */
+  image = subimage->image;
+  weight = weightt = NULL;		/* To avoid gcc -Wall warnings */
   if (wfield)
-    wstrip = wfield->strip;
+    weight = subimage->weight;
   for (y=ymin; y<ymax; y++)
     {
-    stript = strip + (pos = (y%h)*w + xmin);
+    imaget = image + (pos = y*w + xmin);
     if (wfield)
-      wstript = wstrip + pos;
-    for (x=xmin; x<xmax; x++, stript++, wstript++)
+      weightt = weight + pos;
+    for (x=xmin; x<xmax; x++, imaget++, weightt++)
       {
       dx = x - mx;
       dy = y - my;
@@ -199,16 +175,16 @@ void	makeavergrowth(picstruct *field, picstruct *wfield, objstruct *obj)
 /*------ Here begin tests for pixel and/or weight overflows. Things are a */
 /*------ bit intricated to have it running as fast as possible in the most */
 /*------ common cases */
-        if ((pix=*stript)<=-BIG || (wfield && (var=*wstript)>=wthresh))
+        if ((pix=*imaget)<=-BIG || (wfield && (var=*weightt)>=wthresh))
           {
           if (corrflag
 		&& (x2=(int)(2*mx+0.49999-x))>=0 && x2<w
-		&& (y2=(int)(2*my+0.49999-y))>=fymin && y2<fymax
-		&& (pix=*(strip + (pos = (y2%h)*w + x2)))>-BIG)
+		&& (y2=(int)(2*my+0.49999-y))>=0 && y2<h
+		&& (pix=*(image + (pos = y2*w + x2)))>-BIG)
             {
             if (wfield)
               {
-              var = *(wstrip + pos);
+              var = *(weight + pos);
               if (var>=wthresh)
                 pix = var = 0.0;
               }
@@ -271,12 +247,12 @@ void	makeavergrowth(picstruct *field, picstruct *wfield, objstruct *obj)
 /*
   if (pflag)
     {
-    tv = ngamma*(tv-area*exp(obj->dbkg/ngamma));
+    tv = ngamma*(tv-area*exp(obj2->dbkg/ngamma));
     sigtv /= ngamma*ngamma;
     }
   else
     {
-    tv -= area*obj->dbkg;
+    tv -= area*obj2->dbkg;
     if (!wfield && gain > 0.0 && tv>0.0)
       sigtv += tv/gain;
     }
@@ -292,11 +268,12 @@ void	makeavergrowth(picstruct *field, picstruct *wfield, objstruct *obj)
     }
 
 /* Now let's remap the growth-curve to match user's choice */
+/*
   if (FLAG(obj2.flux_growth))
     {
-    n = prefs.flux_growthsize;
-    if (FLAG(obj2.flux_growthstep))
-      obj2->flux_growthstep = rlim/n;
+    n = prefs.flux_growth_size;
+    if (FLAG(obj2.flux_growth_step))
+      obj2->flux_growth_step = rlim/n;
     fgrowth = obj2->flux_growth;
     step2 = (double)GROWTH_NSTEP/n;
     j = 1;
@@ -315,9 +292,9 @@ void	makeavergrowth(picstruct *field, picstruct *wfield, objstruct *obj)
 
   if (FLAG(obj2.mag_growth))
     {
-    n = prefs.mag_growthsize;
-    if (FLAG(obj2.mag_growthstep))
-      obj2->mag_growthstep = rlim/n;
+    n = prefs.mag_growth_size;
+    if (FLAG(obj2.mag_growth_step))
+      obj2->mag_growth_step = rlim/n;
     fgrowth = obj2->mag_growth;
     step2 = (double)GROWTH_NSTEP/n;
     j = 1;
@@ -334,13 +311,13 @@ void	makeavergrowth(picstruct *field, picstruct *wfield, objstruct *obj)
       *(fgrowth++) = pix>0.0?(prefs.mag_zeropoint-2.5*log10(pix)):99.0;
       }
     }
-
+*/
   if (FLAG(obj2.flux_radius))
     {
     n = ngrowth-1;
     for (j=0; j<prefs.nflux_frac; j++)
       {
-      tv = prefs.flux_frac[j]*obj2->flux_auto;
+      tv = prefs.flux_frac[j]*obj2->flux_auto[0];
       growtht = growth-1;
       for (i=0; i<n && *(++growtht)<tv; i++);
       obj2->flux_radius[j] = step
@@ -357,7 +334,7 @@ void	makeavergrowth(picstruct *field, picstruct *wfield, objstruct *obj)
   if (FLAG(obj2.hl_radius))
     {
     n = ngrowth-1;
-    tv = 0.5*obj2->flux_auto;
+    tv = 0.5*obj2->flux_auto[0];
     growtht = growth-1;
     for (i=0; i<n && *(++growtht)<tv; i++);
     obj2->hl_radius = fabs(step*(i? ((dg=*growtht - *(growtht-1)) != 0.0 ?
@@ -369,6 +346,8 @@ void	makeavergrowth(picstruct *field, picstruct *wfield, objstruct *obj)
     if (obj2->hl_radius < GROWTH_MINHLRAD)
       obj2->hl_radius = GROWTH_MINHLRAD;
     }
+
+  free(growth);
 
   return;
   }

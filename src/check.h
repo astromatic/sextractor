@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		26/02/2013
+*	Last modified:		24/04/2013
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -58,13 +58,16 @@ typedef struct structcheck
 
 /*------------------------------- functions ---------------------------------*/
 
-checkstruct	*initcheck(char *, checkenum, int next);
+checkstruct	*check_init(char *filename, checkenum check_type, int next,
+			int depth);
 
-void		addcheck(checkstruct *, float *, int,int, int,int, float),
-		addcheck_resample(checkstruct *, float *, int,int, int,int,
-			float, float),
-		blankcheck(checkstruct *, PIXTYPE *, int,int,int,int,PIXTYPE),
-		endcheck(checkstruct *),
-		reendcheck(picstruct *field, checkstruct *),
-		reinitcheck(picstruct *, checkstruct *),
-		writecheck(checkstruct *, PIXTYPE *, int);
+void		check_add(checkstruct *check, float *thumb, int w, int h,
+			int ix,int iy, float amplitude),
+		check_addresample(checkstruct *check, float *thumb, int w,int h,
+			int ix,int iy, float step2, float amplitude),
+		check_blank(checkstruct *check, PIXTYPE *mask, int w, int h,
+			int xmin,int ymin, float val),
+		check_reend(fieldstruct *field, checkstruct *check),
+		check_end(checkstruct *check),
+		check_reinit(fieldstruct *field, checkstruct *check),
+		check_write(checkstruct *check, PIXTYPE *data, int w);

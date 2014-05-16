@@ -1,13 +1,13 @@
 /*
-*				extract.h
+*				lutz.h
 *
-* Include file for extract.c.
+* Include file for lutz.c.
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,9 +22,12 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/10/2010
+*	Last modified:		11/01/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
+
+#ifndef _LUTZ_H_
+#define _LUTZ_H_
 
 /*------------------------------ definitions --------------------------------*/
 
@@ -51,11 +54,13 @@ typedef struct structinfo
 
 
 /*------------------------------- functions ---------------------------------*/
-void		lutzalloc(int, int),
-		lutzfree(void),
-		lutzsort(infostruct *, objliststruct *),
-		sortit(picstruct *, picstruct *, picstruct *, picstruct *,
-			infostruct *, objliststruct *, PIXTYPE *, PIXTYPE *),
-		update(infostruct *, infostruct *, pliststruct *);
+void		lutz_alloc(int width, int height),
+		lutz_free(void),
+		lutz_output(infostruct *info, objliststruct *objlist),
+		lutz_update(infostruct *infoptr1, infostruct *infoptr2,
+			pliststruct *pixel);
 
-int		lutz(objliststruct *, int, objstruct *, objliststruct *); 
+int		lutz_subextract(objliststruct *objlistroot, int nroot,
+			objstruct *objparent, objliststruct *objlist);
+
+#endif

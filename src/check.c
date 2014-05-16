@@ -41,16 +41,27 @@
 #include	"fitswcs.h"
 #include	"check.h"
 
-/********************************* addcheck **********************************/
-/*
-Add a PSF to a CHECK-image (with a multiplicative factor).
-Outside boundaries are taken into account.
-*/
-void	addcheck(checkstruct *check, float *psf,
-			int w,int h, int ix,int iy, float amplitude)
+/****** check_add ************************************************************
+PROTO	void check_add(checkstruct *check, float *thumb, int w, int h,
+			int ix,int iy, float amplitude)
+PURPOSE	Add a small thumbnail to a check image (with a multiplicative factor).
+INPUT	Pointer to the check-image,
+	pointer to the thumbnail,
+	thumbnail width,
+	thumbnail height,
+	thumbnail center x coordinate,
+	thumbnail center y coordinate,
+	flux scaling factor.
+OUTPUT	-.
+NOTES	Outside boundaries are taken into account.
+AUTHOR	E. Bertin (IAP)
+VERSION	07/12/2011
+ ***/
+void	check_add(checkstruct *check, float *thumb, int w, int h,
+			int ix,int iy, float amplitude)
   {
    PIXTYPE	*pix;
-   int		x,y, xmin,xmax,ymin,ymax,w2, dwpsf;
+   int		x,y, xmin,xmax,ymin,ymax,w2, dwthumb;
 
 /* Set the image boundaries */
   w2 = w;
@@ -58,7 +69,7 @@ void	addcheck(checkstruct *check, float *psf,
   ymax = ymin + h;
   if (ymin<0)
     {
-    psf -= ymin*w;
+    thumb -= ymin*w;
     ymin = 0;
     }
   if (ymax>check->height)
@@ -73,27 +84,33 @@ void	addcheck(checkstruct *check, float *psf,
     }
   if (xmin<0)
     {
-    psf -= xmin;
+    thumb -= xmin;
     w2 += xmin;
     xmin = 0;
     }
 
-  dwpsf = w-w2;
+  dwthumb = w-w2;
 /* Subtract the right pixels to the destination */
-  for (y=ymin; y<ymax; y++, psf += dwpsf)
+  for (y=ymin; y<ymax; y++, thumb += dwthumb)
     {
     pix = (float *)check->pix+y*check->width+xmin;
     for (x=w2; x--;)
-      *(pix++) += amplitude**(psf++);
+      *(pix++) += amplitude**(thumb++);
+//{
+//*pix += (amplitude**thumb * amplitude**thumb)*0.05;
+//*pix *= 1.0/(0.05*fabs(amplitude**thumb)+1.0);
+//pix++;
+//thumb++;
+//}
     }
 
   return;
   }
 
 
-/****** addcheck_resample *****************************************************
-PROTO	void addcheck_resample(checkstruct *check, float *thumb, int w, int h,
-			int ix,int iy, float zoom, float amplitude)
+/****** check_addresample *****************************************************
+PROTO	void check_addresample(checkstruct *check, float *thumb, int w, int h,
+			int ix,int iy, float step2, float amplitude)
 PURPOSE	Add a resampled thumbnail to a check image (with a multiplicative
 	factor).
 INPUT	Pointer to the check-image,
@@ -109,12 +126,13 @@ NOTES	Outside boundaries are taken into account.
 AUTHOR	E. Bertin (IAP)
 VERSION	23/09/2013
  ***/
-void	addcheck_resample(checkstruct *check, float *thumb, int w, int h,
+void	check_addresample(checkstruct *check, float *thumb, int w, int h,
 			int ix, int iy, float step1, float amplitude)
   {
-   float	interpm[CHECKINTERPW*CHECKINTERPW],
+   PIXTYPE	interpm[CHECKINTERPW*CHECKINTERPW],
 		*pix2, *mask,*maskt,*pix12, *pixin,*pixin0, *pixout,*pixout0,
-		xs1,ys1, x1,y1, x,y, dxm,dym, val, norm, step2;
+		val,norm;
+   float	xs1,ys1, x1,y1, x,y, dxm,dym, step2;
    int		i,j,k,n,t, *start,*startt, *nmask,*nmaskt,
 		ixs2,iys2, ix2,iy2, dix2,diy2, nx2,ny2, iys1a, ny1, hmw,hmh,
 		ixs,iys, ix1,iy1, w2,h2;
@@ -130,14 +148,14 @@ void	addcheck_resample(checkstruct *check, float *thumb, int w, int h,
   ixs2 = 0;			/* Int part of Im2 start x-coord */
   if (xs1<0.0)
     {
-    dix2 = (int)(1-xs1*step1);
+    dix2 = (int)(1-xs1/step2);
 /*-- Simply leave here if the images do not overlap in x */
     if (dix2 >= w2)
       return;
     ixs2 += dix2;
     xs1 += dix2*step2;
     }
-  nx2 = (int)((w-1-xs1)*step1+1);/* nb of interpolated Im2 pixels along x */
+  nx2 = (int)((w-1-xs1)/step2+1);/* nb of interpolated Im2 pixels along x */
   if (nx2>(ix2=w2-ixs2))
     nx2 = ix2;
   if (nx2<=0)
@@ -149,14 +167,14 @@ void	addcheck_resample(checkstruct *check, float *thumb, int w, int h,
   iys2 = 0;			/* Int part of Im2 start y-coord */
   if (ys1<0.0)
     {
-    diy2 = (int)(1-ys1*step1);
+    diy2 = (int)(1-ys1/step2);
 /*-- Simply leave here if the images do not overlap in y */
     if (diy2 >= h2)
       return;
     iys2 += diy2;
     ys1 += diy2*step2;
     }
-  ny2 = (int)((h-1-ys1)*step1+1);/* nb of interpolated Im2 pixels along y */
+  ny2 = (int)((h-1-ys1)/step2+1);/* nb of interpolated Im2 pixels along y */
   if (ny2>(iy2=h2-iys2))
     ny2 = iy2;
   if (ny2<=0)
@@ -295,12 +313,24 @@ void	addcheck_resample(checkstruct *check, float *thumb, int w, int h,
   }
 
 
-/********************************* blankcheck *******************************/
-/*
-Blank a part of the CHECK-image according to a mask.
-*/
-void	blankcheck(checkstruct *check, PIXTYPE *mask, int w,int h,
-		int xmin,int ymin, PIXTYPE val)
+/****** check_blank **********************************************************
+PROTO	void check_blank(checkstruct *check, PIXTYPE *mask, int w, int h,
+			int ix,int iy, float val)
+PURPOSE	Blank a part of a check image according to a mask.
+INPUT	Pointer to the check-image,
+	pointer to the blanking mask,
+	mask width,
+	mask height,
+	mask minimum x coordinate,
+	mask minimum y coordinate,
+	blanking value.
+OUTPUT	-.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	07/12/2011
+ ***/
+void	check_blank(checkstruct *check, PIXTYPE *mask, int w, int h,
+			int xmin,int ymin, float val)
   {
    PIXTYPE	*pixt;
    int		x,y, xmax,ymax,w2,wc;
@@ -352,12 +382,21 @@ void	blankcheck(checkstruct *check, PIXTYPE *mask, int w,int h,
   }
 
 
-/******************************** initcheck **********************************/
-/*
-initialize check-image.
-*/
-checkstruct	*initcheck(char *filename, checkenum check_type, int next)
-
+/****** check_init **********************************************************
+PROTO	checkstruct *check_init(char *filename, checkenum check_type, int next,
+			int depth)
+PURPOSE	Initialize a new check image.
+INPUT	Check image filename,
+	check image type,
+	number of extension,
+	depth (number of image planes).
+OUTPUT	Pointer to an allocated check image structure.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	29/11/2011
+ ***/
+checkstruct	*check_init(char *filename, checkenum check_type, int next,
+			int depth)
   {
    catstruct	*cat;
    checkstruct	*check;
@@ -365,6 +404,7 @@ checkstruct	*initcheck(char *filename, checkenum check_type, int next)
   QCALLOC(check, checkstruct, 1);
   check->type = check_type;
   check->next = next;
+  check->depth = depth;
   cat = check->cat = new_cat(1);
   strcpy(cat->filename, filename);
 
@@ -386,12 +426,16 @@ checkstruct	*initcheck(char *filename, checkenum check_type, int next)
   }
 
 
-/******************************** reinitcheck ********************************/
-/*
-initialize check-image (for subsequent writing).
-*/
-void	reinitcheck(picstruct *field, checkstruct *check)
-
+/****** check_reinit *********************************************************
+PROTO	void check_reinit(fieldstruct *field, checkstruct *check)
+PURPOSE	Initialize an existing check image or subsequent writing.
+INPUT	Pointer to the image structure,
+	pointer to the check image.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	29/11/2011
+ ***/
+void	check_reinit(fieldstruct *field, checkstruct *check)
   {
    catstruct	*cat;
    tabstruct	*tab;
@@ -460,9 +504,6 @@ void	reinitcheck(picstruct *field, checkstruct *check)
     case CHECK_APERTURES:
     case CHECK_PSFPROTOS:
     case CHECK_SUBPSFPROTOS:
-    case CHECK_PCPROTOS:
-    case CHECK_SUBPCPROTOS:
-    case CHECK_PCOPROTOS:
     case CHECK_PROFILES:
     case CHECK_SUBPROFILES:
     case CHECK_SPHEROIDS:
@@ -584,22 +625,26 @@ void	reinitcheck(picstruct *field, checkstruct *check)
       break;
 
     default:
-      error(EXIT_FAILURE, "*Internal Error* in ", "reinitcheck()!");
+      error(EXIT_FAILURE, "*Internal Error* in ", "check_reinit()!");
     }
 
   return;
   }
 
 
-/******************************** writecheck *********************************/
-/*
-Write ONE line of npix pixels of a check-image.
-*/
-void	writecheck(checkstruct *check, PIXTYPE *data, int w)
-
+/****** check_write *********************************************************
+PROTO	void check_write(checkstruct *check, PIXTYPE *data, int w)
+PURPOSE	Write ONE line of npix pixels of a check-image.
+INPUT	Pointer to the check image,
+	pointer to the image line,
+	line width (in pixels).
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	29/11/2011
+ ***/
+void	check_write(checkstruct *check, PIXTYPE *data, int w)
   {
   if (check->type == CHECK_APERTURES || check->type == CHECK_SUBPSFPROTOS
-	|| check->type == CHECK_SUBPCPROTOS || check->type == CHECK_PCOPROTOS
 	|| check->type == CHECK_SUBPROFILES || check->type == CHECK_SUBSPHEROIDS
 	|| check->type == CHECK_SUBDISKS || check->type == CHECK_OTHER)
     {
@@ -643,11 +688,16 @@ void	writecheck(checkstruct *check, PIXTYPE *data, int w)
   }
 
 
-/********************************* reendcheck ********************************/
-/*
-Finish current check-image.
-*/
-void	reendcheck(picstruct *field, checkstruct *check)
+/****** check_reend *********************************************************
+PROTO	void check_reend(fieldstruct *field, checkstruct *check)
+PURPOSE	Complete current check-image extension.
+INPUT	Pointer to the image structure,
+	pointer to the check image.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	29/11/2011
+ ***/
+void	check_reend(fieldstruct *field, checkstruct *check)
   {
    catstruct	*cat;
 
@@ -656,7 +706,7 @@ void	reendcheck(picstruct *field, checkstruct *check)
     {
     case CHECK_MINIBACKGROUND:
     case CHECK_MINIBACKRMS:
-      break;
+      return;
 
     case CHECK_IDENTICAL:
     case CHECK_BACKGROUND:
@@ -666,15 +716,13 @@ void	reendcheck(picstruct *field, checkstruct *check)
       free(check->pix);
       free(check->line);
       check->line = NULL;
+      pad_tab(cat, check->npix*sizeof(PIXTYPE));
       break;
 
     case CHECK_OBJECTS:
     case CHECK_APERTURES:
     case CHECK_PSFPROTOS:
     case CHECK_SUBPSFPROTOS:
-    case CHECK_PCPROTOS:
-    case CHECK_SUBPCPROTOS:
-    case CHECK_PCOPROTOS:
     case CHECK_PROFILES:
     case CHECK_SUBPROFILES:
     case CHECK_SPHEROIDS:
@@ -687,11 +735,13 @@ void	reendcheck(picstruct *field, checkstruct *check)
     case CHECK_OTHER:
       write_body(cat->tab, check->pix, check->npix);
       free(check->pix);
+      pad_tab(cat, check->npix*sizeof(PIXTYPE));
       break;
 
     case CHECK_SEGMENTATION:
       write_ibody(cat->tab, check->pix, check->npix);
       free(check->pix);
+      pad_tab(cat, check->npix*sizeof(FLAGTYPE));
       break;
 
     case CHECK_MASK:
@@ -700,9 +750,10 @@ void	reendcheck(picstruct *field, checkstruct *check)
        int	y;
 
       for (y=field->ymin; y<field->ymax; y++)
-        writecheck(check, &PIX(field, 0, y), field->width);
+        check_write(check, &PIX(field, 0, y), field->width);
       free(check->line);
       check->line = NULL;
+      pad_tab(cat, check->npix*sizeof(unsigned char));
       break;
       }
 
@@ -711,31 +762,36 @@ void	reendcheck(picstruct *field, checkstruct *check)
        int	y;
 
       for (y=field->ymin; y<field->ymax; y++)
-        writecheck(check, &PIX(field, 0, y), field->width);
+        check_write(check, &PIX(field, 0, y), field->width);
       free(check->pix);
       free(check->line);
       check->line = NULL;
+      pad_tab(cat, check->npix*sizeof(PIXTYPE));
       break;
       }
 
     default:
-      error(EXIT_FAILURE, "*Internal Error* in ", "endcheck()!");
+      error(EXIT_FAILURE, "*Internal Error* in ", "check_reend()!");
     }
-
-  pad_tab(cat, check->npix*sizeof(PIXTYPE));
 
   return;
   }
 
-/********************************* endcheck **********************************/
-/*
-close check-image.
-*/
-void	endcheck(checkstruct *check)
+
+/****** check_end ***********************************************************
+PROTO	void check_end(checkstruct *check)
+PURPOSE	Close check image and free allocated memory.
+INPUT	Pointer to the check image.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	29/11/2011
+ ***/
+void	check_end(checkstruct *check)
   {
   free_cat(&check->cat,1);
   free(check);
 
   return;
   }
+
 

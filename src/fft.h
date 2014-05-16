@@ -22,9 +22,13 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		15/02/2013
+*	Last modified:		24/04/2013
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
+
+#ifndef FFTW3_H
+#include FFTW_H
+#endif
 
 #ifndef _FITSCAT_H_
 #include "fits/fitscat.h"
@@ -47,11 +51,19 @@
 		{fftwf_free(ptr); ptr=NULL;}
 
 /*--------------------------- structure definitions -------------------------*/
+typedef	struct fftscratch
+	{
+        fftwf_plan   	fplan, bplan;	/* Forward and backward FFT plans */
+	fftwf_complex	*fdata;		/* Scratch (Fourier) space */
+	int		size[2];	/* Scratch space dimensions */
+	}	fftscratchstruct;
 
 /*---------------------------------- protos --------------------------------*/
-extern void	fft_conv(float *data1, float *fdata2, int *size),
-		fft_end(void),
+extern void	fft_conv(float *data1, float *fdata2, int *size,
+			fftscratchstruct **fftscratch),
+		fft_end(),
 		fft_init(int nthreads),
-		fft_reset(void);
+		fft_reset(void),
+		fft_scratchend(fftscratchstruct *fftscratch);
 
 extern float	*fft_rtf(float *data, int *size);

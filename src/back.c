@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		23/03/2011
+*	Last modified:		07/03/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -41,14 +41,21 @@
 #include	"fits/fitscat.h"
 #include	"back.h"
 #include	"field.h"
+#include	"misc.h"
 #include	"weight.h"
 
-/******************************** makeback ***********************************/
-/*
-Background maps are established from the images themselves; thus we need to
-make at least one first pass through the data.
-*/
-void	makeback(picstruct *field, picstruct *wfield, int wscale_flag)
+/****** back_map ************************************************************
+PROTO	void back_map(fieldstruct *field, fieldstruct *wfield, int wscale_flag)
+PURPOSE	Compute a map of an image background.
+INPUT	Pointer to image field,
+	pointer to image weight field,
+	weight scaling flag.
+OUTPUT	-.
+NOTES	Global preferences are used.
+AUTHOR	E. Bertin (IAP)
+VERSION	07/03/2012
+ ***/
+void	back_map(fieldstruct *field, fieldstruct *wfield, int wscale_flag)
 
   {
    backstruct	*backmesh,*wbackmesh, *bm,*wbm;
@@ -82,9 +89,9 @@ void	makeback(picstruct *field, picstruct *wfield, int wscale_flag)
 /* Save current positions in files */
 
   wfcurpos = wfcurpos2 = 0;		/* to avoid gcc -Wall warnings */
-  QFTELL(field->file, fcurpos, field->filename);
+  QFTELL(field->cat->file, fcurpos, field->cat->filename);
   if (wfield)
-    QFTELL(wfield->file, wfcurpos, wfield->filename);
+    QFTELL(wfield->cat->file, wfcurpos, wfield->cat->filename);
 
 /* Allocate a correct amount of memory to store pixels */
 
@@ -148,7 +155,7 @@ void	makeback(picstruct *field, picstruct *wfield, int wscale_flag)
         weight_to_var(wfield, wbuf, bufsize);
         }
 /*---- Build the histograms */
-      backstat(backmesh, wbackmesh, buf, wbuf, bufsize,nx, w, bw,
+      back_stat(backmesh, wbackmesh, buf, wbuf, bufsize,nx, w, bw,
 	wfield?wfield->weight_thresh:0.0);
       bm = backmesh;
       for (m=nx; m--; bm++)
@@ -165,15 +172,15 @@ void	makeback(picstruct *field, picstruct *wfield, int wscale_flag)
           else
             QCALLOC(wbm->histo, LONG, wbm->nlevels);
         }
-      backhisto(backmesh, wbackmesh, buf, wbuf, bufsize,nx, w, bw,
+      back_histo(backmesh, wbackmesh, buf, wbuf, bufsize,nx, w, bw,
 	wfield?wfield->weight_thresh:0.0);
       }
     else
       {
 /*---- Image size too big, we have to skip a few data !*/
-      QFTELL(field->file, fcurpos2, field->filename);
+      QFTELL(field->cat->file, fcurpos2, field->cat->filename);
       if (wfield)
-        QFTELL(wfield->file, wfcurpos2, wfield->filename);
+        QFTELL(wfield->cat->file, wfcurpos2, wfield->cat->filename);
       if (j == ny-1 && (n=field->height%field->backh))
         {
         meshsize = n*(size_t)w;
@@ -192,35 +199,35 @@ void	makeback(picstruct *field, picstruct *wfield, int wscale_flag)
         }
 
 /*---- Read and skip, read and skip, etc... */
-      QFSEEK(field->file, bufshift*(OFF_T)field->bytepix, SEEK_CUR,
-		field->filename);
+      QFSEEK(field->cat->file, bufshift*(OFF_T)field->tab->bytepix,
+		SEEK_CUR, field->cat->filename);
       buft = buf;
       for (i=nlines; i--; buft += w)
         {
         read_body(field->tab, buft, w);
         if (i)
-          QFSEEK(field->file, jumpsize*(OFF_T)field->bytepix, SEEK_CUR,
-		field->filename);
+          QFSEEK(field->cat->file, jumpsize*(OFF_T)field->tab->bytepix,
+		SEEK_CUR, field->cat->filename);
         }
 
       if (wfield)
         {
 /*------ Read and skip, read and skip, etc... now on the weight-map */
-        QFSEEK(wfield->file, bufshift*(OFF_T)wfield->bytepix, SEEK_CUR,
-		wfield->filename);
+        QFSEEK(wfield->cat->file, bufshift*(OFF_T)wfield->tab->bytepix,
+		SEEK_CUR, wfield->cat->filename);
         wbuft = wbuf;
         for (i=nlines; i--; wbuft += w)
           {
           read_body(wfield->tab, wbuft, w);
           weight_to_var(wfield, wbuft, w);
           if (i)
-            QFSEEK(wfield->file, jumpsize*(OFF_T)wfield->bytepix, SEEK_CUR,
-		wfield->filename);
+            QFSEEK(wfield->cat->file, jumpsize*(OFF_T)wfield->tab->bytepix,
+		SEEK_CUR, wfield->cat->filename);
           }
         }
-      backstat(backmesh, wbackmesh, buf, wbuf, bufsize, nx, w, bw,
+      back_stat(backmesh, wbackmesh, buf, wbuf, bufsize, nx, w, bw,
 	wfield?wfield->weight_thresh:0.0);
-      QFSEEK(field->file, fcurpos2, SEEK_SET, field->filename);
+      QFSEEK(field->cat->file, fcurpos2, SEEK_SET, field->cat->filename);
       bm = backmesh;
       for (m=nx; m--; bm++)
         if (bm->mean <= -BIG)
@@ -229,7 +236,7 @@ void	makeback(picstruct *field, picstruct *wfield, int wscale_flag)
           QCALLOC(bm->histo, LONG, bm->nlevels);
       if (wfield)
         {
-        QFSEEK(wfield->file, wfcurpos2, SEEK_SET, wfield->filename);
+        QFSEEK(wfield->cat->file, wfcurpos2, SEEK_SET, wfield->cat->filename);
         wbm = wbackmesh;
         for (m=nx; m--; wbm++)
           if (wbm->mean <= -BIG)
@@ -248,7 +255,7 @@ void	makeback(picstruct *field, picstruct *wfield, int wscale_flag)
           read_body(wfield->tab, wbuf, bufsize2);
           weight_to_var(wfield, wbuf, bufsize2);
           }
-        backhisto(backmesh, wbackmesh, buf, wbuf, bufsize2, nx, w, bw,
+        back_histo(backmesh, wbackmesh, buf, wbuf, bufsize2, nx, w, bw,
 		wfield?wfield->weight_thresh:0.0);
         }
       }
@@ -258,7 +265,7 @@ void	makeback(picstruct *field, picstruct *wfield, int wscale_flag)
     for (m=0; m<nx; m++, bm++)
       {
       k = m+nx*j;
-      backguess(bm, field->back+k, field->sigma+k);
+      back_guess(bm, field->back+k, field->sigma+k);
       free(bm->histo);
       }
     if (wfield)
@@ -267,7 +274,7 @@ void	makeback(picstruct *field, picstruct *wfield, int wscale_flag)
       for (m=0; m<nx; m++, wbm++)
         {
         k = m+nx*j;
-        backguess(wbm, wfield->back+k, wfield->sigma+k);
+        back_guess(wbm, wfield->back+k, wfield->sigma+k);
         free(wbm->histo);
         }
       }
@@ -283,15 +290,15 @@ void	makeback(picstruct *field, picstruct *wfield, int wscale_flag)
     }
 
 /* Go back to the original position */
-  QFSEEK(field->file, fcurpos, SEEK_SET, field->filename);
+  QFSEEK(field->cat->file, fcurpos, SEEK_SET, field->cat->filename);
   if (wfield)
-    QFSEEK(wfield->file, wfcurpos, SEEK_SET, wfield->filename);
+    QFSEEK(wfield->cat->file, wfcurpos, SEEK_SET, wfield->cat->filename);
 
 /* Median-filter and check suitability of the background map */
   NFPRINTF(OUTPUT, "Filtering background map(s)");
-  filterback(field);
+  back_filter(field);
   if (wfield)
-    filterback(wfield);
+    back_filter(wfield);
 
 /* Compute normalization for variance- or weight-maps*/
   if (wfield && wfield->flags&(VAR_FIELD|WEIGHT_FIELD))
@@ -332,10 +339,10 @@ void	makeback(picstruct *field, picstruct *wfield, int wscale_flag)
 /* Compute 2nd derivatives along the y-direction */
   NFPRINTF(OUTPUT, "Computing background d-map");
   free(field->dback);
-  field->dback = makebackspline(field, field->back);
+  field->dback = back_makespline(field, field->back);
   NFPRINTF(OUTPUT, "Computing background-noise d-map");
   free(field->dsigma);
-  field->dsigma = makebackspline(field, field->sigma);
+  field->dsigma = back_makespline(field, field->sigma);
 /* If asked for, force the backmean parameter to the supplied value */
   if (field->back_type == BACK_ABSOLUTE)
     field->backmean = (float)prefs.back_val[(field->flags&DETECT_FIELD)?0:1];
@@ -378,7 +385,7 @@ void	makeback(picstruct *field, picstruct *wfield, int wscale_flag)
     error(EXIT_FAILURE,
 	"*Error*: I cannot deal with zero or negative thresholds!", "");
 
-  if (prefs.detect_type == PHOTO
+  if (field->detector_type == DETECTOR_PHOTO
 	&& field->backmean+3*field->backsig > 50*field->ngamma)
     error(EXIT_FAILURE,
 	"*Error*: The density range of this image is too large for ",
@@ -388,11 +395,27 @@ void	makeback(picstruct *field, picstruct *wfield, int wscale_flag)
   }
 
 
-/******************************** backstat **********************************/
-/*
-Compute robust statistical estimators in a row of meshes.
-*/
-void	backstat(backstruct *backmesh, backstruct *wbackmesh,
+/****** back_stat ***********************************************************
+PROTO	void back_stat(backstruct *backmesh, backstruct *wbackmesh,
+		PIXTYPE *buf, PIXTYPE *wbuf, size_t bufsize,
+			int n, int w, int bw, PIXTYPE wthresh)
+PURPOSE	Compute robust statistical estimators of the background in a row of
+	meshes.
+INPUT	Pointer to background image mesh structure,
+	pointer to background variance mesh structure,
+	pointer to image buffer,
+	pointer to variance buffer,
+	buffer size (number of pixels),
+	number of meshes
+	frame width (pixels),
+	mesh width (pixels),
+	weight threshold.
+OUTPUT	-.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	07/12/2011
+ ***/
+void	back_stat(backstruct *backmesh, backstruct *wbackmesh,
 		PIXTYPE *buf, PIXTYPE *wbuf, size_t bufsize,
 			int n, int w, int bw, PIXTYPE wthresh)
 
@@ -539,13 +562,28 @@ void	backstat(backstruct *backmesh, backstruct *wbackmesh,
   }
 
 
-/******************************** backhisto *********************************/
-/*
-Compute robust statistical estimators in a row of meshes.
-*/
-void	backhisto(backstruct *backmesh, backstruct *wbackmesh,
+/****** back_histo ***********************************************************
+PROTO	void back_histo(fieldstruct *field, fieldstruct *wfield,
 		PIXTYPE *buf, PIXTYPE *wbuf, size_t bufsize,
 			int n, int w, int bw, PIXTYPE wthresh)
+PURPOSE	Compute image and variance histograms in a row of meshes.
+INPUT	Pointer to background image mesh structure,
+	pointer to background variance mesh structure,
+	pointer to image buffer,
+	pointer to variance buffer,
+	buffer size (number of pixels),
+	frame width (pixels),
+	mesh width (pixels),
+	weight threshold.
+OUTPUT	-.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	07/12/2011
+ ***/
+void	back_histo(backstruct *backmesh, backstruct *wbackmesh,
+		PIXTYPE *buf, PIXTYPE *wbuf, size_t bufsize,
+			int n, int w, int bw, PIXTYPE wthresh)
+
   {
    backstruct	*bm,*wbm;
    PIXTYPE	*buft,*wbuft;
@@ -592,7 +630,7 @@ void	backhisto(backstruct *backmesh, backstruct *wbackmesh,
           bin = (int)(*(buft++)/qscale + cste);
           if ((wpix = *(wbuft++))<wthresh && bin<nlevels && bin>=0)
             {
-            (*(histo+bin))++;
+        	(*(histo+bin))++;
             bin = (int)(wpix/wqscale + wcste);
             if (bin>=0 && bin<wnlevels)
               (*(whisto+bin))++;
@@ -607,20 +645,26 @@ void	backhisto(backstruct *backmesh, backstruct *wbackmesh,
           {
           bin = (int)(*(buft++)/qscale + cste);
           if (bin>=0 && bin<nlevels)
-            (*(histo+bin))++;
+        	(*(histo+bin))++;
           }
     }
 
   return;
   }
 
-/******************************* backguess **********************************/
-/*
-Estimate the background from a histogram;
-*/
-float	backguess(backstruct *bkg, float *mean, float *sigma)
 
-#define	EPS	(1e-4)	/* a small number */
+/****** back_guess ***********************************************************
+PROTO	float back_guess(backstruct *bkg, float *mean, float *sigma)
+PURPOSE	Estimate the background value and its variance from a histogram.
+INPUT	Pointer to background structure,
+	pointer to the background level estimate (output),
+	pointer to the background variance estimate (output).
+OUTPUT	Estimate of the background level.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	07/12/2011
+ ***/
+float	back_guess(backstruct *bkg, float *mean, float *sigma)
 
   {
    LONG		*histo, *hilow, *hihigh, *histot;
@@ -642,7 +686,7 @@ float	backguess(backstruct *bkg, float *mean, float *sigma)
   sig = 10.0*nlevelsm1;
   sig1 = 1.0;
   mea = med = bkg->mean;
-  for (n=100; n-- && (sig>=0.1) && (fabs(sig/sig1-1.0)>EPS);)
+  for (n=100; n-- && (sig>=0.1) && (fabs(sig/sig1-1.0)>BACK_EPS);)
     {
     sig1 = sig;
     sum = mea = sig = 0.0;
@@ -686,13 +730,17 @@ float	backguess(backstruct *bkg, float *mean, float *sigma)
   return *mean;
   }
 
-
-/******************************* filterback *********************************/
-/*
-Median filtering of the background map to remove the contribution from bright
-sources.
-*/
-void	filterback(picstruct *field)
+/****** back_filter **********************************************************
+PROTO	void back_filter(fieldstruct *field)
+PURPOSE	Median filter a background map to remove the contribution from bright
+	sources.
+INPUT	Pointer to image field structure.
+OUTPUT	-.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	07/12/2011
+ ***/
+void	back_filter(fieldstruct *field)
 
   {
    float	*back,*sigma, *back2,*sigma2, *bmask,*smask, *sigmat,
@@ -812,23 +860,29 @@ void	filterback(picstruct *field)
 
   free(sigma2);
 
-
   return;
   }
 
 
-/******************************** localback *********************************/
-/*
-Compute Local background if possible.
-*/
-float	localback(picstruct *field, objstruct *obj)
+/****** back_local ***********************************************************
+PROTO	float back_local(fieldstruct *field, objstruct *obj, float *sigma)
+PURPOSE	Compute local background if possible.
+INPUT	Pointer to image field structure,
+	pointer to the source obj structure,
+	pointer to local background variance estimate (output).
+OUTPUT	Local background level estimate.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	21/12/2011
+ ***/
+float	back_local(fieldstruct *field, objstruct *obj, float *sigma)
 
   {
    static backstruct	backmesh;
    int			bxmin,bxmax, bymin,bymax, ixmin,ixmax, iymin,iymax,
 			bxnml,bynml, oxsize,oysize, npix,
 			i, x,y, bin, w,sh, bmn, pbs;
-   float		bkg, bqs,cste;
+   float		dbkg, bqs,cste;
    LONG			*bmh;
    PIXTYPE		*backpix, *bp, *strip, *st,
 			pix;
@@ -899,7 +953,7 @@ float	localback(picstruct *field, objstruct *obj)
 
     if (npix)
       {
-      backstat(&backmesh, NULL, backpix, NULL, npix, 1, 1, 1, 0.0);
+      back_stat(&backmesh, NULL, backpix, NULL, npix, 1, 1, 1, 0.0);
       QCALLOC(backmesh.histo, LONG, backmesh.nlevels);
       bmh = backmesh.histo;
       bmn = backmesh.nlevels;
@@ -911,33 +965,39 @@ float	localback(picstruct *field, objstruct *obj)
         if (bin>=0 && bin<bmn)
           (*(bmh+bin))++;
         }
-      backguess(&backmesh, &bkg, &obj->sigbkg);
-      obj->bkg += (obj->dbkg = bkg);
+      back_guess(&backmesh, &dbkg, sigma);
       free(backmesh.histo);
       }
     else
       {
-      obj->dbkg = 0.0;
-      obj->sigbkg = field->backsig;
+      dbkg = 0.0;
+      *sigma = -1.0;
       }
     free(backpix);
     }
   else
     {
-    obj->dbkg = bkg = 0.0;
-    obj->sigbkg = field->backsig;
+    dbkg = 0.0;
+    *sigma = -1.0;
     }
 
-  return bkg;
+  return dbkg;
   }
 
 
-/************************************ back ***********************************/
-/*
-return background at position x,y (linear interpolation between background
-map vertices).
-*/
-PIXTYPE	back(picstruct *field, int x, int y)
+/****** back_interpolate *****************************************************
+PROTO	PIXTYPE back_interpolate(fieldstruct *field, double x, double y)
+PURPOSE	Return interpolated background value at pixel position x,y (linear
+	interpolation between background map vertices).
+INPUT	Pointer to image field structure,
+	pixel x coordinate,
+	pixel y coordinate.
+OUTPUT	Local background level estimate.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	08/12/2011
+ ***/
+PIXTYPE	back_interpolate(fieldstruct *field, double x, double y)
 
   {
    int		nx,ny, xl,yl, pos;
@@ -948,8 +1008,8 @@ PIXTYPE	back(picstruct *field, int x, int y)
   nx = field->nbackx;
   ny = field->nbacky;
 
-  dx = (double)x/field->backw - 0.5;
-  dy = (double)y/field->backh - 0.5;
+  dx = x/field->backw - 0.5;
+  dy = y/field->backh - 0.5;
   dx -= (xl = (int)dx);
   dy -= (yl = (int)dy);
 
@@ -987,12 +1047,18 @@ PIXTYPE	back(picstruct *field, int x, int y)
   }
 
 
-/******************************* makebackspline ******************************/
-/*
-Pre-compute 2nd derivatives along the y direction at background nodes.
-*/
-float *makebackspline(picstruct *field, float *map)
-
+/****** back_makespline ******************************************************
+PROTO	float *back_makespline(fieldstruct *field, float *map)
+PURPOSE	Pre-compute spline 2nd derivatives along the y direction at background
+	nodes.
+INPUT	Pointer to image field structure,
+	pointer to the background map.
+OUTPUT	Pointer to the array of 2nd derivatives.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	07/12/2011
+ ***/
+float *back_makespline(fieldstruct *field, float *map)
   {
    int		x,y, nbx,nby,nbym1;
    float	*dmap,*dmapt,*mapt, *u, temp;
@@ -1034,26 +1100,35 @@ float *makebackspline(picstruct *field, float *map)
   }
 
 
-/******************************* subbackline *********************************/
-/*
-Interpolate background at line y (bicubic spline interpolation between
-background map vertices) and subtract it from the current line.
-*/
-void	subbackline(picstruct *field, int y, PIXTYPE *line)
+/****** back_subline *********************************************************
+PROTO	void back_subline(fieldstruct *field, int y, PIXTYPE *line)
+PURPOSE	Interpolate background at line y (bicubic spline interpolation between
+	background map vertices) and subtract it from the current line.
+INPUT	Pointer to image field structure,
+	y coordinate of image line,
+	pointer to the image line.
+
+OUTPUT	-.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	03/04/2012
+ ***/
+void	back_subline(fieldstruct *field, int y, int xmin, int width,
+		PIXTYPE *line)
 
   {
-   int		i,j,x,yl, nbx,nbxm1,nby, nx,width, ystep, changepoint;
+   int		i,j,x,yl, nbx,nbxm1,nby, nx, ystep, changepoint;
    float	dx,dx0,dy,dy3, cdx,cdy,cdy3, temp, xstep,
 		*node,*nodep,*dnode, *blo,*bhi,*dblo,*dbhi, *u;
    PIXTYPE	*backline, bval;
 
-  width = field->width;
   backline = field->backline;
 
   if (field->back_type==BACK_ABSOLUTE)
     {
 /*-- In absolute background mode, just subtract a cste */
     bval = field->backmean;
+    line += xmin;
     for (i=width; i--;)
       *(line++) -= ((*backline++)=bval);
     return;
@@ -1133,7 +1208,7 @@ void	subbackline(picstruct *field, int y, PIXTYPE *line)
     bhi = node + 1;
     dblo = dnode;
     dbhi = dnode + 1;
-    for (x=i=0,j=width; j--; i++, dx += xstep)
+    for (x=i=0,j=xmin; j--; i++, dx += xstep)
       {
       if (i==changepoint && x>0 && x<nbxm1)
         {
@@ -1144,6 +1219,25 @@ void	subbackline(picstruct *field, int y, PIXTYPE *line)
         dx = dx0;
         }
       cdx = 1 - dx;
+      if (i==nx)
+        {
+        x++;
+        i = 0;
+        }
+      }
+
+    for (j=width; j--; i++, dx += xstep)
+      {
+      if (i==changepoint && x>0 && x<nbxm1)
+        {
+        blo++;
+        bhi++;
+        dblo++;
+        dbhi++;
+        dx = dx0;
+        }
+      cdx = 1 - dx;
+      
       *(line++) -= (*(backline++) = (PIXTYPE)(cdx*(*blo+(cdx*cdx-1)**dblo)
 			+ dx*(*bhi+(dx*dx-1)**dbhi)));
       if (i==nx)
@@ -1167,19 +1261,19 @@ void	subbackline(picstruct *field, int y, PIXTYPE *line)
   }
 
 
-/******************************* backrmsline ********************************
-PROTO   void backrmsline(picstruct *field, int y, PIXTYPE *line)
-PURPOSE Bicubic-spline interpolation of the background noise along the current
-        scanline (y).
-INPUT   Measurement or detection field pointer,
-        Current line position. 
-        Where to put the data. 
-OUTPUT  -.
-NOTES   Most of the code is a copy of subbackline(), for optimization reasons.
-AUTHOR  E. Bertin (IAP & Leiden & ESO)
-VERSION 02/02/98
+/****** back_rmsline *********************************************************
+PROTO	void back_rmsline(fieldstruct *field, int y, PIXTYPE *line)
+PURPOSE	Bicubic-spline interpolation of the background noise along the current
+	scanline (y).
+INPUT	Measurement or detection field pointer,
+	current line position. 
+	where to put the data. 
+OUTPUT	-.
+NOTES	Most of the code is a copy of back_subline(), for optimization reasons.
+AUTHOR	E. Bertin (IAP)
+VERSION	07/12/2011
  ***/
-void	backrmsline(picstruct *field, int y, PIXTYPE *line)
+void	back_rmsline(fieldstruct *field, int y, PIXTYPE *line)
 
   {
    int		i,j,x,yl, nbx,nbxm1,nby, nx,width, ystep, changepoint;
@@ -1295,11 +1389,18 @@ void	backrmsline(picstruct *field, int y, PIXTYPE *line)
   }
 
 
-/********************************* copyback **********************************/
-/*
-Copy sub-structures related to background procedures (mainly freeing memory).
-*/
-void	copyback(picstruct *infield, picstruct *outfield)
+/****** back_copy ************************************************************
+PROTO	void back_copy(fieldstruct *infield, fieldstruct *outfield)
+PURPOSE Copy sub-structures related to background procedures (mainly copying
+	memory).
+INPUT	Input field pointer to be copied,
+	destination field pointer. 
+OUTPUT	-.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	07/12/2011
+ ***/
+void	back_copy(fieldstruct *infield, fieldstruct *outfield)
 
   {
   QMEMCPY(infield->back, outfield->back, float, infield->nback);
@@ -1312,11 +1413,16 @@ void	copyback(picstruct *infield, picstruct *outfield)
   }
 
 
-/********************************* endback ***********************************/
-/*
-Terminate background procedures (mainly freeing memory).
-*/
-void	endback(picstruct *field)
+/****** back_end *************************************************************
+PROTO	void back_end(fieldstruct *field)
+PURPOSE Terminate background procedures (freeing memory).
+INPUT	Image field pointer. 
+OUTPUT	-.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	07/12/2011
+ ***/
+void	back_end(fieldstruct *field)
 
   {
   free(field->back);
@@ -1326,5 +1432,43 @@ void	endback(picstruct *field)
   free(field->backline);
 
   return;
+  }
+
+/****** back_printmeshs ******************************************************
+PROTO	void back_printmeshs(const backstruct *backmesh, const int nmeshs)
+PURPOSE Print info on a mesh structure.
+INPUT	Pointer to a  mesh structure, number of meshes
+OUTPUT	-.
+NOTES	-.
+AUTHOR	M. Kuemmel (LMU)
+VERSION	12/02/2014
+ ***/
+void	back_printmeshs(const backstruct *backmesh, const int nmeshs)
+  {
+	int index=0;
+	// go over the meshes
+	for (index=0; index<nmeshs; index++)
+		// print one mesh
+		back_printmesh(&backmesh[index]);
+  }
+
+/****** back_printmesh ******************************************************
+PROTO	void back_printmesh(const backstruct *backmesh)
+PURPOSE Print info on a mesh structure.
+INPUT	Pointer to a  mesh structure
+OUTPUT	-.
+NOTES	-.
+AUTHOR	M. Kuemmel (LMU)
+VERSION	12/02/2014
+ ***/
+void	back_printmesh(const backstruct *backmesh)
+  {
+	int index;
+	QPRINTF(OUTPUT, "  Mode: %.5g, Mean: %.5g, Sigma: %.5g, Npixel: %i\n", backmesh->mode, backmesh->mean, backmesh->sigma, backmesh->npix);
+	QPRINTF(OUTPUT, "  Lcut: %.5g, Hcut: %.5g, Qzero: %.5g Qscale: %.5g\n", backmesh->lcut, backmesh->hcut, backmesh->qzero, backmesh->qscale);
+	QPRINTF(OUTPUT, "  Nlevels: %i, \n", backmesh->nlevels);
+	for (index=0; index<backmesh->nlevels; index++)
+		if (backmesh->histo[index])
+			QPRINTF(OUTPUT, " Value: %.5g, Nhisto: %i", backmesh->qzero+(float)index*backmesh->qscale, backmesh->histo[index]);
   }
 

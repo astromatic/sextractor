@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		19/10/2010
+*	Last modified:		03/04/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -32,11 +32,13 @@
 
 #include	<math.h>
 #include	<stdlib.h>
+#include	<stdio.h>
 #include	<string.h>
 
 #include	"define.h"
 #include	"globals.h"
 #include	"prefs.h"
+#include	"back.h"
 #include	"image.h"
 
 static float	interpm[INTERPW*INTERPW];
@@ -46,9 +48,10 @@ static float	interpm[INTERPW*INTERPW];
 Copy a small part of the image. Image parts which lie outside boundaries are
 set to -BIG.
 */
-int	copyimage(picstruct *field, PIXTYPE *dest, int w,int h, int ix,int iy)
+int	copyimage(fieldstruct *field, PIXTYPE *dest, int w,int h, int ix,int iy)
   {
    PIXTYPE	*destt;
+   OFF_T	offset,step;
    int		i,y, xmin,xmax,ymin,ymax,w2;
 
 /* First put the retina background to -BIG */
@@ -87,8 +90,30 @@ int	copyimage(picstruct *field, PIXTYPE *dest, int w,int h, int ix,int iy)
     }
 
 /* Copy the right pixels to the destination */
-  for (y=ymin; y<ymax; y++, dest += w)
-      memcpy(dest, &PIX(field, xmin, y), w2*sizeof(PIXTYPE));
+  if ((field->flags&MULTIGRID_FIELD))
+    {
+    offset = (OFF_T)ymin*field->tab->naxisn[1] + xmin;
+    step = w - w2;
+/*-- Read and skip, read and skip, etc... */
+    QFSEEK(field->cat->file,
+	field->tab->bodypos + offset*(OFF_T)field->tab->bytepix,
+	SEEK_SET, field->cat->filename);
+    y = ymin;
+    for (i = ymax - ymin; i--; dest += step)
+        {
+        read_body(field->tab, dest, w2);
+        back_subline(field, y++, xmin, w2, dest);
+        if (i)
+          QFSEEK(field->cat->file, step*(OFF_T)field->tab->bytepix,
+		SEEK_CUR, field->cat->filename);
+        }
+    }
+  else
+    {
+    y = ymin;
+    for (i = ymax - ymin; i--; dest += w)
+      memcpy(dest, &PIX(field, xmin, y++), w2*sizeof(PIXTYPE));
+    }
 
   return RETURN_OK;
   }
@@ -99,7 +124,7 @@ int	copyimage(picstruct *field, PIXTYPE *dest, int w,int h, int ix,int iy)
 Add a PSF to a part of the image (with a multiplicative factor).
 outside boundaries are taken into account.
 */
-void	addimage(picstruct *field, float *psf,
+void	addimage(fieldstruct *field, float *psf,
 			int w,int h, int ix,int iy, float amplitude)
   {
    PIXTYPE	*pix;
@@ -149,7 +174,7 @@ void	addimage(picstruct *field, float *psf,
 Copy a small part of the image and recenter it through sinc interpolation.
 Image parts which lie outside boundaries are set to 0.
 */
-int	copyimage_center(picstruct *field, PIXTYPE *dest, int w,int h,
+int	copyimage_center(fieldstruct *field, PIXTYPE *dest, int w,int h,
 			float x,float y)
   {
    PIXTYPE	*s,*s0, *dt,*dt0,*dt2;
@@ -254,7 +279,7 @@ int	copyimage_center(picstruct *field, PIXTYPE *dest, int w,int h,
 Add a vignet to an image (with a multiplicative factor), recentered through
 sinc interpolation.
 */
-void	addimage_center(picstruct *field, float *psf, int w,int h,
+void	addimage_center(fieldstruct *field, float *psf, int w,int h,
 			float x,float y, float amplitude)
   {
    PIXTYPE	*s,*s0, *dt,*dt0,*dt2;
@@ -364,7 +389,7 @@ free(psf2);
 /*
 Blank a small part of the image according to a mask.
 */
-void	blankimage(picstruct *field, PIXTYPE *mask, int w,int h,
+void	blankimage(fieldstruct *field, PIXTYPE *mask, int w,int h,
 		int xmin,int ymin, PIXTYPE val)
   {
    PIXTYPE	*pixt;
@@ -414,11 +439,62 @@ void	blankimage(picstruct *field, PIXTYPE *mask, int w,int h,
   }
 
 
+/****************************** deblankimage ********************************/
+/*
+Unblank some pixels in an image using pixels from another image.
+Outside boundaries are taken into account.
+*/
+void	deblankimage(PIXTYPE *pixblank, int wblank,int hblank,
+		PIXTYPE	*pixima, int wima, int hima,
+		int xmin,int ymin)
+  {
+   int		x,y, xmax,ymax, w2,dwima,dwblank;
+   PIXTYPE	val;
+
+/* Don't go further if out of frame!! */
+  if (xmin+wblank<0 || xmin>=wima
+	|| ymin+hblank<0 || ymin>=hima)
+    return;
+
+/* Set the image boundaries */
+  w2 = wblank;
+  ymax = ymin + hblank;
+  if (ymin<0)
+    {
+    pixblank -= ymin*wblank;
+    ymin = 0;
+    }
+  if (ymax>hima)
+    ymax = hima;
+
+  xmax = xmin + wblank;
+  if (xmax>wima)
+    xmax = wima;
+  if (xmin<0)
+    {
+    pixblank -= xmin;
+    xmin = 0;
+    }
+
+/* Copy the right pixels to the destination */
+  w2 = xmax - xmin;
+  dwblank = wblank - w2;
+  dwima = wima - w2;
+  pixima += ymin*wima + xmin;
+  for (y=ymax-ymin; y--; pixblank += dwblank, pixima += dwima)
+    for (x=w2; x--; pixima++)
+      if ((val = *(pixblank++)) > -BIG)
+        *pixima = val;
+
+  return;
+  }
+
+
 /********************************* pasteimage *******************************/
 /*
 Paste a mask onto an image.
 */
-void	pasteimage(picstruct *field, PIXTYPE *mask, int w,int h,
+void	pasteimage(fieldstruct *field, PIXTYPE *mask, int w,int h,
 		int xmin,int ymin)
   {
    PIXTYPE	*pixt, val;
@@ -760,4 +836,3 @@ void	addfrombig(float *pixbig, int wbig,int hbig,
   }
 
  
-

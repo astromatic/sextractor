@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1997-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1997-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/10/2010
+*	Last modified:		20/03/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -33,10 +33,11 @@
 
 /*---------------------------------- protos --------------------------------*/
 
-extern picstruct	*newweight(char *filename, picstruct *reffield,
-				weightenum wtype, int nok);
-
 void			weight_count(objstruct *obj, pliststruct *pixel),
-			weight_to_var(picstruct *wfield, PIXTYPE *data,
+			weight_to_var(fieldstruct *wfield, PIXTYPE *data,
 				int npix);
+
+extern fieldstruct	*weight_init(char *filename, fieldstruct *reffield,
+				int imindex, int ext, weightenum wtype);
+
 

@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		02/11/2011
+*	Last modified:		18/09/2013
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -39,31 +39,47 @@
 
 /*----------------------------- Internal constants --------------------------*/
 
-#define	MAXLIST		32		/* max. nb of list members */
+#define	MAXDIMAGE	1		/* max. nb of detection images */
+#define	MAXCHARL	16384		/* max. nb of chars in a string list */
+#define	MAXLIST		2048		/* max. nb of list members */
+#define	MAXLISTSIZE	2000000		/* max size of list */
+#define	MAXNPARAMAXIS	4		/* max parameter dimensionality */
+#define	MAXPHOTKEY	64		/* max number of photometric keywords */
 
 /* NOTES:
 One must have:	MAXLIST >= 1 (preferably >= 16!)
 */
+
 /*------------------------------- preferences -------------------------------*/
 typedef struct
   {
   char		**command_line;				/* Command line */
   int		ncommand_line;				/* nb of params */
   char		prefs_name[MAXCHAR];			/* prefs filename*/
-  char		*(image_name[2]);			/* image filenames */
-  int		nimage_name;				/* nb of params */
+  char		*image_name[MAXIMAGE];			/* image filenames */
+  int		nimage;					/* nb of images */
+  int		image_flags[MAXIMAGE];			/* image flags */
+  int		ndimage;				/* nb of detec. images*/
   char		cat_name[MAXCHAR];			/* catalog filename*/
   char		head_suffix[MAXCHAR];			/* ext. header suffix */
+/*----- catalog output */
+  char		*param[MAXLIST];			/* catalog parameters*/
+  int		nparam;					/* nb of params */
+  enum	{CAT_NONE, ASCII, ASCII_HEAD, ASCII_SKYCAT, ASCII_VO,
+	FITS_LDAC, FITS_TPX, FITS_10}
+		cat_type;				/* type of catalog */
 /*----- thresholding */
   double	dthresh[2];				/* detect. threshold */
   int		ndthresh;				/* (1 or 2 entries) */
   double	thresh[2];				/* analysis thresh. */
   int		nthresh;				/* (1 or 2 entries) */
   enum	{THRESH_RELATIVE, THRESH_ABSOLUTE}
-					thresh_type[2];	/* bkgnd type */
+		thresh_type[2];				/* threshold type */
   int		nthresh_type;				/* nb of params */
 /*----- extraction */
-  int		dimage_flag;				/* detect. image ? */
+  int		multigrids_flag;			/* any multigrid use? */
+  int		multigrid_flag[MAXIMAGE];		/* use multigrid? */
+  int		nmultigrid_flag;			/* nb of params */
   int		ext_minarea;				/* min area in pix. */
   int		ext_maxarea;				/* max area in pix. */
   int		deb_maxarea;				/* max deblend. area */
@@ -73,77 +89,96 @@ typedef struct
   int		nfilter_thresh;				/* nb of params */
   int		deblend_nthresh;			/* threshold number */
   double	deblend_mincont;			/* minimum contrast */
-  char		satur_key[8];				/* saturation keyword */
-  double	satur_level;				/* saturation level */
-  enum	{CCD, PHOTO}			detect_type;	/* detection type */
+  detectorenum	detector_type[MAXIMAGE];		/* detector type */
+  int		ndetector_type;				/* nb of params */
 /*----- Flagging */
-  char		*(fimage_name[MAXFLAG]);		/* flagmap filenames */
-  int		nfimage_name;				/* nb of params */
+  int		imaflags_flag;				/* use flag maps? */
+  char		*fimage_name[MAXFLAG];			/* flagmap filenames */
+  int		nfimage;				/* nb of params */
   enum	{FLAG_OR, FLAG_AND, FLAG_MIN, FLAG_MAX, FLAG_MOST}
-				flag_type[MAXFLAG];	/* flag combination */
-  int		imaflag_size;				/* requested iso nb1 */
-  int		imanflag_size;				/* requested iso nb2 */
-  int		nimaisoflag;				/* effective iso nb */
-  int		nimaflag;				/* effective ima nb */
+		flag_type[MAXFLAG];			/* flag combination */
+  int		nflag_type;				/* nb of params */
 /*----- cleaning */
   int		clean_flag;				/* allow cleaning ? */
   double	clean_param;				/* cleaning effic. */
 /*----- Weighting */
-  char		*(wimage_name[2]);       		/* weight filenames */
-  int		nwimage_name;				/* nb of params */
-  weightenum	weight_type[2];				/* weighting scheme */
+  char		weight_suffix[MAXCHAR];			/* suffix for weights */
+  char		*wimage_name[MAXIMAGE];	      		/* weight filenames */
+  int		nwimage;				/* nb of params */
+  weightenum	weight_type[MAXIMAGE];			/* weighting scheme */
   int		nweight_type;				/* nb of params */
-  int		weight_flag;				/* do we weight ? */
-  int		dweight_flag;				/* detection weight? */
-  int		weightgain_flag;			/* weight gain? */
-  int		wscale_flag[2];		/* Weight rescaling */
+  int		weights_flag;				/* weight at all? */
+  int		weight_flag[MAXIMAGE];			/* do we weight ? */
+  int		weightgain_flag[MAXIMAGE];		/* weight gain? */
+  int		nweightgain_flag;			/* nb of params */
+  int		wscale_flag[MAXIMAGE];			/* Weight rescaling */
   int		nwscale_flag;				/* nb of params */
+  double	weight_thresh[MAXIMAGE];		/* weight thresholds */
+  int		nweight_thresh;				/* nb of params */
 /*----- photometry */
-  enum	{CAT_NONE, ASCII, ASCII_HEAD, ASCII_SKYCAT, ASCII_VO,
-	FITS_LDAC, FITS_TPX, FITS_10}
-		cat_type;				/* type of catalog */
-  enum	{PNONE, FIXED, AUTO}		apert_type;	/* type of aperture */
+  enum {SHARE_ALL, SHARE_ALLBUTDETECT, SHARE_DETECT, SHARE_NONE}
+		photsharing_type;			/* photom. sharing */
+  int		nphotinstru;				/* nb of channels */
+  char		*photinstru_key[MAXPHOTKEY];	/* Photom instrument keywords*/
+  int		nphotinstru_key;			/* nb of params */
+  char		**photinstrustr;		/* Photom instrument labels */
+  int		nphotinstrumax;				/* max nb of params */
   double	apert[MAXNAPER];			/* apert size (pix) */
   int		naper;					/* effective apert. */
-  int		flux_apersize, fluxerr_apersize;	/* requested apert. */
-  int		mag_apersize, magerr_apersize;		/* requested apert. */
+  int		aper_size[2];				/* requested apert. */
+  int		auto_flag;				/* compute auto mags? */
   double	autoparam[2];				/* Kron parameters */
   int		nautoparam;				/* nb of Kron params */
-  double	petroparam[2];				/* Kron parameters */
-  int		npetroparam;				/* nb of Kron params */
   double	autoaper[2];				/* minimum apertures */
   int		nautoaper;				/* nb of min. aperts */
-  double	mag_zeropoint;				/* magnitude offsets */
-  double	mag_gamma;				/* for emulsions */
-  double	gain;					/* only for CCD */
+  double	petroparam[2];				/* Kron parameters */
+  int		npetroparam;				/* nb of Kron params */
+  int		win_flag;				/* compute win. pos? */
+  double	mag_zeropoint[MAXIMAGE];		/* magnitude offsets */
+  int		nmag_zeropoint;				/* nb of params */
+  double	mag_gamma[MAXIMAGE];			/* for emulsions */
+  int		nmag_gamma;				/* nb of params */
+  double	gain[MAXIMAGE];				/* only for CCD */
+  int		ngain;					/* nb of params */
   char		gain_key[8];				/* gain keyword */
+  char		satur_key[8];				/* saturation keyword */
+  double	satur_level[MAXIMAGE];			/* saturation level */
+  int		nsatur_level;				/* nb of params */
+/*----- astrometry */
+  int		world_flag;				/* WORLD required */
+  char		coosys[16];				/* VOTable coord.sys */
+  double	epoch;					/* VOTable epoch */
+  double	pixel_scale[MAXIMAGE];			/* in arcsec */
+  int		npixel_scale;				/* nb of params */
 /*----- S/G separation */
-  double	pixel_scale;				/* in arcsec */
-  double	seeing_fwhm;				/* in arcsec */
+  double	seeing_fwhm[MAXIMAGE];			/* in arcsec */
+  int		nseeing_fwhm;				/* nb of params */
   char		nnw_name[MAXCHAR];			/* nnw filename */
 /*----- background */
-  enum	{IMAGE, AFILE}			back_origin;	/* origin of bkgnd */
+  enum	{IMAGE, AFILE}
+		back_origin;				/* origin of bkgnd */
   char		back_name[MAXCHAR];			/* bkgnd filename */
-  backenum	back_type[2];				/* bkgnd type */
+  backenum	back_type[MAXIMAGE];			/* bkgnd type */
   int		nback_type;				/* nb of params */
-  double	back_val[2];				/* user-def. bkg */
+  double	back_val[MAXIMAGE];			/* user-def. bkg */
   int		nback_val;				/* nb of params */
   int		backsize[2];				/* bkgnd mesh size */
   int		nbacksize;				/* nb of params */
   int		backfsize[2];				/* bkgnd filt. size */
   int		nbackfsize;				/* nb of params */
   double	backfthresh;				/* bkgnd fil. thresh */
-  enum	{GLOBAL, LOCAL}			pback_type;	/* phot. bkgnd type */
+  enum	{GLOBAL, LOCAL}
+		pback_type;				/* phot. bkgnd type */
   int		pback_size;				/* rect. ann. width */
 /*----- memory */
-  int		clean_stacksize;			/* size of buffer */
+  int		clean_stacksize;			/* obj buffer size*/
+  int		obj2_stacksize;				/* obj2 buffer size*/
   int		mem_pixstack;				/* pixel stack size */
   int		mem_bufsize;				/* strip height */
-/*----- catalog output */
-  char		param_name[MAXCHAR];			/* param. filename */
 /*----- miscellaneous */
   int		pipe_flag;				/* allow piping ? */
-  enum	{QUIET, NORM, WARN, FULL}      	verbose_type;	/* display type */
+  enum	{QUIET, NORM, WARN, FULL}
+		verbose_type;				/* display type */
   int		xml_flag;				/* Write XML file? */
   char		xml_name[MAXCHAR];			/* XML file name */
   char		xsl_name[MAXCHAR];			/* XSL file name (or URL) */
@@ -154,11 +189,11 @@ typedef struct
   double	time_diff;				/* Execution time */
 /*----- CHECK-images */
   int		check_flag;				/* CHECK-image flag */
-  checkenum    	check_type[MAXCHECK];		       	/* check-image types */
+  checkenum    	check_type[MAXCHECK];	  	     	/* check-image types */
   int		ncheck_type;				/* nb of params */
-  char		*(check_name[MAXCHECK]);       		/* check-image names */
+  char		*check_name[MAXCHECK];	       		/* check-image names */
   int		ncheck_name;				/* nb of params */
-  struct structcheck	*(check[MAXCHECK]);		/* check-image ptrs */
+  struct structcheck	*check[MAXCHECK];		/* check-image ptrs */
 /*----- ASSOCiation */
   int		assoc_flag;				/* ASSOCiation flag */
   char		assoc_name[MAXCHAR];			/* ASSOC-list name */
@@ -176,35 +211,30 @@ typedef struct
   double	assoc_radius;				/* ASSOC range */
   int		assoc_size;				/* nb of parameters */
   char		retina_name[MAXCHAR];			/* retina filename */
-  int		vignetsize[2];				/* vignet size */
-  int		vigshiftsize[2];			/* shift-vignet size */
+  int		vignet_size[3];				/* vignet size */
+  int		vigshift_size[3];			/* shift-vignet size */
   int		cleanmargin;				/* CLEANing margin */
+/*----- SOM-fitting */
   char		som_name[MAXCHAR];			/* SOM filename */
   int		somfit_flag;				/* ASSOCiation flag */
-  int		somfit_vectorsize;			/* SOMfit vec. size */
+  int		somfit_vector_size[2];			/* SOMfit vec. size */
 /*----- masking */
   enum {MASK_NONE, MASK_BLANK, MASK_CORRECT}
 		mask_type;				/* type of masking */
   int		blank_flag;				/* BLANKing flag */
-  double	weight_thresh[2];      			/* weight threshlds */
-  int		nweight_thresh;				/* nb of params */
 /*----- interpolation */
   enum	{INTERP_NONE, INTERP_VARONLY, INTERP_ALL}
-		interp_type[2];				/* interpolat. type */
+		interp_type[MAXIMAGE];			/* interpolat. type */
   int		ninterp_type;				/* nb of params */
-  int		interp_xtimeout[2];   			/* interp. x timeout */
-  int		ninterp_xtimeout;       	        /* nb of params */
-  int		interp_ytimeout[2];   			/* interp. y timeout */
+  int		interp_xtimeout[MAXIMAGE]; 		/* interp. x timeout */
+  int		ninterp_xtimeout;		        /* nb of params */
+  int		interp_ytimeout[MAXIMAGE];		/* interp. y timeout */
   int		ninterp_ytimeout;       		/* nb of params */
-/*----- astrometry */
-  int		world_flag;				/* WORLD required */
-  char		coosys[16];				/* VOTable coord.sys */
-  double	epoch;					/* VOTable epoch */
 /*----- growth curve */
   int		growth_flag;				/* gr. curve needed */
-  int		flux_growthsize;       			/* number of elem. */
-  int		mag_growthsize;       			/* number of elem. */
-  int		flux_radiussize;       			/* number of elem. */
+  int		flux_growth_size[2];			/* number of elem. */
+  int		mag_growth_size[2];			/* number of elem. */
+  int		flux_radius_size[2];			/* number of elem. */
   double	growth_step;				/* step size (pix) */
   double	flux_frac[MAXNAPER];			/* for FLUX_RADIUS */
   int		nflux_frac;       			/* number of elem. */
@@ -213,7 +243,7 @@ typedef struct
   int		dpsf_flag;				/* detectiob PSF */
   int		psffit_flag;				/* PSF-fit needed */
   int		dpsffit_flag;				/* dual image PSF-fit */
-  char		*(psf_name[2]);				/* PSF filename */
+  char		*psf_name[MAXIMAGE];			/* PSF filename(s) */
   int		npsf_name;				/* nb of params */
   int		psf_npsfmax;				/* Max # of PSFs */
   int		psf_xsize,psf_ysize;			/* nb of params */
@@ -225,12 +255,10 @@ typedef struct
   int		psf_fluxerrsize;			/* nb of params */
   int		psf_magsize;				/* nb of params */
   int		psf_magerrsize;				/* nb of params */
-  int		pc_flag;				/* PC-fit needed */
-  int		pc_vectorsize;				/* nb of params */
   int		prof_flag;				/* Profile-fitting */
-  int		dprof_flag;				/* Det. Prof.-fitting */
   int		pattern_flag;				/* Pattern-fitting */
-/*----- Profile-fitting */
+/*----- model-fitting */
+  int		prof_modelflags;			/* model flags */
   int		prof_vectorsize;			/* nb of params */
   int		prof_errvectorsize;			/* nb of params */
   int		prof_errmatrixsize[2];			/* nb of params */
@@ -243,20 +271,23 @@ typedef struct
 /*----- Pattern-fitting */
   pattypenum	pattern_type;				/* Disk pattern type */
 /*----- customize */
-  int		fitsunsigned_flag;			/* Force unsign FITS */
+  int		fitsunsigned_flag[MAXIMAGE];		/* Force unsign FITS */
+  int		nfitsunsigned_flag;			/* nm of params */
   int		next;			     /* Number of extensions in file */
 /* Multithreading */
   int		nthreads;			/* Number of active threads */
   }	prefstruct;
 
-  prefstruct		prefs;
+prefstruct	prefs;
 
 /*-------------------------------- protos -----------------------------------*/
+extern char	*list_to_str(char *listname);
+
 extern int	cistrcmp(char *cs, char *ct, int mode);
 
-extern void	dumpprefs(int state),
-		endprefs(void),
-		preprefs(void),
-		readprefs(char *filename,char **argkey,char **argval,int narg),
-		useprefs(void);
+extern void	prefs_dump(int state),
+		prefs_end(void),
+		prefs_tune(void),
+		prefs_read(char *filename,char **argkey,char **argval,int narg),
+		prefs_use(void);
 #endif

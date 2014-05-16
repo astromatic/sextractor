@@ -22,7 +22,7 @@
 #	You should have received a copy of the GNU General Public License
 #	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 #
-#	Last modified:		14/12/2013
+#	Last modified:		18/09/2013
 #
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -30,8 +30,8 @@
 define([AC_CACHE_LOAD],)
 define([AC_CACHE_SAVE],)
 
-# This is your standard Bertin source code...
-AC_INIT(sextractor, 2.19.5, [bertin@iap.fr])
+# Code version
+AC_INIT(sextractor, 3.0a9, [bertin@iap.fr])
 AC_CONFIG_SRCDIR(src/makeit.c)
 AC_CONFIG_AUX_DIR(autoconf)
 AC_CONFIG_HEADERS(config.h)
@@ -173,7 +173,7 @@ AC_ARG_ENABLE([model-fitting],
 	AC_MSG_RESULT([no]))
 
 # Set flags for multithreading
-n_pthreads=16
+n_pthreads=256
 AC_ARG_ENABLE(threads,
         [AS_HELP_STRING([--enable-threads@<:@=<max_number_of_threads>@:>@],
 	[Enable multhreading (on with up to 16 threads by default)])],
@@ -187,8 +187,6 @@ AC_ARG_ENABLE(threads,
     fi,
     use_pthreads=yes
     )
-# Deactivate multithreading for now
-use_pthreads="no"
 
 # Provide special option for profiling
 AC_MSG_CHECKING([for profiler mode])

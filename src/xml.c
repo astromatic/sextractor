@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		27/04/2013
+*	Last modified:		12/06/2013
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -39,6 +39,7 @@
 #include "define.h"
 #include "globals.h"
 #include "fits/fitscat.h"
+#include "catout.h"
 #include "field.h"
 #include "key.h"
 #include "prefs.h"
@@ -50,17 +51,17 @@ extern char		keylist[][32];		/* from preflist.h */
 xmlstruct		*xmlstack = NULL;
 int			nxml=0, nxmlmax=0;
 
-/****** init_xml ************************************************************
-PROTO	int	init_xml(void)
+/****** xml_init *************************************************************
+PROTO	int xml_init(void)
 PURPOSE	Initialize a set of meta-data kept in memory before being written to the
 	XML file
 INPUT	Number of image extensions.
 OUTPUT	RETURN_OK if everything went fine, RETURN_ERROR otherwise.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	03/07/2006
+VERSION	24/02/2012
  ***/
-int	init_xml(int next)
+int	xml_init(int next)
   {
   QMALLOC(xmlstack, xmlstruct, next);
   nxml = 0;
@@ -70,34 +71,38 @@ int	init_xml(int next)
   }
 
 
-/****** end_xml ************************************************************
-PROTO	int	end_xml(void)
+/****** xml_end **************************************************************
+PROTO	int xml_end(void)
 PURPOSE	Free the set of meta-data kept in memory.
 INPUT	-.
 OUTPUT	RETURN_OK if everything went fine, RETURN_ERROR otherwise.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	12/07/2006
+VERSION	24/02/2012
  ***/
-int	end_xml(void)
+int	xml_end(void)
   {
   free(xmlstack);
 
   return EXIT_SUCCESS;
   }
 
-/****** update_xml ***********************************************************
-PROTO	int	update_xml(void)
+/****** xml_update ***********************************************************
+PROTO	int xml_update(sexcatstruct *sexcat, fieldstruct **fields,
+			fieldstruct **wfields)
 PURPOSE	Update a set of meta-data kept in memory before being written to the
 	XML file
-INPUT	-.
+INPUT	Pointer to catalog,
+	pointer to an array of image field pointers,
+	pointer to an array of weight-map field pointers,
+	number of images.
 OUTPUT	RETURN_OK if everything went fine, RETURN_ERROR otherwise.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	05/02/2010
+VERSION	24/02/2012
  ***/
-int	update_xml(sexcatstruct *sexcat, picstruct *dfield, picstruct *field,
-		picstruct *dwfield, picstruct *wfield)
+int	xml_update(sexcatstruct *sexcat, fieldstruct **fields,
+		fieldstruct **wfields)
   {
    xmlstruct	*x;
 
@@ -106,54 +111,54 @@ int	update_xml(sexcatstruct *sexcat, picstruct *dfield, picstruct *field,
 			"");
   x = &xmlstack[nxml++];
   x->currext = sexcat->currext;
-  x->headflag[0] = dfield->headflag;
-  x->headflag[1] = field->headflag;
+  x->headflag[0] = fields[0]->headflag;
+  x->headflag[1] = fields[0]->headflag;
   x->ndetect = sexcat->ndetect;
   x->ntotal = sexcat->ntotal;
   strcpy(x->ext_date, sexcat->ext_date);
   strcpy(x->ext_time, sexcat->ext_time);
   x->ext_elapsed = sexcat->ext_elapsed;
-  strcpy(x->ident[0], dfield->ident); 
-  strcpy(x->ident[1], field->ident); 
-  x->backmean[0] = dfield->backmean;
-  x->backmean[1] = field->backmean;
-  x->backsig[0] = dfield->backsig;
-  x->backsig[1] = field->backsig;
-  x->sigfac[0] = dfield->sigfac;
-  x->sigfac[1] = field->sigfac;
-  x->thresh[0] = dfield->dthresh;
-  x->thresh[1] = field->thresh;
-  x->pixscale[0] = dfield->pixscale;
-  x->pixscale[1] = field->pixscale;
-  x->epoch[0] = dfield->epoch;
-  x->epoch[1] = field->epoch;
-  x->gain[0] = dfield->gain;
-  x->gain[1] = field->gain;
-  x->satur_level[0] = dfield->satur_level;
-  x->satur_level[1] = field->satur_level;
+  strcpy(x->ident[0], fields[0]->ident); 
+  strcpy(x->ident[1], fields[0]->ident); 
+  x->backmean[0] = fields[0]->backmean;
+  x->backmean[1] = fields[0]->backmean;
+  x->backsig[0] = fields[0]->backsig;
+  x->backsig[1] = fields[0]->backsig;
+  x->sigfac[0] = fields[0]->sigfac;
+  x->sigfac[1] = fields[0]->sigfac;
+  x->thresh[0] = fields[0]->dthresh;
+  x->thresh[1] = fields[0]->thresh;
+  x->pixscale[0] = fields[0]->pixscale;
+  x->pixscale[1] = fields[0]->pixscale;
+  x->epoch[0] = fields[0]->epoch;
+  x->epoch[1] = fields[0]->epoch;
+  x->gain[0] = fields[0]->gain;
+  x->gain[1] = fields[0]->gain;
+  x->satur_level[0] = fields[0]->satur_level;
+  x->satur_level[1] = fields[0]->satur_level;
 
   return EXIT_SUCCESS;
   }
 
 
-/****** write_xml ************************************************************
-PROTO	int	write_xml(char *filename)
+/****** xml_write ************************************************************
+PROTO	int xml_write(char *filename)
 PURPOSE	Save meta-data to an XML file/stream.
 INPUT	XML file name.
 OUTPUT	RETURN_OK if everything went fine, RETURN_ERROR otherwise.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	14/07/2006
+VERSION	24/02/2012
  ***/
-int	write_xml(char *filename)
+int	xml_write(char *filename)
   {
    FILE		*file;
 
   if (!(file = fopen(prefs.xml_name, "w")))
     return RETURN_ERROR;
 
-  write_xml_header(file);
-  write_vo_fields(file);
+  xml_write_header(file);
+  catout_writevofields(file);
 
   fprintf(file, "   <DATA>\n");
   if (prefs.cat_type == FITS_LDAC || prefs.cat_type == FITS_TPX
@@ -166,7 +171,7 @@ int	write_xml(char *filename)
   fprintf(file, "   </DATA>\n");
   fprintf(file, "  </TABLE>\n");
 
-  write_xml_meta(file, (char *)NULL);
+  xml_write_meta(file, (char *)NULL);
 
   fprintf(file, "</RESOURCE>\n");
   fprintf(file, "</VOTABLE>\n");
@@ -177,21 +182,21 @@ int	write_xml(char *filename)
   }
 
 
-/****** write_xml_header ******************************************************
-PROTO	int	write_xml_header(FILE *file)
+/****** xml_write_header *****************************************************
+PROTO	int xml_write_header(FILE *file)
 PURPOSE	Save an XML-VOtable header to an XML file/stream
 INPUT	file or stream pointer.
 OUTPUT	RETURN_OK if everything went fine, RETURN_ERROR otherwise.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	27/04/2013
+VERSION	24/02/2012
  ***/
-int	write_xml_header(FILE *file)
+int	xml_write_header(FILE *file)
   {
    char		*filename, *rfilename;
 
 /* A short, "relative" version of the filename */
-  filename = prefs.image_name[prefs.nimage_name>1? 1:0];
+  filename = prefs.image_name[prefs.nimage>1? 1:0];
   if (!(rfilename = strrchr(filename, '/')))
     rfilename = filename;
   else
@@ -201,7 +206,6 @@ int	write_xml_header(FILE *file)
   fprintf(file, "<?xml-stylesheet type=\"text/xsl\" href=\"%s\"?>\n",
 	prefs.xsl_name);
   fprintf(file, "<VOTABLE version=\"1.1\" "
-//        "xmlns=\"http://www.ivoa.net/xml/VOTable/v1.1\" "
 	"xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" "
 	"xsi:noNamespaceSchemaLocation="
 	"\"http://www.ivoa.net/xml/VOTable/v1.1\">\n");
@@ -224,17 +228,17 @@ int	write_xml_header(FILE *file)
   }
 
 
-/****** write_xml_meta ********************************************************
-PROTO	int	write_xml_meta(FILE *file, char *error)
+/****** xml_write_meta *******************************************************
+PROTO	int xml_write_meta(FILE *file, char *error)
 PURPOSE	Save meta-data to an XML-VOTable file or stream
 INPUT	Pointer to the output file (or stream),
 	Pointer to an error msg (or NULL).
 OUTPUT	RETURN_OK if everything went fine, RETURN_ERROR otherwise.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	25/04/2013
+VERSION	24/02/2012
  ***/
-int	write_xml_meta(FILE *file, char *error)
+int	xml_write_meta(FILE *file, char *error)
   {
    char			*pspath,*psuser, *pshost, *str;
    struct tm		*tm;
@@ -305,7 +309,7 @@ int	write_xml_meta(FILE *file, char *error)
   fprintf(file,
 	"  <PARAM name=\"Image_Name\" datatype=\"char\" arraysize=\"*\""
 	" ucd=\"obs.image;meta.fits\" value=\"%s", prefs.image_name[0]);
-  if (prefs.nimage_name>1)
+  if (prefs.nimage>1)
     fprintf(file, ",%s", prefs.image_name[1]);
   fprintf(file, "\"/>\n");
 
@@ -342,8 +346,7 @@ int	write_xml_meta(FILE *file, char *error)
   fprintf(file, "   <FIELD name=\"Extension\" datatype=\"int\""
 	" ucd=\"meta.record\"/>\n");
   fprintf(file, "   <FIELD name=\"External_Header\" datatype=\"boolean\""
-	" arraysize=\"%d\" ucd=\"meta.code\"/>\n",
-	prefs.nimage_name);
+	" arraysize=\"%d\" ucd=\"meta.code\"/>\n", prefs.nimage);
   fprintf(file, "   <FIELD name=\"Date\" datatype=\"char\" arraysize=\"*\""
 	" ucd=\"meta.record;time.event.end\"/>\n");
   fprintf(file, "   <FIELD name=\"Time\" datatype=\"char\" arraysize=\"*\""
@@ -358,31 +361,31 @@ int	write_xml_meta(FILE *file, char *error)
 	" arraysize=\"*\" ucd=\"meta.id;obs\"/>\n");
   fprintf(file, "   <FIELD name=\"Background_Mean\" datatype=\"float\""
 	" arraysize=\"%d\" ucd=\"instr.skyLevel;obs.image;stat.median\""
-	" unit=\"ct\"/>\n", prefs.nimage_name);
+	" unit=\"ct\"/>\n", prefs.nimage);
   fprintf(file, "   <FIELD name=\"Background_StDev\" datatype=\"float\""
 	" arraysize=\"%d\" ucd=\"stat.stdev;obs.image;stat.median\""
-	" unit=\"ct\"/>\n", prefs.nimage_name);
+	" unit=\"ct\"/>\n", prefs.nimage);
   fprintf(file, "   <FIELD name=\"Threshold\" datatype=\"float\""
 	" arraysize=\"%d\" ucd=\"instr.sensitivity;obs.image;stat.median\""
-	" unit=\"ct\"/>\n", prefs.nimage_name);
+	" unit=\"ct\"/>\n", prefs.nimage);
   fprintf(file, "   <FIELD name=\"Weight_Scaling\" datatype=\"float\""
 	" arraysize=\"%d\" ucd=\"arith.factor;obs.image;stat.median\"/>\n",
-	prefs.nimage_name);
+	prefs.nimage);
   fprintf(file, "   <FIELD name=\"Pixel_Scale\" datatype=\"float\""
 	" arraysize=\"%d\" ucd=\"instr.scale;obs.image;stat.mean\""
-	" unit=\"arcsec\"/>\n", prefs.nimage_name);
+	" unit=\"arcsec\"/>\n", prefs.nimage);
   fprintf(file, "   <FIELD name=\"Epoch\" datatype=\"float\""
 	" arraysize=\"%d\" ucd=\"time.epoch;obs\" unit=\"yr\"/>\n",
-	prefs.nimage_name);
+	prefs.nimage);
   fprintf(file, "   <FIELD name=\"Gain\" datatype=\"float\""
 	" arraysize=\"%d\" ucd=\"instr.param;obs.param\"/>\n",
-	prefs.nimage_name);
+	prefs.nimage);
   fprintf(file, "   <FIELD name=\"Satur_Level\" datatype=\"float\""
 	" arraysize=\"%d\" ucd=\"instr.saturation;phot.count\" unit=\"ct\"/>\n",
-	prefs.nimage_name);
+	prefs.nimage);
   fprintf(file, "   <DATA><TABLEDATA>\n");
   for (n=0; n<nxml; n++)
-    if (prefs.nimage_name>1)
+    if (prefs.nimage>1)
       fprintf(file, "     <TR>\n"
 	"      <TD>%d</TD><TD>%c %c</TD><TD>%s</TD><TD>%s</TD><TD>%.0f</TD>"
 	"<TD>%d</TD><TD>%d</TD>\n"
@@ -469,114 +472,116 @@ int	write_xml_meta(FILE *file, char *error)
 
   if (!error)
     {
-    write_xmlconfigparam(file, "Catalog_Type", "", "meta.code;meta.table", "");
-    write_xmlconfigparam(file, "Catalog_Name", "",
+    xml_write_configparam(file, "Catalog_Type", "", "meta.code;meta.table", "");
+    xml_write_configparam(file, "Catalog_Name", "",
 	"meta;meta.table;meta.file", "");
-    write_xmlconfigparam(file, "Parameters_Name", "", "meta;obs.param", "");
+    xml_write_configparam(file, "Parameters", "", "meta;obs.param", "");
 
-    write_xmlconfigparam(file, "Detect_Type", "",
+    xml_write_configparam(file, "Detect_Type", "",
 	"meta.code;obs.param;instr.det", "");
-    write_xmlconfigparam(file, "Detect_MinArea", "pix",
+    xml_write_configparam(file, "Detect_MinArea", "pix",
 	"obs.param;phys.area;stat.min", "%d");
-    write_xmlconfigparam(file, "Detect_MaxArea", "pix",
+    xml_write_configparam(file, "Detect_MaxArea", "pix",
 	"obs.param;phys.area;stat.max", "%d");
-    write_xmlconfigparam(file, "Thresh_Type", "",
+    xml_write_configparam(file, "Thresh_Type", "",
 	"meta.code;obs.param;instr.sensitivity", "");
-    write_xmlconfigparam(file, "Detect_Thresh", "",
+    xml_write_configparam(file, "Detect_Thresh", "",
 	"obs.param;instr.sensitivity", "%g");
-    write_xmlconfigparam(file, "Analysis_Thresh", "",
+    xml_write_configparam(file, "Analysis_Thresh", "",
 	"obs.param;instr.sensitivity", "%g");
-    write_xmlconfigparam(file, "Filter", "", "meta.code;obs.param", "");
-    write_xmlconfigparam(file, "Filter_Name","", "obs.param;meta.file", "");
-    write_xmlconfigparam(file, "Filter_Thresh", "", "obs.param", "%g");
-    write_xmlconfigparam(file, "Deblend_NThresh", "",
+    xml_write_configparam(file, "Filter", "", "meta.code;obs.param", "");
+    xml_write_configparam(file, "Filter_Name","", "obs.param;meta.file", "");
+    xml_write_configparam(file, "Filter_Thresh", "", "obs.param", "%g");
+    xml_write_configparam(file, "Deblend_NThresh", "",
 	"meta.number;obs.param", "%d");
-    write_xmlconfigparam(file, "Deblend_MinCont", "",
+    xml_write_configparam(file, "Deblend_MinCont", "",
 	"obs.param;arith.ratio", "%g");
-    write_xmlconfigparam(file, "Clean", "", "meta.code;obs.param", "");
-    write_xmlconfigparam(file, "Clean_Param","","obs.param;arith.ratio", "%g");
-    write_xmlconfigparam(file, "Mask_Type", "", "meta.code;obs.param", "");
+    xml_write_configparam(file, "Clean", "", "meta.code;obs.param", "");
+    xml_write_configparam(file, "Clean_Param","","obs.param;arith.ratio", "%g");
+    xml_write_configparam(file, "Mask_Type", "", "meta.code;obs.param", "");
 
-    write_xmlconfigparam(file, "Weight_Type", "", "meta.code;obs.param", "");
-    write_xmlconfigparam(file, "Rescale_Weights","","meta.code;obs.param", "");
-    write_xmlconfigparam(file, "Weight_Suffix", "",
+    xml_write_configparam(file, "Weight_Type", "", "meta.code;obs.param", "");
+    xml_write_configparam(file, "Rescale_Weights","","meta.code;obs.param", "");
+    xml_write_configparam(file, "Weight_Suffix", "",
 	"meta;meta.file;meta.fits", "");
-    write_xmlconfigparam(file, "Weight_Thresh", "", "obs.param", "%g");
-    write_xmlconfigparam(file, "Weight_Image", "",
+    xml_write_configparam(file, "Weight_Thresh", "", "obs.param", "%g");
+    xml_write_configparam(file, "Weight_Image", "",
 	"stat.weight;meta.file;meta.fits", "");
-    write_xmlconfigparam(file, "Weight_Gain", "", "meta.code;obs.param", "");
+    xml_write_configparam(file, "Weight_Gain", "", "meta.code;obs.param", "");
 
-    write_xmlconfigparam(file, "Flag_Image", "",
+    xml_write_configparam(file, "Flag_Image", "",
 	"meta.code;meta.file;meta.fits", "");
-    write_xmlconfigparam(file, "Flag_Type", "", "meta.code;obs.param", "");
+    xml_write_configparam(file, "Flag_Type", "", "meta.code;obs.param", "");
 
-    write_xmlconfigparam(file, "Phot_Apertures", "pix",
+    xml_write_configparam(file, "Phot_Apertures", "pix",
 	"obs.param;phys.size.diameter", "%g");
-    write_xmlconfigparam(file, "Phot_AutoParams", "",
+    xml_write_configparam(file, "Phot_AutoParams", "",
 	"meta.code;obs.param", "%g");
-    write_xmlconfigparam(file, "Phot_PetroParams", "",
+    xml_write_configparam(file, "Phot_PetroParams", "",
 	"meta.code;obs.param", "%g");
-    write_xmlconfigparam(file, "Phot_AutoApers", "pix",
+    xml_write_configparam(file, "Phot_AutoApers", "pix",
 	"obs.param;phys.size.diameter", "%g");
-    write_xmlconfigparam(file, "Phot_FluxFrac", "",
+    xml_write_configparam(file, "Phot_FluxFrac", "",
 	"obs.param;arith.ratio", "%g");
-    write_xmlconfigparam(file, "Satur_Level", "ct",
+    xml_write_configparam(file, "Satur_Level", "ct",
 	"obs.param;instr.saturation", "%g");
-    write_xmlconfigparam(file, "Satur_Key", "",
+    xml_write_configparam(file, "Satur_Key", "",
 	"meta.code;obs.param;instr.saturation", "");
-    write_xmlconfigparam(file, "Mag_ZeroPoint", "mag",
+    xml_write_configparam(file, "Mag_ZeroPoint", "mag",
 	"obs.param;phot.calib;phot.mag", "%.4f");
-    write_xmlconfigparam(file, "Mag_Gamma", "",
+    xml_write_configparam(file, "Mag_Gamma", "",
 	"obs.param;phot.calib;instr.plate.emulsion", "%.2f");
-    write_xmlconfigparam(file, "Gain", "/ct", "obs.param;instr.param", "%g");
-    write_xmlconfigparam(file, "Gain_Key", "",
+    xml_write_configparam(file, "Gain", "/ct", "obs.param;instr.param", "%g");
+    xml_write_configparam(file, "Gain_Key", "",
 	"meta.code;obs.param;instr.param", "");
 
-    write_xmlconfigparam(file, "Pixel_Scale", "arcsec/pix",
+    xml_write_configparam(file, "Pixel_Scale", "arcsec/pix",
 	"obs.param;instr.scale", "%g");
-    write_xmlconfigparam(file, "Seeing_FWHM", "arcsec",
+    xml_write_configparam(file, "Seeing_FWHM", "arcsec",
 	"obs.param;instr.obsty.seeing", "%g");
-    write_xmlconfigparam(file, "StarNNW_Name", "",
+    xml_write_configparam(file, "StarNNW_Name", "",
 	"obs.param;meta.dataset;meta.file", "");
 
-    write_xmlconfigparam(file, "Back_Type", "", "meta.code;obs.param", "");
-    write_xmlconfigparam(file, "Back_Value", "ct", "obs.param", "%g");
-    write_xmlconfigparam(file, "Back_Size", "pix", "obs.param", "%d");
-    write_xmlconfigparam(file, "Back_FilterSize", "", "obs.param", "%d");
-    write_xmlconfigparam(file, "BackPhoto_Type", "","meta.code;obs.param", "");
-    write_xmlconfigparam(file, "BackPhoto_Thick", "pix", "obs.param", "%d");
-    write_xmlconfigparam(file, "Back_FiltThresh", "ct", "obs.param;", "%g");
+    xml_write_configparam(file, "Back_Type", "", "meta.code;obs.param", "");
+    xml_write_configparam(file, "Back_Value", "ct", "obs.param", "%g");
+    xml_write_configparam(file, "Back_Size", "pix", "obs.param", "%d");
+    xml_write_configparam(file, "Back_FilterSize", "", "obs.param", "%d");
+    xml_write_configparam(file, "BackPhoto_Type", "","meta.code;obs.param", "");
+    xml_write_configparam(file, "BackPhoto_Thick", "pix", "obs.param", "%d");
+    xml_write_configparam(file, "Back_FilterThresh", "ct", "obs.param;", "%g");
 
-    write_xmlconfigparam(file, "CheckImage_Type","","meta.code;obs.param", "");
-    write_xmlconfigparam(file, "CheckImage_Name", "",
+    xml_write_configparam(file, "CheckImage_Type","","meta.code;obs.param", "");
+    xml_write_configparam(file, "CheckImage_Name", "",
 	"meta.id;meta.file;meta.fits", "");
 
-    write_xmlconfigparam(file, "Memory_ObjStack", "",
+    xml_write_configparam(file, "Memory_ObjStack", "",
 	"meta.number;src;obs.param", "%d");
-    write_xmlconfigparam(file, "Memory_PixStack", "pix",
+    xml_write_configparam(file, "Memory_Obj2Stack", "",
+	"meta.number;src;obs.param", "%d");
+    xml_write_configparam(file, "Memory_PixStack", "pix",
 	"meta.number;obs.param", "%d");
-    write_xmlconfigparam(file, "Memory_BufSize", "pix",
+    xml_write_configparam(file, "Memory_BufSize", "pix",
 	"meta.number;obs.param", "%d");
 
-    write_xmlconfigparam(file, "Assoc_Name", "",
+    xml_write_configparam(file, "Assoc_Name", "",
 	"meta;meta.table;meta.file", "");
-    write_xmlconfigparam(file, "Assoc_Data", "", "meta;meta.table", "%d");
-    write_xmlconfigparam(file, "Assoc_Params", "", "meta;meta.table", "%d");
-    write_xmlconfigparam(file, "AssocCoord_Type", "", "meta.code", "");
-    write_xmlconfigparam(file, "Assoc_Radius", "pix",
+    xml_write_configparam(file, "Assoc_Data", "", "meta;meta.table", "%d");
+    xml_write_configparam(file, "Assoc_Params", "", "meta;meta.table", "%d");
+    xml_write_configparam(file, "AssocCoord_Type", "", "meta.code", "");
+    xml_write_configparam(file, "Assoc_Radius", "pix",
 	"meta;phys.size.radius", "");
-    write_xmlconfigparam(file, "Assoc_Type", "", "meta.code", "");
-    write_xmlconfigparam(file, "AssocSelec_Type", "", "meta.code", "");
+    xml_write_configparam(file, "Assoc_Type", "", "meta.code", "");
+    xml_write_configparam(file, "AssocSelec_Type", "", "meta.code", "");
 
-    write_xmlconfigparam(file, "Verbose_Type", "", "meta.code", "");
-    write_xmlconfigparam(file, "Header_Suffix", "", "meta.id;meta.file", "");
-    write_xmlconfigparam(file, "Write_XML", "", "meta.code", "");
-    write_xmlconfigparam(file, "XML_Name", "", "meta;meta.file", "");
-    write_xmlconfigparam(file, "XSL_URL", "", "meta.ref.url;meta.file", "");
-    write_xmlconfigparam(file, "NThreads", "", "meta.number", "%d");
-    write_xmlconfigparam(file, "FITS_Unsigned", "", "meta.code;obs.param", "");
+    xml_write_configparam(file, "Verbose_Type", "", "meta.code", "");
+    xml_write_configparam(file, "Header_Suffix", "", "meta.id;meta.file", "");
+    xml_write_configparam(file, "Write_XML", "", "meta.code", "");
+    xml_write_configparam(file, "XML_Name", "", "meta;meta.file", "");
+    xml_write_configparam(file, "XSL_URL", "", "meta.ref.url;meta.file", "");
+    xml_write_configparam(file, "NThreads", "", "meta.number", "%d");
+    xml_write_configparam(file, "FITS_Unsigned", "", "meta.code;obs.param", "");
 
-    write_xmlconfigparam(file, "PSF_Name", "",
+    xml_write_configparam(file, "PSF_Name", "",
 	"instr.det.psf;meta.file;meta.fits", "");
     }
 
@@ -587,8 +592,39 @@ int	write_xml_meta(FILE *file, char *error)
   }
 
 
-/****** write_xmlconfigparam **************************************************
-PROTO	int write_xmlconfigparam(FILE *file, char *name, char *unit,
+/****** xml_write_error ******************************************************
+PROTO	int xml_write_error(char *error)
+PURPOSE	Save meta-data to a simplified XML file in case of a catched error
+INPUT	a character string.
+OUTPUT	RETURN_OK if everything went fine, RETURN_ERROR otherwise.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	24/02/2012
+ ***/
+void	xml_write_error(char *filename, char *error)
+  {
+   FILE			*file;
+
+  if (!(file = fopen(filename, "w")))
+    return;
+
+  xml_write_header(file);
+
+  fprintf(file, " </TABLE>\n");
+
+  xml_write_meta(file, error);
+
+  fprintf(file, "</RESOURCE>\n");
+  fprintf(file, "</VOTABLE>\n");
+
+  fclose(file);
+
+  return;
+  }
+
+
+/****** xml_write_configparam ************************************************
+PROTO	int xml_write_configparam(FILE *file, char *name, char *unit,
 		char *ucd, char *format)
 PURPOSE	Write to a VO-table the configuration parameters.
 INPUT	Output stream (file) pointer,
@@ -599,9 +635,9 @@ INPUT	Output stream (file) pointer,
 OUTPUT	RETURN_OK if the keyword exists, RETURN_ERROR otherwise.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	25/04/2013
+VERSION	12/06/2013
  ***/
-int	write_xmlconfigparam(FILE *file, char *name, char *unit,
+int	xml_write_configparam(FILE *file, char *name, char *unit,
 		 char *ucd, char *format)
   {
    char		value[MAXCHAR], uunit[MAXCHAR];
@@ -696,22 +732,22 @@ int	write_xmlconfigparam(FILE *file, char *name, char *unit,
 		name, ucd);
       break;
     case P_STRING:
-      sprintf(value, (char *)key[i].ptr);
+      strcpy(value, (char *)key[i].ptr);
       fprintf(file, "   <PARAM name=\"%s\" datatype=\"char\" arraysize=\"*\""
 	" ucd=\"%s\" value=\"%s\"/>\n",
-	name, ucd, *value? value: " ");
+	name, ucd, value);
       break;
     case P_STRINGLIST:
       n = *(key[i].nlistptr);
       if (n)
         {
-        sprintf(value, ((char **)key[i].ptr)[0]);
+        strcpy(value, ((char **)key[i].ptr)[0]);
         fprintf(file, "   <PARAM name=\"%s\" datatype=\"char\""
 		" arraysize=\"*\" ucd=\"%s\" value=\"%s",
-		name, ucd, *value? value: " ");
+		name, ucd, value);
         for (j=1; j<n; j++)
           {
-          sprintf(value, ((char **)key[i].ptr)[j]);
+          strcpy(value, ((char **)key[i].ptr)[j]);
           fprintf(file, ",%s", *value? value: " ");
           }
         fprintf(file, "\"/>\n");
@@ -722,7 +758,7 @@ int	write_xmlconfigparam(FILE *file, char *name, char *unit,
 		name, ucd);
       break;
     case P_KEY:
-      sprintf(value, key[i].keylist[*((int *)key[i].ptr)]);
+      strcpy(value, key[i].keylist[*((int *)key[i].ptr)]);
       fprintf(file, "   <PARAM name=\"%s\" datatype=\"char\" arraysize=\"*\""
 	" ucd=\"%s\" value=\"%s\"/>\n",
 	name, ucd, value);
@@ -731,13 +767,13 @@ int	write_xmlconfigparam(FILE *file, char *name, char *unit,
       n = *(key[i].nlistptr);
       if (n)
         {
-        sprintf(value, key[i].keylist[((int *)key[i].ptr)[0]]);
+        strcpy(value, key[i].keylist[((int *)key[i].ptr)[0]]);
         fprintf(file, "   <PARAM name=\"%s\" datatype=\"char\""
 		" arraysize=\"*\" ucd=\"%s\" value=\"%s",
 		name, ucd, value);
         for (j=1; j<n; j++)
           {
-          sprintf(value, key[i].keylist[((int *)key[i].ptr)[j]]);
+          strcpy(value, key[i].keylist[((int *)key[i].ptr)[j]]);
           fprintf(file, ",%s", value);
           }
         fprintf(file, "\"/>\n");
@@ -748,42 +784,10 @@ int	write_xmlconfigparam(FILE *file, char *name, char *unit,
 		name, ucd);
       break;
     default:
-        error(EXIT_FAILURE, "*Internal Error*: Type Unknown",
-		" in write_xmlconfigparam()");
+      error(EXIT_FAILURE, "*Internal Error*: Type Unknown",
+		" in xml_write_configparam()");
     }
 
   return RETURN_OK;
   }
-
-
-/****** write_xmlerror ******************************************************
-PROTO	int	write_xmlerror(char *error)
-PURPOSE	Save meta-data to a simplified XML file in case of a catched error
-INPUT	a character string.
-OUTPUT	RETURN_OK if everything went fine, RETURN_ERROR otherwise.
-NOTES	-.
-AUTHOR	E. Bertin (IAP)
-VERSION	14/07/2006
- ***/
-void	write_xmlerror(char *filename, char *error)
-  {
-   FILE			*file;
-
-  if (!(file = fopen(filename, "w")))
-    return;
-
-  write_xml_header(file);
-
-  fprintf(file, " </TABLE>\n");
-
-  write_xml_meta(file, error);
-
-  fprintf(file, "</RESOURCE>\n");
-  fprintf(file, "</VOTABLE>\n");
-
-  fclose(file);
-
-  return;
-  }
-
 

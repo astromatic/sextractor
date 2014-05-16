@@ -1,7 +1,7 @@
 /*
-*				plist.h
+*				scan.h
 *
-* Include file for plist.c.
+* Include file for scan.c.
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 *
@@ -22,40 +22,26 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/01/2012
+*	Last modified:		08/02/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-/*------------------------------- definitions -------------------------------*/
+#ifndef _LUTZ_H_
+#include "lutz.h"
+#endif
 
-#define	PLIST(ptr, elem)	(((pbliststruct *)(ptr))->elem)
+/*------------------------------ definitions --------------------------------*/
 
-#define	PLISTEXIST(elem)	(plistexist_##elem)
+#define	NOBJ			256		/* starting number of obj. */
+#define	UNKNOWN			-1		/* flag for LUTZ */
 
-#define	PLISTPIX(ptr, elem)	(*((PIXTYPE *)((ptr)+plistoff_##elem)))
-
-#define	PLISTFLAG(ptr, elem)	(*((FLAGTYPE *)((ptr)+plistoff_##elem)))
-
-/*------------------------------- structures --------------------------------*/
-
-typedef struct
-  {
-  int		nextpix;
-  int		x, y;
-  PIXTYPE       value;
-  }	pbliststruct;
-
-/*-------------------------------- globals ----------------------------------*/
-
-int	plistexist_value, plistexist_cvalue,
-	plistexist_flag, plistexist_wflag, plistexist_dthresh, plistexist_var,
-	plistoff_value, plistoff_cvalue,
-	plistoff_flag[MAXFLAG], plistoff_wflag, plistoff_dthresh, plistoff_var,
-	plistsize;
+/*--------------------------------- typedefs --------------------------------*/
 
 /*------------------------------- functions ---------------------------------*/
-
-void	init_plist(void);
-
-int	createblank(objliststruct *objlist, int n),
-	createsubmap(objliststruct *objlist, int n);
+void		scan_extract(fieldstruct *dfield, fieldstruct *dwfield,
+			fieldstruct **fields, fieldstruct **wfields, int nfield,
+			fieldstruct **ffields, int nffield),
+		scan_output(fieldstruct **fields, fieldstruct **wfields,
+			int nfield, infostruct *info, objliststruct *objlist),
+		scan_preanalyse(objliststruct *objlist, int no,
+			int analyse_type);

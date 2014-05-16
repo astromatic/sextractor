@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/03/2011
+*	Last modified:		23/11/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -31,12 +31,13 @@
 #endif
 
 #include	<stdlib.h>
+#include	<string.h>
 #include	<time.h>
 #include	<sys/time.h>
 
 #include	"define.h"
 #include	"globals.h"
-
+#include	"misc.h"
 
 /*i**** fqcmp **************************************************************
 PROTO	int	fqcmp(const void *p1, const void *p2)
@@ -151,5 +152,34 @@ double	counter_seconds(void)
   dummy = gettimeofday(&tp,&tzp);
   return (double) tp.tv_sec + (double) tp.tv_usec * 1.0e-6;
   }
+
+
+/****** selectext ************************************************************
+PROTO	int selectext(char *filename)
+PURPOSE	Return the user-selected extension number [%d] from the file name.
+INPUT	Filename character string.
+OUTPUT	Extension number, or RETURN_ERROR if no extension specified.
+NOTES	The bracket and its extension number are removed from the filename if
+	found.
+AUTHOR  E. Bertin (IAP)
+VERSION 08/10/2007
+ ***/
+int	selectext(char *filename)
+  {
+   char	*bracl,*bracr;
+   int	next;
+
+  if (filename && (bracl=strrchr(filename, '[')))
+    {
+    *bracl = '\0';
+    if ((bracr=strrchr(bracl+1, ']')))
+      *bracr = '\0';
+    next = strtol(bracl+1, NULL, 0);
+    return next;
+    }
+
+  return RETURN_ERROR;
+  }
+
 
 

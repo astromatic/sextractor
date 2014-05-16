@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2013 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		04/06/2013
+*	Last modified:		21/03/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -37,6 +37,7 @@
 
 #include	"define.h"
 #include	"globals.h"
+#include	"catout.h"
 #include	"prefs.h"
 #include "pattern.h"
 #define		SYNTAX \
@@ -46,17 +47,24 @@ EXECUTABLE " <image> [<image2>][-c <configuration_file>][-<keyword> <value>]\n" 
 "> to dump a full list of measurement parameters: " EXECUTABLE " -dp \n"
 
 extern const char       notokstr[];
-extern keystruct	objkey[];
 
-/********************************** main ************************************/
+/****** main *****************************************************************
+PROTO	void main(int argc, char *argv[])
+PURPOSE	Main function (called from the shell).
+INPUT	Number of arguments (including the executable name),
+	array of strings.
+OUTPUT	EXIT_SUCCESS in case of success, EXIT_FAILURE otherwise.
+NOTES	Global preferences are used.
+AUTHOR	E. Bertin (IAP)
+VERSION	21/03/2012
+ ***/
 int	main(int argc, char *argv[])
 
   {
    double	tdiff, lines, dets;
-   int		a, narg, nim, opt, opt2;
-   char		str[MAXCHARL],
-		**argkey, **argval,
-		*pstr;
+   char		**argkey, **argval,
+		*str, *listbuf;
+   int		a, narg, nim,ntok, opt, opt2;
 
 setlinebuf(stdout);
  if (argc<2)
@@ -75,7 +83,7 @@ setlinebuf(stdout);
   prefs.command_line = argv;
   prefs.ncommand_line = argc;
   prefs.pipe_flag = 0;
-  prefs.nimage_name = 1;
+  prefs.nimage = 1;
   prefs.image_name[0] = "image";
   strcpy(prefs.prefs_name, "default.sex");
   narg = nim = 0;
@@ -101,11 +109,11 @@ setlinebuf(stdout);
             break;
           case 'd':
             if (opt2=='d')
-              dumpprefs(1);
+              prefs_dump(1);
             else if (opt2=='p')
-              dumpparams();
+              catout_dumpparams();
             else
-              dumpprefs(0);
+              prefs_dump(0);
             exit(EXIT_SUCCESS);
             break;
           case 'v':
@@ -129,31 +137,38 @@ setlinebuf(stdout);
 /*---- The input image filename(s) */
       for(; (a<argc) && (*argv[a]!='-'); a++)
         {
-        strncpy(str, argv[a], MAXCHARL-1);
-        for (pstr=NULL;(pstr=strtok(pstr?NULL:str, notokstr)); nim++)
+        str = (*argv[a] == '@'? listbuf=list_to_str(argv[a]+1) : argv[a]);
+        for (ntok=0; (str=strtok(ntok?NULL:str, notokstr)); nim++,ntok++)
           if (nim<MAXIMAGE)
-            prefs.image_name[nim] = pstr;
+            prefs.image_name[nim] = str;
           else
-            error(EXIT_FAILURE, "*Error*: Too many input images: ", pstr);
+            error(EXIT_FAILURE, "*Error*: Too many input images: ", str);
         }
-      prefs.nimage_name = nim;
+      prefs.nimage = nim;
       a--;
       }
     }
 
-  readprefs(prefs.prefs_name, argkey, argval, narg);
-  preprefs();
+/* Read configuration keywords */
+  prefs_read(prefs.prefs_name, argkey, argval, narg);
+
+/* Apply low level preferences/settings (threads, architecture, endianity) */
+  prefs_tune();
 
   free(argkey);
   free(argval);
 
+/* Main processing */
   makeit();
 
-  endprefs();
+/* Free memory associated with preferences/settings */
+  prefs_end();
+
+/* Display computing time / statistics */
   NFPRINTF(OUTPUT, "");
   tdiff = prefs.time_diff>0.0? prefs.time_diff : 0.001;
-  lines = (double)thefield1.height/tdiff;
-  dets = (double)thecat.ntotal/tdiff;
+  lines = (double)thecat.nlinesum/tdiff;
+  dets = (double)thecat.ntotalsum/tdiff;
   NPRINTF(OUTPUT,
 	"> All done (in %.1f s: %.1f line%s/s , %.1f detection%s/s)\n",
 	prefs.time_diff, lines, lines>1.0? "s":"", dets, dets>1.0? "s":"");

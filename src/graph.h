@@ -1,13 +1,13 @@
 /*
-*				flag.h
+*				graph.h
 *
-* Include file for flag.c.
+* Include file for graph.c.
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1997-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,16 +22,15 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		21/02/2012
+*	Last modified:		23/11/2011
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-/*--------------------------- Internal constants ----------------------------*/
+/*-------------------------------- Functions --------------------------------*/
 
-#define	FLAG_BUFSIZE	32	/* Flag-stacksize at start */
-
-/*------------------------------- functions ---------------------------------*/
-
-void	flag_get(objstruct *obj, pliststruct *pixel),
-	flag_merge(objstruct *objmaster, objstruct *objslave);
-
+void	sexcircle(PIXTYPE *raster, int w,int h, float x, float y,
+		float radius, PIXTYPE val),
+	sexdraw(PIXTYPE *raster, int w, int h, float x, float y, PIXTYPE val),
+	sexellipse(PIXTYPE *raster, int w, int h, float x, float y, float a,
+		float b, float theta, PIXTYPE val, int dotflag),
+	sexmove(float x, float y);

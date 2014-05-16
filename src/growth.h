@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1995-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1995-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/10/2010
+*	Last modified:		11/01/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -41,8 +41,7 @@ One must have:	GROWTH_SAMP >= 1
 */
 
 /*------------------------------- functions ---------------------------------*/
-extern void	endgrowth(void),
-		initgrowth(void),
-		makeavergrowth(picstruct *field, picstruct *wfield,
-			objstruct *obj);
+extern void	growth_aver(fieldstruct **fields, fieldstruct **wfields,
+			int nfield, obj2struct *obj2);
+;
 

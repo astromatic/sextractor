@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		09/07/2012
+*	Last modified:		18/07/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -72,7 +72,7 @@ INPUT	Pointer to a profit structure,
 OUTPUT	Pointer to the new pattern structure.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	18/11/2009
+VERSION	06/05/2012
  ***/
 patternstruct	*pattern_init(profitstruct *profit, pattypenum ptype, int ncomp)
   {
@@ -84,8 +84,8 @@ patternstruct	*pattern_init(profitstruct *profit, pattypenum ptype, int ncomp)
   QCALLOC(pattern, patternstruct, 1);
   pattern->type = ptype;
   pattern->ncomp = ncomp;
-  pattern->size[0] = profit->modnaxisn[0];
-  pattern->size[1] = profit->modnaxisn[1];
+  pattern->size[0] = profit->subprofit->modnaxisn[0];
+  pattern->size[1] = profit->subprofit->modnaxisn[1];
   switch(pattern->type)
     {
     case PATTERN_QUADRUPOLE:
@@ -109,7 +109,8 @@ patternstruct	*pattern_init(profitstruct *profit, pattypenum ptype, int ncomp)
     }
 
   ninpix = pattern->size[0]*pattern->size[1] * pattern->size[2];
-  noutpix = profit->objnaxisn[0]*profit->objnaxisn[1] * pattern->size[2];
+  noutpix = profit->subprofit->objnaxisn[0]*profit->subprofit->objnaxisn[1]
+		* pattern->size[2];
   QMALLOC(pattern->coeff, float, pattern->size[2]);
   QMALLOC(pattern->norm, float, pattern->size[2]);
   QMALLOC(pattern->modpix, float, ninpix);
@@ -159,7 +160,7 @@ INPUT	Pointer to pattern structure.
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	09/07/2012
+VERSION	18/07/2012
  ***/
 void	pattern_fit(patternstruct *pattern, profitstruct *profit)
   {
@@ -178,15 +179,15 @@ void	pattern_fit(patternstruct *pattern, profitstruct *profit)
   inpix = pattern->modpix;
   ninpix = pattern->size[0]*pattern->size[1];
   outpix = pattern->lmodpix;
-  noutpix = profit->objnaxisn[0]*profit->objnaxisn[1];
+  noutpix = profit->subprofit->objnaxisn[0]*profit->subprofit->objnaxisn[1];
   for (p=0; p<nvec; p++)
     {
-    profit_convolve(profit, inpix);
-    profit_resample(profit, inpix, outpix, 1.0);
+    subprofit_convolve(profit->subprofit, inpix);
+    profit_resample(profit, profit->subprofit, inpix, outpix, 1.0);
     outpix1 = pattern->lmodpix;
     for (p2=0; p2<=p; p2++)
       {
-      weightpix = profit->objweight;
+      weightpix = profit->subprofit->objweight;
       outpix2 = outpix;
       dval = 0.0;
       for (n=noutpix; n--;)
@@ -197,7 +198,7 @@ void	pattern_fit(patternstruct *pattern, profitstruct *profit)
         }
       alpha[p*nvec+p2] = alpha[p2*nvec+p] = dval;
       }
-    weightpix = profit->objweight;
+    weightpix = profit->subprofit->objweight;
     doutpix1 = profit->resi;
     outpix2 = outpix;
     dval = 0.0;
@@ -244,8 +245,9 @@ void	pattern_fit(patternstruct *pattern, profitstruct *profit)
       for (n=noutpix; n--;)
         *(outpix1++) += dval**(outpix2++);
       }
-    addcheck(check, outpix, profit->objnaxisn[0],profit->objnaxisn[1],
-		profit->ix, profit->iy, 1.0);
+    check_add(check, outpix,
+		profit->subprofit->objnaxisn[0],profit->subprofit->objnaxisn[1],
+		profit->subprofit->ix, profit->subprofit->iy, 1.0);
     free(outpix);
     }
 /*
@@ -278,7 +280,6 @@ else if (!(p%2))
 cat=new_cat(1);
 init_cat(cat);
 cat->tab->naxis=3;
-QMALLOC(cat->tab->naxisn, int, 3);
 cat->tab->naxisn[0]=profit->modnaxisn[0];
 cat->tab->naxisn[1]=profit->modnaxisn[1];
 cat->tab->naxisn[2]=nout;
@@ -417,7 +418,7 @@ INPUT	Pointer to pattern structure,
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	01/12/2009
+VERSION	06/05/2012
  ***/
 void	pattern_create(patternstruct *pattern, profitstruct *profit)
   {
@@ -441,7 +442,7 @@ void	pattern_create(patternstruct *pattern, profitstruct *profit)
 /* Compute Profile CD matrix */
   aspect = fabs(*profit->paramlist[PARAM_DISK_ASPECT]);
   posangle = fmod_m90_p90(*profit->paramlist[PARAM_DISK_POSANG])*DEG;
-  scale = fabs(*profit->paramlist[PARAM_DISK_SCALE]/profit->pixstep);
+  scale = fabs(*profit->paramlist[PARAM_DISK_SCALE]/profit->subprofit->pixstep);
   flux = fabs(*profit->paramlist[PARAM_DISK_FLUX])*1.67835;
   bflux = fabs(*profit->paramlist[PARAM_SPHEROID_FLUX]);
   bt = bflux / (bflux+flux);
@@ -452,8 +453,8 @@ void	pattern_create(patternstruct *pattern, profitstruct *profit)
       wb = 1.0;
     omwb = 1.0 - wb;
     flux = wb*bflux + omwb*flux;
-    scale = omwb*scale
-	+ wb*fabs(*profit->paramlist[PARAM_SPHEROID_REFF]/profit->pixstep)*1.5;
+    scale = omwb*scale + wb*fabs(*profit->paramlist[PARAM_SPHEROID_REFF]
+			/profit->subprofit->pixstep)*1.5;
     aspect = omwb*aspect
 	+ wb*fabs(*profit->paramlist[PARAM_SPHEROID_ASPECT]);
     posangle /= DEG;
@@ -523,7 +524,7 @@ void	pattern_create(patternstruct *pattern, profitstruct *profit)
         r02 = r0*r0;
         rh = (p+2)*rad/dnrad;
         rh2 = rh*rh;
-        pmodpix = profit->modpix;
+        pmodpix = profit->subprofit->modpix;
         for (ix2=pattern->size[1]; ix2--; x2+=1.0)
           {
           x1t = cd12*x2 + cd11*x1;
@@ -616,7 +617,7 @@ void	pattern_create(patternstruct *pattern, profitstruct *profit)
           {
           norm = pnorm = 0.0;
           r2pix = r2buf;
-          pmodpix = profit->modpix;
+          pmodpix = profit->subprofit->modpix;
           if (!f)
             {
             for (i=npix; i--; pmodpix++)
@@ -661,7 +662,7 @@ void	pattern_create(patternstruct *pattern, profitstruct *profit)
               *(pix++) *= fnorm;
             modpix -= npix;
             norm = pnorm = 0.0;
-            pmodpix = profit->modpix;
+            pmodpix = profit->subprofit->modpix;
             for (i=npix; i--; pmodpix++)
               {
               *(pix++) = (float)(dval = *(modpix++)**(scpixt++));

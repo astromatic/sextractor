@@ -7,7 +7,7 @@
 *
 *	This file part of:	AstrOmatic FITS/LDAC library
 *
-*	Copyright:		(C) 1995-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1995-2014 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -23,7 +23,7 @@
 *	along with AstrOmatic software.
 *	If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		13/06/2012
+*	Last modified:		10/03/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -983,7 +983,7 @@ void	show_keys(tabstruct *tab, char **keynames, keystruct **keys, int nkeys,
   if (kflag)
     free(keys);
   if (o_type == SHOW_SKYCAT) 
-     fprintf(stream, skycattail, 1.0);
+     fprintf(stream, "%s", skycattail);
   return;
   }
 

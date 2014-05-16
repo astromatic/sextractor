@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		17/04/2013
+*	Last modified:		24/04/2013
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -61,7 +61,7 @@ int	comp_assoc(const void *i1, const void *i2)
 /*
 Make the presentation histogram, order the assoc-list and build the hash-table.
 */
-void  sort_assoc(picstruct *field, assocstruct *assoc)
+void  sort_assoc(fieldstruct *field, assocstruct *assoc)
 
   {
    int		comp_assoc(const void *i1, const void *i2);
@@ -234,7 +234,7 @@ assocstruct  *load_assoc(char *filename, wcsstruct *wcs)
 /*
 Initialize the association procedure.
 */
-void	init_assoc(picstruct *field)
+void	init_assoc(fieldstruct *field)
 
   {
    assocstruct	*assoc;
@@ -252,9 +252,6 @@ void	init_assoc(picstruct *field)
 /* Sort the assoc-list by y coordinates, and build the hash table */
   sort_assoc(field, assoc);
 
-/* Where data go for the current output pattern*/
-  assoc->data = outobj2.assoc;
-
   return;
   }
 
@@ -263,7 +260,7 @@ void	init_assoc(picstruct *field)
 /*
 Free memory related to the assoc operations.
 */
-void	end_assoc(picstruct *field)
+void	end_assoc(fieldstruct *field)
 
   {
 /* Free the assoc-list */
@@ -282,16 +279,16 @@ void	end_assoc(picstruct *field)
 /*
 Perform the association task for a source and return the number of IDs.
 */
-int	do_assoc(picstruct *field, double x, double y)
+int	do_assoc(fieldstruct *field, double x, double y, double *data)
   {
    assocstruct	*assoc;
    double	aver, dx,dy, dist, rad, rad2, comp, wparam,
-		*list, *input, *data;
+		*list, *input, *datat;
    int		h, step, i, flag, iy, nobj;
 
   assoc = field->assoc;
 /* Need to initialize the array */
-  memset(assoc->data, 0, prefs.assoc_size*sizeof(double));
+  memset(data, 0, prefs.assoc_size*sizeof(double));
   aver = 0.0;
 
   if (prefs.assoc_type == ASSOC_MIN || prefs.assoc_type == ASSOC_NEAREST)
@@ -321,11 +318,11 @@ int	do_assoc(picstruct *field, double x, double y)
       input = list+3;
       if (prefs.assoc_type == ASSOC_FIRST)
         {
-        memcpy(assoc->data, input, assoc->ndata*sizeof(double));
+        memcpy(data, input, assoc->ndata*sizeof(double));
         return 1;
         }
       wparam = *(list+2);
-      data = assoc->data;
+      datat = data;
       switch(prefs.assoc_type)
         {
         case ASSOC_NEAREST:
@@ -338,21 +335,21 @@ int	do_assoc(picstruct *field, double x, double y)
         case ASSOC_MEAN:
           aver += wparam;
           for (i=assoc->ndata; i--;)
-            *(data++) += *(input++)*wparam;
+            *(datat++) += *(input++)*wparam;
           break;
         case ASSOC_MAGMEAN:
           wparam = fabs(wparam)<99.0?DEXP(-0.4*wparam): 0.0;
           aver += wparam;
           for (i=assoc->ndata; i--;)
-            *(data++) += *(input++)*wparam;
+            *(datat++) += *(input++)*wparam;
           break;
         case ASSOC_SUM:
           for (i=assoc->ndata; i--;)
-            *(data++) += *(input++);
+            *(datat++) += *(input++);
           break;
         case ASSOC_MAGSUM:
           for (i=assoc->ndata; i--;)
-            *(data++) += fabs(wparam=*(input++))<99.0? DEXP(-0.4*wparam):0.0;
+            *(datat++) += fabs(wparam=*(input++))<99.0? DEXP(-0.4*wparam):0.0;
           break;
         case ASSOC_MIN:
           if (wparam<comp)
@@ -384,16 +381,16 @@ int	do_assoc(picstruct *field, double x, double y)
     {
     if (aver<1e-30)
       return 0;
-    data = assoc->data;
+    datat = data;
     for (i=assoc->ndata; i--;)
-      *(data++) /= aver;
+      *(datat++) /= aver;
     }
 
   if (prefs.assoc_type == ASSOC_MAGSUM)
     {
-    data = assoc->data;
-    for (i=assoc->ndata; i--; data++)
-      *data = *data>0.0? -2.5*log10(*data):99.0;
+    datat = data;
+    for (i=assoc->ndata; i--; datat++)
+      *datat = *datat>0.0? -2.5*log10(*datat):99.0;
     }
 
   return flag;

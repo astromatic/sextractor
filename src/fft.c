@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		17/04/2013
+*	Last modified:		24/04/2013
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -37,10 +37,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#ifndef FFTW3_H
-#include FFTW_H
-#endif
-
 #include "define.h"
 #include "globals.h"
 #include "fft.h"
@@ -49,13 +45,11 @@
 #include "threads.h"
 #endif
 
- fftwf_plan	fplan, bplan;
- int    	firsttimeflag;
+ int    firsttimeflag;
 
 #ifdef USE_THREADS
  pthread_mutex_t	fftmutex;
 #endif
- fftwf_complex 		*fdata1;
 
 /****** fft_init ************************************************************
 PROTO	void fft_init(void)
@@ -71,12 +65,15 @@ void    fft_init(int nthreads)
   if (!firsttimeflag)
     {
 #ifdef USE_THREADS
+    QPTHREAD_MUTEX_INIT(&fftmutex, NULL);
+#ifdef HAVE_FFTW_MP
     if (nthreads > 1)
       {
       if (!fftw_init_threads())
         error(EXIT_FAILURE, "*Error*: thread initialization failed in ", "FFTW");
       fftwf_plan_with_nthreads(prefs.nthreads);
       }
+#endif
 #endif
     firsttimeflag = 1;
     }
@@ -85,7 +82,7 @@ void    fft_init(int nthreads)
   }
 
 
-/****** fft_end ************************************************************
+/****** fft_end *************************************************************
 PROTO	void fft_init(void)
 PURPOSE	Clear up stuff set by FFT routines
 INPUT	-.
@@ -100,6 +97,12 @@ void    fft_end(void)
   if (firsttimeflag)
     {
     firsttimeflag = 0;
+#ifdef USE_THREADS
+#ifdef HAVE_FFTW_MP
+    fftwf_cleanup_threads();
+#endif
+    QPTHREAD_MUTEX_DESTROY(&fftmutex);
+#endif
     fftwf_cleanup();
     }
 
@@ -107,44 +110,58 @@ void    fft_end(void)
   }
 
 
-/****** fft_reset ***********************************************************
-PROTO	void fft_reset(void)
-PURPOSE	Reset the FFT plans
-INPUT	-.
+/****** fft_scratchend ******************************************************
+PROTO	void fft_scratchend(fftscratchstruct *fftscratch)
+PURPOSE	Reset FFT buffers (including plans and scratch space).
+INPUT	Pointer to the fftscratch structure to reset.
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	08/10/2009
+VERSION	01/08/2012
  ***/
-void    fft_reset(void)
- {
-  if (fplan)
-    {
-    QFFTWF_FREE(fdata1);
-    fftwf_destroy_plan(fplan);
-    }
-  if (bplan)
-    fftwf_destroy_plan(bplan);
-  fplan = bplan = NULL;
+void    fft_scratchend(fftscratchstruct *fftscratch)
+  {
+  if (!fftscratch)
+    return;
+
+#ifdef USE_THREADS
+    QPTHREAD_MUTEX_LOCK(&fftmutex);
+#endif
+  if (fftscratch->fplan)
+    fftwf_destroy_plan(fftscratch->fplan);
+   if (fftscratch->bplan)
+    fftwf_destroy_plan(fftscratch->bplan);
+#ifdef USE_THREADS
+    QPTHREAD_MUTEX_UNLOCK(&fftmutex);
+#endif
+  if (fftscratch->fdata)
+    QFFTWF_FREE(fftscratch->fdata);
+  free(fftscratch);
 
   return;
   }
 
 
 /****** fft_conv ************************************************************
-PROTO	void fft_conv(float *data1, float *fdata2, int *size)
+PROTO	fftscratchstruct	*fft_conv(float *data1,float *fdata2, int *size,
+					fftscratchstruct	**pfftscratch)
 PURPOSE	Optimized 2-dimensional FFT convolution using the FFTW library.
 INPUT	ptr to the first image,
 	ptr to the Fourier transform of the second image,
-	image size vector.
-OUTPUT	-.
+	image size vector,
+	ptr to an FFT scratch structure pointer. If the structure pointer points
+	to NULL, initialization is performed and the returned pointer points to
+	the new FFT scratch structure.
+OUTPUT	ptr to a new FFT scratch structure if initialization is required.
 NOTES	For data1 and fdata2, memory must be allocated for
 	size[0]* ... * 2*(size[naxis-1]/2+1) floats (padding required).
 AUTHOR	E. Bertin (IAP)
-VERSION	29/03/2013
+VERSION	24/04/2013
  ***/
-void    fft_conv(float *data1, float *fdata2, int *size)
+void	fft_conv(float *data1, float *fdata2, int *size,
+			fftscratchstruct **pfftscratch)
   {
+   fftscratchstruct	*fftscratch;
    float		*fdata1p,*fdata2p,
 			real,imag, fac;
    int			i, npix,npix2;
@@ -154,18 +171,32 @@ void    fft_conv(float *data1, float *fdata2, int *size)
   npix2 = ((size[0]/2) + 1) * size[1];
 
 /* Forward FFT "in place" for data1 */
-  if (!fplan)
+  if (!pfftscratch || !(fftscratch=*pfftscratch)
+	|| fftscratch->size[0] != size[0] || fftscratch->size[1] != size[1])
     {
-    QFFTWF_MALLOC(fdata1, fftwf_complex, npix2);
-    fplan = fftwf_plan_dft_r2c_2d(size[1], size[0], data1,
-        (fftwf_complex *)fdata1, FFTW_ESTIMATE);
+    QCALLOC(fftscratch, fftscratchstruct, 1);
+    if (pfftscratch)
+      {
+      if (*pfftscratch)
+        fft_scratchend(*pfftscratch);
+      *pfftscratch = fftscratch;
+      }
+#ifdef USE_THREADS
+    QPTHREAD_MUTEX_LOCK(&fftmutex);
+#endif
+    QFFTWF_MALLOC(fftscratch->fdata, fftwf_complex, npix2);
+    fftscratch->fplan = fftwf_plan_dft_r2c_2d(size[1], size[0], data1,
+        fftscratch->fdata, FFTW_ESTIMATE);
+#ifdef USE_THREADS
+    QPTHREAD_MUTEX_UNLOCK(&fftmutex);
+#endif
     }
 
-  fftwf_execute_dft_r2c(fplan, data1, fdata1);
+  fftwf_execute_dft_r2c(fftscratch->fplan, data1, fftscratch->fdata);
 
 /* Actual convolution (Fourier product) */
   fac = 1.0/npix;  
-  fdata1p = (float *)fdata1;
+  fdata1p = (float *)fftscratch->fdata;
   fdata2p = fdata2;
 #pragma ivdep
   for (i=npix2; i--;)
@@ -179,13 +210,19 @@ void    fft_conv(float *data1, float *fdata2, int *size)
     }
 
 /* Reverse FFT */
-  if (!bplan)
-    bplan = fftwf_plan_dft_c2r_2d(size[1], size[0], (fftwf_complex *)fdata1, 
-        data1, FFTW_ESTIMATE);
-  fftwf_execute_dft_c2r(bplan, fdata1, data1);
+  if (!fftscratch->bplan)
+    {
+#ifdef USE_THREADS
+    QPTHREAD_MUTEX_LOCK(&fftmutex);
+#endif
+    fftscratch->bplan = fftwf_plan_dft_c2r_2d(size[1], size[0],
+		fftscratch->fdata, data1, FFTW_ESTIMATE);
+#ifdef USE_THREADS
+    QPTHREAD_MUTEX_UNLOCK(&fftmutex);
+#endif
+    }
 
-//  fftwf_execute(plan);
-
+  fftwf_execute_dft_c2r(fftscratch->bplan, fftscratch->fdata, data1);
 
   return;
   }
@@ -199,7 +236,7 @@ INPUT	ptr to the image,
 OUTPUT	Pointer to the compressed, memory-allocated Fourier transform.
 NOTES	Input data may end up corrupted.
 AUTHOR	E. Bertin (IAP)
-VERSION	12/07/2012
+VERSION	18/07/2012
  ***/
 float	*fft_rtf(float *data, int *size)
   {
@@ -211,10 +248,22 @@ float	*fft_rtf(float *data, int *size)
   npix2 = ((size[0]/2) + 1) * size[1];
 
 /* Forward FFT "in place" for data1 */
+#ifdef USE_THREADS
+  QPTHREAD_MUTEX_LOCK(&fftmutex);
+#endif
   QFFTWF_MALLOC(fdata, fftwf_complex, npix2);
   plan = fftwf_plan_dft_r2c_2d(size[1], size[0], data, fdata, FFTW_ESTIMATE);
+#ifdef USE_THREADS
+  QPTHREAD_MUTEX_UNLOCK(&fftmutex);
+#endif
   fftwf_execute(plan);
+#ifdef USE_THREADS
+  QPTHREAD_MUTEX_LOCK(&fftmutex);
+#endif
   fftwf_destroy_plan(plan);
+#ifdef USE_THREADS
+  QPTHREAD_MUTEX_UNLOCK(&fftmutex);
+#endif
 
   return (float *)fdata;
   }

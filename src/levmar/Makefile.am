@@ -8,7 +8,7 @@
 #	This file part of:	AstrOmatic software
 #
 #	Copyright:		(C) 2007-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
-##				(C) 2004-2011 Manolis Lourakis (orig. LevMar)
+##				(C) 2004-2011 Manolis Lourakis (original LevMar)
 #
 #	Licenses:		GNU General Public License
 #
@@ -24,7 +24,7 @@
 #	along with AstrOmatic software.
 #	If not, see <http://www.gnu.org/licenses/>.
 #
-#	Last modified:		10/07/2012
+#	Last modified:		24/04/2013
 #
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

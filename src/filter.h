@@ -46,13 +46,17 @@ typedef struct structfilter
 filterstruct	*thefilter;
 
 /*------------------------------- functions ---------------------------------*/
-void		convolve(picstruct *, PIXTYPE *, int y),
-		convolve_image(picstruct *field, float *vig1,
+void		convolve(fieldstruct *, PIXTYPE *, int y),
+		convolve_image(fieldstruct *field, float *vig1,
 				float *vig2, int width, int height),
-		filter(picstruct *, PIXTYPE *, int y),
-		neurfilter(picstruct *, PIXTYPE *, int y),
-		endfilter(void),
-		getfilter(char *filename);
+		filter(fieldstruct *, PIXTYPE *, int y),
+		neurfilter(fieldstruct *, PIXTYPE *, int y),
+		endfilter(void);
 
-int		getconv(char *filename),
-		getneurfilter(char *filename);
+
+extern int  getneurfilter(const char *filename);
+extern void getfilter(const char *filename);
+extern int	getconv(const char *filename);
+extern int  getASCIIconv(const char *filename);
+extern int  getPSFExconv(const char *filename);
+extern void getImageStats(const float *pix, const int width, const int height, float stats[]);

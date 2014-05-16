@@ -7,7 +7,7 @@ dnl %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 dnl
 dnl	This file part of:	AstrOmatic software
 dnl
-dnl	Copyright:		(C) 2003-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+dnl	Copyright:		(C) 2003-2014 Emmanuel Bertin -- IAP/CNRS/UPMC
 dnl
 dnl	License:		GNU General Public License
 dnl
@@ -23,7 +23,7 @@ dnl	You should have received a copy of the GNU General Public License
 dnl	along with AstrOmatic software.
 dnl	If not, see <http://www.gnu.org/licenses/>.
 dnl
-dnl	Last modified:		12/12/2011
+dnl	Last modified:		18/02/2014
 dnl
 dnl %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 dnl
@@ -118,11 +118,17 @@ dnl --------------------
 dnl Search library files
 dnl --------------------
 
+dnl Check whether we are using a Debian distribution:
+if test -f /etc/debian_version; then
+  lapack_lib="lapack_atlas"
+else
+  lapack_lib="lapack"
+fi
 if test x$acx_atlas_ok = xyes; then
   OLIBS="$LIBS"
   LIBS=""
   if test x$1 = x; then
-    AC_CHECK_LIB(lapack, [clapack_dpotrf],, [acx_atlas_ok=no],
+    AC_CHECK_LIB($lapack_lib, [clapack_dpotrf],, [acx_atlas_ok=no],
 		[-lcblas -latlas -lm])
     AC_CHECK_LIB(cblas, cblas_dgemm,, [acx_atlas_ok=no],
 		[-latlas -lm])
@@ -131,9 +137,10 @@ if test x$acx_atlas_ok = xyes; then
     else
       atlas_def=/usr/local/atlas
       unset ac_cv_lib_lapack_clapack_dpotrf
+      unset ac_cv_lib_lapack_atlas_clapack_dpotrf
       unset ac_cv_lib_cblas_cblas_dgemm
       acx_atlas_ok=yes
-      AC_CHECK_LIB(lapack, [clapack_dpotrf],, [acx_atlas_ok=no],
+      AC_CHECK_LIB($lapack_lib, [clapack_dpotrf],, [acx_atlas_ok=no],
 		[-L$atlas_def/lib -lcblas -latlas -lm])
       AC_CHECK_LIB(cblas, cblas_dgemm,, [acx_atlas_ok=no],
 		[-L$atlas_def/lib -latlas -lm])
@@ -142,9 +149,10 @@ if test x$acx_atlas_ok = xyes; then
       else
         atlas_def=/usr/lib64/atlas
         unset ac_cv_lib_lapack_clapack_dpotrf
+        unset ac_cv_lib_lapack_atlas_clapack_dpotrf
         unset ac_cv_lib_cblas_cblas_dgemm
         acx_atlas_ok=yes
-        AC_CHECK_LIB(lapack, [clapack_dpotrf],, [acx_atlas_ok=no],
+        AC_CHECK_LIB($lapack_lib, [clapack_dpotrf],, [acx_atlas_ok=no],
 		[-L$atlas_def -lcblas -latlas -lm])
         AC_CHECK_LIB(cblas, cblas_dgemm,, [acx_atlas_ok=no],
 		[-L$atlas_def -latlas -lm])
@@ -153,9 +161,10 @@ if test x$acx_atlas_ok = xyes; then
         else
           atlas_def=/usr/lib/atlas
           unset ac_cv_lib_lapack_clapack_dpotrf
+          unset ac_cv_lib_lapack_atlas_clapack_dpotrf
           unset ac_cv_lib_cblas_cblas_dgemm
           acx_atlas_ok=yes
-          AC_CHECK_LIB(lapack, [clapack_dpotrf],, [acx_atlas_ok=no],
+          AC_CHECK_LIB($lapack_lib, [clapack_dpotrf],, [acx_atlas_ok=no],
 		[-L$atlas_def -lcblas -latlas -lm])
           AC_CHECK_LIB(cblas, cblas_dgemm,, [acx_atlas_ok=no],
 		[-L$atlas_def -latlas -lm])
@@ -164,9 +173,10 @@ if test x$acx_atlas_ok = xyes; then
           else
             atlas_def=/usr/atlas
             unset ac_cv_lib_lapack_clapack_dpotrf
+            unset ac_cv_lib_lapack_atlas_clapack_dpotrf
             unset ac_cv_lib_cblas_cblas_dgemm
             acx_atlas_ok=yes
-            AC_CHECK_LIB(lapack, [clapack_dpotrf],, [acx_atlas_ok=no],
+            AC_CHECK_LIB($lapack_lib, [clapack_dpotrf],, [acx_atlas_ok=no],
 		[-L$atlas_def/lib -lcblas -latlas -lm])
             AC_CHECK_LIB(cblas, cblas_dgemm,, [acx_atlas_ok=no],
 		[-L$atlas_def/lib -latlas -lm])
@@ -180,7 +190,7 @@ if test x$acx_atlas_ok = xyes; then
       fi
     fi
   else
-    AC_CHECK_LIB(lapack, [clapack_dpotrf],, [acx_atlas_ok=no],
+    AC_CHECK_LIB($lapack_lib, [clapack_dpotrf],, [acx_atlas_ok=no],
 		[-L$1 -lcblas -latlas -lm])
     AC_CHECK_LIB(cblas, cblas_dgemm,, [acx_atlas_ok=no],
 		[-L$1 -latlas -lm])
@@ -188,9 +198,10 @@ if test x$acx_atlas_ok = xyes; then
       ATLAS_LIBPATH="-L$1"
     else
       unset ac_cv_lib_lapack_clapack_dpotrf
+      unset ac_cv_lib_lapack_atlas_clapack_dpotrf
       unset ac_cv_lib_cblas_cblas_dgemm
       acx_atlas_ok=yes
-      AC_CHECK_LIB(lapack, [clapack_dpotrf],, [acx_atlas_ok=no],
+      AC_CHECK_LIB($lapack_lib, [clapack_dpotrf],, [acx_atlas_ok=no],
 		[-L$1/lib -lcblas -latlas -lm])
       AC_CHECK_LIB(cblas, cblas_dgemm,, [acx_atlas_ok=no],
 		[-L$1/lib -latlas -lm])
@@ -218,14 +229,14 @@ dnl Check whether the multithreaded version of ATLAS is there too:
     AC_CHECK_LIB(ptcblas, cblas_dgemm, [acx_atlast_ok=yes], [acx_atlast_ok=no],
 	[$ATLAS_LIBPATH -lcblas -latlas -lm])
     if test x$acx_atlast_ok = xyes; then
-      ATLAS_LIBS="$ATLAS_LIBPATH -llapack -lptcblas -lcblas -latlas"
+      ATLAS_LIBS="$ATLAS_LIBPATH -l$lapack_lib -lptcblas -lcblas -latlas"
       LIBS="$OLIBS"
       AC_SUBST(ATLAS_LIBS)
       AC_DEFINE(HAVE_ATLAS_MP,1,
 	[Define if you have the parallel ATLAS libraries.])
       $4
     else
-      ATLAS_LIBS="$ATLAS_LIBPATH -llapack -lcblas -latlas"
+      ATLAS_LIBS="$ATLAS_LIBPATH -l$lapack_lib -lcblas -latlas"
       LIBS="$OLIBS"
       AC_SUBST(ATLAS_LIBS)
       ATLAS_WARN="CBLAS/LAPack was compiled without multithreading support!"
@@ -233,7 +244,7 @@ dnl Check whether the multithreaded version of ATLAS is there too:
       $4         
     fi
   else
-    ATLAS_LIBS="$ATLAS_LIBPATH -llapack -lcblas -latlas"
+    ATLAS_LIBS="$ATLAS_LIBPATH -l$lapack_lib -lcblas -latlas"
     LIBS="$OLIBS"
     AC_SUBST(ATLAS_LIBS)
     $4

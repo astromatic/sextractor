@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1997-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1997-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/10/2010
+*	Last modified:		22/02/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -40,81 +40,81 @@
 #include	"plist.h"
 #include	"flag.h"
 
-/********************************* getflags *********************************
-PROTO   void	getflags(objstruct *obj, pliststruct *pixel)
+/****** flag_get ************************************************************
+PROTO   void	flag_get(objstruct *obj, pliststruct *pixel)
 PURPOSE Return the composited flags extracted from the flag-maps.
 INPUT   obj structure,
 	pixel list.
 OUTPUT  -.
 NOTES   -.
-AUTHOR  E. Bertin (IAP & Leiden & ESO)
-VERSION 18/11/98
+AUTHOR  E. Bertin (IAP)
+VERSION 22/02/2012
  ***/
-void	getflags(objstruct *obj, pliststruct *pixel)
+void	flag_get(objstruct *obj, pliststruct *pixel)
   {
    pliststruct	*pixt;
-   FLAGTYPE	imaflag,cimaflag,
+   FLAGTYPE	imaflags,cimaflags,
 		*flagstack, *fs;
    int		i,n,nmax,nc,nflag,nflag0,
 		*nflagstack, *nfs;
 
-  for (i=0; i<prefs.nimaisoflag; i++)
+  for (i=0; i<prefs.nfimage; i++)
     {
     nmax = 0;
-    imaflag = 0;
+    imaflags = 0;
     switch(prefs.flag_type[i])
       {
       case FLAG_OR:
         for (pixt=pixel+obj->firstpix;pixt>=pixel;
 		pixt=pixel+PLIST(pixt,nextpix))
-          if ((cimaflag = PLISTFLAG(pixt,flag[i])))
+          if ((cimaflags = PLISTFLAG(pixt,flag[i])))
             {
-            imaflag |= cimaflag;
+            imaflags |= cimaflags;
             nmax++;
             }
         break;
       case FLAG_AND:
         for (pixt=pixel+obj->firstpix;pixt>=pixel;
 		pixt=pixel+PLIST(pixt,nextpix))
-          if ((cimaflag = PLISTFLAG(pixt,flag[i])))
+          if ((cimaflags = PLISTFLAG(pixt,flag[i])))
             {
-            imaflag &= cimaflag;
+            imaflags &= cimaflags;
             nmax++;
             }
         break;
       case FLAG_MIN:
-        imaflag = UINT_MAX;
+        imaflags = UINT_MAX;
         for (pixt=pixel+obj->firstpix;pixt>=pixel;
 		pixt=pixel+PLIST(pixt,nextpix))
-          if ((cimaflag = PLISTFLAG(pixt,flag[i])))
+          if ((cimaflags = PLISTFLAG(pixt,flag[i])))
             {
-            if (cimaflag<imaflag)
+            if (cimaflags<imaflags)
               {
-              imaflag = cimaflag;
+              imaflags = cimaflags;
               nmax = 1;
               }
-            else if (cimaflag==imaflag)
+            else if (cimaflags==imaflags)
               nmax++;
             }
         if (!nmax)
-          imaflag = 0;
+          imaflags = 0;
         break;
       case FLAG_MAX:
-        imaflag = 0;
+        imaflags = 0;
         for (pixt=pixel+obj->firstpix;pixt>=pixel;
 		pixt=pixel+PLIST(pixt,nextpix))
-          if ((cimaflag = PLISTFLAG(pixt,flag[i])))
+          if ((cimaflags = PLISTFLAG(pixt,flag[i])))
             {
-            if (cimaflag>imaflag)
+            if (cimaflags>imaflags)
               {
-              imaflag = cimaflag;
+              imaflags = cimaflags;
               nmax = 1;
               }
-            else if (cimaflag==imaflag)
+            else if (cimaflags==imaflags)
               nmax++;
             }
         if (!nmax)
-          imaflag = 0;
+          imaflags = 0;
         break;
       case FLAG_MOST:
 /*------ Allocate memory for the buffers */
@@ -124,10 +124,10 @@ void	getflags(objstruct *obj, pliststruct *pixel)
 /*------ Count flag values */
         for (pixt=pixel+obj->firstpix;pixt>=pixel;
 		pixt=pixel+PLIST(pixt,nextpix))
-          if ((cimaflag = PLISTFLAG(pixt,flag[i])))
+          if ((cimaflags = PLISTFLAG(pixt,flag[i])))
             {
             for (n=nflag, fs=flagstack, nfs=nflagstack; n-- && *nfs; nfs++)
-              if (*(fs++) == cimaflag)
+              if (*(fs++) == cimaflags)
                 {
                 (*nfs)++;
                 break;
@@ -145,7 +145,7 @@ void	getflags(objstruct *obj, pliststruct *pixel)
               }
             if (!*nfs)
               {
-              *fs = cimaflag;
+              *fs = cimaflags;
               *nfs = 1;
               }
             }
@@ -155,7 +155,7 @@ void	getflags(objstruct *obj, pliststruct *pixel)
           if ((nc=*(nfs++))>nmax)
             {
             nmax = nc;
-            imaflag = *fs;
+            imaflags = *fs;
             }
 
 /*------ Free memory allocated for the buffers */
@@ -166,35 +166,37 @@ void	getflags(objstruct *obj, pliststruct *pixel)
         error(EXIT_FAILURE, "*Internal Error*: Unknown FLAG_TYPE","");
       }
 
-    if (i<prefs.imaflag_size)
-      obj->imaflag[i] = imaflag;
-    if (i<prefs.imanflag_size)
-      obj->imanflag[i] = nmax;
+    if (i<prefs.nfimage)
+      {
+      obj->imaflags[i] = imaflags;
+      obj->imanflags[i] = nmax;
+      }
     }
 
   return;
   }
 
-/******************************* mergeflags *********************************
-PROTO   void	mergeflags(objstruct *objmaster, objstruct *objslave)
+
+/****** flag_merge **********************************************************
+PROTO   void	flag_merge(objstruct *objmaster, objstruct *objslave)
 PURPOSE Composite flag extracted from the flag-maps.
-INPUT   obj structure (,
-	pixel list.
+INPUT   Destination object,
+	source object.
 OUTPUT  -.
 NOTES   -.
-AUTHOR  E. Bertin (IAP & Leiden & ESO)
-VERSION 29/04/98
+AUTHOR  E. Bertin (IAP)
+VERSION 21/02/2012
  ***/
-void	mergeflags(objstruct *objmaster, objstruct *objslave)
+void	flag_merge(objstruct *objmaster, objstruct *objslave)
   {
    FLAGTYPE	*masterflag,*slaveflag;
    int		i, *masternflag,*slavenflag;
 
-  masterflag = objmaster->imaflag;
-  masternflag = objmaster->imanflag;
-  slaveflag = objslave->imaflag;
-  slavenflag = objslave->imanflag;
-  for (i=0; i<prefs.nimaisoflag; i++,
+  masterflag = objmaster->imaflags;
+  masternflag = objmaster->imanflags;
+  slaveflag = objslave->imaflags;
+  slavenflag = objslave->imanflags;
+  for (i=0; i<prefs.nfimage; i++,
 	masterflag++,masternflag++,slaveflag++,slavenflag++)
     switch(prefs.flag_type[i])
       {

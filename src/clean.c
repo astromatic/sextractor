@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/10/2010
+*	Last modified:		15/03/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -47,16 +47,16 @@
 static LONG		*cleanvictim;
 
 
-/******************************* initclean **********************************
-PROTO   void initclean(void)
+/****** clean_init ***********************************************************
+PROTO   void clean_init(void)
 PURPOSE Initialize things for CLEANing.
 INPUT   -.
 OUTPUT  -.
 NOTES   -.
-AUTHOR  E. Bertin (IAP & Leiden & ESO)
-VERSION 03/07/97
+AUTHOR  E. Bertin (IAP)
+VERSION 21/12/2011
  ***/
-void	initclean(void)
+void	clean_init(void)
   {
   if (prefs.clean_flag)
     QMALLOC(cleanvictim, LONG, prefs.clean_stacksize);
@@ -69,43 +69,43 @@ void	initclean(void)
   }
 
 
-/******************************** endclean **********************************
-PROTO   void endclean(void)
+/****** clean_end ************************************************************
+PROTO   void clean_end(void)
 PURPOSE End things related to CLEANing.
 INPUT   -.
 OUTPUT  -.
 NOTES   -.
-AUTHOR  E. Bertin (IAP & Leiden & ESO)
-VERSION 03/07/97
+AUTHOR  E. Bertin (IAP)
+VERSION 03/07/2011
  ***/
-void	endclean(void)
+void	clean_end(void)
   {
   if (prefs.clean_flag)
     free(cleanvictim);
   free(cleanobjlist);
+
   return;
   }
 
 
-/********************************** clean ***********************************
-PROTO   int clean(int objnb, objliststruct *objlistin)
-PURPOSE Remove object from frame -buffer and put it in the "CLEANlist".
-INPUT   Object number,
-        Object list (source).
+/****** clean_process *********************************************************
+PROTO   int clean_process(fieldstruct *field, objstruct *objin)
+PURPOSE Examine object in frame-buffer and put it in the "clean object list" if
+	necessary.
+INPUT   Pointer to image field,
+        Object (source).
 OUTPUT  0 if the object was CLEANed, 1 otherwise.
-NOTES   -.
-AUTHOR  E. Bertin (IAP, Leiden & ESO)
-VERSION 08/02/2001
+NOTES   Global preferences are used.
+AUTHOR  E. Bertin (IAP)
+VERSION 11/01/2012
  ***/
-int	clean(picstruct *field, picstruct *dfield, int objnb,
-		objliststruct *objlistin)
+int	clean_process(fieldstruct *field, objstruct *objin)
   {
-   objstruct		*objin, *obj;
+   objstruct		*obj;
    int			i,j,k;
    double		amp,ampin,alpha,alphain, unitarea,unitareain,beta,val;
    float	       	dx,dy,rlim;
 
-  objin = objlistin->obj+objnb;
   beta = prefs.clean_param;
   unitareain = PI*objin->a*objin->b;
   ampin = objin->fdflux/(2*unitareain*objin->abcor);
@@ -138,7 +138,7 @@ int	clean(picstruct *field, picstruct *dfield, int objnb,
 	    && ((float)(val<1e10?amp*pow(val,-beta) : 0.0) > objin->mthresh))
           {
 /*------- the newcomer is eaten!! */
-          mergeobject(objin, obj);
+          clean_merge(objin, obj);
           if (prefs.blank_flag)
             {
 /*---------- Paste back ``CLEANed'' object pixels before forgetting them */
@@ -147,12 +147,6 @@ int	clean(picstruct *field, picstruct *dfield, int objnb,
               pasteimage(field, objin->blank, objin->subw, objin->subh,
 			objin->subx, objin->suby);
               free(objin->blank);
-              }
-            if (objin->dblank)
-              {
-              pasteimage(dfield, objin->dblank, objin->subw, objin->subh,
-			objin->subx, objin->suby);
-              free(objin->dblank);
               }
             }
 
@@ -167,41 +161,40 @@ int	clean(picstruct *field, picstruct *dfield, int objnb,
     {
     k = cleanvictim[i];
     obj = cleanobjlist->obj + k;
-    mergeobject(obj, objin);
+    clean_merge(obj, objin);
     if (prefs.blank_flag)
       {
 /*---- Paste back ``CLEANed'' object pixels before forgetting them */
       if (obj->blank)
         {
-        pasteimage(field, obj->blank, obj->subw, obj->subh,
-		obj->subx, obj->suby);
+        pasteimage(field, obj->blank, obj->subw,obj->subh, obj->subx,obj->suby);
         free(obj->blank);
         }
-      if (obj->dblank)
-        {
-        pasteimage(dfield, obj->dblank, obj->subw, obj->subh,
-		obj->subx, obj->suby);
-        free(obj->dblank);
-        }
       }
-    subcleanobj(k);
+    clean_sub(k);
     }
 
   return 1;
   }
 
 
-/******************************* addcleanobj ********************************/
-/*
-Add an object to the "cleanobjlist".
-*/
-void	addcleanobj(objstruct *objin)
+/****** clean_add ************************************************************
+PROTO   void clean_add(objstruct *objin)
+PURPOSE Add an object to the "clean object list".
+INPUT   Pointer to object.
+OUTPUT  -.
+NOTES   -.
+AUTHOR  E. Bertin (IAP)
+VERSION 21/12/2011
+ ***/
+void	clean_add(objstruct *objin)
 
   {
+   objstruct	*cobj;
    int		margin, y;
    float	hh1,hh2;
 
-/*Update the object list */
+/* Update the object list */
   if (cleanobjlist->nobj)
     {
     if (!(cleanobjlist->obj = (objstruct *)realloc(cleanobjlist->obj,
@@ -230,17 +223,25 @@ void	addcleanobj(objstruct *objin)
   if ((y=(int)(objin->my+0.49999)-prefs.cleanmargin)<objin->ycmin)
     objin->ycmin = y;
 
-  cleanobjlist->obj[cleanobjlist->nobj-1] = *objin;
+  cobj = &cleanobjlist->obj[cleanobjlist->nobj-1];
+  *cobj = *objin;
+  cobj->prev = cobj->next = -1;
 
   return;
   }
 
 
-/******************************** mergeobject *******************************/
-/*
-Merge twos objects from "objlist".
-*/
-void	mergeobject(objstruct *objslave,objstruct *objmaster)
+/****** clean_merge **********************************************************
+PROTO   void clean_merge(objstruct *objin, objstruct *objout)
+PURPOSE Merge the content of two objects.
+INPUT   Pointer to the input object,
+	pointer to the output object.
+OUTPUT  -.
+NOTES   -.
+AUTHOR  E. Bertin (IAP)
+VERSION 15/03/2012
+ ***/
+void	clean_merge(objstruct *objin, objstruct *objout)
 
   {
    checkstruct	*check;
@@ -248,70 +249,79 @@ void	mergeobject(objstruct *objslave,objstruct *objmaster)
   if ((check = prefs.check[CHECK_SEGMENTATION]))
     {
      ULONG	*pix;
-     ULONG	colorslave = objslave->number,
-		colormaster = objmaster->number;
+     ULONG	colorin = objin->number,
+		colorout = objout->number;
      int	dx,dx0,dy,dpix;
 
-    pix = (ULONG *)check->pix+check->width*objslave->ymin + objslave->xmin;
-    dx0 = objslave->xmax-objslave->xmin+1;
+    pix = (ULONG *)check->pix+check->width*objin->ymin + objin->xmin;
+    dx0 = objin->xmax-objin->xmin+1;
     dpix = check->width-dx0;
-    for (dy=objslave->ymax-objslave->ymin+1; dy--; pix += dpix)
+    for (dy=objin->ymax-objin->ymin+1; dy--; pix += dpix)
       for (dx=dx0; dx--; pix++)
-        if (*pix==colorslave)
-          *pix = colormaster;
+        if (*pix==colorin)
+          *pix = colorout;
     }
 
-  objmaster->fdnpix += objslave->fdnpix;
-  objmaster->dnpix += objslave->dnpix;
-  objmaster->fdflux += objslave->fdflux;
-  objmaster->dflux += objslave->dflux;
-  objmaster->flux += objslave->flux;
-  objmaster->fluxerr += objslave->fluxerr;
+  objout->fdnpix += objin->fdnpix;
+  objout->dnpix += objin->dnpix;
+  objout->fdflux += objin->fdflux;
+  objout->dflux += objin->dflux;
+  objout->dfluxerr += objin->dfluxerr;
 
-  if (objslave->fdpeak>objmaster->fdpeak)
+  if (objin->fdpeak>objout->fdpeak)
     {
-    objmaster->fdpeak = objslave->fdpeak;
-    objmaster->peakx = objslave->peakx;
-    objmaster->peaky = objslave->peaky;
+    objout->fdpeak = objin->fdpeak;
+    objout->dpeakx = objin->dpeakx;
+    objout->dpeaky = objin->dpeaky;
     }
-  if (objslave->dpeak>objmaster->dpeak)
-    objmaster->dpeak = objslave->dpeak;
-  if (objslave->peak>objmaster->peak)
-    objmaster->peak = objslave->peak;
+  if (objin->dpeak>objout->dpeak)
+    objout->dpeak = objin->dpeak;
 
-  if (objslave->xmin<objmaster->xmin)
-    objmaster->xmin = objslave->xmin;
-  if (objslave->xmax>objmaster->xmax)
-    objmaster->xmax = objslave->xmax;
+  if (objin->xmin<objout->xmin)
+    objout->xmin = objin->xmin;
+  if (objin->xmax>objout->xmax)
+    objout->xmax = objin->xmax;
 
-  if (objslave->ymin<objmaster->ymin)
-    objmaster->ymin = objslave->ymin;
-  if (objslave->ymax>objmaster->ymax)
-    objmaster->ymax = objslave->ymax;
+  if (objin->ymin<objout->ymin)
+    objout->ymin = objin->ymin;
+  if (objin->ymax>objout->ymax)
+    objout->ymax = objin->ymax;
 
-  objmaster->flag |= (objslave->flag & (~(OBJ_MERGED|OBJ_CROWDED)));
-  mergeflags(objmaster, objslave);
+  objout->flag |= (objin->flag & (~(OBJ_MERGED|OBJ_CROWDED)));
+  flag_merge(objout, objin);
 
   return;
   }
 
 
-/******************************* subcleanobj ********************************/
-/*
-remove an object from a "cleanobjlist".
-*/
-void	subcleanobj(int objnb)
-
+/****** clean_sub ************************************************************
+PROTO   void clean_sub(int objnb)
+PURPOSE Remove an object from the "clean object list".
+INPUT   Object index.
+OUTPUT  -.
+NOTES   -.
+AUTHOR  E. Bertin (IAP)
+VERSION 21/12/2011
+ ***/
+void	clean_sub(int objnb)
   {
+   int prev, next;
+
 /* Update the object list */
   if (objnb>=cleanobjlist->nobj)
     error(EXIT_FAILURE, "*Internal Error*: no CLEAN object to remove ",
-	"in subcleanobj()");
+	"in clean_sub()");
 
   if (--cleanobjlist->nobj)
     {
     if (cleanobjlist->nobj != objnb)
+      {
       cleanobjlist->obj[objnb] = cleanobjlist->obj[cleanobjlist->nobj];
+      if ((prev=cleanobjlist->obj[objnb].prev)>=0 && prev!=objnb)
+        cleanobjlist->obj[prev].next = objnb;
+      if ((next=cleanobjlist->obj[objnb].next)>=0 && next<cleanobjlist->nobj)
+        cleanobjlist->obj[next].prev = objnb;
+      }
     if (!(cleanobjlist->obj = (objstruct *)realloc(cleanobjlist->obj,
 		    cleanobjlist->nobj * sizeof(objstruct))))
       error(EXIT_FAILURE, "Not enough memory for ", "CLEANing");

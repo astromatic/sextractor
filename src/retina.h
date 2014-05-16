@@ -43,6 +43,6 @@ retistruct	*theretina;
 /*------------------------------- functions ---------------------------------*/
 
 retistruct	*getretina(char *filename);
-float		readretina(picstruct *, retistruct *, float, float);
+float		readretina(fieldstruct *, retistruct *, float, float);
 void		endretina(retistruct *retina);
 

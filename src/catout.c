@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2013 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		12/09/2013
+*	Last modified:		20/03/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -37,6 +37,7 @@
 
 #include	"define.h"
 #include	"globals.h"
+#include	"catout.h"
 #include	"prefs.h"
 #include	"fits/fitscat.h"
 #include	"param.h"
@@ -51,134 +52,323 @@ FILE		*ascfile;
 char		*buf;
 int		catopen_flag = 0;
 
-/******************************* readcatparams *******************************/
-/*
-Read the catalog config file
-*/
-void	readcatparams(char *filename)
+/****** catout_readparams ****************************************************
+PROTO	obj2liststruct *catout_readparams(char **paramlist, int nparam,
+						int nobj2)
+PURPOSE	Read user's choice of catalog parameters and initialize obj2 list.
+INPUT	Array of pointers to strings containing the measurement parameters,
+	number of parameters,
+	number of obj2list members.
+OUTPUT	Pointer to the allocated obj2list.
+NOTES	Requires access to the objtab and obj2key static pointers.
+AUTHOR	E. Bertin (IAP)
+VERSION	15/02/2012
+ ***/
+obj2liststruct	*catout_readparams(char **paramlist, int nparam, int nobj2)
   {
-   keystruct	*key;
-   FILE		*infile;
-   char		str[MAXCHAR], *keyword, *sstr;
-   int		i, size;
+   obj2liststruct	*obj2list;
+   obj2struct		*obj2, *prevobj2;
+   keystruct		*key, *tabkey;
+   char			*keyword, *str;
+   int			naxisn[MAXNPARAMAXIS],
+			i,k,o,p, size, nkeys, ntaxis;
 
 /* Prepare the OBJECTS tables*/
   objtab = new_tab("OBJECTS");
 
-  if ((infile = fopen(filename,"r")) == NULL)
-    error(EXIT_FAILURE, "*ERROR*: can't read ", filename);
-
 /* Scan the catalog config file*/
-  thecat.nparam = 0;
-  while (fgets(str, MAXCHAR, infile))
+  nkeys = 0;
+  for (p=0; p<nparam; p++)
     {
-    sstr = str + strspn(str," \t");
-    if (*sstr!=(char)'#' && *sstr!=(char)'\n')
+    str = paramlist[p];
+    if (*str!=(char)'#' && *str!=(char)'\n')
       {
-      keyword = strtok(sstr, " \t{[(\n\r");
+      keyword = strtok(str, " \t{[(\n\r");
       if (keyword &&
-	(i = findkey(keyword,(char *)objkey,sizeof(keystruct)))!=RETURN_ERROR)
+	(k = findkey(keyword,(char *)obj2key,sizeof(keystruct)))!=RETURN_ERROR)
         {
-        key = objkey+i;
+        key = obj2key+k;
         add_key(key, objtab, 0);
         *((char *)key->ptr) = (char)'\1';
-        thecat.nparam++;
+        size=t_size[key->ttype];
+        nkeys++;
         if (key->naxis)
           {
+          ntaxis = 0;
           for (i=0; i<key->naxis; i++)
-            key->naxisn[i] = 1;
-          size=t_size[key->ttype];
-          for (i=0; (sstr = strtok(NULL, " \t,;.)]}\r")) && *sstr!=(char)'#'
-		&& *sstr!=(char)'\n'; i++)
             {
-            if (i>=key->naxis)
-              error(EXIT_FAILURE, "*Error*: too many dimensions for keyword ",
-		keyword);
-            if (!(size*=(key->naxisn[i]=atoi(sstr))))
-              error(EXIT_FAILURE, "*Error*: wrong array syntax for keyword ",
-		keyword);
+            naxisn[i] = 0;
+            if (!key->naxisn[i])
+              ntaxis++;
             }
-          key->nbytes = size;
+          if (ntaxis)
+/*---------- Read only axis sizes that are not already set */
+            for (i=0; (str = strtok(NULL, " \t,;.)]}\r")) && *str!=(char)'#'
+		&& *str!=(char)'\n'; i++)
+              {
+              naxisn[i] = 1;
+              if (i>=ntaxis)
+                error(EXIT_FAILURE,
+			"*Error*: too many dimensions for keyword ", keyword);
+              if (!(size*=(naxisn[i]=atoi(str))))
+          	    error(EXIT_FAILURE,
+			"*Error*: wrong array syntax for keyword ", keyword);
+              }
+          for (i=0; i<key->naxis; i++)
+            if (!key->naxisn[i])
+              size *= (key->naxisn[i] = naxisn[i]? naxisn[i] : 1);
           }
+        key->nbytes = size;
         }
       else
         warning(keyword, " catalog parameter unknown");
       }
     }
 
-  fclose(infile);
+/* Allocate memory for the obj2list */
+  QMALLOC(obj2list, obj2liststruct, 1);
+  obj2list->nobj2 = nobj2;
+  obj2list->nkeys = nkeys;
+  QCALLOC(obj2list->obj2, obj2struct, nobj2);
 
-/* Now we copy the flags to the proper structures */
+/* Create key arrays for the catalog buffer, with the right pointers */
+/* And initialize the free obj2 linked list */
+  obj2list->freeobj2 = obj2list->obj2;
+  prevobj2 = NULL;
+  for (o=0; o<nobj2; o++)
+    {
+    obj2 = &obj2list->obj2[o];
+    obj2->prevobj2 = prevobj2;
+    if (prevobj2)
+      prevobj2->nextobj2 = obj2;
+    if (nkeys)
+      {
+      QMALLOC(obj2->keys, keystruct, nkeys);
+      key = obj2->keys;
+      tabkey = objtab->key;
+      for (k=nkeys; k--; key++)
+        {
+        *key = *tabkey;
+        key->prevkey = key-1;
+        key->nextkey = key+1;
+        key->ptr = (char *)obj2 + ((char *)tabkey->ptr - (char *)&flagobj2);
+        tabkey = tabkey->nextkey;
+        }
+      obj2->keys[0].prevkey = obj2->keys + nkeys-1;
+      obj2->keys[nkeys-1].nextkey = obj2->keys;
+      }
+    prevobj2 = obj2;
+    }
 
-  flagobj = outobj;
-  flagobj2 = outobj2;
-/* Differentiate between outobj and outobj2 vectors */
-  memset(&outobj2, 0, sizeof(outobj2));
-  updateparamflags();
+  catout_updateparamflags();
 
-  return;
+  return obj2list;
   }
 
 
-/******************************* alloccatparams ******************************/
-/*
-Allocate memory for parameter arrays
-*/
-void	alloccatparams(void)
+/****** catout_changeparamsize *********************************************
+PROTO	void catout_changeparamsize(char *keyword, int *axisn, int naxis)
+PURPOSE	Change the size of a multidimensional measurement parameter.
+INPUT	keyword string,
+	array of sizes,
+	number of dimensions.
+OUTPUT	-.
+NOTES	Requires access to the obj2key static pointer.
+AUTHOR	E. Bertin (IAP)
+VERSION	15/02/2012
+ ***/
+void	catout_changeparamsize(char *keyword, int *axisn, int naxis)
   {
    keystruct	*key;
-   int		i;
+   int		i,k;
 
-/* Go back to multi-dimensional arrays for memory allocation */
-  if (thecat.nparam)
-    for (i=objtab->nkey, key=objtab->key; i--; key = key->nextkey) 
-      if (key->naxis)
-        {
-/*------ Only outobj2 vectors are dynamic */
-        if (!*((char **)key->ptr))
-          {
-          QMALLOC(*((char **)key->ptr), char, key->nbytes);
-          key->ptr = *((char **)key->ptr);
-          key->allocflag = 1;
-          }
-        }
+  if ((k = findkey(keyword,(char *)obj2key,sizeof(keystruct)))!=RETURN_ERROR)
+    {
+    key = obj2key+k;
+    if (key->naxis)
+      {
+      key->naxis = naxis;
+      for (i=0; i<naxis; i++)
+        key->naxisn[i]=axisn[i];
+      }
+    }
 
   return;
   }
 
-/*************************** changecatparamarrays ****************************/
-/*
-Change parameter array dimensions
-*/
-void	changecatparamarrays(char *keyword, int *axisn, int naxis)
+
+/****** catout_allocparams *************************************************
+PROTO	void catout_allocparams(obj2liststruct *obj2list)
+PURPOSE	Allocate arrays for all multidimensional measurement parameters.
+INPUT	Pointer to the obj2list.
+OUTPUT	-.
+NOTES	Requires access to the obj2key static pointer.
+AUTHOR	E. Bertin (IAP)
+VERSION	15/02/2012
+ ***/
+void	catout_allocparams(obj2liststruct *obj2list)
   {
-   keystruct	*key;
-   int		d,i, size;
+   obj2struct	*obj2;
+   keystruct	*key, *key2;
+   char		**ptr;
+   int		i,k,o, nkeys, ptroffset, size;
 
-  if (thecat.nparam)
-    for (i=objtab->nkey, key=objtab->key; i--; key = key->nextkey) 
-      if (key->naxis && !strcmp(keyword, key->name))
+/* Allocate arrays for multidimensional measurement parameters */
+/* Note that they do not need to be selected for catalog output */
+  nkeys = obj2list->nkeys;
+  for (key=obj2key; *key->name; key++)
+    if (key->naxis && *((char *)key->ptr))
+      {
+      size=t_size[key->ttype];
+      for (i=0; i<key->naxis; i++)
+        size *= key->naxisn[i];
+      key->nbytes = size;
+      ptroffset = (char *)key->ptr-(char *)&flagobj2;
+      obj2 = obj2list->obj2;
+      for (o=obj2list->nobj2; o--; obj2++)
         {
-        size = t_size[key->ttype];
-        if (key->naxis != naxis)
-          key->naxis = naxis;
-        for (d=0; d<naxis; d++)
-          size *= (key->naxisn[d]=axisn[d]);
-        key->nbytes = size;
-        break;
+        ptr = (char **)((char *)obj2 + ptroffset);
+        QCALLOC(*ptr, char, size);
+/*------ Now the tricky part: we replace the pointer to the array pointer */
+/*------ with the array pointer itself when applicable */
+        key2=obj2->keys;
+        for (k=nkeys; k--; key2++)
+          if (key2->ptr == ptr)
+            {
+            key2->ptr = *ptr;
+            key2->nbytes = size;
+            }
         }
+      }
 
   return;
   }
 
-/***************************** updateparamflags ******************************/
-/*
-Update parameter flags according to their mutual dependencies.
-*/
-void	updateparamflags()
+
+/****** catout_freeparams *************************************************
+PROTO	void catout_freeparams(obj2liststruct *obj2list)
+PURPOSE	Free memory for all multidimensional measurement parameters.
+INPUT	Pointer to the obj2list.
+OUTPUT	-.
+NOTES	Requires access to the obj2key static pointer.
+AUTHOR	E. Bertin (IAP)
+VERSION	15/02/2012
+ ***/
+void	catout_freeparams(obj2liststruct *obj2list)
+  {
+   obj2struct	*obj2;
+   keystruct	*key;
+   char		**ptr;
+   int		o, ptroffset;
+
+/* Free arrays allocated for multidimensional measurement parameters */
+  for (key=obj2key; *key->name; key++)
+    if (key->naxis && *((char *)key->ptr))
+      {
+      ptroffset = (char *)key->ptr-(char *)&flagobj2;
+      obj2 = obj2list->obj2;
+      for (o=obj2list->nobj2; o--; obj2++)
+        {
+        ptr = (char **)((char *)obj2 + ptroffset);
+        free(*ptr);
+        }
+      }
+
+  return;
+  }
+
+
+/****** catout_allocother *************************************************
+PROTO	int catout_allocother(obj2liststruct *obj2list, void *flagobj2elem,
+				int nbytes)
+PURPOSE	Allocate an array in the obj2 structure that does not correspond
+	to a measurement parameter.
+INPUT	Pointer to the obj2list,
+	pointer to the flagobj2 element pointer which must be allocated.
+	number of bytes to be allocated
+OUTPUT	RETURN_OK if pointers were not already allocated, or RETURN_ERROR
+	otherwise.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	14/02/2012
+ ***/
+int	catout_allocother(obj2liststruct *obj2list, void *flagobj2elem,
+				int nbytes)
+  {
+   obj2struct	*obj2;
+   char		**ptr;
+   int		o, ptroffset;
+
+   if (*(char *)flagobj2elem)
+     return RETURN_ERROR;
+
+   ptroffset = (char *)flagobj2elem - (char *)&flagobj2;
+   obj2 = obj2list->obj2;
+   for (o=obj2list->nobj2; o--; obj2++)
+     {
+     ptr = (char **)((char *)obj2 + ptroffset);
+     QCALLOC(*ptr, char, nbytes);
+     }
+
+  *(char *)flagobj2elem = 1;
+
+  return RETURN_OK;
+  }
+
+
+/****** catout_freeother *************************************************
+PROTO	int catout_freeother(obj2liststruct *obj2list, void *flagobj2elem)
+PURPOSE	Free an array in the obj2 structure that does not correspond
+	to a measurement parameter.
+INPUT	Pointer to the obj2list,
+	pointer to the flagobj2 element pointer which must be free'ed.
+OUTPUT	RETURN_OK if pointers were already allocated, or RETURN_ERROR otherwise.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	15/02/2012
+ ***/
+int	catout_freeother(obj2liststruct *obj2list, void *flagobj2elem)
+  {
+   obj2struct	*obj2;
+   char		**ptr;
+   int		o, ptroffset;
+
+  if (!*(char *)flagobj2elem)
+    return RETURN_ERROR;
+
+/* Free arrays allocated for multidimensional measurement parameters */
+  ptroffset = (char *)flagobj2elem - (char *)&flagobj2;
+  obj2 = obj2list->obj2;
+  for (o=obj2list->nobj2; o--; obj2++)
+    {
+    ptr = (char **)((char *)obj2 + ptroffset);
+    free(*ptr);
+    }
+
+  *(char *)flagobj2elem = 0;
+
+  return RETURN_OK;
+  }
+
+
+/****** catout_updateparamflags **********************************************
+PROTO	void catout_updateparamflags(void)
+PURPOSE	Update parameter flags according to their mutual dependencies.
+INPUT	Pointer to the obj2list.
+OUTPUT	-.
+NOTES	Requires access to the flagobj2 static pointer.
+AUTHOR	E. Bertin (IAP)
+VERSION	06/05/2012
+ ***/
+void	catout_updateparamflags(void)
 
   {
    int	i;
+
+
+/*---------------------------- Always required ------------------------------*/
+
+  FLAG(obj2.bkg) = 1;			/* Sky background */
 
 /*----------------------------- Model-fitting -----------------------------*/
 
@@ -192,6 +382,13 @@ void	updateparamflags()
   FLAG(obj2.fluxcorerr_prof) |= FLAG(obj2.magcorerr_prof);
   FLAG(obj2.fluxcor_prof) |= FLAG(obj2.magcor_prof)
 			| FLAG(obj2.fluxcorerr_prof);
+  FLAG(obj2.fluxerr_prof) |= FLAG(obj2.magerr_prof)
+			| FLAG(obj2.prof_concentrationerr)
+			| FLAG(obj2.fluxcorerr_prof);
+  FLAG(obj2.flux_prof) |= FLAG(obj2.mag_prof)
+			| FLAG(obj2.fluxerr_prof)
+			| FLAG(obj2.fluxcor_prof);
+
 
   FLAG(obj2.poserraw_prof) |= FLAG(obj2.poserrbw_prof);
   FLAG(obj2.poserrcxxw_prof) |= FLAG(obj2.poserrcyyw_prof)
@@ -233,26 +430,21 @@ void	updateparamflags()
 			| FLAG(obj2.prof_class_star)
 			| FLAG(obj2.fluxcor_prof);
 
-  FLAG(obj2.prof_dirac_fluxratio) |= FLAG(obj2.prof_dirac_fluxratioerr);
   FLAG(obj2.prof_dirac_mag) |= FLAG(obj2.prof_dirac_magerr);
-  FLAG(obj2.prof_spheroid_fluxratio) |= FLAG(obj2.prof_spheroid_fluxratioerr);
   FLAG(obj2.prof_spheroid_mag) |= FLAG(obj2.prof_spheroid_magerr);
   FLAG(obj2.prof_spheroid_reff) |= FLAG(obj2.prof_spheroid_refferr);
   FLAG(obj2.prof_spheroid_aspect) |= FLAG(obj2.prof_spheroid_aspecterr);
   FLAG(obj2.prof_spheroid_theta) |= FLAG(obj2.prof_spheroid_thetaerr);
   FLAG(obj2.prof_spheroid_sersicn) |= FLAG(obj2.prof_spheroid_sersicnerr);
-  FLAG(obj2.prof_disk_fluxratio) |= FLAG(obj2.prof_disk_fluxratioerr);
   FLAG(obj2.prof_disk_mag) |= FLAG(obj2.prof_disk_magerr);
   FLAG(obj2.prof_disk_scale) |= FLAG(obj2.prof_disk_scaleerr);
   FLAG(obj2.prof_disk_aspect) |= FLAG(obj2.prof_disk_aspecterr);
   FLAG(obj2.prof_disk_inclination) |= FLAG(obj2.prof_disk_inclinationerr);
   FLAG(obj2.prof_disk_theta) |= FLAG(obj2.prof_disk_thetaerr);
-  FLAG(obj2.prof_bar_fluxratio) |= FLAG(obj2.prof_bar_fluxratioerr);
   FLAG(obj2.prof_bar_mag) |= FLAG(obj2.prof_bar_magerr);
   FLAG(obj2.prof_bar_length) |= FLAG(obj2.prof_bar_lengtherr);
   FLAG(obj2.prof_bar_aspect) |= FLAG(obj2.prof_bar_aspecterr);
   FLAG(obj2.prof_bar_theta) |= FLAG(obj2.prof_bar_thetaerr);
-  FLAG(obj2.prof_arms_fluxratio) |= FLAG(obj2.prof_arms_fluxratioerr);
   FLAG(obj2.prof_arms_mag) |= FLAG(obj2.prof_arms_magerr);
   FLAG(obj2.prof_e1errw) |= FLAG(obj2.prof_e2errw) | FLAG(obj2.prof_e12corrw);
   FLAG(obj2.prof_e1w) |= FLAG(obj2.prof_e2w) | FLAG(obj2.prof_e1errw);
@@ -377,7 +569,6 @@ void	updateparamflags()
 
   FLAG(obj2.prof_arms_flux) |= FLAG(obj2.prof_arms_fluxerr)
 			| FLAG(obj2.prof_arms_mag)
-			| FLAG(obj2.prof_arms_fluxratio)
 			| FLAG(obj2.prof_arms_scalew)
 			| FLAG(obj2.prof_arms_scale)
 			| FLAG(obj2.prof_arms_posang)
@@ -387,7 +578,6 @@ void	updateparamflags()
   FLAG(obj2.prof_bar_theta) |= FLAG(obj2.prof_bar_lengthw);
   FLAG(obj2.prof_bar_flux) |= FLAG(obj2.prof_bar_fluxerr)
 			| FLAG(obj2.prof_bar_mag)
-			| FLAG(obj2.prof_bar_fluxratio)
 			| FLAG(obj2.prof_bar_lengthw)
 			| FLAG(obj2.prof_bar_length)
 			| FLAG(obj2.prof_bar_aspect)
@@ -396,7 +586,6 @@ void	updateparamflags()
 			| FLAG(obj2.prof_arms_flux);
   FLAG(obj2.prof_disk_flux) |= FLAG(obj2.prof_disk_fluxerr)
 			| FLAG(obj2.prof_disk_mag)
-			| FLAG(obj2.prof_disk_fluxratio)
 			| FLAG(obj2.prof_disk_scalew)
 			| FLAG(obj2.prof_disk_scale)
 			| FLAG(obj2.prof_disk_aspect)
@@ -406,7 +595,6 @@ void	updateparamflags()
 			| FLAG(obj2.prof_bar_flux);
   FLAG(obj2.prof_spheroid_flux) |= FLAG(obj2.prof_spheroid_fluxerr)
 			| FLAG(obj2.prof_spheroid_mag)
-			| FLAG(obj2.prof_spheroid_fluxratio)
 			| FLAG(obj2.prof_spheroid_reffw)
 			| FLAG(obj2.prof_spheroid_reff)
 			| FLAG(obj2.prof_spheroid_aspect)
@@ -414,29 +602,8 @@ void	updateparamflags()
 			| FLAG(obj2.prof_spheroid_sersicn)
 			| FLAG(obj2.prof_spheroid_peak);
   FLAG(obj2.prof_dirac_flux) |= FLAG(obj2.prof_dirac_fluxerr)
-			| FLAG(obj2.prof_dirac_mag)
-			| FLAG(obj2.prof_dirac_fluxratio);
+			| FLAG(obj2.prof_dirac_mag);
   FLAG(obj2.prof_offset_flux) |= FLAG(obj2.prof_offset_fluxerr);
-  FLAG(obj2.fluxerr_dprof) |= FLAG(obj2.magerr_dprof);
-  FLAG(obj2.flux_dprof) |= FLAG(obj2.mag_dprof)
-			| FLAG(obj2.fluxerr_dprof);
-  prefs.dprof_flag |= FLAG(obj2.dprof_chi2)
-			| FLAG(obj2.dprof_flag)
-			| FLAG(obj2.dprof_niter)
-			| FLAG(obj2.flux_dprof);
-
-  FLAG(obj2.fluxerr_prof) |= FLAG(obj2.magerr_prof)
-			| FLAG(obj2.prof_concentrationerr)
-			| FLAG(obj2.fluxcorerr_prof)
-			| FLAG(obj2.prof_arms_fluxratio)
-			| FLAG(obj2.prof_bar_fluxratio)
-			| FLAG(obj2.prof_disk_fluxratio)
-			| FLAG(obj2.prof_spheroid_fluxratio)
-			| FLAG(obj2.prof_dirac_fluxratio);
-  FLAG(obj2.flux_prof) |= FLAG(obj2.mag_prof)
-			| FLAG(obj2.fluxerr_prof)
-			| FLAG(obj2.fluxcor_prof);
-
   prefs.prof_flag |= FLAG(obj2.prof_chi2) | FLAG(obj2.prof_niter)
 			| FLAG(obj2.prof_vector) | FLAG(obj2.prof_errvector)
 			| FLAG(obj2.prof_errmatrix)
@@ -448,8 +615,7 @@ void	updateparamflags()
 			| FLAG(obj2.prof_disk_flux)
 			| FLAG(obj2.prof_spheroid_flux)
 			| FLAG(obj2.prof_dirac_flux)
-			| FLAG(obj2.prof_offset_flux)
-			| prefs.dprof_flag;
+			| FLAG(obj2.prof_offset_flux);
 
 
 /* If only global parameters are requested, fit a Sersic model */
@@ -462,8 +628,8 @@ void	updateparamflags()
     FLAG(obj2.prof_spheroid_sersicn) |= prefs.prof_flag;
     }
 
-
 /*------------------------------ Astrometry ---------------------------------*/
+  FLAG(obj2.posx) = FLAG(obj2.posy) = 1;	/* Always required! */
   FLAG(obj2.win_aw) |= FLAG(obj2.win_bw) | FLAG(obj2.win_polarw);
   FLAG(obj2.win_cxxw) |= FLAG(obj2.win_cyyw) | FLAG(obj2.win_cxyw);
   FLAG(obj2.win_thetas) |= FLAG(obj2.win_theta1950)
@@ -530,7 +696,7 @@ void	updateparamflags()
   FLAG(obj2.poserr_a) |= FLAG(obj2.poserr_b) | FLAG(obj2.poserr_theta)
 			| FLAG(obj2.winposerr_a);
   FLAG(obj2.poserr_cxx) |= FLAG(obj2.poserr_cyy) | FLAG(obj2.poserr_cxy);
-  FLAG(obj.poserr_mx2) |= FLAG(obj.poserr_my2) | FLAG(obj.poserr_mxy)
+  FLAG(obj2.poserr_mx2) |= FLAG(obj2.poserr_my2) | FLAG(obj2.poserr_mxy)
 			| FLAG(obj2.poserr_a) | FLAG(obj2.poserr_cxx)
 			| FLAG(obj2.poserr_mx2w) | FLAG(obj2.winposerr_mx2);
 
@@ -554,14 +720,12 @@ void	updateparamflags()
   
   FLAG(obj2.peakxw) |= FLAG(obj2.peakyf);
   FLAG(obj2.peakxw) |= FLAG(obj2.peakyw) | FLAG(obj2.peakalphas);
-  FLAG(obj.peakx) |= FLAG(obj.peaky) | FLAG(obj2.peakxw) | FLAG(obj2.peakxf);
+  FLAG(obj2.peakx) |= FLAG(obj2.peaky) | FLAG(obj2.peakxw) | FLAG(obj2.peakxf);
 
-  FLAG(obj2.mxf) |= FLAG(obj2.myf);
+  FLAG(obj2.posxf) |= FLAG(obj2.posyf);
 
-  FLAG(obj2.mxw) |= FLAG(obj2.myw) | FLAG(obj2.mx2w) | FLAG(obj2.alphas)
-		| FLAG(obj2.poserr_mx2w)
-		| ((FLAG(obj2.assoc) | FLAG(obj2.assoc_number))
-			&& (prefs.assoccoord_type==ASSOCCOORD_WORLD));
+  FLAG(obj2.posxw) |= FLAG(obj2.posyw) | FLAG(obj2.mx2w) | FLAG(obj2.alphas)
+		| FLAG(obj2.poserr_mx2w);
   FLAG(obj2.mamaposx) |= FLAG(obj2.mamaposy);
   FLAG(obj2.fluxerr_win) |= FLAG(obj2.snr_win);
   FLAG(obj2.flux_win) |= FLAG(obj2.mag_win)|FLAG(obj2.magerr_win)
@@ -569,8 +733,9 @@ void	updateparamflags()
   FLAG(obj2.winpos_x) |= FLAG(obj2.winpos_y)
 			| FLAG(obj2.winposerr_mx2) | FLAG(obj2.win_mx2)
 			| FLAG(obj2.winpos_xw) | FLAG(obj2.winpos_xf)
-			| FLAG(obj2.win_flag)
-			| FLAG(obj2.flux_win) |FLAG(obj2.winpos_niter);
+			| FLAG(obj2.win_flags)
+			| FLAG(obj2.flux_win) | FLAG(obj2.winpos_niter);
+  prefs.win_flag = FLAG(obj2.winpos_x);
 
   FLAG(obj2.area_flagw) |= FLAG(obj2.npixw) | FLAG(obj2.fdnpixw)
 			| FLAG(obj2.fwhmw)
@@ -579,21 +744,33 @@ void	updateparamflags()
 			| FLAG(obj2.prof_disk_mumax)
 			| FLAG(obj2.mumax_prof);
 
-/*------------------------------ Photometry ---------------------------------*/
+  prefs.world_flag = FLAG(obj2.posxw) || FLAG(obj2.mamaposx)
+		|| FLAG(obj2.peakxw) || FLAG(obj2.winpos_xw)
+		|| FLAG(obj2.mx2w) || FLAG(obj2.win_mx2w)
+		|| FLAG(obj2.xw_prof) || FLAG(obj2.poserrmx2w_prof)
+		|| FLAG(obj2.poserr_mx2w) || FLAG(obj2.winposerr_mx2w)
+		|| FLAG(obj2.area_flagw) || FLAG(obj2.prof_flagw)
+		|| FLAG(obj2.fwhmw_psf);
 
+/*------------------------------ Photometry ---------------------------------*/
   FLAG(obj2.fluxerr_best) |= FLAG(obj2.magerr_best);
 
   FLAG(obj2.flux_best) |= FLAG(obj2.mag_best) | FLAG(obj2.fluxerr_best);
 
   FLAG(obj2.hl_radius) |= FLAG(obj2.winpos_x) | prefs.prof_flag;
 
-  FLAG(obj2.flux_auto)  |= FLAG(obj2.mag_auto) | FLAG(obj2.magerr_auto)
-			| FLAG(obj2.fluxerr_auto)
-			| FLAG(obj2.kronfactor)
-			| FLAG(obj2.flux_best)
+  FLAG(obj2.fluxerr_auto) |= prefs.prof_flag;
+
+  FLAG(obj2.flux_auto) = FLAG(obj2.flux_best)
 			| FLAG(obj2.flux_radius)
 			| FLAG(obj2.hl_radius)
 			| FLAG(obj2.fluxcor_prof);
+  prefs.auto_flag = FLAG(obj2.flux_auto)
+			| FLAG(obj2.fluxerr_auto)
+			| FLAG(obj2.mag_auto)
+			| FLAG(obj2.magerr_auto)
+			| FLAG(obj2.auto_flags)
+			| FLAG(obj2.auto_kronfactor);
   FLAG(obj2.flux_petro) |= FLAG(obj2.mag_petro) | FLAG(obj2.magerr_petro)
 			| FLAG(obj2.fluxerr_petro)
 			| FLAG(obj2.petrofactor);
@@ -607,11 +784,18 @@ void	updateparamflags()
   FLAG(obj2.flux_aper) |= FLAG(obj2.mag_aper)|FLAG(obj2.magerr_aper)
 			    | FLAG(obj2.fluxerr_aper);
 
-  FLAG(obj2.flux_galfit) |= FLAG(obj2.mag_galfit) | FLAG(obj2.magerr_galfit)
-			    | FLAG(obj2.fluxerr_galfit);
+/*------------------------------ Growth-curves ----------------------------- */
+  if (FLAG(obj2.flux_growth)
+	|| FLAG(obj2.mag_growth)
+	|| FLAG(obj2.flux_radius)
+	|| FLAG(obj2.hl_radius)
+	|| FLAG(obj2.flux_growth_step)
+	|| FLAG(obj2.mag_growth_step))
+    prefs.growth_flag = 1;
 
 /*---------------------------- External flags -------------------------------*/
-  VECFLAG(obj.imaflag) |= VECFLAG(obj.imanflag);
+  prefs.imaflags_flag = FLAG(obj2.imaflags)
+			| FLAG(obj2.imanflags);
 
 /*------------------------------ PSF-fitting --------------------------------*/
   FLAG(obj2.fwhm_psf) |= FLAG(obj2.fwhmw_psf);
@@ -648,60 +832,69 @@ void	updateparamflags()
 
   FLAG(obj2.fluxerr_psf) |= FLAG(obj2.poserrmx2_psf) | FLAG(obj2.magerr_psf);
 
-  FLAG(obj2.mx2_pc) |= FLAG(obj2.my2_pc) | FLAG(obj2.mxy_pc)
-			| FLAG(obj2.a_pc) | FLAG(obj2.b_pc)
-			| FLAG(obj2.theta_pc) | FLAG(obj2.vector_pc)
-			| FLAG(obj2.gdposang) | FLAG(obj2.gdscale)
-			| FLAG(obj2.gdaspect) | FLAG(obj2.flux_galfit)
-			| FLAG(obj2.gde1) | FLAG(obj2.gde2)
-			| FLAG(obj2.gbposang) | FLAG(obj2.gbscale)
-			| FLAG(obj2.gbaspect) | FLAG(obj2.gbratio);
-
   FLAG(obj2.flux_psf) |= FLAG(obj2.mag_psf) | FLAG(obj2.x_psf)
 			| FLAG(obj2.y_psf) | FLAG(obj2.xw_psf)
 			| FLAG(obj2.fluxerr_psf)
 			| FLAG(obj2.niter_psf)
-			| FLAG(obj2.chi2_psf)
-			| FLAG(obj2.mx2_pc);
+			| FLAG(obj2.chi2_psf);
+
+  if (FLAG(obj2.flux_psf))
+    prefs.psffit_flag = 1;
+
+/*--------------------------------- ASSOC ----------------------------------*/
+  prefs.assoc_flag = FLAG(obj2.assoc) || FLAG(obj2.assoc_number);
+
+/*----------------------------- SOM-fitting --------------------------------*/
+  prefs.somfit_flag = FLAG(obj2.flux_somfit);
 
 /*-------------------------------- Others -----------------------------------*/
-  FLAG(obj.fwhm) |= FLAG(obj2.fwhmw);
+  FLAG(obj2.fwhm) |= FLAG(obj2.fwhmw);
 
-  FLAG(obj.iso[0]) |= FLAG(obj2.sprob);
+  FLAG(obj2.iso[0]) |= FLAG(obj2.sprob);
   for (i=0; i<NISO; i++)
-    FLAG(obj.iso[0]) |= FLAG(obj.iso[i]);
+    FLAG(obj2.iso[0]) |= FLAG(obj2.iso[i]);
 
-  FLAG(obj.wflag) |= FLAG(obj.nzwpix) | FLAG(obj.nzdwpix);
+  FLAG(obj2.wflag) |= FLAG(obj2.nzwpix) | FLAG(obj2.nzdwpix);
 
   return; 
   }
 
 
-/********************************** dumpparams *******************************/
-/*
-Initialize the catalog header
-*/
-void	dumpparams(void)
+/****** catout_dumpparams ****************************************************
+PROTO	void catout_dumpparams(void)
+PURPOSE	Dump the complete list of catalog parameters to standard output.
+INPUT	-.
+OUTPUT	-.
+NOTES	Requires access to the obj2key static pointer.
+AUTHOR	E. Bertin (IAP)
+VERSION	18/07/2011
+ ***/
+void	catout_dumpparams(void)
   {
    int		i;
 
-  for (i=0; *objkey[i].name ; i++)
-    if (*objkey[i].unit)
+  for (i=0; *obj2key[i].name ; i++)
+    if (*obj2key[i].unit)
       printf("#%-24.24s %-57.57s [%s]\n",
-		objkey[i].name, objkey[i].comment, objkey[i].unit);
+		obj2key[i].name, obj2key[i].comment, obj2key[i].unit);
     else
       printf("#%-24.24s %-57.57s\n",
-		objkey[i].name, objkey[i].comment);
+		obj2key[i].name, obj2key[i].comment);
 
   return;
   }
 
 
-/********************************** initcat **********************************/
-/*
-Initialize the catalog header
-*/
-void	initcat(void)
+/****** catout_init *********************************************************
+PROTO	void catout_init(void)
+PURPOSE	Initialize the catalog output.
+INPUT	-.
+OUTPUT	-.
+NOTES	Requires access to global prefs and the obj2key static pointer.
+AUTHOR	E. Bertin (IAP)
+VERSION	24/02/2012
+ ***/
+void	catout_init(void)
   {
    keystruct	*key;
    int		i, n;
@@ -748,8 +941,8 @@ void	initcat(void)
       }
     else if (prefs.cat_type == ASCII_VO && objtab->key) 
       {
-      write_xml_header(ascfile);
-      write_vo_fields(ascfile);
+      xml_write_header(ascfile);
+      catout_writevofields(ascfile);
       fprintf(ascfile, "   <DATA><TABLEDATA>\n");
       }
     }
@@ -777,7 +970,7 @@ void	initcat(void)
         break;
       default:
         error (EXIT_FAILURE, "*Internal Error*: Unknown FITS type in ",
-		"initcat()");
+		"catout_init()");
       }
     }
 
@@ -787,16 +980,16 @@ void	initcat(void)
   }
 
 
-/****** write_vo_fields *******************************************************
-PROTO	int	write_vo_fields(FILE *file)
+/****** catout_writevofields *************************************************
+PROTO	int catout_writevofields(FILE *file)
 PURPOSE	Write the list of columns to an XML-VOTable file or stream
 INPUT	Pointer to the output file (or stream).
 OUTPUT	-.
-NOTES	-.
+NOTES	Requires access to global prefs and the objtab static pointer.
 AUTHOR	E. Bertin (IAP)
-VERSION	14/07/2006
+VERSION	18/07/2011
  ***/
-void	write_vo_fields(FILE *file)
+void	catout_writevofields(FILE *file)
   {
    keystruct	*key;
    char		datatype[40], arraysize[40], str[40];
@@ -841,11 +1034,16 @@ void	write_vo_fields(FILE *file)
   }
 
 
-/********************************* reinitcat *********************************/
-/*
-Initialize the catalog header
-*/
-void	reinitcat(picstruct *field)
+/****** catout_initext ********************************************************
+PROTO	void catout_initext(fieldstruct *field)
+PURPOSE	Initialize the catalog header for the current extension.
+INPUT	Pointer to image field.
+OUTPUT	-.
+NOTES	Requires access to global prefs and the objtab static pointer.
+AUTHOR	E. Bertin (IAP)
+VERSION	08/12/2011
+ ***/
+void	catout_initext(fieldstruct *field)
   {
    tabstruct	*tab, *asctab;
    keystruct	*key;
@@ -926,26 +1124,33 @@ void	reinitcat(picstruct *field)
 
       default:
         error (EXIT_FAILURE, "*Internal Error*: Unknown FITS type in ",
-		"reinitcat()");
+		"catout_initext()");
       }
 
     objtab->cat = fitscat;
     init_writeobj(fitscat, objtab, &buf);
     }
 
-  zerocat();
-
   return;
   }
 
 
-/********************************* writecat **********************************/
-/*
-Write out in the catalog each one object.
-*/
-void	writecat(int n, objliststruct *objlist)
+/****** catout_writeobj ******************************************************
+PROTO	void catout_writeobj(obj2struct *obj2)
+PURPOSE	Write one object in the output catalog.
+INPUT	Pointer to the current obj2 structure.
+OUTPUT	-.
+NOTES	Requires access to global prefs and the objtab static pointer.
+AUTHOR	E. Bertin (IAP)
+VERSION	03/10/2011
+ ***/
+void	catout_writeobj(obj2struct *obj2)
   {
-  outobj = objlist->obj[n];
+   keystruct	*keystore;
+
+/* We temporarily replace the objtab key sequence with that from the list */
+  keystore = objtab->key;
+  objtab->key = obj2->keys;
 
   switch(prefs.cat_type)
     {
@@ -971,84 +1176,23 @@ void	writecat(int n, objliststruct *objlist)
       error (EXIT_FAILURE, "*Internal Error*: Unknown catalog type", "");
     }
 
-  return;
-  }
-
-
-/********************************** endcat ***********************************/
-/*
-Terminate the catalog output.
-*/
-void	endcat(char *error)
-  {
-   keystruct	*key;
-   int		i;
-
-  if (!catopen_flag)
-    {
-    if (prefs.cat_type == ASCII_VO)
-      write_xmlerror(prefs.cat_name, error);
-    return;
-    }
-  switch(prefs.cat_type)
-    {
-    case ASCII:
-    case ASCII_HEAD:
-      if (!prefs.pipe_flag)
-        fclose(ascfile);
-      break;
-
-    case ASCII_SKYCAT:
-      fprintf(ascfile, skycattail);
-      if (!prefs.pipe_flag)
-        fclose(ascfile);
-      break;
-
-    case ASCII_VO:
-      fprintf(ascfile, "    </TABLEDATA></DATA>\n");
-      fprintf(ascfile, "  </TABLE>\n");
-/*---- Add configuration file meta-data */
-      write_xml_meta(ascfile, error);
-      fprintf(ascfile, "</RESOURCE>\n");
-      fprintf(ascfile, "</VOTABLE>\n");
-
-      if (!prefs.pipe_flag)
-        fclose(ascfile);
-      break;
-
-    case FITS_LDAC:
-    case FITS_TPX:
-    case FITS_10:
-      free_cat(&fitscat,1);
-      break;
-
-    case CAT_NONE:
-      break;
-
-    default:
-      break;
-    }
-
-/* Free allocated memory for arrays */
-  key = objtab->key;
-  for (i=objtab->nkey; i--; key=key->nextkey)
-    if (key->naxis && key->allocflag)
-      free(key->ptr);
-
-  objtab->key = NULL;
-  objtab->nkey = 0;
-  free_tab(objtab);
-  objtab = NULL;
+/* Put the "legacy" key structure back in place */
+  objtab->key = keystore;
 
   return;
   }
 
 
-/******************************** reendcat ***********************************/
-/*
-Terminate the catalog output.
-*/
-void	reendcat()
+/****** catout_endext ********************************************************
+PROTO	void catout_endext(void)
+PURPOSE	End catalog output for the current extension.
+INPUT	-.
+OUTPUT	-.
+NOTES	Requires access to global prefs and the objtab static pointer.
+AUTHOR	E. Bertin (IAP)
+VERSION	18/07/2011
+ ***/
+void	catout_endext(void)
   {
    keystruct	*key;
    tabstruct	*tab;
@@ -1103,21 +1247,79 @@ void	reendcat()
   }
 
 
-/********************************** zerocat **********************************/
-/*
-Reset to 0 all measurements in the current catalog.
-*/
-void	zerocat(void)
+/****** catout_end **********************************************************
+PROTO	void catout_end(char *error)
+PURPOSE	End catalog output.
+INPUT	Error message character string (or NULL if no error).
+OUTPUT	-.
+NOTES	Requires access to global prefs and the objtab static pointer.
+AUTHOR	E. Bertin (IAP)
+VERSION	24/02/2012
+ ***/
+void	catout_end(char *error)
   {
-   keystruct	*key;
-   int		i;
+   obj2liststruct	*obj2list;
+   int			o;
 
-  key = objtab->key;
-  for (i=objtab->nkey; i--; key=key->nextkey)
-    memset(key->ptr, 0, key->nbytes);
+  if (!catopen_flag)
+    {
+    if (prefs.cat_type == ASCII_VO)
+      xml_write_error(prefs.cat_name, error);
+    return;
+    }
+  switch(prefs.cat_type)
+    {
+    case ASCII:
+    case ASCII_HEAD:
+      if (!prefs.pipe_flag)
+        fclose(ascfile);
+      break;
+
+    case ASCII_SKYCAT:
+      fprintf(ascfile, skycattail);
+      if (!prefs.pipe_flag)
+        fclose(ascfile);
+      break;
+
+    case ASCII_VO:
+      fprintf(ascfile, "    </TABLEDATA></DATA>\n");
+      fprintf(ascfile, "  </TABLE>\n");
+/*---- Add configuration file meta-data */
+      xml_write_meta(ascfile, error);
+      fprintf(ascfile, "</RESOURCE>\n");
+      fprintf(ascfile, "</VOTABLE>\n");
+
+      if (!prefs.pipe_flag)
+        fclose(ascfile);
+      break;
+
+    case FITS_LDAC:
+    case FITS_TPX:
+    case FITS_10:
+      free_cat(&fitscat,1);
+      break;
+
+    case CAT_NONE:
+      break;
+
+    default:
+      break;
+    }
+
+/* Free allocated memory for arrays and structures */
+  obj2list = thecat.obj2list;
+  catout_freeparams(obj2list);
+  if (obj2list->nkeys)
+    for (o=0; o<obj2list->nobj2; o++)
+      free(obj2list->obj2[o].keys);
+  free(obj2list->obj2);
+  free(obj2list);
+  objtab->key = NULL;
+  objtab->nkey = 0;
+  free_tab(objtab);
+  objtab = NULL;
 
   return;
   }
-
 
 

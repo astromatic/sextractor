@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/10/2010
+*	Last modified:		28/03/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -40,35 +40,57 @@
 #include	"prefs.h"
 #include	"neurro.h"
 
+static double neur_activ(double x);
+
 brainstruct	*brain;
 
-/******************************** neurinit **********************************/
-/*
-Initialization of the "brain".
-*/
-void	neurinit()
+/****** neur_init ***********************************************************
+PROTO	void neur_init(void)
+PURPOSE	Initialize the neural network ("brain").
+INPUT	-.
+OUTPUT	-.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	28/03/2012
+ ***/
+void	neur_init(void)
+
   {
   QMALLOC(brain, brainstruct, 1);
 
   return;
   }
 
-/********************************* neurend **********************************/
-/*
-Close the "brain".
-*/
-void	neurclose()
+
+/****** neur_end ***********************************************************
+PROTO	void neur_end(void)
+PURPOSE	End the neural network ("brain").
+INPUT	-.
+OUTPUT	-.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	28/03/2012
+ ***/
+void	neur_end(void)
+
   {
   free(brain);
 
   return;
   }
 
-/******************************** neurresp **********************************/
-/*
-Neural network response to an input vector.
-*/
-void	neurresp(double *input, double *output)
+
+/****** neur_resp ***********************************************************
+PROTO	void neur_resp(double *input, double *output)
+PURPOSE	Compute the neural network response to an input vector.
+INPUT	Pointer to the input vector,
+	pointer to the output vector (filled with new values in output).
+OUTPUT	-.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	28/03/2012
+ ***/
+void	neur_resp(double *input, double *output)
 
   {
    int	i, j, l, lastlay = brain->layersnb-1;
@@ -82,7 +104,7 @@ void	neurresp(double *input, double *output)
       neursum = brain->b[l][j];
       for (i=0; i<brain->nn[l]; i++)
         neursum += brain->w[l][i][j] * brain->n[l][i];
-      brain->n[l+1][j] = f(neursum);
+      brain->n[l+1][j] = neur_activ(neursum);
       }
   for (i=0; i<brain->nn[lastlay]; i++)
     output[i] = (brain->n[lastlay][i]-brain->outbias[i])
@@ -92,34 +114,44 @@ void	neurresp(double *input, double *output)
   }
 
 
-/************************************ f *************************************/
-/*
-Sigmoid function for a neural network.
-*/
-double	f(double x)
+/*i**** neur_activ ***********************************************************
+PROTO	static double neur_activ(double x)
+PURPOSE	Activation function (sigmoid function) of the input scalar.
+INPUT	Input value.
+OUTPUT	Output activation value.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	28/03/2012
+ ***/
+static double	neur_activ(double x)
 
   {
   return 1.0 / (1.0 + exp(-x));
   }
 
 
-/********************************* getnnw ***********************************/
-/*
-Read the NNW table that contains the weights.
-*/
-void    getnnw()
-
+/****** neur_getnnw *********************************************************
+PROTO	void neur_getnnw(char *filename)
+PURPOSE	Read the ".nnw" ASCII file containing the neural network weights.
+INPUT	File name.
+OUTPUT	-.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	28/03/2012
+ ***/
+void	neur_getnnw(char *filename)
   {
+
    FILE	*infile;
    int	i, j, k, step;
    char	str[MAXCHAR], *sstr, *null;
 
-  if ((infile = fopen(prefs.nnw_name,"r")) == NULL)
-    error(EXIT_FAILURE,"*ERROR*: can't read ", prefs.nnw_name);
+  if ((infile = fopen(filename,"r")) == NULL)
+    error(EXIT_FAILURE,"*ERROR*: can't read ", filename);
 
   fgets(str, MAXCHAR, infile);
   if (strncmp(str,"NNW",3))
-    error(EXIT_FAILURE, prefs.nnw_name, " is NOT a NNW table!");
+    error(EXIT_FAILURE, filename, " is NOT a NNW table!");
 
   step = 1;
   i=j=0;			/* To avoid gcc -Wall warnings */
@@ -187,7 +219,8 @@ void    getnnw()
 		  }
 		step++;
 		break;
-	default:error(EXIT_FAILURE, "*Error*: inconsistency in ", prefs.nnw_name);
+	default:error(EXIT_FAILURE, "*Error*: inconsistency in ",
+		filename);
 	}
 
       }

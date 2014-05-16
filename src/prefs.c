@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		18/06/2012
+*	Last modified:		18/09/2013
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -36,13 +36,16 @@
 #include	<stdlib.h>
 #include	<string.h>
 #include        <unistd.h>
-
 #if defined(USE_THREADS) \
 && (defined(__APPLE__) || defined(FREEBSD) || defined(NETBSD))	/* BSD, Apple */
  #include	<sys/types.h>
  #include	<sys/sysctl.h>
 #elif defined(USE_THREADS) && defined(HAVE_MPCTL)		/* HP/UX */
  #include	<sys/mpctl.h>
+#endif
+
+#if defined(__INTEL_COMPILER) && defined (USE_CPUREDISPATCH)
+ #include <cpuid.h>
 #endif
 
 #ifdef HAVE_MKL
@@ -52,18 +55,23 @@
 #include	"define.h"
 #include	"globals.h"
 #include	"back.h"
+#include	"field.h"
 #include	"prefs.h"
 #include	"preflist.h"
 #include	"fits/fitscat.h"
 
-
-/********************************* dumpprefs ********************************/
-/*
-Print the default preference parameters.
-*/
-void    dumpprefs(int state)
+/****** prefs_dump ***********************************************************
+PROTO	void prefs_dump(int state)
+PURPOSE	Dump the list of configuration parameters, default values and comments.
+INPUT	Dump style (0 for regular, !=0 for including advanced parameters).
+OUTPUT	-.
+NOTES	default_prefs[] global array used.
+AUTHOR	E. Bertin (IAP)
+VERSION	18/01/2012
+ ***/
+void	prefs_dump(int state)
   {
-   char **dp;
+   char	**dp;
 
   dp = default_prefs;
   while (**dp)
@@ -77,21 +85,30 @@ void    dumpprefs(int state)
   }
 
 
-/********************************* readprefs ********************************/
-/*
-Read a configuration file in ``standard'' format (see the SExtractor
-documentation)
-*/
-void    readprefs(char *filename, char **argkey, char **argval, int narg)
+/****** prefs_read ***********************************************************
+PROTO	void prefs_read(char *filename, char **argkey, char **argval, int narg)
+PURPOSE	Read a configuration file in ``standard'' format (see the SExtractor
+	documentation)
+INPUT	Configuration file name,
+	pointer to an array of keyword strings,
+	pointer to an array of value strings,
+	number of keywords.
+OUTPUT	-.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	21/02/2012
+ ***/
+void    prefs_read(char *filename, char **argkey, char **argval, int narg)
 
   {
-   FILE          *infile;
-   char          *cp, str[MAXCHARL], *keyword, *value, **dp;
-   int           i, ival, nkey, warn, argi, flagc, flagd, flage, flagz;
-   float         dval;
-#ifndef	NO_ENVVAR
+   FILE		*infile;
+   char		str[MAXCHARL], errstr[MAXCHAR],
+		*cp,  *keyword, *value, **dp;
+   int		i, ival, nkey, warn, argi, flagc, flagd, flage, flagz;
+   double	dval;
+#ifdef	HAVE_GETENV
    static char	value2[MAXCHARL],envname[MAXCHAR];
-   char		*dolpos;
+   char		*dolpos, *listbuf;
 #endif
 
 
@@ -108,7 +125,6 @@ void    readprefs(char *filename, char **argkey, char **argval, int narg)
   for (i=0; key[i].name[0]; i++)
     strcpy(keylist[i], key[i].name);
   keylist[i][0] = '\0';
-
 
 /*Scan the configuration file*/
 
@@ -154,7 +170,7 @@ void    readprefs(char *filename, char **argkey, char **argval, int narg)
       if (nkey!=RETURN_ERROR)
         {
         value = strtok((char *)NULL, notokstr);
-#ifndef	NO_ENVVAR
+#ifdef	HAVE_GETENV
 /*------ Expansion of environment variables (preceded by '$') */
         if (value && (dolpos=strchr(value, '$')))
           {
@@ -189,7 +205,7 @@ void    readprefs(char *filename, char **argkey, char **argval, int narg)
               }
 	    }
 
-          value = value2;
+          value = strtok(value2, notokstr);
           }
 #endif
         switch(key[nkey].type)
@@ -197,6 +213,8 @@ void    readprefs(char *filename, char **argkey, char **argval, int narg)
           case P_FLOAT:
             if (!value || value[0]==(char)'#')
               error(EXIT_FAILURE, keyword," keyword has no value!");
+            if (*value=='@')
+              value = listbuf = list_to_str(value+1);
             dval = atof(value);
             if (dval>=key[nkey].dmin && dval<=key[nkey].dmax)
               *(double *)(key[nkey].ptr) = dval;
@@ -207,7 +225,9 @@ void    readprefs(char *filename, char **argkey, char **argval, int narg)
           case P_INT:
             if (!value || value[0]==(char)'#')
               error(EXIT_FAILURE, keyword," keyword has no value!");
-            ival = atoi(value);
+            if (*value=='@')
+              value = listbuf = list_to_str(value+1);
+            ival = (int)strtol(value, (char **)NULL, 0);
             if (ival>=key[nkey].imin && ival<=key[nkey].imax)
               *(int *)(key[nkey].ptr) = ival;
             else
@@ -216,13 +236,17 @@ void    readprefs(char *filename, char **argkey, char **argval, int narg)
 
           case P_STRING:
             if (!value || value[0]==(char)'#')
-              error(EXIT_FAILURE, keyword," string is empty!");
+              value = "";
+            if (*value=='@')
+              value = listbuf = list_to_str(value+1);
             strcpy((char *)key[nkey].ptr, value);
             break;
 
           case P_BOOL:
             if (!value || value[0]==(char)'#')
               error(EXIT_FAILURE, keyword," keyword has no value!");
+            if (*value=='@')
+              value = listbuf = list_to_str(value+1);
             if ((cp = strchr("yYnN", (int)value[0])))
               *(int *)(key[nkey].ptr) = (tolower((int)*cp)=='y')?1:0;
             else
@@ -232,14 +256,22 @@ void    readprefs(char *filename, char **argkey, char **argval, int narg)
           case P_KEY:
             if (!value || value[0]==(char)'#')
               error(EXIT_FAILURE, keyword," keyword has no value!");
+            if (*value=='@')
+              value = listbuf = list_to_str(value+1);
             if ((ival = findkeys(value, key[nkey].keylist,FIND_STRICT))
 			!= RETURN_ERROR)
               *(int *)(key[nkey].ptr) = ival;
             else
-              error(EXIT_FAILURE, keyword, " set to an unknown keyword");
+              {
+              sprintf(errstr, "*Error*: %s set to an unknown keyword: ",
+			keyword);
+              error(EXIT_FAILURE, errstr, value);
+              }
             break;
 
           case P_BOOLLIST:
+             if (value && *value=='@')
+              value = strtok(listbuf = list_to_str(value+1), notokstr);
             for (i=0; i<MAXLIST&&value&&value[0]!=(char)'#'; i++)
               {
               if (i>=key[nkey].nlistmax)
@@ -256,11 +288,13 @@ void    readprefs(char *filename, char **argkey, char **argval, int narg)
             break;
 
           case P_INTLIST:
+            if (value && *value=='@')
+              value = strtok(listbuf = list_to_str(value+1), notokstr);
             for (i=0; i<MAXLIST&&value&&value[0]!=(char)'#'; i++)
               {
               if (i>=key[nkey].nlistmax)
                 error(EXIT_FAILURE, keyword, " has too many members");
-              ival = strtol(value, NULL, 0);
+              ival = strtol(value, (char **)NULL, 0);
               if (ival>=key[nkey].imin && ival<=key[nkey].imax)
                 ((int *)key[nkey].ptr)[i] = ival;
               else
@@ -273,6 +307,8 @@ void    readprefs(char *filename, char **argkey, char **argval, int narg)
             break;
 
           case P_FLOATLIST:
+            if (value && *value=='@')
+              value = strtok(listbuf = list_to_str(value+1), notokstr);
             for (i=0; i<MAXLIST&&value&&value[0]!=(char)'#'; i++)
               {
               if (i>=key[nkey].nlistmax)
@@ -290,6 +326,8 @@ void    readprefs(char *filename, char **argkey, char **argval, int narg)
             break;
 
           case P_KEYLIST:
+            if (value && *value=='@')
+              value = strtok(listbuf = list_to_str(value+1), notokstr);
             for (i=0; i<MAXLIST && value && value[0]!=(char)'#'; i++)
               {
               if (i>=key[nkey].nlistmax)
@@ -298,7 +336,11 @@ void    readprefs(char *filename, char **argkey, char **argval, int narg)
 			!= RETURN_ERROR)
                 ((int *)(key[nkey].ptr))[i] = ival;
               else
-                error(EXIT_FAILURE, keyword, " set to an unknown keyword");
+                {
+                sprintf(errstr, "*Error*: %s set to an unknown keyword: ",
+			keyword);
+                error(EXIT_FAILURE, errstr, value);
+                }
               value = strtok((char *)NULL, notokstr);
               }
             if (i<key[nkey].nlistmin)
@@ -307,6 +349,8 @@ void    readprefs(char *filename, char **argkey, char **argval, int narg)
             break;
 
           case P_STRINGLIST:
+            if (value && *value=='@')
+              value = strtok(listbuf = list_to_str(value+1), notokstr);
             if (!value || value[0]==(char)'#')
               {
               value = "";
@@ -330,7 +374,7 @@ void    readprefs(char *filename, char **argkey, char **argval, int narg)
 
           default:
             error(EXIT_FAILURE, "*Internal ERROR*: Type Unknown",
-				" in readprefs()");
+				" in prefs_read()");
             break;
           }
         key[nkey].flag = 1;
@@ -396,14 +440,61 @@ int     cistrcmp(char *cs, char *ct, int mode)
   }
 
 
-/********************************* preprefs **********************************/
-/*
-Set number of threads and endianity.
-*/
-void	preprefs()
+/****** list_to_str **********************************************************
+PROTO	char    *list_to_str(char *listname)
+PURPOSE	Read the content of a file and convert it to a long string.
+INPUT	File name.
+OUTPUT	Pointer to an allocated string, or NULL if something went wrong.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	07/05/2012
+ ***/
+char	*list_to_str(char *listname)
+  {
+   FILE		*fp;
+   char		liststr[MAXCHAR],
+		*listbuf, *str;
+   int		l, bufpos, bufsize;
+
+  if (!(fp=fopen(listname,"r")))
+    error(EXIT_FAILURE, "*Error*: File not found: ", listname);
+  bufsize = 8*MAXCHAR;
+  QMALLOC(listbuf, char, bufsize);
+  for (bufpos=0; fgets(liststr,MAXCHAR,fp);)
+    for (str=NULL; (str=strtok(str? NULL: liststr, "\n\r\t ")) && str[0]!='#';)
+      {
+      if (bufpos>MAXLISTSIZE)
+        error(EXIT_FAILURE, "*Error*: Too many parameters in ", listname);
+      l = strlen(str)+1;
+      if (bufpos+l > bufsize)
+        {
+        bufsize += 8*MAXCHAR;
+        QREALLOC(listbuf, char, bufsize);
+        }
+      if (bufpos)
+        listbuf[bufpos-1] = ' ';
+      strcpy(listbuf+bufpos, str);
+      bufpos += l;
+      }
+  fclose(fp);
+
+  return listbuf;
+  }
+
+
+/****** prefs_tune ***********************************************************
+PROTO	void prefs_tune(void)
+PURPOSE	Set up stuff such as number of threads, endianity, CPU ID overrides,...
+INPUT	-.
+OUTPUT	-.
+NOTES	Global preferences are used.
+AUTHOR	E. Bertin (IAP)
+VERSION	18/01/2012
+ ***/
+void	prefs_tune(void)
 
   {
-   char			str[80];
+   char			str[MAXCHAR];
    unsigned short	ashort=1;
 #ifdef USE_THREADS
    int			nproc;
@@ -414,7 +505,7 @@ void	preprefs()
 
 /* Multithreading */
 #ifdef USE_THREADS
-  if (prefs.nthreads <= 0)
+  if (!prefs.nthreads)
     {
 /*-- Get the number of processors for parallel builds */
 /*-- See, e.g. http://ndevilla.free.fr/threads */
@@ -440,8 +531,9 @@ void	preprefs()
 #endif
 
     if (nproc>0)
-      prefs.nthreads = ((prefs.nthreads) && nproc>(-prefs.nthreads))?
-		-prefs.nthreads : nproc;
+       prefs.nthreads = ((prefs.nthreads) && nproc>(-prefs.nthreads))?
+			-prefs.nthreads
+			: nproc;
     else
       {
       prefs.nthreads = prefs.nthreads? -prefs.nthreads : 2;
@@ -449,11 +541,22 @@ void	preprefs()
       warning("Cannot find the number of CPUs on this system:", str);
       }
     }
-#ifndef HAVE_ATLAS_MP
+
+#ifdef HAVE_MKL
+  mkl_set_num_threads(1);
+#else
+ #ifndef HAVE_ATLAS_MP
    if (prefs.nthreads>1)
      warning("This executable has been compiled using a version of the ATLAS "
 	"library without support for multithreading. ",
 	"Performance will be degraded.");
+ #endif
+ #ifndef HAVE_FFTWF_MP
+   if (prefs.nthreads>1)
+     warning("This executable has been compiled using a version of the FFTW "
+	"library without support for multithreading. ",
+	"Performance will be degraded.");
+ #endif
 #endif
 
 #else
@@ -463,11 +566,6 @@ void	preprefs()
     warning("NTHREADS != 1 ignored: ",
 	"this build of " BANNER " is single-threaded");
     }
-#endif
-
-/* We temporarily allow threads for non-multithreaded code (defaulted to 1)*/
-#ifdef HAVE_MKL
-  mkl_set_num_threads(prefs.nthreads);
 #endif
 
 /* Override INTEL CPU detection routine to help performance on 3rd-party CPUs */
@@ -492,43 +590,73 @@ void	preprefs()
   else
     __intel_cpu_indicator = 0x0001;
 #endif
-
   }
 
 
-/********************************* useprefs **********************************/
-/*
-Update various structures according to the prefs.
-*/
-void	useprefs()
+/****** prefs_use ************************************************************
+PROTO	void prefs_use(void)
+PURPOSE	Update various structures according to configuration parameters.
+INPUT	-.
+OUTPUT	-.
+NOTES	Global preferences are used.
+AUTHOR	E. Bertin (IAP)
+VERSION	18/09/2013
+ ***/
+void	prefs_use(void)
 
   {
-   int			i, margin, naper;
-   char			*str;
-
-/*-------------------------------- Images ----------------------------------*/
-  prefs.dimage_flag = (prefs.nimage_name>1);
-
-/*--------------------------------- ASSOC ----------------------------------*/
-  prefs.assoc_flag = FLAG(obj2.assoc) || FLAG(obj2.assoc_number);
+   int			i,j, last, margin;
+   char			*pstr;
 
 /*-------------------------------- Extracting ------------------------------*/
   if (prefs.nthresh_type<2)
     prefs.thresh_type[1] = prefs.thresh_type[0];
+
+  if (prefs.ndetector_type<prefs.nimage)
+    {
+    last = prefs.ndetector_type - 1;
+    for (i=prefs.ndetector_type; i<prefs.nimage; i++)
+      prefs.detector_type[i] = prefs.detector_type[last];
+    prefs.ndetector_type = prefs.nimage;
+    }
+
+
+/*-------------------------------- Multigrid -------------------------------*/
+  prefs.multigrids_flag = 0;
+  for (i=0; i<prefs.nmultigrid_flag; i++)
+    if ((prefs.multigrid_flag[i]))
+      {
+      prefs.multigrids_flag = 1;
+      break;
+      }
+
+  if (prefs.nmultigrid_flag<prefs.nimage)
+    {
+    last = prefs.nmultigrid_flag - 1;
+    for (i=prefs.nmultigrid_flag; i<prefs.nimage; i++)
+      prefs.multigrid_flag[i] = prefs.multigrid_flag[last];
+    prefs.nmultigrid_flag = prefs.nimage;
+    }
+
+/*------------------------------ Image flags -------------------------------*/
+/* TODO: make detection/measurement image selection more flexible */
+  for (i=0; i<prefs.nimage; i++)
+    prefs.image_flags[i] = MEASURE_FIELD
+	| prefs.multigrid_flag[i]*MULTIGRID_FIELD;
+  prefs.image_flags[0] |= DETECT_FIELD;
 
 /*-------------------------------- Deblending ------------------------------*/
   prefs.deb_maxarea = (prefs.ext_minarea<MAXDEBAREA ?
 		prefs.ext_minarea:MAXDEBAREA);
 
 /*-------------------------------- Astrometry ------------------------------*/
-  prefs.world_flag = FLAG(obj2.mxw) || FLAG(obj2.mamaposx)
+  prefs.world_flag = FLAG(obj2.posxw) || FLAG(obj2.mamaposx)
 		|| FLAG(obj2.peakxw) || FLAG(obj2.winpos_xw)
 		|| FLAG(obj2.mx2w) || FLAG(obj2.win_mx2w)
 		|| FLAG(obj2.xw_prof) || FLAG(obj2.poserrmx2w_prof)
 		|| FLAG(obj2.poserr_mx2w) || FLAG(obj2.winposerr_mx2w)
 		|| FLAG(obj2.area_flagw) || FLAG(obj2.prof_flagw)
-		|| FLAG(obj2.fwhmw_psf)
-		|| (FLAG(obj2.sprob) && prefs.pixel_scale == 0.0);
+		|| FLAG(obj2.fwhmw_psf);
 
 /* Default astrometric settings */
   strcpy(prefs.coosys, "ICRS");
@@ -536,96 +664,93 @@ void	useprefs()
 
 /*-------------------------------- Photometry ------------------------------*/
 
-/* Find the largest APERture-photometry vector */
-  if (FLAG(obj2.flux_aper))
+/* Detector gain */
+  if (prefs.ngain != prefs.nimage)
     {
-    naper = prefs.flux_apersize;
-    if (prefs.fluxerr_apersize>naper)
-      naper = prefs.fluxerr_apersize;
-    if (prefs.mag_apersize>naper)
-      naper = prefs.mag_apersize;
-    if (prefs.magerr_apersize>naper)
-      naper = prefs.magerr_apersize;
-    if (naper>prefs.naper)
-      {
-      warning("Not enough apertures provided in config.:\n",
-	"         some APER photometric values will remain blank ");
-      naper = prefs.naper;
-      }
-    else
-      prefs.naper = naper;
+    last = prefs.ngain-1;
+    for (i=prefs.ngain; i<prefs.nimage; i++)
+      prefs.gain[i] = prefs.gain[last];
+    prefs.ngain = prefs.nimage;
     }
-  else
-    naper = 0;			/* To avoid gcc -Wall warnings */
 
-/* Find the largest "minimum margin" necessary for apertures */
+/* Saturation level */
+  if (prefs.nsatur_level != prefs.nimage)
+    {
+    last = prefs.nsatur_level-1;
+    for (i=prefs.nsatur_level; i<prefs.nimage; i++)
+      prefs.satur_level[i] = prefs.satur_level[last];
+    prefs.nsatur_level = prefs.nimage;
+    }
+
+/* Magnitude zero-point */
+  if (prefs.nmag_zeropoint != prefs.nimage)
+    {
+    last = prefs.nmag_zeropoint-1;
+    for (i=prefs.nmag_zeropoint; i<prefs.nimage; i++)
+      prefs.mag_zeropoint[i] = prefs.mag_zeropoint[last];
+    prefs.nmag_zeropoint = prefs.nimage;
+    }
+
+/* Field label strings */
+  if (!prefs.nphotinstrumax)
+    {
+    prefs.nphotinstrumax = prefs.nimage;
+    QCALLOC(prefs.photinstrustr, char *, prefs.nphotinstrumax);
+    prefs.nphotinstru = 0;
+    }
+
+/* Set up CLEANing margin based on photometric apertures */
   prefs.cleanmargin = 0;
-  if (FLAG(obj2.vignet)
-	&& (margin=(prefs.vignetsize[1]+1)/2) > prefs.cleanmargin)
-    prefs.cleanmargin = margin;
-  if (FLAG(obj2.vigshift)
-	&& (margin=(prefs.vigshiftsize[1]+1)/2+3)>prefs.cleanmargin)
-    prefs.cleanmargin = margin;
+
   if (FLAG(obj2.flux_aper))
-    for (i=0; i<naper; i++)
+    for (i=0; i<prefs.naper; i++)
       if ((margin=(int)((prefs.apert[i]+1)/2)+1) > prefs.cleanmargin)
         prefs.cleanmargin = margin;
+  if (FLAG(obj2.vignet)
+	&& (margin=(prefs.vignet_size[1]+1)/2) > prefs.cleanmargin)
+    prefs.cleanmargin = margin;
+  if (FLAG(obj2.vigshift)
+	&& (margin=(prefs.vigshift_size[1]+1)/2+3)>prefs.cleanmargin)
+    prefs.cleanmargin = margin;
 
-/* Growth-curve flag */
-  if (FLAG(obj2.flux_growth)
-	|| FLAG(obj2.mag_growth)
-	|| FLAG(obj2.flux_radius)
-	|| FLAG(obj2.hl_radius)
-	|| FLAG(obj2.flux_growthstep)
-	|| FLAG(obj2.mag_growthstep))
-    prefs.growth_flag = 1;
-
-  if (FLAG(obj2.flux_radius) && prefs.flux_radiussize)
-    if (prefs.nflux_frac>prefs.flux_radiussize)
-      prefs.nflux_frac = prefs.flux_radiussize;
+  if (FLAG(obj2.flux_radius) && prefs.flux_radius_size[0])
+    if (prefs.nflux_frac>prefs.flux_radius_size[0])
+      prefs.nflux_frac = prefs.flux_radius_size[0];
 
 /*------------------------------- MASKing ----------------------------------*/
   prefs.blank_flag = (prefs.mask_type!=MASK_NONE);
 
-/*--------------------------- SOM-fitting ----------------------------------*/
-  prefs.somfit_flag = FLAG(obj2.flux_somfit);
-
 /*------------------------------ Background --------------------------------*/
-  if (prefs.nback_type<2)
-    prefs.back_type[1] = prefs.back_type[0];
-  if (prefs.nback_val<2)
-    prefs.back_val[1] = prefs.back_val[0];
-
   if (prefs.nbacksize<2)
     prefs.backsize[1] = prefs.backsize[0];
   if (prefs.nbackfsize<2)
     prefs.backfsize[1] = prefs.backfsize[0];
+  if (prefs.nback_type<2)
+    prefs.back_type[1] = prefs.back_type[0];
 
 /*------------------------------ FLAG-images -------------------------------*/
-  prefs.nimaisoflag = (prefs.imaflag_size > prefs.imanflag_size) ?
-			prefs.imaflag_size : prefs.imanflag_size;
-  prefs.nimaflag = (prefs.nimaisoflag < prefs.nfimage_name) ?
-		prefs.nimaisoflag : prefs.nfimage_name;
+  if (prefs.nflag_type<prefs.nfimage)
+    {
+    last = prefs.nflag_type - 1;
+    for (i=prefs.nflag_type; i<prefs.nfimage; i++)
+      prefs.flag_type[i] = prefs.flag_type[last];
+    prefs.nflag_type = prefs.nfimage;
+    }
 
 /*----------------------------- CHECK-images -------------------------------*/
   prefs.check_flag = 0;
   for (i=0; i<prefs.ncheck_type; i++)
     if (prefs.check_type[i] != CHECK_NONE)	/* at least 1 is not NONE */
+      {
       prefs.check_flag = 1;
+      break;
+      }
 
   if (prefs.check_flag && prefs.ncheck_name!=prefs.ncheck_type)
     error(EXIT_FAILURE, "*Error*: CHECKIMAGE_NAME(s) and CHECKIMAGE_TYPE(s)",
 		" are not in equal number");
 
 /*---------------------------- PSF-fitting ---------------------------------*/
-  if (FLAG(obj2.flux_psf) )
-    {
-    prefs.psffit_flag = 1;
-/* We deactivate double-PSF fits for now */
-/*
-    prefs.dpsffit_flag = (prefs.npsf_name>1);
-*/
-    }
   if (prefs.check_flag)
     for (i=0; i<prefs.ncheck_type; i++)
       if (prefs.check_type[i] == CHECK_SUBPSFPROTOS
@@ -633,21 +758,6 @@ void	useprefs()
         prefs.psffit_flag = 1;
   if (prefs.psffit_flag)
     prefs.psf_flag = 1;
-  if (prefs.dpsffit_flag)
-    prefs.dpsf_flag = 1;
-
-/*---------------------------- PC-fitting ----------------------------------*/
-/* PC-fitting is possible only if a PSF file is loaded */
-  if (prefs.psf_flag)
-    {
-    prefs.pc_flag = FLAG(obj2.mx2_pc);
-    if (prefs.check_flag)
-      for (i=0; i<prefs.ncheck_type; i++)
-        if (prefs.check_type[i] == CHECK_SUBPCPROTOS
-		|| prefs.check_type[i] == CHECK_PCPROTOS
-		|| prefs.check_type[i] == CHECK_PCOPROTOS)
-          prefs.pc_flag = 1;
-    }
 
 /*----------------------------- Model-fitting -------------------------------*/
   if (prefs.check_flag)
@@ -661,60 +771,147 @@ void	useprefs()
         prefs.prof_flag = 1;
   if (prefs.prof_flag)
     prefs.psf_flag = 1;
-  if (prefs.dprof_flag)
-    prefs.dpsf_flag = 1;
 
 /*-------------------------- Tracking the PSF FWHM --------------------------*/
-  if (prefs.seeing_fwhm == 0 && (FLAG(obj2.sprob) || FLAG(obj2.fwhm_psf)))
+  if (prefs.seeing_fwhm == 0 && FLAG(obj2.sprob) || FLAG(obj2.fwhm_psf))
     prefs.psf_flag = 1;
 
-/*-------------------------- Pattern-fitting -------------------------------*/
+/*--------------------------- Pattern-fitting -------------------------------*/
 /* Profile-fitting is possible only if a PSF file is loaded */
   if (prefs.check_flag)
     for (i=0; i<prefs.ncheck_type; i++)
       if (prefs.check_type[i] == CHECK_PATTERNS)
         prefs.pattern_flag = 1;
 
-/*----------------------------- WEIGHT-images ------------------------------*/
-  if (prefs.nweight_type<2)
-    prefs.weight_type[1] = prefs.weight_type[0];
+/*--------------------------------- PSFs ------------------------------------*/
+  if (prefs.psf_flag && prefs.npsf_name != prefs.nimage)
+     error(EXIT_FAILURE, "*Error*: PSF_NAME(s) and input image(s)",
+		" are not in equal number");
 
-  prefs.dweight_flag = (prefs.weight_type[0]!= WEIGHT_NONE);
-  prefs.weight_flag = (prefs.weight_type[1]!= WEIGHT_NONE);
+/*-------------------------------- WEIGHTs ----------------------------------*/
+  prefs.weights_flag = 0;
+  for (i=0; i<prefs.nweight_type; i++)
+    prefs.weights_flag |= (prefs.weight_type[1]!= WEIGHT_NONE);
 
-  if (prefs.dweight_flag || prefs.weight_flag)
+/* If Weights are needed... */
+  if (prefs.weights_flag)
     {
-/*-- Handle the default weight-threshold values */
-    if (prefs.nweight_thresh<2)
-      for (i=2; --i >= prefs.nweight_thresh;)
-        prefs.weight_thresh[i] = (prefs.weight_type[i]==WEIGHT_FROMWEIGHTMAP)?
-					0.0 : BIG;
-/*-- Weight rescaling flags */
-    if (prefs.nwscale_flag<2)
-       prefs.wscale_flag[1] = (prefs.weight_type[1]==WEIGHT_FROMBACK)?
-					BACK_WSCALE : prefs.wscale_flag[0];
+/*-- Weight types */
+    if (prefs.nweight_type != prefs.nimage)
+      {
+      last = prefs.nweight_type-1;
+      for (i=prefs.nweight_type; i<prefs.nimage; i++)
+        prefs.weight_type[i] = prefs.weight_type[last];
+      prefs.nweight_type = prefs.nimage;
+      }
 
-/*-- Check WEIGHT_IMAGE parameter(s) */
-    if ((!prefs.nwimage_name
-	&& ((prefs.weight_type[0]!=WEIGHT_FROMBACK
-		&& prefs.weight_type[0]!=WEIGHT_NONE)
-	|| (prefs.weight_type[1]!=WEIGHT_FROMBACK
-		&& prefs.weight_type[1]!=WEIGHT_NONE)))
-	|| (prefs.nwimage_name<2
-	&& prefs.weight_type[0]!=WEIGHT_FROMBACK
-	&& prefs.weight_type[0]!=WEIGHT_NONE
-	&& prefs.weight_type[1]!=WEIGHT_FROMBACK
-	&& prefs.weight_type[1]!=WEIGHT_NONE
-	&& prefs.weight_type[0]!=prefs.weight_type[1]))
-      error(EXIT_FAILURE, "*Error*: WEIGHT_IMAGE missing","");
+/*-- Weight flags (new) */
+    if (!prefs.weight_flag)
+      {
+      for (i=0; i<prefs.nimage; i++)
+        prefs.weight_flag[i] = (prefs.weight_type[i]!= WEIGHT_NONE);
+      }
 
-    if (prefs.nwimage_name && prefs.nwimage_name<2)
-      prefs.wimage_name[1] = prefs.wimage_name[0];
-    if (prefs.nwimage_name==2 && prefs.nweight_type==1)
-      prefs.nweight_type = 2;
+/*-- Weight rescaling flag */
+    if (prefs.nwscale_flag != prefs.nimage)
+      {
+      last = prefs.nwscale_flag-1;
+      for (i=prefs.nwscale_flag; i<prefs.nimage; i++)
+        prefs.wscale_flag[i] = (prefs.weight_type[i]==WEIGHT_FROMBACK)?
+					BACK_WSCALE : prefs.wscale_flag[last];
+      prefs.nwscale_flag = prefs.nimage;
+      }
 
-/*-- If detection-only interpolation is needed with 1 Weight image... */
-/*-- ...pretend we're using 2, with only one being interpolated */
+/*-- Weight thresholds */
+    if (prefs.nweight_thresh != prefs.nimage)
+      {
+      if (!(prefs.nweight_thresh))
+        {
+        prefs.weight_thresh[0] = (prefs.weight_type[0]==WEIGHT_FROMWEIGHTMAP)?
+                      0.0:BIG;
+        prefs.nweight_thresh = 1;
+        }
+
+      last = prefs.nweight_thresh - 1;
+      for (i=prefs.nweight_thresh; i<prefs.nimage; i++)
+        prefs.weight_thresh[i] = prefs.weight_thresh[last];
+      prefs.nweight_thresh = prefs.nimage;
+      }
+
+/*-- Weight gains */
+    if (prefs.nweightgain_flag != prefs.nimage)
+      {
+      last = prefs.nweightgain_flag-1;
+      for (i=prefs.nweightgain_flag; i<prefs.nimage; i++)
+        prefs.weightgain_flag[i] = prefs.weightgain_flag[last];
+      prefs.nweightgain_flag = prefs.nimage;
+      }
+
+/*-- Weight images */
+
+    if (prefs.nwimage != prefs.nimage)
+      {
+      if (prefs.nwimage > prefs.nimage)
+        prefs.nwimage = prefs.nimage;
+      else if (!prefs.nwimage)
+        {
+/*------ Use the WEIGHT_SUFFIX to identify the weight-maps */
+        for (i=0; i<prefs.nimage; i++)
+          {
+          QMALLOC(prefs.wimage_name[i], char, MAXCHAR);
+/*-------- Create a file name with a new extension */
+          strcpy(prefs.wimage_name[i], prefs.image_name[i]);
+          if (!(pstr = strrchr(prefs.wimage_name[i], '.')))
+            pstr = prefs.wimage_name[i]+strlen(prefs.wimage_name[i]);
+          sprintf(pstr, "%s", prefs.weight_suffix);
+          }
+        prefs.nwimage = prefs.nimage;
+        }
+      if (prefs.nweight_type > prefs.nwimage)
+        {
+        for (i=0; i<prefs.nweight_type; i++)
+          {
+          if (prefs.weight_type[i] == WEIGHT_NONE
+		|| prefs.weight_type[i] == WEIGHT_FROMBACK)
+            {
+/*---------- If the background map is internal, shift the next filenames ...*/
+            for (j=prefs.nwimage; j>i; j--)
+              prefs.wimage_name[j] = prefs.wimage_name[j-1];
+/*---------- ... and replace the current one with a dummy one */
+            QMALLOC(prefs.wimage_name[i], char, MAXCHAR);
+            sprintf(prefs.wimage_name[i], "INTERNAL");
+            prefs.nwimage++;
+            }
+          }      
+/*------ Now check that we haven't gone too far!! */
+        if (prefs.nwimage > prefs.nweight_type)
+          error(EXIT_FAILURE, "*Error*: the number of WEIGHT_TYPEs and ",
+		"weight-maps do not match");
+        }
+
+      if (prefs.nwimage != prefs.nimage)
+        {
+/*------ Weight-maps given through the WEIGHT_IMAGE keyword */
+        if (prefs.nwimage == 1)
+          {
+          warning("Several input images and a single weight-map found: ",
+		"applying the same weight-map to all images");
+          prefs.nwimage = prefs.nimage;
+          for (i=1; i<prefs.nwimage; i++)
+            {
+            QMALLOC(prefs.wimage_name[i], char, MAXCHAR);
+            strcpy(prefs.wimage_name[i],prefs.wimage_name[0]);
+            }
+          }
+        else
+          error(EXIT_FAILURE, "*Error*: the number of input images and ",
+		"weight-maps do not match");
+        }
+      }
+    }
+/*
+*-- If detection-only interpolation is needed with 1 Weight image... *
+*-- ...pretend we're using 2, with only one being interpolated *
     if (prefs.nweight_type==1
 	&& prefs.nwimage_name && prefs.wimage_name[1]==prefs.wimage_name[0]
 	&& prefs.interp_type[0]==INTERP_VARONLY )
@@ -724,39 +921,37 @@ void	useprefs()
       prefs.weight_type[0] = WEIGHT_FROMINTERP;
       prefs.wimage_name[1] = prefs.wimage_name[0];
       prefs.interp_type[1] = INTERP_NONE;
-      prefs.dweight_flag = 1;
       if (prefs.nweight_thresh<2)
         {
         prefs.nweight_thresh = 2;
         prefs.weight_thresh[1] = prefs.weight_thresh[0];
         }
       }
-    }
-
+*/
 /*------------------------------ Catalogue ---------------------------------*/
 
   if (!strcmp(prefs.cat_name, "STDOUT"))
     prefs.pipe_flag = 1;
 
-  if ((str=strrchr(prefs.filter_name, '/')))
-    strcpy(thecat.filter_name, str+1);
+  if ((pstr=strrchr(prefs.filter_name, '/')))
+    strcpy(thecat.filter_name, pstr+1);
   else
     strcpy(thecat.filter_name, prefs.filter_name);
 
-  if ((str=strrchr(prefs.prefs_name, '/')))
-    strcpy(thecat.prefs_name, str+1);
+  if ((pstr=strrchr(prefs.prefs_name, '/')))
+    strcpy(thecat.prefs_name, pstr+1);
   else
     strcpy(thecat.prefs_name, prefs.prefs_name);
 
-  if ((str=strrchr(prefs.nnw_name, '/')))
-    strcpy(thecat.nnw_name, str+1);
+  if ((pstr=strrchr(prefs.nnw_name, '/')))
+    strcpy(thecat.nnw_name, pstr+1);
   else
     strcpy(thecat.nnw_name, prefs.nnw_name);
 
-  if ((str=strrchr(prefs.image_name[prefs.nimage_name-1], '/')))
-    strcpy(thecat.image_name, str+1);
+  if ((pstr=strrchr(prefs.image_name[prefs.nimage-1], '/')))
+    strcpy(thecat.image_name, pstr+1);
   else
-    strcpy(thecat.image_name, prefs.image_name[prefs.nimage_name-1]);
+    strcpy(thecat.image_name, prefs.image_name[prefs.nimage-1]);
 
   sprintf(thecat.soft_name, "%s %s", BANNER, VERSION);
 
@@ -764,23 +959,27 @@ void	useprefs()
   }
 
 
-/********************************* endprefs *********************************/
-/*
-Mostly free memory allocate for static arrays.
-*/
-void	endprefs(void)
+/****** prefs_end ************************************************************
+PROTO	void prefs_end(void)
+PURPOSE	Free memory allocated for config-related arrays.
+INPUT	-.
+OUTPUT	-.
+NOTES	Global preferences are used.
+AUTHOR	E. Bertin (IAP)
+VERSION	21/02/2012
+ ***/
+void	prefs_end(void)
 
   {
     int i;
 
-  for (i=0; i<prefs.nfimage_name; i++)
-      free(prefs.fimage_name[i]);
-  for (i=0; i<prefs.nwimage_name; i++)
-      free(prefs.wimage_name[i]);
-  for (i=0; i<prefs.npsf_name; i++)
-      free(prefs.psf_name[i]);
-  for (i=0; i<prefs.ncheck_name; i++)
-      free(prefs.check_name[i]);
+  if (prefs.photinstrustr)
+    {
+    for (i=0; i<prefs.nphotinstru; i++)
+      free(prefs.photinstrustr[i]);
+    free(prefs.photinstrustr);
+    prefs.nphotinstru = 0;
+    }
 
   return;
   }

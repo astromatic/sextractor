@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		09/03/2011
+*	Last modified:		03/04/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -32,6 +32,7 @@
 #define	QUANTIF_NSIGMA		5		/* histogram limits */
 #define	QUANTIF_NMAXLEVELS	4096		/* max nb of quantif. levels */
 #define	QUANTIF_AMIN		4		/* min nb of "mode pixels" */
+#define	BACK_EPS		(1e-4)		/* a small number */
 
 #define	BACK_WSCALE		1		/* Activate weight scaling */
 #define	BACK_NOWSCALE		0		/* No weight scaling */
@@ -56,19 +57,26 @@ typedef struct structback
 
 
 /*------------------------------- functions ---------------------------------*/
-void		backhisto(backstruct *, backstruct *, PIXTYPE *, PIXTYPE *,
-			size_t, int, int, int, PIXTYPE),
-		backstat(backstruct *, backstruct *, PIXTYPE *, PIXTYPE *,
-			size_t, int, int, int, PIXTYPE),
-		backrmsline(picstruct *, int, PIXTYPE *),
-		copyback(picstruct *infield, picstruct *outfield),
-		endback(picstruct *),
-		filterback(picstruct *),
-		makeback(picstruct *, picstruct *, int),
-		subbackline(picstruct *, int, PIXTYPE *);
+void		back_histo(backstruct *backmesh, backstruct *wbackmesh,
+			PIXTYPE *buf, PIXTYPE *wbuf, size_t bufsize,
+			int n, int w, int bw, PIXTYPE wthresh),
+		back_stat(backstruct *backmesh, backstruct *wbackmesh,
+			PIXTYPE *buf, PIXTYPE *wbuf, size_t bufsize,
+			int n, int w, int bw, PIXTYPE wthresh),
+		back_rmsline(fieldstruct *field, int y, PIXTYPE *line),
+		back_copy(fieldstruct *infield, fieldstruct *outfield),
+		back_end(fieldstruct *field),
+		back_field(fieldstruct *field),
+		back_filter(fieldstruct *field),
+		back_map(fieldstruct *field, fieldstruct *wfield,
+			int wscale_flag),
+		back_subline(fieldstruct *field, int y, int xmin, int width,
+			PIXTYPE *line),
+		back_printmeshs(const backstruct *backmesh, const int nmeshs),
+		back_printmesh(const backstruct *backmesh);
 
-float		backguess(backstruct *, float *, float *),
-		localback(picstruct *, objstruct *),
-		*makebackspline(picstruct *, float *);
+float		*back_makespline(fieldstruct *, float *),
+		back_guess(backstruct *bkg, float *mean, float *sigma),
+		back_local(fieldstruct *field, objstruct *obj, float *sigma);
 
-extern PIXTYPE	back(picstruct *, int, int);
+PIXTYPE		back_interpolate(fieldstruct *field, double x, double y);

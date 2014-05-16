@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		12/04/2012
+*	Last modified:		13/04/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -38,7 +38,7 @@
 #define		BANNER		"SExtractor"
 #define		MYVERSION	VERSION
 #define		EXECUTABLE	"sex"
-#define         COPYRIGHT       "2012 IAP/CNRS/UPMC"
+#define         COPYRIGHT       "2011-2012 IAP/CNRS/UPMC"
 #define		DISCLAIMER	BANNER " comes with ABSOLUTELY NO WARRANTY\n" \
 		"You may redistribute copies of " BANNER "\n" \
 		"under the terms of the GNU General Public License."
@@ -57,7 +57,7 @@
 #define	MAXCHARL		16384		/* max.nb of chars in strlist*/
 #define	MAXDEBAREA		3		/* max. area for deblending */
 #define	MAXFLAG			4		/* max. # of FLAG-images */
-#define	MAXIMAGE		2		/* max. # of input images */
+#define	MAXIMAGE		1024		/* max. # of input images */
 #define	MAXNAPER		32		/* max. number of apertures */
 #define	MAXNASSOC		32		/* max. number of assoc. */
 #define	MAXPICSIZE		1048576		/* max. image size */
@@ -68,7 +68,9 @@
 #ifndef PI
 #define	PI			3.1415926535898	/* never met before? */
 #endif
+
 #define	DEG			(PI/180.0)	/* 1 deg in radians */
+#define	FDMAG			1.0857362f
 
 /* NOTES:
  *
@@ -240,4 +242,3 @@
 
 #define FLAG(x)		(*((char *)&flag##x))
 
-#define VECFLAG(x)	(*((char *)flag##x))

@@ -1,13 +1,13 @@
 /*
-*				flag.h
+*				deblend.h
 *
-* Include file for flag.c.
+* Include file for deblend.c.
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1997-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 2012 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,16 +22,26 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		21/02/2012
+*	Last modified:		27/03/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-/*--------------------------- Internal constants ----------------------------*/
+/*------------------------------ definitions --------------------------------*/
 
-#define	FLAG_BUFSIZE	32	/* Flag-stacksize at start */
+#ifndef	RAND_MAX
+#define	RAND_MAX		2147483647
+#endif
+#define	DEBLEND_NSONMAX		1024		/* max. number per level */
+#define	DEBLEND_NBRANCH		16		/* starting number per branch */
 
 /*------------------------------- functions ---------------------------------*/
+void	deblend_alloc(void),
+	deblend_free(void);
 
-void	flag_get(objstruct *obj, pliststruct *pixel),
-	flag_merge(objstruct *objmaster, objstruct *objslave);
+int	deblend_addobj(int objnb, objliststruct *objl1, objliststruct *objl2),
+	deblend_belong(int corenb, objliststruct *coreobjlist,
+	       int shellnb, objliststruct *shellobjlist),
+	deblend_gatherup(objliststruct *objlistin,objliststruct *objlistout),
+	deblend_parcelout(objliststruct *objlistin, objliststruct *objlistout);
+
 

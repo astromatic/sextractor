@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1996-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1996-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/10/2010
+*	Last modified:		21/03/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -42,13 +42,13 @@ keystruct	headkey[] = {
   {"SEXELAPS", "Elapsed time during extraction (s)",
 	&thecat.ext_elapsed, H_FLOAT, T_DOUBLE, "%7.1f"},
   {"SEXBKGND", "Median background level (ADU)",
-	&thefield1.backmean, H_EXPO, T_FLOAT, "%-13G"},
+	&thefield.backmean, H_EXPO, T_FLOAT, "%-13G"},
   {"SEXBKDEV", "Median background RMS (ADU)",
-	&thefield1.backsig, H_EXPO, T_FLOAT, "%-13G"},
+	&thefield.backsig, H_EXPO, T_FLOAT, "%-13G"},
   {"SEXTHLD ", "Extraction threshold (ADU)",
-	&thefield2.dthresh, H_EXPO, T_FLOAT, "%-15G"},
+	&thefield.dthresh, H_EXPO, T_FLOAT, "%-15G"},
   {"SEXATHLD", "Analysis threshold (ADU)",
-	&thefield1.thresh, H_EXPO, T_FLOAT, "%-15G"},
+	&thefield.thresh, H_EXPO, T_FLOAT, "%-15G"},
   {"SEXNDET ", "Number of raw detections",
 	&thecat.ndetect, H_INT, T_LONG, "%9d"},
   {"SEXNFIN ", "Final number of extracted sources",
@@ -56,13 +56,13 @@ keystruct	headkey[] = {
   {"SEXNPARA", "Number of parameters per source",
 	&thecat.nparam, H_INT, T_LONG, "%3d"},
   {"SEXPXSCL", "Pixel scale used for measurements (arcsec)",
-	&thefield1.pixscale, H_EXPO, T_DOUBLE, "%-15G"},
+	&thefield.pixscale, H_EXPO, T_DOUBLE, "%-15G"},
   {"SEXSFWHM", "Source FWHM used for measurements (arcsec)",
 	&prefs.seeing_fwhm, H_EXPO, T_DOUBLE, "%-13G"},
   {"SEXNNWF ", "S/G classification NNW filename",
 	thecat.nnw_name, H_STRING, T_STRING, "%-18s"},
   {"SEXGAIN ", "Gain used (e-/ADU)",
-	&thefield2.gain, H_EXPO, T_DOUBLE, "%6.2f"},
+	&thefield.gain, H_EXPO, T_DOUBLE, "%6.2f"},
   {"SEXFLTR ", "Detection filtering activated (flag)",
 	&prefs.filter_flag, H_BOOL, T_LONG, "%1s"},
   {"SEXFILTN", "Filter filename",
@@ -100,19 +100,19 @@ keystruct	headkey[] = {
   {"SEXPETP2", "Parameter #2 used for Petrosian magnitudes",
 	&prefs.autoparam[1], H_FLOAT, T_DOUBLE, "%4.1f"},
   {"SEXSATLV", "Saturation level used for flagging (ADU)",
-	&thefield2.satur_level, H_EXPO, T_DOUBLE, "%-13G"},
+	&thefield.satur_level, H_EXPO, T_DOUBLE, "%-13G"},
   {"SEXMGZPT", "Zero-point used for magnitudes",
 	&prefs.mag_zeropoint, H_FLOAT, T_DOUBLE, "%8.4f"},
   {"SEXMGGAM", "Gamma used for photographic photometry",
 	&prefs.mag_gamma, H_FLOAT, T_DOUBLE, "%4.2f"},
   {"SEXBKGSX", "Mesh width used for background mapping (pixels)",
-	&thefield1.backw, H_INT, T_LONG, "%5d"},
+	&thefield.backw, H_INT, T_LONG, "%5d"},
   {"SEXBKGSY", "Mesh height used for background mapping (pixels)",
-	&thefield1.backh, H_INT, T_LONG, "%5d"},
+	&thefield.backh, H_INT, T_LONG, "%5d"},
   {"SEXBKGFX", "Mask width used for background map filtering",
-	&thefield1.nbackfx, H_INT, T_LONG, "%3d"},
+	&thefield.nbackfx, H_INT, T_LONG, "%3d"},
   {"SEXBKGFY", "Mask height used for background map filtering",
-	&thefield1.nbackfy, H_INT, T_LONG, "%3d"},
+	&thefield.nbackfy, H_INT, T_LONG, "%3d"},
 /*
   {"SEXPBKGT", "Background type for photometry",
 	 &prefs.pback_type, H_STRING, T_STRING, "-18s"},
@@ -124,8 +124,8 @@ keystruct	headkey[] = {
   {"SEXFBUFS", "Image-buffer height (scanlines)",
 	&prefs.mem_bufsize, H_INT, T_LONG, "%5d"},
   {"SEXMWSCL", "Measurement-weight re-scaling factor",
-	&thewfield1.sigfac, H_EXPO, T_FLOAT, "%-13G"},
+	&thewfield.sigfac, H_EXPO, T_FLOAT, "%-13G"},
   {"SEXDWSCL", "Detection-weight re-scaling factor",
-	&thewfield2.sigfac, H_EXPO, T_FLOAT, "%-13G"},
+	&thewfield.sigfac, H_EXPO, T_FLOAT, "%-13G"},
   {""}};
 

@@ -47,7 +47,7 @@
 /*
 Return the response of the retina at a given image position.
 */
-float    readretina(picstruct *field, retistruct *retina, float x, float y)
+float    readretina(fieldstruct *field, retistruct *retina, float x, float y)
   {
    float        *pix, resp, norm;
    int          i, ix,iy;

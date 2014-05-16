@@ -1,13 +1,13 @@
 /*
-*				flag.h
+*				misc.h
 *
-* Include file for flag.c.
+* Include file for misc.c.
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1997-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,16 +22,18 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		21/02/2012
+*	Last modified:		11/01/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-/*--------------------------- Internal constants ----------------------------*/
+/*-------------------------------- Functions --------------------------------*/
 
-#define	FLAG_BUFSIZE	32	/* Flag-stacksize at start */
+double	counter_seconds(void);
 
-/*------------------------------- functions ---------------------------------*/
+float	fqmedian(float *ra, int n);
 
-void	flag_get(objstruct *obj, pliststruct *pixel),
-	flag_merge(objstruct *objmaster, objstruct *objslave);
+int	selectext(char *filename);
+
+void	propagate_covar(double *vi, double *d, double *vo,
+				int ni, int no,	double *temp);
 

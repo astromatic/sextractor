@@ -1,13 +1,13 @@
 /*
-*				assoc.h
+*				catout.h
 *
-* Include file for assoc.c.
+* Include file for catout.c.
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1997-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 2011-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,34 +22,30 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		03/10/2011
+*	Last modified:		14/02/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-#ifndef _FITSWCS_H_
-#include        "fitswcs.h"
-#endif
-
-#define		ASSOC_BUFINC	131072	/* Assoc buffer increment (bytes) */
-
 /*--------------------------------- typedefs --------------------------------*/
-
-typedef struct structassoc
-  {
-  double	*list;			/* Pointer to the list of data */
-  int		nobj;			/* Number of data rows */
-  int		ncol;			/* Total number of columns per row */
-  int		ndata;			/* Number of retained cols per row */
-  int		*hash;			/* Pointer to the hash table */
-  double	radius;			/* Radius of search for association */
-  }             assocstruct;
 
 /*------------------------------ Prototypes ---------------------------------*/
 
-assocstruct	*load_assoc(char *filename, wcsstruct *wcs);
+obj2liststruct	*catout_readparams(char **paramlist, int nparam,
+						int nobj2);
 
-int		do_assoc(fieldstruct *field, double x, double y, double *data);
+int		catout_allocother(obj2liststruct *obj2list, void *flagobj2elem,
+				int nbytes),
+		catout_freeother(obj2liststruct *obj2list, void *flagobj2elem);
 
-void		init_assoc(fieldstruct *field),
-		end_assoc(fieldstruct *field),
-		sort_assoc(fieldstruct *field, assocstruct *assoc);
+void		catout_allocparams(obj2liststruct *obj2list),
+		catout_changeparamsize(char *keyword, int *axisn, int naxis),		
+		catout_dumpparams(void),
+		catout_end(char *error),
+		catout_endext(void),
+		catout_freeparams(obj2liststruct *obj2list),
+		catout_init(void),
+		catout_initext(fieldstruct *field),
+		catout_updateparamflags(void),
+		catout_writeobj(obj2struct *obj2),
+		catout_writevofields(FILE *file);
+
