@@ -1,0 +1,1037 @@
+#
+#				ChangeLog
+#
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+#
+#	This file part of:	SExtractor
+#
+#	Copyright:		(C) 1997-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+#
+#	License:		GNU General Public License
+#
+#	SExtractor is free software: you can redistribute it and/or modify
+#	it under the terms of the GNU General Public License as published by
+#	the Free Software Foundation, either version 3 of the License, or
+# 	(at your option) any later version.
+#	SExtractor is distributed in the hope that it will be useful,
+#	but WITHOUT ANY WARRANTY; without even the implied warranty of
+#	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#	GNU General Public License for more details.
+#	You should have received a copy of the GNU General Public License
+#	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
+#
+#	Last modified:		11/10/2010
+#
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+------------------------------------------------------------------------
+r231 | bertin | 2010-09-29 17:11:15 +0200 (Wed, 29 Sep 2010) | 3 lines
+
+Fixed issue with adaptive CLASS_STAR in dual image mode (thanks to N.Sevilla).
+Pushed version number to 2.12.3.
+
+------------------------------------------------------------------------
+r230 | bertin | 2010-09-22 17:54:49 +0200 (Wed, 22 Sep 2010) | 2 lines
+
+Allowed SEEING_FWHM to be 0 if no PSF is available and CLASS_STAR is not in the
+parameter list.
+
+------------------------------------------------------------------------
+r229 | bertin | 2010-09-13 11:05:21 +0200 (Mon, 13 Sep 2010) | 6 lines
+
+Removed singular matrix warnings in LevMar solver calls.
+Changed the management of tolerances in Hessian inversion SVD.
+Pushed Lanczos interpolator to 4th order in PSF and model-fitting.
+Normalized the interpolating function so that the DC component gain is 1.
+Pushed version number 2.12.2.
+
+------------------------------------------------------------------------
+r228 | bertin | 2010-08-26 16:30:26 +0200 (Thu, 26 Aug 2010) | 5 lines
+
+Fixed model-fitting issue with empty images in dual-image mode (thanks to
+V. de Lapparent for reporting).
+Updated LevMar to version 2.5.
+Updated URLs in various places.
+Pushed version number to 2.12.1.
+
+------------------------------------------------------------------------
+r227 | bertin | 2010-08-23 15:17:00 +0200 (Mon, 23 Aug 2010) | 3 lines
+
+Added --disable-model-fitting configure option to turn-off model-fitting
+features and to allow compiling SExtractor without requiring the ATLAS and
+FFTW libraries.
+Version number pushed to 2.12.0.
+
+------------------------------------------------------------------------
+r226 | bertin | 2010-08-20 18:32:32 +0200 (Fri, 20 Aug 2010) | 2 lines
+
+Added  POLAR1ERRMODEL_WORLD,POLAR2ERRMODEL_WORLD,POLARCORRMODEL_WORLD,
+ELLIP1ERRMODEL_WORLD,ELLIP2ERRMODEL_WORLD and ELLIPCORRMODEL_WORLD measurement
+parameters.
+
+------------------------------------------------------------------------
+r225 | bertin | 2010-08-08 19:34:14 +0200 (Sun, 08 Aug 2010) | 9 lines
+
+Fixed detection threshold missing in XML metadata output.
+Fixed TFORM error message in fitshead.c (thanks to S.Guieu).
+Fixed model-fitting error variance/covariance issue (bug in matrix inversion).
+Added ELLIP1ERRMODEL_IMAGE, ELLIP2ERRMODEL_IMAGE, ELLIPCORRMODEL_IMAGE,
+POLAR1ERRMODEL_IMAGE, POLAR2ERRMODEL_IMAGE, POLARCORRMODEL_IMAGE (more testing
+is needed and WORLD versions are not yet functional).
+Narrowed the tolerance constraint for stopping windowed centering iterations.
+Fixed incorrect reading of the DATE-OBS FITS keyword when EPOCH and MJD-OBS are missing.
+Pushed version number to 2.11.11.
+
+------------------------------------------------------------------------
+r224 | bertin | 2010-07-16 11:05:40 +0200 (Fri, 16 Jul 2010) | 5 lines
+
+Fixed WINdowed position error estimates that were underestimated by a factor 2
+(thanks to G.Bernstein).
+Fixed FLUXERR_WIN triggering issue.
+Optimized WIN parameter computations.
+Pushed version number to 2.11.8.
+
+------------------------------------------------------------------------
+r221 | bertin | 2010-07-09 16:41:51 +0200 (Fri, 09 Jul 2010) | 20 lines
+
+Added VOTABLE "version" attribute to XML output.
+Reverted minimization algorithm back to double precision (while keeping single
+precision for data and parameters in "bounded" space).
+Added specific handling of "Jacobian calls" in model-fitting.
+Sped up the resampling process in model-fitting.
+Tuned up minimization algorithm in model-fitting.
+Added shortcuts to the computation of the local PSF model. 
+Fixed triggering issues with some model-fitting parameters (thanks to
+S.Serrano).
+Removed CLASS_STAR_MODEL and DISK_PATTERN* measurement parameters.
+Added automatic tracking of the PSF FWHM from the local PSF model if
+SEEING_FWHM is 0 for CLASS_STAR.
+Fixed excessive WIN parameter computation time on large ring-shaped objects.
+Fixed model-fitting issue with null half-light radii (thanks to S.Desai and
+B.Armstrong).
+Fixed aperture display value error in FITS-LDAC catalogue header.
+Removed redundant update_tab() calls in FITS library.
+Fixed comment copy issue for slashes within strings in FITS library (thanks to
+F.Schuller).
+Added check of PSF values; SExtractor will now exit in error in the case where
+all PSF components sum up to 0.
+Replaced computation of model second moments and ellipticities with analytical
+estimates.
+Improved the accuracy of peak and average model surface brightness estimates.
+Fixed some compiler warnings.
+Pushed version number to 2.11.7.
+
+------------------------------------------------------------------------
+r220 | bertin | 2010-02-05 14:17:20 +0100 (Fri, 05 Feb 2010) | 5 lines
+
+Added reading of .head ASCII headers (suggestion from M.Monnerville and
+P.Hudelot).
+Improved real-time display.
+Fixed various issues with XSLT in double image mode.
+Pushed version number to 2.11.0.
+
+------------------------------------------------------------------------
+r219 | bertin | 2010-01-21 14:38:14 +0100 (Thu, 21 Jan 2010) | 3 lines
+
+Added the DETECT_MAXAREA (advanced) configuration keyword (as suggested by
+V.Terron).
+Improved processing time display.
+
+------------------------------------------------------------------------
+r218 | bertin | 2009-12-16 01:02:21 +0100 (Wed, 16 Dec 2009) | 9 lines
+
+Fixed world coordinates in PSF-fitting.
+Fixed error ellipse measurements in PSF-fitting (but works only for PSF_NMAX=1
+currently).
+Simplified PSF parameter handling (removed PSFDISPLAY_TYPE configuration
+option).
+Simplified triggering of local north axis computation.
+Allowed model axis ratios to exceed 1 to facilitate convergence.
+Fixed alignment bug for symmetric models.
+Restricted maximum allowed range for model coordinates.
+Pushed version number to 2.10.0.
+
+------------------------------------------------------------------------
+r217 | bertin | 2009-12-01 14:46:19 +0100 (Tue, 01 Dec 2009) | 3 lines
+
+Set XMODEL_IMAGE and YMODEL_IMAGE data types back to double precision (thanks
+to S.Desai).
+Fixed various compilation warnings.
+
+------------------------------------------------------------------------
+r216 | bertin | 2009-11-18 17:45:26 +0100 (Wed, 18 Nov 2009) | 4 lines
+
+Fixed issue with FFTW configure for custom library paths.
+Fixed compilation warnings in pattern.c and lm.h.
+Pushed version number to 2.9.9.
+
+------------------------------------------------------------------------
+r215 | bertin | 2009-11-02 17:25:36 +0100 (Mon, 02 Nov 2009) | 3 lines
+
+Fixed typos introduced in the 2.4 LevMar custom update.
+Added support for 64 bit binary table elements in FITS library (thanks to J.P.
+McFarland).
+
+------------------------------------------------------------------------
+r214 | bertin | 2009-10-22 21:36:54 +0200 (Thu, 22 Oct 2009) | 4 lines
+
+Fixed issue with SVD on some objects.
+Updated the LevMar library to V2.4.
+Pushed version number to 2.9.7.
+
+------------------------------------------------------------------------
+r213 | bertin | 2009-10-19 17:10:20 +0200 (Mon, 19 Oct 2009) | 4 lines
+
+Fixed MODELS check-image.
+Fixed X/YMODEL_WORLD issue.
+Increased CLEANing margin for model-fitting.
+
+------------------------------------------------------------------------
+r212 | bertin | 2009-10-09 18:21:18 +0200 (Fri, 09 Oct 2009) | 5 lines
+
+Improved the quality of model resampling for subsampled objects.
+Implemented a more consistent model size and flux scaling scheme for subsampled
+objects.
+Fixed Sersic model generation bug.
+Pushed version number to 2.9.6.
+
+------------------------------------------------------------------------
+r211 | bertin | 2009-10-08 23:34:46 +0200 (Thu, 08 Oct 2009) | 6 lines
+
+Added automatic image rebinning for fitting very large objects (>512 pixels).
+Fixed several issues related to image and weight copy prior to fitting.
+Fixed bug with symmetric models.
+Fixed issue with new FFT planning scheme.
+Pushed version number to 2.9.5.
+
+------------------------------------------------------------------------
+r210 | bertin | 2009-10-01 17:54:49 +0200 (Thu, 01 Oct 2009) | 4 lines
+
+Added new NLOWWEIGHT_ISO and NLOWDWEIGHT_ISO parameters that count the number
+of bad pixels within the measured isophotal footprint, and within one pixel of
+the detected isophotal footprint, respectively.
+FLAGS_WEIGHT is now working without crashing.
+Pushed version number to 2.9.3.
+
+------------------------------------------------------------------------
+r209 | bertin | 2009-09-29 18:54:34 +0200 (Tue, 29 Sep 2009) | 6 lines
+
+Fixed BITPIX display info.
+Changed CONCENTRATION_MODEL to SPREAD_MODEL.
+Added SPREADERR_MODEL measurement (currently a crude estimate).
+Optimized FFT calls.
+Set PSF_NMAX to 2 by default.
+
+------------------------------------------------------------------------
+r208 | bertin | 2009-09-24 14:38:44 +0200 (Thu, 24 Sep 2009) | 5 lines
+
+Fixed CONCENTRATION_MODEL issue.
+Removed singular matrix warning.
+Added MATRIX_MODELERR measurement parameters.
+Added DURATION_ANALYSIS measurement parameter.
+
+------------------------------------------------------------------------
+r207 | bertin | 2009-09-21 14:27:28 +0200 (Mon, 21 Sep 2009) | 6 lines
+
+Added FLUX_MAX_MODEL, FLUX_EFF_MODEL, FLUX_MEAN_MODEL, MU_MAX_MODEL,
+MU_EFF_MODEL and MU_MEAN_MODEL parameters (FLUX_MAX_MODEL estimator still
+somewhat inacurrate).
+Added FLUX_MAX_SPHEROID, FLUX_EFF_SPHEROID, FLUX_MEAN_SPHEROID, MU_MAX_SPHEROID,
+MU_EFF_SPHEROID, MU_MEAN_SPHEROID parameters.
+Added FLUX_MAX_DISK, FLUX_EFF_DISK, FLUX_MEAN_DISK, MU_MAX_DISK, MU_EFF_DISK
+and MU_MEAN_DISK parameters.
+Changed the way total model fluxes and model moments are computed.
+Pushed version number to 2.9.2.
+
+------------------------------------------------------------------------
+r206 | bertin | 2009-09-14 00:24:01 +0200 (Mon, 14 Sep 2009) | 10 lines
+
+Changed ExMODEL parameters to ELLIPx_MODEL.
+Changed EPSxMODEL parameters to POLARx_MODEL.
+Added AMODEL, BMODEL, THETAMODEL for both _IMAGE and _WORLD coordinates.
+Added CXXMODEL CYYMODEL, CXYMODEL for both _IMAGE and _WORLD coordinates.
+AddedTHETAMODEL_SKY,THETAMODEL_J2000,THETAMODEL_B1950.
+Added ELLIPxMODEL_WORLD and POLARxMODEL_WORLD.
+Fixed broken PSF-fitting.
+Fixed warnings while generating the configure (thanks to S.Pascual).
+Pushed version number to 2.9.1.
+
+------------------------------------------------------------------------
+r205 | bertin | 2009-09-10 19:28:28 +0200 (Thu, 10 Sep 2009) | 2 lines
+
+Put back missing item in configure file.
+
+------------------------------------------------------------------------
+r204 | bertin | 2009-09-09 17:49:41 +0200 (Wed, 09 Sep 2009) | 2 lines
+
+Cleaned up configure file.
+
+------------------------------------------------------------------------
+r203 | bertin | 2009-09-09 11:47:17 +0200 (Wed, 09 Sep 2009) | 2 lines
+
+Added new rpm-best option in Makefile.am.
+
+------------------------------------------------------------------------
+r202 | bertin | 2009-09-08 22:11:04 +0200 (Tue, 08 Sep 2009) | 3 lines
+
+Changed the --enable-automatic-flags configure option to --enable-auto-flags.
+Added --enable-best-link configure option.
+
+------------------------------------------------------------------------
+r201 | bertin | 2009-09-08 18:58:59 +0200 (Tue, 08 Sep 2009) | 4 lines
+
+Switched to single precision for model fitting.
+Changed configure behaviour towards CFLAGS and LDFLAGS: automatic settings are
+now applied only if the --enable-automatic-flags configure option is set
+(thanks to S.Pascual).
+Version number pushed to 2.9.0.
+
+------------------------------------------------------------------------
+r200 | bertin | 2009-08-27 23:25:14 +0200 (Thu, 27 Aug 2009) | 5 lines
+
+Removed redundant code in astrom_pos().
+Fixed random crashes with model fitting (thanks to S.Desai).
+Fixed gain problem in PSF fitting.
+Pushed version number to 2.8.9.
+
+------------------------------------------------------------------------
+r199 | bertin | 2009-07-20 21:41:29 +0200 (Mon, 20 Jul 2009) | 3 lines
+
+Added FOCAL coordinates for centering parameters.
+Re-organized astrometric calls.
+
+------------------------------------------------------------------------
+r198 | bertin | 2009-06-26 17:41:48 +0200 (Fri, 26 Jun 2009) | 2 lines
+
+Fixed incorrect FFTW type in multithread check.
+
+------------------------------------------------------------------------
+r197 | bertin | 2009-06-26 17:13:08 +0200 (Fri, 26 Jun 2009) | 6 lines
+
+Made parallel version of ATLAS not mandatory for the multithread option (unused).
+Replaced configuration error with warning if FFTW is not multithreaded and
+multithreading has been activated (unused).
+Added autoconfig support for FFTW multithreaded versions combined in libfftw3
+(unused).
+Added runtime warning if ATLAS is not multithreaded and multithreading is on
+(unused).
+Version number pushed to 2.8.8.
+
+------------------------------------------------------------------------
+r196 | bertin | 2009-05-29 21:17:33 +0200 (Fri, 29 May 2009) | 2 lines
+
+Further refinements on display.
+
+------------------------------------------------------------------------
+r195 | bertin | 2009-05-29 18:35:54 +0200 (Fri, 29 May 2009) | 2 lines
+
+Improved online display.
+
+------------------------------------------------------------------------
+r194 | bertin | 2009-05-29 18:21:25 +0200 (Fri, 29 May 2009) | 6 lines
+
+Removed multithreading in FFTs (would degrade performance).
+Added computation of FLUXERR_MODEL and MAGERR_MODEL.
+Fixed a numerical bug in E1MODEL_IMAGE and E2MODEL_IMAGE.
+Improved onscreen display.
+Pushed version number to 2.8.7
+
+------------------------------------------------------------------------
+r193 | bertin | 2009-05-22 14:26:11 +0200 (Fri, 22 May 2009) | 2 lines
+
+Included Chiara's MissFITS fix in fitspick().
+
+------------------------------------------------------------------------
+r192 | bertin | 2009-05-22 14:14:26 +0200 (Fri, 22 May 2009) | 3 lines
+
+Added filtering of non-numerical characters for floating-point FITS keywords
+(thanks to D.G. Bonfield for the suggestion).
+
+------------------------------------------------------------------------
+r191 | bertin | 2009-05-19 17:40:54 +0200 (Tue, 19 May 2009) | 2 lines
+
+Increased field format size from %15.10e to %18.10e and from %5.1f to %6.2f.
+
+------------------------------------------------------------------------
+r190 | bertin | 2009-05-07 11:18:57 +0200 (Thu, 07 May 2009) | 2 lines
+
+Removed forgotten debug printout.
+
+------------------------------------------------------------------------
+r189 | bertin | 2009-04-28 19:40:43 +0200 (Tue, 28 Apr 2009) | 2 lines
+
+Fixed bug in make_kernel() test bug (thanks to R.Owen).
+
+------------------------------------------------------------------------
+r187 | bertin | 2009-04-09 15:31:57 +0200 (Thu, 09 Apr 2009) | 2 lines
+
+Forgot to regenerate configure file.
+
+------------------------------------------------------------------------
+r186 | bertin | 2009-04-09 15:29:59 +0200 (Thu, 09 Apr 2009) | 3 lines
+
+Removed obsolete measurement parameters.
+Pushed version number to 2.8.6
+
+------------------------------------------------------------------------
+r185 | bertin | 2009-04-01 18:53:14 +0200 (Wed, 01 Apr 2009) | 2 lines
+
+More junk cleaning.
+
+------------------------------------------------------------------------
+r184 | bertin | 2009-04-01 18:17:33 +0200 (Wed, 01 Apr 2009) | 4 lines
+
+Fixed icc 11 compilations options on x86-64 architecture.
+Cleaned up obsolete references.
+Added favicon to XSLT filter.
+
+------------------------------------------------------------------------
+r183 | bertin | 2009-04-01 15:53:17 +0200 (Wed, 01 Apr 2009) | 2 lines
+
+Added another refinement to the XSLT filter.
+
+------------------------------------------------------------------------
+r182 | bertin | 2009-04-01 13:11:33 +0200 (Wed, 01 Apr 2009) | 2 lines
+
+Updated XSLT filter (AstrOmatic theme).
+
+------------------------------------------------------------------------
+r181 | bertin | 2009-03-23 19:21:58 +0100 (Mon, 23 Mar 2009) | 8 lines
+
+Removed unstable and buggy measurements from parameter list.
+Cleaned up Makefile.am RPM options.
+Fixed rpm build issue on Fedora Core 10.
+Fixed display of max thread number in configure help.
+Updated icc compilation flags to 11.0 syntax.
+Set the license string to CeCILL in the .spec file.
+Pushed version number to 2.8.5.
+
+------------------------------------------------------------------------
+r180 | bertin | 2009-03-20 14:11:44 +0100 (Fri, 20 Mar 2009) | 3 lines
+
+Put back model chi2 normalisation.
+Made handling of dynamic compression and chi2 computations more flexible.
+
+------------------------------------------------------------------------
+r179 | bertin | 2009-03-18 15:43:36 +0100 (Wed, 18 Mar 2009) | 3 lines
+
+Added CONCENTRATION_MODEL and finalized CLASS_ST parameters.
+Version number pushed to 2.8.4.
+
+------------------------------------------------------------------------
+r178 | bertin | 2009-03-10 14:05:07 +0100 (Tue, 10 Mar 2009) | 1 line
+
+Set mime-type property of SExtractor doc to application/pdf
+------------------------------------------------------------------------
+r177 | bertin | 2009-02-20 19:06:45 +0100 (Fri, 20 Feb 2009) | 4 lines
+
+Fixed bug which would cause the mapping to depend on the ordering of PVs.
+Changed software license to CeCILL (French equivalent of GPL).
+Pushed version number to 2.8.3.
+
+------------------------------------------------------------------------
+r176 | bertin | 2009-01-29 19:34:29 +0100 (Thu, 29 Jan 2009) | 1 line
+
+Fixed crash with model fitting on small objects
+------------------------------------------------------------------------
+r175 | bertin | 2009-01-28 22:52:45 +0100 (Wed, 28 Jan 2009) | 1 line
+
+Nothing
+------------------------------------------------------------------------
+r173 | bertin | 2009-01-28 18:37:46 +0100 (Wed, 28 Jan 2009) | 1 line
+
+merged with SExFIGI branch
+------------------------------------------------------------------------
+r39 | bertin | 2009-01-28 17:05:55 +0100 (Wed, 28 Jan 2009) | 1 line
+
+Moved software to trunk
+------------------------------------------------------------------------
+r22 | bertin | 2006-10-29 21:04:25 +0100 (Sun, 29 Oct 2006) | 5 lines
+
+Updated FITS library to the latest version.
+Fixed some UCDs in output parameters.
+Applied patch by Sergio Pascual for configuring the path to the XSL file.
+Updated the BUGS section.
+
+------------------------------------------------------------------------
+r21 | bertin | 2006-08-16 18:06:49 +0200 (Wed, 16 Aug 2006) | 2 lines
+
+Discard NaN pixels in non-weighted background measurements (as in SWarp).
+
+------------------------------------------------------------------------
+r20 | baillard | 2006-07-18 13:54:43 +0200 (Tue, 18 Jul 2006) | 2 lines
+
+Move sextractor to public repository
+
+------------------------------------------------------------------------
+r19 | bertin | 2006-07-17 19:56:12 +0200 (Mon, 17 Jul 2006) | 4 lines
+
+Doc: keyword list updated.
+ChangeLog updated.
+Back-propagated destructive byte-swapping bugfix in FITS library.
+
+------------------------------------------------------------------------
+r18 | bertin | 2006-07-14 20:25:09 +0200 (Fri, 14 Jul 2006) | 3 lines
+
+Removed warnings in psf.c (P.Delorme's edits) using brute-force.
+Switched ChangeLog to SVN format.
+
+------------------------------------------------------------------------
+r17 | bertin | 2006-07-14 20:13:39 +0200 (Fri, 14 Jul 2006) | 8 lines
+
+Yet another rewriting of the XML part. Meta-data, error messages and catalog
+info are now consistant between the catalog and the XML metadata file. Still
+some pb with the COOSYS epoch and system in the VOTable version of the catalog
+(but correct in the XML metadata file).
+CATALOG_TYPE ASCII_VO changed to ASCII_VOTABLE.
+Added a check in error catching to prevent recursive loops.
+Added reinit of the warning counter to allow multiple uses of the warning
+history.
+Cleaned up configure.ac and added a default path for the (still missing) XSL
+file.
+Updated config/default.sex, BUGS HISTORY and README files.
+Ready for release of V2.5.
+
+------------------------------------------------------------------------
+r16 | bertin | 2006-07-13 22:06:48 +0200 (Thu, 13 Jul 2006) | 5 lines
+
+XML VOTable approach changed again: support for error messaging in VO catalog
+(not only metadata) and FITS serialization of LDAC files in XML output.
+COOSYS tag added with relevant information.
+Removed MAMA_CORFLEX advanced config parameter (replaced with define).
+Version number pushed to 2.5.
+
+------------------------------------------------------------------------
+r15 | bertin | 2006-07-12 20:34:06 +0200 (Wed, 12 Jul 2006) | 4 lines
+
+Improved XML VOTable (still waiting for F.Ochsenbein comments, though).
+Added meta-data to VOTable catalog output.
+Fixed potential bug with long command lines.
+
+------------------------------------------------------------------------
+r14 | bertin | 2006-07-11 23:04:18 +0200 (Tue, 11 Jul 2006) | 2 lines
+
+Completed the conversion of XML output to the VOTable format.
+
+------------------------------------------------------------------------
+r13 | bertin | 2006-07-10 21:49:59 +0200 (Mon, 10 Jul 2006) | 6 lines
+
+Added support for ICRS in header WCS.
+Changed the way header WCS info is interpreted when EQUINOX is missing.
+Added dump of command line in XML meta-data.
+Pushed max number of recorded warnings to 100.
+Changed XML meta-data output format to VOTable (not complete yet).
+
+------------------------------------------------------------------------
+r12 | bertin | 2006-07-09 19:57:00 +0200 (Sun, 09 Jul 2006) | 4 lines
+
+Added support for warning history in the fits library.
+Added duration to XML error output.
+Added ten most recent warnings to XML output.
+
+------------------------------------------------------------------------
+r11 | bertin | 2006-07-07 20:30:30 +0200 (Fri, 07 Jul 2006) | 4 lines
+
+Added catching of error messages and forwarding to XML.
+Added ASCII_VO output catalog format (inspired by G.Tissier's VOTable patch)
+Fixed issue with conflicting CDi_j/CDELTi parameters (report by J.F. Bonnarel).
+
+------------------------------------------------------------------------
+r10 | bertin | 2006-07-05 20:11:29 +0200 (Wed, 05 Jul 2006) | 2 lines
+
+Added more configuration parameters to XML output.
+
+------------------------------------------------------------------------
+r9 | bertin | 2006-07-04 17:39:58 +0200 (Tue, 04 Jul 2006) | 3 lines
+
+Fixed a bug with the reentrant version of strtok in TNX.
+Added more XML info.
+
+------------------------------------------------------------------------
+r8 | bertin | 2006-07-03 21:31:15 +0200 (Mon, 03 Jul 2006) | 5 lines
+
+Updated display to the leatest "Bertin standards".
+Added comments to uncommonly used config parameters in default .sex.
+Changed default output channel for info about extraction to stdout.
+Added XML output.
+
+------------------------------------------------------------------------
+r7 | bertin | 2006-07-02 21:15:05 +0200 (Sun, 02 Jul 2006) | 5 lines
+
+Updated WCS lib to the latest SCAMP version.
+Added support for TNX distortions.
+Added support for WCS with more than 2D (NAXIS=3 right now).
+Added -g compilation flag for gcc.
+
+------------------------------------------------------------------------
+r6 | bertin | 2006-06-29 22:38:02 +0200 (Thu, 29 Jun 2006) | 7 lines
+
+Self Organizing Map code revived!
+The FITS body writing routine now complies with strict aliasing constraints,
+but: Strict-aliasing optimization option dropped in acx_prog_cc_optim.m4
+because of too many problems with gcc 4.1 (missing X_IMAGE output, etc.): too
+much "fun" with pointers in the SExtractor code.
+Local background estimates work again after many years of oblivion, thanks to
+an increased top margin in the buffering mechanism (bug found by P.Astier).
+Overwriting of displayed infos fixed.
+
+------------------------------------------------------------------------
+r5 | bertin | 2006-01-12 20:12:04 +0100 (Thu, 12 Jan 2006) | 2 lines
+
+Preliminary merging with P.Delorme branch (improved PSF-fitting). 
+
+------------------------------------------------------------------------
+r4 | bertin | 2005-11-30 07:29:34 +0100 (Wed, 30 Nov 2005) | 3 lines
+
+Added preliminary support for FLAGS_WEIGHT. Null weights above detections are
+still missed.
+
+------------------------------------------------------------------------
+r3 | bertin | 2005-10-19 20:12:37 +0200 (Wed, 19 Oct 2005) | 1 line
+
+
+------------------------------------------------------------------------
+r2 | bertin | 2005-10-17 16:57:55 +0200 (Mon, 17 Oct 2005) | 1 line
+
+first SExtractor import
+
+-------------------------------- old ChangeLog --------------------------------
+Who     When            Where(mostly)   What
+
+EB      03/07/97        clean.c         Make removal of LSB sources optional.
+                        scanimage()     Idem.
+                        clean.h
+                        types.h         Move prototypes from types.h to clean.h
+
+EB      23/07/97        -               Blanking of detections. Major update.
+                                        outobj2 components are now handled
+                                        through the obj2 pointer.
+
+EB      31/07/97        photom.c        MAGERR_APER bug introduced during the
+                                        add of blanking fixed.
+
+EB      01/08/97        LDACTools       Upgraded from the EIS version.
+
+EB      04/08/97        -               Added handling of external FLAG-maps.
+                        read_prefs()    Upgraded from the WeightWatcher code.
+                        newfield()      Changed slightly the frame description
+                                        display.
+EB      13/08/97        filterback()    Fixed bug with even BACK_FILTERSIZE
+                        localback()     Fixed bug with LOCAL backgrounds for
+                                        BLANKed detections.
+
+EB      27/08/97        -               Added handling of external WEIGHT-maps.
+
+EB      02/09/97        makeback()      Added display of currently processed
+                                        line.
+                        sexheadsc.h
+                        catout.c        New ASCII_SKYCAT catalog format.
+
+EB      05/09/97        -               Fixed -PROTOTYPES check-image bug.
+
+EB      13/09/97        filter.c        Added FILTER_THRESH option.
+                        scan.c          Fixed WEIGHT-map detection bug.
+
+EB      10/10/97        examine_iso()
+                        clean()         Improve CLEANing and take into account
+                                        variable S/N.
+                        plist.[c,h]     New memory-friendly propagation of
+                                        information through deblending.
+
+EB      16/10/97        main()          New syntax for dual-image mode.
+
+EB      18/10/97        analyse.c
+                        photom.c        Exact computation of photometric errors
+                                        in the context of variable S/N.
+
+EB      20/10/97        prefs.h         new MAMA_CORFLEX preferences parameter,
+                        astrom.c
+                        param.h         new X_MAMA and Y_MAMA output parameters
+
+EB      21/10/97        createblank()   Bug in single-image mode fixed.
+                        sortit()        Bug in dual-image + BLANKing mode.
+
+EB      24/10/97        astrom.c        X_MAMA and Y_MAMA computed differently
+                        addcleanobj()   Bug in the automag flagging fixed by
+                                        modifying the margin computations
+
+EB      26/10/97        analyse()       ASSOC selection added.
+                        photom.c        MASKing with photometric CORRECTion
+                                        added.
+
+EB      04/11/97        readprefs()     Added support for ENV variables within
+                                        .sex config file.
+
+EB      06/11/97        photom.c        Bug in FLUXERR_ISOCOR fixed.
+
+EB      13/11/97        end_readobj()
+                        end_writeobj()  "Potential bug" fixed.
+
+EB      18/11/97        flag.[c,h]      New module for computing flags from
+                                        flag-map.
+
+EB      21/11/97        newfield()      PIXEL_SCALE pb with non-WCS images
+                                        fixed.
+
+EB      24/11/97        prefs.h         CROSS_ID keyval changed to MATCHED.
+                        initcheck()     WCS rescaling for MINIBACKGROUND and
+                                        MINIBACKRMS added.
+
+EB      28/11/97        initcheck()     Bug fixed in WCS coordinates of MINIs.
+
+EB      29/11/97        initcheck()     Another bug added in MINIs fixed.
+                        sexhead.h       Corrected SEXTHLD value.
+
+EB      19/12/97        readprefs()     Test length of command-line arguments
+
+EB      21/12/97        endobject()     Replace prefs pixel-scale by field
+                                        pixel-scale for S/G separation.
+
+EB      06/01/98        readimagehead() Load basic WCS infos even if no astrom
+                                        parameter is requested (for MINIBACKs).
+                                        Added handling of CDxx_xx (thanks to
+                                        D. Mink)
+
+EB      29/01/98        -               Added crude interpolation scheme in
+                                        presence of image weighting: new
+                                        interpolate.c module.
+
+EB      30/01/98        preanalyse()
+                        examineiso()    Changed the rules concerning the
+                                        handling of "infinitely thin"
+                                        detections (B_IMAGE=0).
+
+EB      31/01/98        parcelout()     Fixed a big (but intermittent) bug
+                                        preventing proper deblending in
+                                        weighted images.
+
+EB      07/02/98        photom.c
+                        scan.c
+                        makeit.c        Revisited completely the handling of
+                                        bad pixels for the photometry.
+
+EB      10/02/98        endobject()     (De)blanking strategy slightly changed.
+
+EB	16/02/98        -               New parameters XPEAK_ and YPEAK_ added.
+
+EB      13/03/98        -               Finalization of the handling of weights
+                                        (Background RMS, weight threshold).
+                        endobject()     SEGMENTATION check-image bug fixed.
+
+EB      16/03/98        readprefs()     Management of the conflicts between
+                                        weight-types seriously updated.
+
+EB      20/03/98        photom.c        MAGERR bug in presence of weighting
+                                        fixed.
+
+EB      23/03/98        clean()         Wrong handling of abcor factor
+                                        corrected.
+
+EB      25/03/98        clean()         realloc() bug in CLEANing with Linux
+                        scan.c          fixed.
+
+EB      26/03/98        readimagehead() Typo in OBS-DATE FITS keyword reading.
+
+EB      27/03/98        sortit()        Bug that prevented some faint
+                                        detections to be CLEANed fixed.
+                        -               Add a new EXTRA_WARNINGS prefs option.
+
+EB      11/04/98        -               Added FITS_UNSIGNED option.
+                        filterback()    Bug with empty images fixed.
+                        main()          New banner.
+
+EB      15/04/98        getflag()       Potential bug for big objects with
+                                        FLAGTYPE MOST fixed.
+                        examineiso()    Wrong detection threshold for CLEANing
+                                        in multi-image mode replaced with
+                                        correct one.
+EB      29/04/98        -               Allow multiple FLAG-MAPs (up to 4
+                                        currently): IMAFLAG_ISO and
+                                        NIMAFLAG_ISO have become vectors.
+                        getflags()      Bug with FLAG_TYPEs MIN and MAX fixed.
+
+EB      30/04/98        copyastrom()    Fixed a bug with INTERP_TYPE VAR_ONLY.
+                        -               Simplified access init_interpolate.
+
+EB      02/05/98        define.h
+                        fitsread()      Improve stability with incorrect FITS
+                                        headers.
+
+EB      03/05/98        filterback()    RMS determination more tolerant towards
+                                        constant weight-maps.
+                                        BACK_FILTERing anisotropy bug fixed.
+                        makeit()        Bad closing of CHECKIMAGEs fixed.
+                        -               New CATALOG_TYPE NONE option.
+                        -               APER measurements functional again
+                                        (recently introduced bug).
+
+EB      06/05/98        readimagehead() Pb with FITS astrometric strings fixed.
+
+EB      07/05/98        getconv()       Uninitialized variable pb fixed.
+
+EB      12/05/98        loadstrip()     Bug in the production of BACKGROUND
+                                        CHECK-image fixed.
+
+EB      28/05/98        define.h        new VECFLAG() macro for flagging
+                                        arrays.
+                        prefs.h         Remove "&" before ptrs to static
+                                        arrays.
+
+EB      13/06/98        initastrom()    Wrong mapping of PC components fixed.
+                        readimagehead() Wrong mapping of CD components fixed.
+
+EB      29/06/98        makeit()        Handling of weight-maps+interpolation
+                                        simplified.
+                        scanimage()     Missing reference field in the reading
+                                        of dwscan added.
+                        useprefs()      Bad default threshold in VAR_ONLY
+                                        interpolation mode fixed.
+
+EB      30/06/98        backguess()     Missing scaling of "sig" in the
+                                        computation of "*mean" added, but
+                                        threshold changed from 0.2 to 0.0,
+                                        awaiting for more tests.
+
+EB      08/07/98        readimagehead() CDx_x FITS WCS parameters are now
+                                        given priority before PCxxxx.
+
+EB      09/07/98        filterback()    Filtering bug at image borders fixed.
+
+EB      21/07/98        photom.c        Division by zero for unphotometrable
+                                        objects fixed.
+
+EB      23/07/98        fitswrite()     Pb with very long strings fixed.
+                        readcatparams() Reading of .param files more robust.
+                                        Comments starting with '#' now allowed.
+
+EB      27/07/98        readimagehead()
+                        initcheck()     Changed the handling of CDELTx params
+                                        when CDx_x are used. Now works with
+                                        MINIBACKGROUND check-images.
+
+EB      11/08/98        photom.c        Purify warning fixed in
+                                        computeautoflux()
+                        scan.c          Purify warning fixed in scanimage().
+                                        BLANKing procedure of CLEANed pixels
+                                        fixed. Memory leaks fixed.
+
+EB      18/11/98        -               New BACK_TYPE, BACK_VALUE, and
+                                        THRESH_TYPE config parameters.
+                        flag.c          Fixed initialization bug in FLAG_TYPE
+                                        MAX mode (thanks to T.Erben).
+
+EB      20/11/98        back.c          New BACK_FILTTHRESH parameter.
+
+EB      23/11/98        prefs.c
+                        weight.c        Quick fix of MAP_RMS measurement mode.
+
+EB      26/11/98        -               New key->alloc flag to distinguish
+                                        between constant and dynamic pointers.
+
+EB      28/11/98        -               lint warnings fixed.
+
+EB      29/11/98        assoc.c         New ASSOC_TYPE NEAREST option.
+
+EB      28/12/98        catout.c        Added dependency between flux_auto and
+                                        flux_radius
+
+EB      13/01/99        endobject()     Fixed numbering problem in SEGMENTATION
+                                        maps when CLEAN is N.
+
+EB      27/01/99        load_assoc()    Stupid bug in 2 ASSOC_PARAMS mode
+                                        fixed.
+
+EB      19/02/99        examineiso()    Variable thresholding is now taken into
+                                        account for S/G classification and
+                                        FWHMs.
+
+EB      25/02/99        types.h         Wrong data-type for BACK_VALUE fixed.
+
+EB      02/03/99        examineiso()    XPEAK and YPEAK offset bug fixed.
+
+EB      06/04/99        -               Unused variables removed.
+                        clean.c
+                        scan.c          New handling of CLEANed blanked
+					detections.
+
+EB      08/04/99        -               Various memory leaks fixed
+                        readimage()     BACKGROUND_RMS check-images now
+                                        operational in single-image mode.
+
+EB      15/04/99        param.h         Remove the 0's from the formatting
+                                        of flags.
+
+EB      21/04/99        -               New _PROFILE photometric parameters.
+
+EB      06/05/99        examineiso()    Potential bug in the threshs[i] fixed.
+                        readimage()     Bug in BACKGROUND_RMS mode fixed.
+
+EB      11/05/99        -               Major change: handling of weight-maps
+                                        during the background processing.
+                                        New WEIGHT_GAIN parameter.
+
+EB      19/05/99        scanimage()     Important "bug" fix: slight differences
+                                        between single- and double-image modes
+                                        supressed.
+
+EB      24/05/99        makeback()      Memory leak in double-weight/single-
+                                        image mode fixed.
+                        makeit()        New info display.
+                        inheritfield()  Interpolation flag is no longer
+                                        inherited (fixes a bug in some weird
+                                        double-weight-maps configs).
+
+EB      12/08/99        endfield()      Fixed segmentation fault at the end
+                                        of processing when ASSOC is used.
+                        psf_load()      Remove malloc() of null-size data
+                                        with constant PSFs.
+
+EB      10/09/99        makeit()        Background pb in WEIGHT_TYPE NONE,...
+                                        fixed.
+
+EB      14/09/99        back()          Replacement value for bad variance map
+                                        background meshes changed to 1.0
+                        scanimage()     Bug with THRESH_TYPE ABSOLUTE in
+                                        WEIGHTing mode fixed.
+
+EB      30/09/99        fitsread()      The quote (') symbol is now properly
+                                        handled in FITS headers.
+
+EB      07/10/99        scanimage()     Removed debug information inadvertently
+                                        left in the previous release.
+
+EB      24/01/2000      computeautoflux()
+                                        Small inaccuracy in crowding-flag
+                                        positioning fixed.
+
+EB      01/02/2000      localback()     Fixed division by zero in local
+                                        background estimates of some heavily
+                                        deblended detections in MASK_TYPE
+                                        CORRECT mode.
+EB      03/02/2000      makeback()      Risk of segmentation fault with huge
+                                        weight maps fixed.
+
+EB      11/02/2000      computeautoflux()
+                                        Wrong version of photom.c in release
+                                        V2.1.5 fixed.
+
+EB      14/10/2000      newfield()      RMS_FIELD now properly taken into
+                                        account.
+                        prefs.h         BACK_FILTERSIZE upper limit pushed to
+                                        11.
+
+EB      04/02/2001      backhisto()
+                        backstat()      Fixed two huge bugs in the MAP_WEIGHT
+                                        calibration.
+
+EB      08/02/2001      makeback()      Fixed a small bug in large-image mode.
+                        clean()         Fixed CLEANing bug for hollow objects.
+
+EB      23/09/2001      neurfilter()    Fixed a bug that would make the result
+                                        of neural filtering compiler-dependent.
+                        makeback()      Corrected typos in text displayed on
+                                        screen.
+
+EB      24/09/2001      endobject()     Add 1 to xmin,xmax,ymin and ymax object
+                                        parameters to be compatible with the
+                                        FITS convention for pixel coordinates.
+
+EB      17/06/2002      -               Added Large File Support
+
+EB      13/12/2002      -               Moved to autoconf'ed distribution.
+                        -               FITS and WCS library updated.
+                        main()          New banner.
+EB      15/12/2002      -               Added Support for MEF files.
+
+EB      24/01/2003      initastrom()
+                        astrom.h        Increased PV array to 2000 to comply
+                                        with the newly added version of the WCS
+                                        library.
+                        preflist.h      Increased default MEMORY_PIXSTACK to
+                                        200,000.
+                        acx_prog_cc_optim.m4
+                                        Added "-g" to default CFLAGS when
+                                        compiling with gcc.
+EB      05/02/2003      readimage.c     Added <math.h> include statement.
+
+EB      06/02/2003      backguess()     Fixed potential bug with unitialized
+                                        value.
+
+EB      07/02/2003      back.c
+                        fitscat.h
+                        define.h
+                        configure.in    Improved LFS support (with glibc2.2).
+
+EB      05/03/2003      -               Put back config/ dir and add Benne
+                                        Holwerda's manual.
+
+EB      02/04/2003      makeback()      Fixed a memory leak on weight histo.
+                        refine.c        Modify parcelout() array allocation.
+                        pc.c
+                        psf.c
+                        som.c           Added dummy return to please insure++.
+
+EB      03/04/2003      endastrom()     2 arrays were freed twice sometimes.
+
+EB      28/11/2003      -               Fixed gcc -Wall warnings
+                        -               Updated the fitscat and wcs libraries
+                                        to the latest versions.
+
+EB      03/12/2003      add_tab()       Removed confusing seg section, fixing
+                                        the SEXNDET header bug with MEFs.
+                        save_head()     Add saving of headpos file position.
+
+EB      15/06/2004      analyse.c
+                        check.c
+                        clean.c         Mv SEGMENTATION map from 16 to 32 bits.
+
+EB      13/12/2004      computepetroflux()
+                                        Added Petrosian "total" magnitudes
+                        winpos.c        Added *WIN_* position measurements.
+
+EB      14/12/2004      key.h           Keyword max length changed to 31 chars
+
+EB      15/12/2004      -               New RPM build system
+                        -               Updated the fits and wcs libraries
+                                        to the latest versions.
+
+EB      15/02/2005      compute_winpos()
+                                        Added 1.0 to computed coordinates and
+                                        fixed error singularities. New
+                                        iterative procedure (more accurate).
+
+EB      17/07/2005      compute_winpos()
+                                        Added computation of "windowed moments".
+                        astrom.c        Added support for WORLD "windowed
+                                        parameters".
+
+EB      18/07/2005      dumpprefs()     Added support for "deep dump".
+                        Makefile.am     added the -g option to gcc CFLAGS.
+                        param.h         Fixed non-FORTRAN compliant format
+                                        in TDISP output.
+
+EB      22/08/2005      compute_winpos()
+                                        Fixed issues for sources with flux<0.
+
+EB      23/08/2005      param.h         Removed duplicated lines.
+
+EB      24/08/2005      compute_winpos()
+                                        Added Kaiser's POLARizations (POLAR and
+                                        POLARWIN) and FLAGS_WIN.
+
+EB      25/08/2005      compute_winpos()
+                                        Added NITER_WIN giving the number of
+                                        WIN iterations.
+
+EB      22/09/2005      compute_winpos()
+                                        Fixed a trigger bug with ERR*WIN_IMAGE.
+
+EB      23/09/2005      define.h        Corrected SExtractor URL.
+
+EB      27/09/2005      examineiso()    Fixed NaN in computing ISO thresholds.
+
+EB      19/10/2005      updateparamflags()
+                                        Fixed a trigger bug with ERR*WIN_IMAGE.
+                        astrom_winshapeparam()
+                                        Fixed null *WIN_WORLDs.
+                        preflist.h      Improved display of advanced parameters.
