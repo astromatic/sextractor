@@ -398,7 +398,7 @@ dthresh = field->dthresh;
 
 
 /****** analyse_final *******************************************************
-PROTO	void analyse_final(fieldstruct **fields, fieldstruct **wfields,
+PROTO	void analyse_final2(fieldstruct **fields, fieldstruct **wfields,
 			int nfield, objliststruct *objlist, int iobj)
 PURPOSE Do the final analysis based on a list of detections and a detection
 	index.
@@ -410,26 +410,22 @@ INPUT	Pointer to an array of image field pointers,
 OUTPUT  -.
 NOTES   Global preferences are used.
 AUTHOR  E. Bertin (IAP)
-VERSION 03/01/2014
+VERSION 15/05/2014
  ***/
 void analyse_final(fieldstruct **fields, fieldstruct **wfields,
 			int nfield, objliststruct *objlist, int objindex)
   {
    fieldstruct		*field;
-   obj2groupstruct	group2;
-   obj2liststruct	*obj2list;
+    obj2liststruct	*overobjlist;
    objstruct		*obj;
    obj2struct		*obj2, *prevobj2, *firstobj2;
    subimagestruct	*objsubimage, *groupsubimage;
    int			i, ycmax, nextiobj, noverlap, iobj,
 			xmin,xmax,ymin,ymax;
-
-  obj2list = thecat.obj2list;
-
 /* field is the detection field */
   field = fields[0];
 /* Find overlapping detections and link them */
-  noverlap = analyse_overlapness(cleanobjlist, objindex);
+  overobjlist = analyse_overlapness(objlist, objindex);
 
   xmax = ymax = -(xmin = ymin = 2000000);
   iobj = objindex;
@@ -512,13 +508,13 @@ void analyse_final(fieldstruct **fields, fieldstruct **wfields,
     {
 /*-- 1 single thread: don't bother with independent measurement threads */
 /*-- Analyse the group of obj2s */
-    analyse_group(fields, wfields, nfield, &group2);
+    group2_analyse(fields, wfields, nfield, &group2);
 /*-- Write to catalogue and terminate the group of obj2s */
     analyse_end(fields, wfields, nfield, &group2);
     }
 #else
 /* Analyse the group of obj2s */
-  analyse_group(fields, wfields, nfield, &group2);
+  group2_analyse(fields, wfields, nfield, &group2);
 /* Write to catalogue and terminate the group of obj2s */
   analyse_end(fields, wfields, nfield, &group2);
 #endif
@@ -528,7 +524,177 @@ void analyse_final(fieldstruct **fields, fieldstruct **wfields,
 
 
 /****** analyse_overlapness ***************************************************
-PROTO	int analyse_overlapness(objliststruct *objlist, int iobj)
+PROTO	objliststruct *analyse_overlapness(objliststruct *objlist, int iobj)
+PURPOSE Create a list of objects overlapping a given object.
+INPUT   objliststruct pointer,
+	obj index.
+OUTPUT  -.
+NOTES   .
+TODO	The selection algorithm is currently very basic and inefficient.
+AUTHOR  E. Bertin (IAP)
+VERSION 14/05/2014
+ ***/
+objliststruct *analyse_overlapness(objliststruct *objlist, objstruct *fobj)
+  {
+   objlistruct	*overobjlist;
+   objstruct	*obj,*cobj,*fobj;
+   int		i, blend, nover, nobj;
+
+  QMALLOC(overobjlist, 1, objliststruct);
+  QMALLOC(overobjlist->obj, ANALYSE_NOVERLAP, objstruct);
+  overobj = overobjlist->obj;
+  nover = 0;
+  nobj = objlist->nobj;
+  obj = objlist->obj;
+  overobj = overobjlist->obj
+  fobj = &obj[iobj];
+  fobj->prev = -1;
+  blend = fobj->blend;
+  cobj = fobj;
+  for (i=0; i<nobj; i++, obj++)
+    if (obj->blend == blend && obj!=fobj)
+      {
+      overobj[nover++] = obj;
+      }
+
+  cobj->next = -1;
+
+  return nblend;
+  }
+
+
+/****** analyse_final2 *******************************************************
+PROTO	void analyse_final2(fieldstruct **fields, fieldstruct **wfields,
+			int nfield, objliststruct *objlist, int iobj)
+PURPOSE Do the final analysis based on a list of detections and a detection
+	index.
+INPUT	Pointer to an array of image field pointers,
+	pointer to an array of weight-map field pointers,
+	number of images,
+	objlist pointer,
+	obj index.
+OUTPUT  -.
+NOTES   Global preferences are used.
+AUTHOR  E. Bertin (IAP)
+VERSION 03/01/2014
+ ***/
+void analyse_final2(fieldstruct **fields, fieldstruct **wfields,
+			int nfield, objliststruct *objlist, int objindex)
+  {
+   fieldstruct		*field;
+   obj2groupstruct	group2;
+   obj2liststruct	*obj2list;
+   objstruct		*obj;
+   obj2struct		*obj2, *prevobj2, *firstobj2;
+   subimagestruct	*objsubimage, *groupsubimage;
+   int			i, ycmax, nextiobj, noverlap, iobj,
+			xmin,xmax,ymin,ymax;
+
+  obj2list = thecat.obj2list;
+
+/* field is the detection field */
+  field = fields[0];
+/* Find overlapping detections and link them */
+  noverlap = analyse_overlapness(objlist, objindex);
+
+  xmax = ymax = -(xmin = ymin = 2000000);
+  iobj = objindex;
+  for (i=noverlap; i--;)
+    {
+    obj = &objlist->obj[iobj];
+    if (obj->xmin < xmin)
+      xmin = obj->xmin;
+    if (obj->xmax > xmax)
+      xmax = obj->xmax;
+    if (obj->ymin < ymin)
+      ymin = obj->ymin;
+    if (obj->ymax > ymax)
+      ymax = obj->ymax;
+    iobj = obj->next;
+    }
+
+  group2.subimage = subimage_new(field, wfields? wfields[0] : NULL,
+		xmin, xmax, ymin, ymax);
+
+/* Convert every linked detection to a linked obj2 */
+  prevobj2 = NULL;
+  iobj = objindex;
+  for (i=noverlap; i--;)
+    {
+    obj = &objlist->obj[iobj];
+/*-- Warn if there is a possibility for any aperture to be truncated */
+    if ((ycmax=obj->ycmax) > field->ymax)
+      {
+      sprintf(gstr, "Object at position %.0f,%.0f ", obj->mx+1, obj->my+1);
+      QWARNING(gstr, "may have some apertures truncated:\n"
+		"          You might want to increase MEMORY_BUFSIZE");
+      }
+    else if (ycmax>field->yblank && prefs.blank_flag)
+      {
+      sprintf(gstr, "Object at position %.0f,%.0f ", obj->mx+1, obj->my+1);
+      QWARNING(gstr, "may have some unBLANKed neighbours:\n"
+		"          You might want to increase MEMORY_PIXSTACK");
+      }
+    obj2 = analyse_obj2obj2(fields, wfields, nfield, obj, obj2list);
+    if (!obj2)
+      error(EXIT_FAILURE, "*Error*: ", "obj2 stack full");
+    obj2->nextobj2 = NULL;
+    if (prevobj2)
+      {
+      prevobj2->nextobj2 = obj2;
+      obj2->prevobj2 = prevobj2;
+      }
+    else
+      {
+      obj2->prevobj2 = NULL;
+      firstobj2 = obj2;
+      }
+    prevobj2 = obj2;
+
+    objsubimage = obj2->subimage;
+    groupsubimage = group2.subimage;
+    deblankimage(objsubimage->image,
+		objsubimage->imsize[0], objsubimage->imsize[1],
+		groupsubimage->image,
+		groupsubimage->imsize[0],groupsubimage->imsize[1],
+		objsubimage->immin[0] - groupsubimage->immin[0],
+		objsubimage->immin[1] - groupsubimage->immin[1]);
+
+    nextiobj = obj->next;
+/*-- Take care of next obj that might be swapped by clean_sub! */
+    if (nextiobj == objlist->nobj-1)
+      nextiobj = iobj;
+    clean_sub(iobj);
+    iobj = nextiobj;
+    }
+
+  group2.obj2 = firstobj2;
+
+#ifdef USE_THREADS
+  if (prefs.nthreads>1)
+/*-- Push in obj2 */
+    pthread_add_obj2group(group2);
+  else
+    {
+/*-- 1 single thread: don't bother with independent measurement threads */
+/*-- Analyse the group of obj2s */
+    group2_analyse(fields, wfields, nfield, &group2);
+/*-- Write to catalogue and terminate the group of obj2s */
+    analyse_end(fields, wfields, nfield, &group2);
+    }
+#else
+/* Analyse the group of obj2s */
+  group2_analyse(fields, wfields, nfield, &group2);
+/* Write to catalogue and terminate the group of obj2s */
+  analyse_end(fields, wfields, nfield, &group2);
+#endif
+
+  return;
+  }
+
+
+/****** analyse_overlapness2 ***************************************************
+PROTO	int analyse_overlapness2(objliststruct *objlist, int iobj)
 PURPOSE Link together overlapping detections.
 INPUT   objliststruct pointer,
 	obj index.
@@ -537,7 +703,7 @@ NOTES   -.
 AUTHOR  E. Bertin (IAP)
 VERSION 07/10/2011
  ***/
-int analyse_overlapness(objliststruct *objlist, int iobj)
+int analyse_overlapness2(objliststruct *objlist, int iobj)
   {
    objstruct	*obj,*cobj,*fobj;
    int		i, blend, nblend,nobj;
@@ -719,121 +885,6 @@ obj2struct	*analyse_obj2obj2(fieldstruct **fields, fieldstruct **wfields,
     }
 
   return obj2;
-  }
-
-
-/****** analyse_group ********************************************************
-PROTO	void analyse_group(fieldstruct **fields, fieldstruct **wfields,
-			int nfield, obj2groupstruct *group2)
-PURPOSE Perform measurements on a group of detections.
-INPUT   Pointer to an array of image field pointers,
-	pointer to an array of weight-map field pointers,
-	number of images,
-	Pointer to obj2group.
-OUTPUT  -.
-NOTES   -.
-AUTHOR  E. Bertin (IAP)
-VERSION 02/08/2012
- ***/
-void	analyse_group(fieldstruct **fields, fieldstruct **wfields,
-			int nfield, obj2groupstruct *group2)
-  {
-   fieldstruct		*field, *wfield;
-   subprofitstruct	*subprofit,*modsubprofit;
-   subimagestruct	*subimage;
-   obj2struct		*obj2, *modobj2, *fobj2;
-   int			i,s;
-
-/* field is the detection field */
-  field = fields[0];
-  wfield = wfields? wfields[0]:NULL;
-
-  fobj2 = group2->obj2;
-
-  if (prefs.prof_flag)
-    {
-/*-- Setup model fitting for this group */
-    for (obj2=fobj2; obj2; obj2=obj2->nextobj2)
-      {
-      photom_auto(fields, wfields, nfield, obj2);
-      growth_aver(fields, wfields, nfield, obj2);
-      obj2->profit = profit_init(obj2, MODEL_MOFFAT, PROFIT_NOCONV);
-      }
-    if (fobj2->nextobj2)
-      {
-/*---- Iterative multiple fit if several sources overlap */
-      for (i=0; i<ANALYSE_NMULTITER; i++)
-        {
-        for (obj2=fobj2; obj2; obj2=obj2->nextobj2)
-          profit_fit(obj2->profit, obj2);
-        for (obj2=fobj2; obj2; obj2=obj2->nextobj2)
-          {
-          if (i)
-            {
-            subprofit = obj2->profit->subprofit;
-            subimage = obj2->subimage;
-            for (s=nfield; s--;)
-              subprofit_copyobjpix(subprofit++, subimage++);
-            }
-          for (modobj2=fobj2; modobj2; modobj2=modobj2->nextobj2)
-            if (modobj2 != obj2)
-              {
-              subprofit = obj2->profit->subprofit;
-              modsubprofit = modobj2->profit->subprofit;
-              for (s=nfield; s--;)
-                {
-                subprofit_submodpix(modsubprofit++, subprofit->objpix,
-			subprofit->ix, subprofit->iy,
-			subprofit->objnaxisn[0], subprofit->objnaxisn[1],
-			subprofit->subsamp, 0.95);
-                subprofit++;
-                }
-              }
-          }
-        }
-      }
-    else
-/*---- One single source */
-      profit_fit(fobj2->profit, fobj2);
-    }
-
-/* Subtract current best-fitting models from group sub-image */
-  subimage = group2->subimage;
-  for (obj2=fobj2; obj2; obj2=obj2->nextobj2)
-    {
-    subprofit = obj2->profit->subprofit;
-    subprofit_submodpix(subprofit, subimage->image,
-			subimage->ipos[0], subimage->ipos[1],
-			subimage->imsize[0], subimage->imsize[1],
-			subprofit->subsamp, 1.0);
-    }
-
-/* Full source analysis and decide if detection should be written to catalogue*/
-  for (obj2=fobj2; obj2; obj2=obj2->nextobj2)
-    obj2->writable_flag =
-		(analyse_full(fields, wfields, nfield, obj2) == RETURN_OK);
-/* Deallocate memory used for model-fitting */
-  if (prefs.prof_flag)
-    for (obj2=fobj2; obj2; obj2=obj2->nextobj2)
-      profit_end(obj2->profit);
-
-/* Free the group of obj2s */
-  for (obj2=fobj2; obj2; obj2=obj2->nextobj2)
-    subimage_endall(obj2);
-
-  subimage_end(group2->subimage);
-
-#ifdef USE_THREADS
-  if (prefs.nthreads>1)
-    {
-/*-- Flag group2s as done */
-    QPTHREAD_MUTEX_LOCK(&pthread_group2mutex);
-    group2->done_flag = 1;
-    QPTHREAD_MUTEX_UNLOCK(&pthread_group2mutex);
-    }
-#endif
-
-  return;
   }
 
 
@@ -1215,157 +1266,5 @@ void	analyse_end(fieldstruct **fields, fieldstruct **wfields,
 
   return;
   }
-
-
-#ifdef USE_THREADS
-
-/****** pthread_init_obj2group ************************************************
-PROTO	void pthread_init_obj2group(fieldstruct **fields, fieldstruct **wfields,
-			int nfield, int nthreads)
-PURPOSE	Setup threads, mutexes and semaphores for multhreaded obj2 group
-	processing.
-INPUT	Pointer to an array of image field pointers,
-	pointer to an array of weight-map field pointers,
-	number of images,
-	number of threads.
-OUTPUT	-.
-NOTES	Relies on some global variables.
-AUTHOR	E. Bertin (IAP)
-VERSION	03/01/2013
- ***/
-void	pthread_init_obj2group(fieldstruct **fields, fieldstruct **wfields,
-			int nfield, int nthreads)
-  {
-   int	n,p;
-
-  pthread_fields = fields;
-  pthread_wfields = wfields;
-  pthread_nfield = nfield;
-  pthread_nthreads = nthreads;
-  pthread_ngroup2 = prefs.obj2_stacksize;
-  QMALLOC(pthread_thread, pthread_t, nthreads);
-  QCALLOC(pthread_group2, obj2groupstruct, pthread_ngroup2);
-  QPTHREAD_COND_INIT(&pthread_group2addcond, NULL);
-  QPTHREAD_COND_INIT(&pthread_obj2savecond, NULL);
-  QPTHREAD_MUTEX_INIT(&pthread_group2mutex, NULL);
-  QPTHREAD_MUTEX_INIT(&pthread_freeobj2mutex, NULL);
-  QPTHREAD_MUTEX_INIT(&pthread_countobj2mutex, NULL);
-  QPTHREAD_ATTR_INIT(&pthread_attr);
-  QPTHREAD_ATTR_SETDETACHSTATE(&pthread_attr, PTHREAD_CREATE_JOINABLE);
-  pthread_group2addindex = pthread_group2procindex = pthread_group2saveindex= 0;
-  pthread_endflag = 0;
-
-/* Start the measurement/write_to_catalog threads */
-  for (p=0; p<nthreads; p++)
-    QPTHREAD_CREATE(&pthread_thread[p], &pthread_attr,
-		&pthread_analyse_obj2group, (void *)p);
-
-  return;
-  }
-
-
-/****** pthread_end_obj2group *************************************************
-PROTO	void pthread_end_obj2group(void)
-PURPOSE	Terminate threads, mutexes and semaphores set for multhreaded obj2
-	group processing.
-INPUT	-.
-OUTPUT	-.
-NOTES	-.
-AUTHOR	E. Bertin (IAP)
-VERSION	03/01/2014
- ***/
-void	pthread_end_obj2group(void)
-  {
-   int	p;
-
-  QPTHREAD_MUTEX_LOCK(&pthread_group2mutex);
-/* Call all threads to exit */
-  pthread_endflag = 1;
-  QPTHREAD_COND_BROADCAST(&pthread_group2addcond);
-  QPTHREAD_COND_BROADCAST(&pthread_group2addcond);
-  QPTHREAD_MUTEX_UNLOCK(&pthread_group2mutex);
-
-  for (p=0; p<pthread_nthreads; p++)
-    QPTHREAD_JOIN(pthread_thread[p], NULL);
-
-  QPTHREAD_MUTEX_DESTROY(&pthread_group2mutex);
-  QPTHREAD_MUTEX_DESTROY(&pthread_freeobj2mutex);
-  QPTHREAD_MUTEX_DESTROY(&pthread_countobj2mutex);
-  QPTHREAD_ATTR_DESTROY(&pthread_attr);
-  QPTHREAD_COND_DESTROY(&pthread_group2addcond);
-  QPTHREAD_COND_DESTROY(&pthread_obj2savecond);
-
-  free(pthread_thread);
-  free(pthread_group2);
-
-  return;
-  }
-
-
-/****** pthread_add_obj2group *************************************************
-PROTO	void pthread_addobj2group(obj2groupstruct *group2)
-PURPOSE	Add an object to the list of obj2 groups that need to be processed.
-INPUT	Pointer to the obj2group to be processed.
-OUTPUT	-.
-NOTES	-.
-AUTHOR	E. Bertin (IAP)
-VERSION	03/01/2014
- ***/
-void	pthread_add_obj2group(obj2groupstruct group2)
-  {
-
-  QPTHREAD_MUTEX_LOCK(&pthread_group2mutex);
-  while (pthread_group2addindex>=pthread_group2saveindex+pthread_ngroup2)
-/*-- Wait for stack to flush if limit on the number of stored obj2s is reached*/
-    QPTHREAD_COND_WAIT(&pthread_obj2savecond, &pthread_group2mutex);
-  pthread_group2[pthread_group2addindex++%pthread_ngroup2] = group2;
-  QPTHREAD_COND_BROADCAST(&pthread_group2addcond);
-  QPTHREAD_MUTEX_UNLOCK(&pthread_group2mutex);
-
-  return;
-  }
-
-
-/****** pthread_analyse_obj2group *********************************************
-PROTO	void *pthread_analyse_obj2group(void *arg)
-PURPOSE	thread that takes care of measuring and saving obj2 groups.
-INPUT	Pointer to the thread number.
-OUTPUT	-.
-NOTES	-.
-AUTHOR	E. Bertin (IAP)
-VERSION	03/01/2014
- ***/
-void	*pthread_analyse_obj2group(void *arg)
-  {
-   obj2groupstruct	*group2;
-
-  while (1)
-    {
-    QPTHREAD_MUTEX_LOCK(&pthread_group2mutex);
-/*-- Flush objects for which measurements have been completed */
-    while (pthread_group2saveindex<pthread_group2procindex
-		&& (pthread_group2[pthread_group2saveindex].done_flag))
-      analyse_end(pthread_fields, pthread_wfields, pthread_nfield,
-		&pthread_group2[pthread_group2saveindex++]);
-    while (pthread_group2procindex>=pthread_group2addindex)
-/*---- Wait for more objects to be pushed in stack */
-      {
-      if ((pthread_endflag))
-        {
-        QPTHREAD_MUTEX_UNLOCK(&pthread_group2mutex);
-        pthread_exit(NULL);
-        }
-      QPTHREAD_COND_WAIT(&pthread_group2addcond, &pthread_group2mutex);
-      }
-    group2 = &pthread_group2[pthread_group2procindex++%pthread_ngroup2];
-    QPTHREAD_MUTEX_UNLOCK(&pthread_group2mutex);
-    analyse_group(pthread_fields, pthread_wfields, pthread_nfield, group2);
-    }
-
-  return (void *)NULL;
-  }
-
-#endif
-
 
 

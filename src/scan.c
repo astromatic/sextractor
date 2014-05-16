@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2014 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		02/08/2012
+*	Last modified:		14/05/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -56,7 +56,9 @@
 #endif
 
 static void	scan_initmarkers(fieldstruct *field),
-		scan_updatemarkers(fieldstruct *field, int yl);
+		scan_updatemarkers(fieldstruct *field, int yl),
+		scan_update(infostruct *infoptr1, infostruct *infoptr2,
+			pliststruct *pixel);
 
 /****** scan_extract *********************************************************
 PROTO	void scan_extract(fieldstruct *dfield, fieldstruct *dwfield,
@@ -142,7 +144,6 @@ void	scan_extract(fieldstruct *dfield, fieldstruct *dwfield,
   QCALLOC(start, int, stacksize);
   QMALLOC(end, int, stacksize);
   blankpad = bpt = NULL;
-  lutz_alloc(w,h);
   deblend_alloc();
 
 /* Some initializations */
@@ -459,7 +460,7 @@ void	scan_extract(fieldstruct *dfield, fieldstruct *dwfield,
             start[co] = UNKNOWN;
             }
           else
-            lutz_update(&info[co],&store[xl], pixel);
+            scan_update(&info[co],&store[xl], pixel);
           ps = OBJECT;
           }
         else if (newmarker == 's')
@@ -468,7 +469,7 @@ void	scan_extract(fieldstruct *dfield, fieldstruct *dwfield,
             {
             pstop--;
             xl2 = start[co];
-            lutz_update(&info[co-1],&info[co], pixel);
+            scan_update(&info[co-1],&info[co], pixel);
             if (start[--co] == UNKNOWN)
               start[co] = xl2;
             else
@@ -507,7 +508,7 @@ void	scan_extract(fieldstruct *dfield, fieldstruct *dwfield,
 /*---------------------------------------------------------------------------*/
 
       if (luflag)
-        lutz_update(&info[co],&curpixinfo, pixel);
+        scan_update(&info[co],&curpixinfo, pixel);
       else
         {
         if (cs == OBJECT)
@@ -634,7 +635,6 @@ void	scan_extract(fieldstruct *dfield, fieldstruct *dwfield,
     free(cwscanp);
   deblend_free();
   free(pixel);
-  lutz_free();
   free(info);
   free(store);
   free(marker);
@@ -694,6 +694,40 @@ static void	scan_updatemarkers(fieldstruct *field, int yl)
   }
 
 
+/****** scan_update **********************************************************
+PROTO	void scan_update(infostruct *infoptr1, infostruct *infoptr2,
+		pliststruct *pixel)
+PURPOSE	Update the properties of a detection each time one of its pixels is
+	scanned.
+INPUT	Pointer to detection info,
+	pointer to pointer to new object info,
+	pointer to pixel list.
+OUTPUT	-.
+NOTES	-.
+AUTHOR	E. Bertin (IAP)
+VERSION	15/03/2012
+ ***/
+void	scan_update(infostruct *infoptr1, infostruct *infoptr2,
+		pliststruct *pixel)
+
+  {
+  infoptr1->pixnb += infoptr2->pixnb;
+  infoptr1->flag |= infoptr2->flag;
+  if (infoptr1->firstpix == -1)
+    {
+    infoptr1->firstpix = infoptr2->firstpix;
+    infoptr1->lastpix = infoptr2->lastpix;
+    }
+  else if (infoptr2->lastpix != -1)
+    {
+    PLIST(pixel+infoptr1->lastpix, nextpix) = infoptr2->firstpix;
+    infoptr1->lastpix = infoptr2->lastpix;
+    }
+
+  return;
+  }
+
+
 /****** scan_output **********************************************************
 PROTO	void scan_output(fieldstruct **fields, fieldstructs **wfields,
 		int nfield, infostruct *info, objliststruct *objlist)
@@ -707,7 +741,7 @@ INPUT	Pointer to an array of image field pointers,
 OUTPUT	-.
 NOTES	Global preferences are used.
 AUTHOR	E. Bertin (IAP)
-VERSION	07/03/2012
+VERSION	14/05/2014
  ***/
 void	scan_output(fieldstruct **fields, fieldstruct **wfields, int nfield,
 		infostruct *info, objliststruct *objlist)
@@ -747,7 +781,8 @@ void	scan_output(fieldstruct **fields, fieldstruct **wfields, int nfield,
   if ((int)obj.ymin < field->ymin)
     obj.flag |= OBJ_ISO_PB;
 
-  if (!(obj.flag & OBJ_OVERFLOW) && (createsubmap(objlist, 0) == RETURN_OK))
+  if (!(obj.flag & OBJ_OVERFLOW)
+	&& (objlist->subimage = subimage_fromplist(objlist, 0)))
     {
     if (deblend_parcelout(objlist, &objlistd) == RETURN_OK)
       objlistout = &objlistd;
@@ -759,7 +794,8 @@ void	scan_output(fieldstruct **fields, fieldstruct **wfields, int nfield,
       sprintf(gstr, "%.0f,%.0f", obj.mx+1, obj.my+1);
       warning("Deblending overflow for detection at ", gstr);
       }
-    free(obj.submap);
+    subimage_end(objlist->subimage);
+    QFREE(objlist->subimage);
     }
   else
     objlistout = objlist;

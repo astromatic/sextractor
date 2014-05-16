@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2014 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/01/2012
+*	Last modified:		14/05/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -31,8 +31,8 @@
 
 /*------------------------------ definitions --------------------------------*/
 
-#define	NOBJ			256		/* starting number of obj. */
-#define	UNKNOWN			-1		/* flag for LUTZ */
+#define	NSUBOBJ_START		256		/// Nb of subobjects at start
+#define	UNKNOWN			-1		/// Lutz algorithm flag code
 
 /*--------------------------------- typedefs --------------------------------*/
 
@@ -43,20 +43,17 @@ typedef	enum		{COMPLETE, INCOMPLETE, NONOBJECT, OBJECT}
 PIXTYPE		*dumscan;
 
 /*------------------------------- structures --------------------------------*/
-/* Temporary object parameters during extraction */
+ /// Temporary detection parameters during extraction
 typedef struct structinfo
   {
-  LONG		pixnb;			/* Number of pixels included */
-  LONG		firstpix;		/* Pointer to first pixel of pixlist */
-  LONG		lastpix;		/* Pointer to last pixel of pixlist */
-  short		flag;			/* Extraction flag */
+  LONG		pixnb;			/// Nb of pixels included in detection
+  LONG		firstpix;		/// Pointer to first pixel of pixel list
+  LONG		lastpix;		/// Pointer to last pixel of pixel list
+  short		flag;			/// Extraction flag
   }       infostruct;
 
-
 /*------------------------------- functions ---------------------------------*/
-void		lutz_alloc(int width, int height),
-		lutz_free(void),
-		lutz_output(infostruct *info, objliststruct *objlist),
+void		lutz_output(infostruct *info, objliststruct *objlist),
 		lutz_update(infostruct *infoptr1, infostruct *infoptr2,
 			pliststruct *pixel);
 

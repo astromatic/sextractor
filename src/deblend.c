@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2014 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		27/03/2012
+*	Last modified:		14/05/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -40,6 +40,7 @@
 #include	"deblend.h"
 #include	"lutz.h"
 #include	"plist.h"
+#include	"subimage.h"
 #include	"scan.h"
 
 static objliststruct	*objlist;
@@ -54,13 +55,14 @@ OUTPUT	RETURN_OK if success, RETURN_FATAL_ERROR otherwise (memory overflow).
 NOTES	Even if the object is not deblended, the output objlist threshold is
 	recomputed if a variable threshold is used.
 AUTHOR	E. Bertin (IAP)
-VERSION	27/03/2012
+VERSION	14/05/2014
  ***/
 int	deblend_parcelout(objliststruct *objlistin, objliststruct *objlistout)
 
   {
-   objstruct		*obj;
    static objliststruct	debobjlist, debobjlist2;
+   objstruct		*obj;
+   subimagestruct	*subimage;
    double		dthresh, dthresh0, value0;
    int			h,i,j,k,l,m, xn,
 			nbm = DEBLEND_NBRANCH,
@@ -78,6 +80,7 @@ int	deblend_parcelout(objliststruct *objlistin, objliststruct *objlistout)
   debobjlist.npix = debobjlist2.npix = 0;
   objlistout->thresh = debobjlist2.thresh = objlistin->thresh;
   memset(objlist, 0, (size_t)xn*sizeof(objliststruct));
+  subimage = objlistin->subimage;
 
   for (l=0; l<objlistin->nobj && out==RETURN_OK; l++)
       {
@@ -115,8 +118,8 @@ int	deblend_parcelout(objliststruct *objlistin, objliststruct *objlistout)
 
         for (i=0; i<objlist[k-1].nobj; i++)
           {
-          if ((out=lutz_subextract(objlistin, l, &objlist[k-1].obj[i],
-			&debobjlist)) == RETURN_FATAL_ERROR)
+          if ((out=lutz_subextract(subimage, &objlist[k-1].obj[i], &debobjlist))
+		== RETURN_FATAL_ERROR)
             goto exit_parcelout;
 
           for (j=h=0; j<debobjlist.nobj; j++)

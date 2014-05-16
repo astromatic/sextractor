@@ -1,13 +1,14 @@
-/*
-*				lutz.c
-*
-* Lutz (1980) algorithm to extract connected pixels from an image raster.
+/**
+* @file		lutz.c
+* @brief	Lutz (1980) algorithm to extract connected pixels from an image
+		raster.
+* @date		14/05/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2014 IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -21,8 +22,6 @@
 *	GNU General Public License for more details.
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
-*
-*	Last modified:		11/01/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -41,178 +40,135 @@
 #include	"plist.h"
 #include	"scan.h"
 
-/*------------------------- Static buffers for lutz() -----------------------*/
-
-static infostruct	*info, *store;
-static char		*marker;
-static status		*psstack;
-static int		*start, *end, *discan, xmin,ymin,xmax,ymax;
-
-
-/****** lutz_alloc ***********************************************************
-PROTO	void lutz_alloc(int width, int height)
-PURPOSE	Allocate memory for buffers used by Lutz' extraction algorithm.
-INPUT	Frame width,
-	frame height.
-OUTPUT	-.
-NOTES	-.
-AUTHOR	E. Bertin (IAP)
-VERSION	21/12/2011
- ***/
-void	lutz_alloc(int width, int height)
-  {
-   int	*discant,
-	stacksize, i;
-
-  stacksize = width+1;
-  xmin = ymin = 0;
-  xmax = width-1;
-  ymax = height-1;
-  QMALLOC(info, infostruct, stacksize);
-  QMALLOC(store, infostruct, stacksize);
-  QMALLOC(marker, char, stacksize);
-  QMALLOC(psstack, status, stacksize);
-  QMALLOC(start, int, stacksize);
-  QMALLOC(end, int, stacksize);
-  QMALLOC(discan, int, stacksize);
-  discant = discan;
-  for (i=stacksize; i--;)
-    *(discant++) = -1;
-
-  return;
-  }
-
-
-/****** lutz_free ************************************************************
-PROTO   void lutz_free(void)
-PURPOSE Free memory for buffers used by Lutz' extraction algorithms.
-INPUT	-.
-OUTPUT	-.
-NOTES	-.
-AUTHOR	E. Bertin (IAP)
-VERSION	21/12/2011
- ***/
-void	lutz_free(void)
-  {
-  free(discan);
-  free(info);
-  free(store);
-  free(marker);
-  free(psstack);
-  free(start);
-  free(end);
-
-  return;
-  }
-
-
-/****** lutz_subextract ******************************************************
-PROTO	void lutz_subextract(objliststruct *objlistroot, int nroot,
-		objstruct *objparent, objliststruct *objlist)
+/****** lutz_subextract **************************************************//**
+PROTO	int lutz_subextract(subimagestruct *subimage, objstruct *objparent,
+		objliststruct *objlist)
 PURPOSE	C implementation of R.K LUTZ' algorithm for the extraction of
-	8-connected pixels in a sub-image
-INPUT	-.
+	8-connected pixels in a sub-image around a parent object
+INPUT	Pointer to sub-image,
+	pointer to parent object,
+	pointer to the object list where new detections will be added.
 OUTPUT	RETURN_OK if no memory allocation problem occured, RETURN_FATAL_ERROR
 	otherwise.
 NOTES	Global preferences are used.
 AUTHOR	E. Bertin (IAP)
-VERSION	21/12/2011
+TODO    Check propagation of flags
+VERSION	14/05/2014
  ***/
-int	lutz_subextract(objliststruct *objlistroot, int nroot,
-		objstruct *objparent, objliststruct *objlist)
+int	lutz_subextract(subimagestruct *subimage, objstruct *objparent,
+		objliststruct *objlist)
 
   {
-   static infostruct	curpixinfo,initinfo;
-   objstruct		*obj, *objroot;
-   pliststruct		*plist,*pixel, *plistin, *plistint;
+   infostruct		curpixinfo,initinfo,
+			*info, *store;
+   objstruct		*obj;
+   pliststruct		*plist,*pixel;
+   status		*psstack;
 
-   char			newmarker;
-   int			cn, co, luflag, objnb, pstop, xl,xl2,yl,
+   char			*marker,
+			newmarker;
+   int			*start, *end,
+			xmax,ymax, subw,subh,scansize,
+			cn, co, luflag, objnb, pstop, xl,xl2,yl,
 			out, minarea, stx,sty,enx,eny, step,
-			nobjm = NOBJ,
-			inewsymbol, *iscan;
+			nobjm = NSUBOBJ_START,
+			inewsymbol;
    short		trunflag;
-   PIXTYPE		thresh;
+   PIXTYPE		*scan,*cscan,*dscan,
+			thresh;
    status		cs, ps;
 
-  out = RETURN_OK;
 
-  minarea = prefs.deb_maxarea;
-  plistint = plistin = objlistroot->plist;
-  objroot = &objlistroot->obj[nroot];
   stx = objparent->xmin;
   sty = objparent->ymin;
-  enx = objparent->xmax;
-  eny = objparent->ymax;
+  enx = objparent->xmax + 1;
+  eny = objparent->ymax + 1;
+  xmax = subimage->field->width-1;
+  ymax = subimage->field->height-1;
+  subw = enx - stx;				// Sub-subimage width
+  subh = eny - sty;				// Sub-subimage height
+  scansize = subw + 1;				// Sub-subimage scan size
+  QMALLOC(info, infostruct, scansize);
+  QMALLOC(store, infostruct, scansize);
+  QCALLOC(marker, char, scansize);		// Must be initialized to 0
+  QMALLOC(psstack, status, scansize);
+  QMALLOC(start, int, scansize);
+  QMALLOC(end, int, scansize);
+  QMALLOC(dscan, int, scansize);
+  dscant = dscan;
+  for (i=stacksize; i--;)
+    *(dscant++) = -BIG;
+
+  out = RETURN_OK;
+  minarea = prefs.deb_maxarea;
+
   thresh = objlist->dthresh;
   initinfo.pixnb = 0;
   initinfo.flag = 0;
   initinfo.firstpix = initinfo.lastpix = -1;
   cn = 0;
-  iscan = objroot->submap + (sty-objroot->suby)*objroot->subw
-	+ (stx-objroot->subx);
-/* As we only analyse a fraction of the map, a step occurs between lines */
-  step = objroot->subw - (++enx-stx);
-  eny++;
+  imsize = subimage->imsize[0];
+  scan = subimage->image
+	+ (sty-subimage->immin[1])*imsize
+	+ (stx-subimage->immin[0]);
+  cscan = (subimage->fimage? subimage->fimage : subimage->image)
+	+ (sty-subimage->immin[1])*imsize
+	+ (stx-subimage->immin[0]);
+// As we only analyse a fraction of the subimage, a step occurs between lines
+  step = imsize - subw;
 
-/*------Allocate memory to store object data */
-
-  free(objlist->obj);
+// Allocate memory to store object data */
+  free(objlist->obj);				// Free existing object if any
   if (!(obj=objlist->obj=(objstruct *)malloc(nobjm*sizeof(objstruct))))
     {
     out = RETURN_FATAL_ERROR;
-    plist = NULL;			/* To avoid gcc -Wall warnings */
+    plist = NULL;				// Avoid gcc -Wall warnings
     goto exit_lutz;
     }
 
-/*------Allocate memory for the pixel list */
-
+// Allocate memory for the pixel list */
   free(objlist->plist);
-  if (!(objlist->plist
-	= (pliststruct *)malloc((eny-sty)*(enx-stx)*plistsize)))
+  if (!(objlist->plist = (pliststruct *)malloc(subw*subh*plistsize)))
     {
     out = RETURN_FATAL_ERROR;
-    plist = NULL;			/* To avoid gcc -Wall warnings */
+    plist = NULL;				// Avoid gcc -Wall warnings
     goto exit_lutz;
     }
 
   pixel = plist = objlist->plist;
-
-/*----------------------------------------*/
-
-  for (xl=stx; xl<=enx; xl++)
-    marker[xl] = 0 ;
-
   objnb = objlist->nobj = 0;
   co = pstop = 0;
   curpixinfo.pixnb = 1;
 
-  for (yl=sty; yl<=eny; yl++, iscan += step)
+  for (yl=sty; yl<=eny; yl++, cscan += step, scan += imsize)
     {
     ps = COMPLETE;
     cs = NONOBJECT;
     trunflag =  (yl==0 || yl==ymax) ? OBJ_TRUNC : 0;
     if (yl==eny)
-      iscan = discan;
+      cscan = scan = dscan;
 
     for (xl=stx; xl<=enx; xl++)
       {
       newmarker = marker[xl];
       marker[xl] = 0;
-      if ((inewsymbol = (xl!=enx)?*(iscan++):-1) < 0)
+      if ((cnewsymbol = (xl!=enx)?*(cscan++):-BIG) < 0)
         luflag = 0;
       else
         {
         curpixinfo.flag = trunflag;
-        plistint = plistin+inewsymbol;
-        luflag = (PLISTPIX(plistint, cvalue) > thresh?1:0);
+        luflag =  > thresh?1:0);
         }
       if (luflag)
         {
         if (xl==0 || xl==xmax)
           curpixinfo.flag |= OBJ_TRUNC;
-        memcpy(pixel, plistint, (size_t)plistsize);
         PLIST(pixel, nextpix) = -1;
+        PLIST(pixel, x) = xl;
+        PLIST(pixel, y) = yl;
+        PLIST(pixel, value) = scan[xl-stx];
+        if (PLISTEXIST(cvalue))
+          PLISTPIX(pixel, cvalue) = cnewsymbol;
         curpixinfo.lastpix = curpixinfo.firstpix = cn;
         cn += plistsize;
         pixel += plistsize;
@@ -355,6 +311,14 @@ exit_lutz:
     free(objlist->plist);
     objlist->plist = NULL;
     }
+
+  free(dscan);
+  free(info);
+  free(store);
+  free(marker);
+  free(psstack);
+  free(start);
+  free(end);
 
   return  out;
   }

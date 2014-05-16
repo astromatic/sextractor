@@ -79,8 +79,18 @@ const int	flux_flag[PARAM_NPARAM] = {0,
 
 int	the_gal;
 
+/****** profit_init *******************************************************//**
+Allocate and initialize a new model-fitting structure.
+@param[in] fields	Pointer to an array of image field pointers
+@param[in] wfields	Pointer to an array of weight-map field pointers
+@param[in] nfield	Number of images
+@param[in] group	Pointer to objgroup
+
+@author 		E. Bertin (IAP)
+@date			28/03/2014
+ ***/
 /****** profit_init ***********************************************************
-PROTO	profitstruct profit_init(obj2struct *obj2, unsigned int modeltype,
+PROTO	profitstruct profit_init(objstruct *obj, obj2struct *obj2, unsigned int modeltype,
 				int	convflag)
 PURPOSE	Allocate and initialize a new profile-fitting structure.
 INPUT	pointer to the obj2,
@@ -91,8 +101,8 @@ NOTES	-.
 AUTHOR	E. Bertin (IAP)
 VERSION	04/12/2013
  ***/
-profitstruct	*profit_init(obj2struct *obj2, unsigned int modeltype,
-			int conv_flag)
+profitstruct	*profit_init(objstruct *obj, obj2struct *obj2,
+			unsigned int modeltype, int conv_flag)
   {
    profitstruct		*profit;
    subprofitstruct	*subprofit;

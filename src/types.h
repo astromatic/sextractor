@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2014 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		02/08/2012
+*	Last modified:		14/05/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -115,7 +115,6 @@ typedef struct
 /* ---- morphological data */			
   int		xmin,xmax,ymin,ymax,ycmin,ycmax;/* x,y limits */
   PIXTYPE	*blank; 	       		/* BLANKing sub-images  */
-  int		*submap;			/* Pixel-index sub-map */
   int		subx,suby, subw,subh;		/* sub-image pos. and size */
   short		flag;				/* extraction flags */
   BYTE		wflag;				/* weighted extraction flags */
@@ -562,6 +561,7 @@ typedef struct
   int		nobj;			/* number of objects in list */
   objstruct	*obj;			/* pointer to the object array */
   int		npix;			/* number of pixels in pixel-list */
+  struct subimage	*subimage;	/* Array of sub-images */
   pliststruct	*plist;			/* pointer to the pixel-list */
   PIXTYPE	dthresh;		/* detection threshold */
   PIXTYPE	thresh;			/* analysis threshold */
