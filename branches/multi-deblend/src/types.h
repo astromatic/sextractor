@@ -132,6 +132,7 @@ typedef struct
   float		mthresh;		       	/* max. threshold (ADU) */
   int		iso[NISO];			/* isophotal areas */
   float		fwhm;				/* IMAGE FWHM */
+  profitstruct	*profit;			/* Pointer to fitted model */
   }	objstruct;
 
 /* II: "BLIND" parameters */
