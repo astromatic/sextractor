@@ -45,40 +45,25 @@
 #include	"plist.h"
 #include	"subimage.h"
 
-/****** subimage_fromplist ****************************************************
-PROTO	subimagestruct *subimage_fromplist(fieldstruct *field,
-		fieldstruct *wfield,
-		objstruct *obj, pliststruct *plist)
-PURPOSE	Create a sub-image from an object and a pixel list, without any margin.
-INPUT	Pointer to the image field,
-	pointer to the weight-map field,
-	lower frame limit in x (included),
-	upper frame limit in x (excluded),
-	lower frame limit in y (included),
-	upper frame limit in y (excluded).
-OUTPUT	Pointer to a new malloc'ed subimage structure.
-NOTES	-.
-AUTHOR	E. Bertin (IAP)
-VERSION	15/05/2014
+/****** subimage_fromplist ************************************************//**
+Create a sub-image from an object and a pixel list, without any margin.
+@param[in] field	Pointer to the image field.
+@param[in] wfield	Pointer to the weight field.
+@param[in] obj		Pointer to the parent object.
+@param[in] plist	Pixel list.
+@param[out] 		Pointer to a new subimage.
+
+@author 		E. Bertin (IAP)
+@date			16/05/2014
  ***/
 subimagestruct	*subimage_fromplist(fieldstruct *field, fieldstruct *wfield,
-			objstruct *obj, pliststruct *plist)
+			objstruct *obj, pliststruct *plist) {
 
-  {
    subimagestruct	*subimage;
    pliststruct	*plistt;
    PIXTYPE	*pix,*wpix;
    long		pos;
    int		i, n, xmin,ymin, w;
-
-
-  for (i=obj->firstpix; i!=-1; i=PLIST(pixt,nextpix))
-    {
-    plistt = plist+i;
-    *(pix+(PLIST(plistt,x)-xmin) + (PLIST(plistt,y)-ymin)*w) =
-		PLISTPIX(plistt,cvalue);
-    }
-
 
 /* Initialize sub-image */
   QMALLOC(subimage, subimagestruct, 1);
@@ -96,68 +81,63 @@ subimagestruct	*subimage_fromplist(fieldstruct *field, fieldstruct *wfield,
   subimage->bkg = 0.0;
 
   npix = subimage->imsize[0]*subimage->imsize[1];
+
+  if (!(subimage->image = (PIXTYPE *)malloc(npix*sizeof(PIXTYPE)))) {
+    free(subimage);
+    return NULL;
+  }
+
   pix = subimage->image;
   for (i=npix; i--;)
     *(pix++) = -BIG;
 
-  if (!(subimage->image = (PIXTYPE *)malloc(npix*sizeof(PIXTYPE))))
-    {
-    free(subimage);
-    return NULL;
-    }
-
-  if (subimage->wfield)
-    {
-    if (!(subimage->weight = (PIXTYPE *)malloc(npix*sizeof(PIXTYPE))))
-      {
+  if (subimage->wfield) {
+    if (!(subimage->weight = (PIXTYPE *)malloc(npix*sizeof(PIXTYPE)))) {
       free(subimage->image);
       free(subimage);
       return NULL;
-      }
+    }
     wpix = subimage->weight;
     for (i=npix; i--;)
       *(wpix++) = BIG;
-    }
-  else
+  } else
     subimage->weight = NULL;
 
 
   pix = subimage->image;
   wpix = subimage->weight;
-  for (i=obj->firstpix; i!=-1; i=PLIST(pixt,nextpix))
-    {
+  for (i=obj->firstpix; i!=-1; i=PLIST(pixt,nextpix)) {
     plistt = plist+i;
     pos = (PLIST(plistt,x)-xmin) + (PLIST(plistt,y)-ymin)*w;
     *(pix+pos) = PLISTPIX(plistt,cvalue);
     if (wpix)
       *(wpix+pos) = PLISTPIX(plistt,var);
-    }
-
-  return subimage;
   }
 
+  return subimage;
+}
 
-/****** subimage_new ********************************************************
-PROTO	subimagestruct *subimage_new(fieldstruct *field, fieldstruct *wfield,
-			int xmin, int xmax, int ymin, int ymax)
-PURPOSE	Create a sub-image.
-INPUT	Pointer to the image field,
-	pointer to the weight-map field,
-	lower frame limit in x (included),
-	upper frame limit in x (excluded),
-	lower frame limit in y (included),
-	upper frame limit in y (excluded).
-OUTPUT	Pointer to a new malloc'ed subimage structure.
-NOTES	-.
-AUTHOR	E. Bertin (IAP)
-VERSION	03/01/2014
+
+/****** subimage_fromfield ************************************************//**
+Create a sub-image from an image field, without any margin.
+@param[in] field	Pointer to the image field.
+@param[in] wfield	Pointer to the weight field.
+@param[in] xmin		Lower frame limit in x (included).
+@param[in] xmax		Upper frame limit in x (excluded).
+@param[in] ymin		Lower frame limit in y (included).
+@param[in] ymax		Upper frame limit in y (excluded).
+@param[out] 		Pointer to a new subimage.
+
+@author 		E. Bertin (IAP)
+@date			19/05/2014
  ***/
-subimagestruct	*subimage_new(fieldstruct *field, fieldstruct *wfield,
-			int xmin, int xmax, int ymin, int ymax)
+subimagestruct	*subimage_fromfield(fieldstruct *field, fieldstruct *wfield,
+			int xmin, int xmax, int ymin, int ymax) {
 
-  {
    subimagestruct	*subimage;
-
+   PIXTYPE	*pix,*wpix;
+   long		pos;
+   int		i, n, xmin,ymin, w;
 
 /* Initialize sub-image */
   QMALLOC(subimage, subimagestruct, 1);
@@ -165,27 +145,38 @@ subimagestruct	*subimage_new(fieldstruct *field, fieldstruct *wfield,
   subimage->immin[0] = xmin;
   subimage->immin[1] = ymin;
   subimage->immax[0] = xmax;
-  subimage->immax[1] = ymax;
-  subimage->imsize[0] = xmax - xmin;
+  subimage->immax[1] = ymax ;
+  subimage->imsize[0] = w = xmax - xmin;
   subimage->imsize[1] = ymax - ymin;
   subimage->ipos[0] = subimage->immin[0] + subimage->imsize[0]/2;
   subimage->ipos[1] = subimage->immin[1] + subimage->imsize[1]/2;
-
   subimage->field = field;
   subimage->wfield = wfield;
-
-  QMALLOC(subimage->image, PIXTYPE, subimage->imsize[0]*subimage->imsize[1]);
-  if (subimage->wfield)
-    {
-    QMALLOC(subimage->weight, PIXTYPE,
-		subimage->imsize[0]*subimage->imsize[1]);
-    }
-  else
-    subimage->weight = NULL;
   subimage->bkg = 0.0;
- 
-  return subimage;
+
+  npix = subimage->imsize[0]*subimage->imsize[1];
+
+  if (!(subimage->image = (PIXTYPE *)calloc(npix*sizeof(PIXTYPE)))) {
+    free(subimage);
+    return NULL;
   }
+
+  copyimage(field, subimage->image, subimage->imsize[0],subimage->imsize[1],
+	subimage->ipos[0],subimage->ipos[1], -BIG);
+
+  if (subimage->wfield) {
+    if (!(subimage->weight = (PIXTYPE *)malloc(npix*sizeof(PIXTYPE)))) {
+      free(subimage->image);
+      free(subimage);
+      return NULL;
+    }
+    copyimage(wfield, subimage->weight, subimage->imsize[0],subimage->imsize[1],
+	subimage->ipos[0],subimage->ipos[1], BIG);
+  } else
+    subimage->weight = NULL;
+
+  return subimage;
+}
 
 
 /****** subimage_getall ******************************************************

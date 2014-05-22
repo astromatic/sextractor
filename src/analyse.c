@@ -425,13 +425,12 @@ void analyse_final(fieldstruct **fields, fieldstruct **wfields,
 /* field is the detection field */
   field = fields[0];
 /* Find overlapping detections and link them */
-  overobjlist = analyse_overlapness(objlist, objindex);
+  overobjlist = analyse_overlapness(objlist, objlist->objindex);
 
-  xmax = ymax = -(xmin = ymin = 2000000);
-  iobj = objindex;
-  for (i=noverlap; i--;)
+  xmax = ymax = -(xmin = ymin = 0x7FFFFFFF);	/// largest signed 32-bit int
+  obj = overobjlist->obj;
+  for (i=overobjlist->nobj; i--; obj++)
     {
-    obj = &objlist->obj[iobj];
     if (obj->xmin < xmin)
       xmin = obj->xmin;
     if (obj->xmax > xmax)
@@ -443,7 +442,7 @@ void analyse_final(fieldstruct **fields, fieldstruct **wfields,
     iobj = obj->next;
     }
 
-  group2.subimage = subimage_new(field, wfields? wfields[0] : NULL,
+  overobjlist->subimage = subimage_fromfield(field, wfields? wfields[0] : NULL,
 		xmin, xmax, ymin, ymax);
 
 /* Convert every linked detection to a linked obj2 */
@@ -451,7 +450,7 @@ void analyse_final(fieldstruct **fields, fieldstruct **wfields,
   iobj = objindex;
   for (i=noverlap; i--;)
     {
-    obj = &objlist->obj[iobj];
+    obj = overobjlist->obj[iobj];
 /*-- Warn if there is a possibility for any aperture to be truncated */
     if ((ycmax=obj->ycmax) > field->ymax)
       {
@@ -532,25 +531,20 @@ OUTPUT  -.
 NOTES   .
 TODO	The selection algorithm is currently very basic and inefficient.
 AUTHOR  E. Bertin (IAP)
-VERSION 14/05/2014
+VERSION 19/05/2014
  ***/
 objliststruct *analyse_overlapness(objliststruct *objlist, objstruct *fobj)
   {
    objlistruct	*overobjlist;
-   objstruct	*obj,*cobj,*fobj;
-   int		i, blend, nover, nobj;
+   objstruct	*obj;
+   int		i, blend, nobj;
 
   QMALLOC(overobjlist, 1, objliststruct);
   QMALLOC(overobjlist->obj, ANALYSE_NOVERLAP, objstruct);
-  overobj = overobjlist->obj;
-  nover = 0;
+  overobjlist = overobjlist_new();
   nobj = objlist->nobj;
   obj = objlist->obj;
-  overobj = overobjlist->obj
-  fobj = &obj[iobj];
-  fobj->prev = -1;
   blend = fobj->blend;
-  cobj = fobj;
   for (i=0; i<nobj; i++, obj++)
     if (obj->blend == blend && obj!=fobj)
       objlist_add(overobjlist, obj);
@@ -686,44 +680,6 @@ void analyse_final2(fieldstruct **fields, fieldstruct **wfields,
 #endif
 
   return;
-  }
-
-
-/****** analyse_overlapness2 ***************************************************
-PROTO	int analyse_overlapness2(objliststruct *objlist, int iobj)
-PURPOSE Link together overlapping detections.
-INPUT   objliststruct pointer,
-	obj index.
-OUTPUT  -.
-NOTES   -.
-AUTHOR  E. Bertin (IAP)
-VERSION 07/10/2011
- ***/
-int analyse_overlapness2(objliststruct *objlist, int iobj)
-  {
-   objstruct	*obj,*cobj,*fobj;
-   int		i, blend, nblend,nobj;
-
-  nblend = 1;
-  nobj = objlist->nobj;
-  obj = objlist->obj;
-  fobj = &obj[iobj];
-  fobj->prev = -1;
-  blend = fobj->blend;
-  cobj = fobj;
-  for (i=0; i<nobj; i++, obj++)
-    if (obj->blend == blend && obj!=fobj)
-      {
-      cobj->next = i;
-      obj->prev = iobj;
-      cobj = obj;
-      iobj = i;
-      nblend++;
-      }
-
-  cobj->next = -1;
-
-  return nblend;
   }
 
 
@@ -895,7 +851,7 @@ INPUT   Pointer to an array of image field pointers,
 OUTPUT  RETURN_OK if the object has been processed, RETURN_ERROR otherwise.
 NOTES   -.
 AUTHOR  E. Bertin (IAP)
-VERSION 02/08/2012
+VERSION 19/05/2014
  ***/
 int	analyse_full(fieldstruct **fields, fieldstruct **wfields,
 			int nfield, obj2struct *obj2)
@@ -1157,7 +1113,7 @@ dfield = dwfield = wfield = NULL;
 /*--------------------------------- "Vignets" ------------------------------*/
   if (FLAG(obj2.vignet))
     copyimage(field,obj2->vignet,prefs.vignet_size[0],prefs.vignet_size[1],
-	obj2->ix, obj2->iy);
+	obj2->ix, obj2->iy, -BIG);
 
   if (FLAG(obj2.vigshift))
     copyimage_center(field, obj2->vigshift, prefs.vigshift_size[0],

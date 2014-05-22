@@ -92,7 +92,7 @@ objliststruct	*objlist_new(void) {
 
 /****** objlist_end *******************************************************//**
 Free resources allocated to an objlist
-@param[in] 		Pointer to the objlist.
+@param[in] objlist	Pointer to the objlist.
 
 @author 		E. Bertin (IAP)
 @date			16/05/2014
@@ -168,18 +168,18 @@ int	objlist_subobj(objliststruct *objlist, int objindex) {
 }
 
 
-/****** group_analyse *****************************************************//**
-Perform measurements on a group of detections.
+/****** objlist_deblend ***************************************************//**
+Perform model-fitting and deblending on a list of objects.
 @param[in] fields	Pointer to an array of image field pointers
 @param[in] wfields	Pointer to an array of weight-map field pointers
 @param[in] nfield	Number of images
-@param[in] group	Pointer to objgroup
+@param[in] objlist	Pointer to objlist
 
 @author 		E. Bertin (IAP)
 @date			28/03/2014
  ***/
-void	group_analyse(fieldstruct **fields, fieldstruct **wfields,
-			int nfield, objgroupstruct *group)
+void	objlist_deblend(fieldstruct **fields, fieldstruct **wfields,
+			int nfield, objliststruct *objlist)
   {
    fieldstruct		*field, *wfield;
    subprofitstruct	*subprofit,*modsubprofit;
@@ -191,9 +191,9 @@ void	group_analyse(fieldstruct **fields, fieldstruct **wfields,
   field = fields[0];
   wfield = wfields? wfields[0]:NULL;
 
-  fobj = group->obj;		/* First obj in the chained list */
-
-  for (obj=fobj; obj; obj=obj->nextobj)
+  fobj = objlist->obj;		/* First obj in the chained list */
+  obj = objlist->obj;
+  for (o=objlist->nobj; o--; obj++)
     obj->profit = profit_init(obj, MODEL_MOFFAT, PROFIT_NOCONV);
 
   subimage = group->subimage;
