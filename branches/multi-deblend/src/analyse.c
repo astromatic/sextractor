@@ -422,10 +422,11 @@ void analyse_final(fieldstruct **fields, fieldstruct **wfields,
    subimagestruct	*objsubimage, *groupsubimage;
    int			i, ycmax, nextiobj, noverlap, iobj,
 			xmin,xmax,ymin,ymax;
-/* field is the detection field */
+
+// field is the detection field */
   field = fields[0];
 /* Find overlapping detections and link them */
-  overobjlist = analyse_overlapness(objlist, objlist->objindex);
+  overobjlist = analyse_overlapness(objlist, objlist->obj[objindex]);
 
   xmax = ymax = -(xmin = ymin = 0x7FFFFFFF);	/// largest signed 32-bit int
   obj = overobjlist->obj;
@@ -439,14 +440,12 @@ void analyse_final(fieldstruct **fields, fieldstruct **wfields,
       ymin = obj->ymin;
     if (obj->ymax > ymax)
       ymax = obj->ymax;
-    iobj = obj->next;
     }
 
   overobjlist->subimage = subimage_fromfield(field, wfields? wfields[0] : NULL,
 		xmin, xmax, ymin, ymax);
 
 /* Convert every linked detection to a linked obj2 */
-  prevobj2 = NULL;
   iobj = objindex;
   for (i=noverlap; i--;)
     {
@@ -519,37 +518,6 @@ void analyse_final(fieldstruct **fields, fieldstruct **wfields,
 #endif
 
   return;
-  }
-
-
-/****** analyse_overlapness ***************************************************
-PROTO	objliststruct *analyse_overlapness(objliststruct *objlist, int iobj)
-PURPOSE Create a list of objects overlapping a given object.
-INPUT   objliststruct pointer,
-	obj index.
-OUTPUT  -.
-NOTES   .
-TODO	The selection algorithm is currently very basic and inefficient.
-AUTHOR  E. Bertin (IAP)
-VERSION 19/05/2014
- ***/
-objliststruct *analyse_overlapness(objliststruct *objlist, objstruct *fobj)
-  {
-   objlistruct	*overobjlist;
-   objstruct	*obj;
-   int		i, blend, nobj;
-
-  QMALLOC(overobjlist, 1, objliststruct);
-  QMALLOC(overobjlist->obj, ANALYSE_NOVERLAP, objstruct);
-  overobjlist = overobjlist_new();
-  nobj = objlist->nobj;
-  obj = objlist->obj;
-  blend = fobj->blend;
-  for (i=0; i<nobj; i++, obj++)
-    if (obj->blend == blend && obj!=fobj)
-      objlist_add(overobjlist, obj);
-
-  return nblend;
   }
 
 

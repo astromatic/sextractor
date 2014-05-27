@@ -179,13 +179,41 @@ Perform model-fitting and deblending on a list of objects.
 @date			28/03/2014
  ***/
 void	objlist_deblend(fieldstruct **fields, fieldstruct **wfields,
-			int nfield, objliststruct *objlist)
+			int nfield, objliststruct *objlist, int objindex)
   {
    fieldstruct		*field, *wfield;
    subprofitstruct	*subprofit,*modsubprofit;
    subimagestruct	*subimage;
    objstruct		*obj, *modobj, *fobj;
    int			i,s;
+
+// field is the detection field */
+  field = fields[0];
+  wfield = wfields? wfields[0]:NULL;
+
+// Find overlapping detections and link them
+  overobjlist = objlist_overlap(objlist, objlist->obj[objindex]);
+
+  xmax = ymax = -(xmin = ymin = 0x7FFFFFFF);	/// largest signed 32-bit int
+  obj = overobjlist->obj;
+  for (i=overobjlist->nobj; i--; obj++)
+    {
+//-- Create individual object subimages
+    obj->subimage = subimage_fromfield(field, wfield,
+		obj->xmin, obj->xmax, obj->ymin, obj->ymax);
+    if (obj->xmin < xmin)
+      xmin = obj->xmin;
+    if (obj->xmax > xmax)
+      xmax = obj->xmax;
+    if (obj->ymin < ymin)
+      ymin = obj->ymin;
+    if (obj->ymax > ymax)
+      ymax = obj->ymax;
+    }
+
+  overobjlist->subimage = subimage_fromfield(field, wfield,
+				xmin, xmax, ymin, ymax);
+
 
 /* field is the detection field */
   field = fields[0];
@@ -265,6 +293,36 @@ void	objlist_deblend(fieldstruct **fields, fieldstruct **wfields,
 
   return;
   }
+
+
+/****** objlist_overlap ***************************************************//**
+Create a list of objects overlapping a given object.
+@param[in] objlist	Pointer to objlist
+@param[in] fobj		Pointer to object
+
+@author 		E. Bertin (IAP)
+@date			22/05/2014
+@todo	The selection algorithm is currently very basic and inefficient.
+ ***/
+objliststruct *objlist_overlap(objliststruct *objlist, objstruct *fobj)
+  {
+   objlistruct	*overobjlist;
+   objstruct	*obj;
+   int		i, blend, nobj;
+
+  QMALLOC(overobjlist, 1, objliststruct);
+  QMALLOC(overobjlist->obj, ANALYSE_NOVERLAP, objstruct);
+  overobjlist = overobjlist_new();
+  nobj = objlist->nobj;
+  obj = objlist->obj;
+  blend = fobj->blend;
+  for (i=0; i<nobj; i++, obj++)
+    if (obj->blend == blend && obj!=fobj)
+      objlist_add(overobjlist, obj);
+
+  return nblend;
+  }
+
 
 
 #ifdef USE_THREADS
