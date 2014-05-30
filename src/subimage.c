@@ -179,6 +179,58 @@ subimagestruct	*subimage_fromfield(fieldstruct *field, fieldstruct *wfield,
 }
 
 
+/****** subimage_fill ****************************************************//**
+Replace pixels of the first subimage by valid pixels from the second subimage.
+@param[in] subimage	Pointer to the first (destination) subimage.
+@param[in] submask	Pointer to the second subimage.
+
+@author 		E. Bertin (IAP)
+@date			30/05/2014
+ ***/
+void	subimage_fill(subimagestruct *subimage, subimagestruct *submask)
+  {
+   int		x,y, xmax,ymax, w2,dwima,dwblank;
+   PIXTYPE	val;
+
+/* Don't go further if out of frame!! */
+  if (subimage->xmin+wblank<0 || xmin>=wima
+	|| ymin+hblank<0 || ymin>=hima)
+    return;
+
+/* Set the image boundaries */
+  w2 = wblank;
+  ymax = ymin + hblank;
+  if (ymin<0)
+    {
+    pixblank -= ymin*wblank;
+    ymin = 0;
+    }
+  if (ymax>hima)
+    ymax = hima;
+
+  xmax = xmin + wblank;
+  if (xmax>wima)
+    xmax = wima;
+  if (xmin<0)
+    {
+    pixblank -= xmin;
+    xmin = 0;
+    }
+
+/* Copy the right pixels to the destination */
+  w2 = xmax - xmin;
+  dwblank = wblank - w2;
+  dwima = wima - w2;
+  pixima += ymin*wima + xmin;
+  for (y=ymax-ymin; y--; pixblank += dwblank, pixima += dwima)
+    for (x=w2; x--; pixima++)
+      if ((val = *(pixblank++)) > -BIG)
+        *pixima = val;
+
+  return;
+  }
+
+
 /****** subimage_getall ******************************************************
 PROTO	subimagestruct *subimage_getall(fieldstruct **fields,
 			fieldstruct **wfields, int nfield, obj2struct *obj2)

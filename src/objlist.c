@@ -1,8 +1,8 @@
 /**
-* @file		group.c
+* @file		objlist.c
 * @brief	Manage groups of detection (advanced deblending)
-* @date		16/05/2014
-*
+* @date		30/05/2014
+* @copyright
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 *
 *	This file part of:	SExtractor
@@ -179,8 +179,7 @@ Perform model-fitting and deblending on a list of objects.
 @date			28/03/2014
  ***/
 void	objlist_deblend(fieldstruct **fields, fieldstruct **wfields,
-			int nfield, objliststruct *objlist, int objindex)
-  {
+			int nfield, objliststruct *objlist, int objindex) {
    fieldstruct		*field, *wfield;
    subprofitstruct	*subprofit,*modsubprofit;
    subimagestruct	*subimage;
@@ -196,11 +195,15 @@ void	objlist_deblend(fieldstruct **fields, fieldstruct **wfields,
 
   xmax = ymax = -(xmin = ymin = 0x7FFFFFFF);	/// largest signed 32-bit int
   obj = overobjlist->obj;
-  for (i=overobjlist->nobj; i--; obj++)
-    {
+  for (i=overobjlist->nobj; i--; obj++) {
 //-- Create individual object subimages
-    obj->subimage = subimage_fromfield(field, wfield,
+    obj->fullimage = subimage_fromfield(field, wfield,
 		obj->xmin, obj->xmax, obj->ymin, obj->ymax);
+//-- if BLANKing is on, paste back the object pixels in the image*/
+    if (prefs.blank_flag && obj->blank) {
+      subimage_fill(obj->fullimage, obj->subimage);
+      subimage_end(obj->blank);
+    }
     if (obj->xmin < xmin)
       xmin = obj->xmin;
     if (obj->xmax > xmax)
@@ -209,7 +212,7 @@ void	objlist_deblend(fieldstruct **fields, fieldstruct **wfields,
       ymin = obj->ymin;
     if (obj->ymax > ymax)
       ymax = obj->ymax;
-    }
+  }
 
   overobjlist->subimage = subimage_fromfield(field, wfield,
 				xmin, xmax, ymin, ymax);
