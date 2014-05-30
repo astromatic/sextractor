@@ -741,12 +741,12 @@ INPUT	Pointer to an array of image field pointers,
 OUTPUT	-.
 NOTES	Global preferences are used.
 AUTHOR	E. Bertin (IAP)
-VERSION	14/05/2014
+VERSION	30/05/2014
  ***/
 void	scan_output(fieldstruct **fields, fieldstruct **wfields, int nfield,
 		infostruct *info, objliststruct *objlist)
   {
-   fieldstruct		*field;
+   fieldstruct		*field, *wfield;
    objliststruct	objlistd, *objlistout;
    obj2liststruct	*obj2list;
    static objstruct	obj;
@@ -756,6 +756,7 @@ void	scan_output(fieldstruct **fields, fieldstruct **wfields, int nfield,
    int 			i,j,n,o;
 
   field = fields[0];
+  wfield = wfields? wfields[0] : NULL;
 
   pixel = objlist->plist;
   objlistd.obj = NULL;
@@ -814,7 +815,8 @@ void	scan_output(fieldstruct **fields, fieldstruct **wfields, int nfield,
     analyse_iso(fields, wfields, nfield, objlistout, o);
     if (prefs.blank_flag)
       {
-      if (createblank(objlistout, o) != RETURN_OK)
+      if (!(cobj->isoimage = subimage_fromplist(field, wfield, cobj,
+		objlistout->plist)))
         {
 /*------ Not enough mem. for the BLANK vignet: flag the object now */
         cobj->flag |= OBJ_OVERFLOW;

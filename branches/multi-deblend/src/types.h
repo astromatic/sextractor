@@ -114,8 +114,8 @@ typedef struct
 		poserr_mxy;			/* Error ellips moments */
 /* ---- morphological data */			
   int		xmin,xmax,ymin,ymax,ycmin,ycmax;/* x,y limits */
-  PIXTYPE	*blank; 	       		/* BLANKing sub-images  */
-  int		subx,suby, subw,subh;		/* sub-image pos. and size */
+  struct subimage	*isoimage;		/// Isophotal sub-image
+  struct subimage	*fullimage;		/// Full sub-image
   short		flag;				/* extraction flags */
   BYTE		wflag;				/* weighted extraction flags */
   FLAGTYPE	imaflags[MAXFLAG];		/* flags from FLAG-images */
