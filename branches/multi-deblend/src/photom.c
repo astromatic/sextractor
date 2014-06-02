@@ -72,10 +72,10 @@ void  photom_aper(fieldstruct *field, fieldstruct *wfield, obj2struct *obj2,
     wthresh = wfield->weight_thresh;
   weight = weightt = NULL;
   subimage = obj2->subimage;
-  mx = subimage->dpos[0] - subimage->immin[0];
-  my = subimage->dpos[1] - subimage->immin[1];
-  w = subimage->imsize[0];
-  h = subimage->imsize[1];
+  mx = subimage->dpos[0] - subimage->xmin[0];
+  my = subimage->dpos[1] - subimage->xmin[1];
+  w = subimage->size[0];
+  h = subimage->size[1];
   ngamma = field->ngamma;
   pflag = (field->detector_type==DETECTOR_PHOTO);
   corrflag = (prefs.mask_type==MASK_CORRECT);
@@ -255,12 +255,12 @@ void  photom_petro(fieldstruct *field, fieldstruct *dfield,
     wthresh = wfield->weight_thresh;
   weightt = dweightt = NULL;
   subimage = obj2->subimage;
-  w = subimage->imsize[0];
-  h = subimage->imsize[1];
+  w = subimage->size[0];
+  h = subimage->size[1];
   ngamma = field->ngamma;
   bkg = (double)obj2->dbkg[0];
-  mx = subimage->dpos[0] - (double)subimage->immin[0];
-  my = subimage->dpos[1] - (double)subimage->immin[1];
+  mx = subimage->dpos[0] - (double)subimage->xmin[0];
+  my = subimage->dpos[1] - (double)subimage->xmin[1];
   var = backnoise2 = field->backsig*field->backsig;
   gain = field->gain;
   pflag = (field->detector_type==DETECTOR_PHOTO);
@@ -563,11 +563,11 @@ void  photom_auto(fieldstruct **fields, fieldstruct **wfields,
     wthresh = wfield->weight_thresh;
   weightt = NULL;
   subimage = obj2->subimage;
-  w = subimage->imsize[0];
-  h = subimage->imsize[1];
+  w = subimage->size[0];
+  h = subimage->size[1];
   ngamma = field->ngamma;
-  mx = subimage->dpos[0] - (double)subimage->immin[0];
-  my = subimage->dpos[1] - (double)subimage->immin[1];
+  mx = subimage->dpos[0] - (double)subimage->xmin[0];
+  my = subimage->dpos[1] - (double)subimage->xmin[1];
   var = backnoise2 = field->backsig*field->backsig;
   gain = field->gain;
   corrflag = (prefs.mask_type==MASK_CORRECT);
@@ -706,10 +706,10 @@ void  photom_auto(fieldstruct **fields, fieldstruct **wfields,
       f = field->imindex;
       pflag = (field->detector_type==DETECTOR_PHOTO);
 
-      w = subimage->imsize[0];
-      h = subimage->imsize[1];
-      mx = subimage->dpos[0] - (double)subimage->immin[0];
-      my = subimage->dpos[1] - (double)subimage->immin[1];
+      w = subimage->size[0];
+      h = subimage->size[1];
+      mx = subimage->dpos[0] - (double)subimage->xmin[0];
+      my = subimage->dpos[1] - (double)subimage->xmin[1];
 
       jac = subimage->dinvjacob;
       cx2 = jac[0]*jac[0]*obj2->cxx

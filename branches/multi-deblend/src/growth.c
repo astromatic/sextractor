@@ -84,10 +84,10 @@ void  growth_aver(fieldstruct **fields, fieldstruct **wfields, int nfield,
 /* Allocate the growth-curve buffer */
   QCALLOC(growth, double, GROWTH_NSTEP);
   subimage = obj2->subimage;
-  mx = subimage->dpos[0] - subimage->immin[0];
-  my = subimage->dpos[1] - subimage->immin[1];
-  w = subimage->imsize[0];
-  h = subimage->imsize[1];
+  mx = subimage->dpos[0] - subimage->xmin[0];
+  my = subimage->dpos[1] - subimage->xmin[1];
+  w = subimage->size[0];
+  h = subimage->size[1];
   pflag = (field->detector_type==DETECTOR_PHOTO)? 1:0;
   corrflag = (prefs.mask_type==MASK_CORRECT);
   var = backnoise2 = field->backsig*field->backsig;

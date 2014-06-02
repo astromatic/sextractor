@@ -89,8 +89,8 @@ void	win_pos(fieldstruct **fields, fieldstruct **wfields,
   for (s=0; s<nsubimage; s++, subimage++)
     {
 /*-- Store positions in sub-images */
-    sposx[s] = subimage->dpos[0] - 1.0 - subimage->immin[0];
-    sposy[s] = subimage->dpos[1] - 1.0 - subimage->immin[1];
+    sposx[s] = subimage->dpos[0] - 1.0 - subimage->xmin[0];
+    sposy[s] = subimage->dpos[1] - 1.0 - subimage->xmin[1];
     sokflag[s] = 1;
     }
 
@@ -212,8 +212,8 @@ void	win_pos(fieldstruct **fields, fieldstruct **wfields,
         mx2ph = mx*2.0 + 0.49999;
         my2ph = my*2.0 + 0.49999;
 
-        w = subimage->imsize[0];
-        h = subimage->imsize[1];
+        w = subimage->size[0];
+        h = subimage->size[1];
         if (xmin < 0)
           {
           xmin = 0;
@@ -402,10 +402,10 @@ void	win_pos(fieldstruct **fields, fieldstruct **wfields,
 
       f = field->imindex;
       if (FLAG(obj2.winpos_x))
-        obj2->winpos_x[f] = sposx[s] + subimage->immin[0]
+        obj2->winpos_x[f] = sposx[s] + subimage->xmin[0]
 				+ 1.0;	/* Mind the 1 pixel FITS offset */
       if (FLAG(obj2.winpos_y))
-        obj2->winpos_y[f] = sposy[s] + subimage->immin[1]
+        obj2->winpos_y[f] = sposy[s] + subimage->xmin[1]
 				+ 1.0;	/* Mind the 1 pixel FITS offset */
       if (FLAG(obj2.winpos_niter))
         obj2->winpos_niter[f] = i+1;

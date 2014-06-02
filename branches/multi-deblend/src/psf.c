@@ -1024,10 +1024,10 @@ int	psf_copyobjpix(PIXTYPE *data, PIXTYPE *weight,
     memset(weight, 0, wout*hout*sizeof(PIXTYPE));
 
   subimage = obj2->subimage;	/* !CHECK */
-  ix -= subimage->immin[0];
-  iy -= subimage->immin[1];
-  win = subimage->imsize[0];
-  hin = subimage->imsize[1];
+  ix -= subimage->xmin[0];
+  iy -= subimage->xmin[1];
+  win = subimage->size[0];
+  hin = subimage->size[1];
 
 /* Don't go further if out of frame!! */
   if (ix<0 || ix>=win || iy<0 || iy>=hin)

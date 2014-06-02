@@ -265,7 +265,7 @@ void	objlist_deblend(fieldstruct **fields, fieldstruct **wfields,
     subprofit = obj->profit->subprofit;
     subprofit_submodpix(subprofit, subimage->image,
 			subimage->ipos[0], subimage->ipos[1],
-			subimage->imsize[0], subimage->imsize[1],
+			subimage->size[0], subimage->size[1],
 			subprofit->subsamp, 1.0);
     }
 

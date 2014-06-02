@@ -158,9 +158,9 @@ profitstruct	*profit_init(objstruct *obj, obj2struct *obj2,
     subprofit->iy = (int)(obj2->my + 0.49999); /* 1st pix=0 */
     psf_fwhm = conv_flag? subprofit->psf->masksize[0]*subprofit->psf->pixstep
 			: 0.0;
-    subprofit->objnaxisn[0] = ((int)((subimage->imsize[0] + psf_fwhm + 0.499)
+    subprofit->objnaxisn[0] = ((int)((subimage->size[0] + psf_fwhm + 0.499)
 		*1.2)/2)*2 + 1;
-    subprofit->objnaxisn[1] = ((int)((subimage->imsize[1] + psf_fwhm + 0.499)
+    subprofit->objnaxisn[1] = ((int)((subimage->size[1] + psf_fwhm + 0.499)
 		*1.2)/2)*2 + 1;
     if (subprofit->objnaxisn[1] < subprofit->objnaxisn[0])
       subprofit->objnaxisn[1] = subprofit->objnaxisn[0];
@@ -2160,10 +2160,10 @@ int	subprofit_copyobjpix(subprofitstruct *subprofit,
     *(wpixout++) = 0.0;
     }
  
-  ix = subprofit->ix - subimage->immin[0];
-  iy = subprofit->iy - subimage->immin[1];
-  win = subimage->imsize[0];
-  hin = subimage->imsize[1];
+  ix = subprofit->ix - subimage->xmin[0];
+  iy = subprofit->iy - subimage->xmin[1];
+  win = subimage->size[0];
+  hin = subimage->size[1];
  
   backnoise2 = field->backsig*field->backsig;
   sn = (int)subprofit->subsamp;

@@ -482,11 +482,11 @@ void analyse_final(fieldstruct **fields, fieldstruct **wfields,
     objsubimage = obj2->subimage;
     groupsubimage = group2.subimage;
     deblankimage(objsubimage->image,
-		objsubimage->imsize[0], objsubimage->imsize[1],
+		objsubimage->size[0], objsubimage->size[1],
 		groupsubimage->image,
-		groupsubimage->imsize[0],groupsubimage->imsize[1],
-		objsubimage->immin[0] - groupsubimage->immin[0],
-		objsubimage->immin[1] - groupsubimage->immin[1]);
+		groupsubimage->size[0],groupsubimage->size[1],
+		objsubimage->xmin[0] - groupsubimage->xmin[0],
+		objsubimage->xmin[1] - groupsubimage->xmin[1]);
 
     nextiobj = obj->next;
 /*-- Take care of next obj that might be swapped by clean_sub! */
@@ -612,11 +612,11 @@ void analyse_final2(fieldstruct **fields, fieldstruct **wfields,
     objsubimage = obj2->subimage;
     groupsubimage = group2.subimage;
     deblankimage(objsubimage->image,
-		objsubimage->imsize[0], objsubimage->imsize[1],
+		objsubimage->size[0], objsubimage->size[1],
 		groupsubimage->image,
-		groupsubimage->imsize[0],groupsubimage->imsize[1],
-		objsubimage->immin[0] - groupsubimage->immin[0],
-		objsubimage->immin[1] - groupsubimage->immin[1]);
+		groupsubimage->size[0],groupsubimage->size[1],
+		objsubimage->xmin[0] - groupsubimage->xmin[0],
+		objsubimage->xmin[1] - groupsubimage->xmin[1]);
 
     nextiobj = obj->next;
 /*-- Take care of next obj that might be swapped by clean_sub! */
@@ -783,8 +783,8 @@ obj2struct	*analyse_obj2obj2(fieldstruct **fields, fieldstruct **wfields,
     {
     subimage = obj2->subimage;
     deblankimage(obj->blank, obj->subw, obj->subh,
-		subimage->image, subimage->imsize[0],subimage->imsize[1],
-		obj->subx - subimage->immin[0], obj->suby - subimage->immin[1]);
+		subimage->image, subimage->size[0],subimage->size[1],
+		obj->subx - subimage->xmin[0], obj->suby - subimage->xmin[1]);
     free(obj->blank);
     }
 
