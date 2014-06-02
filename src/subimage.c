@@ -1,13 +1,13 @@
-/*
-*				subimage.c
-*
-* Manage subimage structures.
-*
+/**
+* @file		subimage.c
+* @brief	Manage sub-images
+* @date		01/06/2014
+* @copyright
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2014 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2014 IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -21,8 +21,6 @@
 *	GNU General Public License for more details.
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
-*
-*	Last modified:		15/05/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -68,19 +66,19 @@ subimagestruct	*subimage_fromplist(fieldstruct *field, fieldstruct *wfield,
 /* Initialize sub-image */
   QMALLOC(subimage, subimagestruct, 1);
   subimage->dscale = 1.0;
-  subimage->immin[0] = xmin = obj->xmin;
-  subimage->immin[1] = ymin = obj->ymin;
-  subimage->immax[0] = obj->xmax + 1;
-  subimage->immax[1] = obj->ymax + 1;
-  subimage->imsize[0] = w = xmax - xmin;
-  subimage->imsize[1] = ymax - ymin;
-  subimage->ipos[0] = subimage->immin[0] + subimage->imsize[0]/2;
-  subimage->ipos[1] = subimage->immin[1] + subimage->imsize[1]/2;
+  subimage->xmin[0] = xmin = obj->xmin;
+  subimage->xmin[1] = ymin = obj->ymin;
+  subimage->xmax[0] = obj->xmax + 1;
+  subimage->xmax[1] = obj->ymax + 1;
+  subimage->size[0] = w = xmax - xmin;
+  subimage->size[1] = ymax - ymin;
+  subimage->ipos[0] = subimage->xmin[0] + subimage->size[0]/2;
+  subimage->ipos[1] = subimage->xmin[1] + subimage->size[1]/2;
   subimage->field = field;
   subimage->wfield = wfield;
   subimage->bkg = 0.0;
 
-  npix = subimage->imsize[0]*subimage->imsize[1];
+  npix = subimage->size[0]*subimage->size[1];
 
   if (!(subimage->image = (PIXTYPE *)malloc(npix*sizeof(PIXTYPE)))) {
     free(subimage);
@@ -142,26 +140,26 @@ subimagestruct	*subimage_fromfield(fieldstruct *field, fieldstruct *wfield,
 /* Initialize sub-image */
   QMALLOC(subimage, subimagestruct, 1);
   subimage->dscale = 1.0;
-  subimage->immin[0] = xmin;
-  subimage->immin[1] = ymin;
-  subimage->immax[0] = xmax;
-  subimage->immax[1] = ymax ;
-  subimage->imsize[0] = w = xmax - xmin;
-  subimage->imsize[1] = ymax - ymin;
-  subimage->ipos[0] = subimage->immin[0] + subimage->imsize[0]/2;
-  subimage->ipos[1] = subimage->immin[1] + subimage->imsize[1]/2;
+  subimage->xmin[0] = xmin;
+  subimage->xmin[1] = ymin;
+  subimage->xmax[0] = xmax;
+  subimage->xmax[1] = ymax ;
+  subimage->size[0] = w = xmax - xmin;
+  subimage->size[1] = ymax - ymin;
+  subimage->ipos[0] = subimage->xmin[0] + subimage->size[0]/2;
+  subimage->ipos[1] = subimage->xmin[1] + subimage->size[1]/2;
   subimage->field = field;
   subimage->wfield = wfield;
   subimage->bkg = 0.0;
 
-  npix = subimage->imsize[0]*subimage->imsize[1];
+  npix = subimage->size[0]*subimage->size[1];
 
   if (!(subimage->image = (PIXTYPE *)calloc(npix*sizeof(PIXTYPE)))) {
     free(subimage);
     return NULL;
   }
 
-  copyimage(field, subimage->image, subimage->imsize[0],subimage->imsize[1],
+  copyimage(field, subimage->image, subimage->size[0],subimage->size[1],
 	subimage->ipos[0],subimage->ipos[1], -BIG);
 
   if (subimage->wfield) {
@@ -170,7 +168,7 @@ subimagestruct	*subimage_fromfield(fieldstruct *field, fieldstruct *wfield,
       free(subimage);
       return NULL;
     }
-    copyimage(wfield, subimage->weight, subimage->imsize[0],subimage->imsize[1],
+    copyimage(wfield, subimage->weight, subimage->size[0],subimage->size[1],
 	subimage->ipos[0],subimage->ipos[1], BIG);
   } else
     subimage->weight = NULL;
@@ -185,50 +183,54 @@ Replace pixels of the first subimage by valid pixels from the second subimage.
 @param[in] submask	Pointer to the second subimage.
 
 @author 		E. Bertin (IAP)
-@date			30/05/2014
+@date			01/06/2014
  ***/
-void	subimage_fill(subimagestruct *subimage, subimagestruct *submask)
-  {
-   int		x,y, xmax,ymax, w2,dwima,dwblank;
-   PIXTYPE	val;
+void	subimage_fill(subimagestruct *subimage, subimagestruct *submask) {
+
+   int		x,y, xmin,xmax,ymin,ymax, w,dwima,dwmask;
+   PIXTYPE	*pixima,*pixmask,
+		val;
 
 /* Don't go further if out of frame!! */
-  if (subimage->xmin+wblank<0 || xmin>=wima
-	|| ymin+hblank<0 || ymin>=hima)
+  if (subimage->xmax[0] <= submask->xmin[0]
+	|| subimage->xmin[0] >= submask->xmax[0]
+	|| subimage->ymax[1] <= submask->ymin[1]
+	|| subimage->ymin[1] >= submask->ymax[1])
     return;
 
 /* Set the image boundaries */
-  w2 = wblank;
-  ymax = ymin + hblank;
-  if (ymin<0)
-    {
-    pixblank -= ymin*wblank;
-    ymin = 0;
-    }
-  if (ymax>hima)
-    ymax = hima;
 
-  xmax = xmin + wblank;
-  if (xmax>wima)
-    xmax = wima;
-  if (xmin<0)
-    {
-    pixblank -= xmin;
+  pixmask = submask->image;
+  xmin = submask->xmin[0] - subimage->xmin[0];
+  xmax = submask->xmax[0] - subimage->xmin[0];
+  if (xmax > subimage->size[0])
+    xmax = subimage->size[0];
+  if (xmin < 0) {
+    pixmask -= xmin;
     xmin = 0;
-    }
+  }
+
+  ymin = submask->xmin[1] - subimage->xmin[1];
+  ymax = submask->xmax[1] - subimage->xmin[1];
+  if (ymin < 0) {
+    pixmask -= ymin * submask->size[0];
+    ymin = 0;
+  }
+  if (ymax > subimage->size[1])
+    ymax = subimage->size[1];
 
 /* Copy the right pixels to the destination */
-  w2 = xmax - xmin;
-  dwblank = wblank - w2;
-  dwima = wima - w2;
-  pixima += ymin*wima + xmin;
-  for (y=ymax-ymin; y--; pixblank += dwblank, pixima += dwima)
-    for (x=w2; x--; pixima++)
-      if ((val = *(pixblank++)) > -BIG)
+  w = xmax - xmin;
+  dwmask = submask->size[0] - w;
+  dwima = subimage->size[0] - w;
+  pixima = subimage->xmin[1] + ymin*subimage->size[0] + xmin;
+  for (y=ymax-ymin; y--; pixmask += dwmask, pixima += dwima)
+    for (x=w; x--; pixima++)
+      if ((val = *(pixmask++)) > -BIG)
         *pixima = val;
 
   return;
-  }
+}
 
 
 /****** subimage_getall ******************************************************
@@ -293,16 +295,16 @@ subimagestruct	*subimage_getall(fieldstruct **fields, fieldstruct **wfields,
   subimage = obj2->subimage;
   for (s=0; s<nsubimage; s++, subimage++)
     {
-    QMALLOC(subimage->image, PIXTYPE, subimage->imsize[0]*subimage->imsize[1]);
+    QMALLOC(subimage->image, PIXTYPE, subimage->size[0]*subimage->size[1]);
     copyimage(subimage->field, subimage->image,
-	subimage->imsize[0],subimage->imsize[1],
+	subimage->size[0],subimage->size[1],
 	subimage->ipos[0],subimage->ipos[1]);
     if (subimage->wfield)
       {
       QMALLOC(subimage->weight, PIXTYPE,
-		subimage->imsize[0]*subimage->imsize[1]);
+		subimage->size[0]*subimage->size[1]);
       copyimage(subimage->wfield, subimage->weight,
-	subimage->imsize[0],subimage->imsize[1],
+	subimage->size[0],subimage->size[1],
 	subimage->ipos[0],subimage->ipos[1]);
       }
     else
@@ -353,18 +355,18 @@ void	subimage_init(subimagestruct *subimage,
       subimage->dinvjacob[3] = det*subimage->djacob[0];
       subimage->ipos[0] = (int)(subimage->dpos[0]-0.50001);/* Integer coords */
       subimage->ipos[1] = (int)(subimage->dpos[1]-0.50001);/* Integer coords */
-      dmax = fabs(subimage->djacob[0]*dsubimage->imsize[0]);
-      if ((dval=fabs(subimage->djacob[1]*dsubimage->imsize[1]))>dmax)
+      dmax = fabs(subimage->djacob[0]*dsubimage->size[0]);
+      if ((dval=fabs(subimage->djacob[1]*dsubimage->size[1]))>dmax)
         dmax = dval;
-      subimage->imsize[0] = (int)(dmax+0.49999);
-      dmax = fabs(subimage->djacob[2]*dsubimage->imsize[0]);
-      if ((dval=fabs(subimage->djacob[3]*dsubimage->imsize[1]))>dmax)
+      subimage->size[0] = (int)(dmax+0.49999);
+      dmax = fabs(subimage->djacob[2]*dsubimage->size[0]);
+      if ((dval=fabs(subimage->djacob[3]*dsubimage->size[1]))>dmax)
         dmax = dval;
-      subimage->imsize[1] = (int)(dmax+0.49999);
-      subimage->immin[0] = subimage->ipos[0] - subimage->imsize[0]/2;
-      subimage->immin[1] = subimage->ipos[1] - subimage->imsize[1]/2;
-      subimage->immax[0] = subimage->immin[0] + subimage->imsize[0];
-      subimage->immax[1] = subimage->immin[1] + subimage->imsize[1];
+      subimage->size[1] = (int)(dmax+0.49999);
+      subimage->xmin[0] = subimage->ipos[0] - subimage->size[0]/2;
+      subimage->xmin[1] = subimage->ipos[1] - subimage->size[1]/2;
+      subimage->xmax[0] = subimage->xmin[0] + subimage->size[0];
+      subimage->xmax[1] = subimage->xmin[1] + subimage->size[1];
       }
     else
       *subimage = *dsubimage;
@@ -380,12 +382,12 @@ void	subimage_init(subimagestruct *subimage,
 		= subimage->dinvjacob[0] = subimage->dinvjacob[3] = 1.0;
     subimage->djacob[1] = subimage->djacob[2]
 		= subimage->dinvjacob[1] = subimage->dinvjacob[2] = 0.0;
-    subimage->imsize[0] = 3.0*(obj2->xmax-obj2->xmin)+1+2*field->stripmargin;
-    subimage->imsize[1] = 3.0*(obj2->ymax-obj2->ymin)+1+2*field->stripmargin;
-    subimage->immin[0] = subimage->ipos[0] - subimage->imsize[0]/2;
-    subimage->immin[1] = subimage->ipos[1] - subimage->imsize[1]/2;
-    subimage->immax[0] = subimage->immin[0] + subimage->imsize[0];
-    subimage->immax[1] = subimage->immin[1] + subimage->imsize[1];
+    subimage->size[0] = 3.0*(obj2->xmax-obj2->xmin)+1+2*field->stripmargin;
+    subimage->size[1] = 3.0*(obj2->ymax-obj2->ymin)+1+2*field->stripmargin;
+    subimage->xmin[0] = subimage->ipos[0] - subimage->size[0]/2;
+    subimage->xmin[1] = subimage->ipos[1] - subimage->size[1]/2;
+    subimage->xmax[0] = subimage->xmin[0] + subimage->size[0];
+    subimage->xmax[1] = subimage->xmin[1] + subimage->size[1];
     }
 
   subimage->field = field;

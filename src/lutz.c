@@ -107,13 +107,13 @@ int	lutz_subextract(subimagestruct *subimage, objstruct *objparent,
   initinfo.flag = 0;
   initinfo.firstpix = initinfo.lastpix = -1;
   cn = 0;
-  imsize = subimage->imsize[0];
+  imsize = subimage->size[0];
   scan = subimage->image
-	+ (sty-subimage->immin[1])*imsize
-	+ (stx-subimage->immin[0]);
+	+ (sty-subimage->xmin[1])*imsize
+	+ (stx-subimage->xmin[0]);
   cscan = (subimage->fimage? subimage->fimage : subimage->image)
-	+ (sty-subimage->immin[1])*imsize
-	+ (stx-subimage->immin[0]);
+	+ (sty-subimage->xmin[1])*imsize
+	+ (stx-subimage->xmin[0]);
 // As we only analyse a fraction of the subimage, a step occurs between lines
   step = imsize - subw;
 

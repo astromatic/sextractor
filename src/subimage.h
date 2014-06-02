@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		15/05/2014
+*	Last modified:		01/06/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -43,9 +43,9 @@ typedef struct subimage
   PIXTYPE	*weight;		/// Pointer to subimage weights
   double	dpos[2];		/// Object coordinates (if applicable)
   int		ipos[2];		/// Coordinates of subimage centre
-  int		imsize[2];		/// Subimage dimensions [pixels]
-  int		immin[2];		/// Subimage min x/y coordinates
-  int		immax[2];		/// Subimage max x/y coordinates - 1
+  int		size[2];		/// Subimage dimensions [pixels]
+  int		xmin[2];		/// Subimage min x/y coordinates
+  int		xmax[2];		/// Subimage max x/y coordinates - 1
   double	djacob[4];		/// Local astrometric Jacobian matrix
   double	dinvjacob[4];		/// Inverse Jacobian matrix
   double	dscale;			/// Local relative pixel scale
@@ -63,6 +63,8 @@ subimagestruct	*subimage_fromplist(fieldstruct *field, fieldstruct *wfield,
 
 void		subimage_end(subimagestruct *subimage),
 		subimage_endall(obj2struct *obj2),
+		subimage_fill(subimagestruct *subimage,
+			subimagestruct *submask),
 		subimage_init(subimagestruct *subimage,
 				fieldstruct *field, fieldstruct *wfield,
 				obj2struct *obj2, subimagestruct *dsubimage);
