@@ -193,18 +193,10 @@ void	objlist_deblend(fieldstruct **fields, fieldstruct **wfields,
 // Find overlapping detections and link them
   overobjlist = objlist_overlap(objlist, objlist->obj[objindex]);
 
-  xmax = ymax = -(xmin = ymin = 0x7FFFFFFF);	/// largest signed 32-bit int
+  xmax = ymax = -(xmin = ymin = 0x7FFFFFFF);	// largest signed 32-bit int
   obj = overobjlist->obj;
-  for (i=overobjlist->nobj; i--; obj++) {
-//-- Create individual object subimages
-    obj->fullimage = subimage_fromfield(field, wfield,
-		obj->xmin, obj->xmax, obj->ymin, obj->ymax);
-//-- if BLANKing is on, paste back the object pixels in the image*/
-    if (prefs.blank_flag && obj->blank) {
-      subimage_fill(obj->fullimage, obj->subimage);
-      subimage_end(obj->blank);
-    }
-    if (obj->xmin < xmin)
+  for (i=overobjlist->nobj; i--; obj++) {	// find boundaries of the group
+    if (obj->xmin < xmin)			// of overlapping objects
       xmin = obj->xmin;
     if (obj->xmax > xmax)
       xmax = obj->xmax;
@@ -214,60 +206,70 @@ void	objlist_deblend(fieldstruct **fields, fieldstruct **wfields,
       ymax = obj->ymax;
   }
 
+// TODO: add margin
+// Extract subimage covering the whole group
   overobjlist->subimage = subimage_fromfield(field, wfield,
 				xmin, xmax, ymin, ymax);
 
+  for (i=overobjlist->nobj; i--; obj++) {
+//-- Create individual object subimages
+    obj->fullimage = subimage_fromfield(field, wfield,
+		obj->xmin, obj->xmax, obj->ymin, obj->ymax);
+//-- if BLANKing is on, paste back the object pixels in the sub-images
+    if (prefs.blank_flag && obj->blank) {
+      subimage_fill(obj->fullimage, obj->isoimage);
+      subimage_fill(overobjlist->subimage, obj->isoimage);
+      subimage_end(obj->isoimage);
+    }
+  }
 
 /* field is the detection field */
   field = fields[0];
   wfield = wfields? wfields[0]:NULL;
 
-  fobj = objlist->obj;		/* First obj in the chained list */
-  obj = objlist->obj;
-  for (o=objlist->nobj; o--; obj++)
+  obj = overobjlist->obj;
+  for (o=overobjlist->nobj; o--; obj++)
     obj->profit = profit_init(obj, MODEL_MOFFAT, PROFIT_NOCONV);
 
-  subimage = group->subimage;
-  for (j=0; j<GROUP_NDEBLENDITER; j++)
-    {
-    nobj = group->nobj;
+  subimage = overobjlist->subimage;
+  for (j=0; j<GROUP_NDEBLENDITER; j++) {
+    nobj = overobjlist->nobj;
 /*---- Iterative multiple fit if several sources overlap */
-    for (i=0; i<GROUP_NMULTITER; i++)
-      {
-      for (obj=fobj; obj; obj=obj->nextobj)
+    for (i=0; i<GROUP_NMULTITER; i++) {
+      obj = overobjlist->obj;
+      for (o=nobj; o--; obj++)
         profit_fit(obj->profit, obj);
-      for (obj=fobj; obj; obj=obj->nextobj)
-        {
+      obj = overobjlist->obj;
+      for (o=nobj; o--; obj++) {
         if (i)
           subprofit_copyobjpix(obj->profit->subprofit, subimage);
-        for (modobj=fobj; modobj; modobj=modobj->nextobj)
-          if (modobj != obj)
-            {
+        modobj = overobjlist->obj;
+        for (o2=nobj; o2--; modobj++)
+          if (modobj != obj) {
             subprofit = obj->profit->subprofit;
             modsubprofit = modobj->profit->subprofit;
             subprofit_submodpix(modsubprofit, subprofit->objpix,
 			subprofit->ix, subprofit->iy,
 			subprofit->objnaxisn[0], subprofit->objnaxisn[1],
 			subprofit->subsamp, nobj>1 ? 0.95: 1.0);
-            }
-        }
+          }
+      }
       if (nobj <= 1)
         break;
-      }
-    lutz_subextract(subimageobjliststruct *objlistroot, int nroot,
-		objstruct *objparent, objliststruct *objlist));
     }
+
+    lutz_subextract(subimage, objstruct *objparent, objliststruct *objlist));
+  }
 
 /* Subtract current best-fitting models from group sub-image */
   subimage = group->subimage;
-  for (obj=fobj; obj; obj=obj->nextobj)
-    {
+  for (obj=fobj; obj; obj=obj->nextobj) {
     subprofit = obj->profit->subprofit;
     subprofit_submodpix(subprofit, subimage->image,
 			subimage->ipos[0], subimage->ipos[1],
 			subimage->size[0], subimage->size[1],
 			subprofit->subsamp, 1.0);
-    }
+  }
 
 /* Full source analysis and decide if detection should be written to catalogue*/
   for (obj=fobj; obj; obj=obj->nextobj)
@@ -285,17 +287,16 @@ void	objlist_deblend(fieldstruct **fields, fieldstruct **wfields,
   subimage_end(group->subimage);
 
 #ifdef USE_THREADS
-  if (prefs.nthreads>1)
-    {
+  if (prefs.nthreads>1) {
 /*-- Flag groups as done */
     QPTHREAD_MUTEX_LOCK(&pthread_groupmutex);
     group->done_flag = 1;
     QPTHREAD_MUTEX_UNLOCK(&pthread_groupmutex);
-    }
+  }
 #endif
 
   return;
-  }
+}
 
 
 /****** objlist_overlap ***************************************************//**
