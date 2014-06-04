@@ -36,7 +36,7 @@
 /*------------------------------- structures --------------------------------*/
 typedef struct subimage
   {
-  struct field	*field;		/// pointer to the field that hosts local data
+  struct field	*field;		/// pointer to the field hosting local data
   struct field	*wfield;	/// pointer to the field hosting local weights
   PIXTYPE	*image;			/// Pointer to subimage data
   PIXTYPE	*fimage;		/// Pointer to filtered subimage data

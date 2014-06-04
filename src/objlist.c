@@ -1,7 +1,7 @@
 /**
 * @file		objlist.c
 * @brief	Manage groups of detection (advanced deblending)
-* @date		30/05/2014
+* @date		04/06/2014
 * @copyright
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 *
@@ -95,11 +95,13 @@ Free resources allocated to an objlist
 @param[in] objlist	Pointer to the objlist.
 
 @author 		E. Bertin (IAP)
-@date			16/05/2014
+@date			04/06/2014
  ***/
 void	objlist_end(objliststruct *objlist) {
 
   free(objlist->obj);
+  free(objlist->plist);
+  free(objlist->subimage);
   free(objlist);
 }
 
@@ -211,6 +213,7 @@ void	objlist_deblend(fieldstruct **fields, fieldstruct **wfields,
   overobjlist->subimage = subimage_fromfield(field, wfield,
 				xmin, xmax, ymin, ymax);
 
+  obj = overobjlist->obj;
   for (i=overobjlist->nobj; i--; obj++) {
 //-- Create individual object subimages
     obj->fullimage = subimage_fromfield(field, wfield,
@@ -219,7 +222,6 @@ void	objlist_deblend(fieldstruct **fields, fieldstruct **wfields,
     if (prefs.blank_flag && obj->blank) {
       subimage_fill(obj->fullimage, obj->isoimage);
       subimage_fill(overobjlist->subimage, obj->isoimage);
-      subimage_end(obj->isoimage);
     }
   }
 
@@ -234,15 +236,16 @@ void	objlist_deblend(fieldstruct **fields, fieldstruct **wfields,
   subimage = overobjlist->subimage;
   for (j=0; j<GROUP_NDEBLENDITER; j++) {
     nobj = overobjlist->nobj;
-/*---- Iterative multiple fit if several sources overlap */
+//-- Iterative multiple fit if several sources overlap
     for (i=0; i<GROUP_NMULTITER; i++) {
       obj = overobjlist->obj;
       for (o=nobj; o--; obj++)
         profit_fit(obj->profit, obj);
       obj = overobjlist->obj;
       for (o=nobj; o--; obj++) {
+//------ Subtract the contribution from all overlapping neighbors (models)
         if (i)
-          subprofit_copyobjpix(obj->profit->subprofit, subimage);
+          subprofit_copyobjpix(obj->profit->subprofit, obj->fullimage);
         modobj = overobjlist->obj;
         for (o2=nobj; o2--; modobj++)
           if (modobj != obj) {
@@ -258,17 +261,21 @@ void	objlist_deblend(fieldstruct **fields, fieldstruct **wfields,
         break;
     }
 
-    lutz_subextract(subimage, objstruct *objparent, objliststruct *objlist));
-  }
-
-/* Subtract current best-fitting models from group sub-image */
-  subimage = group->subimage;
-  for (obj=fobj; obj; obj=obj->nextobj) {
-    subprofit = obj->profit->subprofit;
-    subprofit_submodpix(subprofit, subimage->image,
-			subimage->ipos[0], subimage->ipos[1],
+    obj = overobjlist->obj;
+    for (o=nobj; o--; obj++)
+      subprofit_submodpix(modsubprofit, subimage->image,
+			subimage->xmin[0], subimage->xmin[1],
 			subimage->size[0], subimage->size[1],
-			subprofit->subsamp, 1.0);
+			subprofit->subsamp, nobj>1 ? 0.95: 1.0);
+    lutz_subextract(subimage, objstruct *objparent, objlist));
+    obj = overobjlist->obj;
+    for (i=overobjlist->nobj; i--; obj++) {
+//---- Create individual object subimages
+      obj->fullimage = subimage_fromfield(field, wfield,
+		obj->xmin, obj->xmax, obj->ymin, obj->ymax);
+//-- if BLANKing is on, paste back the object pixels in the sub-images
+    if (prefs.blank_flag && obj->blank) {
+      subimage_fill(obj->fullimage, obj->isoimage);
   }
 
 /* Full source analysis and decide if detection should be written to catalogue*/
