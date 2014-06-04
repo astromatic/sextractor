@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		14/05/2014
+*	Last modified:		04/06/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -43,7 +43,6 @@
 #include	"subimage.h"
 #include	"scan.h"
 
-static objliststruct	*objlist;
 static short		*son, *ok;
 
 /****** deblend_parcelout ****************************************************
@@ -55,12 +54,14 @@ OUTPUT	RETURN_OK if success, RETURN_FATAL_ERROR otherwise (memory overflow).
 NOTES	Even if the object is not deblended, the output objlist threshold is
 	recomputed if a variable threshold is used.
 AUTHOR	E. Bertin (IAP)
-VERSION	14/05/2014
+VERSION	04/06/2014
+TODO	Remove dependency towards global variables son and ok.
  ***/
 int	deblend_parcelout(objliststruct *objlistin, objliststruct *objlistout)
 
   {
-   static objliststruct	debobjlist, debobjlist2;
+   objliststruct	**objlist,
+			*debobjlist, *debobjlist2;
    objstruct		*obj;
    subimagestruct	*subimage;
    double		dthresh, dthresh0, value0;
@@ -72,133 +73,114 @@ int	deblend_parcelout(objliststruct *objlistin, objliststruct *objlistout)
 
   xn = prefs.deblend_nthresh;
 
-/* Initialize lists of objects */
+// Initialize object list tree
+  QMALLOC(objlist, objliststruct *,  prefs.deblend_nthresh);
+  for (k=0; k<prefs.deblend_nthresh; k++)
+    objlist[k] = objlist_new();
 
-  debobjlist.obj = debobjlist2.obj =  NULL;
-  debobjlist.plist = debobjlist2.plist = NULL;
-  debobjlist.nobj = debobjlist2.nobj = 0;
-  debobjlist.npix = debobjlist2.npix = 0;
-  objlistout->thresh = debobjlist2.thresh = objlistin->thresh;
-  memset(objlist, 0, (size_t)xn*sizeof(objliststruct));
+// Initialize working object list
+  debobjlist2 = objlist_new();
+  objlistout->thresh = debobjlist2->thresh = objlistin->thresh;
   subimage = objlistin->subimage;
 
-  for (l=0; l<objlistin->nobj && out==RETURN_OK; l++)
-      {
-      dthresh0 = objlistin->obj[l].dthresh;
+  for (l=0; l<objlistin->nobj && out==RETURN_OK; l++) {
+    dthresh0 = objlistin->obj[l].dthresh;
 
-      objlistout->dthresh = debobjlist2.dthresh = dthresh0;
-      if ((out = deblend_addobj(l, objlistin, &objlist[0]))
-		== RETURN_FATAL_ERROR)
-        goto exit_parcelout;
-      if ((out = deblend_addobj(l, objlistin, &debobjlist2))
-		== RETURN_FATAL_ERROR)
-        goto exit_parcelout;
-      value0 = objlist[0].obj[0].fdflux*prefs.deblend_mincont;
-      ok[0] = (short)1;
-      for (k=1; k<xn; k++)
-        {
-/*------ Calculate threshold */
-        dthresh = objlistin->obj[l].fdpeak;
-        if (dthresh>0.0)
-          {
-          if (prefs.detector_type[0] == DETECTOR_PHOTO)
-            debobjlist.dthresh= dthresh0 + (dthresh-dthresh0) * (double)k/xn;
-          else
-            debobjlist.dthresh = dthresh0 * pow(dthresh/dthresh0,(double)k/xn);
-          }
+    objlistout->dthresh = debobjlist2.dthresh = dthresh0;
+    if ((out = deblend_addobj(l, objlistin, objlist[0])) == RETURN_FATAL_ERROR)
+      goto exit_parcelout;
+    if ((out = deblend_addobj(l, objlistin, debobjlist2)) == RETURN_FATAL_ERROR)
+      goto exit_parcelout;
+    value0 = objlist[0]->obj[0].fdflux*prefs.deblend_mincont;
+    ok[0] = (short)1;
+    for (k=1; k<xn; k++) {
+//---- Calculate threshold
+      dthresh = objlistin->obj[l].fdpeak;
+      if (dthresh>0.0) {
+        if (prefs.detector_type[0] == DETECTOR_PHOTO)
+          dthresh = dthresh0 + (dthresh-dthresh0) * (double)k/xn;
         else
-          debobjlist.dthresh = dthresh0;
+          dthresh = dthresh0 * pow(dthresh/dthresh0,(double)k/xn);
+      } else
+        dthresh = dthresh0;
 
-/*------ Build tree (bottom->up) */
-        if (objlist[k-1].nobj >= DEBLEND_NSONMAX)
-          {
-          out = RETURN_FATAL_ERROR;
-          goto exit_parcelout;
-          }
-
-        for (i=0; i<objlist[k-1].nobj; i++)
-          {
-          if ((out=lutz_subextract(subimage, &objlist[k-1].obj[i], &debobjlist))
-		== RETURN_FATAL_ERROR)
-            goto exit_parcelout;
-
-          for (j=h=0; j<debobjlist.nobj; j++)
-            if (deblend_belong(j, &debobjlist, i, &objlist[k-1]))
-              {
-              debobjlist.obj[j].dthresh = debobjlist.dthresh;
-              m = deblend_addobj(j, &debobjlist, &objlist[k]);
-              if (m==RETURN_FATAL_ERROR || m>=DEBLEND_NSONMAX)
-                {
-                out = RETURN_FATAL_ERROR;
-                goto exit_parcelout;
-                }
-              if (h>=nbm-1)
-                if (!(son = (short *)realloc(son,
-			xn*DEBLEND_NSONMAX*(nbm+=16)*sizeof(short))))
-                  {
-                  out = RETURN_FATAL_ERROR;
-                  goto exit_parcelout;
-                  }
-              son[k-1+xn*(i+DEBLEND_NSONMAX*(h++))] = (short)m;
-              ok[k+xn*m] = (short)1;
-              }
-          son[k-1+xn*(i+DEBLEND_NSONMAX*h)] = (short)-1;
-          }
-        }
-
-/*---- Cut the right branches (top->down) */
-
-      for (k = xn-2; k>=0; k--)
-        {
-        obj = objlist[k+1].obj;
-        for (i=0; i<objlist[k].nobj; i++)
-          {
-          for (m=h=0; (j=(int)son[k+xn*(i+DEBLEND_NSONMAX*h)])!=-1; h++)
-            {
-            if (obj[j].fdflux - obj[j].dthresh*obj[j].fdnpix > value0)
-              m++;
-            ok[k+xn*i] &= ok[k+1+xn*j];
-            }
-          if (m>1)	
-            {
-            for (h=0; (j=(int)son[k+xn*(i+DEBLEND_NSONMAX*h)])!=-1; h++)
-              if (ok[k+1+xn*j] && obj[j].fdflux-obj[j].dthresh*obj[j].fdnpix
-			> value0)
-                {
-                objlist[k+1].obj[j].flag |= OBJ_MERGED	/* Merge flag on */
-			| ((OBJ_ISO_PB|OBJ_APERT_PB|OBJ_OVERFLOW)
-			&debobjlist2.obj[0].flag);
-                if ((out = deblend_addobj(j, &objlist[k+1], &debobjlist2))
-			== RETURN_FATAL_ERROR)
-                  goto exit_parcelout;
-                }
-            ok[k+xn*i] = (short)0;
-            }
-          }
-        }
-
-      if (ok[0])
-        out = deblend_addobj(0, &debobjlist2, objlistout);
-      else
-        out = deblend_gatherup(&debobjlist2, objlistout);
-
-exit_parcelout:
-
-      free(debobjlist2.obj);
-      free(debobjlist2.plist);
-
-      for (k=0; k<xn; k++)
-        {
-        free(objlist[k].obj);
-        free(objlist[k].plist);
-        }
+//-- Build tree (bottom->up)
+      if (objlist[k-1]->nobj >= DEBLEND_NSONMAX) {
+        out = RETURN_FATAL_ERROR;
+        goto exit_parcelout;
       }
 
-  free(debobjlist.obj);
-  free(debobjlist.plist);
+      for (i=0; i<objlist[k-1]->nobj; i++) {
+        obj = &objlist[k-1]->obj[i];
+        if (!(debobjlist = lutz_subextract(subimage, dthresh,
+		obj->xmin, obj->xmax, obj->ymin, obj->ymax))) {
+          out = RETURN_FATAL_ERROR;
+          goto exit_parcelout;
+        }
+
+        for (j=h=0; j<debobjlist->nobj; j++)
+          if (deblend_belong(j, debobjlist, i, objlist[k-1])) {
+            debobjlist->obj[j].dthresh = dthresh;
+            m = deblend_addobj(j, debobjlist, objlist[k]);
+            if (m == RETURN_FATAL_ERROR || m >= DEBLEND_NSONMAX) {
+              out = RETURN_FATAL_ERROR;
+              goto exit_parcelout;
+            }
+            if ( h >= nbm - 1 && !(son = (short *)realloc(son,
+			xn*DEBLEND_NSONMAX*(nbm+=16)*sizeof(short)))) {
+              out = RETURN_FATAL_ERROR;
+              goto exit_parcelout;
+            }
+            son[k-1+xn*(i+DEBLEND_NSONMAX*(h++))] = (short)m;
+            ok[k+xn*m] = (short)1;
+          }
+        son[k-1+xn*(i+DEBLEND_NSONMAX*h)] = (short)-1;
+        objlist_end(debobjlist);
+      }
+    }
+
+//-- Cut the right branches (top->down)
+    for (k = xn-2; k>=0; k--) {
+      obj = objlist[k+1]->obj;
+      for (i=0; i<objlist[k]->nobj; i++) {
+        for (m=h=0; (j=(int)son[k+xn*(i+DEBLEND_NSONMAX*h)])!=-1; h++) {
+          if (obj[j].fdflux - obj[j].dthresh*obj[j].fdnpix > value0)
+            m++;
+          ok[k+xn*i] &= ok[k+1+xn*j];
+        }
+        if (m > 1) {
+          for (h=0; (j=(int)son[k+xn*(i+DEBLEND_NSONMAX*h)])!=-1; h++)
+            if (ok[k+1+xn*j] && obj[j].fdflux-obj[j].dthresh*obj[j].fdnpix
+			> value0) {
+              objlist[k+1]->obj[j].flag |= OBJ_MERGED	// Merge flag on
+			| ((OBJ_ISO_PB|OBJ_APERT_PB|OBJ_OVERFLOW)
+			& debobjlist2->obj[0].flag);
+              if ((out = deblend_addobj(j, objlist[k+1], debobjlist2))
+			== RETURN_FATAL_ERROR)
+                goto exit_parcelout;
+            }
+          ok[k+xn*i] = (short)0;
+        }
+      }
+    }
+
+    if (ok[0])
+      out = deblend_addobj(0, debobjlist2, objlistout);
+    else
+      out = deblend_gatherup(debobjlist2, objlistout);
+
+exit_parcelout:
+  for (k=0; k<xn; k++)
+    objlist_end(objlist[k]);
+  free(objlist);
+
+  if (debobjlist)  
+    objlist_end(debobjlist);
+  if (debobjlist2)  
+    objlist_end(debobjlist2);
 
   return out;
-  }
+}
 
 
 /****** deblend_addobj ******************************************************
@@ -315,7 +297,6 @@ void	deblend_alloc(void)
   {
   QMALLOC(son, short,  prefs.deblend_nthresh*DEBLEND_NSONMAX*DEBLEND_NBRANCH);
   QMALLOC(ok, short,  prefs.deblend_nthresh*DEBLEND_NSONMAX);
-  QMALLOC(objlist, objliststruct,  prefs.deblend_nthresh);
 
   return;
   }
@@ -334,7 +315,6 @@ void	deblend_free(void)
   {
   QFREE(son);
   QFREE(ok);
-  QFREE(objlist);
   return;
   }
 

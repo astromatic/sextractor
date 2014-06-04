@@ -2,7 +2,7 @@
 * @file		lutz.c
 * @brief	Lutz (1980) algorithm to extract connected pixels from an image
 		raster.
-* @date		14/05/2014
+* @date		04/06/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 *
@@ -41,52 +41,47 @@
 #include	"scan.h"
 
 /****** lutz_subextract **************************************************//**
-PROTO	int lutz_subextract(subimagestruct *subimage, objstruct *objparent,
-		objliststruct *objlist)
+PROTO	objliststruct	*lutz_subextract(subimagestruct *subimage,
+			PIXTYPE thresh, int xmin, int xmax, int ymin, int ymax)
 PURPOSE	C implementation of R.K LUTZ' algorithm for the extraction of
-	8-connected pixels in a sub-image around a parent object
+	8-connected pixels in a sub-image above a given threshold and within
+	given limits
 INPUT	Pointer to sub-image,
-	pointer to parent object,
-	pointer to the object list where new detections will be added.
-OUTPUT	RETURN_OK if no memory allocation problem occured, RETURN_FATAL_ERROR
-	otherwise.
+	detection threshold,
+	minimum x pixel coordinate,
+	maximum x pixel coordinate,
+	minimum y pixel coordinate,
+	maximumy pixel coordinate.
+OUTPUT	Pointer to the objlist if no memory allocation problem occured,
+	NULL otherwise.
 NOTES	Global preferences are used.
 AUTHOR	E. Bertin (IAP)
 TODO    Check propagation of flags
-VERSION	14/05/2014
+VERSION	04/06/2014
  ***/
-int	lutz_subextract(subimagestruct *subimage, objstruct *objparent,
-		objliststruct *objlist)
-
-  {
+objliststruct	*lutz_subextract(subimagestruct *subimage, PIXTYPE thresh,
+			int xmin, int xmax, int ymin, int ymax) {
    infostruct		curpixinfo,initinfo,
 			*info, *store;
-   objstruct		*obj;
    pliststruct		*plist,*pixel;
    status		*psstack;
 
    char			*marker,
 			newmarker;
    int			*start, *end,
-			xmax,ymax, subw,subh,scansize,
+			wminus1,hminus1, subw,subh,scansize,
 			cn, co, luflag, objnb, pstop, xl,xl2,yl,
-			out, minarea, stx,sty,enx,eny, step,
-			nobjm = NSUBOBJ_START,
+			out, minarea, step, nobjm,
 			inewsymbol;
    short		trunflag;
-   PIXTYPE		*scan,*cscan,*dscan,
-			thresh;
+   PIXTYPE		*scan,*cscan,*dscan;
    status		cs, ps;
 
 
-  stx = objparent->xmin;
-  sty = objparent->ymin;
-  enx = objparent->xmax + 1;
-  eny = objparent->ymax + 1;
-  xmax = subimage->field->width-1;
-  ymax = subimage->field->height-1;
-  subw = enx - stx;				// Sub-subimage width
-  subh = eny - sty;				// Sub-subimage height
+  wminus1 = subimage->field->width-1;
+  hminus1 = subimage->field->height-1;
+  subw = xmax - xmin;				// Sub-subimage width
+  subh = ymax - ymin;				// Sub-subimage height
   scansize = subw + 1;				// Sub-subimage scan size
   QMALLOC(info, infostruct, scansize);
   QMALLOC(store, infostruct, scansize);
@@ -102,36 +97,33 @@ int	lutz_subextract(subimagestruct *subimage, objstruct *objparent,
   out = RETURN_OK;
   minarea = prefs.deb_maxarea;
 
-  thresh = objlist->dthresh;
   initinfo.pixnb = 0;
   initinfo.flag = 0;
   initinfo.firstpix = initinfo.lastpix = -1;
   cn = 0;
   imsize = subimage->size[0];
   scan = subimage->image
-	+ (sty-subimage->xmin[1])*imsize
-	+ (stx-subimage->xmin[0]);
+	+ (ymin - subimage->xmin[1])*imsize
+	+ (xmin - subimage->xmin[0]);
   cscan = (subimage->fimage? subimage->fimage : subimage->image)
-	+ (sty-subimage->xmin[1])*imsize
-	+ (stx-subimage->xmin[0]);
+	+ (ymin - subimage->xmin[1])*imsize
+	+ (xmin - subimage->xmin[0]);
 // As we only analyse a fraction of the subimage, a step occurs between lines
   step = imsize - subw;
 
 // Allocate memory to store object data */
-  free(objlist->obj);				// Free existing object if any
-  if (!(obj=objlist->obj=(objstruct *)malloc(nobjm*sizeof(objstruct))))
+  objlist = objlist_new();
+  nobjm = NSUBOBJ_START;
+  if (!(objlist->obj=(objstruct *)malloc(nobjm*sizeof(objstruct))))
     {
     out = RETURN_FATAL_ERROR;
-    plist = NULL;				// Avoid gcc -Wall warnings
     goto exit_lutz;
     }
 
 // Allocate memory for the pixel list */
-  free(objlist->plist);
   if (!(objlist->plist = (pliststruct *)malloc(subw*subh*plistsize)))
     {
     out = RETURN_FATAL_ERROR;
-    plist = NULL;				// Avoid gcc -Wall warnings
     goto exit_lutz;
     }
 
@@ -140,19 +132,19 @@ int	lutz_subextract(subimagestruct *subimage, objstruct *objparent,
   co = pstop = 0;
   curpixinfo.pixnb = 1;
 
-  for (yl=sty; yl<=eny; yl++, cscan += step, scan += imsize)
+  for (yl=ymin; yl<=ymax; yl++, cscan += step, scan += imsize)
     {
     ps = COMPLETE;
     cs = NONOBJECT;
-    trunflag =  (yl==0 || yl==ymax) ? OBJ_TRUNC : 0;
-    if (yl==eny)
+    trunflag =  (yl==0 || yl==hminus1) ? OBJ_TRUNC : 0;
+    if (yl==ymax)
       cscan = scan = dscan;
 
-    for (xl=stx; xl<=enx; xl++)
+    for (xl=xmin; xl<=xmax; xl++)
       {
       newmarker = marker[xl];
       marker[xl] = 0;
-      if ((cnewsymbol = (xl!=enx)?*(cscan++):-BIG) < 0)
+      if ((cnewsymbol = (xl!=xmax)?*(cscan++):-BIG) < 0)
         luflag = 0;
       else
         {
@@ -161,12 +153,12 @@ int	lutz_subextract(subimagestruct *subimage, objstruct *objparent,
         }
       if (luflag)
         {
-        if (xl==0 || xl==xmax)
+        if (xl==0 || xl==wminus1)
           curpixinfo.flag |= OBJ_TRUNC;
         PLIST(pixel, nextpix) = -1;
         PLIST(pixel, x) = xl;
         PLIST(pixel, y) = yl;
-        PLIST(pixel, value) = scan[xl-stx];
+        PLIST(pixel, value) = scan[xl - xmin];
         if (PLISTEXIST(cvalue))
           PLISTPIX(pixel, cvalue) = cnewsymbol;
         curpixinfo.lastpix = curpixinfo.firstpix = cn;
@@ -239,8 +231,9 @@ int	lutz_subextract(subimagestruct *subimage, objstruct *objparent,
               if ((int)info[co].pixnb >= minarea)
                 {
                 if (objlist->nobj>=nobjm)
-                  if (!(obj = objlist->obj = (objstruct *)
-  			realloc(obj, (nobjm+=nobjm/2)* sizeof(objstruct))))
+                  if (!(objlist->obj = (objstruct *)
+  			realloc(objlist->obj,
+			(nobjm+=nobjm/2)* sizeof(objstruct))))
                     {
                     out = RETURN_FATAL_ERROR;
                     goto exit_lutz;
@@ -289,29 +282,6 @@ int	lutz_subextract(subimagestruct *subimage, objstruct *objparent,
 
 exit_lutz:
 
-   if (objlist->nobj && out == RETURN_OK)
-    {
-    if (!(objlist->obj=(objstruct *)realloc(obj,
-		objlist->nobj*sizeof(objstruct))))
-      error(EXIT_FAILURE,"problem with mem. realloc. in lutz()","");
-    }
-  else
-    {
-    free(obj);
-    objlist->obj = NULL;
-    }
-
-  if (cn && out == RETURN_OK)
-    {
-    if (!(objlist->plist=(pliststruct *)realloc(plist,cn)))
-      error(EXIT_FAILURE,"problem with mem. realloc. in lutz()","");
-    }
-  else
-    {
-    free(objlist->plist);
-    objlist->plist = NULL;
-    }
-
   free(dscan);
   free(info);
   free(store);
@@ -320,8 +290,28 @@ exit_lutz:
   free(start);
   free(end);
 
-  return  out;
+  if (out == RETURN_OK) {
+    if (objlist->nobj) {
+      if (!(objlist->obj=(objstruct *)realloc(objlist->obj,
+		objlist->nobj*sizeof(objstruct))))
+        error(EXIT_FAILURE,"problem with mem. realloc. in lutz()","");
+    } else {
+      free(objlist->obj);
+      objlist->obj = NULL;
+      }
+    if (cn) {
+      if (!(objlist->plist=(pliststruct *)realloc(plist,cn)))
+        error(EXIT_FAILURE,"problem with mem. realloc. in lutz()","");
+    } else {
+      free(objlist->plist);
+      objlist->plist = NULL;
+    }
+    return objlist;
+  } else {
+    objlist_end(objlist);
+    return NULL;
   }
+}
 
 
 /****** lutz_update **********************************************************
