@@ -81,45 +81,33 @@ int	the_gal;
 
 /****** profit_init *******************************************************//**
 Allocate and initialize a new model-fitting structure.
-@param[in] fields	Pointer to an array of image field pointers
-@param[in] wfields	Pointer to an array of weight-map field pointers
-@param[in] nfield	Number of images
-@param[in] group	Pointer to objgroup
+@param[in] obj		Pointer to an object
+@param[in] subimage	Pointer to an array of subimages (or a single subimage)
+@param[in] nsubimage	Number of subimages
+@param[in] modeltype	Binary mask of model types
+@param[in] conv_flag	Convolution flag (0 = no convolution)
 
 @author 		E. Bertin (IAP)
 @date			28/03/2014
  ***/
-/****** profit_init ***********************************************************
-PROTO	profitstruct profit_init(objstruct *obj, obj2struct *obj2, unsigned int modeltype,
-				int	convflag)
-PURPOSE	Allocate and initialize a new profile-fitting structure.
-INPUT	pointer to the obj2,
-	Binary mask of model types,
-	Convolution flag (0 = no convolution).
-OUTPUT	A pointer to an allocated profit structure.
-NOTES	-.
-AUTHOR	E. Bertin (IAP)
-VERSION	04/12/2013
- ***/
-profitstruct	*profit_init(objstruct *obj, obj2struct *obj2,
-			unsigned int modeltype, int conv_flag)
+profitstruct	*profit_init(objstruct *obj, subimagestruct *subimage,
+			int nsubimage, unsigned int modeltype, int conv_flag)
   {
    profitstruct		*profit;
    subprofitstruct	*subprofit;
-   subimagestruct	*subimage;
+   obj2struct		*obj2;
    double		psf_fwhm;
    int			s,t, nmodels, npix, nsub;
 
   QCALLOC(profit, profitstruct, 1);
 
-  profit->obj2 = obj2;
+  obj2 = obj->obj2;
   profit->conv_flag = conv_flag;
 
-  QCALLOC(profit->subprofit, subprofitstruct, obj2->nsubimage);
+  QCALLOC(profit->subprofit, subprofitstruct, nsubimage);
   subprofit = profit->subprofit;
-  subimage = obj2->subimage;
   nsub = 0;
-  for (s=0; s<obj2->nsubimage; s++, subimage++)
+  for (s=0; s<nsubimage; s++, subimage++)
     {
     subprofit->field = subimage->field;
     subprofit->wfield = subimage->wfield;
@@ -133,29 +121,31 @@ profitstruct	*profit_init(objstruct *obj, obj2struct *obj2,
       subprofit->psf = NULL;
       subprofit->pixstep = 1.0;
       }
-    subprofit->sigma = obj2->sigbkg[s];
+    subprofit->sigma = obj2? obj2->sigbkg[s] : obj->sigbkg;
     subprofit->fluxfac = 1.0;	/* Default */
 
 /*-- Set initial guesses and boundaries */
     subprofit->guesssigbkg = subprofit->sigma;
-    subprofit->guessdx = obj2->mx - (int)(obj2->mx+0.49999);
-    subprofit->guessdy = obj2->my - (int)(obj2->my+0.49999);
-    subprofit->guessradius = obj2->hl_radius;
+    subprofit->guessdx = obj->mx - (int)(obj->mx+0.49999);
+    subprofit->guessdy = obj->my - (int)(obj->my+0.49999);
+    subprofit->guessradius = obj2? obj2->hl_radius : 1.2 * sqrtf(obj->a*obj->b);
+					// 1.2 is ~2.35/2
     if (conv_flag && subprofit->guessradius < 0.5*subprofit->psf->fwhm)
       subprofit->guessradius = 0.5*subprofit->psf->fwhm;
-    if ((subprofit->guessflux = obj2->flux_auto[s]) <= 0.0)
+    if ((subprofit->guessflux = obj2? obj2->flux_auto[s] : obj->dflux) <= 0.0)
       subprofit->guessflux = 0.0;
-    if ((subprofit->guessfluxmax = 10.0*obj2->fluxerr_auto[s])
+    if ((subprofit->guessfluxmax = 10.0
+		* (obj2? obj2->fluxerr_auto[s] : obj->dfluxerr))
 	<= subprofit->guessflux)
       subprofit->guessfluxmax = subprofit->guessflux;
     if (subprofit->guessfluxmax <= 0.0)
       subprofit->guessfluxmax = 1.0;
-    subprofit->guessaspect = obj2->b/obj2->a;
-    subprofit->guessposang = obj2->theta;
+    subprofit->guessaspect = obj->b/obj->a;
+    subprofit->guessposang = obj->theta;
 
 /*-- Create pixmaps at image resolution */
-    subprofit->ix = (int)(obj2->mx + 0.49999); /* 1st pix=0 */
-    subprofit->iy = (int)(obj2->my + 0.49999); /* 1st pix=0 */
+    subprofit->ix = (int)(obj->mx + 0.49999); /* 1st pix=0 */
+    subprofit->iy = (int)(obj->my + 0.49999); /* 1st pix=0 */
     psf_fwhm = conv_flag? subprofit->psf->masksize[0]*subprofit->psf->pixstep
 			: 0.0;
     subprofit->objnaxisn[0] = ((int)((subimage->size[0] + psf_fwhm + 0.499)
@@ -301,16 +291,16 @@ void	subprofit_end(subprofitstruct *subprofit)
 
 
 /****** profit_fit ************************************************************
-PROTO	int profit_fit(profitstruct *profit, obj2struct *obj2)
+PROTO	int profit_fit(profitstruct *profit, objstruct *obj)
 PURPOSE	Fit profile(s) convolved with the PSF to a detected object.
 INPUT	Pointer to the model structure,
-	pointer to the obj2.
+	pointer to the obj.
 OUTPUT	Number of minimization iterations (0 in case of error).
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
 VERSION	18/07/2012
  ***/
-int	profit_fit(profitstruct *profit, obj2struct *obj2)
+int	profit_fit(profitstruct *profit, objstruct *obj)
   {
    int			p, nparam, nparam2;
     checkstruct		*check;
@@ -324,16 +314,18 @@ int	profit_fit(profitstruct *profit, obj2struct *obj2)
 /* Check if the number of constraints exceeds the number of free parameters */
   if (profit->nresi < nparam)
     {
-    if (FLAG(obj2.prof_vector))
-      for (p=0; p<nparam; p++)
-        obj2->prof_vector[p] = 0.0;
-    if (FLAG(obj2.prof_errvector))
-      for (p=0; p<nparam; p++)
-        obj2->prof_errvector[p] = 0.0;
-    if (FLAG(obj2.prof_errmatrix))
-      for (p=0; p<nparam2; p++)
-        obj2->prof_errmatrix[p] = 0.0;
-    obj2->prof_niter = 0;
+    if (obj->obj2) {
+      if (FLAG(obj2.prof_vector))
+        for (p=0; p<nparam; p++)
+          obj2->prof_vector[p] = 0.0;
+      if (FLAG(obj2.prof_errvector))
+        for (p=0; p<nparam; p++)
+          obj2->prof_errvector[p] = 0.0;
+      if (FLAG(obj2.prof_errmatrix))
+        for (p=0; p<nparam2; p++)
+          obj2->prof_errmatrix[p] = 0.0;
+      obj2->prof_niter = 0;
+    }
     profit->flag |= PROFLAG_NOTCONST;
     return 0;
     }
@@ -3069,11 +3061,9 @@ VERSION	24/04/2013
 void	profit_resetparam(profitstruct *profit, paramenum paramtype)
   {
    subprofitstruct	*subprofit;
-   obj2struct		*obj2;
    float		param, parammin,parammax, range;
    parfitenum		fittype;
 
-  obj2 = profit->obj2;
   subprofit = profit->subprofit;	/* Take the first subprofit !CHECK */
   param = parammin = parammax = 0.0;	/* Avoid gcc -Wall warnings*/
 

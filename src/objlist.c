@@ -141,7 +141,7 @@ int	objlist_addobj(objliststruct *objlist, *objstruct obj) {
 /****** objlist_subobj ****************************************************//**
 Remove an object from an objlist.
 @param[in] objlist	Pointer to the objlist
-@param[in] wfields	Index of the object to be removed
+@param[in] objindex	Index of the object to be removed
 @param[out] 		RETURN_ERROR if the objlist is empty,
 			RETURN_FATAL_ERROR if a memory (re-)allocation issue
 			happened,
@@ -170,6 +170,29 @@ int	objlist_subobj(objliststruct *objlist, int objindex) {
 }
 
 
+/****** objlist_movobj ****************************************************//**
+Move an object from an objlist to another.
+@param[in] objlistin	Pointer to the source objlist
+@param[in] objindex	Index of the object to be removed
+@param[in] objlistout	Pointer to the destination objlist
+@param[out] 		RETURN_ERROR if the objlist is empty,
+			RETURN_FATAL_ERROR if a memory (re-)allocation issue
+			happened,
+			RETURN_OK otherwise.
+
+@author 		E. Bertin (IAP)
+@date			05/06/2014
+ ***/
+int	objlist_movobj(objliststruct *objlistin, int objindex,
+		objliststruct *objlistout) {
+
+  if (objlist_addobj(objlistout, objlistin->obj[objindex]) == RETURN_OK)
+    return objlist_subobj(objlistin, objindex);
+  else
+    RETURN_ERROR;
+}
+
+
 /****** objlist_deblend ***************************************************//**
 Perform model-fitting and deblending on a list of objects.
 @param[in] fields	Pointer to an array of image field pointers
@@ -178,7 +201,7 @@ Perform model-fitting and deblending on a list of objects.
 @param[in] objlist	Pointer to objlist
 
 @author 		E. Bertin (IAP)
-@date			28/03/2014
+@date			05/06/2014
  ***/
 void	objlist_deblend(fieldstruct **fields, fieldstruct **wfields,
 			int nfield, objliststruct *objlist, int objindex) {
@@ -186,18 +209,18 @@ void	objlist_deblend(fieldstruct **fields, fieldstruct **wfields,
    subprofitstruct	*subprofit,*modsubprofit;
    subimagestruct	*subimage;
    objstruct		*obj, *modobj, *fobj;
-   int			i,s;
+   int			i,o,s;
 
-// field is the detection field */
-  field = fields[0];
-  wfield = wfields? wfields[0]:NULL;
+  field = fields[0];			// field is the detection field
+  wfield = wfields? wfields[0]:NULL;	// wfield is the detection weight map
 
 // Find overlapping detections and link them
   overobjlist = objlist_overlap(objlist, objlist->obj[objindex]);
 
   xmax = ymax = -(xmin = ymin = 0x7FFFFFFF);	// largest signed 32-bit int
   obj = overobjlist->obj;
-  for (i=overobjlist->nobj; i--; obj++) {	// find boundaries of the group
+  blend = obj->blend;				// Keep note of the blend index
+  for (o=overobjlist->nobj; o--; obj++) {	// find boundaries of the group
     if (obj->xmin < xmin)			// of overlapping objects
       xmin = obj->xmin;
     if (obj->xmax > xmax)
@@ -212,6 +235,12 @@ void	objlist_deblend(fieldstruct **fields, fieldstruct **wfields,
 // Extract subimage covering the whole group
   overobjlist->subimage = subimage_fromfield(field, wfield,
 				xmin, xmax, ymin, ymax);
+  obj = overobjlist->obj;
+  for (o=overobjlist->nobj; o--; obj++) {
+//-- if BLANKing is on, paste back the object pixels in the sub-image
+    if (prefs.blank_flag && obj->isoimage) {
+      subimage_fill(overobjlist->subimage, obj->isoimage);
+  }
 
   obj = overobjlist->obj;
   for (i=overobjlist->nobj; i--; obj++) {
@@ -219,19 +248,12 @@ void	objlist_deblend(fieldstruct **fields, fieldstruct **wfields,
     obj->fullimage = subimage_fromfield(field, wfield,
 		obj->xmin, obj->xmax, obj->ymin, obj->ymax);
 //-- if BLANKing is on, paste back the object pixels in the sub-images
-    if (prefs.blank_flag && obj->blank) {
+    if (prefs.blank_flag && obj->isoimage) {
       subimage_fill(obj->fullimage, obj->isoimage);
-      subimage_fill(overobjlist->subimage, obj->isoimage);
     }
+    obj->profit = profit_init(obj, obj->fullimage, 1 ,
+		MODEL_MOFFAT, PROFIT_NOCONV);
   }
-
-/* field is the detection field */
-  field = fields[0];
-  wfield = wfields? wfields[0]:NULL;
-
-  obj = overobjlist->obj;
-  for (o=overobjlist->nobj; o--; obj++)
-    obj->profit = profit_init(obj, MODEL_MOFFAT, PROFIT_NOCONV);
 
   subimage = overobjlist->subimage;
   for (j=0; j<GROUP_NDEBLENDITER; j++) {
@@ -240,7 +262,7 @@ void	objlist_deblend(fieldstruct **fields, fieldstruct **wfields,
     for (i=0; i<GROUP_NMULTITER; i++) {
       obj = overobjlist->obj;
       for (o=nobj; o--; obj++)
-        profit_fit(obj->profit, obj);
+        profit_fit(obj->profit);
       obj = overobjlist->obj;
       for (o=nobj; o--; obj++) {
 //------ Subtract the contribution from all overlapping neighbors (models)
@@ -267,16 +289,39 @@ void	objlist_deblend(fieldstruct **fields, fieldstruct **wfields,
 			subimage->xmin[0], subimage->xmin[1],
 			subimage->size[0], subimage->size[1],
 			subprofit->subsamp, nobj>1 ? 0.95: 1.0);
-    lutz_subextract(subimage, objstruct *objparent, objlist));
-    obj = overobjlist->obj;
-    for (i=overobjlist->nobj; i--; obj++) {
+    newobjlist = lutz_subextract(subimage, overobjlist->dthresh, xmin, xmax,
+			ymin, ymax);
+    obj = newobjlist->obj;
+    for (o=0; o<newobjlist->nobj; o++, obj++) {
+      scan_preanalyse(newobjlist, o, ANALYSE_FULL|ANALYSE_ROBUST);
+      if (prefs.ext_maxarea && obj->fdnpix > prefs.ext_maxarea)
+        continue; 
+      obj->number = ++thecat.ndetect;
+      obj->blend = blend;
+//---- Isophotal measurements
+      analyse_iso(fields, wfields, nfield, newobjlist, o);
+      if (prefs.blank_flag) {
+        if (!(obj->isoimage = subimage_fromplist(field, wfield, obj,
+		newobjlist->plist))) {
+//-------- Not enough memory for the BLANKing subimage: flag the object now
+          obj->flag |= OBJ_OVERFLOW;
+          sprintf(gstr, "%.0f,%.0f", obj->mx+1, obj->my+1);
+          warning("Memory overflow during masking for detection at ", gstr);
+        }
+      }
 //---- Create individual object subimages
       obj->fullimage = subimage_fromfield(field, wfield,
 		obj->xmin, obj->xmax, obj->ymin, obj->ymax);
-//-- if BLANKing is on, paste back the object pixels in the sub-images
-    if (prefs.blank_flag && obj->blank) {
-      subimage_fill(obj->fullimage, obj->isoimage);
+//---- if BLANKing is on, paste back the object pixels in the sub-images
+      if (prefs.blank_flag)
+        subimage_fill(obj->fullimage, obj->isoimage);
+      objlist_movobj(newobjlist, o, overobjlist);
+    }
+    objlist_end(newobjlist);
   }
+
+
+  return overobjlist;
 
 /* Full source analysis and decide if detection should be written to catalogue*/
   for (obj=fobj; obj; obj=obj->nextobj)

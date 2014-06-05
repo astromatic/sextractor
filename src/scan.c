@@ -818,9 +818,8 @@ void	scan_output(fieldstruct **fields, fieldstruct **wfields, int nfield,
       if (!(cobj->isoimage = subimage_fromplist(field, wfield, cobj,
 		objlistout->plist)))
         {
-/*------ Not enough mem. for the BLANK vignet: flag the object now */
+/*------ Not enough mem. for the BLANKing isoimage: flag the object now */
         cobj->flag |= OBJ_OVERFLOW;
-        cobj->blank = NULL;
         sprintf(gstr, "%.0f,%.0f", cobj->mx+1, cobj->my+1);
         warning("Memory overflow during masking for detection at ", gstr);
         }
