@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		03/01/2014
+*	Last modified:		05/06/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -183,7 +183,6 @@ typedef struct
 
 typedef struct profit
   {
-  obj2struct	*obj2;		/* Current object */
   int		nparam;		/* Number of parameters to be fitted */
   float		*paramlist[PARAM_NPARAM];	/* flat parameter list */
   int		paramindex[PARAM_NPARAM];/* Vector of parameter indices */
@@ -253,8 +252,8 @@ typedef struct subprofit
 /*----------------------------- Global variables ----------------------------*/
 /*-------------------------------- functions --------------------------------*/
 
-profitstruct	*profit_init(obj2struct *obj2, unsigned int modeltype,
-			int conv_flag);
+profitstruct	*profit_init(obj2struct *obj, subimagestruct *subimage,
+			int nsubimage, unsigned int modeltype, int conv_flag);
 
 profstruct	*prof_init(profitstruct *profit, unsigned int modeltype);
 
@@ -275,7 +274,7 @@ int		profit_boundtounbound(profitstruct *profit,
 			subimagestruct *subimage),
 		profit_covarunboundtobound(profitstruct *profit,
 			double *dparam, float *param),
-		profit_fit(profitstruct *profit, obj2struct *obj2),
+		profit_fit(profitstruct *profit, objstruct *obj),
 		profit_minimize(profitstruct *profit, int niter),
 		prof_moments(profitstruct *profit, profstruct *prof,
 				double *jac),

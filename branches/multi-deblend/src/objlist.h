@@ -1,7 +1,7 @@
 /**
 * @file		objlist.h
 * @brief	Include file for objlist.c.
-* @date		30/05/2014
+* @date		05/06/2014
 * @copyright
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 *
@@ -60,8 +60,10 @@ objliststruct	*objlist_new(void);
 
 obj2struct	*analyse_obj2obj2(fieldstruct **fields, fieldstruct **wfields,
 			int nfield, objstruct *obj, obj2liststruct *obj2list);
-int		objlist_add(objliststruct *objlist, objstruct *obj),
-		objlist_sub(objliststruct *objlist, int objindex),
+int		objlist_addobj(objliststruct *objlist, objstruct *obj),
+		objlist_movobj(objliststruct *objlistin, int objindex,
+			objliststruct *objlistout),
+		objlist_subobj(objliststruct *objlist, int objindex),
 		analyse_full(fieldstruct **fields, fieldstruct **wfields,
 			int nfield, obj2struct *obj2),
 		analyse_overlapness(objliststruct *objlist, int iobj);

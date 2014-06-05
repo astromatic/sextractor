@@ -113,9 +113,9 @@ typedef struct
   double	poserr_mx2, poserr_my2,
 		poserr_mxy;			/* Error ellips moments */
 /* ---- morphological data */			
-  int		xmin,xmax,ymin,ymax,ycmin,ycmax;/* x,y limits */
   struct subimage	*isoimage;		/// Isophotal sub-image
   struct subimage	*fullimage;		/// Full sub-image
+  int		xmin,xmax,ymin,ymax,ycmin,ycmax;/* x,y limits */
   short		flag;				/* extraction flags */
   BYTE		wflag;				/* weighted extraction flags */
   FLAGTYPE	imaflags[MAXFLAG];		/* flags from FLAG-images */
