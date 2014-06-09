@@ -49,7 +49,7 @@ Copy a small part of the image. Image parts which lie outside boundaries are
 set to initvalue.
 */
 int	copyimage(fieldstruct *field, PIXTYPE *dest, int w,int h, int ix,int iy,
-		PIXTYPE *initvalue)
+		PIXTYPE initvalue)
   {
    PIXTYPE	*destt;
    OFF_T	offset,step;

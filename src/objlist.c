@@ -1,7 +1,7 @@
 /**
 * @file		objlist.c
-* @brief	Manage groups of detection (advanced deblending)
-* @date		04/06/2014
+* @brief	Manage object lists (e.g., for advanced deblending)
+* @date		09/06/2014
 * @copyright
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 *
@@ -49,8 +49,10 @@
 #include	"graph.h"
 #include	"growth.h"
 #include	"image.h"
+#include	"lutz.h"
 #include	"misc.h"
 #include	"neurro.h"
+#include	"objlist.h"
 #include	"photom.h"
 #include	"psf.h"
 #include	"profit.h"
@@ -65,13 +67,13 @@
 
 pthread_t	*pthread_thread;
 pthread_attr_t	pthread_attr;
-pthread_mutex_t	pthread_groupmutex, pthread_freeobjmutex;
-pthread_cond_t	pthread_groupaddcond, pthread_objsavecond;
+pthread_mutex_t	pthread_objlistmutex, pthread_freeobjmutex;
+pthread_cond_t	pthread_objlistaddcond, pthread_objsavecond;
 fieldstruct	**pthread_fields,**pthread_wfields;
-objgroupstruct	*pthread_group;
-int		pthread_ngroup, pthread_groupaddindex,pthread_groupprocindex,
-		pthread_groupsaveindex, pthread_nfield, pthread_nthreads,
-		pthread_endflag;
+objliststruct	*pthread_objlist;
+int		pthread_nobjlist, pthread_objlistaddindex,
+		pthread_objlistprocindex, pthread_objlistsaveindex,
+		pthread_nfield, pthread_nthreads, pthread_endflag;
 
 #endif
 
@@ -84,6 +86,8 @@ Create a new, empty objlist.
  ***/
 objliststruct	*objlist_new(void) {
 
+   objliststruct *objlist;
+
   QCALLOC(objlist, objliststruct, 1);
 
   return objlist;
@@ -91,18 +95,66 @@ objliststruct	*objlist_new(void) {
 
 
 /****** objlist_end *******************************************************//**
-Free resources allocated to an objlist
+Free resources allocated for an objlist
 @param[in] objlist	Pointer to the objlist.
 
 @author 		E. Bertin (IAP)
-@date			04/06/2014
+@date			09/06/2014
  ***/
 void	objlist_end(objliststruct *objlist) {
 
+  objstruct	*obj;
+  int		o;
+
+  obj = objlist->obj;
+  for (o=objlist->nobj; o--; obj++)
+    obj_end(obj);
+
   free(objlist->obj);
   free(objlist->plist);
-  free(objlist->subimage);
+
+  if (objlist->subimage) {
+    subimage_end(objlist->subimage);
+    free(objlist->subimage);
+  }
   free(objlist);
+
+  return;
+}
+
+
+/****** obj_end **********************************************************//**
+Free resources allocated for an object
+@param[in] obj	Pointer to the object.
+
+@author 		E. Bertin (IAP)
+@date			09/06/2014
+ ***/
+void	obj_end(objstruct *obj) {
+
+  if (obj->isoimage) {
+    subimage_end(obj->isoimage);
+    free(obj->isoimage);
+  }
+  if (obj->fullimage) {
+    subimage_end(obj->fullimage);
+    free(obj->fullimage);
+  }
+
+  if (!obj->obj2)
+    return;
+
+  catout_freeobjparams(obj);
+//  catout_freeother(obj, &flagobj2.diffbkg);
+  catout_freeother(obj, &flagobj2.sigbkg);
+  catout_freeother(obj, &flagobj2.cflux);
+  catout_freeother(obj, &flagobj2.cfluxw);
+  catout_freeother(obj, &flagobj2.cposx);
+  catout_freeother(obj, &flagobj2.cposy);
+  catout_freeother(obj, &flagobj2.cposw);
+  free(obj->obj2);
+
+  return;
 }
 
 
@@ -117,7 +169,7 @@ Add an object to an objlist.
 @author 		E. Bertin (IAP)
 @date			16/05/2014
  ***/
-int	objlist_addobj(objliststruct *objlist, *objstruct obj) {
+int	objlist_addobj(objliststruct *objlist, objstruct *obj) {
 
 // Check if memory (re-)allocation is necessary.
   if (objlist->nobj >= objlist->nobjmax) {
@@ -134,7 +186,7 @@ int	objlist_addobj(objliststruct *objlist, *objstruct obj) {
   objlist->obj[objlist->nobj] = *obj;
   objlist->nobj++;
 
-  return RETURN_OK
+  return RETURN_OK;
 }
 
 
@@ -148,9 +200,12 @@ Remove an object from an objlist.
 			RETURN_OK otherwise.
 
 @author 		E. Bertin (IAP)
-@date			16/05/2014
+@date			09/06/2014
  ***/
 int	objlist_subobj(objliststruct *objlist, int objindex) {
+
+   int nobjmax;
+
   if (--objlist->nobj) {
     if (objlist->nobj != objindex)
       objlist->obj[objindex] = objlist->obj[objlist->nobj];
@@ -166,7 +221,7 @@ int	objlist_subobj(objliststruct *objlist, int objindex) {
     objlist->nobjmax = 0;
   }
 
-  return RETURN_OK
+  return RETURN_OK;
 }
 
 
@@ -181,12 +236,12 @@ Move an object from an objlist to another.
 			RETURN_OK otherwise.
 
 @author 		E. Bertin (IAP)
-@date			05/06/2014
+@date			09/06/2014
  ***/
 int	objlist_movobj(objliststruct *objlistin, int objindex,
 		objliststruct *objlistout) {
 
-  if (objlist_addobj(objlistout, objlistin->obj[objindex]) == RETURN_OK)
+  if (objlist_addobj(objlistout, objlistin->obj + objindex) == RETURN_OK)
     return objlist_subobj(objlistin, objindex);
   else
     RETURN_ERROR;
@@ -199,28 +254,29 @@ Perform model-fitting and deblending on a list of objects.
 @param[in] wfields	Pointer to an array of weight-map field pointers
 @param[in] nfield	Number of images
 @param[in] objlist	Pointer to objlist
-
+@param[in] objindex	Index of blended object in the objlist
 @author 		E. Bertin (IAP)
-@date			05/06/2014
+@date			09/06/2014
  ***/
-void	objlist_deblend(fieldstruct **fields, fieldstruct **wfields,
+objliststruct	*objlist_deblend(fieldstruct **fields, fieldstruct **wfields,
 			int nfield, objliststruct *objlist, int objindex) {
    fieldstruct		*field, *wfield;
    subprofitstruct	*subprofit,*modsubprofit;
    subimagestruct	*subimage;
+   objliststruct	*newobjlist, *overobjlist;
    objstruct		*obj, *modobj, *fobj;
-   int			i,o,s;
+   int			xmin,ymin, xmax,ymax, blend, nobj, i, j, o, o2;
 
   field = fields[0];			// field is the detection field
   wfield = wfields? wfields[0]:NULL;	// wfield is the detection weight map
 
 // Find overlapping detections and link them
-  overobjlist = objlist_overlap(objlist, objlist->obj[objindex]);
+  overobjlist = objlist_overlap(objlist, objlist->obj + objindex);
 
   xmax = ymax = -(xmin = ymin = 0x7FFFFFFF);	// largest signed 32-bit int
   obj = overobjlist->obj;
   blend = obj->blend;				// Keep note of the blend index
-  for (o=overobjlist->nobj; o--; obj++) {	// find boundaries of the group
+  for (o=overobjlist->nobj; o--; obj++) {	// find boundaries of the list
     if (obj->xmin < xmin)			// of overlapping objects
       xmin = obj->xmin;
     if (obj->xmax > xmax)
@@ -232,13 +288,13 @@ void	objlist_deblend(fieldstruct **fields, fieldstruct **wfields,
   }
 
 // TODO: add margin
-// Extract subimage covering the whole group
+// Extract subimage covering the whole objlist
   overobjlist->subimage = subimage_fromfield(field, wfield,
 				xmin, xmax, ymin, ymax);
   obj = overobjlist->obj;
   for (o=overobjlist->nobj; o--; obj++) {
 //-- if BLANKing is on, paste back the object pixels in the sub-image
-    if (prefs.blank_flag && obj->isoimage) {
+    if (prefs.blank_flag && obj->isoimage)
       subimage_fill(overobjlist->subimage, obj->isoimage);
   }
 
@@ -251,8 +307,8 @@ void	objlist_deblend(fieldstruct **fields, fieldstruct **wfields,
     if (prefs.blank_flag && obj->isoimage) {
       subimage_fill(obj->fullimage, obj->isoimage);
     }
-    obj->profit = profit_init(obj, obj->fullimage, 1 ,
-		MODEL_MOFFAT, PROFIT_NOCONV);
+    obj->profit = profit_init(obj, obj->fullimage, 1,
+			MODEL_MOFFAT, PROFIT_NOCONV);
   }
 
   subimage = overobjlist->subimage;
@@ -262,7 +318,7 @@ void	objlist_deblend(fieldstruct **fields, fieldstruct **wfields,
     for (i=0; i<GROUP_NMULTITER; i++) {
       obj = overobjlist->obj;
       for (o=nobj; o--; obj++)
-        profit_fit(obj->profit);
+        profit_fit(obj->profit, obj);
       obj = overobjlist->obj;
       for (o=nobj; o--; obj++) {
 //------ Subtract the contribution from all overlapping neighbors (models)
@@ -315,203 +371,190 @@ void	objlist_deblend(fieldstruct **fields, fieldstruct **wfields,
 //---- if BLANKing is on, paste back the object pixels in the sub-images
       if (prefs.blank_flag)
         subimage_fill(obj->fullimage, obj->isoimage);
+      obj->profit = profit_init(obj, obj->fullimage, 1,
+			MODEL_MOFFAT, PROFIT_NOCONV);
       objlist_movobj(newobjlist, o, overobjlist);
     }
     objlist_end(newobjlist);
   }
 
+  obj = overobjlist->obj;
+  for (i=overobjlist->nobj; i--; obj++)
+    profit_end(obj->profit);
 
   return overobjlist;
-
-/* Full source analysis and decide if detection should be written to catalogue*/
-  for (obj=fobj; obj; obj=obj->nextobj)
-    obj->writable_flag =
-		(analyse_full(fields, wfields, nfield, obj) == RETURN_OK);
-/* Deallocate memory used for model-fitting */
-  if (prefs.prof_flag)
-    for (obj=fobj; obj; obj=obj->nextobj)
-      profit_end(obj->profit);
-
-/* Free the group of objs */
-  for (obj=fobj; obj; obj=obj->nextobj)
-    subimage_endall(obj);
-
-  subimage_end(group->subimage);
-
-#ifdef USE_THREADS
-  if (prefs.nthreads>1) {
-/*-- Flag groups as done */
-    QPTHREAD_MUTEX_LOCK(&pthread_groupmutex);
-    group->done_flag = 1;
-    QPTHREAD_MUTEX_UNLOCK(&pthread_groupmutex);
-  }
-#endif
-
-  return;
 }
 
 
 /****** objlist_overlap ***************************************************//**
-Create a list of objects overlapping a given object.
+Move objects overlapping a given object from the input list to a new list.
+from the input list.
 @param[in] objlist	Pointer to objlist
 @param[in] fobj		Pointer to object
 
 @author 		E. Bertin (IAP)
-@date			22/05/2014
+@date			09/06/2014
 @todo	The selection algorithm is currently very basic and inefficient.
  ***/
-objliststruct *objlist_overlap(objliststruct *objlist, objstruct *fobj)
-  {
-   objlistruct	*overobjlist;
-   objstruct	*obj;
-   int		i, blend, nobj;
+objliststruct *objlist_overlap(objliststruct *objlist, objstruct *fobj) {
+   objliststruct	*overobjlist;
+   objstruct		*obj;
+   int			i, blend, nobj;
 
-  QMALLOC(overobjlist, 1, objliststruct);
-  QMALLOC(overobjlist->obj, ANALYSE_NOVERLAP, objstruct);
-  overobjlist = overobjlist_new();
+  QMALLOC(overobjlist, objliststruct, 1);
+  QMALLOC(overobjlist->obj, objstruct, ANALYSE_NOVERLAP);
+  overobjlist = objlist_new();
   nobj = objlist->nobj;
   obj = objlist->obj;
   blend = fobj->blend;
   for (i=0; i<nobj; i++, obj++)
-    if (obj->blend == blend && obj!=fobj)
-      objlist_add(overobjlist, obj);
+    if (obj->blend == blend)
+      objlist_movobj(objlist, i, overobjlist);
 
-  return nblend;
-  }
-
+  return overobjlist;
+}
 
 
 #ifdef USE_THREADS
 
-/****** pthread_group_init ***********************************************//**
-Setup threads, mutexes and semaphores for multithreaded group processing
+/****** pthread_objlist_init **********************************************//**
+Setup threads, mutexes and semaphores for multithreaded objlist processing
 @param[in] fields	Pointer to an array of image field pointers
 @param[in] wfields	Pointer to an array of weight-map field pointers
 @param[in] nfield	Number of images
 @param[in] nthreads	Number of threads
 
 @author 		E. Bertin (IAP)
-@date			03/01/2014
+@date			09/06/2014
  ***/
-void	pthread_group_init(fieldstruct **fields, fieldstruct **wfields,
+void	pthread_objlist_init(fieldstruct **fields, fieldstruct **wfields,
 			int nfield, int nthreads)
   {
-   int	n,p;
+   int	n, p;
 
   pthread_fields = fields;
   pthread_wfields = wfields;
   pthread_nfield = nfield;
   pthread_nthreads = nthreads;
-  pthread_ngroup = prefs.obj_stacksize;
+  pthread_nobjlist = prefs.obj2_stacksize;
   QMALLOC(pthread_thread, pthread_t, nthreads);
-  QCALLOC(pthread_group, objgroupstruct, pthread_ngroup);
-  QPTHREAD_COND_INIT(&pthread_groupaddcond, NULL);
+  QCALLOC(pthread_objlist, objliststruct, pthread_nobjlist);
+  QPTHREAD_COND_INIT(&pthread_objlistaddcond, NULL);
   QPTHREAD_COND_INIT(&pthread_objsavecond, NULL);
-  QPTHREAD_MUTEX_INIT(&pthread_groupmutex, NULL);
+  QPTHREAD_MUTEX_INIT(&pthread_objlistmutex, NULL);
   QPTHREAD_MUTEX_INIT(&pthread_freeobjmutex, NULL);
   QPTHREAD_MUTEX_INIT(&pthread_countobjmutex, NULL);
   QPTHREAD_ATTR_INIT(&pthread_attr);
   QPTHREAD_ATTR_SETDETACHSTATE(&pthread_attr, PTHREAD_CREATE_JOINABLE);
-  pthread_groupaddindex = pthread_groupprocindex = pthread_groupsaveindex= 0;
+  pthread_objlistaddindex = pthread_objlistprocindex
+	= pthread_objlistsaveindex= 0;
   pthread_endflag = 0;
 
 /* Start the measurement/write_to_catalog threads */
   for (p=0; p<nthreads; p++)
     QPTHREAD_CREATE(&pthread_thread[p], &pthread_attr,
-		&pthread_group_analyse, (void *)p);
+		&pthread_objlist_analyse, (void *)p);
 
   return;
   }
 
 
-/****** pthread_group_end ************************************************//**
-Terminate threads, mutexes and semaphores for multithreaded group processing
+/****** pthread_objlist_end ***********************************************//**
+Terminate threads, mutexes and semaphores for multithreaded objlist processing
 
 @author 	E. Bertin (IAP)
-@date		03/01/2014
+@date		09/06/2014
  ***/
-void	pthread_group_end(void)
+void	pthread_objlist_end(void)
   {
    int	p;
 
-  QPTHREAD_MUTEX_LOCK(&pthread_groupmutex);
+  QPTHREAD_MUTEX_LOCK(&pthread_objlistmutex);
 /* Call all threads to exit */
   pthread_endflag = 1;
-  QPTHREAD_COND_BROADCAST(&pthread_groupaddcond);
-  QPTHREAD_COND_BROADCAST(&pthread_groupaddcond);
-  QPTHREAD_MUTEX_UNLOCK(&pthread_groupmutex);
+  QPTHREAD_COND_BROADCAST(&pthread_objlistaddcond);
+  QPTHREAD_COND_BROADCAST(&pthread_objlistaddcond);
+  QPTHREAD_MUTEX_UNLOCK(&pthread_objlistmutex);
 
   for (p=0; p<pthread_nthreads; p++)
     QPTHREAD_JOIN(pthread_thread[p], NULL);
 
-  QPTHREAD_MUTEX_DESTROY(&pthread_groupmutex);
+  QPTHREAD_MUTEX_DESTROY(&pthread_objlistmutex);
   QPTHREAD_MUTEX_DESTROY(&pthread_freeobjmutex);
   QPTHREAD_MUTEX_DESTROY(&pthread_countobjmutex);
   QPTHREAD_ATTR_DESTROY(&pthread_attr);
-  QPTHREAD_COND_DESTROY(&pthread_groupaddcond);
+  QPTHREAD_COND_DESTROY(&pthread_objlistaddcond);
   QPTHREAD_COND_DESTROY(&pthread_objsavecond);
 
   free(pthread_thread);
-  free(pthread_group);
+  free(pthread_objlist);
 
   return;
   }
 
 
-/****** pthread_group_add ************************************************//**
-Add a group to the list of groups that need to be processed.
-@param[in] group	group to be added (note: not a pointer!)
+/****** pthread_objlist_add **********************************************//**
+Add an objlist to the list of objlists that need to be processed.
+@param[in] objlist	objlist to be added (note: not a pointer!)
 
 @author 	E. Bertin (IAP)
-@date		03/01/2014
+@date		09/06/2014
  ***/
-void	pthread_group_add(objgroupstruct group)
+void	pthread_objlist_add(objliststruct objlist)
   {
 
-  QPTHREAD_MUTEX_LOCK(&pthread_groupmutex);
-  while (pthread_groupaddindex>=pthread_groupsaveindex+pthread_ngroup)
+  QPTHREAD_MUTEX_LOCK(&pthread_objlistmutex);
+  while (pthread_objlistaddindex>=pthread_objlistsaveindex+pthread_nobjlist)
 /*-- Wait for stack to flush if limit on the number of stored objs is reached*/
-    QPTHREAD_COND_WAIT(&pthread_objsavecond, &pthread_groupmutex);
-  pthread_group[pthread_groupaddindex++%pthread_ngroup] = group;
-  QPTHREAD_COND_BROADCAST(&pthread_groupaddcond);
-  QPTHREAD_MUTEX_UNLOCK(&pthread_groupmutex);
+    QPTHREAD_COND_WAIT(&pthread_objsavecond, &pthread_objlistmutex);
+  pthread_objlist[pthread_objlistaddindex++%pthread_nobjlist] = objlist;
+  QPTHREAD_COND_BROADCAST(&pthread_objlistaddcond);
+  QPTHREAD_MUTEX_UNLOCK(&pthread_objlistmutex);
 
   return;
   }
 
 
-/****** pthread_group_analyse ********************************************//**
-Thread that takes care of measuring and saving obj groups.
+/****** pthread_objlist_analyse ******************************************//**
+Thread that takes care of measuring and saving objlists.
 @paran[in] arg	unused (here only for compliancy with POSIX threads)
 
 @author 	E. Bertin (IAP)
-@date		03/01/2014
+@date		09/06/2014
  ***/
-void	*pthread_analyse_objgroup(void *arg)
+void	*pthread_objlist_analyse(void *arg)
   {
-   objgroupstruct	*group;
+   objliststruct	*objlist;
+   objstruct		*obj;
+   int			o;
 
   while (1)
     {
-    QPTHREAD_MUTEX_LOCK(&pthread_groupmutex);
+    QPTHREAD_MUTEX_LOCK(&pthread_objlistmutex);
 /*-- Flush objects for which measurements have been completed */
-    while (pthread_groupsaveindex<pthread_groupprocindex
-		&& (pthread_group[pthread_groupsaveindex].done_flag))
+    while (pthread_objlistsaveindex<pthread_objlistprocindex
+		&& (pthread_objlist[pthread_objlistsaveindex].done_flag))
       analyse_end(pthread_fields, pthread_wfields, pthread_nfield,
-		&pthread_group[pthread_groupsaveindex++]);
-    while (pthread_groupprocindex>=pthread_groupaddindex)
+		&pthread_objlist[pthread_objlistsaveindex++]);
+    while (pthread_objlistprocindex>=pthread_objlistaddindex)
 /*---- Wait for more objects to be pushed in stack */
       {
       if ((pthread_endflag))
         {
-        QPTHREAD_MUTEX_UNLOCK(&pthread_groupmutex);
+        QPTHREAD_MUTEX_UNLOCK(&pthread_objlistmutex);
         pthread_exit(NULL);
         }
-      QPTHREAD_COND_WAIT(&pthread_groupaddcond, &pthread_groupmutex);
+      QPTHREAD_COND_WAIT(&pthread_objlistaddcond, &pthread_objlistmutex);
       }
-    group = &pthread_group[pthread_groupprocindex++%pthread_ngroup];
-    QPTHREAD_MUTEX_UNLOCK(&pthread_groupmutex);
-    analyse_group(pthread_fields, pthread_wfields, pthread_nfield, group);
+    objlist = &pthread_objlist[pthread_objlistprocindex++%pthread_nobjlist];
+    QPTHREAD_MUTEX_UNLOCK(&pthread_objlistmutex);
+    obj = objlist->obj;
+    for (o=objlist->nobj; o--; obj++)
+      analyse_full(pthread_fields, pthread_wfields, pthread_nfield, obj);
+/*-- Flag groups as done */
+    QPTHREAD_MUTEX_LOCK(&pthread_objlistmutex);
+    objlist->done_flag = 1;
+    QPTHREAD_MUTEX_UNLOCK(&pthread_objlistmutex);
     }
 
   return (void *)NULL;

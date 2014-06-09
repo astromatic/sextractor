@@ -22,9 +22,16 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		14/05/2014
+*	Last modified:		09/06/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
+
+#ifndef _OBJLIST_H_
+#include "objlist.h"
+#endif
+
+#ifndef _PLIST_H_
+#define _PLIST_H_
 
 /*------------------------------- definitions -------------------------------*/
 
@@ -57,4 +64,4 @@ int	plistexist_value, plistexist_cvalue,
 
 void	init_plist(void);
 
-int	createblank(objliststruct *objlist, int n);
+#endif

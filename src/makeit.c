@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2013 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2014 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		18/09/2013
+*	Last modified:		09/06/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -120,8 +120,7 @@ void	makeit(void)
 		prefs.nthreads>1? "s":"");
 
   NFPRINTF(OUTPUT, "Setting catalog parameters");
-  thecat.obj2list = catout_readparams(prefs.param, prefs.nparam,
-					prefs.obj2_stacksize);
+  catout_readparams(prefs.param, prefs.nparam);
   prefs_use();	/* update things a first time according to prefs parameters */
 
   if (prefs.filter_flag)
@@ -436,24 +435,6 @@ void	makeit(void)
       }
     }
 
-/* Allocate memory for multidimensional catalog parameter arrays */
-  catout_allocparams(thecat.obj2list);
-/* Allocate memory for other arrays (not catalogue measurements) */
-/* Sky background */
-  catout_allocother(thecat.obj2list, &flagobj2.diffbkg, nimage*sizeof(float));
-  catout_allocother(thecat.obj2list, &flagobj2.sigbkg, nimage*sizeof(float));
-/* Flux combination */
-  catout_allocother(thecat.obj2list, &flagobj2.cflux,
-		prefs.nphotinstru*sizeof(double));
-  catout_allocother(thecat.obj2list, &flagobj2.cfluxw,
-		prefs.nphotinstru*sizeof(double));
-/* Position combination */
-  catout_allocother(thecat.obj2list, &flagobj2.cposx,
-		prefs.nphotinstru*sizeof(double));
-  catout_allocother(thecat.obj2list, &flagobj2.cposy,
-		prefs.nphotinstru*sizeof(double));
-  catout_allocother(thecat.obj2list, &flagobj2.cposw,
-		prefs.nphotinstru*sizeof(double));
   prefs_use();
 
 
@@ -723,18 +704,8 @@ void	makeit(void)
   if (prefs.xml_flag)
     xml_write(prefs.xml_name);
 
-/* Free memory allocated for arrays that are not catalogue measurements */
-  catout_freeother(thecat.obj2list, &flagobj2.diffbkg);
-  catout_freeother(thecat.obj2list, &flagobj2.sigbkg);
-  catout_freeother(thecat.obj2list, &flagobj2.cflux);
-  catout_freeother(thecat.obj2list, &flagobj2.cfluxw);
-  catout_freeother(thecat.obj2list, &flagobj2.cposx);
-  catout_freeother(thecat.obj2list, &flagobj2.cposy);
-  catout_freeother(thecat.obj2list, &flagobj2.cposw);
-
 /* End catalog */
   catout_end((char *)NULL);
-
 
   if (prefs.xml_flag || prefs.cat_type==ASCII_VO)
     xml_end();

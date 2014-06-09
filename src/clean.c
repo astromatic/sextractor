@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2014 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		16/05/2014
+*	Last modified:		09/06/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -54,14 +54,14 @@ INPUT   -.
 OUTPUT  -.
 NOTES   -.
 AUTHOR  E. Bertin (IAP)
-VERSION 16/05/2014
+VERSION 09/06/2014
  ***/
 void	clean_init(void)
   {
   if (prefs.clean_flag)
     QMALLOC(cleanvictim, LONG, prefs.clean_stacksize);
 
-  cleanobjlist = objlist_new(0);
+  cleanobjlist = objlist_new();
 
   return;
   }
@@ -74,13 +74,14 @@ INPUT   -.
 OUTPUT  -.
 NOTES   -.
 AUTHOR  E. Bertin (IAP)
-VERSION 03/07/2011
+VERSION 09/06/2014
  ***/
 void	clean_end(void)
   {
   if (prefs.clean_flag)
     free(cleanvictim);
   objlist_end(cleanobjlist);
+  free(cleanobjlist);
 
   return;
   }
@@ -95,11 +96,12 @@ INPUT   Pointer to image field,
 OUTPUT  0 if the object was CLEANed, 1 otherwise.
 NOTES   Global preferences are used.
 AUTHOR  E. Bertin (IAP)
-VERSION 11/01/2012
+VERSION 09/06/2014
  ***/
 int	clean_process(fieldstruct *field, objstruct *objin)
   {
    objstruct		*obj;
+   subimagestruct	*subimage;
    int			i,j,k;
    double		amp,ampin,alpha,alphain, unitarea,unitareain,beta,val;
    float	       	dx,dy,rlim;
@@ -137,15 +139,13 @@ int	clean_process(fieldstruct *field, objstruct *objin)
           {
 /*------- the newcomer is eaten!! */
           clean_merge(objin, obj);
-          if (prefs.blank_flag)
+          if (prefs.blank_flag && (subimage = objin->isoimage))
             {
 /*---------- Paste back ``CLEANed'' object pixels before forgetting them */
-            if (objin->blank)
-              {
-              pasteimage(field, objin->blank, objin->subw, objin->subh,
-			objin->subx, objin->suby);
-              free(objin->blank);
-              }
+            pasteimage(field, subimage->image,
+			subimage->size[0], subimage->size[1],
+			subimage->ipos[0],subimage->ipos[1]);
+            QFREE(objin->isoimage);
             }
 
           return 0;
@@ -160,14 +160,13 @@ int	clean_process(fieldstruct *field, objstruct *objin)
     k = cleanvictim[i];
     obj = cleanobjlist->obj + k;
     clean_merge(obj, objin);
-    if (prefs.blank_flag)
+    if (prefs.blank_flag && (subimage = objin->isoimage))
       {
 /*---- Paste back ``CLEANed'' object pixels before forgetting them */
-      if (obj->blank)
-        {
-        pasteimage(field, obj->blank, obj->subw,obj->subh, obj->subx,obj->suby);
-        free(obj->blank);
-        }
+      pasteimage(field, subimage->image,
+			subimage->size[0], subimage->size[1],
+			subimage->ipos[0],subimage->ipos[1]);
+      QFREE(objin->isoimage);
       }
     clean_sub(k);
     }
