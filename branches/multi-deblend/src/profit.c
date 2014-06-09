@@ -298,12 +298,12 @@ INPUT	Pointer to the model structure,
 OUTPUT	Number of minimization iterations (0 in case of error).
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	18/07/2012
+VERSION	09/06/2014
  ***/
 int	profit_fit(profitstruct *profit, objstruct *obj)
   {
+   obj2struct		*obj2;
    int			p, nparam, nparam2;
-    checkstruct		*check;
 
   nparam = profit->nparam;
   nparam2 = nparam*nparam;
@@ -314,7 +314,7 @@ int	profit_fit(profitstruct *profit, objstruct *obj)
 /* Check if the number of constraints exceeds the number of free parameters */
   if (profit->nresi < nparam)
     {
-    if (obj->obj2) {
+    if ((obj2 = obj->obj2)) {
       if (FLAG(obj2.prof_vector))
         for (p=0; p<nparam; p++)
           obj2->prof_vector[p] = 0.0;
@@ -868,22 +868,23 @@ return;
 
 /****** profit_spread ********************************************************
 PROTO	void profit_spread(profitstruct *profit, fieldstruct *field,
-		fieldstruct *wfield, obj2struct *obj2)
+		fieldstruct *wfield, objstruct *obj)
 PURPOSE	Perform star/galaxy separation by comparing the best-fitting local PSF
 	and a compact exponential profile to the actual data using linear
 	discriminant analysis.
 INPUT	Pointer to the profile-fitting structure,
 	pointer to the field,
 	pointer to the field weight,
-	pointer to the obj2.
+	pointer to the obj.
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	29/12/2013
+VERSION	09/06/2014
  ***/
 void	profit_spread(profitstruct *profit,  fieldstruct *field,
-		fieldstruct *wfield, obj2struct *obj2)
+		fieldstruct *wfield, objstruct *obj)
   {
+   obj2struct		*obj2;
    profitstruct		*pprofit,*qprofit;
    subprofitstruct	*subprofit, *psubprofit,*qsubprofit;
    PIXTYPE		valp,valq, sig2;
@@ -891,10 +892,14 @@ void	profit_spread(profitstruct *profit,  fieldstruct *field,
    float		dchi2;
    int			p,s, nsub;
 
+  obj2 = obj->obj2;
+
   nsub = profit->nsubprofit;
 
-  pprofit = profit_init(obj2, MODEL_DIRAC, PROFIT_CONV);
-  qprofit = profit_init(obj2, MODEL_EXPONENTIAL, PROFIT_CONV);
+  pprofit = profit_init(obj, obj2->subimage, obj2->nsubimage,
+		MODEL_DIRAC, PROFIT_CONV);
+  qprofit = profit_init(obj, obj2->subimage, obj2->nsubimage,
+		MODEL_EXPONENTIAL, PROFIT_CONV);
 
   profit_residuals(profit, PROFIT_DYNPARAM, profit->paraminit, profit->resi);
   profit_resetparams(pprofit);

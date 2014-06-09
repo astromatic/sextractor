@@ -56,26 +56,29 @@ OUTPUT	Pointer to the objlist if no memory allocation problem occured,
 	NULL otherwise.
 NOTES	Global preferences are used.
 AUTHOR	E. Bertin (IAP)
-TODO    Check propagation of flags
-VERSION	04/06/2014
+TODO    Check propagation of flags,
+	check cscan management.
+VERSION	09/06/2014
  ***/
 objliststruct	*lutz_subextract(subimagestruct *subimage, PIXTYPE thresh,
 			int xmin, int xmax, int ymin, int ymax) {
+
+   objliststruct	*objlist;
    infostruct		curpixinfo,initinfo,
 			*info, *store;
    pliststruct		*plist,*pixel;
-   status		*psstack;
-
+   status		*psstack,
+			cs, ps;
+   short		trunflag;
    char			*marker,
 			newmarker;
+   PIXTYPE		*scan, *cscan, *dscan, *dscant,
+			cnewsymbol;
    int			*start, *end,
-			wminus1,hminus1, subw,subh,scansize,
+			wminus1,hminus1, subw,subh,scansize, imsize,
 			cn, co, luflag, objnb, pstop, xl,xl2,yl,
 			out, minarea, step, nobjm,
-			inewsymbol;
-   short		trunflag;
-   PIXTYPE		*scan,*cscan,*dscan;
-   status		cs, ps;
+			inewsymbol, i;
 
 
   wminus1 = subimage->field->width-1;
@@ -89,9 +92,9 @@ objliststruct	*lutz_subextract(subimagestruct *subimage, PIXTYPE thresh,
   QMALLOC(psstack, status, scansize);
   QMALLOC(start, int, scansize);
   QMALLOC(end, int, scansize);
-  QMALLOC(dscan, int, scansize);
+  QMALLOC(dscan, PIXTYPE, scansize);
   dscant = dscan;
-  for (i=stacksize; i--;)
+  for (i=scansize; i--;)
     *(dscant++) = -BIG;
 
   out = RETURN_OK;
@@ -144,13 +147,11 @@ objliststruct	*lutz_subextract(subimagestruct *subimage, PIXTYPE thresh,
       {
       newmarker = marker[xl];
       marker[xl] = 0;
-      if ((cnewsymbol = (xl!=xmax)?*(cscan++):-BIG) < 0)
-        luflag = 0;
-      else
-        {
-        curpixinfo.flag = trunflag;
-        luflag =  > thresh?1:0);
-        }
+      cnewsymbol = (xl==xmax)? -BIG : *(cscan++);
+
+      curpixinfo.flag = trunflag;
+      luflag =  (cnewsymbol > thresh);
+
       if (luflag)
         {
         if (xl==0 || xl==wminus1)

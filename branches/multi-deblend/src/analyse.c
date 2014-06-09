@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		03/01/2014
+*	Last modified:		09/06/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -53,6 +53,7 @@
 #include	"image.h"
 #include	"misc.h"
 #include	"neurro.h"
+#include	"objlist.h"
 #include	"photom.h"
 #include	"psf.h"
 #include	"profit.h"
@@ -65,15 +66,15 @@
 #ifdef USE_THREADS
 #include	"threads.h"
 
-pthread_t	*pthread_thread;
-pthread_attr_t	pthread_attr;
-pthread_mutex_t	pthread_group2mutex, pthread_freeobj2mutex;
-pthread_cond_t	pthread_group2addcond, pthread_obj2savecond;
-fieldstruct	**pthread_fields,**pthread_wfields;
-obj2groupstruct	*pthread_group2;
-int		pthread_ngroup2, pthread_group2addindex,pthread_group2procindex,
-		pthread_group2saveindex, pthread_nfield, pthread_nthreads,
-		pthread_endflag;
+extern pthread_t	*pthread_thread;
+extern pthread_attr_t	pthread_attr;
+extern pthread_mutex_t	pthread_objlistmutex, pthread_freeobjmutex;
+extern pthread_cond_t	pthread_objlistaddcond, pthread_objsavecond;
+extern fieldstruct	**pthread_fields,**pthread_wfields;
+extern objliststruct	*pthread_objlist;
+extern int		pthread_nobjlist, pthread_objlistaddindex,
+			pthread_objlistprocindex, pthread_objlistsaveindex,
+			pthread_nfield, pthread_nthreads, pthread_endflag;
 
 #endif
 
@@ -399,310 +400,103 @@ dthresh = field->dthresh;
 
 /****** analyse_final *******************************************************
 PROTO	void analyse_final2(fieldstruct **fields, fieldstruct **wfields,
-			int nfield, objliststruct *objlist, int iobj)
+			int nfield, objliststruct *objlist)
 PURPOSE Do the final analysis based on a list of detections and a detection
 	index.
 INPUT	Pointer to an array of image field pointers,
 	pointer to an array of weight-map field pointers,
 	number of images,
-	objlist pointer,
-	obj index.
+	objlist pointer.
 OUTPUT  -.
 NOTES   Global preferences are used.
 AUTHOR  E. Bertin (IAP)
 VERSION 15/05/2014
  ***/
 void analyse_final(fieldstruct **fields, fieldstruct **wfields,
-			int nfield, objliststruct *objlist, int objindex)
+			int nfield, objliststruct *objlist)
   {
-   fieldstruct		*field;
-    obj2liststruct	*overobjlist;
+   fieldstruct		*field, *wfield;
    objstruct		*obj;
-   obj2struct		*obj2, *prevobj2, *firstobj2;
-   subimagestruct	*objsubimage, *groupsubimage;
-   int			i, ycmax, nextiobj, noverlap, iobj,
-			xmin,xmax,ymin,ymax;
+   int			o;
 
 // field is the detection field */
-  field = fields[0];
-/* Find overlapping detections and link them */
-  overobjlist = analyse_overlapness(objlist, objlist->obj[objindex]);
+  field = fields[0];			// field is the detection field
+  wfield = wfields? wfields[0]:NULL;	// wfield is the detection weight map
 
-  xmax = ymax = -(xmin = ymin = 0x7FFFFFFF);	/// largest signed 32-bit int
-  obj = overobjlist->obj;
-  for (i=overobjlist->nobj; i--; obj++)
-    {
-    if (obj->xmin < xmin)
-      xmin = obj->xmin;
-    if (obj->xmax > xmax)
-      xmax = obj->xmax;
-    if (obj->ymin < ymin)
-      ymin = obj->ymin;
-    if (obj->ymax > ymax)
-      ymax = obj->ymax;
-    }
-
-  overobjlist->subimage = subimage_fromfield(field, wfields? wfields[0] : NULL,
-		xmin, xmax, ymin, ymax);
-
-/* Convert every linked detection to a linked obj2 */
-  iobj = objindex;
-  for (i=noverlap; i--;)
-    {
-    obj = overobjlist->obj[iobj];
-/*-- Warn if there is a possibility for any aperture to be truncated */
-    if ((ycmax=obj->ycmax) > field->ymax)
-      {
-      sprintf(gstr, "Object at position %.0f,%.0f ", obj->mx+1, obj->my+1);
-      QWARNING(gstr, "may have some apertures truncated:\n"
-		"          You might want to increase MEMORY_BUFSIZE");
-      }
-    else if (ycmax>field->yblank && prefs.blank_flag)
-      {
-      sprintf(gstr, "Object at position %.0f,%.0f ", obj->mx+1, obj->my+1);
-      QWARNING(gstr, "may have some unBLANKed neighbours:\n"
-		"          You might want to increase MEMORY_PIXSTACK");
-      }
-    obj2 = analyse_obj2obj2(fields, wfields, nfield, obj, obj2list);
-    if (!obj2)
+  obj = objlist->obj;
+  for (o=objlist->nobj; o--; obj++)
+    if (!(obj->obj2 = analyse_obj2obj2(fields, wfields, nfield, obj)))
       error(EXIT_FAILURE, "*Error*: ", "obj2 stack full");
-    obj2->nextobj2 = NULL;
-    if (prevobj2)
-      {
-      prevobj2->nextobj2 = obj2;
-      obj2->prevobj2 = prevobj2;
-      }
-    else
-      {
-      obj2->prevobj2 = NULL;
-      firstobj2 = obj2;
-      }
-    prevobj2 = obj2;
-
-    objsubimage = obj2->subimage;
-    groupsubimage = group2.subimage;
-    deblankimage(objsubimage->image,
-		objsubimage->size[0], objsubimage->size[1],
-		groupsubimage->image,
-		groupsubimage->size[0],groupsubimage->size[1],
-		objsubimage->xmin[0] - groupsubimage->xmin[0],
-		objsubimage->xmin[1] - groupsubimage->xmin[1]);
-
-    nextiobj = obj->next;
-/*-- Take care of next obj that might be swapped by clean_sub! */
-    if (nextiobj == objlist->nobj-1)
-      nextiobj = iobj;
-    clean_sub(iobj);
-    iobj = nextiobj;
-    }
-
-  group2.obj2 = firstobj2;
 
 #ifdef USE_THREADS
   if (prefs.nthreads>1)
-/*-- Push in obj2 */
-    pthread_add_obj2group(group2);
+/*-- Push in objlist */
+    pthread_objlist_add(*objlist);
   else
     {
 /*-- 1 single thread: don't bother with independent measurement threads */
-/*-- Analyse the group of obj2s */
-    group2_analyse(fields, wfields, nfield, &group2);
-/*-- Write to catalogue and terminate the group of obj2s */
-    analyse_end(fields, wfields, nfield, &group2);
+/*-- Analyse the objects of objlist */
+    obj = objlist->obj;
+    for (o=objlist->nobj; o--; obj++)
+      obj->writable_flag
+	= (analyse_full(fields, wfields, nfield, obj) == RETURN_OK);
+/*-- Write to catalogue */
+    analyse_end(fields, wfields, nfield, objlist);
     }
 #else
-/* Analyse the group of obj2s */
-  group2_analyse(fields, wfields, nfield, &group2);
-/* Write to catalogue and terminate the group of obj2s */
-  analyse_end(fields, wfields, nfield, &group2);
+    obj = objlist->obj;
+    for (o=objlist->nobj; o--; obj++)
+      obj->writable_flag
+	= (analyse_full(fields, wfields, nfield, obj) == RETURN_OK);
+/*-- Write to catalogue */
+    analyse_end(fields, wfields, nfield, objlist);
 #endif
 
   return;
   }
 
-
-/****** analyse_final2 *******************************************************
-PROTO	void analyse_final2(fieldstruct **fields, fieldstruct **wfields,
-			int nfield, objliststruct *objlist, int iobj)
-PURPOSE Do the final analysis based on a list of detections and a detection
-	index.
-INPUT	Pointer to an array of image field pointers,
-	pointer to an array of weight-map field pointers,
-	number of images,
-	objlist pointer,
-	obj index.
-OUTPUT  -.
-NOTES   Global preferences are used.
-AUTHOR  E. Bertin (IAP)
-VERSION 03/01/2014
- ***/
-void analyse_final2(fieldstruct **fields, fieldstruct **wfields,
-			int nfield, objliststruct *objlist, int objindex)
-  {
-   fieldstruct		*field;
-   obj2groupstruct	group2;
-   obj2liststruct	*obj2list;
-   objstruct		*obj;
-   obj2struct		*obj2, *prevobj2, *firstobj2;
-   subimagestruct	*objsubimage, *groupsubimage;
-   int			i, ycmax, nextiobj, noverlap, iobj,
-			xmin,xmax,ymin,ymax;
-
-  obj2list = thecat.obj2list;
-
-/* field is the detection field */
-  field = fields[0];
-/* Find overlapping detections and link them */
-  noverlap = analyse_overlapness(objlist, objindex);
-
-  xmax = ymax = -(xmin = ymin = 2000000);
-  iobj = objindex;
-  for (i=noverlap; i--;)
-    {
-    obj = &objlist->obj[iobj];
-    if (obj->xmin < xmin)
-      xmin = obj->xmin;
-    if (obj->xmax > xmax)
-      xmax = obj->xmax;
-    if (obj->ymin < ymin)
-      ymin = obj->ymin;
-    if (obj->ymax > ymax)
-      ymax = obj->ymax;
-    iobj = obj->next;
-    }
-
-  group2.subimage = subimage_new(field, wfields? wfields[0] : NULL,
-		xmin, xmax, ymin, ymax);
-
-/* Convert every linked detection to a linked obj2 */
-  prevobj2 = NULL;
-  iobj = objindex;
-  for (i=noverlap; i--;)
-    {
-    obj = &objlist->obj[iobj];
-/*-- Warn if there is a possibility for any aperture to be truncated */
-    if ((ycmax=obj->ycmax) > field->ymax)
-      {
-      sprintf(gstr, "Object at position %.0f,%.0f ", obj->mx+1, obj->my+1);
-      QWARNING(gstr, "may have some apertures truncated:\n"
-		"          You might want to increase MEMORY_BUFSIZE");
-      }
-    else if (ycmax>field->yblank && prefs.blank_flag)
-      {
-      sprintf(gstr, "Object at position %.0f,%.0f ", obj->mx+1, obj->my+1);
-      QWARNING(gstr, "may have some unBLANKed neighbours:\n"
-		"          You might want to increase MEMORY_PIXSTACK");
-      }
-    obj2 = analyse_obj2obj2(fields, wfields, nfield, obj, obj2list);
-    if (!obj2)
-      error(EXIT_FAILURE, "*Error*: ", "obj2 stack full");
-    obj2->nextobj2 = NULL;
-    if (prevobj2)
-      {
-      prevobj2->nextobj2 = obj2;
-      obj2->prevobj2 = prevobj2;
-      }
-    else
-      {
-      obj2->prevobj2 = NULL;
-      firstobj2 = obj2;
-      }
-    prevobj2 = obj2;
-
-    objsubimage = obj2->subimage;
-    groupsubimage = group2.subimage;
-    deblankimage(objsubimage->image,
-		objsubimage->size[0], objsubimage->size[1],
-		groupsubimage->image,
-		groupsubimage->size[0],groupsubimage->size[1],
-		objsubimage->xmin[0] - groupsubimage->xmin[0],
-		objsubimage->xmin[1] - groupsubimage->xmin[1]);
-
-    nextiobj = obj->next;
-/*-- Take care of next obj that might be swapped by clean_sub! */
-    if (nextiobj == objlist->nobj-1)
-      nextiobj = iobj;
-    clean_sub(iobj);
-    iobj = nextiobj;
-    }
-
-  group2.obj2 = firstobj2;
-
-#ifdef USE_THREADS
-  if (prefs.nthreads>1)
-/*-- Push in obj2 */
-    pthread_add_obj2group(group2);
-  else
-    {
-/*-- 1 single thread: don't bother with independent measurement threads */
-/*-- Analyse the group of obj2s */
-    group2_analyse(fields, wfields, nfield, &group2);
-/*-- Write to catalogue and terminate the group of obj2s */
-    analyse_end(fields, wfields, nfield, &group2);
-    }
-#else
-/* Analyse the group of obj2s */
-  group2_analyse(fields, wfields, nfield, &group2);
-/* Write to catalogue and terminate the group of obj2s */
-  analyse_end(fields, wfields, nfield, &group2);
-#endif
-
-  return;
-  }
 
 
 /****** analyse_obj2obj2 ******************************************************
 PROTO	obj2struct *analyse_obj2obj2(fieldstruct **fields,
-			fieldstruct **wfields, int nfield,
-			objstruct *obj, obj2liststruct *obj2list)
+			fieldstruct **wfields, int nfield, objstruct *obj)
 PURPOSE Move object data from obj to obj2 structure.
 INPUT	Pointer to an array of image field pointers,
 	pointer to an array of weight-map field pointers,
 	number of images,
-	obj pointer,
-	obj2list pointer,
+	obj pointer.
 OUTPUT  New obj2 pointer.
 NOTES   -.
 AUTHOR  E. Bertin (IAP)
-VERSION 03/10/2012
+VERSION 09/06/2014
  ***/
 obj2struct	*analyse_obj2obj2(fieldstruct **fields, fieldstruct **wfields,
-			int nfield, objstruct *obj, obj2liststruct *obj2list)
+			int nfield, objstruct *obj)
   {
    checkstruct		*check;
    fieldstruct		*field;
-   subimagestruct	*subimage;
    obj2struct		*obj2;
    float		sigbkg;
    static int		number;
    int			f, idx,idy;
 
-#ifdef USE_THREADS
-  if (prefs.nthreads>1)
-    QPTHREAD_MUTEX_LOCK(&pthread_freeobj2mutex);
-#endif
-  while (!(obj2list->freeobj2->nextobj2))
-    {
-#ifdef USE_THREADS
-    if (prefs.nthreads>1)
-      QPTHREAD_COND_WAIT(&pthread_obj2savecond, &pthread_freeobj2mutex)
-    else
-      {
-      QPTHREAD_MUTEX_UNLOCK(&pthread_freeobj2mutex);
-#endif
-      return NULL;
-#ifdef USE_THREADS
-      }
-#endif
-    }
+  QMALLOC(obj2, obj2struct, 1);
+  obj->obj2 = obj2;
 
-  obj2 = obj2list->freeobj2;
-  obj2list->freeobj2 = obj2->nextobj2;
-#ifdef USE_THREADS
-  if (prefs.nthreads>1)
-    QPTHREAD_MUTEX_UNLOCK(&pthread_freeobj2mutex);
-#endif
-  obj2->nextobj2 = obj2->prevobj2 = NULL;
+/* Allocate memory for multidimensional catalog parameter arrays */
+  catout_allocobjparams(obj);
+
+/* Allocate memory for other arrays (not catalogue measurements) */
+/* Sky background */
+//  catout_alloobjcother(obj, &flagobj2.diffbkg, prefs.nimage*sizeof(float));
+  catout_allocobjother(obj, &flagobj2.sigbkg, prefs.nimage*sizeof(float));
+/* Flux combination */
+  catout_allocobjother(obj, &flagobj2.cflux, prefs.nphotinstru*sizeof(double));
+  catout_allocobjother(obj, &flagobj2.cfluxw, prefs.nphotinstru*sizeof(double));
+/* Position combination */
+  catout_allocobjother(obj, &flagobj2.cposx, prefs.nphotinstru*sizeof(double));
+  catout_allocobjother(obj, &flagobj2.cposy, prefs.nphotinstru*sizeof(double));
+  catout_allocobjother(obj, &flagobj2.cposw, prefs.nphotinstru*sizeof(double));
 
 /*-- Local backgrounds */
   for (f=0; f<nfield; f++)
@@ -725,7 +519,6 @@ obj2struct	*analyse_obj2obj2(fieldstruct **fields, fieldstruct **wfields,
     }
 
 /* Copy main data */
-
   obj2->number = ++number;
   obj2->fdnpix = obj->fdnpix;
   obj2->dnpix = obj->dnpix;
@@ -778,15 +571,9 @@ obj2struct	*analyse_obj2obj2(fieldstruct **fields, fieldstruct **wfields,
 /* Copy image data around current object */
   subimage_getall(fields, wfields, nfield, obj2);
 
-/* if BLANKing is on, paste back the object pixels in the image*/
-  if (prefs.blank_flag && obj->blank)
-    {
-    subimage = obj2->subimage;
-    deblankimage(obj->blank, obj->subw, obj->subh,
-		subimage->image, subimage->size[0],subimage->size[1],
-		obj->subx - subimage->xmin[0], obj->suby - subimage->xmin[1]);
-    free(obj->blank);
-    }
+/* if BLANKing is on, paste back the object pixels in the first subimage*/
+  if (prefs.blank_flag && obj->isoimage)
+    subimage_fill(obj2->subimage, obj->isoimage);
 
   if ((check=prefs.check[CHECK_SEGMENTATION]))
     {
@@ -810,21 +597,22 @@ obj2struct	*analyse_obj2obj2(fieldstruct **fields, fieldstruct **wfields,
 
 /****** analyse_full *********************************************************
 PROTO	int analyse_full(fieldstruct **fields, fieldstruct **wfields,
-			int nfield, obj2struct *obj2)
+			int nfield, objstruct *obj)
 PURPOSE Final analysis of object data.
 INPUT   Pointer to an array of image field pointers,
 	pointer to an array of weight-map field pointers,
 	number of images,
-	obj2struct pointer.
+	objstruct pointer.
 OUTPUT  RETURN_OK if the object has been processed, RETURN_ERROR otherwise.
 NOTES   -.
 AUTHOR  E. Bertin (IAP)
 VERSION 19/05/2014
  ***/
 int	analyse_full(fieldstruct **fields, fieldstruct **wfields,
-			int nfield, obj2struct *obj2)
+			int nfield, objstruct *obj)
   {
-fieldstruct *field, *dfield, *dwfield, *wfield;
+   obj2struct		*obj2;
+   fieldstruct		*field, *dfield, *dwfield, *wfield;
    checkstruct		*check;
    double		rawpos[NAXIS],
 			analtime1;
@@ -834,6 +622,8 @@ fieldstruct *field, *dfield, *dwfield, *wfield;
     analtime1 = counter_seconds();
   else
     analtime1 = 0.0;		/* To avoid gcc -Wall warnings */
+
+  obj2 = obj->obj2;
 
 /* field is the detection field */
   field = fields[0];
@@ -1032,7 +822,7 @@ dfield = dwfield = wfield = NULL;
       astrom_proferrparam(field, obj2);
 /*-- PSF- and model-guided star/galaxy separation */
     if (FLAG(obj2.prof_class_star) || FLAG(obj2.prof_concentration))
-      profit_spread(obj2->profit, field, wfield, obj2);
+      profit_spread(obj2->profit, field, wfield, obj);
     }
 
 /*------------------------------- PSF fitting ------------------------------
@@ -1097,14 +887,14 @@ dfield = dwfield = wfield = NULL;
 #ifdef USE_THREADS
   if (prefs.nthreads>1)
     {
-    QPTHREAD_MUTEX_LOCK(&pthread_countobj2mutex);
+    QPTHREAD_MUTEX_LOCK(&pthread_countobjmutex);
     thecat.ntotal++;
      if (((prefs.prof_flag) && !(thecat.ntotal%(10*pthread_nthreads)))
 		|| !(thecat.ntotal%(100*pthread_nthreads)))
       NPRINTF(OUTPUT, "\33[1M> Line:%5d  "
 	"Objects: %8d detected / %8d sextracted\n\33[1A",
 	thecat.nline, thecat.ndetect, thecat.ntotal);
-    QPTHREAD_MUTEX_UNLOCK(&pthread_countobj2mutex);
+    QPTHREAD_MUTEX_UNLOCK(&pthread_countobjmutex);
     }
   else
 #endif
@@ -1125,30 +915,30 @@ dfield = dwfield = wfield = NULL;
 
 /****** analyse_end *********************************************************
 PROTO	void analyse_end(fieldstruct **fields, fieldstruct **wfields,
-			int nfield, obj2groupstruct *obj2group)
-PURPOSE Write to catalogue measurements made on a group of detections and
+			int nfield, objliststruct *objlist)
+PURPOSE Write to catalogue measurements made on a list of detections and
 	release objects.
 INPUT   Pointer to an array of image field pointers,
 	pointer to an array of weight-map field pointers,
 	number of images,
-	obj2groupstruct pointer.
+	objlist pointer.
 OUTPUT  -.
 NOTES   -.
 AUTHOR  E. Bertin (IAP)
-VERSION 03/01/2014
+VERSION 09/06/2014
  ***/
 void	analyse_end(fieldstruct **fields, fieldstruct **wfields,
-			int nfield, obj2groupstruct *group2)
+			int nfield, objliststruct *objlist)
   {
-   obj2liststruct	*obj2list;
-   obj2struct		*obj2, *fobj2;
+   objstruct	*obj;
+   obj2struct	*obj2;
+   int		o;
 
-  obj2list = thecat.obj2list;
-  fobj2 = group2->obj2;
-
-  for (obj2=fobj2; obj2; obj2=obj2->nextobj2)
+  obj=objlist->obj;
+  for (o=objlist->nobj; o--; obj++)
     {
-    if ((obj2->writable_flag))
+    obj2 = obj->obj2;
+    if ((obj->writable_flag))
       {
 /*---- Catalogue output */
       FPRINTF(OUTPUT, "%8d %6.1f %6.1f %5.1f %5.1f %12g "
@@ -1164,24 +954,18 @@ void	analyse_end(fieldstruct **fields, fieldstruct **wfields,
 	obj2->flags&OBJ_ISO_PB?'I':'_',
 	obj2->flags&OBJ_DOVERFLOW?'D':'_',
 	obj2->flags&OBJ_OVERFLOW?'O':'_');
-      catout_writeobj(obj2);
+      catout_writeobj(obj);
       }
     }
 
-  group2->done_flag = 0;
+  objlist->done_flag = 0;
 
-  for (obj2=fobj2; obj2->nextobj2; obj2=obj2->nextobj2);
 #ifdef USE_THREADS
   if (prefs.nthreads>1)
-    QPTHREAD_MUTEX_LOCK(&pthread_freeobj2mutex);
-#endif
-  obj2->nextobj2 = obj2list->freeobj2;
-  obj2list->freeobj2->prevobj2 = obj2->nextobj2;
-  obj2list->freeobj2 = fobj2;
-#ifdef USE_THREADS
-  QPTHREAD_COND_BROADCAST(&pthread_obj2savecond);
+    QPTHREAD_MUTEX_LOCK(&pthread_freeobjmutex);
+  QPTHREAD_COND_BROADCAST(&pthread_objsavecond);
   if (prefs.nthreads>1)
-    QPTHREAD_MUTEX_UNLOCK(&pthread_freeobj2mutex);
+    QPTHREAD_MUTEX_UNLOCK(&pthread_freeobjmutex);
 #endif
 
   return;

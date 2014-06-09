@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		14/05/2014
+*	Last modified:		09/06/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -46,9 +46,11 @@
 #include	"filter.h"
 #include	"image.h"
 #include	"lutz.h"
+#include	"objlist.h"
 #include	"plist.h"
 #include	"readimage.h"
 #include	"scan.h"
+#include	"subimage.h"
 #include	"weight.h"
 
 #ifdef USE_THREADS
@@ -75,7 +77,7 @@ INPUT	Pointer to the detection image field,
 OUTPUT	-.
 NOTES	Global preferences are used.
 AUTHOR	E. Bertin (IAP)
-VERSION	02/08/2012
+VERSION	09/06/2014
  ***/
 void	scan_extract(fieldstruct *dfield, fieldstruct *dwfield,
 			fieldstruct **fields, fieldstruct **wfields, int nfield,
@@ -86,7 +88,8 @@ void	scan_extract(fieldstruct *dfield, fieldstruct *dwfield,
 			initinfo, freeinfo, *victim;
    fieldstruct		*field,*ffield;
    checkstruct		*check;
-   objliststruct       	objlist;
+   objliststruct       	*overobjlist,
+			objlist;
    objstruct		*cleanobj;
    pliststruct		*pixel, *pixt;
 
@@ -207,7 +210,7 @@ void	scan_extract(fieldstruct *dfield, fieldstruct *dwfield,
 #ifdef USE_THREADS
 /*Setup measurement threads as we meet the 1st object; leave 1 for extraction */
   if (prefs.nthreads>1)
-    pthread_init_obj2group(fields, wfields, nfield, prefs.nthreads);
+    pthread_objlist_init(fields, wfields, nfield, prefs.nthreads);
 #endif
 
 /*----- Here we go */
@@ -315,10 +318,7 @@ void	scan_extract(fieldstruct *dfield, fieldstruct *dwfield,
 
     for (xl=0; xl<=w; xl++)
       {
-      if (xl == w)
-        cnewsymbol = -BIG;
-      else
-        cnewsymbol = cscan[xl];
+      cnewsymbol = (xl == w ? -BIG : cscan[xl]);
 
       newmarker = marker[xl];
       marker[xl] = 0;
@@ -326,7 +326,7 @@ void	scan_extract(fieldstruct *dfield, fieldstruct *dwfield,
       curpixinfo.flag = trunflag;
       if (varthreshflag)
         thresh = relthresh*sqrt((xl==w || yl==h)? 0.0:cwscan[xl]);
-      luflag = cnewsymbol > thresh?1:0;
+      luflag = (cnewsymbol > thresh);
 
       if (luflag)
         {
@@ -573,30 +573,32 @@ void	scan_extract(fieldstruct *dfield, fieldstruct *dwfield,
         scan_updatemarkers(ffields[i], yl);
 
 /*-- Remove objects close to the ymin limit if ymin is ready to increase */
-    if (dfield->stripy==dfield->stripysclim)
-      {
+    if (dfield->stripy==dfield->stripysclim) {
       i = cleanobjlist->nobj;
-      while (i--)
-        {
+      while (i--) {
         if (i>=cleanobjlist->nobj)
           i = cleanobjlist->nobj - 1;
         cleanobj = cleanobjlist->obj+i;
-        if (cleanobj->ycmin <= dfield->ymin)
-          analyse_final(fields, wfields, nfield, cleanobjlist, i);
+        if (cleanobj->ycmin <= dfield->ymin) {
+          overobjlist = objlist_deblend(fields, wfields, nfield,
+			cleanobjlist, i);
+          analyse_final(fields, wfields, nfield, overobjlist);
+          objlist_end(overobjlist);
         }
       }
+    }
 
 #ifdef USE_THREADS
     if (prefs.nthreads>1)
       {
-      QPTHREAD_MUTEX_LOCK(&pthread_countobj2mutex);
+      QPTHREAD_MUTEX_LOCK(&pthread_countobjmutex);
       thecat.nline = yl>h? h:yl;
       if ((prefs.prof_flag && !(thecat.ntotal%(10*prefs.nthreads))) ||
 		!(thecat.nline%50))
         NPRINTF(OUTPUT, "\33[1M> Line:%5d  "
 		"Objects: %8d detected / %8d sextracted\n\33[1A",
 		thecat.nline, thecat.ndetect, thecat.ntotal);
-      QPTHREAD_MUTEX_UNLOCK(&pthread_countobj2mutex);
+      QPTHREAD_MUTEX_UNLOCK(&pthread_countobjmutex);
       }
     else
 #endif
@@ -624,10 +626,11 @@ void	scan_extract(fieldstruct *dfield, fieldstruct *dwfield,
       }
 
 /* Now that all "detected" pixels have been removed, analyse detections */
-  while (cleanobjlist->nobj)
-    analyse_final(fields, wfields, nfield, cleanobjlist,
-	cleanobjlist->nobj-1);
-
+  while (cleanobjlist->nobj) {
+    overobjlist = objlist_deblend(fields, wfields, nfield, cleanobjlist, 0);
+    analyse_final(fields, wfields, nfield, overobjlist);
+    objlist_end(overobjlist);
+  }
   clean_end();
 
 /*Free memory */
@@ -647,7 +650,7 @@ void	scan_extract(fieldstruct *dfield, fieldstruct *dwfield,
 
 #ifdef	USE_THREADS
   if (prefs.nthreads>1)
-    pthread_end_obj2group();
+    pthread_objlist_end();
 #endif
 
   return;
@@ -661,9 +664,9 @@ INPUT	Pointer to the image field.
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	07/05/2012
+VERSION	09/06/2014
  ***/
-static void	scan_initmarkers(fieldstruct *field)
+void	scan_initmarkers(fieldstruct *field)
 
   {
   if (field)
@@ -682,9 +685,9 @@ INPUT	Pointer to the image field,
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	07/05/2012
+VERSION	09/06/2014
  ***/
-static void	scan_updatemarkers(fieldstruct *field, int yl)
+void	scan_updatemarkers(fieldstruct *field, int yl)
 
   {
   if (field)
@@ -741,24 +744,20 @@ INPUT	Pointer to an array of image field pointers,
 OUTPUT	-.
 NOTES	Global preferences are used.
 AUTHOR	E. Bertin (IAP)
-VERSION	30/05/2014
+VERSION	09/06/2014
  ***/
 void	scan_output(fieldstruct **fields, fieldstruct **wfields, int nfield,
 		infostruct *info, objliststruct *objlist)
   {
    fieldstruct		*field, *wfield;
-   objliststruct	objlistd, *objlistout;
-   obj2liststruct	*obj2list;
+   objliststruct	objlistd, *objlistout, *overobjlist;
    static objstruct	obj;
    objstruct		*cobj, *vobj;
-   obj2struct		*obj2, *firstobj2, *prevobj2;
-   pliststruct		*pixel;
    int 			i,j,n,o;
 
   field = fields[0];
   wfield = wfields? wfields[0] : NULL;
 
-  pixel = objlist->plist;
   objlistd.obj = NULL;
   objlistd.plist = NULL;
   objlistd.nobj = objlistd.npix = 0;
@@ -783,7 +782,8 @@ void	scan_output(fieldstruct **fields, fieldstruct **wfields, int nfield,
     obj.flag |= OBJ_ISO_PB;
 
   if (!(obj.flag & OBJ_OVERFLOW)
-	&& (objlist->subimage = subimage_fromplist(objlist, 0)))
+	&& (objlist->subimage = subimage_fromplist(field, wfield, &obj,
+		objlist->plist)))
     {
     if (deblend_parcelout(objlist, &objlistd) == RETURN_OK)
       objlistout = &objlistd;
@@ -858,8 +858,10 @@ void	scan_output(fieldstruct **fields, fieldstruct **wfields, int nfield,
 		"          You might want to increase MEMORY_OBJSTACK");
           }
         }
-
-      analyse_final(fields, wfields, nfield, cleanobjlist, victim);
+      overobjlist = objlist_deblend(fields, wfields, nfield,
+	cleanobjlist, victim);
+      analyse_final(fields, wfields, nfield, overobjlist);
+      objlist_end(overobjlist);
       }
 
 /*-- Add the object only if it is not "swallowed" by cleaning */

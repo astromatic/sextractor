@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 2011-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 2011-2014 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		14/02/2012
+*	Last modified:		09/06/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -30,22 +30,20 @@
 
 /*------------------------------ Prototypes ---------------------------------*/
 
-obj2liststruct	*catout_readparams(char **paramlist, int nparam,
-						int nobj2);
-
-int		catout_allocother(obj2liststruct *obj2list, void *flagobj2elem,
+int		catout_allocobjother(objstruct *obj, void *flagobj2elem,
 				int nbytes),
-		catout_freeother(obj2liststruct *obj2list, void *flagobj2elem);
+		catout_freeobjother(objstruct *obj, void *flagobj2elem);
 
-void		catout_allocparams(obj2liststruct *obj2list),
+void		catout_allocobjparams(objstruct *obj),
 		catout_changeparamsize(char *keyword, int *axisn, int naxis),		
 		catout_dumpparams(void),
 		catout_end(char *error),
 		catout_endext(void),
-		catout_freeparams(obj2liststruct *obj2list),
+		catout_freeobjparams(objstruct *obj),
 		catout_init(void),
 		catout_initext(fieldstruct *field),
+		catout_readparams(char **paramlist, int nparam),
 		catout_updateparamflags(void),
-		catout_writeobj(obj2struct *obj2),
+		catout_writeobj(objstruct *obj),
 		catout_writevofields(FILE *file);
 

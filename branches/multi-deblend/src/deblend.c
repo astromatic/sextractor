@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		04/06/2014
+*	Last modified:		09/06/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -54,7 +54,7 @@ OUTPUT	RETURN_OK if success, RETURN_FATAL_ERROR otherwise (memory overflow).
 NOTES	Even if the object is not deblended, the output objlist threshold is
 	recomputed if a variable threshold is used.
 AUTHOR	E. Bertin (IAP)
-VERSION	04/06/2014
+VERSION	09/06/2014
 TODO	Remove dependency towards global variables son and ok.
  ***/
 int	deblend_parcelout(objliststruct *objlistin, objliststruct *objlistout)
@@ -86,7 +86,7 @@ int	deblend_parcelout(objliststruct *objlistin, objliststruct *objlistout)
   for (l=0; l<objlistin->nobj && out==RETURN_OK; l++) {
     dthresh0 = objlistin->obj[l].dthresh;
 
-    objlistout->dthresh = debobjlist2.dthresh = dthresh0;
+    objlistout->dthresh = debobjlist2->dthresh = dthresh0;
     if ((out = deblend_addobj(l, objlistin, objlist[0])) == RETURN_FATAL_ERROR)
       goto exit_parcelout;
     if ((out = deblend_addobj(l, objlistin, debobjlist2)) == RETURN_FATAL_ERROR)
@@ -112,7 +112,7 @@ int	deblend_parcelout(objliststruct *objlistin, objliststruct *objlistout)
 
       for (i=0; i<objlist[k-1]->nobj; i++) {
         obj = &objlist[k-1]->obj[i];
-        if (!(debobjlist = lutz_subextract(subimage, dthresh,
+        if (!(debobjlist = lutz_subextract(subimage, (PIXTYPE)dthresh,
 		obj->xmin, obj->xmax, obj->ymin, obj->ymax))) {
           out = RETURN_FATAL_ERROR;
           goto exit_parcelout;
@@ -168,11 +168,11 @@ int	deblend_parcelout(objliststruct *objlistin, objliststruct *objlistout)
       out = deblend_addobj(0, debobjlist2, objlistout);
     else
       out = deblend_gatherup(debobjlist2, objlistout);
+  }
 
 exit_parcelout:
   for (k=0; k<xn; k++)
     objlist_end(objlist[k]);
-  free(objlist);
 
   if (debobjlist)  
     objlist_end(debobjlist);

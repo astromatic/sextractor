@@ -1,7 +1,7 @@
 /**
 * @file		subimage.c
 * @brief	Manage sub-images
-* @date		01/06/2014
+* @date		09/06/2014
 * @copyright
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 *
@@ -52,15 +52,15 @@ Create a sub-image from an object and a pixel list, without any margin.
 @param[out] 		Pointer to a new subimage.
 
 @author 		E. Bertin (IAP)
-@date			16/05/2014
+@date			09/06/2014
  ***/
 subimagestruct	*subimage_fromplist(fieldstruct *field, fieldstruct *wfield,
 			objstruct *obj, pliststruct *plist) {
 
    subimagestruct	*subimage;
    pliststruct	*plistt;
-   PIXTYPE	*pix,*wpix;
-   long		pos;
+   PIXTYPE	*pix, *wpix, *pixt;
+   long		pos, npix;
    int		i, n, xmin,ymin, w;
 
 /* Initialize sub-image */
@@ -70,8 +70,8 @@ subimagestruct	*subimage_fromplist(fieldstruct *field, fieldstruct *wfield,
   subimage->xmin[1] = ymin = obj->ymin;
   subimage->xmax[0] = obj->xmax + 1;
   subimage->xmax[1] = obj->ymax + 1;
-  subimage->size[0] = w = xmax - xmin;
-  subimage->size[1] = ymax - ymin;
+  subimage->size[0] = w = subimage->xmax[0] - subimage->xmin[0];
+  subimage->size[1] = subimage->xmax[1] - subimage->xmin[1];
   subimage->ipos[0] = subimage->xmin[0] + subimage->size[0]/2;
   subimage->ipos[1] = subimage->xmin[1] + subimage->size[1]/2;
   subimage->field = field;
@@ -104,7 +104,7 @@ subimagestruct	*subimage_fromplist(fieldstruct *field, fieldstruct *wfield,
 
   pix = subimage->image;
   wpix = subimage->weight;
-  for (i=obj->firstpix; i!=-1; i=PLIST(pixt,nextpix)) {
+  for (i=obj->firstpix; i!=-1; i=PLIST(plistt,nextpix)) {
     plistt = plist+i;
     pos = (PLIST(plistt,x)-xmin) + (PLIST(plistt,y)-ymin)*w;
     *(pix+pos) = PLISTPIX(plistt,cvalue);
@@ -127,15 +127,15 @@ Create a sub-image from an image field, without any margin.
 @param[out] 		Pointer to a new subimage.
 
 @author 		E. Bertin (IAP)
-@date			19/05/2014
+@date			09/06/2014
  ***/
 subimagestruct	*subimage_fromfield(fieldstruct *field, fieldstruct *wfield,
 			int xmin, int xmax, int ymin, int ymax) {
 
    subimagestruct	*subimage;
    PIXTYPE	*pix,*wpix;
-   long		pos;
-   int		i, n, xmin,ymin, w;
+   long		npix, pos;
+   int		i, n, w;
 
 /* Initialize sub-image */
   QMALLOC(subimage, subimagestruct, 1);
@@ -154,7 +154,7 @@ subimagestruct	*subimage_fromfield(fieldstruct *field, fieldstruct *wfield,
 
   npix = subimage->size[0]*subimage->size[1];
 
-  if (!(subimage->image = (PIXTYPE *)calloc(npix*sizeof(PIXTYPE)))) {
+  if (!(subimage->image = (PIXTYPE *)calloc(npix, sizeof(PIXTYPE)))) {
     free(subimage);
     return NULL;
   }
@@ -194,8 +194,8 @@ void	subimage_fill(subimagestruct *subimage, subimagestruct *submask) {
 /* Don't go further if out of frame!! */
   if (subimage->xmax[0] <= submask->xmin[0]
 	|| subimage->xmin[0] >= submask->xmax[0]
-	|| subimage->ymax[1] <= submask->ymin[1]
-	|| subimage->ymin[1] >= submask->ymax[1])
+	|| subimage->xmax[1] <= submask->xmin[1]
+	|| subimage->xmin[1] >= submask->xmax[1])
     return;
 
 /* Set the image boundaries */
@@ -223,7 +223,7 @@ void	subimage_fill(subimagestruct *subimage, subimagestruct *submask) {
   w = xmax - xmin;
   dwmask = submask->size[0] - w;
   dwima = subimage->size[0] - w;
-  pixima = subimage->xmin[1] + ymin*subimage->size[0] + xmin;
+  pixima = subimage->image + ymin*subimage->size[0] + xmin;
   for (y=ymax-ymin; y--; pixmask += dwmask, pixima += dwima)
     for (x=w; x--; pixima++)
       if ((val = *(pixmask++)) > -BIG)
@@ -245,7 +245,7 @@ OUTPUT	Pointer to a new malloc'ed subimage structure.
 NOTES	Global preferences are used. Input fields must have been through
 	frame_wcs() with detection field as a reference.
 AUTHOR	E. Bertin (IAP)
-VERSION	02/05/2012
+VERSION	09/06/2014
  ***/
 subimagestruct	*subimage_getall(fieldstruct **fields, fieldstruct **wfields,
 			int nfield, obj2struct *obj2)
@@ -298,14 +298,14 @@ subimagestruct	*subimage_getall(fieldstruct **fields, fieldstruct **wfields,
     QMALLOC(subimage->image, PIXTYPE, subimage->size[0]*subimage->size[1]);
     copyimage(subimage->field, subimage->image,
 	subimage->size[0],subimage->size[1],
-	subimage->ipos[0],subimage->ipos[1]);
+	subimage->ipos[0],subimage->ipos[1], -BIG);
     if (subimage->wfield)
       {
       QMALLOC(subimage->weight, PIXTYPE,
 		subimage->size[0]*subimage->size[1]);
       copyimage(subimage->wfield, subimage->weight,
 	subimage->size[0],subimage->size[1],
-	subimage->ipos[0],subimage->ipos[1]);
+	subimage->ipos[0],subimage->ipos[1], BIG);
       }
     else
       subimage->weight = NULL;

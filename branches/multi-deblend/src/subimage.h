@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		01/06/2014
+*	Last modified:		09/06/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -54,7 +54,9 @@ typedef struct subimage
 
 /*------------------------------- functions ---------------------------------*/
 
-subimagestruct	*subimage_fromplist(fieldstruct *field, fieldstruct *wfield,
+subimagestruct	*subimage_fromfield(fieldstruct *field, fieldstruct *wfield,
+			int xmin, int xmax, int ymin, int ymax),
+		*subimage_fromplist(fieldstruct *field, fieldstruct *wfield,
 			objstruct *obj, pliststruct *plist),
 		*subimage_getall(fieldstruct **fields, fieldstruct **wfields,
 				int nfield, obj2struct *obj2),

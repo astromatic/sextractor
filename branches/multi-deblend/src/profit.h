@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		05/06/2014
+*	Last modified:		09/06/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -252,7 +252,7 @@ typedef struct subprofit
 /*----------------------------- Global variables ----------------------------*/
 /*-------------------------------- functions --------------------------------*/
 
-profitstruct	*profit_init(obj2struct *obj, subimagestruct *subimage,
+profitstruct	*profit_init(objstruct *obj, subimagestruct *subimage,
 			int nsubimage, unsigned int modeltype, int conv_flag);
 
 profstruct	*prof_init(profitstruct *profit, unsigned int modeltype);
@@ -306,7 +306,7 @@ void		prof_end(profstruct *prof),
 		profit_resetparam(profitstruct *profit, paramenum paramtype),
 		profit_resetparams(profitstruct *profit),
 		profit_spread(profitstruct *profit,  fieldstruct *field,
-			fieldstruct *wfield, obj2struct *obj2),
+			fieldstruct *wfield, objstruct *obj),
 		subprofit_submodpix(subprofitstruct *subprofitmod,
 			PIXTYPE *pixout, int ix, int iy, int width, int height,
 			float oversamp, float fac),

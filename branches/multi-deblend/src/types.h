@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		14/05/2014
+*	Last modified:		09/06/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -132,7 +132,10 @@ typedef struct
   float		mthresh;		       	/* max. threshold (ADU) */
   int		iso[NISO];			/* isophotal areas */
   float		fwhm;				/* IMAGE FWHM */
-  profitstruct	*profit;			/* Pointer to fitted model */
+  struct profit	*profit;			/* Pointer to fitted model */
+  struct obj2	*obj2;				/* Pointer to measurements */
+  int		done_flag;			/* measurements complete ?*/
+  int		writable_flag;			/* to be written to catalog?*/
   }	objstruct;
 
 /* II: "BLIND" parameters */
@@ -143,8 +146,6 @@ typedef struct obj2
   struct subimage	*subimage;		/* Array of sub-images */
   int		nsubimage;			/* nb of sub-images */
 /* ---- basic parameters */
-  int		done_flag;			/* measurements complete ?*/
-  int		writable_flag;			/* to be written to catalog?*/
   int		number;				/* ID */
   int		fdnpix;				/* nb of extracted pix */
   int		dnpix;				/* nb of pix above thresh  */
@@ -553,51 +554,34 @@ typedef struct obj2
   short		ext_number;			/* FITS extension number */
 /* ---- Time ---- */
   float		analtime;			/* Analysis time (s) */
-  keystruct	*keys;				/* Pointer to catalog keys */
   }	obj2struct;
-
-/*----------------------------- lists of objects ----------------------------*/
-typedef struct
-  {
-  obj2struct	*obj2;			/* pointer to the object array */
-  obj2struct	*freeobj2;		/* pointer to the first free obj2 */
-  int		nobj2;			/* number of objects in list */
-  int		nkeys;			/* number of keys per obj2 */
-  }	obj2liststruct;
-
-typedef struct
-  {
-  obj2struct	*obj2;			/* pointer to the first object */
-  struct subimage	*subimage;	/* Detection sub-image */
-  int		done_flag;		/* Set if group ready to save */  
-  }	obj2groupstruct;
-
 
 /*-------------------------------- catalog  ---------------------------------*/
 
 typedef struct
   {
-  int		ndetect;				/* nb of detections */
-  int		ntotal;					/* Total object nb */
-  int		ntotalsum;				/* Sum of all objects */
-  int		nline;					/* Number of lines */
-  int		nlinesum;				/* Sum of all lines */
-  int		nblend;					/* Number of blends */
-  int		nparam;					/* Nb of parameters */
-  obj2liststruct	*obj2list;			/* List of objects */
-  int		nobj2;					/* Nb of obj2's */
+  int		ndetect;			/* nb of detections */
+  int		ntotal;				/* Total object nb */
+  int		ntotalsum;			/* Sum of all objects */
+  int		nline;				/* Number of lines */
+  int		nlinesum;			/* Sum of all lines */
+  int		nblend;				/* Number of blends */
+  int		nparam;				/* Nb of parameters */
+  keystruct	*key;				/// Catalog key array (columns)
+  keystruct	*curkey;			/// Current keys
+  int		nkey;				/// Nb of catalog keys
 /*----- Misc. strings defining the extraction */
-  char		prefs_name[MAXCHAR];			/* Prefs filename*/
-  char		image_name[MAXCHAR];			/* image filename*/
-  char		psf_name[MAXCHAR];			/* PSF filename*/
-  char		nnw_name[MAXCHAR];			/* NNW name */
-  char		filter_name[MAXCHAR];			/* Filter name */
-  char		soft_name[MAXCHAR];			/* Sextractor version*/
+  char		prefs_name[MAXCHAR];		/* Prefs filename*/
+  char		image_name[MAXCHAR];		/* image filename*/
+  char		psf_name[MAXCHAR];		/* PSF filename*/
+  char		nnw_name[MAXCHAR];		/* NNW name */
+  char		filter_name[MAXCHAR];		/* Filter name */
+  char		soft_name[MAXCHAR];		/* Sextractor version*/
 /*----- time */
-  char		ext_date[16],ext_time[16];		/* date and time */
-  double	ext_elapsed;				/* processing time */
+  char		ext_date[16],ext_time[16];	/* date and time */
+  double	ext_elapsed;			/* processing time */
 /*----- MEF */
-  int		currext;				/* current extension */
-  int		next;					/* Nb of extensions */
+  int		currext;			/* current extension */
+  int		next;				/* Nb of extensions */
   }		sexcatstruct;
 
