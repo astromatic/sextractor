@@ -399,7 +399,7 @@ dthresh = field->dthresh;
 
 
 /****** analyse_final *******************************************************
-PROTO	void analyse_final2(fieldstruct **fields, fieldstruct **wfields,
+PROTO	void analyse_final(fieldstruct **fields, fieldstruct **wfields,
 			int nfield, objliststruct *objlist)
 PURPOSE Do the final analysis based on a list of detections and a detection
 	index.

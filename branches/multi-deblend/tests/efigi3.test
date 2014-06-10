@@ -1,0 +1,7 @@
+#! /bin/sh
+# Copyright (C) 2007 Emmanuel Bertin.
+#
+# Basic test using 2D psf-file for convolution. It should be noted that the
+# PSF file was done for a different instrument and does not provide a good
+# result for the detection. Hence this is just some kind of  run test.
+../src/sex galaxies.fits -CATALOG_NAME galaxies3.cat -FILTER_NAME xyPSF.psf
