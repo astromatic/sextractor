@@ -1,0 +1,5 @@
+#! /bin/sh
+# Copyright (C) 2007 Emmanuel Bertin.
+#
+# the basic test "efigi1.test", here with a weight image
+../src/sex galaxies.fits -WEIGHT_IMAGE galaxies.weight.fits -WEIGHT_TYPE MAP_WEIGHT -CATALOG_NAME galaxies4.cat

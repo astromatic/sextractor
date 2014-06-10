@@ -45,7 +45,7 @@ typedef struct
   objstruct	*obj;			/* pointer to the object array */
   int		npix;			/* number of pixels in pixel-list */
   struct subimage	*subimage;	/* Array of sub-images */
-  struct plist	*plist;			/* pointer to the pixel-list */
+  pliststruct	*plist;			/* pointer to the pixel-list */
   PIXTYPE	dthresh;		/* detection threshold */
   PIXTYPE	thresh;			/* analysis threshold */
   int		done_flag;		/* Set if objs are ready to save */  

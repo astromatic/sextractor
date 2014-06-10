@@ -26,10 +26,6 @@
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-#ifndef _OBJLIST_H_
-#include "objlist.h"
-#endif
-
 #ifndef _PLIST_H_
 #define _PLIST_H_
 

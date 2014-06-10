@@ -1073,6 +1073,7 @@ OUTPUT	-.
 NOTES	Requires access to global prefs and the objtab static pointer.
 AUTHOR	E. Bertin (IAP)
 VERSION	09/06/2014
+TODO	Check those static keystructs
  ***/
 void	catout_writeobj(objstruct *obj)
   {
