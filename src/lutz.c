@@ -2,7 +2,7 @@
 * @file		lutz.c
 * @brief	Lutz (1980) algorithm to extract connected pixels from an image
 		raster.
-* @date		04/06/2014
+* @date		10/06/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 *
@@ -58,7 +58,7 @@ NOTES	Global preferences are used.
 AUTHOR	E. Bertin (IAP)
 TODO    Check propagation of flags,
 	check cscan management.
-VERSION	09/06/2014
+VERSION	10/06/2014
  ***/
 objliststruct	*lutz_subextract(subimagestruct *subimage, PIXTYPE thresh,
 			int xmin, int xmax, int ymin, int ymax) {
@@ -81,8 +81,8 @@ objliststruct	*lutz_subextract(subimagestruct *subimage, PIXTYPE thresh,
 			inewsymbol, i;
 
 
-  wminus1 = subimage->field->width-1;
-  hminus1 = subimage->field->height-1;
+  wminus1 = subimage->field->width - 1 - xmin;
+  hminus1 = subimage->field->height - 1;
   subw = xmax - xmin;				// Sub-subimage width
   subh = ymax - ymin;				// Sub-subimage height
   scansize = subw + 1;				// Sub-subimage scan size
@@ -135,31 +135,31 @@ objliststruct	*lutz_subextract(subimagestruct *subimage, PIXTYPE thresh,
   co = pstop = 0;
   curpixinfo.pixnb = 1;
 
-  for (yl=ymin; yl<=ymax; yl++, cscan += step, scan += imsize)
+  for (yl=0; yl<=subh; yl++, cscan += step, scan += imsize)
     {
     ps = COMPLETE;
     cs = NONOBJECT;
-    trunflag =  (yl==0 || yl==hminus1) ? OBJ_TRUNC : 0;
-    if (yl==ymax)
+    trunflag =  (yl==-ymin || yl==hminus1) ? OBJ_TRUNC : 0;
+    if (yl==subh)
       cscan = scan = dscan;
 
-    for (xl=xmin; xl<=xmax; xl++)
+    for (xl=0; xl<=subw; xl++)
       {
       newmarker = marker[xl];
       marker[xl] = 0;
-      cnewsymbol = (xl==xmax)? -BIG : *(cscan++);
+      cnewsymbol = (xl==subw)? -BIG : *(cscan++);
 
       curpixinfo.flag = trunflag;
       luflag =  (cnewsymbol > thresh);
 
       if (luflag)
         {
-        if (xl==0 || xl==wminus1)
+        if (xl==-xmin || xl==wminus1)
           curpixinfo.flag |= OBJ_TRUNC;
         PLIST(pixel, nextpix) = -1;
-        PLIST(pixel, x) = xl;
-        PLIST(pixel, y) = yl;
-        PLIST(pixel, value) = scan[xl - xmin];
+        PLIST(pixel, x) = xl + xmin;
+        PLIST(pixel, y) = yl + ymin;
+        PLIST(pixel, value) = scan[xl];
         if (PLISTEXIST(cvalue))
           PLISTPIX(pixel, cvalue) = cnewsymbol;
         curpixinfo.lastpix = curpixinfo.firstpix = cn;
