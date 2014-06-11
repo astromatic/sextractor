@@ -744,15 +744,16 @@ INPUT	Pointer to an array of image field pointers,
 OUTPUT	-.
 NOTES	Global preferences are used.
 AUTHOR	E. Bertin (IAP)
-VERSION	09/06/2014
+VERSION	11/06/2014
  ***/
 void	scan_output(fieldstruct **fields, fieldstruct **wfields, int nfield,
-		infostruct *info, objliststruct *objlist)
+		infostruct *info, pliststruct *plist)
   {
    fieldstruct		*field, *wfield;
-   objliststruct	objlistd, *objlistout, *overobjlist;
-   static objstruct	obj;
-   objstruct		*cobj, *vobj;
+   objliststruct	*objlistout, *overobjlist,
+			objlistd, newobjlist;
+   objstruct		newobj;
+   objstruct		*obj, *vobj;
    int 			i,j,n,o;
 
   field = fields[0];
@@ -764,18 +765,18 @@ void	scan_output(fieldstruct **fields, fieldstruct **wfields, int nfield,
 
 /*----- Allocate memory to store object data */
 
-  objlist->obj = &obj;
-  objlist->nobj = 1;
+  newobjlist.obj = &newobj;
+  newobjlist.nobj = 1;
 
-  memset(&obj, 0, (size_t)sizeof(objstruct));
-  objlist->npix = info->pixnb;
-  obj.firstpix = info->firstpix;
-  obj.lastpix = info->lastpix;
-  obj.flag = info->flag;
-  obj.dthresh = objlist->dthresh;
-  obj.thresh = objlist->thresh;
+  memset(&newobj, 0, (size_t)sizeof(objstruct));
+  newobj.firstpix = info->firstpix;
+  newobj.lastpix = info->lastpix;
+  newobj.flag = info->flag;
+  newobjlist.npix = info->pixnb;
+  newobj.dthresh = field->dthresh;
+  newobj.thresh = field->thresh;
 
-  scan_preanalyse(objlist, 0, ANALYSE_FAST);
+  scan_preanalyse(&newobj, plist, ANALYSE_FAST);
 
 /*----- Check if the current strip contains the lower isophote... */
   if ((int)obj.ymin < field->ymin)
@@ -804,23 +805,23 @@ void	scan_output(fieldstruct **fields, fieldstruct **wfields, int nfield,
   ++thecat.nblend;			/* Parent blend index */
   for (o=0; o<objlistout->nobj; o++)
     {
+    obj = objlistout->obj + o;
 /*-- Basic measurements */
-    scan_preanalyse(objlistout, o, ANALYSE_FULL|ANALYSE_ROBUST);
+    scan_preanalyse(obj, objlistout->plist, ANALYSE_FULL|ANALYSE_ROBUST);
     if (prefs.ext_maxarea && objlistout->obj[o].fdnpix > prefs.ext_maxarea)
       continue; 
-    cobj = objlistout->obj + o;
-    cobj->number = ++thecat.ndetect;
-    cobj->blend = thecat.nblend;
+    obj->number = ++thecat.ndetect;
+    obj->blend = thecat.nblend;
 /*--- Isophotal measurements */
     analyse_iso(fields, wfields, nfield, objlistout, o);
     if (prefs.blank_flag)
       {
-      if (!(cobj->isoimage = subimage_fromplist(field, wfield, cobj,
+      if (!(obj->isoimage = subimage_fromplist(field, wfield, obj,
 		objlistout->plist)))
         {
 /*------ Not enough mem. for the BLANKing isoimage: flag the object now */
-        cobj->flag |= OBJ_OVERFLOW;
-        sprintf(gstr, "%.0f,%.0f", cobj->mx+1, cobj->my+1);
+        obj->flag |= OBJ_OVERFLOW;
+        sprintf(gstr, "%.0f,%.0f", obj->mx+1, obj->my+1);
         warning("Memory overflow during masking for detection at ", gstr);
         }
       }
@@ -865,8 +866,8 @@ void	scan_output(fieldstruct **fields, fieldstruct **wfields, int nfield,
       }
 
 /*-- Add the object only if it is not "swallowed" by cleaning */
-    if (!prefs.clean_flag || clean_process(field, cobj))
-      clean_add(cobj);
+    if (!prefs.clean_flag || clean_process(field, obj))
+      clean_add(obj);
     }
 
   free(objlistd.plist);
@@ -876,22 +877,17 @@ void	scan_output(fieldstruct **fields, fieldstruct **wfields, int nfield,
   }
 
 
-/****** scan_preanalyse ******************************************************
-PROTO   void scan_preanalyse(objliststruct *objlist, int no, int analyse_type)
-PURPOSE Compute basic image parameters from the pixel-list for each detection.
-INPUT   Objlist pointer,
-	objlist number,
-        analysis switch flag.
-OUTPUT  -.
-NOTES   -.
-AUTHOR  E. Bertin (IAP)
-VERSION 15/02/2012
+/****** scan_preanalyse **************************************************//**
+Compute basic image parameters from the pixel-list for each detection.
+@param[in] obj		Pointer to the object
+@param[in] plist	Pointer to the pixel list
+@param[in] analyse_type	ANALYSE_FAST, ANALYSE_FULL or ANALYSE_ROBUST
+@author 		E. Bertin (IAP)
+@date			11/06/2014
  ***/
-void  scan_preanalyse(objliststruct *objlist, int no, int analyse_type)
+void  scan_preanalyse(objstruct *obj, pliststruct *plist, int analyse_type) {
 
-  {
-   objstruct	*obj = &objlist->obj[no];
-   pliststruct	*pixel = objlist->plist, *pixt;
+   pliststruct	*pixel;
    PIXTYPE	peak, cpeak, val, cval, minthresh, thresht;
    double	thresh,thresh2, t1t2,darea,
 		mx,my, mx2,my2,mxy, rv, tv,
@@ -900,7 +896,7 @@ void  scan_preanalyse(objliststruct *objlist, int no, int analyse_type)
    int		x, y, xmin,xmax, ymin,ymax,area2, fdnpix, dnpix;
   
 
-/*-----  initialize stacks and bounds */
+// Initialize stacks and bounds
   thresh = obj->dthresh;
   if (PLISTEXIST(dthresh))
     minthresh = BIG;
@@ -909,18 +905,18 @@ void  scan_preanalyse(objliststruct *objlist, int no, int analyse_type)
   fdnpix = dnpix = 0;
   rv = 0.0;
   peak = cpeak = -BIG;
-  ymin = xmin = 2*MAXPICSIZE;    /* to be really sure!! */
+  ymin = xmin = 2*MAXPICSIZE;    // to be really sure!!
   ymax = xmax = 0;
 
-/*-----  integrate results */
-  for (pixt=pixel+obj->firstpix; pixt>=pixel; pixt=pixel+PLIST(pixt,nextpix))
-    {
-    x = PLIST(pixt, x);
-    y = PLIST(pixt, y);
-    val=PLISTPIX(pixt, value);
-    if (cpeak < (cval=PLISTPIX(pixt, cvalue)))
+// Integrate results
+  for (pixel = plist + obj->firstpix; pixel >= plist;
+		pixel = plist + PLIST(pixel, nextpix)) {
+    x = PLIST(pixel, x);
+    y = PLIST(pixel, y);
+    val=PLISTPIX(pixel, value);
+    if (cpeak < (cval=PLISTPIX(pixel, cvalue)))
       cpeak = cval;
-    if (PLISTEXIST(dthresh) && (thresht=PLISTPIX(pixt, dthresh))<minthresh)
+    if (PLISTEXIST(dthresh) && (thresht=PLISTPIX(pixel, dthresh))<minthresh)
       minthresh = thresht;
     if (peak < val)
       peak = val;
@@ -934,12 +930,12 @@ void  scan_preanalyse(objliststruct *objlist, int no, int analyse_type)
     if (ymax < y)
       ymax = y;
     fdnpix++;
-    }    
+  }    
 
   if (PLISTEXIST(dthresh))
     obj->dthresh = thresh = minthresh;
 
-/* copy some data to "obj" structure */
+// Copy some data to "obj" structure
 
   obj->fdnpix = (LONG)fdnpix;
   obj->fdflux = (float)rv;
@@ -949,18 +945,17 @@ void  scan_preanalyse(objliststruct *objlist, int no, int analyse_type)
   obj->ymin = ymin;
   obj->ymax = ymax;
 
-  if (analyse_type & ANALYSE_FULL)
-    {
+  if (analyse_type & ANALYSE_FULL) {
     mx = my = tv = 0.0;
     mx2 = my2 = mxy = 0.0;
     thresh2 = (thresh + peak)/2.0;
     area2 = 0;
-    for (pixt=pixel+obj->firstpix; pixt>=pixel; pixt=pixel+PLIST(pixt,nextpix))
-      {
-      x = PLIST(pixt,x)-xmin;	/* avoid roundoff errors on big images */
-      y = PLIST(pixt,y)-ymin;	/* avoid roundoff errors on big images */
-      cval = PLISTPIX(pixt, cvalue);
-      tv += (val = PLISTPIX(pixt, value));
+    for (pixel = plist + obj->firstpix; pixel >= plist;
+		pixel = plist + PLIST(pixel, nextpix)) {
+      x = PLIST(pixel, x) - xmin;	// avoid roundoff errors on big images
+      y = PLIST(pixel, y) - ymin;
+      cval = PLISTPIX(pixel, cvalue);
+      tv += (val = PLISTPIX(pixel, value));
       if (val>thresh)
         dnpix++;
       if (val > thresh2)
@@ -970,15 +965,14 @@ void  scan_preanalyse(objliststruct *objlist, int no, int analyse_type)
       mx2 += cval * x*x;
       my2 += cval * y*y;
       mxy += cval * x*y;
-      }
+    }
 
-/*----- compute object's properties */
-    xm = mx / rv;			/* mean x */
-    ym = my / rv;			/* mean y */
+//-- Compute object properties
+    xm = mx / rv;		// mean x
+    ym = my / rv;		// mean y
 
-/*-- In case of blending, use previous barycenters */
-    if ((analyse_type&ANALYSE_ROBUST) && (obj->flag&OBJ_MERGED))
-      {
+//-- In case of blending, use previous barycenters
+    if ((analyse_type&ANALYSE_ROBUST) && (obj->flag&OBJ_MERGED)) {
        double	xn,yn;
 
       xn = obj->mx-xmin;
@@ -988,23 +982,19 @@ void  scan_preanalyse(objliststruct *objlist, int no, int analyse_type)
       xym = mxy / rv + xn*yn - xm*yn - xn*ym;
       xm = xn;
       ym = yn;
-      }
-    else
-      {
-      xm2 = mx2 / rv - xm * xm;	/* variance of x */
-      ym2 = my2 / rv - ym * ym;	/* variance of y */
-      xym = mxy / rv - xm * ym;	/* covariance */
-      }
+    } else {
+      xm2 = mx2 / rv - xm * xm;	// variance of x
+      ym2 = my2 / rv - ym * ym;	// variance of y
+      xym = mxy / rv - xm * ym;	// covariance
+    }
 
-/* Handle fully correlated x/y (which cause a singularity...) */
-    if ((temp2=xm2*ym2-xym*xym)<0.00694)
-      {
+//-- Handle fully correlated x/y (which cause a singularity...)
+    if ((temp2=xm2*ym2-xym*xym)<0.00694) {
       xm2 += 0.0833333;
       ym2 += 0.0833333;
       temp2 = xm2*ym2-xym*xym;
       obj->singuflag = 1;
-      }
-    else
+    } else
       obj->singuflag = 0;
 
     if ((fabs(temp=xm2-ym2)) > 0.0)
@@ -1017,9 +1007,9 @@ void  scan_preanalyse(objliststruct *objlist, int no, int analyse_type)
     pmx2+=temp;
     pmy2-=temp;
 
-    obj->dnpix = (obj->flag & OBJ_OVERFLOW)? obj->fdnpix:(LONG)dnpix;
-    obj->mx = xm+xmin;	/* add back xmin */
-    obj->my = ym+ymin;	/* add back ymin */
+    obj->dnpix = (obj->flag & OBJ_OVERFLOW)? obj->fdnpix : (LONG)dnpix;
+    obj->mx = xm + xmin;	// add back xmin
+    obj->my = ym + ymin;	// add back ymin
     obj->mx2 = xm2;
     obj->my2 = ym2;
     obj->mxy = xym;
@@ -1033,17 +1023,15 @@ void  scan_preanalyse(objliststruct *objlist, int no, int analyse_type)
 
     darea = (double)area2 - dnpix;
     t1t2 = thresh/thresh2;
-    if (t1t2>0.0)
-      {
+    if (t1t2>0.0) {
       obj->abcor = (darea<0.0?darea:-1.0)/(2*PI*log(t1t2<1.0?t1t2:0.99)
 	*obj->a*obj->b);
       if (obj->abcor>1.0)
         obj->abcor = 1.0;
-      }
-    else
+    } else
       obj->abcor = 1.0;
-    }
+  }
 
   return;
-  }
+}
 

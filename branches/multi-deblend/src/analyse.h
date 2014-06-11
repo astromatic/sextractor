@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		09/06/2014
+*	Last modified:		11/06/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -35,7 +35,6 @@
 
 /*----------------------------- Internal constants --------------------------*/
 
-#define	ANALYSE_NOVERLAP	16	/* initial nb of objs in overlaps */
 #define	ANALYSE_NMULTITER	10	/* number of multi-model iterations */
 
 /*--------------------------------- typedefs --------------------------------*/

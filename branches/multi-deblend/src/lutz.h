@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		09/06/2014
+*	Last modified:		11/06/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -57,11 +57,12 @@ typedef struct structinfo
   }       infostruct;
 
 /*------------------------------- functions ---------------------------------*/
-void		lutz_output(infostruct *info, objliststruct *objlist),
-		lutz_update(infostruct *infoptr1, infostruct *infoptr2,
-			pliststruct *pixel);
-
 objliststruct	*lutz_subextract(subimagestruct *subimage, PIXTYPE thresh,
 			int xmin, int xmax, int ymin, int ymax);
+
+int		lutz_output(infostruct *info, objliststruct *objlist);
+
+void		lutz_update(infostruct *infoptr1, infostruct *infoptr2,
+			pliststruct *pixel);
 
 #endif

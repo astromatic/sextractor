@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		09/06/2014
+*	Last modified:		11/06/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -50,12 +50,6 @@
 
 #define		OBJ_LOWWEIGHT	0x0001
 #define		OBJ_LOWDWEIGHT	0x0002
-
-/*---------------------------- preanalyse flags -----------------------------*/
-
-#define		ANALYSE_FAST		0
-#define		ANALYSE_FULL		1
-#define		ANALYSE_ROBUST		2
 
 /*--------------------------------- typedefs --------------------------------*/
 typedef	unsigned char	BYTE;			/* a byte */

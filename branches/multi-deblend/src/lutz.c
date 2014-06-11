@@ -2,7 +2,7 @@
 * @file		lutz.c
 * @brief	Lutz (1980) algorithm to extract connected pixels from an image
 		raster.
-* @date		10/06/2014
+* @date		11/06/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 *
@@ -37,6 +37,7 @@
 #include	"globals.h"
 #include	"prefs.h"
 #include	"lutz.h"
+#include	"objlist.h"
 #include	"plist.h"
 #include	"scan.h"
 
@@ -49,16 +50,15 @@ PURPOSE	C implementation of R.K LUTZ' algorithm for the extraction of
 INPUT	Pointer to sub-image,
 	detection threshold,
 	minimum x pixel coordinate,
-	maximum x pixel coordinate,
+	maximum x pixel coordinate (+1),
 	minimum y pixel coordinate,
-	maximumy pixel coordinate.
+	maximum y pixel coordinate (+1).
 OUTPUT	Pointer to the objlist if no memory allocation problem occured,
 	NULL otherwise.
 NOTES	Global preferences are used.
 AUTHOR	E. Bertin (IAP)
-TODO    Check propagation of flags,
-	check cscan management.
-VERSION	10/06/2014
+TODO    Check propagation of flags.
+VERSION	11/06/2014
  ***/
 objliststruct	*lutz_subextract(subimagestruct *subimage, PIXTYPE thresh,
 			int xmin, int xmax, int ymin, int ymax) {
@@ -82,7 +82,7 @@ objliststruct	*lutz_subextract(subimagestruct *subimage, PIXTYPE thresh,
 
 
   wminus1 = subimage->field->width - 1 - xmin;
-  hminus1 = subimage->field->height - 1;
+  hminus1 = subimage->field->height - 1 - ymin;
   subw = xmax - xmin;				// Sub-subimage width
   subh = ymax - ymin;				// Sub-subimage height
   scansize = subw + 1;				// Sub-subimage scan size
@@ -111,6 +111,7 @@ objliststruct	*lutz_subextract(subimagestruct *subimage, PIXTYPE thresh,
   cscan = (subimage->fimage? subimage->fimage : subimage->image)
 	+ (ymin - subimage->xmin[1])*imsize
 	+ (xmin - subimage->xmin[0]);
+
 // As we only analyse a fraction of the subimage, a step occurs between lines
   step = imsize - subw;
 
@@ -135,7 +136,7 @@ objliststruct	*lutz_subextract(subimagestruct *subimage, PIXTYPE thresh,
   co = pstop = 0;
   curpixinfo.pixnb = 1;
 
-  for (yl=0; yl<=subh; yl++, cscan += step, scan += imsize)
+  for (yl=0; yl<=subh; yl++, cscan += imsize, scan += imsize)
     {
     ps = COMPLETE;
     cs = NONOBJECT;
@@ -147,7 +148,7 @@ objliststruct	*lutz_subextract(subimagestruct *subimage, PIXTYPE thresh,
       {
       newmarker = marker[xl];
       marker[xl] = 0;
-      cnewsymbol = (xl==subw)? -BIG : *(cscan++);
+      cnewsymbol = (xl==subw)? -BIG : scan[xl];
 
       curpixinfo.flag = trunflag;
       luflag =  (cnewsymbol > thresh);
@@ -229,17 +230,11 @@ objliststruct	*lutz_subextract(subimagestruct *subimage, PIXTYPE thresh,
             {
           if (start[co] == UNKNOWN)
               {
-              if ((int)info[co].pixnb >= minarea)
+              if ((int)info[co].pixnb >= minarea
+                && lutz_output(&info[co], objlist) != RETURN_OK)
                 {
-                if (objlist->nobj>=nobjm)
-                  if (!(objlist->obj = (objstruct *)
-  			realloc(objlist->obj,
-			(nobjm+=nobjm/2)* sizeof(objstruct))))
-                    {
-                    out = RETURN_FATAL_ERROR;
-                    goto exit_lutz;
-                    }
-                lutz_output(&info[co], objlist);
+                out = RETURN_FATAL_ERROR;
+                goto exit_lutz;
                 }
               }
             else
@@ -350,7 +345,7 @@ void	lutz_update(infostruct *infoptr1, infostruct *infoptr2,
 
 
 /****** lutz_output **********************************************************
-PROTO	void lutz_output(infostruct *info, objliststruct *objlist)
+PROTO	int lutz_output(infostruct *info, objliststruct *objlist)
 PURPOSE	Convert an output detection to a new (sub-)object.
 INPUT	-.
 OUTPUT	-.
@@ -361,21 +356,19 @@ VERSION	15/03/2012
 /*
 Build the object structure.
 */
-void  lutz_output(infostruct *info, objliststruct *objlist)
+int  lutz_output(infostruct *info, objliststruct *objlist)
 
   {
-  objstruct  *obj = objlist->obj+objlist->nobj;
+   objstruct	obj;
 
-  memset(obj, 0, (size_t)sizeof(objstruct));
-  obj->firstpix = info->firstpix;
-  obj->lastpix = info->lastpix;
-  obj->flag = info->flag;
+  memset(&obj, 0, (size_t)sizeof(objstruct));
+  obj.firstpix = info->firstpix;
+  obj.lastpix = info->lastpix;
+  obj.flag = info->flag;
   objlist->npix += info->pixnb;
 
-  scan_preanalyse(objlist, objlist->nobj, ANALYSE_FAST);
+  scan_preanalyse(&obj, objlist->plist, ANALYSE_FAST);
 
-  objlist->nobj++;
-
-  return;
+  return objlist_addobj(objlist, &obj);
   }
 

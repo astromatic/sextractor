@@ -1,7 +1,7 @@
 /**
 * @file		objlist.c
 * @brief	Manage object lists (e.g., for advanced deblending)
-* @date		09/06/2014
+* @date		11/06/2014
 * @copyright
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 *
@@ -38,29 +38,18 @@
 #include	"prefs.h"
 #include	"fits/fitscat.h"
 #include	"analyse.h"
-#include	"back.h"
 #include	"catout.h"
 #include	"clean.h"
 #include	"check.h"
-#include	"assoc.h"
-#include	"astrom.h"
 #include	"plist.h"
-#include	"flag.h"
-#include	"graph.h"
-#include	"growth.h"
 #include	"image.h"
 #include	"lutz.h"
 #include	"misc.h"
-#include	"neurro.h"
 #include	"objlist.h"
-#include	"photom.h"
-#include	"psf.h"
 #include	"profit.h"
-#include	"retina.h"
-#include	"som.h"
+#include	"scan.h"
 #include	"subimage.h"
 #include	"weight.h"
-#include	"winpos.h"
 
 #ifdef USE_THREADS
 #include	"threads.h"
@@ -272,7 +261,7 @@ objliststruct	*objlist_deblend(fieldstruct **fields, fieldstruct **wfields,
 
 // Find overlapping detections and link them
   overobjlist = objlist_overlap(objlist, objlist->obj + objindex);
-
+return overobjlist;
   xmax = ymax = -(xmin = ymin = 0x7FFFFFFF);	// largest signed 32-bit int
   obj = overobjlist->obj;
   blend = obj->blend;				// Keep note of the blend index
@@ -349,7 +338,7 @@ objliststruct	*objlist_deblend(fieldstruct **fields, fieldstruct **wfields,
 			ymin, ymax);
     obj = newobjlist->obj;
     for (o=0; o<newobjlist->nobj; o++, obj++) {
-      scan_preanalyse(newobjlist, o, ANALYSE_FULL|ANALYSE_ROBUST);
+      scan_preanalyse(obj, objlist->plist, ANALYSE_FULL|ANALYSE_ROBUST);
       if (prefs.ext_maxarea && obj->fdnpix > prefs.ext_maxarea)
         continue; 
       obj->number = ++thecat.ndetect;
@@ -393,7 +382,7 @@ from the input list.
 @param[in] fobj		Pointer to object
 
 @author 		E. Bertin (IAP)
-@date			09/06/2014
+@date			11/06/2014
 @todo	The selection algorithm is currently very basic and inefficient.
  ***/
 objliststruct *objlist_overlap(objliststruct *objlist, objstruct *fobj) {
@@ -401,8 +390,6 @@ objliststruct *objlist_overlap(objliststruct *objlist, objstruct *fobj) {
    objstruct		*obj;
    int			i, blend, nobj;
 
-  QMALLOC(overobjlist, objliststruct, 1);
-  QMALLOC(overobjlist->obj, objstruct, ANALYSE_NOVERLAP);
   overobjlist = objlist_new();
   nobj = objlist->nobj;
   obj = objlist->obj;
