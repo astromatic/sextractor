@@ -2,7 +2,7 @@
 * @file		lutz.c
 * @brief	Lutz (1980) algorithm to extract connected pixels from an image
 		raster.
-* @date		11/06/2014
+* @date		24/06/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 *
@@ -58,7 +58,7 @@ OUTPUT	Pointer to the objlist if no memory allocation problem occured,
 NOTES	Global preferences are used.
 AUTHOR	E. Bertin (IAP)
 TODO    Check propagation of flags.
-VERSION	11/06/2014
+VERSION	24/06/2014
  ***/
 objliststruct	*lutz_subextract(subimagestruct *subimage, PIXTYPE thresh,
 			int xmin, int xmax, int ymin, int ymax) {
@@ -76,8 +76,8 @@ objliststruct	*lutz_subextract(subimagestruct *subimage, PIXTYPE thresh,
 			cnewsymbol;
    int			*start, *end,
 			wminus1,hminus1, subw,subh,scansize, imsize,
-			cn, co, luflag, objnb, pstop, xl,xl2,yl,
-			out, minarea, step, nobjm,
+			cn, co, luflag, pstop, xl,xl2,yl,
+			out, minarea, step,
 			inewsymbol, i;
 
 
@@ -117,12 +117,6 @@ objliststruct	*lutz_subextract(subimagestruct *subimage, PIXTYPE thresh,
 
 // Allocate memory to store object data */
   objlist = objlist_new();
-  nobjm = NSUBOBJ_START;
-  if (!(objlist->obj=(objstruct *)malloc(nobjm*sizeof(objstruct))))
-    {
-    out = RETURN_FATAL_ERROR;
-    goto exit_lutz;
-    }
 
 // Allocate memory for the pixel list */
   if (!(objlist->plist = (pliststruct *)malloc(subw*subh*plistsize)))
@@ -132,7 +126,6 @@ objliststruct	*lutz_subextract(subimagestruct *subimage, PIXTYPE thresh,
     }
 
   pixel = plist = objlist->plist;
-  objnb = objlist->nobj = 0;
   co = pstop = 0;
   curpixinfo.pixnb = 1;
 
@@ -288,11 +281,13 @@ exit_lutz:
 
   if (out == RETURN_OK) {
     if (objlist->nobj) {
+      objlist->nobjmax = objlist->nobj;
       if (!(objlist->obj=(objstruct *)realloc(objlist->obj,
-		objlist->nobj*sizeof(objstruct))))
+		objlist->nobjmax*sizeof(objstruct))))
         error(EXIT_FAILURE,"problem with mem. realloc. in lutz()","");
     } else {
       free(objlist->obj);
+      objlist->nobjmax = 0;
       objlist->obj = NULL;
       }
     if (cn) {
@@ -310,55 +305,41 @@ exit_lutz:
 }
 
 
-/****** lutz_update **********************************************************
-PROTO	void lutz_update(infostruct *infoptr1, infostruct *infoptr2,
-		pliststruct *pixel)
-PURPOSE	Update the properties of a detection each time one of its pixels is
-	scanned.
-INPUT	Pointer to detection info,
-	pointer to pointer to new object info,
-	pointer to pixel list.
-OUTPUT	-.
-NOTES	-.
-AUTHOR	E. Bertin (IAP)
-VERSION	15/03/2012
+/****** lutz_update ******************************************************//**
+Update basic detection properties based on new pixel information
+@param[in] infoout	Pointer to the destination detection info
+@param[in] infoin	Pointer to the source detection info
+@param[in] pixel	Pointer to the new pixel
+@author 		E. Bertin (IAP)
+@date			24/06/2014
  ***/
-void	lutz_update(infostruct *infoptr1, infostruct *infoptr2,
-		pliststruct *pixel)
+void	lutz_update(infostruct *infoout, infostruct *infoin,
+			pliststruct *pixel) {
 
-  {
-  infoptr1->pixnb += infoptr2->pixnb;
-  infoptr1->flag |= infoptr2->flag;
-  if (infoptr1->firstpix == -1)
-    {
-    infoptr1->firstpix = infoptr2->firstpix;
-    infoptr1->lastpix = infoptr2->lastpix;
-    }
-  else if (infoptr2->lastpix != -1)
-    {
-    PLIST(pixel+infoptr1->lastpix, nextpix) = infoptr2->firstpix;
-    infoptr1->lastpix = infoptr2->lastpix;
-    }
-
-  return;
+  infoout->pixnb += infoin->pixnb;
+  infoout->flag |= infoin->flag;
+  if (infoout->firstpix == -1) {
+    infoout->firstpix = infoin->firstpix;
+    infoout->lastpix = infoin->lastpix;
+  } else if (infoout->lastpix != -1) {
+    PLIST(pixel + infoout->lastpix, nextpix) = infoin->firstpix;
+    infoout->lastpix = infoin->lastpix;
   }
 
+  return;
+}
 
-/****** lutz_output **********************************************************
-PROTO	int lutz_output(infostruct *info, objliststruct *objlist)
-PURPOSE	Convert an output detection to a new (sub-)object.
-INPUT	-.
-OUTPUT	-.
-NOTES	Global preferences are used.
-AUTHOR	E. Bertin (IAP)
-VERSION	15/03/2012
+
+/****** lutz_output ******************************************************//**
+Convert a basic detection to a new object in the provided objlist
+@param[in]  info	Pointer to the input detection info
+@param[in]  objlist	Pointer to the destination objlist
+@param[out] RETURN_OK, or RETURN_ERROR / RETURN_FATAL_ERROR in case of a problem
+@author 		E. Bertin (IAP)
+@date			24/06/2014
  ***/
-/*
-Build the object structure.
-*/
-int  lutz_output(infostruct *info, objliststruct *objlist)
+int  lutz_output(infostruct *info, objliststruct *objlist) {
 
-  {
    objstruct	obj;
 
   memset(&obj, 0, (size_t)sizeof(objstruct));
@@ -369,6 +350,6 @@ int  lutz_output(infostruct *info, objliststruct *objlist)
 
   scan_preanalyse(&obj, objlist->plist, ANALYSE_FAST);
 
-  return objlist_addobj(objlist, &obj);
-  }
+  return objlist_addobj(objlist, &obj, NULL);	// Pixels are already in plist
+}
 

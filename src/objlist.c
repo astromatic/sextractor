@@ -1,7 +1,7 @@
 /**
 * @file		objlist.c
 * @brief	Manage object lists (e.g., for advanced deblending)
-* @date		11/06/2014
+* @date		26/06/2014
 * @copyright
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 *
@@ -88,7 +88,7 @@ Free resources allocated for an objlist
 @param[in] objlist	Pointer to the objlist.
 
 @author 		E. Bertin (IAP)
-@date			09/06/2014
+@date			26/06/2014
  ***/
 void	objlist_end(objliststruct *objlist) {
 
@@ -100,6 +100,7 @@ void	objlist_end(objliststruct *objlist) {
     obj_end(obj);
 
   free(objlist->obj);
+  free(objlist->objindex);
   free(objlist->plist);
 
   if (objlist->subimage) {
@@ -156,23 +157,59 @@ Add an object to an objlist.
 			RETURN_OK otherwise.
 
 @author 		E. Bertin (IAP)
-@date			16/05/2014
+@date			26/06/2014
  ***/
-int	objlist_addobj(objliststruct *objlist, objstruct *obj) {
+int	objlist_addobj(objliststruct *objlist, objstruct *obj,
+		pliststruct *plist) {
 
-// Check if memory (re-)allocation is necessary.
+   objstruct	*objt;
+   pliststruct	*plistt;
+   int		i, j, nobj, npix;
+
+// Check if memory (re-)allocation is necessary for objects
   if (objlist->nobj >= objlist->nobjmax) {
-    objlist->nobjmax += OBJLIST_NOBJMAXINC;
-    if (objlist->nobjmax && !(objlist->obj = (objstruct *)realloc(objlist->obj,
-		objlist->nobjmax * sizeof(objstruct))))
+    nobj = objlist->nobjmax + OBJLIST_NOBJMAXINC;
+    if (objlist->nobj >= nobj)
+      nobj = objlist->nobj;
+
+    if (!(objt = (objlist->nobjmax) ?
+		  (objstruct *)realloc(objlist->obj, nobj * sizeof(objstruct))
+		: (objstruct *)malloc(nobj * sizeof(objstruct))))
       return RETURN_FATAL_ERROR;
-    else if (!(objlist->obj = (objstruct *)malloc(objlist->nobjmax
-	 * sizeof(objstruct))))
-      return RETURN_FATAL_ERROR;
+
+    objlist->obj = objt;
+    objlist->nobjmax = nobj;
   }
 
 // Copy the content of the input object
-  objlist->obj[objlist->nobj] = *obj;
+  objt = objlist->obj + objlist->nobj;
+  *objt = *obj;
+
+// Copy new pixels if requested
+  if (plist && obj->fdnpix) {
+    npix = objlist->npix + obj->fdnpix;
+//-- (Re-)allocate memory for pixels
+
+    if (!(plistt = (objlist->npix) ?
+		  (pliststruct *)realloc(objlist->plist, npix * plistsize)
+		: (pliststruct *)malloc(npix * plistsize)))
+      return RETURN_FATAL_ERROR;
+
+    objlist->plist = plistt;	// Update plist pointer
+    objt->firstpix = j = objlist->npix * plistsize;
+    plistt += j;		// Move to end of current plist
+    for (i = obj->firstpix; i != -1; i = PLIST(plist + i, nextpix)) {
+      memcpy(plistt, plist + i, (size_t)plistsize);
+      PLIST(plistt, nextpix) = (j += plistsize);
+      plistt += plistsize;
+    }
+
+    PLIST(plistt -= plistsize, nextpix) = -1;
+    objt->lastpix = j - plistsize;
+    objlist->npix = npix;
+  }
+
+// Nothing wrong can happen anymore: update number of objects
   objlist->nobj++;
 
   return RETURN_OK;
@@ -195,6 +232,9 @@ int	objlist_subobj(objliststruct *objlist, int objindex) {
 
    int nobjmax;
 
+  if (!(objlist->nobj))
+    return RETURN_ERROR;
+
   if (--objlist->nobj) {
     if (objlist->nobj != objindex)
       objlist->obj[objindex] = objlist->obj[objlist->nobj];
@@ -204,7 +244,7 @@ int	objlist_subobj(objliststruct *objlist, int objindex) {
     if (nobjmax != objlist->nobjmax
 	&& !(objlist->obj = (objstruct *)realloc(objlist->obj,
 	    (objlist->nobjmax = nobjmax) * sizeof(objstruct))))
-      return RETURN_ERROR;
+      return RETURN_FATAL_ERROR;
   } else {
     QFREE(objlist->obj);
     objlist->nobjmax = 0;
@@ -225,12 +265,12 @@ Move an object from an objlist to another.
 			RETURN_OK otherwise.
 
 @author 		E. Bertin (IAP)
-@date			09/06/2014
+@date			24/06/2014
  ***/
 int	objlist_movobj(objliststruct *objlistin, int objindex,
 		objliststruct *objlistout) {
 
-  if (objlist_addobj(objlistout, objlistin->obj + objindex) == RETURN_OK)
+  if (objlist_addobj(objlistout, objlistin->obj + objindex, NULL) == RETURN_OK)
     return objlist_subobj(objlistin, objindex);
   else
     RETURN_ERROR;

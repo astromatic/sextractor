@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		09/06/2014
+*	Last modified:		26/06/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -468,7 +468,8 @@ INPUT	Pointer to an array of image field pointers,
 OUTPUT  New obj2 pointer.
 NOTES   -.
 AUTHOR  E. Bertin (IAP)
-VERSION 09/06/2014
+VERSION 26/06/2014
+TODO	Free memory allocated for bkg, dbkg, etc.
  ***/
 obj2struct	*analyse_obj2obj2(fieldstruct **fields, fieldstruct **wfields,
 			int nfield, objstruct *obj)
@@ -489,6 +490,8 @@ obj2struct	*analyse_obj2obj2(fieldstruct **fields, fieldstruct **wfields,
 /* Allocate memory for other arrays (not catalogue measurements) */
 /* Sky background */
 //  catout_alloobjcother(obj, &flagobj2.diffbkg, prefs.nimage*sizeof(float));
+  catout_allocobjother(obj, &flagobj2.bkg, prefs.nimage*sizeof(float));
+  catout_allocobjother(obj, &flagobj2.dbkg, prefs.nimage*sizeof(float));
   catout_allocobjother(obj, &flagobj2.sigbkg, prefs.nimage*sizeof(float));
 /* Flux combination */
   catout_allocobjother(obj, &flagobj2.cflux, prefs.nphotinstru*sizeof(double));
