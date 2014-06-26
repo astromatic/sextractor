@@ -22,13 +22,18 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		09/06/2014
+*	Last modified:		25/06/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
 #ifndef _OBJLIST_H_
 #include "objlist.h"
 #endif
+
+#ifndef _SUBIMAGE_H_
+#include "subimage.h"
+#endif
+
 
 /*------------------------------ definitions --------------------------------*/
 
@@ -39,13 +44,15 @@
 #define	DEBLEND_NBRANCH		16		/* starting number per branch */
 
 /*------------------------------- functions ---------------------------------*/
-void	deblend_alloc(void),
-	deblend_free(void);
 
-int	deblend_addobj(int objnb, objliststruct *objl1, objliststruct *objl2),
-	deblend_belong(int corenb, objliststruct *coreobjlist,
-	       int shellnb, objliststruct *shellobjlist),
-	deblend_gatherup(objliststruct *objlistin,objliststruct *objlistout),
-	deblend_parcelout(objliststruct *objlistin, objliststruct *objlistout);
+objliststruct	*deblend_parcelout(objstruct *objin, subimagestruct *subimage,
+			pliststruct *plist);
 
+int		deblend_belong(int corenb, objliststruct *coreobjlist,
+			int shellnb, objliststruct *shellobjlist),
+		deblend_gatherup(objliststruct *objlistin,
+			objliststruct *objlistout);
+	
+void		deblend_alloc(void),
+		deblend_free(void);
 

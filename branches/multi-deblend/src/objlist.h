@@ -1,7 +1,7 @@
 /**
 * @file		objlist.h
 * @brief	Include file for objlist.c.
-* @date		09/06/2014
+* @date		25/06/2014
 * @copyright
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 *
@@ -40,15 +40,16 @@
 /*--------------------------------- typedefs --------------------------------*/
 typedef struct
   {
-  int		nobj;			/* number of objects in list */
-  int		nobjmax;		/* number of allocated slots in list */
-  objstruct	*obj;			/* pointer to the object array */
-  int		npix;			/* number of pixels in pixel-list */
-  struct subimage	*subimage;	/* Array of sub-images */
-  pliststruct	*plist;			/* pointer to the pixel-list */
-  PIXTYPE	dthresh;		/* detection threshold */
-  PIXTYPE	thresh;			/* analysis threshold */
-  int		done_flag;		/* Set if objs are ready to save */  
+  objstruct	*obj;			/// pointer to the object array
+  int		nobj;			/// number of objects in list
+  int		nobjmax;		/// number of allocated slots in list
+  int		*objindex;		/// pointer to the object index array
+  pliststruct	*plist;			/// pointer to the pixel-list
+  int		npix;			/// number of pixels in pixel-list
+  struct subimage	*subimage;	/// Array of sub-images
+  PIXTYPE	dthresh;		/// detection threshold
+  PIXTYPE	thresh;			/// analysis threshold
+  int		done_flag;		/// Set if objs are ready to save
   }	objliststruct;
 
 /*------------------------------ Prototypes ---------------------------------*/
@@ -58,7 +59,8 @@ objliststruct	*objlist_deblend(fieldstruct **fields, fieldstruct **wfields,
 		*objlist_new(void),
 		*objlist_overlap(objliststruct *objlist, objstruct *obj);
 
-int		objlist_addobj(objliststruct *objlist, objstruct *obj),
+int		objlist_addobj(objliststruct *objlist, objstruct *obj,
+			pliststruct *plist),
 		objlist_movobj(objliststruct *objlistin, int objindex,
 			objliststruct *objlistout),
 		objlist_subobj(objliststruct *objlist, int objindex);

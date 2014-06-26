@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		09/06/2014
+*	Last modified:		26/06/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -51,8 +51,7 @@ tabstruct	*objtab = NULL;
 keystruct	*obj2curkey;
 FILE		*ascfile;
 char		*buf;
-int		catopen_flag = 0,
-		nobj2key;
+int		catopen_flag = 0;
 
 /****** catout_readparams ****************************************************
 PROTO	void	catout_readparams(char **paramlist, int nparam)
@@ -178,7 +177,7 @@ void	catout_allocobjparams(objstruct *obj) {
 /* Allocate arrays for multidimensional measurement parameters */
 /* Note that they do not need to be selected for catalog output */
   obj2 = obj->obj2;
-  for (; *key->name; key++)
+  for (key=obj2key; *key->name; key++)
     if (key->naxis && *((char *)key->ptr)) {
       size=t_size[key->ttype];
       for (i=0; i<key->naxis; i++)
@@ -242,7 +241,7 @@ int	catout_allocobjother(objstruct *obj, void *flagobj2elem, int nbytes)
    obj2 = obj->obj2;
    QCALLOC(*((char **)((char *)obj2 + ptroffset)), char, nbytes);
 
-  *(char *)flagobj2elem = 1;
+//  *(char *)flagobj2elem = 1;
 
   return RETURN_OK;
   }
@@ -272,7 +271,7 @@ int	catout_freeother(objstruct *obj, void *flagobj2elem)
   free(*((char **)((char *)obj2
 	+ (int)((char *)flagobj2elem - (char *)&flagobj2))));
 
-  *(char *)flagobj2elem = 0;
+//  *(char *)flagobj2elem = 0;
 
   return RETURN_OK;
   }
@@ -819,7 +818,7 @@ INPUT	-.
 OUTPUT	-.
 NOTES	Requires access to global prefs and the obj2key static pointer.
 AUTHOR	E. Bertin (IAP)
-VERSION	09/06/2014
+VERSION	26/06/2014
  ***/
 void	catout_init(void)
   {
@@ -829,7 +828,7 @@ void	catout_init(void)
   if (prefs.cat_type == CAT_NONE)
     return;
 
-  QMEMCPY(obj2key, obj2curkey, keystruct, nobj2key);
+  QMEMCPY(obj2key, obj2curkey, keystruct, sizeof(obj2key) / sizeof(keystruct));
 
   update_tab(objtab);
 

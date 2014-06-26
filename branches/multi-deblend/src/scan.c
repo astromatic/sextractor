@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		09/06/2014
+*	Last modified:		26/06/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -77,7 +77,7 @@ INPUT	Pointer to the detection image field,
 OUTPUT	-.
 NOTES	Global preferences are used.
 AUTHOR	E. Bertin (IAP)
-VERSION	09/06/2014
+VERSION	26/06/2014
  ***/
 void	scan_extract(fieldstruct *dfield, fieldstruct *dwfield,
 			fieldstruct **fields, fieldstruct **wfields, int nfield,
@@ -88,10 +88,10 @@ void	scan_extract(fieldstruct *dfield, fieldstruct *dwfield,
 			initinfo, freeinfo, *victim;
    fieldstruct		*field,*ffield;
    checkstruct		*check;
-   objliststruct       	*overobjlist,
+   objliststruct       	*cleanobjlist, *overobjlist,
 			objlist;
    objstruct		*cleanobj;
-   pliststruct		*pixel, *pixt;
+   pliststruct		*plist, *pixel;
 
    char			*marker, newmarker, *blankpad, *bpt,*bpt0;
    int			co, i,j, flag, luflag,pstop, xl,xl2,yl, cn,
@@ -147,7 +147,6 @@ void	scan_extract(fieldstruct *dfield, fieldstruct *dwfield,
   QCALLOC(start, int, stacksize);
   QMALLOC(end, int, stacksize);
   blankpad = bpt = NULL;
-  deblend_alloc();
 
 /* Some initializations */
 
@@ -167,22 +166,22 @@ void	scan_extract(fieldstruct *dfield, fieldstruct *dwfield,
   curpixinfo.pixnb = 1;
 
 /* Init cleaning procedure */
-  clean_init();
+  cleanobjlist = clean_init();
 
 /*----- Allocate memory for the pixel list */
   init_plist();
 
-  if (!(pixel = objlist.plist = malloc(nposize=prefs.mem_pixstack*plistsize)))
+  if (!(plist = objlist.plist = malloc(nposize=prefs.mem_pixstack*plistsize)))
     error(EXIT_FAILURE, "Not enough memory to store the pixel stack:\n",
         "           Try to decrease MEMORY_PIXSTACK");
 
 /*----- at the beginning, "free" object fills the whole pixel list */
   freeinfo.firstpix = 0;
   freeinfo.lastpix = nposize-plistsize;
-  pixt = pixel;
-  for (i=plistsize; i<nposize; i += plistsize, pixt += plistsize)
-    PLIST(pixt, nextpix) = i;
-  PLIST(pixt, nextpix) = -1;
+  pixel = plist;
+  for (i=plistsize; i<nposize; i += plistsize, pixel += plistsize)
+    PLIST(pixel, nextpix) = i;
+  PLIST(pixel, nextpix) = -1;
 
 /* Allocate memory for other buffers */
   if (prefs.filter_flag)
@@ -332,8 +331,8 @@ void	scan_extract(fieldstruct *dfield, fieldstruct *dwfield,
         {
         if (xl==0 || xl==w-1)
           curpixinfo.flag |= OBJ_TRUNC;
-        pixt = pixel + (cn=freeinfo.firstpix);
-        freeinfo.firstpix = PLIST(pixt, nextpix);
+        pixel = plist + (cn = freeinfo.firstpix);
+        freeinfo.firstpix = PLIST(pixel, nextpix);
 
 /*------- Running out of pixels, the largest object becomes a "victim" ------*/
 
@@ -362,60 +361,60 @@ void	scan_extract(fieldstruct *dfield, fieldstruct *dwfield,
 		"scanimage()!");
           if (maxpixnb <= 1)
             error(EXIT_FAILURE, "Pixel stack overflow in ", "scanimage()");
-          freeinfo.firstpix = PLIST(pixel+victim->firstpix, nextpix);
-          PLIST(pixel+victim->lastpix, nextpix) = freeinfo.lastpix;
-          PLIST(pixel+(victim->lastpix=victim->firstpix), nextpix) = -1;
+          freeinfo.firstpix = PLIST(plist + victim->firstpix, nextpix);
+          PLIST(plist + victim->lastpix, nextpix) = freeinfo.lastpix;
+          PLIST(plist + (victim->lastpix=victim->firstpix), nextpix) = -1;
           victim->pixnb = 1;
           victim->flag |= OBJ_OVERFLOW;
           }
 
 /*---------------------------------------------------------------------------*/
         curpixinfo.lastpix = curpixinfo.firstpix = cn;
-        PLIST(pixt, nextpix) = -1;
-        PLIST(pixt, x) = xl;
-        PLIST(pixt, y) = yl;
-        PLIST(pixt, value) = scan[xl];
+        PLIST(pixel, nextpix) = -1;
+        PLIST(pixel, x) = xl;
+        PLIST(pixel, y) = yl;
+        PLIST(pixel, value) = scan[xl];
         if (PLISTEXIST(cvalue))
-          PLISTPIX(pixt, cvalue) = cnewsymbol;
+          PLISTPIX(pixel, cvalue) = cnewsymbol;
         if (PLISTEXIST(flag))
           for (i=0; i<nffield; i++)
-            PLISTFLAG(pixt, flag[i]) = fscan[i][xl];
+            PLISTFLAG(pixel, flag[i]) = fscan[i][xl];
 /*--------------------- Detect pixels with a low weight ---------------------*/
         if (PLISTEXIST(wflag) && wscan)
           {
-	  PLISTFLAG(pixt, wflag) = 0;
+	  PLISTFLAG(pixel, wflag) = 0;
           if (wscan[xl] >= wthresh)
-            PLISTFLAG(pixt, wflag) |= OBJ_LOWWEIGHT;
+            PLISTFLAG(pixel, wflag) |= OBJ_LOWWEIGHT;
           if (cwscan[xl] >= cwthresh)
-            PLISTFLAG(pixt, wflag) |= OBJ_LOWDWEIGHT;
+            PLISTFLAG(pixel, wflag) |= OBJ_LOWDWEIGHT;
 
           if (yl>0)
             {
             if (cwscanp[xl] >= cwthresh)
-              PLISTFLAG(pixt, wflag) |= OBJ_LOWDWEIGHT;
+              PLISTFLAG(pixel, wflag) |= OBJ_LOWDWEIGHT;
             if (xl>0 && cwscanp[xl-1]>=cwthresh)
-              PLISTFLAG(pixt, wflag) |= OBJ_LOWDWEIGHT;
+              PLISTFLAG(pixel, wflag) |= OBJ_LOWDWEIGHT;
             if (xl<w-1 && cwscanp[xl+1]>=cwthresh)
-              PLISTFLAG(pixt, wflag) |= OBJ_LOWDWEIGHT;
+              PLISTFLAG(pixel, wflag) |= OBJ_LOWDWEIGHT;
             }
           if (xl>0 && cwscan[xl-1]>=cwthresh)
-              PLISTFLAG(pixt, wflag) |= OBJ_LOWDWEIGHT;
+              PLISTFLAG(pixel, wflag) |= OBJ_LOWDWEIGHT;
           if (xl<w-1 && cwscan[xl+1]>=cwthresh)
-            PLISTFLAG(pixt, wflag) |= OBJ_LOWDWEIGHT;
+            PLISTFLAG(pixel, wflag) |= OBJ_LOWDWEIGHT;
           if (yl<h-1)
             {
             if (cwscann[xl] >= cwthresh)
-              PLISTFLAG(pixt, wflag) |= OBJ_LOWDWEIGHT;
+              PLISTFLAG(pixel, wflag) |= OBJ_LOWDWEIGHT;
             if (xl>0 && cwscann[xl-1]>=cwthresh)
-              PLISTFLAG(pixt, wflag) |= OBJ_LOWDWEIGHT;
+              PLISTFLAG(pixel, wflag) |= OBJ_LOWDWEIGHT;
             if (xl<w-1 && cwscann[xl+1]>=cwthresh)
-              PLISTFLAG(pixt, wflag) |= OBJ_LOWDWEIGHT;
+              PLISTFLAG(pixel, wflag) |= OBJ_LOWDWEIGHT;
             }
           }
         if (PLISTEXIST(dthresh))
-          PLISTPIX(pixt, dthresh) = thresh;
+          PLISTPIX(pixel, dthresh) = thresh;
         if (PLISTEXIST(var))
-          PLISTPIX(pixt, var) = wscan[xl];
+          PLISTPIX(pixel, var) = wscan[xl];
 
         if (cs != OBJECT)
 /*------------------------------- Start Segment -----------------------------*/
@@ -460,7 +459,7 @@ void	scan_extract(fieldstruct *dfield, fieldstruct *dwfield,
             start[co] = UNKNOWN;
             }
           else
-            scan_update(&info[co],&store[xl], pixel);
+            scan_update(&info[co],&store[xl], plist);
           ps = OBJECT;
           }
         else if (newmarker == 's')
@@ -469,7 +468,7 @@ void	scan_extract(fieldstruct *dfield, fieldstruct *dwfield,
             {
             pstop--;
             xl2 = start[co];
-            scan_update(&info[co-1],&info[co], pixel);
+            scan_update(&info[co-1],&info[co], plist);
             if (start[--co] == UNKNOWN)
               start[co] = xl2;
             else
@@ -487,12 +486,11 @@ void	scan_extract(fieldstruct *dfield, fieldstruct *dwfield,
             if (start[co] == UNKNOWN)
               {
               if ((int)info[co].pixnb >= prefs.ext_minarea)
-                {
-                scan_output(fields, wfields, nfield, &info[co], &objlist);
-                }
+                scan_output(fields, wfields, nfield, info + co, plist,
+			cleanobjlist);
 /* ------------------------------------ free the chain-list */
 
-              PLIST(pixel+info[co].lastpix, nextpix) = freeinfo.firstpix;
+              PLIST(plist+info[co].lastpix, nextpix) = freeinfo.firstpix;
               freeinfo.firstpix = info[co].firstpix;
               }
             else
@@ -508,7 +506,7 @@ void	scan_extract(fieldstruct *dfield, fieldstruct *dwfield,
 /*---------------------------------------------------------------------------*/
 
       if (luflag)
-        scan_update(&info[co],&curpixinfo, pixel);
+        scan_update(&info[co],&curpixinfo, plist);
       else
         {
         if (cs == OBJECT)
@@ -631,13 +629,12 @@ void	scan_extract(fieldstruct *dfield, fieldstruct *dwfield,
     analyse_final(fields, wfields, nfield, overobjlist);
     objlist_end(overobjlist);
   }
-  clean_end();
+  clean_end(cleanobjlist);
 
 /*Free memory */
   if (prefs.filter_flag && dwfield && PLISTEXIST(wflag))
     free(cwscanp);
-  deblend_free();
-  free(pixel);
+  free(plist);
   free(info);
   free(store);
   free(marker);
@@ -733,7 +730,7 @@ void	scan_update(infostruct *infoptr1, infostruct *infoptr2,
 
 /****** scan_output **********************************************************
 PROTO	void scan_output(fieldstruct **fields, fieldstructs **wfields,
-		int nfield, infostruct *info, objliststruct *objlist)
+		int nfield, infostruct *info, objliststruct *cleanobjlist)
 PURPOSE	Manage detection after primary extraction (deblending, cleaning,
 	measurements), and add it to an object list.
 INPUT	Pointer to an array of image field pointers,
@@ -744,80 +741,80 @@ INPUT	Pointer to an array of image field pointers,
 OUTPUT	-.
 NOTES	Global preferences are used.
 AUTHOR	E. Bertin (IAP)
-VERSION	11/06/2014
+VERSION	25/06/2014
  ***/
 void	scan_output(fieldstruct **fields, fieldstruct **wfields, int nfield,
-		infostruct *info, pliststruct *plist)
+		infostruct *info, pliststruct *plistin,
+		objliststruct *cleanobjlist)
   {
    fieldstruct		*field, *wfield;
-   objliststruct	*objlistout, *overobjlist,
-			objlistd, newobjlist;
-   objstruct		newobj;
-   objstruct		*obj, *vobj;
-   int 			i,j,n,o;
+   objliststruct	*objlist, *overobjlist,
+			objlistin;
+   objstruct		objin;
+   objstruct		*obj, *cleanobj;
+   pliststruct		*plist;
+   subimagestruct	*subimage;
+   int 			i,j,n,o, oflag;
 
   field = fields[0];
   wfield = wfields? wfields[0] : NULL;
 
-  objlistd.obj = NULL;
-  objlistd.plist = NULL;
-  objlistd.nobj = objlistd.npix = 0;
-
 /*----- Allocate memory to store object data */
 
-  newobjlist.obj = &newobj;
-  newobjlist.nobj = 1;
+  objlistin.obj = &objin;
+  objlistin.nobj = objlistin.nobjmax = 1;
+  objlistin.plist = plistin;
 
-  memset(&newobj, 0, (size_t)sizeof(objstruct));
-  newobj.firstpix = info->firstpix;
-  newobj.lastpix = info->lastpix;
-  newobj.flag = info->flag;
-  newobjlist.npix = info->pixnb;
-  newobj.dthresh = field->dthresh;
-  newobj.thresh = field->thresh;
+  memset(&objin, 0, (size_t)sizeof(objstruct));
+  objin.firstpix = info->firstpix;
+  objin.lastpix = info->lastpix;
+  objin.flag = info->flag;
+  objlistin.npix = info->pixnb;
+  objin.dthresh = field->dthresh;
+  objin.thresh = field->thresh;
 
-  scan_preanalyse(&newobj, plist, ANALYSE_FAST);
+  scan_preanalyse(&objin, plistin, ANALYSE_FAST);
 
-/*----- Check if the current strip contains the lower isophote... */
-  if ((int)obj.ymin < field->ymin)
-    obj.flag |= OBJ_ISO_PB;
+// Check if the current strip contains the lower isophote... */
+  if ((int)objin.ymin < field->ymin)
+    objin.flag |= OBJ_ISO_PB;
 
-  if (!(obj.flag & OBJ_OVERFLOW)
-	&& (objlist->subimage = subimage_fromplist(field, wfield, &obj,
-		objlist->plist)))
-    {
-    if (deblend_parcelout(objlist, &objlistd) == RETURN_OK)
-      objlistout = &objlistd;
-    else
-      {
-      objlistout = objlist;
-      for (o=0; o<objlistout->nobj; o++)
-        objlistout->obj[o].flag |= OBJ_DOVERFLOW;
-      sprintf(gstr, "%.0f,%.0f", obj.mx+1, obj.my+1);
-      warning("Deblending overflow for detection at ", gstr);
-      }
-    subimage_end(objlist->subimage);
-    QFREE(objlist->subimage);
-    }
-  else
-    objlistout = objlist;
+  subimage = NULL;
+// Don't attempt deblending if the object triggered a detection overflow
+  if ((objin.flag & OBJ_OVERFLOW))
+    objlist = &objlistin;
+// Else try to create a subimage and deblend
+  else if (!(subimage = subimage_fromplist(field, wfield, &objin, plistin))
+	|| !(objlist = deblend_parcelout(&objin, subimage, plistin))) {
+//-- Flag deblending overflows
+    objlist = &objlistin;
+    for (o=0; o<objlist->nobj; o++)
+      objlist->obj[o].flag |= OBJ_DOVERFLOW;
+    sprintf(gstr, "%.0f,%.0f", objin.mx+1, objin.my+1);
+    warning("Deblending overflow for detection at ", gstr);
+  }
+  if (subimage) {
+    subimage_end(subimage);
+    free(subimage);
+  }
 
   ++thecat.nblend;			/* Parent blend index */
-  for (o=0; o<objlistout->nobj; o++)
+
+  plist = objlist->plist;
+  for (o=0; o<objlist->nobj; o++)
     {
-    obj = objlistout->obj + o;
+    obj = objlist->obj + o;
 /*-- Basic measurements */
-    scan_preanalyse(obj, objlistout->plist, ANALYSE_FULL|ANALYSE_ROBUST);
-    if (prefs.ext_maxarea && objlistout->obj[o].fdnpix > prefs.ext_maxarea)
+    scan_preanalyse(obj, plist, ANALYSE_FULL|ANALYSE_ROBUST);
+    if (prefs.ext_maxarea && objlist->obj[o].fdnpix > prefs.ext_maxarea)
       continue; 
     obj->number = ++thecat.ndetect;
     obj->blend = thecat.nblend;
 /*--- Isophotal measurements */
-    analyse_iso(fields, wfields, nfield, objlistout, o);
+    analyse_iso(fields, wfields, nfield, objlist, o);
     if (prefs.blank_flag)
       {
-      if (!(obj->isoimage = subimage_fromplist(field, wfield, obj,
-		objlistout->plist)))
+      if (!(obj->isoimage = subimage_fromplist(field, wfield, obj, plist)))
         {
 /*------ Not enough mem. for the BLANKing isoimage: flag the object now */
         obj->flag |= OBJ_OVERFLOW;
@@ -840,7 +837,7 @@ void	scan_output(fieldstruct **fields, fieldstruct **wfields, int nfield,
           ymin = cleanobj->ycmax;
           }
 
-      cleanobj = &cleanobjlist->obj[victim];
+      cleanobj = cleanobjlist->obj + victim;
 /*---- Warn if there is a possibility for any aperture to be truncated */
       if (field->ymax < field->height)
         {
@@ -859,19 +856,20 @@ void	scan_output(fieldstruct **fields, fieldstruct **wfields, int nfield,
 		"          You might want to increase MEMORY_OBJSTACK");
           }
         }
-      overobjlist = objlist_deblend(fields, wfields, nfield,
-	cleanobjlist, victim);
+      overobjlist = objlist_deblend(fields, wfields, nfield, cleanobjlist,
+			victim);
       analyse_final(fields, wfields, nfield, overobjlist);
       objlist_end(overobjlist);
       }
 
 /*-- Add the object only if it is not "swallowed" by cleaning */
-    if (!prefs.clean_flag || clean_process(field, obj))
-      clean_add(obj);
+    if (!prefs.clean_flag || clean_process(cleanobjlist, field, obj))
+      clean_add(cleanobjlist, obj);
     }
 
-  free(objlistd.plist);
-  free(objlistd.obj);
+  if (objlist != &objlistin) {
+    objlist_end(objlist);
+  }
 
   return;
   }

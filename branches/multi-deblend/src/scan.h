@@ -22,12 +22,16 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/06/2014
+*	Last modified:		26/06/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
 #ifndef _LUTZ_H_
 #include "lutz.h"
+#endif
+
+#ifndef _PLIST_H_
+#include "plist.h"
 #endif
 
 /*------------------------------ definitions --------------------------------*/
@@ -48,7 +52,8 @@ void		scan_extract(fieldstruct *dfield, fieldstruct *dwfield,
 			fieldstruct **fields, fieldstruct **wfields, int nfield,
 			fieldstruct **ffields, int nffield),
 		scan_output(fieldstruct **fields, fieldstruct **wfields,
-			int nfield, infostruct *info, objliststruct *objlist),
+			int nfield, infostruct *info, pliststruct *plist,
+			objliststruct *cleanobjlist),
 		scan_preanalyse(objstruct *obj, pliststruct *plist,
 			int analyse_type);
 
