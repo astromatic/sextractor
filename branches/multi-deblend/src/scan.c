@@ -77,7 +77,7 @@ INPUT	Pointer to the detection image field,
 OUTPUT	-.
 NOTES	Global preferences are used.
 AUTHOR	E. Bertin (IAP)
-VERSION	26/06/2014
+VERSION	27/06/2014
  ***/
 void	scan_extract(fieldstruct *dfield, fieldstruct *dwfield,
 			fieldstruct **fields, fieldstruct **wfields, int nfield,
@@ -113,7 +113,7 @@ void	scan_extract(fieldstruct *dfield, fieldstruct *dwfield,
   thecat.ntotal = thecat.ndetect = 0;
   
   wthresh = dwfield ? dwfield->weight_thresh : 0.0;
-  if (wthresh>BIG*WTHRESH_CONVFAC);
+  if (wthresh>BIG*WTHRESH_CONVFAC)
     wthresh = BIG*WTHRESH_CONVFAC;
 
 /* If WEIGHTing and no absolute thresholding, activate threshold scaling */
