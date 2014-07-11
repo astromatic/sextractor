@@ -65,6 +65,7 @@ extern char		profname[][32];
 double			dtime;
 
 int			_count_imext(char *filename);
+checkstruct *thecheck;
 
 /****** makeit ***************************************************************
 PROTO	void main(void)
@@ -484,7 +485,12 @@ void	makeit(void)
           }
         }
       }
-
+/*
+thecheck=check_init("toto.fits", CHECK_OTHER, 0, 1);
+thecheck->width = field->width;
+thecheck->height = field->height;
+check_reinit(field, thecheck);
+*/
 /* Process one extension at a time */
   for (e=0; e<ndext; e++)
     {
@@ -655,7 +661,10 @@ void	makeit(void)
 	prefs.image_name[0]);
 
   NFPRINTF(OUTPUT, "Closing files");
-
+/*
+check_reend(field, thecheck);
+check_end(thecheck);
+*/
 /* End CHECK-image processing */
   if (prefs.check_flag)
     for (i=0; i<MAXCHECK; i++)
