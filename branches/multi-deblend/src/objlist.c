@@ -65,6 +65,7 @@ int		pthread_nobjlist, pthread_objlistaddindex,
 		pthread_nfield, pthread_nthreads, pthread_endflag;
 
 #endif
+extern checkstruct	*thecheck;
 
 /****** objlist_new *******************************************************//**
 Create a new, empty objlist.
@@ -118,17 +119,17 @@ Free resources allocated for an object
 @param[in] obj	Pointer to the object.
 
 @author 		E. Bertin (IAP)
-@date			09/06/2014
+@date			09/07/2014
  ***/
 void	obj_end(objstruct *obj) {
 
   if (obj->isoimage) {
     subimage_end(obj->isoimage);
-    free(obj->isoimage);
+    QFREE(obj->isoimage);
   }
   if (obj->fullimage) {
     subimage_end(obj->fullimage);
-    free(obj->fullimage);
+    QFREE(obj->fullimage);
   }
 
   if (!obj->obj2)
@@ -142,7 +143,7 @@ void	obj_end(objstruct *obj) {
   catout_freeother(obj, &flagobj2.cposx);
   catout_freeother(obj, &flagobj2.cposy);
   catout_freeother(obj, &flagobj2.cposw);
-  free(obj->obj2);
+  QFREE(obj->obj2);
 
   return;
 }
@@ -155,7 +156,8 @@ Add an object to an objlist.
 @param[out] 		RETURN_FATAL_ERROR if a memory (re-)allocation issue
 			happened,
 			RETURN_OK otherwise.
-
+@warning		The ordering of the objlist and the obj pointer may be
+			modified.
 @author 		E. Bertin (IAP)
 @date			26/06/2014
  ***/
@@ -224,7 +226,8 @@ Remove an object from an objlist.
 			RETURN_FATAL_ERROR if a memory (re-)allocation issue
 			happened,
 			RETURN_OK otherwise.
-
+@warning		The ordering of the list and the obj pointer may be
+			modified.
 @author 		E. Bertin (IAP)
 @date			09/06/2014
  ***/
@@ -236,7 +239,7 @@ int	objlist_subobj(objliststruct *objlist, int objindex) {
     return RETURN_ERROR;
 
   if (--objlist->nobj) {
-    if (objlist->nobj != objindex)
+    if (objindex != objlist->nobj)
       objlist->obj[objindex] = objlist->obj[objlist->nobj];
     nobjmax = objlist->nobjmax;
     while (nobjmax - OBJLIST_NOBJMAXINC > objlist->nobj)
@@ -263,7 +266,9 @@ Move an object from an objlist to another.
 			RETURN_FATAL_ERROR if a memory (re-)allocation issue
 			happened,
 			RETURN_OK otherwise.
-
+@warning		The ordering of the source objlist and the source obj
+			pointer may be modified. The destination obj pointer may
+			may be modified.
 @author 		E. Bertin (IAP)
 @date			24/06/2014
  ***/
@@ -290,18 +295,18 @@ Perform model-fitting and deblending on a list of objects.
 objliststruct	*objlist_deblend(fieldstruct **fields, fieldstruct **wfields,
 			int nfield, objliststruct *objlist, int objindex) {
    fieldstruct		*field, *wfield;
-   subprofitstruct	*subprofit,*modsubprofit;
+   subprofitstruct	*subprofit;
    subimagestruct	*subimage;
    objliststruct	*newobjlist, *overobjlist;
    objstruct		*obj, *modobj, *fobj;
-   int			xmin,ymin, xmax,ymax, blend, nobj, i, j, o, o2;
+   int			xmin,ymin, xmax,ymax, blend, nobj, i, j,k, o, o2;
 
   field = fields[0];			// field is the detection field
   wfield = wfields? wfields[0]:NULL;	// wfield is the detection weight map
 
 // Find overlapping detections and link them
   overobjlist = objlist_overlap(objlist, objlist->obj + objindex);
-return overobjlist;
+
   xmax = ymax = -(xmin = ymin = 0x7FFFFFFF);	// largest signed 32-bit int
   obj = overobjlist->obj;
   blend = obj->blend;				// Keep note of the blend index
@@ -318,29 +323,28 @@ return overobjlist;
 
 // TODO: add margin
 // Extract subimage covering the whole objlist
-  overobjlist->subimage = subimage_fromfield(field, wfield,
-				xmin, xmax, ymin, ymax);
+  overobjlist->subimage = subimage = subimage_fromfield(field, wfield,
+				xmin, xmax + 1, ymin, ymax + 1);
   obj = overobjlist->obj;
   for (o=overobjlist->nobj; o--; obj++) {
 //-- if BLANKing is on, paste back the object pixels in the sub-image
-    if (prefs.blank_flag && obj->isoimage)
-      subimage_fill(overobjlist->subimage, obj->isoimage);
+    if (prefs.blank_flag)
+      subimage_fill(subimage, obj->isoimage);
   }
 
   obj = overobjlist->obj;
   for (i=overobjlist->nobj; i--; obj++) {
 //-- Create individual object subimages
     obj->fullimage = subimage_fromfield(field, wfield,
-		obj->xmin, obj->xmax, obj->ymin, obj->ymax);
+		obj->xmin, obj->xmax + 1, obj->ymin, obj->ymax + 1);
 //-- if BLANKing is on, paste back the object pixels in the sub-images
-    if (prefs.blank_flag && obj->isoimage) {
+    if (prefs.blank_flag) {
       subimage_fill(obj->fullimage, obj->isoimage);
     }
     obj->profit = profit_init(obj, obj->fullimage, 1,
 			MODEL_MOFFAT, PROFIT_NOCONV);
   }
 
-  subimage = overobjlist->subimage;
   for (j=0; j<GROUP_NDEBLENDITER; j++) {
     nobj = overobjlist->nobj;
 //-- Iterative multiple fit if several sources overlap
@@ -348,6 +352,7 @@ return overobjlist;
       obj = overobjlist->obj;
       for (o=nobj; o--; obj++)
         profit_fit(obj->profit, obj);
+
       obj = overobjlist->obj;
       for (o=nobj; o--; obj++) {
 //------ Subtract the contribution from all overlapping neighbors (models)
@@ -357,8 +362,7 @@ return overobjlist;
         for (o2=nobj; o2--; modobj++)
           if (modobj != obj) {
             subprofit = obj->profit->subprofit;
-            modsubprofit = modobj->profit->subprofit;
-            subprofit_submodpix(modsubprofit, subprofit->objpix,
+            subprofit_submodpix(modobj->profit->subprofit, subprofit->objpix,
 			subprofit->ix, subprofit->iy,
 			subprofit->objnaxisn[0], subprofit->objnaxisn[1],
 			subprofit->subsamp, nobj>1 ? 0.95: 1.0);
@@ -368,17 +372,34 @@ return overobjlist;
         break;
     }
 
+//-- Remove the models from the common subimage
     obj = overobjlist->obj;
-    for (o=nobj; o--; obj++)
-      subprofit_submodpix(modsubprofit, subimage->image,
-			subimage->xmin[0], subimage->xmin[1],
+    for (o=nobj; o--; obj++) {
+      subprofit = obj->profit->subprofit;
+      subprofit_submodpix(subprofit, subimage->image,
+			subimage->ipos[0], subimage->ipos[1],
 			subimage->size[0], subimage->size[1],
 			subprofit->subsamp, nobj>1 ? 0.95: 1.0);
-    newobjlist = lutz_subextract(subimage, overobjlist->dthresh, xmin, xmax,
-			ymin, ymax);
-    obj = newobjlist->obj;
-    for (o=0; o<newobjlist->nobj; o++, obj++) {
-      scan_preanalyse(obj, objlist->plist, ANALYSE_FULL|ANALYSE_ROBUST);
+    }
+
+    newobjlist = lutz_subextract(subimage, field->dthresh, xmin, xmax + 1,
+			ymin, ymax + 1);
+//-- Put the models back on the common subimage
+//-- TODO: do it in a more efficient way.
+    obj = overobjlist->obj;
+    for (o=nobj; o--; obj++) {
+      subprofit = obj->profit->subprofit;
+      subprofit_submodpix(subprofit, subimage->image,
+			subimage->ipos[0], subimage->ipos[1],
+			subimage->size[0], subimage->size[1],
+			subprofit->subsamp, nobj>1 ? -0.95: -1.0);
+    }
+
+//-- Loop over input objlist; we keep indexing independent of loop counter to
+//-- accommodate changes in the ordering of the list
+    for (o=0, k=newobjlist->nobj; k--; o++) {
+      obj = newobjlist->obj + o;
+      scan_preanalyse(obj, newobjlist->plist, ANALYSE_FULL|ANALYSE_ROBUST);
       if (prefs.ext_maxarea && obj->fdnpix > prefs.ext_maxarea)
         continue; 
       obj->number = ++thecat.ndetect;
@@ -396,19 +417,19 @@ return overobjlist;
       }
 //---- Create individual object subimages
       obj->fullimage = subimage_fromfield(field, wfield,
-		obj->xmin, obj->xmax, obj->ymin, obj->ymax);
+		obj->xmin, obj->xmax + 1, obj->ymin, obj->ymax + 1);
 //---- if BLANKing is on, paste back the object pixels in the sub-images
       if (prefs.blank_flag)
         subimage_fill(obj->fullimage, obj->isoimage);
       obj->profit = profit_init(obj, obj->fullimage, 1,
 			MODEL_MOFFAT, PROFIT_NOCONV);
-      objlist_movobj(newobjlist, o, overobjlist);
+      objlist_movobj(newobjlist, o--, overobjlist);
     }
     objlist_end(newobjlist);
   }
 
   obj = overobjlist->obj;
-  for (i=overobjlist->nobj; i--; obj++)
+  for (o=overobjlist->nobj; o--; obj++)
     profit_end(obj->profit);
 
   return overobjlist;
@@ -422,21 +443,20 @@ from the input list.
 @param[in] fobj		Pointer to object
 
 @author 		E. Bertin (IAP)
-@date			11/06/2014
+@date			10/07/2014
 @todo	The selection algorithm is currently very basic and inefficient.
  ***/
 objliststruct *objlist_overlap(objliststruct *objlist, objstruct *fobj) {
    objliststruct	*overobjlist;
-   objstruct		*obj;
-   int			i, blend, nobj;
+   int			i,o, blend;
 
   overobjlist = objlist_new();
-  nobj = objlist->nobj;
-  obj = objlist->obj;
   blend = fobj->blend;
-  for (i=0; i<nobj; i++, obj++)
-    if (obj->blend == blend)
-      objlist_movobj(objlist, i, overobjlist);
+// Loop over input objlist; we keep indexing independent of loop counter to
+// accommodate changes in the ordering of the list
+  for (o=0, i=objlist->nobj; i--; o++)
+    if ( objlist->obj[o].blend == blend)
+      objlist_movobj(objlist, o--, overobjlist);
 
   return overobjlist;
 }

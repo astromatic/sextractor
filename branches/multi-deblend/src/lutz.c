@@ -2,7 +2,7 @@
 * @file		lutz.c
 * @brief	Lutz (1980) algorithm to extract connected pixels from an image
 		raster.
-* @date		24/06/2014
+* @date		10/07/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 *
@@ -57,8 +57,8 @@ OUTPUT	Pointer to the objlist if no memory allocation problem occured,
 	NULL otherwise.
 NOTES	Global preferences are used.
 AUTHOR	E. Bertin (IAP)
-TODO    Check propagation of flags.
-VERSION	24/06/2014
+TODO    Check propagation of flags and filtering.
+VERSION	10/07/2014
  ***/
 objliststruct	*lutz_subextract(subimagestruct *subimage, PIXTYPE thresh,
 			int xmin, int xmax, int ymin, int ymax) {
@@ -77,7 +77,7 @@ objliststruct	*lutz_subextract(subimagestruct *subimage, PIXTYPE thresh,
    int			*start, *end,
 			wminus1,hminus1, subw,subh,scansize, imsize,
 			cn, co, luflag, pstop, xl,xl2,yl,
-			out, minarea, step,
+			out, minarea,
 			inewsymbol, i;
 
 
@@ -112,9 +112,6 @@ objliststruct	*lutz_subextract(subimagestruct *subimage, PIXTYPE thresh,
 	+ (ymin - subimage->xmin[1])*imsize
 	+ (xmin - subimage->xmin[0]);
 
-// As we only analyse a fraction of the subimage, a step occurs between lines
-  step = imsize - subw;
-
 // Allocate memory to store object data */
   objlist = objlist_new();
 
@@ -141,9 +138,10 @@ objliststruct	*lutz_subextract(subimagestruct *subimage, PIXTYPE thresh,
       {
       newmarker = marker[xl];
       marker[xl] = 0;
-      cnewsymbol = (xl==subw)? -BIG : scan[xl];
+      cnewsymbol = (xl==subw)? -BIG-1 : scan[xl];
 
       curpixinfo.flag = trunflag;
+
       luflag =  (cnewsymbol > thresh);
 
       if (luflag)
