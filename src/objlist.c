@@ -1,7 +1,7 @@
 /**
 * @file		objlist.c
 * @brief	Manage object lists (e.g., for advanced deblending)
-* @date		26/06/2014
+* @date		11/07/2014
 * @copyright
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 *
@@ -290,12 +290,12 @@ Perform model-fitting and deblending on a list of objects.
 @param[in] objlist	Pointer to objlist
 @param[in] objindex	Index of blended object in the objlist
 @author 		E. Bertin (IAP)
-@date			09/06/2014
+@date			11/07/2014
  ***/
 objliststruct	*objlist_deblend(fieldstruct **fields, fieldstruct **wfields,
 			int nfield, objliststruct *objlist, int objindex) {
    fieldstruct		*field, *wfield;
-   subprofitstruct	*subprofit;
+   subprofitstruct	*subprofit, *modsubprofit;
    subimagestruct	*subimage;
    objliststruct	*newobjlist, *overobjlist;
    objstruct		*obj, *modobj, *fobj;
@@ -355,45 +355,48 @@ objliststruct	*objlist_deblend(fieldstruct **fields, fieldstruct **wfields,
 
       obj = overobjlist->obj;
       for (o=nobj; o--; obj++) {
-//------ Subtract the contribution from all overlapping neighbors (models)
+        subprofit = obj->profit->subprofit;
+//------ Subtract the contribution from existing overlapping neighbors (models)
         if (i)
-          subprofit_copyobjpix(obj->profit->subprofit, obj->fullimage);
-        modobj = overobjlist->obj;
-        for (o2=nobj; o2--; modobj++)
+          subprofit_copyobjpix(subprofit, obj->fullimage);
+        if (subprofit->nobjpix) {
+          modobj = overobjlist->obj;
+          for (o2=nobj; o2--; modobj++)
           if (modobj != obj) {
-            subprofit = obj->profit->subprofit;
-            subprofit_submodpix(modobj->profit->subprofit, subprofit->objpix,
+            modsubprofit = modobj->profit->subprofit;
+            if (modsubprofit->lmodpix)
+              subprofit_submodpix(modsubprofit, subprofit->objpix,
 			subprofit->ix, subprofit->iy,
 			subprofit->objnaxisn[0], subprofit->objnaxisn[1],
-			subprofit->subsamp, nobj>1 ? 0.95: 1.0);
+			modsubprofit->subsamp, nobj>1 ? 0.95: 1.0);
           }
+        }
       }
       if (nobj <= 1)
         break;
     }
 
-//-- Remove the models from the common subimage
+//-- Remove the models from the common subimage (if they exist)
     obj = overobjlist->obj;
-    for (o=nobj; o--; obj++) {
-      subprofit = obj->profit->subprofit;
-      subprofit_submodpix(subprofit, subimage->image,
+    for (o=nobj; o--; obj++)
+      if ((subprofit = obj->profit->subprofit) && subprofit->lmodpix)
+        subprofit_submodpix(subprofit, subimage->image,
 			subimage->ipos[0], subimage->ipos[1],
 			subimage->size[0], subimage->size[1],
 			subprofit->subsamp, nobj>1 ? 0.95: 1.0);
-    }
 
-    newobjlist = lutz_subextract(subimage, field->dthresh, xmin, xmax + 1,
+    newobjlist = lutz_subextract(subimage, field->dthresh*4, xmin, xmax + 1,
 			ymin, ymax + 1);
-//-- Put the models back on the common subimage
+
+//-- Put the models back on the common subimage (if they exist)
 //-- TODO: do it in a more efficient way.
     obj = overobjlist->obj;
-    for (o=nobj; o--; obj++) {
-      subprofit = obj->profit->subprofit;
-      subprofit_submodpix(subprofit, subimage->image,
+    for (o=nobj; o--; obj++)
+      if ((subprofit = obj->profit->subprofit) && subprofit->lmodpix)
+        subprofit_submodpix(subprofit, subimage->image,
 			subimage->ipos[0], subimage->ipos[1],
 			subimage->size[0], subimage->size[1],
 			subprofit->subsamp, nobj>1 ? -0.95: -1.0);
-    }
 
 //-- Loop over input objlist; we keep indexing independent of loop counter to
 //-- accommodate changes in the ordering of the list
@@ -430,8 +433,20 @@ objliststruct	*objlist_deblend(fieldstruct **fields, fieldstruct **wfields,
 
   obj = overobjlist->obj;
   for (o=overobjlist->nobj; o--; obj++)
+/*
+{
+subprofit = obj->profit->subprofit;
+profit_residuals(obj->profit, 0.0, obj->profit->paraminit, NULL);
+if (subprofit->lmodpix) {
+check_add(thecheck, subprofit->lmodpix,
+subprofit->objnaxisn[0],subprofit->objnaxisn[1],
+subprofit->ix,subprofit->iy, 1.0);
+}
+*/
     profit_end(obj->profit);
-
+/*
+}
+*/
   return overobjlist;
 }
 

@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 2006-2013 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 2006-2014 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		04/12/2013
+*	Last modified:		11/07/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -88,7 +88,7 @@ Allocate and initialize a new model-fitting structure.
 @param[in] conv_flag	Convolution flag (0 = no convolution)
 
 @author 		E. Bertin (IAP)
-@date			28/03/2014
+@date			11/07/2014
  ***/
 profitstruct	*profit_init(objstruct *obj, subimagestruct *subimage,
 			int nsubimage, unsigned int modeltype, int conv_flag)
@@ -172,8 +172,7 @@ profitstruct	*profit_init(objstruct *obj, subimagestruct *subimage,
 /* Allocate memory for the data and the resampled model */
     QMALLOC16(subprofit->objpix, PIXTYPE, subprofit->nobjpix);
     QMALLOC16(subprofit->objweight, PIXTYPE, subprofit->nobjpix);
-    QMALLOC16(subprofit->lmodpix, PIXTYPE, subprofit->nobjpix);
-    QMALLOC16(subprofit->lmodpix2, PIXTYPE, subprofit->nobjpix);
+    QCALLOC16(subprofit->lmodpix, PIXTYPE, subprofit->nobjpix);
 
 /*-- Create pixmap at model resolution */
     subprofit->modnaxisn[0] =
@@ -196,10 +195,9 @@ profitstruct	*profit_init(objstruct *obj, subimagestruct *subimage,
 
 /* Allocate memory for the complete model */
     QFFTWF_MALLOC(subprofit->modpix, float, subprofit->nmodpix);
-    QMALLOC16(subprofit->modpix2, float, subprofit->nmodpix);
-    QMALLOC16(subprofit->cmodpix, float, subprofit->nmodpix);
+    QCALLOC16(subprofit->cmodpix, float, subprofit->nmodpix);
     if (conv_flag)
-      QMALLOC16(subprofit->psfpix, float, subprofit->nmodpix);
+      QCALLOC(subprofit->psfpix, float, subprofit->nmodpix);
     if ((npix = subprofit_copyobjpix(subprofit, subimage)))
       {
       profit->nresi += npix;
@@ -270,18 +268,18 @@ INPUT	SubProfit structure.
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	02/08/2012
+VERSION	11/07/2014
  ***/
 void	subprofit_end(subprofitstruct *subprofit)
   {
-  free(subprofit->objpix);
-  free(subprofit->objweight);
-  free(subprofit->lmodpix);
-  free(subprofit->lmodpix2);
+  QFREE(subprofit->objpix);
+  QFREE(subprofit->objweight);
+  QFREE(subprofit->lmodpix);
+  subprofit->nobjpix = 0;
   QFFTWF_FREE(subprofit->modpix);
-  free(subprofit->modpix2);
-  free(subprofit->cmodpix);
-  free(subprofit->psfpix);
+  QFREE(subprofit->cmodpix);
+  QFREE(subprofit->psfpix);
+  subprofit->nmodpix = 0;
   QFFTWF_FREE(subprofit->psfdft);
   fft_scratchend(subprofit->fftscratch);
   subprofit->fftscratch = NULL;
@@ -1454,7 +1452,7 @@ INPUT	Pointer to the vector of parameters,
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	26/07/2011
+VERSION	11/07/2014
  ***/
 void	profit_evaluate(double *dpar, double *fvec, int m, int n, void *adata)
   {
@@ -1463,7 +1461,7 @@ void	profit_evaluate(double *dpar, double *fvec, int m, int n, void *adata)
    double		*dpar0, *dresi;
    float		*modpixt, *profpixt, *resi,
 			tparam, val;
-   PIXTYPE		*lmodpixt,*lmodpix2t, *objpix,*weight,
+   PIXTYPE		*objpix,*weight,
 			wval;
    int			c,f,i,p,q, fd,pd, jflag,sflag, nprof;
 
@@ -2461,7 +2459,9 @@ void	subprofit_submodpix(subprofitstruct *subprofitmod,
         {
         dx = x-ix;
         dr2 = dy2 + dx*dx;
-        *(pixout++) -= fac**(pixin++);
+        if (*pixout > -BIG)
+          *pixout -= fac**(pixin++);
+        pixout++;
         }
       }
 

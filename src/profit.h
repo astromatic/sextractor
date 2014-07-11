@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		09/06/2014
+*	Last modified:		11/07/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -226,13 +226,11 @@ typedef struct subprofit
   float		*psfpix;	/* Full res. pixmap of the PSF */
   float		*psfdft;	/* Compressed Fourier Transform of the PSF */
   PIXTYPE	*lmodpix;	/* Low resolution pixmaps of the model */
-  PIXTYPE	*lmodpix2;	/* 2nd low resolution pixmaps of the model */
   PIXTYPE	*objpix;	/* Copy of object pixmaps */
   PIXTYPE	*objweight;	/* Copy of object weight-maps */
   int		objnaxisn[2];	/* Dimensions along each axis */
   int		nobjpix;	/* Total number of "final" pixels */
   float		*modpix;	/* Full res. pixmap of the complete model */
-  float		*modpix2;	/* 2nd full res. pixmap of the complete model */
   float		*cmodpix;	/* Full res. pixmap of the convolved model */
   int		modnaxisn[3];	/* Dimensions along each axis */
   int		nmodpix;	/* Total number of model pixels */
