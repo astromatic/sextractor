@@ -48,7 +48,8 @@
 
 catstruct	*fitscat;
 tabstruct	*objtab = NULL;
-keystruct	*obj2curkey;
+tabstruct	*curobjtab = NULL;
+keystruct	*curobj2key;
 FILE		*ascfile;
 char		*buf;
 int		catopen_flag = 0;
@@ -818,17 +819,22 @@ INPUT	-.
 OUTPUT	-.
 NOTES	Requires access to global prefs and the obj2key static pointer.
 AUTHOR	E. Bertin (IAP)
-VERSION	26/06/2014
+VERSION	10/07/2014
  ***/
 void	catout_init(void)
   {
    keystruct	*key;
-   int		i, n;
+   int		i,k, n;
 
   if (prefs.cat_type == CAT_NONE)
     return;
 
-  QMEMCPY(obj2key, obj2curkey, keystruct, sizeof(obj2key) / sizeof(keystruct));
+// "Current" object table that will receive the updated data pointers
+  curobjtab = new_tab("OBJECTS");
+  key = objtab->key;
+  for (k=objtab->nkey; k--; key = key->nextkey) {
+    copy_key(objtab, key->name, curobjtab, 0);
+  }
 
   update_tab(objtab);
 
@@ -1071,26 +1077,28 @@ INPUT	Pointer to the current obj structure.
 OUTPUT	-.
 NOTES	Requires access to global prefs and the objtab static pointer.
 AUTHOR	E. Bertin (IAP)
-VERSION	09/06/2014
+VERSION	10/07/2014
 TODO	Check those static keystructs
  ***/
 void	catout_writeobj(objstruct *obj)
   {
    static keystruct	*keystore, *key, *curkey;
    char			*ptr;
-   int			ptroffset;
+   long			ptroffset;
+   int			k;
 
 // Update obj2curkey pointers to data with that of the current obj
   ptroffset = (char *)obj->obj2 - (char *)&flagobj2;
-  curkey = obj2curkey;
-  for (key=obj2key; *key->name; key++, curkey++) {
+  key = objtab->key;
+  curkey = curobjtab->key;
+  for (k=objtab->nkey; k--; key = key->nextkey, curkey = curkey->nextkey) {
     ptr = (char *)key->ptr + ptroffset;
     curkey->ptr = (key->naxis && *((char *)key->ptr)) ? *((char **)ptr) : ptr;
   }
 
 /// We temporarily replace the objtab key sequence with that from obj2curkey
   keystore = objtab->key;
-  objtab->key = obj2curkey;
+  objtab->key = curobjtab->key;
 
   switch(prefs.cat_type)
     {
@@ -1194,7 +1202,7 @@ INPUT	Error message character string (or NULL if no error).
 OUTPUT	-.
 NOTES	Requires access to global prefs and the objtab static pointer.
 AUTHOR	E. Bertin (IAP)
-VERSION	09/06/2014
+VERSION	10/07/2014
  ***/
 void	catout_end(char *error)
   {
@@ -1246,11 +1254,13 @@ void	catout_end(char *error)
     }
 
 /* Free allocated memory for arrays and structures */
-  free(obj2curkey);
   objtab->key = NULL;
   objtab->nkey = 0;
   free_tab(objtab);
   objtab = NULL;
+  blank_keys(curobjtab);
+  free_tab(curobjtab);
+  curobjtab = NULL;
 
   return;
   }

@@ -34,8 +34,8 @@
 /*----------------------------- Internal constants --------------------------*/
 
 #define	OBJLIST_NOBJMAXINC	16	/// memory allocation increment */
-#define	GROUP_NDEBLENDITER	10	/// number of deblending iterations
-#define	GROUP_NMULTITER		10	/// number of multi-model iterations
+#define	GROUP_NDEBLENDITER	1	/// number of deblending iterations
+#define	GROUP_NMULTITER		5	/// number of multi-model iterations
 
 /*--------------------------------- typedefs --------------------------------*/
 typedef struct
@@ -47,8 +47,6 @@ typedef struct
   pliststruct	*plist;			/// pointer to the pixel-list
   int		npix;			/// number of pixels in pixel-list
   struct subimage	*subimage;	/// Array of sub-images
-  PIXTYPE	dthresh;		/// detection threshold
-  PIXTYPE	thresh;			/// analysis threshold
   int		done_flag;		/// Set if objs are ready to save
   }	objliststruct;
 

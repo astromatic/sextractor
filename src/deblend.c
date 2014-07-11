@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		25/06/2014
+*	Last modified:		10/07/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -52,7 +52,7 @@ OUTPUT	RETURN_OK if success, RETURN_FATAL_ERROR otherwise (memory overflow).
 NOTES	Even if the object is not deblended, the output objlist threshold is
 	recomputed if a variable threshold is used.
 AUTHOR	E. Bertin (IAP)
-VERSION	25/06/2014
+VERSION	10/07/2014
 TODO	Checkout "out" variable at exit
  ***/
 objliststruct	*deblend_parcelout(objstruct *objin, subimagestruct *subimage,
@@ -84,10 +84,8 @@ objliststruct	*deblend_parcelout(objstruct *objin, subimagestruct *subimage,
 // Initialize working object list
   debobjlist2 = objlist_new();
   objlistout = objlist_new();
-  objlistout->thresh = debobjlist2->thresh = objin->thresh;
 
 // Calculate threshold
-  objlistout->dthresh = debobjlist2->dthresh = dthresh0 = objin->dthresh;
   dthresh = objin->fdpeak;
   if (dthresh>0.0) {
     if (prefs.detector_type[0] == DETECTOR_PHOTO)
@@ -173,8 +171,15 @@ objliststruct	*deblend_parcelout(objstruct *objin, subimagestruct *subimage,
 
   if (ok[0])
     out = objlist_addobj(objlistout, debobjlist2->obj, debobjlist2->plist);
-  else
+  else {
+/*-- Now we have passed the deblending section, reset thresholds */
+    obj = debobjlist2->obj;
+    for (i=debobjlist2->nobj; i--;) {
+      obj->dthresh = objin->dthresh;
+      obj->thresh = objin->thresh;
+    }
     out = deblend_gatherup(debobjlist2, objlistout);
+  }
 
 exit_parcelout:
 
@@ -250,9 +255,6 @@ int	deblend_gatherup(objliststruct *objlistin, objliststruct *objlistout)
 
   out = RETURN_OK;
 
-  objlistout->dthresh = objlistin->dthresh;
-  objlistout->thresh = objlistin->thresh;
-
   QMALLOC(amp, float, nobj);
   QMALLOC(p, float, nobj);
   QMALLOC(n, int, nobj);
@@ -272,10 +274,6 @@ int	deblend_gatherup(objliststruct *objlistin, objliststruct *objlistout)
 
   for (objt = objin+(i=1); i<nobj; i++, objt++)
     {
-/*-- Now we have passed the deblending section, reset thresholds */
-    objt->dthresh = objlistin->dthresh;
-    objt->thresh = objlistin->thresh;
-
 /* ------------	flag pixels which are already allocated */
     for (pixt=pixelin+objin[i].firstpix; pixt>=pixelin;
 	pixt=pixelin+PLIST(pixt,nextpix))

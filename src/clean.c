@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		26/06/2014
+*	Last modified:		10/07/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -92,8 +92,9 @@ INPUT   Pointer to image field,
         Object (source).
 OUTPUT  0 if the object was CLEANed, 1 otherwise.
 NOTES   Global preferences are used.
+TODO	Implement merging of isoimages.
 AUTHOR  E. Bertin (IAP)
-VERSION 26/06/2014
+VERSION 10/07/2014
  ***/
 int	clean_process(objliststruct *cleanobjlist, fieldstruct *field,
 			objstruct *objin)
@@ -141,11 +142,10 @@ int	clean_process(objliststruct *cleanobjlist, fieldstruct *field,
           clean_merge(objin, obj);
           if (prefs.blank_flag && (subimage = objin->isoimage))
             {
-/*---------- Paste back ``CLEANed'' object pixels before forgetting them */
+/*---------- Paste back ``CLEANed'' object pixels */
             pasteimage(field, subimage->image,
 			subimage->size[0], subimage->size[1],
 			subimage->ipos[0],subimage->ipos[1]);
-            QFREE(objin->isoimage);
             }
 
           return 0;
@@ -160,14 +160,12 @@ int	clean_process(objliststruct *cleanobjlist, fieldstruct *field,
     k = cleanvictim[i];
     obj = cleanobjlist->obj + k;
     clean_merge(obj, objin);
-    if (prefs.blank_flag && (subimage = objin->isoimage))
-      {
+    if (prefs.blank_flag && (subimage = obj->isoimage))
 /*---- Paste back ``CLEANed'' object pixels before forgetting them */
       pasteimage(field, subimage->image,
 			subimage->size[0], subimage->size[1],
 			subimage->ipos[0],subimage->ipos[1]);
-      QFREE(objin->isoimage);
-      }
+    obj_end(obj);
     clean_sub(cleanobjlist, k);
     }
 

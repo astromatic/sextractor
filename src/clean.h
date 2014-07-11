@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		26/06/2014
+*	Last modified:		10/07/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -43,8 +43,7 @@ objliststruct	*clean_init(void);
 extern int	clean_process(objliststruct *cleanobjlist, fieldstruct *field,
 			objstruct *objin);
 
-extern void	clean_add(objliststruct *cleanobjlist, objstruct *objin),
-		clean_end(objliststruct *cleanobjlist),
+extern void	clean_end(objliststruct *cleanobjlist),
 		clean_merge(objstruct *objin, objstruct *objout),
 		clean_sub(objliststruct *cleanobjlist, int objindex);
 

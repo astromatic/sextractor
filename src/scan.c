@@ -121,8 +121,6 @@ void	scan_extract(fieldstruct *dfield, fieldstruct *dwfield,
   relthresh = varthreshflag ? prefs.dthresh[0] : 0.0;/* To avoid gcc warnings*/
   w = dfield->width;
   h = dfield->height;
-  objlist.dthresh = dfield->dthresh;
-  objlist.thresh = dfield->thresh;
   scan_initmarkers(dfield);
   scan_initmarkers(dwfield);
 
@@ -150,7 +148,7 @@ void	scan_extract(fieldstruct *dfield, fieldstruct *dwfield,
 
 /* Some initializations */
 
-  thresh = objlist.dthresh;
+  thresh = dfield->dthresh;
   initinfo.pixnb = 0;
   initinfo.flag = 0;
   initinfo.firstpix = initinfo.lastpix = -1;
@@ -750,7 +748,7 @@ void	scan_output(fieldstruct **fields, fieldstruct **wfields, int nfield,
    fieldstruct		*field, *wfield;
    objliststruct	*objlist, *overobjlist,
 			objlistin;
-   objstruct		objin;
+   objstruct		*objin;
    objstruct		*obj, *cleanobj;
    pliststruct		*plist;
    subimagestruct	*subimage;
@@ -760,37 +758,36 @@ void	scan_output(fieldstruct **fields, fieldstruct **wfields, int nfield,
   wfield = wfields? wfields[0] : NULL;
 
 /*----- Allocate memory to store object data */
+  QCALLOC(objin, objstruct, 1);
+  objin->firstpix = info->firstpix;
+  objin->lastpix = info->lastpix;
+  objin->flag = info->flag;
+  objin->dthresh = field->dthresh;
+  objin->thresh = field->thresh;
 
-  objlistin.obj = &objin;
+  objlistin.obj = objin;
   objlistin.nobj = objlistin.nobjmax = 1;
   objlistin.plist = plistin;
-
-  memset(&objin, 0, (size_t)sizeof(objstruct));
-  objin.firstpix = info->firstpix;
-  objin.lastpix = info->lastpix;
-  objin.flag = info->flag;
   objlistin.npix = info->pixnb;
-  objin.dthresh = field->dthresh;
-  objin.thresh = field->thresh;
 
-  scan_preanalyse(&objin, plistin, ANALYSE_FAST);
+  scan_preanalyse(objin, plistin, ANALYSE_FAST);
 
 // Check if the current strip contains the lower isophote... */
-  if ((int)objin.ymin < field->ymin)
-    objin.flag |= OBJ_ISO_PB;
+  if ((int)objin->ymin < field->ymin)
+    objin->flag |= OBJ_ISO_PB;
 
   subimage = NULL;
 // Don't attempt deblending if the object triggered a detection overflow
-  if ((objin.flag & OBJ_OVERFLOW))
+  if ((objin->flag & OBJ_OVERFLOW))
     objlist = &objlistin;
 // Else try to create a subimage and deblend
-  else if (!(subimage = subimage_fromplist(field, wfield, &objin, plistin))
-	|| !(objlist = deblend_parcelout(&objin, subimage, plistin))) {
+  else if (!(subimage = subimage_fromplist(field, wfield, objin, plistin))
+	|| !(objlist = deblend_parcelout(objin, subimage, plistin))) {
 //-- Flag deblending overflows
     objlist = &objlistin;
     for (o=0; o<objlist->nobj; o++)
       objlist->obj[o].flag |= OBJ_DOVERFLOW;
-    sprintf(gstr, "%.0f,%.0f", objin.mx+1, objin.my+1);
+    sprintf(gstr, "%.0f,%.0f", objin->mx+1, objin->my+1);
     warning("Deblending overflow for detection at ", gstr);
   }
   if (subimage) {
@@ -801,8 +798,7 @@ void	scan_output(fieldstruct **fields, fieldstruct **wfields, int nfield,
   ++thecat.nblend;			/* Parent blend index */
 
   plist = objlist->plist;
-  for (o=0; o<objlist->nobj; o++)
-    {
+  for (o=0; o<objlist->nobj; o++) {
     obj = objlist->obj + o;
 /*-- Basic measurements */
     scan_preanalyse(obj, plist, ANALYSE_FULL|ANALYSE_ROBUST);
@@ -812,60 +808,54 @@ void	scan_output(fieldstruct **fields, fieldstruct **wfields, int nfield,
     obj->blend = thecat.nblend;
 /*--- Isophotal measurements */
     analyse_iso(fields, wfields, nfield, objlist, o);
-    if (prefs.blank_flag)
-      {
-      if (!(obj->isoimage = subimage_fromplist(field, wfield, obj, plist)))
-        {
+    if (prefs.blank_flag) {
+      if (!(obj->isoimage = subimage_fromplist(field, wfield, obj, plist))) {
 /*------ Not enough mem. for the BLANKing isoimage: flag the object now */
         obj->flag |= OBJ_OVERFLOW;
         sprintf(gstr, "%.0f,%.0f", obj->mx+1, obj->my+1);
         warning("Memory overflow during masking for detection at ", gstr);
-        }
       }
+    }
 
-    if ((n=cleanobjlist->nobj) >= prefs.clean_stacksize)
-      {
+    if ((n=cleanobjlist->nobj) >= prefs.clean_stacksize) {
        objstruct	*cleanobj;
        int		ymin, ymax, victim=0;
 
       ymin = 2000000000;	/* No image is expected to be that tall ! */
       cleanobj = cleanobjlist->obj;
       for (j=0; j<n; j++, cleanobj++)
-        if (cleanobj->ycmax < ymin)
-          {
+        if (cleanobj->ycmax < ymin) {
           victim = j;
           ymin = cleanobj->ycmax;
-          }
+        }
 
       cleanobj = cleanobjlist->obj + victim;
 /*---- Warn if there is a possibility for any aperture to be truncated */
-      if (field->ymax < field->height)
-        {
-        if ((ymax=cleanobj->ycmax) > field->ymax)
-          {
+      if (field->ymax < field->height) {
+        if ((ymax=cleanobj->ycmax) > field->ymax) {
           sprintf(gstr, "Object at position %.0f,%.0f ",
 		cleanobj->mx+1, cleanobj->my+1);
           QWARNING(gstr, "may have some apertures truncated:\n"
 		"          You might want to increase MEMORY_OBJSTACK");
-          }
-        else if (ymax>field->yblank && prefs.blank_flag)
-          {
+        } else if (ymax>field->yblank && prefs.blank_flag) {
           sprintf(gstr, "Object at position %.0f,%.0f ",
 		cleanobj->mx+1, cleanobj->my+1);
           QWARNING(gstr, "may have some unBLANKed neighbours\n"
 		"          You might want to increase MEMORY_OBJSTACK");
-          }
         }
+      }
       overobjlist = objlist_deblend(fields, wfields, nfield, cleanobjlist,
 			victim);
       analyse_final(fields, wfields, nfield, overobjlist);
       objlist_end(overobjlist);
-      }
+    }
 
 /*-- Add the object only if it is not "swallowed" by cleaning */
-    if (!prefs.clean_flag || clean_process(cleanobjlist, field, obj))
+    if (!prefs.clean_flag || clean_process(cleanobjlist, field, obj)) {
       clean_add(cleanobjlist, obj);
+      obj->isoimage = obj->fullimage = NULL;	// We have done a shallow copy
     }
+  }
 
   if (objlist != &objlistin) {
     objlist_end(objlist);
