@@ -197,7 +197,7 @@ typedef struct structtab
 /*------------------------------- functions ---------------------------------*/
 
 extern catstruct	*new_cat(int ncat),
-			*read_cat(char *filename),
+			*read_cat(const char *filename),
 			*read_cats(char **filenames, int ncat);
 
 extern tabstruct	*asc2bin_tab(catstruct *catin, char *tabinname, 
@@ -218,8 +218,8 @@ extern void	add_cleanupfilename(char *filename),
 		encode_checksum(unsigned int sum, char *str),
 		end_readobj(tabstruct *keytab, tabstruct *tab, char *buf),
 		end_writeobj(catstruct *cat, tabstruct *tab, char *buf),
-		error(int, char *, char *),
-		error_installfunc(void (*func)(char *msg1, char *msg2)),
+		error(int, const char *msg1, const char *msg2),
+		error_installfunc(void (*func)(const char *msg1, const char *msg2)),
 		fixexponent(char *s),
 		free_body(tabstruct *tab),
 		free_cat(catstruct **cat, int ncat),
@@ -245,7 +245,7 @@ extern void	add_cleanupfilename(char *filename),
 		ttypeconv(void *ptrin, void *ptrout,
 			t_type ttypein, t_type ttypeout),
 		voprint_obj(FILE *stream, tabstruct *tab),
-		warning(char *, char *),
+		warning(const char *msg1, const char *msg2),
 		write_body(tabstruct *tab, PIXTYPE *ptr, size_t size),
 		write_ibody(tabstruct *tab, FLAGTYPE *ptr, size_t size),
 		write_checksum(tabstruct *tab);
@@ -327,11 +327,6 @@ extern FLAGTYPE	*alloc_ibody(tabstruct *tab,
 			void (*func)(FLAGTYPE *ptr, int npix));
 
 extern t_type	ttypeof(char *str);
-
-extern  void	error(int, char *, char *),
-		swapbytes(void *ptr, int nb, int n),
-		warning(char *msg1, char *msg2);
-
 
 int		bswapflag;
 

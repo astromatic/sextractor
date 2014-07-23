@@ -76,8 +76,9 @@ void	play_bpann(bpannstruct *bpann, NFLOAT *invec, NFLOAT *outvec)
 /******************************* loadtab_bpann *******************************/
 /*
 Load the relevant ANN structure (using the LDACTools).
+VERSION    23/07/2014
 */
-bpannstruct	*loadtab_bpann(tabstruct *tab, char *filename)
+bpannstruct	*loadtab_bpann(tabstruct *tab, const char *filename)
   {
    bpannstruct	*bpann;
    keystruct	*key;

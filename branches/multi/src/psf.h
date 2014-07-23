@@ -104,7 +104,7 @@ extern double	*compute_gradient (float *weight,int width, int height,
 			float *masks, double *pm),
 		psf_fwhm(psfstruct *psf, obj2struct *obj2);
 
-extern psfstruct	*psf_load(char *filename);
+extern psfstruct	*psf_load(const char *filename);
 
 extern void	double_psf_fit(psfstruct *psf, fieldstruct *field,
 			fieldstruct *wfield, obj2struct *obj2,
