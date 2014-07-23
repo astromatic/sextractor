@@ -46,10 +46,10 @@ PURPOSE	``Read'' a FITS catalog with name filename.
 INPUT	Filename,
 OUTPUT	catstruct pointer.
 NOTES	Returns NULL if no file with name \<filename\> is found.
-AUTHOR	E. Bertin (IAP & Leiden observatory)
-VERSION	07/05/2002
+AUTHOR	E. Bertin (IAP & Leiden observatory), MK
+VERSION	23/07/2014
  ***/
-catstruct	*read_cat(char *filename)
+catstruct	*read_cat(const char *filename)
 
   {
    catstruct *cat;

@@ -789,10 +789,10 @@ INPUT	a character string,
 	another character string
 OUTPUT	RETURN_OK if everything went fine, RETURN_ERROR otherwise.
 NOTES	-.
-AUTHOR	E. Bertin (IAP)
-VERSION	24/02/2012
+AUTHOR	E. Bertin (IAP), MK
+VERSION    23/07/2014
  ***/
-void	write_error(char *msg1, char *msg2)
+void write_error(const char *msg1, const char *msg2)
   {
    char			error[MAXCHAR];
 

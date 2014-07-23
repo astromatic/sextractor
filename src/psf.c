@@ -122,11 +122,14 @@ void	psf_end(psfstruct *psf, psfitstruct *psfit)
  *
  * Read the PSF data from a FITS file in the PSFEx format.
  *
+ * @author EB, MK
+ * @date   23-July-2014
+ *
  * @param[in] filename name of the PSFEx file
  *
  * @return the generated PSF structure
  */
-psfstruct	*psf_load(char *filename)
+psfstruct	*psf_load(const char *filename)
   {
    static obj2struct	saveobj2;
    psfstruct		*psf;

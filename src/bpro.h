@@ -47,7 +47,7 @@ typedef	struct structbpann
 
 /*------------------------------ Prototypes ---------------------------------*/
 
-bpannstruct	*loadtab_bpann(tabstruct *tab, char *filename);
+bpannstruct	*loadtab_bpann(tabstruct *tab, const char *filename);
 
 void		free_bpann(bpannstruct *bpann),
 		play_bpann(bpannstruct *bpann, NFLOAT *invec, NFLOAT *outvec);

@@ -41,5 +41,5 @@ char			gstr[MAXCHAR];
 
 /*------------------------------- functions ---------------------------------*/
 extern void	makeit(void),
-		write_error(char *msg1, char *msg2);
+		write_error(const char *msg1, const char *msg2);
 
