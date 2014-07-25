@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		08/02/2012
+*	Last modified:		30/06/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -45,3 +45,5 @@ void		scan_extract(fieldstruct *dfield, fieldstruct *dwfield,
 			int nfield, infostruct *info, objliststruct *objlist),
 		scan_preanalyse(objliststruct *objlist, int no,
 			int analyse_type);
+void            scan_initmarkers(fieldstruct *field);
+void            scan_updatemarkers(fieldstruct *field, int yl);

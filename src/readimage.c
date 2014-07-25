@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		03/04/2012
+*	Last modified:		30/06/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -52,12 +52,19 @@ PROTO	void *readimage_loadstrip(fieldstruct *field, fieldstruct *wfield)
 PURPOSE	Load a new "strip" of pixel data into the rolling buffer.
 INPUT	Pointer to an image field structure,
 	pointer to a weight-map field structure.
+	integer to control check image writing
 OUTPUT	Void pointer to the start of the strip.
 NOTES	-.
-AUTHOR	E. Bertin (IAP)
-VERSION	03/04/2012
+AUTHOR	E. Bertin (IAP), M. Kuemmel (USM)
+VERSION	30/06/2014
+TODO:   Re-organizing the check image part. Handling the check images needs
+        lots of code with a totally different syntax than just reading data
+        into the field buffer. This should be done elsewhere using a simple
+        program interface. The variable "write_checkimgs"n currently controls
+        the writing of the check images, which is essential to be able
+        re-reading images.
  ***/
-void	*readimage_loadstrip(fieldstruct *field, fieldstruct *wfield)
+void	*readimage_loadstrip(fieldstruct *field, fieldstruct *wfield, const int write_checkimgs)
 
   {
    tabstruct	*tab;
@@ -81,10 +88,11 @@ void	*readimage_loadstrip(fieldstruct *field, fieldstruct *wfield)
     if (flags ^ FLAG_FIELD)
       {
 /*---- Allocate space for the frame-buffer */
-      if (!(field->strip=(PIXTYPE *)malloc(field->stripheight*field->width
-        *sizeof(PIXTYPE))))
-        error(EXIT_FAILURE,"Not enough memory for the image buffer of ",
-		field->rfilename);
+      if (!field->strip) // in case that a field is read again, the old buffer can be re-used
+        if (!(field->strip=(PIXTYPE *)malloc(field->stripheight*field->width
+            *sizeof(PIXTYPE))))
+          error(EXIT_FAILURE,"Not enough memory for the image buffer of ",
+              field->rfilename);
 
       data = field->strip;
 /*---- We assume weight data have been read just before */
@@ -99,7 +107,7 @@ void	*readimage_loadstrip(fieldstruct *field, fieldstruct *wfield)
         read_body(tab, data, nbpix);
       if (flags & (WEIGHT_FIELD|RMS_FIELD|BACKRMS_FIELD|VAR_FIELD))
         weight_to_var(field, data, nbpix);
-      if ((flags & DETECT_FIELD) && (check=prefs.check[CHECK_IDENTICAL]))
+      if (write_checkimgs && (flags & DETECT_FIELD) && (check=prefs.check[CHECK_IDENTICAL]))
         check_write(check, data, nbpix);
       for (y=0; y<field->stripheight; y++, data += w)
         {
@@ -113,7 +121,7 @@ void	*readimage_loadstrip(fieldstruct *field, fieldstruct *wfield)
           wdata += w;
           }
 /*------ Check-image stuff */
-        if (prefs.check_flag)
+        if (write_checkimgs && prefs.check_flag)
           {
           if (flags & DETECT_FIELD)
             {
@@ -142,10 +150,11 @@ void	*readimage_loadstrip(fieldstruct *field, fieldstruct *wfield)
       }
     else
       {
-      if (!(field->fstrip=(FLAGTYPE *)malloc(field->stripheight*field->width
-		*sizeof(FLAGTYPE))))
-      error(EXIT_FAILURE,"Not enough memory for the flag buffer of ",
-	field->rfilename);
+      if (!field->fstrip) // in case that a field is read again, the old buffer can be re-used
+        if (!(field->fstrip=(FLAGTYPE *)malloc(field->stripheight*field->width
+            *sizeof(FLAGTYPE))))
+          error(EXIT_FAILURE,"Not enough memory for the flag buffer of ",
+              field->rfilename);
       read_ibody(field->tab, field->fstrip, nbpix);
       }
 
@@ -164,14 +173,17 @@ void	*readimage_loadstrip(fieldstruct *field, fieldstruct *wfield)
         wdata = wfield->strip + field->stripylim*w;
 
 /*---- copy to Check-image the "oldest" line before it is replaced */
-      if ((flags & DETECT_FIELD) && (check=prefs.check[CHECK_SUBOBJECTS]))
-        check_write(check, data, w);
+      if (write_checkimgs && (flags & DETECT_FIELD))
+        {
+          if ((check=prefs.check[CHECK_SUBOBJECTS]))
+            check_write(check, data, w);
 
-      if ((flags & DETECT_FIELD) && (check=prefs.check[CHECK_MASK]))
-        check_write(check, data, w);
+          if ((check=prefs.check[CHECK_MASK]))
+            check_write(check, data, w);
 
-      if ((flags & DETECT_FIELD) && (check=prefs.check[CHECK_SUBMASK]))
-        check_write(check, data, w);
+          if ((check=prefs.check[CHECK_SUBMASK]))
+            check_write(check, data, w);
+        }
 
       if (flags & BACKRMS_FIELD)
         back_rmsline(field, field->ymax, data);
@@ -182,7 +194,7 @@ void	*readimage_loadstrip(fieldstruct *field, fieldstruct *wfield)
       if (flags & (WEIGHT_FIELD|RMS_FIELD|BACKRMS_FIELD|VAR_FIELD))
         weight_to_var(field, data, w);
 
-      if ((flags & DETECT_FIELD) && (check=prefs.check[CHECK_IDENTICAL]))
+      if (write_checkimgs && (flags & DETECT_FIELD) && (check=prefs.check[CHECK_IDENTICAL]))
         check_write(check, data, w);
 /*---- Interpolate and subtract the background at current line */
       if (flags & (MEASURE_FIELD|DETECT_FIELD))
@@ -190,7 +202,7 @@ void	*readimage_loadstrip(fieldstruct *field, fieldstruct *wfield)
       if (interpflag)
         interpolate(field,wfield, data, wdata);
 /*---- Check-image stuff */
-      if (prefs.check_flag)
+      if (write_checkimgs && prefs.check_flag)
         {
         if (flags & DETECT_FIELD)
           {
@@ -224,9 +236,18 @@ void	*readimage_loadstrip(fieldstruct *field, fieldstruct *wfield)
       field->stripysclim = (++field->stripysclim)%field->stripheight;
     }
 
+  //if (flags ^ FLAG_FIELD){
+  //    //QPRINTF(OUTPUT, "\n\none value: %f\n\n", field->strip[field->stripy*w]);
+  //    QPRINTF(OUTPUT, "\n\none value: %p \n", field->strip + field->stripy*w);
+  //    return (void *)(field->strip + field->stripy*w);
+  //}
+  //else{
+  //    (void *)(field->fstrip + field->stripy*w);
+  //}
+  //
   return (flags ^ FLAG_FIELD)?
-		  (void *)(field->strip + field->stripy*w)
-		: (void *)(field->fstrip + field->stripy*w);
+      (void *)(field->strip + field->stripy*w)
+      : (void *)(field->fstrip + field->stripy*w);
   }
 
 
