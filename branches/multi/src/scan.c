@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		26/06/2014
+*	Last modified:		30/06/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -55,9 +55,6 @@
 #include	"threads.h"
 #endif
 
-static void	scan_initmarkers(fieldstruct *field),
-		scan_updatemarkers(fieldstruct *field, int yl);
-
 /****** scan_extract *********************************************************
 PROTO	void scan_extract(fieldstruct *dfield, fieldstruct *dwfield,
 			fieldstruct **fields, fieldstruct **wfields, int nfield,
@@ -72,7 +69,7 @@ INPUT	Pointer to the detection image field,
 	number of flag maps.
 OUTPUT	-.
 NOTES	Global preferences are used.
-AUTHOR	E. Bertin (IAP)
+AUTHOR	E. Bertin (IAP), MK
 VERSION	26/06/2014
  ***/
 void	scan_extract(fieldstruct *dfield, fieldstruct *dwfield,
@@ -240,7 +237,7 @@ void	scan_extract(fieldstruct *dfield, fieldstruct *dwfield,
         {
 /*------ Copy the previous weight line to track bad pixel limits */
         wscan = (dwfield->stripy==dwfield->stripysclim)?
-		  (PIXTYPE *)readimage_loadstrip(dwfield, (fieldstruct *)NULL)
+		  (PIXTYPE *)readimage_loadstrip(dwfield, (fieldstruct *)NULL, 1)
 		: &dwfield->strip[dwfield->stripy*dwfield->width];
         if (PLISTEXIST(wflag))
           {
@@ -254,13 +251,13 @@ void	scan_extract(fieldstruct *dfield, fieldstruct *dwfield,
         }
       if (dfield->stripy==dfield->stripysclim)
         {
-        scan = (PIXTYPE *)readimage_loadstrip(dfield, dwfield);
+        scan = (PIXTYPE *)readimage_loadstrip(dfield, dwfield, 1);
         for (i=1; i<nfield; i++)
           if (!(fields[i]->flags&MULTIGRID_FIELD))
             {
-            readimage_loadstrip(fields[i], wfields[i]);
+            readimage_loadstrip(fields[i], wfields[i], 1);
             if (wfields[i])
-              readimage_loadstrip(wfields[i], (fieldstruct *)NULL);
+              readimage_loadstrip(wfields[i], (fieldstruct *)NULL, 1);
             }
         }
       else
@@ -271,7 +268,7 @@ void	scan_extract(fieldstruct *dfield, fieldstruct *dwfield,
           {
           ffield = ffields[i];
           fscan[i] = (ffield->stripy==ffield->stripysclim)?
-		  (FLAGTYPE *)readimage_loadstrip(ffield, (fieldstruct *)NULL)
+		  (FLAGTYPE *)readimage_loadstrip(ffield, (fieldstruct *)NULL, 1)
 		: &ffield->fstrip[ffield->stripy*ffield->width];
           }
 
@@ -663,7 +660,8 @@ NOTES	-.
 AUTHOR	E. Bertin (IAP)
 VERSION	07/05/2012
  ***/
-static void	scan_initmarkers(fieldstruct *field)
+//static void	scan_initmarkers(fieldstruct *field)
+void     scan_initmarkers(fieldstruct *field)
 
   {
   if (field)
@@ -684,7 +682,8 @@ NOTES	-.
 AUTHOR	E. Bertin (IAP)
 VERSION	07/05/2012
  ***/
-static void	scan_updatemarkers(fieldstruct *field, int yl)
+//static void	scan_updatemarkers(fieldstruct *field, int yl)
+void     scan_updatemarkers(fieldstruct *field, int yl)
 
   {
   if (field)
@@ -1007,4 +1006,3 @@ void  scan_preanalyse(objliststruct *objlist, int no, int analyse_type)
 
   return;
   }
-

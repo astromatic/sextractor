@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		27/03/2012
+*	Last modified:		30/06/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -31,6 +31,6 @@
 #endif
 
 /*------------------------------- functions ---------------------------------*/
-extern void	readimage_copydata(fieldstruct *field, int offset, int size),
-		*readimage_loadstrip(fieldstruct *field, fieldstruct *wfield);
+extern void readimage_copydata(fieldstruct *field, int offset, int size);
+extern void *readimage_loadstrip(fieldstruct *field, fieldstruct *wfield, const int write_checkimgs);
 

@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		18/09/2013
+*	Last modified:		25/07/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -41,6 +41,7 @@
 #include	"prefs.h"
 #include	"fits/fitscat.h"
 #include	"assoc.h"
+//#include        "objmask.h"
 #include	"back.h"
 #include	"catout.h"
 #include	"check.h"
@@ -65,6 +66,10 @@ extern char		profname[][32];
 double			dtime;
 
 int			_count_imext(char *filename);
+void backsub_multigrid(fieldstruct **fields, fieldstruct **wfields, const int file_next[], const int file_index[], const int nimage);
+void backsub_nonmultigrid(fieldstruct **fields, fieldstruct **wfields, fieldstruct **efields, fieldstruct **wefields,
+    const int nimage, const int ndext, const int actext, psfstruct **psfs);
+void transfer_maskvals(const objmaskstruct *fromMask, wcsstruct *fromWCS, objmaskstruct *toMask, wcsstruct *toWCS);
 
 /****** makeit ***************************************************************
 PROTO	void main(void)
@@ -471,40 +476,9 @@ void	makeit(void)
 
 /* Pre-process background subtraction in multigrid mode */
   if ((prefs.multigrids_flag))
-    for (i=0; i<nimage; i++)
-      {
-      next = file_next[i];
-      field = fields[file_index[i]];
-      wfield = wfields[file_index[i]];
-      for (e=0; e<next; e++, field++, wfield++)
-        {
-        if (next>1)
-          sprintf(str, "[%d/%d]", e+1, next);
-        NFPRINTF(OUTPUT, "");
-        QPRINTF(OUTPUT, " \n");
-        QPRINTF(OUTPUT, "----- Image %.60s%s:\n",
-		field->rfilename, next>1? str:"");
-        field_printinfo(field, wfield);
-        back_map(field, wfield, prefs.wscale_flag[i]);
-        if ((i))
-          {
-          QPRINTF(OUTPUT,
-		"    Background: %.6g   RMS: %.5g"
-		"   Analysis threshold: %.5g \n",
-		field->backmean, field->backsig, field->thresh);
-          }
-        else
-          {
-          QPRINTF(OUTPUT,
-		"    Background: %.6g   RMS: %.5g   Analysis threshold: %.5g"
-		"   Detection threshold: %.5g \n",
-		field->backmean, field->backsig,
-		field->thresh, field->dthresh);
-          }
-        }
-      }
+    backsub_multigrid(fields, wfields, file_next, file_index, nimage);
 
-/* Process one extension at a time */
+  /* Process one extension at a time */
   for (e=0; e<ndext; e++)
     {
     dfield = fields[e];
@@ -512,48 +486,8 @@ void	makeit(void)
     if (!(prefs.multigrids_flag))
       {
 /*---- Multigrid is off: select only one extension from every file */
-      nfield = nimage;
-      for (i=0; i<nimage; i++)
-        {
-        field = efields[i] = fields[i*ndext+e];
-        wfield = wefields[i] = wfields[i*ndext+e];
-        if (ndext>1)
-          sprintf(str, "[%d/%d]", e+1, ndext);
-        NFPRINTF(OUTPUT, "");
-        QPRINTF(OUTPUT, " \n");
-        QPRINTF(OUTPUT, "----- Image %.60s%s:\n",
-		field->rfilename, ndext>1? str:"");
-        field_printinfo(field, wfield);
-        back_map(field, wfield, prefs.wscale_flag[i]);
-        if ((i))
-          {
-          QPRINTF(OUTPUT,
-		"    Background: %.6g   RMS: %.5g"
-		"   Analysis threshold: %.5g \n",
-		field->backmean, field->backsig, field->thresh);
-          }
-        else
-          {
-          QPRINTF(OUTPUT,
-		"    Background: %.6g   RMS: %.5g   Analysis threshold: %.5g"
-		"   Detection threshold: %.5g \n",
-		field->backmean, field->backsig,
-		field->thresh, field->dthresh);
-          }
-
-/*------ For interpolated weight-maps, copy the background structure */
-        if (wfield && wfield->flags&(INTERP_FIELD|BACKRMS_FIELD))
-          back_copy(wfield->reffield, wfield);
-
-/*------ Initialize PSF contexts and workspace */
-        if (prefs.psf_flag)
-          if (psfs[i])
-            {
-            psf_readcontext(psfs[i], field);
-            psf_init(psfs[i]);
-            fields[i]->psf = psfs[i];
-            }
-        }
+        nfield = nimage;
+        backsub_nonmultigrid(fields, wfields, efields, wefields, nimage, ndext, e, psfs);
       }
     else
       {
@@ -809,3 +743,306 @@ void write_error(const char *msg1, const char *msg2)
   }
 
 
+/****************************backsub_multigrid********************************/
+/**
+ * Function: backsub_multigrid
+ * Does the background subtraction in the multigrid mode for all images. This
+ * includes masking (currently not yet parameterized).
+ *
+ * @author MK
+ * @date   25th July 2014
+ *
+ * @param[in,out] fields     list with all images/extensions
+ * @param[in]     wfields    list with all weight images/extensions
+ * @param[in]     file_next  array with number of extensions fo all images
+ * @param[in]     file_index array with first indices of images in 'fields'
+ * @param[in]     nimage     number of images
+ */
+void backsub_multigrid(fieldstruct **fields, fieldstruct **wfields, const int file_next[], const int file_index[], const int nimage)
+{
+  char str[82];
+  int i, j;
+  int next, ndext, e;
+  int doMasking;
+  fieldstruct *field;
+  fieldstruct *wfield;
+  objmaskstruct **omasks=NULL;
+
+  // switch on/off the
+  // masking
+  doMasking=0;
+
+  // go over all (physical) images
+  for (i=0; i<nimage; i++)
+    {
+
+      // get the number of extensions
+      next = file_next[i];
+
+      // get the first extensions
+      field  = fields[file_index[i]];
+      wfield = wfields[file_index[i]];
+
+      if (!i && doMasking)
+        {
+          // store the number of
+          // detection extensions
+          ndext = next;
+
+          // allocate space for the object masks;
+          // set all masks to NULL
+          QMALLOC(omasks, objmaskstruct *, ndext);
+          for (j=0; j<ndext; j++)
+            omasks[j]=NULL;
+        }
+
+      // iterate through all extensions
+      for (e=0; e<next; e++, field++, wfield++)
+        {
+          // print some field information
+          if (next>1)
+            sprintf(str, "[%d/%d]", e+1, next);
+          NFPRINTF(OUTPUT, "");
+          QPRINTF(OUTPUT, " \n");
+          QPRINTF(OUTPUT, "----- Image %.60s%s:\n",
+              field->rfilename, next>1? str:"");
+          field_printinfo(field, wfield);
+
+          if ((i))
+            {
+              if (doMasking)
+                {
+                  fieldstruct *dfield, *wdfield;
+                  objmaskstruct *measureMask=NULL;
+
+                  // locate the first detection extension
+                  // this assumes detection extensions start the vector
+                  dfield  = fields[0];
+                  wdfield = wfields[0];
+
+                  // create a mask for the current measurement image
+                  measureMask = create_objmask((size_t)field->width, (size_t)field->height, 0, e);
+
+                  // iterate through all detection extensions
+                  for (j=0; j<ndext; j++, dfield++, wdfield++)
+                    {
+                      // check for an overlap between the measurement image
+                      // and the current detection image;
+                      // transfer the mask information
+                      if ((frame_wcs(field->wcs, dfield->wcs)))
+                          transfer_maskvals(omasks[j], dfield->wcs, measureMask, field->wcs);
+                    }
+                  objmask_info(measureMask);
+                  // determine the background using the mask
+                  back_map_mask(field, wfield, prefs.wscale_flag[i], measureMask);
+
+                  // release the memory
+                  if (measureMask)
+                    free_objmask(measureMask);
+                }
+              else
+                {
+                  // determine the background
+                  back_map(field, wfield, prefs.wscale_flag[i]);
+                }
+
+              // print background info for a measurement extension
+              QPRINTF(OUTPUT,
+                  "    Background: %.6g   RMS: %.5g"
+                  "   Analysis threshold: %.5g \n",
+                  field->backmean, field->backsig, field->thresh);
+            }
+          else
+            {
+              // determine the background
+              back_map(field, wfield, prefs.wscale_flag[i]);
+
+              if (doMasking)
+                {
+                  // create an object mask
+                  omasks[e] = create_objmask((size_t)field->width, (size_t)field->height, 0, e);
+                  populate_objmask(field, wfield, omasks[e]);
+                  objmask_info(omasks[e]);
+                }
+              // TODO: a second iteration on the detection image, using the new mask;
+              //       this would then change the detection
+
+              // print background info for a detection extension
+              QPRINTF(OUTPUT,
+                  "    Background: %.6g   RMS: %.5g   Analysis threshold: %.5g"
+                  "   Detection threshold: %.5g \n",
+                  field->backmean, field->backsig,
+                  field->thresh, field->dthresh);
+            }
+        }
+    }
+
+  // release the memory in the masks
+  if (doMasking && omasks) {
+      for (j=0; j<ndext;j++) {
+          if (omasks[j])
+              free_objmask(omasks[j]);
+      }
+      free(omasks);
+      omasks=NULL;
+  }
+}
+
+/****************************backsub_nonmultigrid*****************************/
+/**
+ * Function: backsub_nonmultigrid
+ * Does the background subtraction in the non-multigrid mode also sorts the
+ * detection and measurement images for the following detection and measurement
+ * process. This is done for ONE extension of the images and also includes
+ * masking (not parameterized yet). Also associates the PSF's with the
+ * fields/extensions.
+ *
+ * @author MK
+ * @date   25th July 2014
+ *
+ * @param[in,out] fields   list of all fields/extensions
+ * @param[in]     wfields  list of all weight fields/extensions
+ * @param[out]    efields  measurement fields/extensions in the next detection/analysis cycle
+ * @param[out]    wefields measurement weight fields/extensions in the next detection/analysis cycle
+ * @param[in]     nimage   number of images
+ * @param[in]     ndext    number of detection extensions
+ * @param[in]     actext   number of the current detection
+ * @param[in]     psfs     list of PSF's
+ */
+void backsub_nonmultigrid(fieldstruct **fields, fieldstruct **wfields, fieldstruct **efields, fieldstruct **wefields,
+    const int nimage, const int ndext, const int actext, psfstruct **psfs)
+{
+  char str[82];
+  int  i;
+  int doMasking;
+  fieldstruct *field,*wfield;
+  objmaskstruct *omask=NULL;
+
+  // switch on/off the
+  // masking
+  doMasking=0;
+
+ // go over all images
+  for (i=0; i<nimage; i++)
+    {
+      // select the right extension in the current image (+weight)
+      // from the list of images (=fields)
+      field  = fields[i*ndext+actext];
+      wfield = wfields[i*ndext+actext];
+
+      // put the current image (+weight)
+      // to the list of images to be analysed
+      efields[i]  = field;
+      wefields[i] = wfield;
+
+      /// print information on the current image
+      if (ndext>1)
+        sprintf(str, "[%d/%d]", actext+1, ndext);
+      NFPRINTF(OUTPUT, "");
+      QPRINTF(OUTPUT, " \n");
+      QPRINTF(OUTPUT, "----- Image %.60s%s:\n",
+          field->rfilename, ndext>1? str:"");
+      field_printinfo(field, wfield);
+
+      if (!i)
+        {
+          // this is the branch for detection images
+          back_map(field, wfield, prefs.wscale_flag[i]);
+          QPRINTF(OUTPUT,
+              "    Background: %.6g   RMS: %.5g   Analysis threshold: %.5g"
+              "   Detection threshold: %.5g \n",
+              field->backmean, field->backsig,
+              field->thresh, field->dthresh);
+
+          // place here a switch
+          // to create and use object masks
+          if (doMasking)
+            {
+              omask = create_objmask((size_t)field->width, (size_t)field->height, 0, actext);
+              populate_objmask(field, wfield, omask);
+              objmask_info(omask);
+
+              // TODO: a second iteration on the detection image, using the new mask;
+              //       this would then change the detection
+            }
+        }
+      else
+        {
+          // this is the branch for measurement images
+          if (omask)
+            back_map_mask(field, wfield, prefs.wscale_flag[i], omask);
+          else
+            back_map(field, wfield, prefs.wscale_flag[i]);
+          QPRINTF(OUTPUT,
+              "    Background: %.6g   RMS: %.5g"
+              "   Analysis threshold: %.5g \n",
+              field->backmean, field->backsig, field->thresh);
+        }
+
+      // For interpolated weight-maps, copy the background structure
+      if (wfield && wfield->flags&(INTERP_FIELD|BACKRMS_FIELD))
+        back_copy(wfield->reffield, wfield);
+
+      // Initialize PSF contexts and workspace
+      if (prefs.psf_flag)
+        if (psfs[i])
+          {
+            psf_readcontext(psfs[i], field);
+            psf_init(psfs[i]);
+            fields[i]->psf = psfs[i];
+          }
+    }
+
+  // delete the object mask
+  if (omask)
+    free_objmask(omask);
+}
+
+/****************************transfer_maskvals********************************/
+/**
+ * Function: transfer_maskvals
+ *
+ * Transfers the mask value from the input (from-) mask to the output (to-)
+ * mask using their respective WCS, which coincides with the WCS of the images
+ * for which the masks where determined.
+ *
+ * @author MK
+ * @date   25th July 2014
+ *
+ * @param[in]     fromMask - object mask to get the information
+ * @param[in]     fromWCS
+ * @param[in,out] toMask
+ * @param[in]     toWCS
+ */
+void transfer_maskvals(const objmaskstruct *fromMask, wcsstruct *fromWCS, objmaskstruct *toMask, wcsstruct *toWCS)
+{
+  size_t ii, jj;
+  double pixposTo[2];
+  double pixposFrom[2];
+  double wcspos[2];
+
+  // go over all y
+  for (jj=0; jj<toMask->height; jj++)
+    {
+     pixposTo[1] = (double)jj+1;
+
+     // go over all x
+     for (ii=0; ii<toMask->width; ii++)
+        {
+          pixposTo[0] = (double)ii+1;
+
+          // compute the pixel position on the from-mask
+          raw_to_wcs(toWCS, pixposTo, wcspos);
+          raw_to_wcs(fromWCS, wcspos, pixposFrom);
+
+          // compute the index position
+          pixposFrom[0] = floor(pixposFrom[0]-1.0+0.5);
+          pixposFrom[1] = floor(pixposFrom[1]-1.0+0.5);
+
+          // transfer value from-mask --> to-mask
+          if (pixposFrom[0]>-1 && pixposFrom[0]<fromMask->width && pixposFrom[1]>-1 && pixposFrom[1]<fromMask->height)
+            if (get_objmask_value((size_t)pixposFrom[0], (size_t)pixposFrom[1], fromMask))
+              set_objmask_value(ii, jj, 1, toMask);
+        }
+    }
+}

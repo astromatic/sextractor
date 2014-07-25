@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		07/03/2012
+*	Last modified:		30/06/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -35,32 +35,66 @@
 #include	<stdlib.h>
 #include	<string.h>
 
+// TODO: put this block in new file
+#include <stdbool.h>
+#include <sys/mman.h>
+#include <time.h>
+#include "fits/fitscat_defs.h"
+
 #include	"define.h"
 #include	"globals.h"
 #include	"prefs.h"
 #include	"fits/fitscat.h"
+
+//#include        "objmask.h"
+
 #include	"back.h"
 #include	"field.h"
 #include	"misc.h"
 #include	"weight.h"
 
-/****** back_map ************************************************************
-PROTO	void back_map(fieldstruct *field, fieldstruct *wfield, int wscale_flag)
-PURPOSE	Compute a map of an image background.
-INPUT	Pointer to image field,
-	pointer to image weight field,
-	weight scaling flag.
-OUTPUT	-.
-NOTES	Global preferences are used.
-AUTHOR	E. Bertin (IAP)
-VERSION	07/03/2012
- ***/
-void	back_map(fieldstruct *field, fieldstruct *wfield, int wscale_flag)
+/****************************back_map*****************************************/
+/**
+ * Function: back_map
+ * Computes a map of a field (image extension) and stores it in the field
+ * structure.
+ *
+ * @author E. Bertin (IAP), MK
+ * @date   30th June 2014
+ *
+ * @param[in,out] field       the field
+ * @param[in]     wfield      the weight field
+ * @param[in]     wscale_flag weight scaling flag
+ */
+void    back_map(fieldstruct *field, fieldstruct *wfield, int wscale_flag)
+{
+  // set the object mask to NULL and call the masked function
+  objmaskstruct *nullmask=NULL;
+  back_map_mask(field, wfield, wscale_flag, nullmask);
+}
 
-  {
+/****************************back_map_mask************************************/
+/**
+ * Function: back_map_mask
+ * Computes a map of a field (image extension) and stores it in the field
+ * structure. Pixel which are as part of an object masked in the object masked
+ * are *NOT* for the background and noise determination.
+ *
+ * @author E. Bertin (IAP), MK
+ * @date   30th June 2014
+ *
+ * @param[in,out] field       the field
+ * @param[in]     wfield      the weight field
+ * @param[in]     wscale_flag weight scaling flag
+ * @param[in]     omask       the mask for the field
+ */
+void    back_map_mask(fieldstruct *field, fieldstruct *wfield, int wscale_flag, objmaskstruct *omask)
+
+    {
    backstruct	*backmesh,*wbackmesh, *bm,*wbm;
    PIXTYPE	*buf,*wbuf, *buft,*wbuft;
    OFF_T	fcurpos,wfcurpos, wfcurpos2,fcurpos2, bufshift, jumpsize;
+   long int     ocurpos, ocurpos2;
    size_t	bufsize, bufsize2,
 		size,meshsize;
    int		i,j,k,m,n, step, nlines,
@@ -90,6 +124,9 @@ void	back_map(fieldstruct *field, fieldstruct *wfield, int wscale_flag)
 
   wfcurpos = wfcurpos2 = 0;		/* to avoid gcc -Wall warnings */
   QFTELL(field->cat->file, fcurpos, field->cat->filename);
+  ocurpos = ocurpos2 = 0;
+  if (omask)
+    ocurpos = tell_objmask(omask);
   if (wfield)
     QFTELL(wfield->cat->file, wfcurpos, wfield->cat->filename);
 
@@ -109,7 +146,7 @@ void	back_map(fieldstruct *field, fieldstruct *wfield, int wscale_flag)
   else
     bufshift = jumpsize = 0;		/* to avoid gcc -Wall warnings */
 
-/* Allocate some memory */
+  /* Allocate some memory */
   QMALLOC(backmesh, backstruct, nx);		/* background information */
   QMALLOC(buf, PIXTYPE, bufsize);		/* pixel buffer */
   free(field->back);
@@ -136,6 +173,10 @@ void	back_map(fieldstruct *field, fieldstruct *wfield, int wscale_flag)
     wbuf = NULL;
     }
 
+  // =1 prints to file,
+  // =0 prints to screen
+  int fileindex=1;
+
 /* Loop over the data packets */
 
   for (j=0; j<ny; j++)
@@ -149,6 +190,8 @@ void	back_map(fieldstruct *field, fieldstruct *wfield, int wscale_flag)
       if (j == ny-1 && field->npix%bufsize)
         bufsize = field->npix%bufsize;
       read_body(field->tab, buf, bufsize);
+      if (omask)
+        apply_objmask(buf, bufsize, omask);
       if (wfield)
         {
         read_body(wfield->tab, wbuf, bufsize);
@@ -179,6 +222,8 @@ void	back_map(fieldstruct *field, fieldstruct *wfield, int wscale_flag)
       {
 /*---- Image size too big, we have to skip a few data !*/
       QFTELL(field->cat->file, fcurpos2, field->cat->filename);
+      if (omask)
+        ocurpos2 = tell_objmask(omask);
       if (wfield)
         QFTELL(wfield->cat->file, wfcurpos2, wfield->cat->filename);
       if (j == ny-1 && (n=field->height%field->backh))
@@ -201,13 +246,22 @@ void	back_map(fieldstruct *field, fieldstruct *wfield, int wscale_flag)
 /*---- Read and skip, read and skip, etc... */
       QFSEEK(field->cat->file, bufshift*(OFF_T)field->tab->bytepix,
 		SEEK_CUR, field->cat->filename);
+      if (omask)
+        seek_objmask(bufshift, SEEK_CUR, omask);
+
       buft = buf;
       for (i=nlines; i--; buft += w)
         {
         read_body(field->tab, buft, w);
+        if (omask)
+          apply_objmask(buft, w, omask);
         if (i)
-          QFSEEK(field->cat->file, jumpsize*(OFF_T)field->tab->bytepix,
-		SEEK_CUR, field->cat->filename);
+          {
+            QFSEEK(field->cat->file, jumpsize*(OFF_T)field->tab->bytepix,
+                SEEK_CUR, field->cat->filename);
+            if (omask)
+              seek_objmask(jumpsize, SEEK_CUR, omask);
+          }
         }
 
       if (wfield)
@@ -228,6 +282,8 @@ void	back_map(fieldstruct *field, fieldstruct *wfield, int wscale_flag)
       back_stat(backmesh, wbackmesh, buf, wbuf, bufsize, nx, w, bw,
 	wfield?wfield->weight_thresh:0.0);
       QFSEEK(field->cat->file, fcurpos2, SEEK_SET, field->cat->filename);
+      if (omask)
+        seek_objmask(ocurpos2, SEEK_SET, omask);
       bm = backmesh;
       for (m=nx; m--; bm++)
         if (bm->mean <= -BIG)
@@ -250,6 +306,8 @@ void	back_map(fieldstruct *field, fieldstruct *wfield, int wscale_flag)
         if (bufsize2>size)
           bufsize2 = size;
         read_body(field->tab, buf, bufsize2);
+        if (omask)
+          apply_objmask(buf, bufsize2, omask);
         if (wfield)
           {
           read_body(wfield->tab, wbuf, bufsize2);
@@ -259,6 +317,9 @@ void	back_map(fieldstruct *field, fieldstruct *wfield, int wscale_flag)
 		wfield?wfield->weight_thresh:0.0);
         }
       }
+
+    // print the background mesh
+    //back_printmeshs(backmesh, nx,&fileindex);
 
     /*-- Compute background statistics from the histograms */
     bm = backmesh;
@@ -291,7 +352,10 @@ void	back_map(fieldstruct *field, fieldstruct *wfield, int wscale_flag)
 
 /* Go back to the original position */
   QFSEEK(field->cat->file, fcurpos, SEEK_SET, field->cat->filename);
-  if (wfield)
+  if (omask){
+    seek_objmask(ocurpos, SEEK_SET, omask);
+  }
+ if (wfield)
     QFSEEK(wfield->cat->file, wfcurpos, SEEK_SET, wfield->cat->filename);
 
 /* Median-filter and check suitability of the background map */
@@ -302,7 +366,7 @@ void	back_map(fieldstruct *field, fieldstruct *wfield, int wscale_flag)
 
 /* Compute normalization for variance- or weight-maps*/
   if (wfield && wfield->flags&(VAR_FIELD|WEIGHT_FIELD))
-    {      
+    {
     nr = 0;
     QMALLOC(ratio, float, wfield->nback);
     ratiop = ratio;
@@ -642,10 +706,11 @@ void	back_histo(backstruct *backmesh, backstruct *wbackmesh,
     else
       for (y=h; y--; buft += offset)
         for (x=bw; x--;)
-          {
+          {//QPRINTF(OUTPUT, " %.5g", *buft);
           bin = (int)(*(buft++)/qscale + cste);
           if (bin>=0 && bin<nlevels)
         	(*(histo+bin))++;
+          //QPRINTF(OUTPUT, "->%i", bin);
           }
     }
 
@@ -1443,14 +1508,29 @@ NOTES	-.
 AUTHOR	M. Kuemmel (LMU)
 VERSION	12/02/2014
  ***/
-void	back_printmeshs(const backstruct *backmesh, const int nmeshs)
-  {
-	int index=0;
-	// go over the meshes
-	for (index=0; index<nmeshs; index++)
-		// print one mesh
-		back_printmesh(&backmesh[index]);
+void	back_printmeshs(const backstruct *backmesh, const int nmeshs, int *tofile)
+{
+  char filename[MAXCHAR];
+  int index;
+  FILE *outstream;
+  backstruct *bm;
+
+  // go over the meshes
+  bm=backmesh;
+  for (index=0; index<nmeshs; index++, bm++){
+      if (*tofile){
+          sprintf(filename, "histoMsk%i.txt", *tofile);
+          outstream = fopen(filename, "w+");
+          back_printmesh(bm, outstream);
+          fclose(outstream);
+          (*tofile)++;
+      }
+      else{
+          // print one mesh
+          back_printmesh(bm, OUTPUT);
+      }
   }
+}
 
 /****** back_printmesh ******************************************************
 PROTO	void back_printmesh(const backstruct *backmesh)
@@ -1461,14 +1541,655 @@ NOTES	-.
 AUTHOR	M. Kuemmel (LMU)
 VERSION	12/02/2014
  ***/
-void	back_printmesh(const backstruct *backmesh)
+void	back_printmesh(const backstruct *backmesh, FILE * outstream)
+{
+  int index;
+  QPRINTF(outstream, "# Mode: %.5g, Mean: %.5g, Sigma: %.5g, Npixel: %i\n", backmesh->mode, backmesh->mean, backmesh->sigma, backmesh->npix);
+  QPRINTF(outstream, "# Lcut: %.5g, Hcut: %.5g, Qzero: %.5g Qscale: %.5g\n", backmesh->lcut, backmesh->hcut, backmesh->qzero, backmesh->qscale);
+  QPRINTF(outstream, "# Nlevels: %i, \n", backmesh->nlevels);
+  for (index=0; index<backmesh->nlevels; index++)
+    //if (backmesh->histo[index])
+      QPRINTF(outstream, "%i %.5g %i\n", index, backmesh->qzero+(float)index*backmesh->qscale, backmesh->histo[index]);
+}
+
+// TODO: put everything from here into new file
+/****************************create_objmask***********************************/
+/**
+ * Function: create_objmask
+ *
+ * Create an object mask of the specified size and in the desired structure.
+ *
+ * @author MK
+ * @date   June 2014
+ *
+ * @param[in] nx       number of pixels in x
+ * @param[in] ny       number of pixels in y
+ * @param[in] swapflag mapp to a file [1] or keep in memory [0]
+ * @param[in] index    file index, which will be part of the name
+ *
+ * @return the generated object mask
+ */
+objmaskstruct *create_objmask(const size_t nx, const size_t ny, const int swapflag, const int index)
+{
+  objmaskstruct *omask;
+  //size_t index;
+  bool *abool;
+
+  // basic allocation
+  omask = (objmaskstruct *)malloc(sizeof(objmaskstruct));
+
+  // copy the "constants"
+  omask->width  = nx;
+  omask->height = ny;
+  omask->npix   = nx*ny;
+
+  // store the array size
+  omask->size = omask->npix*sizeof(bool);
+
+  // check for the swap flag
+  if (!swapflag)
+    {
+      // malloc the big array
+      omask->maskdata = (bool *)malloc(omask->npix*sizeof(bool));
+      if (!omask->maskdata)
+        {
+          error(EXIT_FAILURE, "Problems allocating memory", "");
+        }
+
+      // mark the other elements as not being used
+      omask->swapfile=NULL;
+      sprintf(omask->swapname, "");
+    }
+  else
+    {
+      // get the swap filename
+      get_obmask_name(index, omask->swapname);
+
+      // open the swap file
+      omask->swapfile = fopen(omask->swapname, "w+");
+      if (!omask->swapfile)
+        {
+          error(EXIT_FAILURE, "Can not open swap file: ", omask->swapname);
+        }
+
+      // stretch the file to the desired size
+      if (fseek(omask->swapfile, omask->size-1, SEEK_SET) == -1) {
+          fclose(omask->swapfile);
+          error(EXIT_FAILURE, "Error calling fseek() to 'stretch' the file: ", omask->swapname);
+      }
+
+      //int result=0;
+      // the fwrite() line should work as well, but somehow
+      // it dumps away, probably someparams are wrong
+      //if (fwrite("", 1, 1, omask->swapfile) != 1) {
+      //result = write(fileno(omask->swapfile), "", 1);
+      //if (result != 1) {
+      //result = fwrite("o", 1, 1, omask->swapfile);
+      //if (result !=1){
+      //fprintf(stderr, "rrrr: %i\n", result);
+
+      // write something at that point to get the file size
+      if (write(fileno(omask->swapfile), "", 1) != 1) {
+          fclose(omask->swapfile);
+          error(EXIT_FAILURE, "Error writing last byte of the file: ", omask->swapname);
+      }
+
+      // make the memory mapping and ceck that it worked
+      omask->maskdata = mmap(0, omask->size, PROT_READ | PROT_WRITE, MAP_SHARED, fileno(omask->swapfile), 0);
+      if (omask->maskdata == MAP_FAILED) {
+          fclose(omask->swapfile);
+          error(EXIT_FAILURE, "Error mmapping the file: ", omask->swapname);
+      }
+    }
+
+  // set swap flag
+  omask->swapflag=swapflag;
+
+  // set the stepper position
+  omask->actindex=0;
+  omask->actpos=omask->maskdata;
+
+  // initialize all values
+  if (!memset(omask->maskdata, 0, omask->size))
+    {
+      if (omask->swapfile)
+        fclose(omask->swapfile);
+      error(EXIT_FAILURE, "Error setting the memory to FALSE.", "");
+    }
+  // that's a classical variant of the initialization
+  //for (index=0; index<omask->npix; index++)
+  //  omask->maskdata[index]=true;
+
+  return omask;
+}
+
+/****************************free_objmask***********************************/
+/**
+ * Function: free_objmask
+ *
+ * Free the memory in an object mask
+ *
+ * @author MK
+ * @date   June 2014
+ *
+ * @param[in] omask  the object mask
+ */
+void free_objmask(objmaskstruct *omask)
+{
+
+  // check the swap flag
+  if (!omask->swapflag)
+    {
+      // free the data in memory
+      free(omask->maskdata);
+      omask->maskdata=NULL;
+    }
+  else
+    {
+      // unmap the memory
+      if (munmap(omask->maskdata, omask->size) == -1) {
+          fclose(omask->swapfile);
+          error(EXIT_FAILURE, "Problems unmapping the swap file: ", omask->swapname);
+      }
+
+      // close the file and set to NULL
+      if (fclose(omask->swapfile))
+        warning("Problems closing the swap file: ", omask->swapname);
+      omask->swapfile=NULL;
+
+      // delete  the swap file
+      if (unlink(omask->swapname))
+        warning("Problems deleting swap file: ", omask->swapname);
+
+    }
+
+  // free the struct
+  free(omask);
+  omask=NULL;
+}
+
+/****************************get_obmask_name**********************************/
+/**
+ * Function: get_obmask_name
+ *
+ * Creates an unique file name for the object mask. The file is located in the
+ * tmp-directory and contains the creation date/time, process number and an
+ * index, making the name rather unique.
+ *
+ * @author MK
+ * @date   June 2014
+ *
+ * @param[in] index    file index
+ * @param[in] filename file name   y-coordinate of element
+ */
+void get_obmask_name(const int index, char *filename)
+{
+  time_t    thetime=time(NULL);
+  struct tm *tm= localtime(&thetime);
+
+  // get the swap filename
+  sprintf(filename, "%s/objmask_%02d-%02d_%02d:%02d:%02d_%05ld_%03i.tmp", BODY_DEFSWAPDIR,
+      tm->tm_mon+1, tm->tm_mday, tm->tm_hour, tm->tm_min, tm->tm_sec,
+      (long)getpid(), index);
+
+  // check whether the object exists
+  // already, which really should not be
+  if(fopen(filename, "r"))
+    {
+      error(EXIT_FAILURE, "File does already exist: ", filename);
+    }
+
+return;
+}
+
+/****************************set_objmask_value*********************************/
+/**
+ * Function: set_objmask_value
+ *
+ * Set an entry in an object mask. The integer input value is transformed
+ * to true/false.
+ *
+ * @author MK
+ * @date   June 2014
+ *
+ * @param[in] xpos   x-coordinate of element
+ * @param[in] ypos   y-coordinate of element
+ * @param[in] value  value to set the element to (0=false, !=0 = true)
+ * @param[in] omask  the object mask of the element
+ */
+void set_objmask_value(const size_t xpos, const size_t ypos, const int value, objmaskstruct *omask)
+{
+  // check for a valid element
+  if (xpos >= omask->width || ypos >= omask->height) {
+      char err_msg[MAXCHAR];
+      sprintf (err_msg, "Array size: (%zu,%zu), index (%zu,%zu) does not exist!", omask->width, omask->width, xpos, ypos);
+      error(EXIT_FAILURE, err_msg, "");
+    }
+  omask->maskdata[ypos*omask->width+xpos] = value ? true : false;
+}
+
+/****************************get_objmask_value*********************************/
+/**
+ * Function: get_objmask_value
+ *
+ * Get an entry in an object mask. True/false is translated to 1/0.
+ *
+ * @author MK
+ * @date   June 2014
+ *
+ * @param[in] xpos   x-coordinate of element
+ * @param[in] ypos   y-coordinate of element
+ * @param[in] omask  the object mask of the element
+ *
+ * @return 1/0 for true/false
+ */
+int get_objmask_value(const size_t xpos, const size_t ypos, const objmaskstruct *omask)
+{
+  // check for a valid element
+  if (xpos >= omask->width || ypos >= omask->height) {
+      char err_msg[MAXCHAR];
+      sprintf (err_msg, "Array size: (%zu,%zu), index (%zu,%zu) does not exist!", omask->width, omask->width, xpos, ypos);
+      error(EXIT_FAILURE, err_msg, "");
+    }
+  return omask->maskdata[ypos*omask->width+xpos] ? 1 : 0;
+}
+
+/****************************reset_objmask************************************/
+/**
+ * Function: reset_objmask
+ *
+ * Initialize all positional values in an object mask.
+ *
+ * @author MK
+ * @date   June 2014
+ *
+ * @param[in] omask  the object mask
+ */
+void reset_objmask(objmaskstruct *omask){
+  // put the index and position to the beginning
+  omask->actindex=0;
+  omask->actpos=omask->maskdata;
+  return;
+}
+
+/****************************tell_objmask*************************************/
+/**
+ * Function: tell_objmask
+ *
+ * Kind of a parallel function to "ftell()" which returns the current index
+ * in the object mask;
+ *
+ * @author MK
+ * @date   June 2014
+ *
+ * @param[in] omask  the object mask
+ *
+ * @return the current index position in the object mask
+ */
+long int tell_objmask(const objmaskstruct *omask)
+{
+  return omask->actindex;
+}
+
+/****************************seek_objmask*************************************/
+/**
+ * Function: seek_objmask
+ *
+ * Kind of a parallel function to "fseek()" which changes the position in an
+ * object mask. If the new position would be outside of the array,  an error
+ * is given.
+ *
+ * @author MK
+ * @date   June 2014
+ *
+ * @param[in] offset the object mask
+ * @param[in] origin the object mask
+ * @param[in] omask  the object mask
+ */
+void seek_objmask(const long int offset, const int origin, objmaskstruct *omask)
+{
+  switch (origin)
   {
-	int index;
-	QPRINTF(OUTPUT, "  Mode: %.5g, Mean: %.5g, Sigma: %.5g, Npixel: %i\n", backmesh->mode, backmesh->mean, backmesh->sigma, backmesh->npix);
-	QPRINTF(OUTPUT, "  Lcut: %.5g, Hcut: %.5g, Qzero: %.5g Qscale: %.5g\n", backmesh->lcut, backmesh->hcut, backmesh->qzero, backmesh->qscale);
-	QPRINTF(OUTPUT, "  Nlevels: %i, \n", backmesh->nlevels);
-	for (index=0; index<backmesh->nlevels; index++)
-		if (backmesh->histo[index])
-			QPRINTF(OUTPUT, " Value: %.5g, Nhisto: %i", backmesh->qzero+(float)index*backmesh->qscale, backmesh->histo[index]);
+  case SEEK_SET:
+    // make sure the position exists
+    if (offset<0)
+      error(EXIT_FAILURE, "Can not seek position before the start of mask: ", omask->swapname);
+    else if (offset>omask->npix)
+      error(EXIT_FAILURE, "Can not seek position after the end of mask: ", omask->swapname);
+
+    // change to the desired position
+    omask->actindex = offset;
+    omask->actpos   = omask->maskdata+offset;
+    break;
+  case SEEK_CUR:
+    // make sure the position exists
+    if (offset<0 && (-offset>omask->actindex))
+      error(EXIT_FAILURE, "Can not seek position before the start of mask: ", omask->swapname);
+    else if (offset>=0 && omask->actindex+offset>omask->npix)
+      error(EXIT_FAILURE, "Can not seek position after the end of mask: ", omask->swapname);
+
+    // change to the desired position
+    omask->actindex += offset;
+    omask->actpos   += offset;
+    break;
+  case SEEK_END:
+    error(EXIT_FAILURE, "The origin SEEK_END is not supported!%s", "");
+    break;
+  default:
+    {
+      // some unknown origin, nothing can be done
+      char errint[MAXCHAR];
+      sprintf(errint, "%d", origin);
+      error(EXIT_FAILURE, "The chosen origin is not implemented: ", errint);
+    break;
+    }
+  }
+}
+
+/****************************read_objmaskOld**********************************/
+/**
+ * Function: read_objmaskOld
+ * Old version of "read_objmask". Could be removed at some point.
+ *
+ * @author MK
+ * @date   June 2014
+ *
+ * @param[in] nobj   number of objects to read
+ * @param[in] omask  the object mask
+ *
+ * @return the current position to read nobject elements from
+ */
+bool *read_objmaskOld(const size_t nobj, objmaskstruct *omask)
+{
+  bool *actpos;
+
+  // make sure there are enough elements to access
+  if ((size_t)omask->actindex+nobj > omask->npix)
+    error(EXIT_FAILURE, "Not enough elements in swapfile:", omask->swapname);
+
+  // store the current position
+  actpos = omask->actpos;
+
+  // prepare the next position
+  omask->actindex += (long int)nobj;
+  omask->actpos   += nobj;
+
+  // return the current position
+  return actpos;
+}
+
+/****************************read_objmask**********************************/
+/**
+ * Function: read_objmask
+ *
+ * Kind of a fake function which gives back the actual stored position in an
+ * object mask together with the guaranty that nobj elements can be read
+ * from it. Naming is similar to "read_tab()" to be used in parallel to
+ * this function.
+ * @author MK
+ * @date   June 2014
+ *
+ * @param[in] nobj   number of objects to read
+ * @param[in] bbuff  address of actual position to read from
+ * @param[in] omask  the object mask
+ */
+void read_objmask(const size_t nobj, bool **boolbuff, objmaskstruct *omask)
+{
+  // make sure that nobj elements can be read
+  if ((size_t)omask->actindex+nobj > omask->npix)
+    error(EXIT_FAILURE, "Not enough elements in swapfile:", omask->swapname);
+
+  // copy the address of the position
+  *boolbuff = omask->actpos;
+
+  // prepare the next position
+  omask->actindex += (long int)nobj;
+  omask->actpos   += nobj;
+}
+
+/****************************apply_objmask**********************************/
+/**
+ * Function: apply_objmask
+ * Applies the object mask to the values in the pixel buffer. The mask values
+ * starting from the current position of the internal index of the mask is
+ * applied to the buffer values. This means that the masks need to be in sync
+ * with the buffer. The mask is applied by setting the values to "-BIG", such
+ * that they are not used in the background detemrination.
+ *
+ * @author MK
+ * @date   June 2014
+ *
+ * @param[in,out] buffer   number of objects to read
+ * @param[in]     npix  address of actual position to read from
+ * @param[in]     omask  the object mask
+ */
+void apply_objmask(PIXTYPE *buffer, size_t npix, objmaskstruct *omask)
+{
+  PIXTYPE *actbuff;
+  bool    *actbool;
+  size_t  index;
+
+  // "read" the next mask pixels
+  read_objmask(npix, &actbool, omask);
+
+  // go over the buffer
+  actbuff = buffer;
+  for (index=0; index<npix; index++, actbuff++, actbool++)
+    {
+      if (*actbool)
+        {
+          //set masked pixels to -BIG
+          *actbuff = -BIG;
+        }
+    }
+}
+
+/****************************print_objmask_elem*********************************/
+/**
+ * Function: print_objmask_elem
+ *
+ * Print an element in an object mask.
+ *
+ * @author MK
+ * @date   June 2014
+ *
+ * @param[in] xpos   x-coordinate of element
+ * @param[in] ypos   y-coordinate of element
+ * @param[in] omask  the object mask of the element
+ */
+void print_objmask_elem(const size_t xpos, const size_t ypos, const objmaskstruct *omask)
+{
+  fprintf(OUTPUT, "%s ", get_objmask_value(xpos, ypos, omask)? "true" : "false");
+}
+
+/****************************print_objmask*********************************/
+/**
+ * Function: print_objmask
+ *
+ * Print all element in an object mask.
+ *
+ * @author MK
+ * @date   June 2014
+ *
+ * @param[in] omask  the object mask of the element
+ */
+void print_objmask(const objmaskstruct *omask)
+{
+  size_t i, j;
+  for (j=0; j<omask->height; j++)
+    for (i=0; i<omask->width; i++)
+      print_objmask_elem(i, j, omask);
+  fprintf(OUTPUT, "\n");
+}
+
+/****************************objmask_info*********************************/
+/**
+ * Function: objmask_info
+ *
+ * Print information on an object mask.
+ *
+ * @author MK
+ * @date   June 2014
+ *
+ * @param[in] omask  the object mask
+ */
+void objmask_info(const objmaskstruct *omask)
+{
+  size_t i;
+  size_t n_true=0, n_false=0;
+  bool   *act_bool;
+
+  // go over the data and count the true's and false's
+  act_bool=omask->maskdata;
+  for (i=0, act_bool=omask->maskdata; i < omask->npix; i++)
+    if (*(act_bool++))
+      n_true++;
+    else
+      n_false++;
+
+  // print the basic information
+  // on the object mask
+  if (omask->swapfile)
+    QPRINTF(OUTPUT, "Object mask in file: %s\n", omask->swapname);
+  QPRINTF(OUTPUT, "Object mask dimension: %zux%zu pix\n", omask->width, omask->height);
+  QPRINTF(OUTPUT, "fraction of masked pixels: %.2f%%\n", 100.0*(double)n_true/(double)omask->npix);
+  QPRINTF(OUTPUT, "# of masked pixels: %zu, unmasked: %zu\n", n_true, n_false);
+}
+
+
+/****************************populate_objmask*********************************/
+/**
+ * Function: populate_objmask
+ * Populate an object mask by going through a field line by line, convolving
+ * with the filter kernel and identifying pixels above a certain threshold.
+ *
+ * @author MK
+ * @date   June 2014
+ *
+ * @param[in] dfield  the detection field
+ * @param[in] dwfield the weight for the detection field
+ * @param[in] omask   the object mask
+ */
+void populate_objmask(fieldstruct *dfield, fieldstruct *dwfield, objmaskstruct *omask)
+{
+  size_t width, height;
+  size_t y_act, x_act;
+  int varthreshflag;
+  PIXTYPE wthresh, relthresh, thresh;
+  PIXTYPE *scan, *wscan;
+  PIXTYPE *cscan=NULL, *cwscan=NULL;
+  OFF_T   fcurpos,wfcurpos;
+
+  // If WEIGHTing and no absolute thresholding, activate threshold scaling */
+  varthreshflag = (dwfield && prefs.thresh_type[0]!=THRESH_ABSOLUTE);
+  relthresh = varthreshflag ? prefs.dthresh[0] : 0.0;// to avoid gcc warnings
+  width  = (size_t)dfield->width;
+  height = (size_t)dfield->height;
+
+  // store the threshold value
+  thresh = dfield->dthresh;
+
+  // do some initialization on the fields,
+  // to prepare the reading
+  scan_initmarkers(dfield);
+  scan_initmarkers(dwfield);
+
+  // memorize the original position in the file
+  QFTELL(dfield->cat->file, fcurpos, dfield->cat->filename);
+  if (dwfield){
+      QFTELL(dwfield->cat->file, wfcurpos, dwfield->cat->filename);
   }
 
+  // allocate memory for buffers
+  if (prefs.filter_flag)
+    {
+      QMALLOC(cscan, PIXTYPE, width);
+      if (dwfield)
+        {
+          QCALLOC(cwscan, PIXTYPE, width);
+        }
+    }
+
+  // go over all lines
+  for (y_act=0; y_act<height; )
+    {
+      // read in the weight image
+      if (dwfield){
+        wscan = (dwfield->stripy==dwfield->stripysclim)
+            ? (PIXTYPE *)readimage_loadstrip(dwfield, (fieldstruct *)NULL, 0)
+            : &dwfield->strip[dwfield->stripy*dwfield->width];
+      }
+
+      // read in the detection image
+      //scan = (dfield->stripy==dfield->stripysclim)
+      //    ? (PIXTYPE *)readimage_loadstrip(dfield, dwfield, 0)
+      //    : &dfield->strip[dfield->stripy*dfield->width];
+      if (dfield->stripy==dfield->stripysclim){
+          scan = (PIXTYPE *)readimage_loadstrip(dfield, dwfield, 0);
+          // TODO: the next line lets the program dump away;
+          //       the values are OK at the end of "readimage_loadstrip()",
+          //       in this program the address is different and it dumps;
+          //       in a parallel location "scan.c:254" it works, there it
+          //       works even with the third parameter='0' as here!
+          //       Perhaps there is a general memory corruption??
+          //       valgrind does not complain...
+          //QPRINTF(OUTPUT, "\n\now it is: %f\n\n", scan[0]);
+          scan = &dfield->strip[dfield->stripy*dfield->width];
+      }
+      else {
+          scan = &dfield->strip[dfield->stripy*dfield->width];
+      }
+
+      if (prefs.filter_flag)
+        {
+          // filter the detection image row
+          filter(dfield, cscan, dfield->y);
+          if (dwfield)
+            {
+              // filter the weight image row
+              filter(dwfield, cwscan, (int)y_act);
+            }
+        }
+      else
+        {
+          // use the unfiltered rows
+          cscan = scan;
+          cwscan = wscan;
+        }
+
+      // go over all columns
+      for (x_act=0; x_act<width; x_act++)
+        {
+          // if necessary, adjust the threshold
+          if (varthreshflag)
+            thresh = relthresh*sqrt(cwscan[x_act]);
+
+          // mark a detected pixel in the object mask
+          if (cscan[x_act]>thresh)
+            set_objmask_value(x_act, y_act, 1, omask);
+
+        }
+
+      // prepare markers for the next line
+      y_act++;
+      scan_updatemarkers(dfield, y_act);
+      scan_updatemarkers(dwfield, y_act);
+    }
+
+  // go back to the original position in the files, allowing them to be re-read
+  QFSEEK(dfield->cat->file, fcurpos, SEEK_SET, dfield->cat->filename);
+  if (dwfield)
+    QFSEEK(dwfield->cat->file, wfcurpos, SEEK_SET, dwfield->cat->filename);
+
+  // release the buffer memory
+  if (prefs.filter_flag){
+      free(cscan);
+      cscan=NULL;
+      if (dwfield){
+          free(cwscan);
+          cwscan=NULL;
+      }
+  }
+
+  return;
+}
