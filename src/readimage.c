@@ -236,15 +236,6 @@ void	*readimage_loadstrip(fieldstruct *field, fieldstruct *wfield, const int wri
       field->stripysclim = (++field->stripysclim)%field->stripheight;
     }
 
-  /*if (flags ^ FLAG_FIELD){
-      //QPRINTF(OUTPUT, "\n\none value: %f\n\n", field->strip[field->stripy*w]);
-      QPRINTF(OUTPUT, "\n\n in read_load... value: %ld\n", field->strip + field->stripy*w);
-      return (void *)(field->strip + field->stripy*w);
-  }
-  else{
-      (void *)(field->fstrip + field->stripy*w);
-  }
-  */
   return (flags ^ FLAG_FIELD)?
       (void *)(field->strip + field->stripy*w)
       : (void *)(field->fstrip + field->stripy*w);
