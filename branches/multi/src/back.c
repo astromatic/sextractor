@@ -2071,9 +2071,9 @@ void objmask_info(const objmaskstruct *omask)
  * @author MK
  * @date   June 2014
  *
- * @param[in] dfield  the detection field
- * @param[in] dwfield the weight for the detection field
- * @param[in] omask   the object mask
+ * @param[in]     dfield  the detection field
+ * @param[in]     dwfield the weight for the detection field
+ * @param[in,out] omask   the object mask
  */
 void populate_objmask(fieldstruct *dfield, fieldstruct *dwfield, objmaskstruct *omask)
 {
@@ -2129,23 +2129,6 @@ void populate_objmask(fieldstruct *dfield, fieldstruct *dwfield, objmaskstruct *
       scan = (dfield->stripy==dfield->stripysclim)
           ? (PIXTYPE *)readimage_loadstrip(dfield, dwfield, 0)
           : &dfield->strip[dfield->stripy*dfield->width];
-      /*if (dfield->stripy==dfield->stripysclim){
-          QPRINTF(OUTPUT, "\n\nvalue of scan BEFORE: %p \n", scan);
-          scan = (PIXTYPE *)readimage_loadstrip(dfield, dwfield, 0);
-          // TODO: the next line lets the program dump away;
-          //       the values are OK at the end of "readimage_loadstrip()",
-          //       in this program the address is different and it dumps;
-          //       in a parallel location "scan.c:254" it works, there it
-          //       works even with the third parameter='0' as here!
-          //       Perhaps there is a general memory corruption??
-          //       valgrind does not complain...
-          QPRINTF(OUTPUT, "\n\nvalue of scan AFTER: %ld \n", scan);
-          QPRINTF(OUTPUT, "\n\now it is: %f\n\n", scan[0]);
-          scan = &dfield->strip[dfield->stripy*dfield->width];
-      }
-      else {
-          scan = &dfield->strip[dfield->stripy*dfield->width];
-      }*/
 
       if (prefs.filter_flag)
         {
