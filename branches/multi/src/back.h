@@ -94,7 +94,7 @@ void		back_histo(backstruct *backmesh, backstruct *wbackmesh,
                         int wscale_flag, objmaskstruct *omask),
 		back_subline(fieldstruct *field, int y, int xmin, int width,
 			PIXTYPE *line),
-		back_printmeshs(const backstruct *backmesh, const int nmeshs, int *tofile),
+		back_printmeshs(backstruct *backmesh, const int nmeshs, int *tofile),
 		back_printmesh(const backstruct *backmesh, FILE * outstream);
 
 float		*back_makespline(fieldstruct *, float *),

@@ -53,6 +53,11 @@
 #include	"misc.h"
 #include	"weight.h"
 
+// REMARK: EITHER include 'readimage.h' OR define 'readimage_loadstrip()',
+//         otherwise the return value is NOT a pointer value, and the code crashes;
+//#include "readimage.h"
+void *readimage_loadstrip(fieldstruct *field, fieldstruct *wfield, const int write_checkimgs);
+
 /****************************back_map*****************************************/
 /**
  * Function: back_map
@@ -1508,7 +1513,7 @@ NOTES	-.
 AUTHOR	M. Kuemmel (LMU)
 VERSION	12/02/2014
  ***/
-void	back_printmeshs(const backstruct *backmesh, const int nmeshs, int *tofile)
+void	back_printmeshs(backstruct *backmesh, const int nmeshs, int *tofile)
 {
   char filename[MAXCHAR];
   int index;
@@ -2076,7 +2081,7 @@ void populate_objmask(fieldstruct *dfield, fieldstruct *dwfield, objmaskstruct *
   size_t y_act, x_act;
   int varthreshflag;
   PIXTYPE wthresh, relthresh, thresh;
-  PIXTYPE *scan, *wscan;
+  PIXTYPE *scan=NULL, *wscan=NULL;
   PIXTYPE *cscan=NULL, *cwscan=NULL;
   OFF_T   fcurpos,wfcurpos;
 
@@ -2121,10 +2126,11 @@ void populate_objmask(fieldstruct *dfield, fieldstruct *dwfield, objmaskstruct *
       }
 
       // read in the detection image
-      //scan = (dfield->stripy==dfield->stripysclim)
-      //    ? (PIXTYPE *)readimage_loadstrip(dfield, dwfield, 0)
-      //    : &dfield->strip[dfield->stripy*dfield->width];
-      if (dfield->stripy==dfield->stripysclim){
+      scan = (dfield->stripy==dfield->stripysclim)
+          ? (PIXTYPE *)readimage_loadstrip(dfield, dwfield, 0)
+          : &dfield->strip[dfield->stripy*dfield->width];
+      /*if (dfield->stripy==dfield->stripysclim){
+          QPRINTF(OUTPUT, "\n\nvalue of scan BEFORE: %p \n", scan);
           scan = (PIXTYPE *)readimage_loadstrip(dfield, dwfield, 0);
           // TODO: the next line lets the program dump away;
           //       the values are OK at the end of "readimage_loadstrip()",
@@ -2133,12 +2139,13 @@ void populate_objmask(fieldstruct *dfield, fieldstruct *dwfield, objmaskstruct *
           //       works even with the third parameter='0' as here!
           //       Perhaps there is a general memory corruption??
           //       valgrind does not complain...
-          //QPRINTF(OUTPUT, "\n\now it is: %f\n\n", scan[0]);
+          QPRINTF(OUTPUT, "\n\nvalue of scan AFTER: %ld \n", scan);
+          QPRINTF(OUTPUT, "\n\now it is: %f\n\n", scan[0]);
           scan = &dfield->strip[dfield->stripy*dfield->width];
       }
       else {
           scan = &dfield->strip[dfield->stripy*dfield->width];
-      }
+      }*/
 
       if (prefs.filter_flag)
         {
