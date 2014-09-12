@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2014 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		06/05/2012
+*	Last modified:		11/09/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -51,7 +51,7 @@ INPUT	Pointer to the image structure,
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	29/03/2012
+VERSION	11/09/2014
  ***/
 void  photom_aper(fieldstruct *field, fieldstruct *wfield, obj2struct *obj2,
 		int aper)
@@ -123,7 +123,7 @@ void  photom_aper(fieldstruct *field, fieldstruct *wfield, obj2struct *obj2,
     }
 
   image = subimage->image;
-  weight = subimage->weight;
+  weight = subimage->imvar;
   for (y=ymin; y<ymax; y++)
     {
     imaget = image + (pos = y*w + xmin);
@@ -227,7 +227,7 @@ INPUT	Pointer to the image structure,
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	30/03/2012
+VERSION	11/09/2014
  ***/
 void  photom_petro(fieldstruct *field, fieldstruct *dfield,
 	fieldstruct *wfield, fieldstruct *dwfield, obj2struct *obj2)
@@ -313,7 +313,7 @@ void  photom_petro(fieldstruct *field, fieldstruct *dfield,
 
   dimage = subimage->image;
   if (dwfield)
-    dweight = subimage->weight;
+    dweight = subimage->imvar;
   klim = sqrt(klim2);
   kstep = klim/20.0;
   area = areab = areanum = areaden = 0;
@@ -433,7 +433,7 @@ void  photom_petro(fieldstruct *field, fieldstruct *dfield,
     tv = sigtv = 0.0;
     image = subimage->image;
     if (wfield)
-      weight = subimage->weight;
+      weight = subimage->imvar;
     for (y=ymin; y<ymax; y++)
       {
       imaget = image + (pos = y*w + xmin);
@@ -623,7 +623,7 @@ void  photom_auto(fieldstruct **fields, fieldstruct **wfields,
   area = areab = 0;
   image = subimage->image;
   if (wfield)
-    weight = subimage->weight;
+    weight = subimage->imvar;
   for (y=ymin; y<ymax; y++)
     {
     imaget = image + (pos = y*w + xmin);
@@ -751,7 +751,7 @@ void  photom_auto(fieldstruct **fields, fieldstruct **wfields,
       area = areab = 0;
       tv = sigtv = 0.0;
       image = subimage->image;
-      weight = subimage->weight;
+      weight = subimage->imvar;
       for (y=ymin; y<ymax; y++)
         {
         imaget = image + (pos = xmin + (y%h)*w);

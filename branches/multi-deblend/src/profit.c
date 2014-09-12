@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/07/2014
+*	Last modified:		11/09/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -2130,7 +2130,7 @@ INPUT	Pointer to the subprofit structure,
 OUTPUT	The number of valid pixels copied.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	06/05/2012
+VERSION	11/09/2014
  ***/
 int	subprofit_copyobjpix(subprofitstruct *subprofit,
 				subimagestruct *subimage)
@@ -2229,7 +2229,7 @@ int	subprofit_copyobjpix(subprofitstruct *subprofit,
             dx = (x-ix);
             off = x + (y+sy)*win;
             spixin = subimage->image + off;
-            swpixin = subimage->weight + off;
+            swpixin = subimage->imvar + off;
             for (sx=sn; sx--;)
               {
               dr2 = dy2 + dx*dx;
@@ -2263,7 +2263,7 @@ int	subprofit_copyobjpix(subprofitstruct *subprofit,
         dy2 = y-iy;
         dy2 *= dy2;
         pixin = subimage->image + xmin + y*win;
-        wpixin = subimage->weight + xmin + y*win;
+        wpixin = subimage->imvar + xmin + y*win;
         for (x=xmin; x<xmax; x++)
           {
           dx = x-ix;
@@ -2272,6 +2272,7 @@ int	subprofit_copyobjpix(subprofitstruct *subprofit,
           wpix = *(wpixin++);
           if (dr2<rad2 && pix>-BIG && pix<satlevel && wpix<wthresh)
             {
+printf("%g \n", wthresh);
             *(pixout++) = pix;
             *(wpixout++) = 1.0 / sqrt(wpix+(pix>0.0?
 		(gainflag? pix*wpix/backnoise2:pix)*invgain : 0.0));
@@ -2348,11 +2349,11 @@ int	subprofit_copyobjpix(subprofitstruct *subprofit,
   }
  
 
-/****** subprofit_submodpix ***************************************************
-PROTO	void	subprofit_submodpix(subprofitstruct *subprofitmod,
+/****** subprofit_addmodpix ***************************************************
+PROTO	void	subprofit_addmodpix(subprofitstruct *subprofitmod,
 		PIXTYPE *pixout, int ix, int iy, int width, int height,
 		float oversamp, float fac)
-PURPOSE	Subtract a rasterized model from an image.
+PURPOSE	Add a rasterized model to an image.
 INPUT	Pointer to the sub-profile structure containing the model raster,
 	image pointer,
 	destination image center x coordinate (integer),
@@ -2364,9 +2365,9 @@ INPUT	Pointer to the sub-profile structure containing the model raster,
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	03/01/2014
+VERSION	11/09/2014
  ***/
-void	subprofit_submodpix(subprofitstruct *subprofitmod,
+void	subprofit_addmodpix(subprofitstruct *subprofitmod,
 		PIXTYPE *pixout, int ix, int iy, int width, int height,
 		float oversamp, float fac)
   {
@@ -2445,7 +2446,7 @@ void	subprofit_submodpix(subprofitstruct *subprofitmod,
             pix += spix;
             }
           }
-        *(pixout++) -= fac*pix;
+        *(pixout++) += fac*pix;
         }
       }
     }
@@ -2460,7 +2461,7 @@ void	subprofit_submodpix(subprofitstruct *subprofitmod,
         dx = x-ix;
         dr2 = dy2 + dx*dx;
         if (*pixout > -BIG)
-          *pixout -= fac**(pixin++);
+          *pixout += fac**(pixin++);
         pixout++;
         }
       }

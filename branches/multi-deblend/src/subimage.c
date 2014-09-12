@@ -1,7 +1,7 @@
 /**
 * @file		subimage.c
 * @brief	Manage sub-images
-* @date		09/06/2014
+* @date		11/09/2014
 * @copyright
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 *
@@ -52,7 +52,7 @@ Create a sub-image from an object and a pixel list, without any margin.
 @param[out] 		Pointer to a new subimage.
 
 @author 		E. Bertin (IAP)
-@date			09/06/2014
+@date			11/09/2014
  ***/
 subimagestruct	*subimage_fromplist(fieldstruct *field, fieldstruct *wfield,
 			objstruct *obj, pliststruct *plist) {
@@ -64,7 +64,7 @@ subimagestruct	*subimage_fromplist(fieldstruct *field, fieldstruct *wfield,
    int		i, n, xmin,ymin, w;
 
 /* Initialize sub-image */
-  QMALLOC(subimage, subimagestruct, 1);
+  QCALLOC(subimage, subimagestruct, 1);
   subimage->dscale = 1.0;
   subimage->xmin[0] = xmin = obj->xmin;
   subimage->xmin[1] = ymin = obj->ymin;
@@ -90,20 +90,18 @@ subimagestruct	*subimage_fromplist(fieldstruct *field, fieldstruct *wfield,
     *(pix++) = -BIG;
 
   if (subimage->wfield) {
-    if (!(subimage->weight = (PIXTYPE *)malloc(npix*sizeof(PIXTYPE)))) {
+    if (!(subimage->imvar = (PIXTYPE *)malloc(npix*sizeof(PIXTYPE)))) {
       free(subimage->image);
       free(subimage);
       return NULL;
     }
-    wpix = subimage->weight;
+    wpix = subimage->imvar;
     for (i=npix; i--;)
       *(wpix++) = BIG;
-  } else
-    subimage->weight = NULL;
-
+  }
 
   pix = subimage->image;
-  wpix = subimage->weight;
+  wpix = subimage->imvar;
   for (i=obj->firstpix; i!=-1; i=PLIST(plistt,nextpix)) {
     plistt = plist+i;
     pos = (PLIST(plistt,x)-xmin) + (PLIST(plistt,y)-ymin)*w;
@@ -127,7 +125,7 @@ Create a sub-image from an image field, without any margin.
 @param[out] 		Pointer to a new subimage.
 
 @author 		E. Bertin (IAP)
-@date			09/06/2014
+@date			11/09/2014
  ***/
 subimagestruct	*subimage_fromfield(fieldstruct *field, fieldstruct *wfield,
 			int xmin, int xmax, int ymin, int ymax) {
@@ -138,7 +136,7 @@ subimagestruct	*subimage_fromfield(fieldstruct *field, fieldstruct *wfield,
    int		i, n, w;
 
 /* Initialize sub-image */
-  QMALLOC(subimage, subimagestruct, 1);
+  QCALLOC(subimage, subimagestruct, 1);
   subimage->dscale = 1.0;
   subimage->xmin[0] = xmin;
   subimage->xmin[1] = ymin;
@@ -163,15 +161,14 @@ subimagestruct	*subimage_fromfield(fieldstruct *field, fieldstruct *wfield,
 	subimage->ipos[0],subimage->ipos[1], -BIG);
 
   if (subimage->wfield) {
-    if (!(subimage->weight = (PIXTYPE *)malloc(npix*sizeof(PIXTYPE)))) {
+    if (!(subimage->imvar = (PIXTYPE *)malloc(npix*sizeof(PIXTYPE)))) {
       free(subimage->image);
       free(subimage);
       return NULL;
     }
-    copyimage(wfield, subimage->weight, subimage->size[0],subimage->size[1],
+    copyimage(wfield, subimage->imvar, subimage->size[0],subimage->size[1],
 	subimage->ipos[0],subimage->ipos[1], BIG);
-  } else
-    subimage->weight = NULL;
+  }
 
   return subimage;
 }
@@ -245,7 +242,7 @@ OUTPUT	Pointer to a new malloc'ed subimage structure.
 NOTES	Global preferences are used. Input fields must have been through
 	frame_wcs() with detection field as a reference.
 AUTHOR	E. Bertin (IAP)
-VERSION	09/06/2014
+VERSION	11/09/2014
  ***/
 subimagestruct	*subimage_getall(fieldstruct **fields, fieldstruct **wfields,
 			int nfield, obj2struct *obj2)
@@ -273,7 +270,7 @@ subimagestruct	*subimage_getall(fieldstruct **fields, fieldstruct **wfields,
   else
     obj2->nsubimage = nsubimage = nfield;
 
-  QMALLOC(obj2->subimage, subimagestruct, obj2->nsubimage);
+  QCALLOC(obj2->subimage, subimagestruct, obj2->nsubimage);
 
   subimage = obj2->subimage;
 /* Initialize first (detection) sub-image */
@@ -301,14 +298,13 @@ subimagestruct	*subimage_getall(fieldstruct **fields, fieldstruct **wfields,
 	subimage->ipos[0],subimage->ipos[1], -BIG);
     if (subimage->wfield)
       {
-      QMALLOC(subimage->weight, PIXTYPE,
+      QMALLOC(subimage->imvar, PIXTYPE,
 		subimage->size[0]*subimage->size[1]);
-      copyimage(subimage->wfield, subimage->weight,
+      copyimage(subimage->wfield, subimage->imvar,
 	subimage->size[0],subimage->size[1],
 	subimage->ipos[0],subimage->ipos[1], BIG);
       }
-    else
-      subimage->weight = NULL;
+
     subimage->bkg = obj2->bkg[s];
     }
 
@@ -403,13 +399,15 @@ PURPOSE	Free resources related to asub-image.
 INPUT	Pointer to a subimage structure.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	03/01/2014
+VERSION	11/09/2014
  ***/
 void	subimage_end(subimagestruct *subimage)
 
   {
   free(subimage->image);
-  free(subimage->weight);
+  free(subimage->imvar);
+  free(subimage->fimage);
+  free(subimage->fimvar);
 
   return;
   }

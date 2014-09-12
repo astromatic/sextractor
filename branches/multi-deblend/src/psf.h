@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1998-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1998-2014 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		06/10/2011
+*	Last modified:		11/09/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -79,7 +79,7 @@ psfitstruct	*thepsfit,*ppsfit,*psfit;
 PIXTYPE		*checkmask;
 
 /*-------------------------------- functions --------------------------------*/
-extern int	psf_copyobjpix(PIXTYPE *data, PIXTYPE *weight,
+extern int	psf_copyobjpix(PIXTYPE *image, PIXTYPE *imvar,
 			int wout, int hout, int ix, int iy,
 			obj2struct *obj2, int detect_flag);
 extern void	compute_pos(int *pnpsf,int *pconvflag,int *pnpsfflag,

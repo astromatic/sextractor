@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/07/2014
+*	Last modified:		11/09/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -305,7 +305,7 @@ void		prof_end(profstruct *prof),
 		profit_resetparams(profitstruct *profit),
 		profit_spread(profitstruct *profit,  fieldstruct *field,
 			fieldstruct *wfield, objstruct *obj),
-		subprofit_submodpix(subprofitstruct *subprofitmod,
+		subprofit_addmodpix(subprofitstruct *subprofitmod,
 			PIXTYPE *pixout, int ix, int iy, int width, int height,
 			float oversamp, float fac),
 		subprofit_surface(profitstruct *profit,

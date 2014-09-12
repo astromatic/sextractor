@@ -570,6 +570,7 @@ obj2struct	*analyse_obj2obj2(fieldstruct **fields, fieldstruct **wfields,
   obj2->mthresh = obj->mthresh;
   memcpy(obj2->iso, obj->iso, NISO*sizeof(int));
   obj2->fwhm = obj->fwhm;
+  obj2->deblend_npass = obj->deblend_npass;
 
 /* Copy image data around current object */
   subimage_getall(fields, wfields, nfield, obj2);

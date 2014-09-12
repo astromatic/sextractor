@@ -290,7 +290,7 @@ Perform model-fitting and deblending on a list of objects.
 @param[in] objlist	Pointer to objlist
 @param[in] objindex	Index of blended object in the objlist
 @author 		E. Bertin (IAP)
-@date			11/07/2014
+@date			11/09/2014
  ***/
 objliststruct	*objlist_deblend(fieldstruct **fields, fieldstruct **wfields,
 			int nfield, objliststruct *objlist, int objindex) {
@@ -299,7 +299,10 @@ objliststruct	*objlist_deblend(fieldstruct **fields, fieldstruct **wfields,
    subimagestruct	*subimage;
    objliststruct	*newobjlist, *overobjlist;
    objstruct		*obj, *modobj, *fobj;
-   int			xmin,ymin, xmax,ymax, blend, nobj, i, j,k, o, o2;
+   PIXTYPE		*imagecopy, *imvarcopy, *imwork, *pix, *pixwork,
+			val, tol;
+   int			xmin,ymin, xmax,ymax, blend, nobj, npix,
+			i, j,k, o, o2, p;
 
   field = fields[0];			// field is the detection field
   wfield = wfields? wfields[0]:NULL;	// wfield is the detection weight map
@@ -322,15 +325,35 @@ objliststruct	*objlist_deblend(fieldstruct **fields, fieldstruct **wfields,
   }
 
 // TODO: add margin
-// Extract subimage covering the whole objlist
+// Extract large subimage covering the whole objlist
   overobjlist->subimage = subimage = subimage_fromfield(field, wfield,
 				xmin, xmax + 1, ymin, ymax + 1);
+  npix = subimage->size[0]*subimage->size[1];
+  if (prefs.filter_flag) {
+//-- Allocate memory for storing the convolved model-subtracted image
+    QCALLOC(subimage->fimage, PIXTYPE, npix);
+    if (subimage->imvar)
+//---- Allocate memory for storing the convolved variance map
+      QCALLOC(subimage->fimvar, PIXTYPE, npix);
+  }
+
   obj = overobjlist->obj;
   for (o=overobjlist->nobj; o--; obj++) {
 //-- if BLANKing is on, paste back the object pixels in the sub-image
     if (prefs.blank_flag)
       subimage_fill(subimage, obj->isoimage);
   }
+
+
+// Backup the large image and the variance map
+  QMEMCPY(subimage->image, imagecopy, PIXTYPE, npix);
+  if (subimage->imvar) {
+    QMEMCPY(subimage->imvar, imvarcopy, PIXTYPE, npix);
+  } else
+    imvarcopy = NULL;
+
+// Create a work buffer of the large image
+  QMALLOC(imwork, PIXTYPE, npix);
 
   obj = overobjlist->obj;
   for (i=overobjlist->nobj; i--; obj++) {
@@ -365,10 +388,10 @@ objliststruct	*objlist_deblend(fieldstruct **fields, fieldstruct **wfields,
           if (modobj != obj) {
             modsubprofit = modobj->profit->subprofit;
             if (modsubprofit->lmodpix)
-              subprofit_submodpix(modsubprofit, subprofit->objpix,
+              subprofit_addmodpix(modsubprofit, subprofit->objpix,
 			subprofit->ix, subprofit->iy,
 			subprofit->objnaxisn[0], subprofit->objnaxisn[1],
-			modsubprofit->subsamp, nobj>1 ? 0.95: 1.0);
+			modsubprofit->subsamp, nobj>1 ? -0.95: -1.0);
           }
         }
       }
@@ -376,27 +399,51 @@ objliststruct	*objlist_deblend(fieldstruct **fields, fieldstruct **wfields,
         break;
     }
 
-//-- Remove the models from the common subimage (if they exist)
+//-- Reset work buffer
+    memset(imwork, 0, npix*sizeof(PIXTYPE));
+
     obj = overobjlist->obj;
     for (o=nobj; o--; obj++)
       if ((subprofit = obj->profit->subprofit) && subprofit->lmodpix)
-        subprofit_submodpix(subprofit, subimage->image,
+//------ Stack up models from all the sources
+        subprofit_addmodpix(subprofit, imwork,
 			subimage->ipos[0], subimage->ipos[1],
 			subimage->size[0], subimage->size[1],
-			subprofit->subsamp, nobj>1 ? 0.95: 1.0);
+			subprofit->subsamp, 1.0);
 
-    newobjlist = lutz_subextract(subimage, field->dthresh*4, xmin, xmax + 1,
+//-- Subtract the result from the subimage
+    pix = subimage->image;
+    pixwork = imwork;
+    for (p=npix; p--;)
+      *(pix++) -= *(pixwork++);
+
+//-- Update the variance map
+    if (subimage->imvar) {
+      pix = subimage->imvar;
+      pixwork = imwork;
+      tol = prefs.deblend_fittol;
+      for (p=npix; p--;) {
+        val = tol * *(pixwork++);
+        *(pix++) += val*val;
+      }
+    }
+
+    if (prefs.filter_flag) {
+      convolve_image(field, subimage->image, subimage->fimage,
+		subimage->size[0], subimage->size[1]);
+      if (subimage->imvar)
+        convolve_image(field, subimage->imvar, subimage->fimvar,
+		subimage->size[0], subimage->size[1]);
+    }
+
+//-- Extract residual sources (if they exist)
+    newobjlist = lutz_subextract(subimage, field->dthresh*2, xmin, xmax + 1,
 			ymin, ymax + 1);
 
-//-- Put the models back on the common subimage (if they exist)
-//-- TODO: do it in a more efficient way.
-    obj = overobjlist->obj;
-    for (o=nobj; o--; obj++)
-      if ((subprofit = obj->profit->subprofit) && subprofit->lmodpix)
-        subprofit_submodpix(subprofit, subimage->image,
-			subimage->ipos[0], subimage->ipos[1],
-			subimage->size[0], subimage->size[1],
-			subprofit->subsamp, nobj>1 ? -0.95: -1.0);
+//-- Recover (sub) image and variance map
+    memcpy(subimage->image, imagecopy, npix*sizeof(PIXTYPE));
+    if (subimage->imvar)
+      memcpy(subimage->imvar, imvarcopy, npix*sizeof(PIXTYPE));
 
 //-- Loop over input objlist; we keep indexing independent of loop counter to
 //-- accommodate changes in the ordering of the list
@@ -407,6 +454,7 @@ objliststruct	*objlist_deblend(fieldstruct **fields, fieldstruct **wfields,
         continue; 
       obj->number = ++thecat.ndetect;
       obj->blend = blend;
+      obj->deblend_npass = j + 1;
 //---- Isophotal measurements
       analyse_iso(fields, wfields, nfield, newobjlist, o);
       if (prefs.blank_flag) {
@@ -447,6 +495,10 @@ subprofit->ix,subprofit->iy, 1.0);
 /*
 }
 */
+  free(imagecopy);
+  free(imvarcopy);
+  free(imwork);
+
   return overobjlist;
 }
 
