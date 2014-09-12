@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		10/06/2014
+*	Last modified:		11/09/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -1282,12 +1282,12 @@ void    double_psf_fit(psfstruct *ppsf, fieldstruct *pfield, fieldstruct *pwfiel
 
 
 /****** psf_copyobjpix ******************************************************
-PROTO	int psf_copyobjpix(PIXTYPE *data, PIXTYPE *weight,
+PROTO	int psf_copyobjpix(PIXTYPE *image, PIXTYPE *imvar,
 			int wout, int hout, int ix, int iy,
 			obj2struct *obj2, int detect_flag);
 PURPOSE	Copy a piece of the input object image/weights to local arrays.
-INPUT	Pointer to the output data array,
-	pointer to the output weight array,
+INPUT	Pointer to the output image array,
+	pointer to the output image variance array,
 	output frame width,
 	output frame height,
 	integer x coordinate,
@@ -1298,22 +1298,22 @@ OUTPUT	RETURN_ERROR if the coordinates are outside object image,
 	RETURN_OK otherwise.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	10/06/2014
+VERSION	11/09/2014
  ***/
-int	psf_copyobjpix(PIXTYPE *data, PIXTYPE *weight,
+int	psf_copyobjpix(PIXTYPE *image, PIXTYPE *imvar,
 			int wout, int hout, int ix, int iy,
 			obj2struct *obj2, int detect_flag)
   {
    subimagestruct	*subimage;
-   PIXTYPE		*datat,*weightt, *imagein,*weightin;
+   PIXTYPE		*imaget,*imvart, *imagein,*imvarin;
    int			i,y, win,hin, w2, xmin,xmax,ymin,ymax;
 
 /* Set output to -BIG */
-  datat = data;
+  imaget = image;
   for (i=wout*hout; i--;)
-    *(datat++) = -BIG;
-  if (weight)
-    memset(weight, 0, wout*hout*sizeof(PIXTYPE));
+    *(imaget++) = -BIG;
+  if (imvar)
+    memset(imvar, 0, wout*hout*sizeof(PIXTYPE));
 
   subimage = obj2->subimage;	/* !CHECK */
   ix -= subimage->xmin[0];
@@ -1331,9 +1331,9 @@ int	psf_copyobjpix(PIXTYPE *data, PIXTYPE *weight,
   ymax = ymin + hout;
   if (ymin<0)
     {
-    data -= ymin*wout;
-    if (weight)
-      weight -= ymin*wout;
+    image -= ymin*wout;
+    if (imvar)
+      imvar -= ymin*wout;
     ymin = 0;
     }
   if (ymax>hin)
@@ -1348,22 +1348,22 @@ int	psf_copyobjpix(PIXTYPE *data, PIXTYPE *weight,
     }
   if (xmin<0)
     {
-    data -= xmin;
-    if (weight)
-      weight -= xmin;
+    image -= xmin;
+    if (imvar)
+      imvar -= xmin;
     w2 += xmin;
     xmin = 0;
     }
 
 /* Copy the right pixels to the destination */
   imagein = subimage->image;
-  for (y=ymin; y<ymax; y++, data += wout)
-    memcpy(data, imagein + xmin+y*win, w2*sizeof(PIXTYPE));
-  if (weight)
+  for (y=ymin; y<ymax; y++, image += wout)
+    memcpy(image, imagein + xmin+y*win, w2*sizeof(PIXTYPE));
+  if (imvar)
     {
-    weightin = subimage->weight;
-    for (y=ymin; y<ymax; y++, data += wout)
-      memcpy(weight, weightin + xmin+y*win, w2*sizeof(PIXTYPE));
+    imvarin = subimage->imvar;
+    for (y=ymin; y<ymax; y++, imvar += wout)
+      memcpy(imvar, imvarin + xmin+y*win, w2*sizeof(PIXTYPE));
     }
 
 

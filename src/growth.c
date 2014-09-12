@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1995-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1995-2014 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		29/03/2012
+*	Last modified:		11/09/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -53,7 +53,7 @@ INPUT   Pointer to an array of image field pointers,
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	29/03/2012
+VERSION	11/09/2014
  ***/
 void  growth_aver(fieldstruct **fields, fieldstruct **wfields, int nfield,
 			obj2struct *obj2)
@@ -70,7 +70,7 @@ void  growth_aver(fieldstruct **fields, fieldstruct **wfields, int nfield,
    int			i,j,n, x,y, x2,y2, xmin,xmax,ymin,ymax, sx,sy, w,h,
 			pflag,corrflag, ipos, ngrowth;
    LONG			pos;
-   PIXTYPE		*image,*imaget, *weight,*weightt,
+   PIXTYPE		*image,*imaget, *imvar,*imvart,
 			pdbkg, wthresh;
   
 /* field is the detection field */
@@ -158,15 +158,15 @@ void  growth_aver(fieldstruct **fields, fieldstruct **wfields, int nfield,
     }
 
   image = subimage->image;
-  weight = weightt = NULL;		/* To avoid gcc -Wall warnings */
+  imvar = imvart = NULL;		/* To avoid gcc -Wall warnings */
   if (wfield)
-    weight = subimage->weight;
+    imvar = subimage->imvar;
   for (y=ymin; y<ymax; y++)
     {
     imaget = image + (pos = y*w + xmin);
     if (wfield)
-      weightt = weight + pos;
-    for (x=xmin; x<xmax; x++, imaget++, weightt++)
+      imvart = imvar + pos;
+    for (x=xmin; x<xmax; x++, imaget++, imvart++)
       {
       dx = x - mx;
       dy = y - my;
@@ -175,7 +175,7 @@ void  growth_aver(fieldstruct **fields, fieldstruct **wfields, int nfield,
 /*------ Here begin tests for pixel and/or weight overflows. Things are a */
 /*------ bit intricated to have it running as fast as possible in the most */
 /*------ common cases */
-        if ((pix=*imaget)<=-BIG || (wfield && (var=*weightt)>=wthresh))
+        if ((pix=*imaget)<=-BIG || (wfield && (var=*imvart)>=wthresh))
           {
           if (corrflag
 		&& (x2=(int)(2*mx+0.49999-x))>=0 && x2<w
@@ -184,7 +184,7 @@ void  growth_aver(fieldstruct **fields, fieldstruct **wfields, int nfield,
             {
             if (wfield)
               {
-              var = *(weight + pos);
+              var = *(imvar + pos);
               if (var>=wthresh)
                 pix = var = 0.0;
               }

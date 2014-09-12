@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 2005-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 2005-2014 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		02/04/2012
+*	Last modified:		11/09/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -50,7 +50,7 @@ INPUT	Pointer to an array of image field pointers,
 OUTPUT  -.
 NOTES   obj2->mx and obj2->my are taken as initial centroid guesses.
 AUTHOR  E. Bertin (IAP)
-VERSION 02/04/2012
+VERSION 11/09/2014
  ***/
 void	win_pos(fieldstruct **fields, fieldstruct **wfields,
 			int nfield, obj2struct *obj2)
@@ -71,7 +71,7 @@ void	win_pos(fieldstruct **fields, fieldstruct **wfields,
                         pflag,corrflag, gainflag, errflag, momentflag, winflag,
 			band,nband, nsubimage;
    long                 pos;
-   PIXTYPE              *image, *imaget, *weight,*weightt,
+   PIXTYPE              *image, *imaget, *imvar,*imvart,
                         wthresh = 0.0;
 
   corrflag = (prefs.mask_type==MASK_CORRECT);
@@ -236,15 +236,15 @@ void	win_pos(fieldstruct **fields, fieldstruct **wfields,
           }
 
         image = subimage->image;
-        weight = weightt = NULL;	/* To avoid gcc -Wall warnings */
+        imvar = imvart = NULL;	/* To avoid gcc -Wall warnings */
         if (wfield)
-          weight = subimage->weight;
+          imvar = subimage->imvar;
         for (y=ymin; y<ymax; y++)
           {
           imaget = image + (pos = y*w + xmin);
           if (wfield)
-            weightt = weight + pos;
-          for (x=xmin; x<xmax; x++, imaget++, weightt++)
+            imvart = imvar + pos;
+          for (x=xmin; x<xmax; x++, imaget++, imvart++)
             {
             dx = x - mx;
             dy = y - my;
@@ -270,7 +270,7 @@ void	win_pos(fieldstruct **fields, fieldstruct **wfields,
 /*------------ Here begin tests for pixel/weight overflows. Things are a */
 /*------------ bit intricated to have it running as fast as possible in the */
 /*------------ most common cases */
-              if ((pix=*imaget)<=-BIG || (wfield && (var=*weightt)>=wthresh))
+              if ((pix=*imaget)<=-BIG || (wfield && (var=*imvart)>=wthresh))
                 {
                 if (corrflag
 			&& (x2=(int)(mx2ph-x))>=0 && x2<w
@@ -279,7 +279,7 @@ void	win_pos(fieldstruct **fields, fieldstruct **wfields,
                   {
                   if (wfield)
                     {
-                    var = *(weight + pos);
+                    var = *(imvar + pos);
                     if (var>=wthresh)
                       pix = var = 0.0;
                     }

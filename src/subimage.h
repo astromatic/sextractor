@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		09/06/2014
+*	Last modified:		11/09/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -40,7 +40,8 @@ typedef struct subimage
   struct field	*wfield;	/// pointer to the field hosting local weights
   PIXTYPE	*image;			/// Pointer to subimage data
   PIXTYPE	*fimage;		/// Pointer to filtered subimage data
-  PIXTYPE	*weight;		/// Pointer to subimage weights
+  PIXTYPE	*imvar;			/// Pointer to subimage inverse weights
+  PIXTYPE	*fimvar;		/// Pointer to filtered inverse weights
   double	dpos[2];		/// Object coordinates (if applicable)
   int		ipos[2];		/// Coordinates of subimage centre
   int		size[2];		/// Subimage dimensions [pixels]
