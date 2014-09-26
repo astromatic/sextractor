@@ -1,7 +1,7 @@
 /**
 * @file		objlist.c
 * @brief	Manage object lists (e.g., for advanced deblending)
-* @date		11/07/2014
+* @date		25/09/2014
 * @copyright
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 *
@@ -290,7 +290,7 @@ Perform model-fitting and deblending on a list of objects.
 @param[in] objlist	Pointer to objlist
 @param[in] objindex	Index of blended object in the objlist
 @author 		E. Bertin (IAP)
-@date			11/09/2014
+@date			25/09/2014
  ***/
 objliststruct	*objlist_deblend(fieldstruct **fields, fieldstruct **wfields,
 			int nfield, objliststruct *objlist, int objindex) {
@@ -437,8 +437,8 @@ objliststruct	*objlist_deblend(fieldstruct **fields, fieldstruct **wfields,
     }
 
 //-- Extract residual sources (if they exist)
-    newobjlist = lutz_subextract(subimage, field->dthresh*2, xmin, xmax + 1,
-			ymin, ymax + 1);
+    newobjlist = lutz_subextract(subimage, 3.0, xmin, xmax + 1,
+			ymin, ymax + 1, SUBEX_VARTHRESH);
 
 //-- Recover (sub) image and variance map
     memcpy(subimage->image, imagecopy, npix*sizeof(PIXTYPE));
