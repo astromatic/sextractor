@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		10/07/2014
+*	Last modified:		25/09/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -52,7 +52,7 @@ OUTPUT	RETURN_OK if success, RETURN_FATAL_ERROR otherwise (memory overflow).
 NOTES	Even if the object is not deblended, the output objlist threshold is
 	recomputed if a variable threshold is used.
 AUTHOR	E. Bertin (IAP)
-VERSION	10/07/2014
+VERSION	25/09/2014
 TODO	Checkout "out" variable at exit
  ***/
 objliststruct	*deblend_parcelout(objstruct *objin, subimagestruct *subimage,
@@ -116,7 +116,8 @@ objliststruct	*deblend_parcelout(objstruct *objin, subimagestruct *subimage,
     for (i=0; i<objlist[k-1]->nobj; i++) {
       obj = &objlist[k-1]->obj[i];
       if (!(debobjlist = lutz_subextract(subimage, (PIXTYPE)dthresh,
-		obj->xmin, obj->xmax + 1, obj->ymin, obj->ymax + 1))) {
+		obj->xmin, obj->xmax + 1, obj->ymin, obj->ymax + 1,
+		SUBEX_NONE))) {
         out = RETURN_FATAL_ERROR;
         goto exit_parcelout;
       }

@@ -2,7 +2,7 @@
 * @file		lutz.c
 * @brief	Lutz (1980) algorithm to extract connected pixels from an image
 		raster.
-* @date		10/07/2014
+* @date		25/09/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 *
@@ -40,28 +40,31 @@
 #include	"objlist.h"
 #include	"plist.h"
 #include	"scan.h"
+#include	"weight.h"
 
 /****** lutz_subextract **************************************************//**
 PROTO	objliststruct	*lutz_subextract(subimagestruct *subimage,
-			PIXTYPE thresh, int xmin, int xmax, int ymin, int ymax)
+			PIXTYPE thresh, int xmin, int xmax, int ymin, int ymax,
+			int extflags)
 PURPOSE	C implementation of R.K LUTZ' algorithm for the extraction of
 	8-connected pixels in a sub-image above a given threshold and within
 	given limits
 INPUT	Pointer to sub-image,
-	detection threshold,
+	detection threshold: relative if weighted threshold, absolute otherwise,
 	minimum x pixel coordinate,
 	maximum x pixel coordinate (+1),
 	minimum y pixel coordinate,
-	maximum y pixel coordinate (+1).
+	maximum y pixel coordinate (+1),
+	binary combination of extraction flags.
 OUTPUT	Pointer to the objlist if no memory allocation problem occured,
 	NULL otherwise.
 NOTES	Global preferences are used.
 AUTHOR	E. Bertin (IAP)
 TODO    Check propagation of flags and filtering.
-VERSION	10/07/2014
+VERSION	25/09/2014
  ***/
 objliststruct	*lutz_subextract(subimagestruct *subimage, PIXTYPE thresh,
-			int xmin, int xmax, int ymin, int ymax) {
+			int xmin, int xmax, int ymin, int ymax, int extflags) {
 
    objliststruct	*objlist;
    infostruct		curpixinfo,initinfo,
@@ -72,14 +75,21 @@ objliststruct	*lutz_subextract(subimagestruct *subimage, PIXTYPE thresh,
    short		trunflag;
    char			*marker,
 			newmarker;
-   PIXTYPE		*scan, *cscan, *dscan, *dscant,
-			cnewsymbol;
+   PIXTYPE		*scan, *cscan, *varscan, *cvarscan, *dumscan, *dumscant,
+			varbadthresh, relthresh, cnewsymbol;
    int			*start, *end,
-			wminus1,hminus1, subw,subh,scansize, imsize,
-			cn, co, luflag, pstop, xl,xl2,yl,
-			out, minarea,
-			inewsymbol, i;
+			i, xl,xl2,yl, wminus1,hminus1, subw,subh,
+			scansize, imsize,
+			varflag, varthreshflag,
+			cn, co, luflag, pstop,
+			out, minarea, inewsymbol;
 
+// Flag the presence of a variance map
+  varflag = subimage->wfield && (subimage->imvar || subimage->fimvar);
+// Flag variable thresholding
+  varthreshflag = (extflags&SUBEX_VARTHRESH) && varflag;
+// Relative threshold will be used only for weighted thresholding
+  relthresh = thresh;
 
   wminus1 = subimage->field->width - 1 - xmin;
   hminus1 = subimage->field->height - 1 - ymin;
@@ -92,13 +102,18 @@ objliststruct	*lutz_subextract(subimagestruct *subimage, PIXTYPE thresh,
   QMALLOC(psstack, status, scansize);
   QMALLOC(start, int, scansize);
   QMALLOC(end, int, scansize);
-  QMALLOC(dscan, PIXTYPE, scansize);
-  dscant = dscan;
+  QMALLOC(dumscan, PIXTYPE, scansize);
+  dumscant = dumscan;
   for (i=scansize; i--;)
-    *(dscant++) = -BIG;
+    *(dumscant++) = -BIG;
 
   out = RETURN_OK;
   minarea = prefs.deb_maxarea;
+
+// Variance threshold for bad pixels (= infinite variance)
+  varbadthresh = varflag? subimage->wfield->weight_thresh : 0.0;
+  if (varbadthresh>BIG*WTHRESH_CONVFAC)
+    varbadthresh = BIG*WTHRESH_CONVFAC;
 
   initinfo.pixnb = 0;
   initinfo.flag = 0;
@@ -108,14 +123,20 @@ objliststruct	*lutz_subextract(subimagestruct *subimage, PIXTYPE thresh,
   scan = subimage->image
 	+ (ymin - subimage->xmin[1])*imsize
 	+ (xmin - subimage->xmin[0]);
-  cscan = (subimage->fimage? subimage->fimage : subimage->image)
+  cscan = subimage->fimage? subimage->fimage : subimage->image
 	+ (ymin - subimage->xmin[1])*imsize
 	+ (xmin - subimage->xmin[0]);
+  varscan = subimage->imvar? subimage->imvar
+	+ (ymin - subimage->xmin[1])*imsize
+	+ (xmin - subimage->xmin[0]) : NULL;
+  cvarscan = subimage->fimvar? subimage->fimvar
+	+ (ymin - subimage->xmin[1])*imsize
+	+ (xmin - subimage->xmin[0]) : varscan;
 
-// Allocate memory to store object data */
+// Allocate memory to store object data
   objlist = objlist_new();
 
-// Allocate memory for the pixel list */
+// Allocate memory for the pixel list
   if (!(objlist->plist = (pliststruct *)malloc(subw*subh*plistsize)))
     {
     out = RETURN_FATAL_ERROR;
@@ -126,22 +147,24 @@ objliststruct	*lutz_subextract(subimagestruct *subimage, PIXTYPE thresh,
   co = pstop = 0;
   curpixinfo.pixnb = 1;
 
-  for (yl=0; yl<=subh; yl++, cscan += imsize, scan += imsize)
+  for (yl=0; yl<=subh; yl++)
     {
     ps = COMPLETE;
     cs = NONOBJECT;
     trunflag =  (yl==-ymin || yl==hminus1) ? OBJ_TRUNC : 0;
     if (yl==subh)
-      cscan = scan = dscan;
+      cvarscan = varscan = cscan = scan = dumscan;
 
     for (xl=0; xl<=subw; xl++)
       {
       newmarker = marker[xl];
       marker[xl] = 0;
-      cnewsymbol = (xl==subw)? -BIG-1 : scan[xl];
+      cnewsymbol = (xl==subw)? -BIG-1 : cscan[xl];
 
       curpixinfo.flag = trunflag;
 
+      if (varthreshflag)
+        thresh = relthresh*sqrt((xl==subw || yl==subh)? 0.0 : cvarscan[xl]);
       luflag =  (cnewsymbol > thresh);
 
       if (luflag)
@@ -154,11 +177,13 @@ objliststruct	*lutz_subextract(subimagestruct *subimage, PIXTYPE thresh,
         PLIST(pixel, value) = scan[xl];
         if (PLISTEXIST(cvalue))
           PLISTPIX(pixel, cvalue) = cnewsymbol;
+        if (PLISTEXIST(var))
+          PLISTPIX(pixel, var) = varscan[xl];
         curpixinfo.lastpix = curpixinfo.firstpix = cn;
         cn += plistsize;
         pixel += plistsize;
         if (cs != OBJECT)
-/*------------------------------- Start Segment -----------------------------*/
+// ----- Start Segment
           {
           cs = OBJECT;
           if (ps == OBJECT)
@@ -180,10 +205,9 @@ objliststruct	*lutz_subextract(subimagestruct *subimage, PIXTYPE thresh,
             }
           }
         }
-/*---------------------------------------------------------------------------*/
-      if (newmarker)
-/*---------------------------- Process New Marker ---------------------------*/
 
+      if (newmarker)
+//---- Process New Marker
         {
         if (newmarker == 'S')
           {
@@ -239,14 +263,12 @@ objliststruct	*lutz_subextract(subimagestruct *subimage, PIXTYPE thresh,
           }
         }
   
-/*---------------------------------------------------------------------------*/
-
       if (luflag)
         lutz_update(&info[co],&curpixinfo, plist);
     else
         {
         if (cs == OBJECT)
-/*-------------------------------- End Segment ------------------------------*/
+//------ End Segment
           {
           cs = NONOBJECT;
           if (ps != COMPLETE)
@@ -263,13 +285,19 @@ objliststruct	*lutz_subextract(subimagestruct *subimage, PIXTYPE thresh,
             }
           }
         }
-/*---------------------------------------------------------------------------*/
       }
+
+    scan += imsize;
+    cscan += imsize;
+    if (varscan)
+      varscan += imsize;
+    if (cvarscan)
+      cvarscan += imsize;
     }
 
 exit_lutz:
 
-  free(dscan);
+  free(dumscan);
   free(info);
   free(store);
   free(marker);

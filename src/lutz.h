@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		24/06/2014
+*	Last modified:		25/09/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -34,6 +34,10 @@
 #define _LUTZ_H_
 
 /*------------------------------ definitions --------------------------------*/
+
+/// Subextraction flags
+#define	SUBEX_NONE		0x0		/// No flag
+#define	SUBEX_VARTHRESH		0x01		/// Activate variable threshold	
 
 #define	NSUBOBJ_START		256		/// Nb of subobjects at start
 #define	UNKNOWN			-1		/// Lutz algorithm flag code
@@ -47,7 +51,7 @@ typedef	enum		{COMPLETE, INCOMPLETE, NONOBJECT, OBJECT}
 PIXTYPE		*dumscan;
 
 /*------------------------------- structures --------------------------------*/
- /// Temporary detection parameters during extraction
+/// Temporary detection parameters during extraction
 typedef struct structinfo
   {
   LONG		pixnb;			/// Nb of pixels included in detection
@@ -58,7 +62,7 @@ typedef struct structinfo
 
 /*------------------------------- functions ---------------------------------*/
 objliststruct	*lutz_subextract(subimagestruct *subimage, PIXTYPE thresh,
-			int xmin, int xmax, int ymin, int ymax);
+			int xmin, int xmax, int ymin, int ymax, int extflags);
 
 int		lutz_output(infostruct *info, objliststruct *objlist);
 
