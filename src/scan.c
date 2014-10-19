@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		26/06/2014
+*	Last modified:		08/10/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -659,14 +659,17 @@ INPUT	Pointer to the image field.
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	09/06/2014
+VERSION	16/10/2014
  ***/
 void	scan_initmarkers(fieldstruct *field)
 
   {
   if (field)
+    {
     field->y = field->stripy = field->ymin = field->stripylim
 	= field->stripysclim = 0;
+    field->yblank = 1;
+    }
 
   return;
   }
@@ -739,7 +742,7 @@ INPUT	Pointer to an array of image field pointers,
 OUTPUT	-.
 NOTES	Global preferences are used.
 AUTHOR	E. Bertin (IAP)
-VERSION	25/06/2014
+VERSION	08/10/2014
  ***/
 void	scan_output(fieldstruct **fields, fieldstruct **wfields, int nfield,
 		infostruct *info, pliststruct *plistin,
@@ -782,7 +785,8 @@ void	scan_output(fieldstruct **fields, fieldstruct **wfields, int nfield,
     objlist = &objlistin;
 // Else try to create a subimage and deblend
   else if (!(subimage = subimage_fromplist(field, wfield, objin, plistin))
-	|| !(objlist = deblend_parcelout(objin, subimage, plistin))) {
+	|| !(objlist = deblend_parcelout(objin, subimage, plistin,
+		field->dthresh))) {
 //-- Flag deblending overflows
     objlist = &objlistin;
     for (o=0; o<objlist->nobj; o++)

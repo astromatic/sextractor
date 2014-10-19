@@ -52,14 +52,14 @@ Create a sub-image from an object and a pixel list, without any margin.
 @param[out] 		Pointer to a new subimage.
 
 @author 		E. Bertin (IAP)
-@date			11/09/2014
+@date			16/10/2014
  ***/
 subimagestruct	*subimage_fromplist(fieldstruct *field, fieldstruct *wfield,
 			objstruct *obj, pliststruct *plist) {
 
    subimagestruct	*subimage;
    pliststruct	*plistt;
-   PIXTYPE	*pix, *wpix, *pixt;
+   PIXTYPE	*pix, *fpix, *wpix, *pixt;
    long		pos, npix;
    int		i, n, xmin,ymin, w;
 
@@ -89,6 +89,17 @@ subimagestruct	*subimage_fromplist(fieldstruct *field, fieldstruct *wfield,
   for (i=npix; i--;)
     *(pix++) = -BIG;
 
+  if (prefs.filter_flag) {
+    if (!(subimage->fimage = (PIXTYPE *)malloc(npix*sizeof(PIXTYPE)))) {
+      free(subimage);
+      return NULL;
+    }
+
+    pix = subimage->fimage;
+    for (i=npix; i--;)
+      *(pix++) = -BIG;
+  }
+
   if (subimage->wfield) {
     if (!(subimage->imvar = (PIXTYPE *)malloc(npix*sizeof(PIXTYPE)))) {
       free(subimage->image);
@@ -101,11 +112,14 @@ subimagestruct	*subimage_fromplist(fieldstruct *field, fieldstruct *wfield,
   }
 
   pix = subimage->image;
+  fpix = subimage->fimage;
   wpix = subimage->imvar;
   for (i=obj->firstpix; i!=-1; i=PLIST(plistt,nextpix)) {
     plistt = plist+i;
     pos = (PLIST(plistt,x)-xmin) + (PLIST(plistt,y)-ymin)*w;
-    *(pix+pos) = PLISTPIX(plistt,cvalue);
+    *(pix+pos) = PLISTPIX(plistt, value);
+    if (fpix)
+      *(fpix+pos) = PLISTPIX(plistt, cvalue);
     if (wpix)
       *(wpix+pos) = PLISTPIX(plistt,var);
   }
@@ -175,14 +189,16 @@ subimagestruct	*subimage_fromfield(fieldstruct *field, fieldstruct *wfield,
 
 
 /****** subimage_fill ****************************************************//**
-Replace pixels of the first subimage by valid pixels from the second subimage.
+Replace pixels of the first subimage depending on the valid pixels from the
+second subimage.
 @param[in] subimage	Pointer to the first (destination) subimage.
 @param[in] submask	Pointer to the second subimage.
 
 @author 		E. Bertin (IAP)
-@date			01/06/2014
+@date			17/10/2014
  ***/
-void	subimage_fill(subimagestruct *subimage, subimagestruct *submask) {
+void	subimage_fill(subimagestruct *subimage, subimagestruct *submask,
+			subimage_fillenum	fill_type) {
 
    int		x,y, xmin,xmax,ymin,ymax, w,dwima,dwmask;
    PIXTYPE	*pixima,*pixmask,
@@ -200,12 +216,13 @@ void	subimage_fill(subimagestruct *subimage, subimagestruct *submask) {
   pixmask = submask->image;
   xmin = submask->xmin[0] - subimage->xmin[0];
   xmax = submask->xmax[0] - subimage->xmin[0];
-  if (xmax > subimage->size[0])
-    xmax = subimage->size[0];
+
   if (xmin < 0) {
     pixmask -= xmin;
     xmin = 0;
   }
+  if (xmax > subimage->size[0])
+    xmax = subimage->size[0];
 
   ymin = submask->xmin[1] - subimage->xmin[1];
   ymax = submask->xmax[1] - subimage->xmin[1];
@@ -224,7 +241,7 @@ void	subimage_fill(subimagestruct *subimage, subimagestruct *submask) {
   for (y=ymax-ymin; y--; pixmask += dwmask, pixima += dwima)
     for (x=w; x--; pixima++)
       if ((val = *(pixmask++)) > -BIG)
-        *pixima = val;
+        *pixima = (fill_type==SUBIMAGE_FILL_INPUT) ? val : -BIG;
 
   return;
 }

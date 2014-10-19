@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/09/2014
+*	Last modified:		08/10/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -69,7 +69,8 @@ typedef	enum {CHECK_NONE, CHECK_IDENTICAL, CHECK_BACKGROUND,
 	CHECK_SUBOBJECTS, CHECK_PSFPROTOS, CHECK_SUBPSFPROTOS,
 	CHECK_MAPSOM, CHECK_PROFILES, CHECK_SUBPROFILES,
 	CHECK_SPHEROIDS, CHECK_SUBSPHEROIDS, CHECK_DISKS, CHECK_SUBDISKS,
-	CHECK_PATTERNS,CHECK_OTHER,
+	CHECK_PATTERNS, CHECK_DEBLEND_MODELS, CHECK_SUBDEBLEND_MODELS,
+	CHECK_OTHER,
 	MAXCHECK}
 		checkenum;
 	/// CHECK_IMAGE type

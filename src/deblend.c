@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		25/09/2014
+*	Last modified:		08/10/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -46,23 +46,24 @@
 /****** deblend_parcelout ****************************************************
 PROTO	deblend_parcelout(objstruct *objin, pliststruct *plist)
 PURPOSE	Divide a list of isophotal detections in several parts (deblending).
-INPUT	Input objlist,
-	output objlist.
+INPUT	Pointer to input obj,
+	pointer to subimage,
+	pointer to pixel list
 OUTPUT	RETURN_OK if success, RETURN_FATAL_ERROR otherwise (memory overflow).
 NOTES	Even if the object is not deblended, the output objlist threshold is
 	recomputed if a variable threshold is used.
 AUTHOR	E. Bertin (IAP)
-VERSION	25/09/2014
+VERSION	08/10/2014
 TODO	Checkout "out" variable at exit
  ***/
 objliststruct	*deblend_parcelout(objstruct *objin, subimagestruct *subimage,
-				pliststruct *plist)
+				pliststruct *plist, PIXTYPE thresh)
 
   {
    objliststruct	**objlist,
 			*debobjlist, *debobjlist2, *objlistout;
    objstruct		*obj;
-   double		dthresh, dthresh0, value0;
+   double		dthresh, value0;
    short		*son, *ok;
    int			h,i,j,k,l,m, xn,
 			nbm = DEBLEND_NBRANCH,
@@ -89,11 +90,11 @@ objliststruct	*deblend_parcelout(objstruct *objin, subimagestruct *subimage,
   dthresh = objin->fdpeak;
   if (dthresh>0.0) {
     if (prefs.detector_type[0] == DETECTOR_PHOTO)
-      dthresh = dthresh0 + (dthresh-dthresh0) * (double)k/xn;
+      dthresh = thresh + (dthresh-thresh) * (double)k/xn;
     else
-      dthresh = dthresh0 * pow(dthresh/dthresh0,(double)k/xn);
+      dthresh = thresh * pow(dthresh/thresh, (double)k/xn);
   } else
-    dthresh = dthresh0;
+    dthresh = thresh;
 
 // Calculate flux threshold from DEBLEND_MINCONT
   value0 = objin->fdflux*prefs.deblend_mincont;

@@ -35,7 +35,7 @@
 
 #define	OBJLIST_NOBJMAXINC	16	/// memory allocation increment */
 #define	GROUP_NDEBLENDITER	3	/// number of deblending iterations
-#define	GROUP_NMULTITER		5	/// number of multi-model iterations
+#define	GROUP_NMULTITER		7	/// number of multi-model iterations
 
 /*--------------------------------- typedefs --------------------------------*/
 typedef struct
