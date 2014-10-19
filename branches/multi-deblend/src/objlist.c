@@ -278,7 +278,7 @@ int	objlist_movobj(objliststruct *objlistin, int objindex,
   if (objlist_addobj(objlistout, objlistin->obj + objindex, NULL) == RETURN_OK)
     return objlist_subobj(objlistin, objindex);
   else
-    RETURN_ERROR;
+    return RETURN_ERROR;
 }
 
 
@@ -290,7 +290,7 @@ Perform model-fitting and deblending on a list of objects.
 @param[in] objlist	Pointer to objlist
 @param[in] objindex	Index of blended object in the objlist
 @author 		E. Bertin (IAP)
-@date			25/09/2014
+@date			17/10/2014
  ***/
 objliststruct	*objlist_deblend(fieldstruct **fields, fieldstruct **wfields,
 			int nfield, objliststruct *objlist, int objindex) {
@@ -299,9 +299,11 @@ objliststruct	*objlist_deblend(fieldstruct **fields, fieldstruct **wfields,
    subimagestruct	*subimage;
    objliststruct	*newobjlist, *overobjlist;
    objstruct		*obj, *modobj, *fobj;
+   checkstruct		*check;
    PIXTYPE		*imagecopy, *imvarcopy, *imwork, *pix, *pixwork,
 			val, tol;
-   int			xmin,ymin, xmax,ymax, blend, nobj, npix,
+   int			xmin,ymin, xmax,ymax, xmargin,ymargin,
+			blend, nobj, npix,
 			i, j,k, o, o2, p;
 
   field = fields[0];			// field is the detection field
@@ -323,34 +325,46 @@ objliststruct	*objlist_deblend(fieldstruct **fields, fieldstruct **wfields,
     if (obj->ymax > ymax)
       ymax = obj->ymax;
   }
+  xmargin = (xmax - xmin + 1)/2 + 1;
+  ymargin = (ymax - ymin + 1)/2 + 1;
+  xmin -= xmargin;
+  xmax += xmargin;
+  ymin -= ymargin;
+  ymax += ymargin;
 
 // TODO: add margin
 // Extract large subimage covering the whole objlist
   overobjlist->subimage = subimage = subimage_fromfield(field, wfield,
 				xmin, xmax + 1, ymin, ymax + 1);
   npix = subimage->size[0]*subimage->size[1];
+
+  if (!subimage->imvar) {
+//-- If no weight-map is provided, create a constant variance map
+    QMALLOC(subimage->imvar, PIXTYPE, npix);
+    val = field->dthresh * field->dthresh;
+    pix = subimage->imvar;
+    for (p=npix; p--;)
+      *(pix++) = val;
+  }
+
   if (prefs.filter_flag) {
 //-- Allocate memory for storing the convolved model-subtracted image
     QCALLOC(subimage->fimage, PIXTYPE, npix);
-    if (subimage->imvar)
-//---- Allocate memory for storing the convolved variance map
-      QCALLOC(subimage->fimvar, PIXTYPE, npix);
+//-- Allocate memory for storing the convolved variance map
+    QCALLOC(subimage->fimvar, PIXTYPE, npix);
   }
 
   obj = overobjlist->obj;
   for (o=overobjlist->nobj; o--; obj++) {
 //-- if BLANKing is on, paste back the object pixels in the sub-image
     if (prefs.blank_flag)
-      subimage_fill(subimage, obj->isoimage);
+      subimage_fill(subimage, obj->isoimage, SUBIMAGE_FILL_INPUT);
   }
 
-
-// Backup the large image and the variance map
+// Backup the large image
   QMEMCPY(subimage->image, imagecopy, PIXTYPE, npix);
-  if (subimage->imvar) {
-    QMEMCPY(subimage->imvar, imvarcopy, PIXTYPE, npix);
-  } else
-    imvarcopy = NULL;
+// Backup the variance map
+  QMEMCPY(subimage->imvar, imvarcopy, PIXTYPE, npix);
 
 // Create a work buffer of the large image
   QMALLOC(imwork, PIXTYPE, npix);
@@ -359,10 +373,10 @@ objliststruct	*objlist_deblend(fieldstruct **fields, fieldstruct **wfields,
   for (i=overobjlist->nobj; i--; obj++) {
 //-- Create individual object subimages
     obj->fullimage = subimage_fromfield(field, wfield,
-		obj->xmin, obj->xmax + 1, obj->ymin, obj->ymax + 1);
+		obj->xmin - 5, obj->xmax + 6, obj->ymin - 5, obj->ymax + 6);
 //-- if BLANKing is on, paste back the object pixels in the sub-images
     if (prefs.blank_flag) {
-      subimage_fill(obj->fullimage, obj->isoimage);
+      subimage_fill(obj->fullimage, obj->isoimage, SUBIMAGE_FILL_INPUT);
     }
     obj->profit = profit_init(obj, obj->fullimage, 1,
 			MODEL_MOFFAT, PROFIT_NOCONV);
@@ -418,35 +432,31 @@ objliststruct	*objlist_deblend(fieldstruct **fields, fieldstruct **wfields,
       *(pix++) -= *(pixwork++);
 
 //-- Update the variance map
-    if (subimage->imvar) {
-      pix = subimage->imvar;
-      pixwork = imwork;
-      tol = prefs.deblend_fittol;
-      for (p=npix; p--;) {
-        val = tol * *(pixwork++);
-        *(pix++) += val*val;
-      }
+    pix = subimage->imvar;
+    pixwork = imwork;
+    tol = prefs.deblend_fittol;
+    for (p=npix; p--;) {
+      val = tol * *(pixwork++);
+      *(pix++) += val*val;
     }
 
     if (prefs.filter_flag) {
       convolve_image(field, subimage->image, subimage->fimage,
 		subimage->size[0], subimage->size[1]);
-      if (subimage->imvar)
-        convolve_image(field, subimage->imvar, subimage->fimvar,
+      convolve_image(field, subimage->imvar, subimage->fimvar,
 		subimage->size[0], subimage->size[1]);
     }
 
 //-- Extract residual sources (if they exist)
-    newobjlist = lutz_subextract(subimage, 3.0, xmin, xmax + 1,
+    newobjlist = lutz_subextract(subimage, 1.0, xmin, xmax + 1,
 			ymin, ymax + 1, SUBEX_VARTHRESH);
+
 
 //-- Recover (sub) image and variance map
     memcpy(subimage->image, imagecopy, npix*sizeof(PIXTYPE));
-    if (subimage->imvar)
-      memcpy(subimage->imvar, imvarcopy, npix*sizeof(PIXTYPE));
+    memcpy(subimage->imvar, imvarcopy, npix*sizeof(PIXTYPE));
 
-//-- Loop over input objlist; we keep indexing independent of loop counter to
-//-- accommodate changes in the ordering of the list
+//-- Loop over input objlist
     for (o=0, k=newobjlist->nobj; k--; o++) {
       obj = newobjlist->obj + o;
       scan_preanalyse(obj, newobjlist->plist, ANALYSE_FULL|ANALYSE_ROBUST);
@@ -466,18 +476,71 @@ objliststruct	*objlist_deblend(fieldstruct **fields, fieldstruct **wfields,
           warning("Memory overflow during masking for detection at ", gstr);
         }
       }
+    }
+    for (o=0, k=newobjlist->nobj; k--; o++) {
+      obj = newobjlist->obj + o;
+      if (prefs.ext_maxarea && obj->fdnpix > prefs.ext_maxarea)
+        continue; 
 //---- Create individual object subimages
       obj->fullimage = subimage_fromfield(field, wfield,
-		obj->xmin, obj->xmax + 1, obj->ymin, obj->ymax + 1);
-//---- if BLANKing is on, paste back the object pixels in the sub-images
-      if (prefs.blank_flag)
-        subimage_fill(obj->fullimage, obj->isoimage);
+		obj->xmin - 5, obj->xmax + 6, obj->ymin - 5, obj->ymax + 6);
+      subimage_fill(obj->fullimage, subimage, SUBIMAGE_FILL_INPUT);
+      if (prefs.blank_flag) {
+//----- if BLANKing is on, blank newly detected pixels in the parent objects
+        modobj = overobjlist->obj;
+        for (o2=overobjlist->nobj; o2--; modobj++) {
+          subimage_fill(modobj->fullimage, obj->isoimage, SUBIMAGE_FILL_BLANK);
+        }
+//----- if BLANKing is on, blank pixels from other new detections
+        modobj = newobjlist->obj;
+        if (modobj != obj) {
+          if (prefs.ext_maxarea && modobj->fdnpix > prefs.ext_maxarea)
+            continue; 
+          for (o2=newobjlist->nobj; o2--; modobj++) {
+//            subimage_fill(obj->fullimage, modobj->isoimage,SUBIMAGE_FILL_BLANK);
+          }
+        }
+      }
+
+//---- Setup model fitting for the new detection
       obj->profit = profit_init(obj, obj->fullimage, 1,
 			MODEL_MOFFAT, PROFIT_NOCONV);
+//---- Subtract the contribution from parent models
+      subprofit = obj->profit->subprofit;
+      modobj = overobjlist->obj;
+      for (o2=overobjlist->nobj; o2--; modobj++) {
+        modsubprofit = modobj->profit->subprofit;
+        if (modsubprofit->lmodpix)
+              subprofit_addmodpix(modsubprofit, subprofit->objpix,
+			subprofit->ix, subprofit->iy,
+			subprofit->objnaxisn[0], subprofit->objnaxisn[1],
+			modsubprofit->subsamp, nobj>1 ? -0.95: -1.0);
+      }
+    }
+
+//-- Move new objects to the regular object list  we keep indexing independent
+//-- of loop counter to accommodate changes in the ordering of the list
+    for (o=0, k=newobjlist->nobj; k--; o++) {
+      obj = newobjlist->obj + o;
+      if (prefs.ext_maxarea && obj->fdnpix > prefs.ext_maxarea)
+        continue; 
       objlist_movobj(newobjlist, o--, overobjlist);
     }
+
     objlist_end(newobjlist);
+
   }
+
+/* Check-image CHECK_DEBLEND_MODELS option */
+  if ((check = prefs.check[CHECK_DEBLEND_MODELS]))
+    check_add(check, imwork, subimage->size[0], subimage->size[1],
+		subimage->ipos[0], subimage->ipos[1], 1.0);
+
+/* Check-image CHECK_DEBLEND_MODELS option */
+  if ((check = prefs.check[CHECK_SUBDEBLEND_MODELS]))
+    check_add(check, imwork, subimage->size[0], subimage->size[1],
+		subimage->ipos[0], subimage->ipos[1], -1.0);
+
 
   obj = overobjlist->obj;
   for (o=overobjlist->nobj; o--; obj++)

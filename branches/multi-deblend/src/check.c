@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2013 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2014 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		23/09/2013
+*	Last modified:		08/10/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -433,7 +433,7 @@ INPUT	Pointer to the image structure,
 	pointer to the check image.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	29/11/2011
+VERSION	08/10/2014
  ***/
 void	check_reinit(fieldstruct *field, checkstruct *check)
   {
@@ -511,6 +511,8 @@ void	check_reinit(fieldstruct *field, checkstruct *check)
     case CHECK_DISKS:
     case CHECK_SUBDISKS:
     case CHECK_PATTERNS:
+    case CHECK_DEBLEND_MODELS:
+    case CHECK_SUBDEBLEND_MODELS:
       tab->bitpix = -32;
       tab->bytepix = 4;
       tab->bitsgn = 0;
@@ -640,13 +642,14 @@ INPUT	Pointer to the check image,
 	line width (in pixels).
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	29/11/2011
+VERSION	08/10/2014
  ***/
 void	check_write(checkstruct *check, PIXTYPE *data, int w)
   {
   if (check->type == CHECK_APERTURES || check->type == CHECK_SUBPSFPROTOS
 	|| check->type == CHECK_SUBPROFILES || check->type == CHECK_SUBSPHEROIDS
-	|| check->type == CHECK_SUBDISKS || check->type == CHECK_OTHER)
+	|| check->type == CHECK_SUBDISKS || check->type == CHECK_SUBDEBLEND_MODELS
+	|| check->type == CHECK_OTHER)
     {
     memcpy((PIXTYPE *)check->pix + w*(check->y++), data, w*sizeof(PIXTYPE));
     return;
@@ -695,7 +698,7 @@ INPUT	Pointer to the image structure,
 	pointer to the check image.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	29/11/2011
+VERSION	08/10/2014
  ***/
 void	check_reend(fieldstruct *field, checkstruct *check)
   {
@@ -732,6 +735,8 @@ void	check_reend(fieldstruct *field, checkstruct *check)
     case CHECK_ASSOC:
     case CHECK_PATTERNS:
     case CHECK_MAPSOM:
+    case CHECK_DEBLEND_MODELS:
+    case CHECK_SUBDEBLEND_MODELS:
     case CHECK_OTHER:
       write_body(cat->tab, check->pix, check->npix);
       free(check->pix);

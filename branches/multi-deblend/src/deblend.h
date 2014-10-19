@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		25/06/2014
+*	Last modified:		08/10/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -46,7 +46,7 @@
 /*------------------------------- functions ---------------------------------*/
 
 objliststruct	*deblend_parcelout(objstruct *objin, subimagestruct *subimage,
-			pliststruct *plist);
+			pliststruct *plist, PIXTYPE thresh);
 
 int		deblend_belong(int corenb, objliststruct *coreobjlist,
 			int shellnb, objliststruct *shellobjlist),

@@ -3295,7 +3295,7 @@ void	profit_resetparam(profitstruct *profit, paramenum paramtype)
       fittype = PARFIT_LOGBOUND;
       param = subprofit->guessradius/sqrtf(subprofit->guessaspect) * 2.0;
 		/* Approximatively 1/sqrt(2^(1/beta)-1) with beta = 4 */
-      parammin = 0.1;
+      parammin = 0.2;
       parammax = param * 10.0;
       break;
     case PARAM_MOFFAT_ASPECT:

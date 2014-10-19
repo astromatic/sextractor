@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		26/06/2014
+*	Last modified:		17/10/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -468,7 +468,7 @@ INPUT	Pointer to an array of image field pointers,
 OUTPUT  New obj2 pointer.
 NOTES   -.
 AUTHOR  E. Bertin (IAP)
-VERSION 26/06/2014
+VERSION 17/10/2014
 TODO	Free memory allocated for bkg, dbkg, etc.
  ***/
 obj2struct	*analyse_obj2obj2(fieldstruct **fields, fieldstruct **wfields,
@@ -577,7 +577,7 @@ obj2struct	*analyse_obj2obj2(fieldstruct **fields, fieldstruct **wfields,
 
 /* if BLANKing is on, paste back the object pixels in the first subimage*/
   if (prefs.blank_flag && obj->isoimage)
-    subimage_fill(obj2->subimage, obj->isoimage);
+    subimage_fill(obj2->subimage, obj->isoimage, SUBIMAGE_FILL_INPUT);
 
   if ((check=prefs.check[CHECK_SEGMENTATION]))
     {

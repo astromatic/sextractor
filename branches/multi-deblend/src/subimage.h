@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/09/2014
+*	Last modified:		17/10/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -32,6 +32,10 @@
 #ifndef _FIELD_H_
 #include        "field.h"
 #endif
+
+/*--------------------------------- typedefs --------------------------------*/
+typedef enum	{SUBIMAGE_FILL_BLANK, SUBIMAGE_FILL_INPUT}
+			subimage_fillenum;
 
 /*------------------------------- structures --------------------------------*/
 typedef struct subimage
@@ -67,7 +71,7 @@ subimagestruct	*subimage_fromfield(fieldstruct *field, fieldstruct *wfield,
 void		subimage_end(subimagestruct *subimage),
 		subimage_endall(obj2struct *obj2),
 		subimage_fill(subimagestruct *subimage,
-			subimagestruct *submask),
+			subimagestruct *submask, subimage_fillenum fill_type),
 		subimage_init(subimagestruct *subimage,
 				fieldstruct *field, fieldstruct *wfield,
 				obj2struct *obj2, subimagestruct *dsubimage);

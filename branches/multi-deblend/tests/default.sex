@@ -1,5 +1,5 @@
-# Default configuration file for SExtractor 2.5.0
-# EB 2006-07-14
+# Default configuration file for SExtractor 3.0
+# EB 2014-10-14
 #
  
 #-------------------------------- Catalog ------------------------------------
@@ -21,7 +21,8 @@ FILTER_NAME      gauss_4.0_7x7.conv   # name of the file containing the filter
  
 DEBLEND_NTHRESH  32             # Number of deblending sub-thresholds
 DEBLEND_MINCONT  0.005          # Minimum contrast parameter for deblending
- 
+DEBLEND_FITTOL   0.2
+
 CLEAN            Y              # Clean spurious detections? (Y or N)?
 CLEAN_PARAM      1.0            # Cleaning efficiency
  
@@ -58,11 +59,11 @@ BACKPHOTO_TYPE   GLOBAL         # can be GLOBAL or LOCAL
  
 #------------------------------ Check Image ----------------------------------
  
-CHECKIMAGE_TYPE  MODELS, -MODELS, -BACKGROUND, FILTERED         # can be NONE, BACKGROUND, BACKGROUND_RMS,
+CHECKIMAGE_TYPE  DEBLEND_MODELS,-DEBLEND_MODELS,-BACKGROUND,APERTURES,OBJECTS
                                 # MINIBACKGROUND, MINIBACK_RMS, -BACKGROUND,
                                 # FILTERED, OBJECTS, -OBJECTS, SEGMENTATION,
                                 # or APERTURES
-CHECKIMAGE_NAME  prof.fits,subprof.fits,orig.fits,filter.fits     # Filename for the check-image
+CHECKIMAGE_NAME deblend.fits,subdeblend.fits,noback.fits,aper.fits,obj.fits    # Filename for the check-image
  
 #--------------------- Memory (change with caution!) -------------------------
  

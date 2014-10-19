@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2014 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		03/04/2012
+*	Last modified:		08/10/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -55,7 +55,7 @@ INPUT	Pointer to an image field structure,
 OUTPUT	Void pointer to the start of the strip.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	03/04/2012
+VERSION	08/10/2014
  ***/
 void	*readimage_loadstrip(fieldstruct *field, fieldstruct *wfield)
 
@@ -130,6 +130,8 @@ void	*readimage_loadstrip(fieldstruct *field, fieldstruct *wfield)
             if ((check = prefs.check[CHECK_SUBSPHEROIDS]))
               check_write(check, data, w);
             if ((check = prefs.check[CHECK_SUBDISKS]))
+              check_write(check, data, w);
+            if ((check = prefs.check[CHECK_SUBDEBLEND_MODELS]))
               check_write(check, data, w);
             }
           if ((flags&DETECT_FIELD) && (check=prefs.check[CHECK_BACKRMS]))
@@ -207,6 +209,8 @@ void	*readimage_loadstrip(fieldstruct *field, fieldstruct *wfield)
           if ((check = prefs.check[CHECK_SUBSPHEROIDS]))
             check_write(check, data, w);
           if ((check = prefs.check[CHECK_SUBDISKS]))
+            check_write(check, data, w);
+          if ((check = prefs.check[CHECK_SUBDEBLEND_MODELS]))
             check_write(check, data, w);
           }
         if ((flags&DETECT_FIELD) && (check=prefs.check[CHECK_BACKRMS]))

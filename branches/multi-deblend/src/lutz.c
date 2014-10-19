@@ -85,7 +85,7 @@ objliststruct	*lutz_subextract(subimagestruct *subimage, PIXTYPE thresh,
 			out, minarea, inewsymbol;
 
 // Flag the presence of a variance map
-  varflag = subimage->wfield && (subimage->imvar || subimage->fimvar);
+  varflag = subimage->imvar || subimage->fimvar;
 // Flag variable thresholding
   varthreshflag = (extflags&SUBEX_VARTHRESH) && varflag;
 // Relative threshold will be used only for weighted thresholding
@@ -165,6 +165,7 @@ objliststruct	*lutz_subextract(subimagestruct *subimage, PIXTYPE thresh,
 
       if (varthreshflag)
         thresh = relthresh*sqrt((xl==subw || yl==subh)? 0.0 : cvarscan[xl]);
+
       luflag =  (cnewsymbol > thresh);
 
       if (luflag)
