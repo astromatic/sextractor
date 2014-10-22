@@ -89,11 +89,11 @@
 #define	PROFIT_HIDEFRES	201	/* Hi. def. model resol. (must be <MAXMODSIZE)*/
 #define	PROFIT_REFFFAC	3.0	/* Factor in r_eff for measurement radius*/
 #define	PROFIT_MAXR2MAX	1e6	/* Maximum r2_max for truncating profiles */
-#define	PROFIT_DYNPARAM	10.0	/* Dynamic compression param. in sigma units */
+#define	PROFIT_DYNPARAM	3.0	/* Dynamic compression param. in sigma units */
 #define	PROFIT_SMOOTHR	4.0	/* Profile smoothing radius (pixels) */
-#define	PROFIT_MAXMODSIZE  512	/* Maximum size allowed for the model raster */
+#define	PROFIT_MAXMODSIZE  5120	/* Maximum size allowed for the model raster */
 #define PROFIT_MAXSMODSIZE 64	/* Number of model planes */
-#define	PROFIT_MAXOBJSIZE  512	/* Maximum size allowed for the object raster */
+#define	PROFIT_MAXOBJSIZE  5120	/* Maximum size allowed for the object raster */
 #define	PROFIT_BARXFADE	0.1	/* Fract. of bar length crossfaded with arms */
 #define	PROFIT_MAXEXTRA	3	/* Max. nb of extra free params of profiles */
 #define INTERP_MAXKERNELWIDTH	8	/* Max. range of kernel (pixels) */
@@ -127,7 +127,7 @@ typedef enum	{PARAM_BACK,
 		PARAM_OUTRING_FLUX, PARAM_OUTRING_START, PARAM_OUTRING_WIDTH,
 		PARAM_MOFFAT_FLUX, PARAM_MOFFAT_ALPHA, PARAM_MOFFAT_ASPECT,
 		PARAM_MOFFAT_POSANG, PARAM_MOFFAT_BETA,
-		PARAM_MOFFAT_MINKP,PARAM_MOFFAT_OFFSET,
+		PARAM_MOFFAT_MINKP, PARAM_MOFFAT_OFFSET,
 		PARAM_NPARAM}	paramenum;
 
 typedef enum 	{PARFIT_FIXED, PARFIT_UNBOUND, PARFIT_LINBOUND,

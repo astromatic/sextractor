@@ -1,7 +1,7 @@
 /**
 * @file		objlist.c
 * @brief	Manage object lists (e.g., for advanced deblending)
-* @date		25/09/2014
+* @date		18/10/2014
 * @copyright
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 *
@@ -41,6 +41,7 @@
 #include	"catout.h"
 #include	"clean.h"
 #include	"check.h"
+#include	"filter.h"
 #include	"plist.h"
 #include	"image.h"
 #include	"lutz.h"
@@ -290,7 +291,7 @@ Perform model-fitting and deblending on a list of objects.
 @param[in] objlist	Pointer to objlist
 @param[in] objindex	Index of blended object in the objlist
 @author 		E. Bertin (IAP)
-@date			17/10/2014
+@date			21/10/2014
  ***/
 objliststruct	*objlist_deblend(fieldstruct **fields, fieldstruct **wfields,
 			int nfield, objliststruct *objlist, int objindex) {
@@ -300,11 +301,12 @@ objliststruct	*objlist_deblend(fieldstruct **fields, fieldstruct **wfields,
    objliststruct	*newobjlist, *overobjlist;
    objstruct		*obj, *modobj, *fobj;
    checkstruct		*check;
+   float		**param;
    PIXTYPE		*imagecopy, *imvarcopy, *imwork, *pix, *pixwork,
 			val, tol;
    int			xmin,ymin, xmax,ymax, xmargin,ymargin,
 			blend, nobj, npix,
-			i, j,k, o, o2, p;
+			i, k, o, o2, p;
 
   field = fields[0];			// field is the detection field
   wfield = wfields? wfields[0]:NULL;	// wfield is the detection weight map
@@ -325,8 +327,13 @@ objliststruct	*objlist_deblend(fieldstruct **fields, fieldstruct **wfields,
     if (obj->ymax > ymax)
       ymax = obj->ymax;
   }
-  xmargin = (xmax - xmin + 1)/2 + 1;
-  ymargin = (ymax - ymin + 1)/2 + 1;
+
+  if (prefs.filter_flag) {
+    xmargin = thefilter->convw/2+1;
+    ymargin = thefilter->convh/2+1;
+  } else
+    xmargin = ymargin = 1;
+
   xmin -= xmargin;
   xmax += xmargin;
   ymin -= ymargin;
@@ -370,10 +377,13 @@ objliststruct	*objlist_deblend(fieldstruct **fields, fieldstruct **wfields,
   QMALLOC(imwork, PIXTYPE, npix);
 
   obj = overobjlist->obj;
-  for (i=overobjlist->nobj; i--; obj++) {
+  for (o=overobjlist->nobj; o--; obj++) {
 //-- Create individual object subimages
+    xmargin = 4;
+    ymargin = 4;
     obj->fullimage = subimage_fromfield(field, wfield,
-		obj->xmin - 5, obj->xmax + 6, obj->ymin - 5, obj->ymax + 6);
+		obj->xmin - xmargin, obj->xmax + 1 + xmargin,
+		obj->ymin - ymargin, obj->ymax + 1 + ymargin);
 //-- if BLANKing is on, paste back the object pixels in the sub-images
     if (prefs.blank_flag) {
       subimage_fill(obj->fullimage, obj->isoimage, SUBIMAGE_FILL_INPUT);
@@ -382,37 +392,10 @@ objliststruct	*objlist_deblend(fieldstruct **fields, fieldstruct **wfields,
 			MODEL_MOFFAT, PROFIT_NOCONV);
   }
 
-  for (j=0; j<GROUP_NDEBLENDITER; j++) {
+  for (i=0; i<=GROUP_NDEBLENDITER; i++) {
     nobj = overobjlist->nobj;
-//-- Iterative multiple fit if several sources overlap
-    for (i=0; i<GROUP_NMULTITER; i++) {
-      obj = overobjlist->obj;
-      for (o=nobj; o--; obj++)
-        profit_fit(obj->profit, obj);
-
-      obj = overobjlist->obj;
-      for (o=nobj; o--; obj++) {
-        subprofit = obj->profit->subprofit;
-//------ Subtract the contribution from existing overlapping neighbors (models)
-        if (i)
-          subprofit_copyobjpix(subprofit, obj->fullimage);
-        if (subprofit->nobjpix) {
-          modobj = overobjlist->obj;
-          for (o2=nobj; o2--; modobj++)
-          if (modobj != obj) {
-            modsubprofit = modobj->profit->subprofit;
-            if (modsubprofit->lmodpix)
-              subprofit_addmodpix(modsubprofit, subprofit->objpix,
-			subprofit->ix, subprofit->iy,
-			subprofit->objnaxisn[0], subprofit->objnaxisn[1],
-			modsubprofit->subsamp, nobj>1 ? -0.95: -1.0);
-          }
-        }
-      }
-      if (nobj <= 1)
-        break;
-    }
-
+//-- Iterative multiple fit
+    objlist_multifit(overobjlist, GROUP_NMULTITER);
 //-- Reset work buffer
     memset(imwork, 0, npix*sizeof(PIXTYPE));
 
@@ -425,6 +408,8 @@ objliststruct	*objlist_deblend(fieldstruct **fields, fieldstruct **wfields,
 			subimage->size[0], subimage->size[1],
 			subprofit->subsamp, 1.0);
 
+    if (i==GROUP_NDEBLENDITER)	// leave here for the last iteration
+      break;
 //-- Subtract the result from the subimage
     pix = subimage->image;
     pixwork = imwork;
@@ -451,6 +436,9 @@ objliststruct	*objlist_deblend(fieldstruct **fields, fieldstruct **wfields,
     newobjlist = lutz_subextract(subimage, 1.0, xmin, xmax + 1,
 			ymin, ymax + 1, SUBEX_VARTHRESH);
 
+//-- Leave if no new detection appears
+    if (!newobjlist->nobj)
+      break;
 
 //-- Recover (sub) image and variance map
     memcpy(subimage->image, imagecopy, npix*sizeof(PIXTYPE));
@@ -464,7 +452,7 @@ objliststruct	*objlist_deblend(fieldstruct **fields, fieldstruct **wfields,
         continue; 
       obj->number = ++thecat.ndetect;
       obj->blend = blend;
-      obj->deblend_npass = j + 1;
+      obj->deblend_npass =  i + 1;
 //---- Isophotal measurements
       analyse_iso(fields, wfields, nfield, newobjlist, o);
       if (prefs.blank_flag) {
@@ -482,8 +470,11 @@ objliststruct	*objlist_deblend(fieldstruct **fields, fieldstruct **wfields,
       if (prefs.ext_maxarea && obj->fdnpix > prefs.ext_maxarea)
         continue; 
 //---- Create individual object subimages
+      xmargin = 4;
+      ymargin = 4;
       obj->fullimage = subimage_fromfield(field, wfield,
-		obj->xmin - 5, obj->xmax + 6, obj->ymin - 5, obj->ymax + 6);
+		obj->xmin - xmargin, obj->xmax + 1 + xmargin,
+		obj->ymin - ymargin, obj->ymax + 1 + ymargin);
       subimage_fill(obj->fullimage, subimage, SUBIMAGE_FILL_INPUT);
       if (prefs.blank_flag) {
 //----- if BLANKing is on, blank newly detected pixels in the parent objects
@@ -514,7 +505,7 @@ objliststruct	*objlist_deblend(fieldstruct **fields, fieldstruct **wfields,
               subprofit_addmodpix(modsubprofit, subprofit->objpix,
 			subprofit->ix, subprofit->iy,
 			subprofit->objnaxisn[0], subprofit->objnaxisn[1],
-			modsubprofit->subsamp, nobj>1 ? -0.95: -1.0);
+			modsubprofit->subsamp, -1.0);
       }
     }
 
@@ -528,7 +519,6 @@ objliststruct	*objlist_deblend(fieldstruct **fields, fieldstruct **wfields,
     }
 
     objlist_end(newobjlist);
-
   }
 
 /* Check-image CHECK_DEBLEND_MODELS option */
@@ -543,26 +533,70 @@ objliststruct	*objlist_deblend(fieldstruct **fields, fieldstruct **wfields,
 
 
   obj = overobjlist->obj;
-  for (o=overobjlist->nobj; o--; obj++)
-/*
-{
-subprofit = obj->profit->subprofit;
-profit_residuals(obj->profit, 0.0, obj->profit->paraminit, NULL);
-if (subprofit->lmodpix) {
-check_add(thecheck, subprofit->lmodpix,
-subprofit->objnaxisn[0],subprofit->objnaxisn[1],
-subprofit->ix,subprofit->iy, 1.0);
-}
-*/
+  for (o=overobjlist->nobj; o--; obj++) {
+    param = obj->profit->paramlist;
+    obj->deblend_fwhm = 2.0f * *param[PARAM_MOFFAT_ALPHA]
+	* (*param[PARAM_MOFFAT_OFFSET]
+	+ sqrtf(powf(2.0f, 1.0f / *param[PARAM_MOFFAT_BETA]) - 1.0f))
+	* sqrtf(*param[PARAM_MOFFAT_ASPECT] < 1.0f?
+		*param[PARAM_MOFFAT_ASPECT]
+		: 1.0f / *param[PARAM_MOFFAT_ASPECT]);
     profit_end(obj->profit);
-/*
-}
-*/
+  }
+
   free(imagecopy);
   free(imvarcopy);
   free(imwork);
 
   return overobjlist;
+}
+
+
+/****** objlist_multifit **************************************************//**
+Perform iterative multiple model-fitting on a list of objects.
+@param[in] objlist	Pointer to objlist
+@param[in] niter	Number of iterations
+@warning		profit_init() must have been called on all obj first.
+@author 		E. Bertin (IAP)
+@date			18/10/2014
+ ***/
+
+void	objlist_multifit(objliststruct *objlist, int niter) {
+   objstruct		*obj, *modobj;
+   subprofitstruct	*subprofit, *modsubprofit;
+   int			i, o, o2, nobj;
+
+  nobj = objlist->nobj;
+  for (i=0; i<=niter; i++) {
+    obj = objlist->obj;
+    for (o=nobj; o--; obj++)
+      profit_fit(obj->profit, obj);
+
+    if (i==niter)
+      break;
+    obj = objlist->obj;
+    for (o=nobj; o--; obj++) {
+      subprofit = obj->profit->subprofit;
+//---- Subtract the contribution from existing overlapping neighbors (models)
+      if (i)
+        subprofit_copyobjpix(subprofit, obj->fullimage);
+      if (subprofit->nobjpix) {
+        modobj = objlist->obj;
+        for (o2=nobj; o2--; modobj++)
+        if (modobj != obj) {
+          modsubprofit = modobj->profit->subprofit;
+          if (modsubprofit->lmodpix)
+            subprofit_addmodpix(modsubprofit, subprofit->objpix,
+			subprofit->ix, subprofit->iy,
+			subprofit->objnaxisn[0], subprofit->objnaxisn[1],
+			modsubprofit->subsamp, nobj>1 ? -0.95: -1.0);
+        }
+      }
+    }
+    if (nobj <= 1)
+      break;
+  }
+  return;
 }
 
 
@@ -694,7 +728,7 @@ void	pthread_objlist_add(objliststruct objlist)
 
 /****** pthread_objlist_analyse ******************************************//**
 Thread that takes care of measuring and saving objlists.
-@paran[in] arg	unused (here only for compliancy with POSIX threads)
+@param[in] arg	unused (here only for compliancy with POSIX threads)
 
 @author 	E. Bertin (IAP)
 @date		09/06/2014

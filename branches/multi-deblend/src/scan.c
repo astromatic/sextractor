@@ -570,16 +570,18 @@ void	scan_extract(fieldstruct *dfield, fieldstruct *dwfield,
 
 /*-- Remove objects close to the ymin limit if ymin is ready to increase */
     if (dfield->stripy==dfield->stripysclim) {
-      i = cleanobjlist->nobj;
-      while (i--) {
-        if (i>=cleanobjlist->nobj)
-          i = cleanobjlist->nobj - 1;
-        cleanobj = cleanobjlist->obj+i;
-        if (cleanobj->ycmin <= dfield->ymin) {
-          overobjlist = objlist_deblend(fields, wfields, nfield,
+      overobjlist = 0x1;	// Just using the pointer as a flag
+      while (cleanobjlist->nobj && overobjlist) {
+        overobjlist = NULL;
+        for (i=0; i<cleanobjlist->nobj; i++) {
+          cleanobj = cleanobjlist->obj + i;
+          if (cleanobj->ycmin <= dfield->ymin) {
+            overobjlist = objlist_deblend(fields, wfields, nfield,
 			cleanobjlist, i);
-          analyse_final(fields, wfields, nfield, overobjlist);
-          objlist_end(overobjlist);
+            analyse_final(fields, wfields, nfield, overobjlist);
+            objlist_end(overobjlist);
+            break;
+          }
         }
       }
     }

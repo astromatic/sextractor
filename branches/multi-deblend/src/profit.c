@@ -128,7 +128,7 @@ profitstruct	*profit_init(objstruct *obj, subimagestruct *subimage,
     subprofit->guesssigbkg = subprofit->sigma;
     subprofit->guessdx = obj->mx - (int)(obj->mx+0.49999);
     subprofit->guessdy = obj->my - (int)(obj->my+0.49999);
-    subprofit->guessradius = obj2? obj2->hl_radius : 1.2 * sqrtf(obj->a*obj->b);
+    subprofit->guessradius = obj2? obj2->hl_radius : 1.0 + 1.2 * sqrtf(obj->a*obj->b);
 					// 1.2 is ~2.35/2
     if (conv_flag && subprofit->guessradius < 0.5*subprofit->psf->fwhm)
       subprofit->guessradius = 0.5*subprofit->psf->fwhm;
@@ -2272,7 +2272,6 @@ int	subprofit_copyobjpix(subprofitstruct *subprofit,
           wpix = *(wpixin++);
           if (dr2<rad2 && pix>-BIG && pix<satlevel && wpix<wthresh)
             {
-printf("%g \n", wthresh);
             *(pixout++) = pix;
             *(wpixout++) = 1.0 / sqrt(wpix+(pix>0.0?
 		(gainflag? pix*wpix/backnoise2:pix)*invgain : 0.0));
@@ -3289,20 +3288,20 @@ void	profit_resetparam(profitstruct *profit, paramenum paramtype)
       fittype = PARFIT_LOGBOUND;
       param = subprofit[paramtype-PARAM_MOFFAT_FLUX].guessflux/profit->nprof;
       parammin = 0.00001*subprofit[paramtype-PARAM_MOFFAT_FLUX].guessfluxmax;
-      parammax = 100.0*subprofit[paramtype-PARAM_MOFFAT_FLUX].guessfluxmax;
+      parammax = 10.0*subprofit[paramtype-PARAM_MOFFAT_FLUX].guessfluxmax;
       break;
     case PARAM_MOFFAT_ALPHA:
       fittype = PARFIT_LOGBOUND;
       param = subprofit->guessradius/sqrtf(subprofit->guessaspect) * 2.0;
 		/* Approximatively 1/sqrt(2^(1/beta)-1) with beta = 4 */
       parammin = 0.2;
-      parammax = param * 10.0;
+      parammax = param * 3.0;
       break;
     case PARAM_MOFFAT_ASPECT:
       fittype = PARFIT_LOGBOUND;
       param = subprofit->guessaspect;
-      parammin = 0.001;
-      parammax = 1000.0;
+      parammin = 0.1*subprofit->guessaspect;
+      parammax = 10.0/subprofit->guessaspect;
       break;
     case PARAM_MOFFAT_POSANG:
       fittype = PARFIT_UNBOUND;

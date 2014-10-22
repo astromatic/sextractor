@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		08/10/2014
+*	Last modified:		21/10/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -104,6 +104,7 @@ typedef struct
   PIXTYPE	dpeak;				/// peak intensity (ADU)
 /// -------------- deblending --------------
   BYTE		deblend_npass;			/// # of deblending passes
+  float		deblend_fwhm;			/// FWHM from deblend model
 /// -------------- basic astrometry data --------------
   int		dpeakx,dpeaky;			/// pos of brightest pix
   double       	mx, my;				/// barycenter
@@ -162,6 +163,7 @@ typedef struct obj2
 		poserr_mxy;			/// Error ellips moments
 /// -------------- deblending --------------
   BYTE		deblend_npass;			/// # of deblending passes
+  float		deblend_fwhm;			/// FWHM from deblend model
 /// -------------- morphometry data --------------		
   int		xmin,xmax,ymin,ymax,ycmin,ycmax;/// x,y limits
   short		flags;				/// extraction flags

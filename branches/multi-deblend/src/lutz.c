@@ -2,7 +2,7 @@
 * @file		lutz.c
 * @brief	Lutz (1980) algorithm to extract connected pixels from an image
 		raster.
-* @date		25/09/2014
+* @date		21/10/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 *
@@ -61,7 +61,7 @@ OUTPUT	Pointer to the objlist if no memory allocation problem occured,
 NOTES	Global preferences are used.
 AUTHOR	E. Bertin (IAP)
 TODO    Check propagation of flags and filtering.
-VERSION	25/09/2014
+VERSION	21/10/2014
  ***/
 objliststruct	*lutz_subextract(subimagestruct *subimage, PIXTYPE thresh,
 			int xmin, int xmax, int ymin, int ymax, int extflags) {
@@ -79,7 +79,7 @@ objliststruct	*lutz_subextract(subimagestruct *subimage, PIXTYPE thresh,
 			varbadthresh, relthresh, cnewsymbol;
    int			*start, *end,
 			i, xl,xl2,yl, wminus1,hminus1, subw,subh,
-			scansize, imsize,
+			scansize, imsize, pos,
 			varflag, varthreshflag,
 			cn, co, luflag, pstop,
 			out, minarea, inewsymbol;
@@ -111,7 +111,8 @@ objliststruct	*lutz_subextract(subimagestruct *subimage, PIXTYPE thresh,
   minarea = prefs.deb_maxarea;
 
 // Variance threshold for bad pixels (= infinite variance)
-  varbadthresh = varflag? subimage->wfield->weight_thresh : 0.0;
+  varbadthresh = varflag && subimage->wfield?
+			subimage->wfield->weight_thresh : 0.0;
   if (varbadthresh>BIG*WTHRESH_CONVFAC)
     varbadthresh = BIG*WTHRESH_CONVFAC;
 
@@ -120,18 +121,11 @@ objliststruct	*lutz_subextract(subimagestruct *subimage, PIXTYPE thresh,
   initinfo.firstpix = initinfo.lastpix = -1;
   cn = 0;
   imsize = subimage->size[0];
-  scan = subimage->image
-	+ (ymin - subimage->xmin[1])*imsize
-	+ (xmin - subimage->xmin[0]);
-  cscan = subimage->fimage? subimage->fimage : subimage->image
-	+ (ymin - subimage->xmin[1])*imsize
-	+ (xmin - subimage->xmin[0]);
-  varscan = subimage->imvar? subimage->imvar
-	+ (ymin - subimage->xmin[1])*imsize
-	+ (xmin - subimage->xmin[0]) : NULL;
-  cvarscan = subimage->fimvar? subimage->fimvar
-	+ (ymin - subimage->xmin[1])*imsize
-	+ (xmin - subimage->xmin[0]) : varscan;
+  pos = (ymin - subimage->xmin[1])*imsize + (xmin - subimage->xmin[0]);
+  scan = subimage->image + pos;
+  cscan = subimage->fimage? subimage->fimage + pos : scan;
+  varscan = subimage->imvar? subimage->imvar + pos : NULL;
+  cvarscan = subimage->fimvar? subimage->fimvar + pos : varscan;
 
 // Allocate memory to store object data
   objlist = objlist_new();

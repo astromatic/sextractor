@@ -189,7 +189,7 @@ void	clean_add(objliststruct *cleanobjlist, objstruct *objin)
    float	hh1,hh2;
 
 /* Compute the max. vertical extent of the object: */
-/* First from 2nd order moments, compute y-limit of the 3-sigma ellips... */
+/* First from 2nd order moments, compute y-limit of the 3-sigma ellipse... */
   hh1 = objin->cyy - objin->cxy*objin->cxy/(4.0*objin->cxx);
   hh1 = hh1 > 0.0 ? 1/sqrt(3*hh1) : 0.0;
 /* ... then from the isophotal limit, which should not be TOO different... */

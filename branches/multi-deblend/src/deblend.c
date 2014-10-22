@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		08/10/2014
+*	Last modified:		21/10/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -53,7 +53,7 @@ OUTPUT	RETURN_OK if success, RETURN_FATAL_ERROR otherwise (memory overflow).
 NOTES	Even if the object is not deblended, the output objlist threshold is
 	recomputed if a variable threshold is used.
 AUTHOR	E. Bertin (IAP)
-VERSION	08/10/2014
+VERSION	21/10/2014
 TODO	Checkout "out" variable at exit
  ***/
 objliststruct	*deblend_parcelout(objstruct *objin, subimagestruct *subimage,
@@ -65,7 +65,7 @@ objliststruct	*deblend_parcelout(objstruct *objin, subimagestruct *subimage,
    objstruct		*obj;
    double		dthresh, value0;
    short		*son, *ok;
-   int			h,i,j,k,l,m, xn,
+   int			h,i,j,k,m, xn,
 			nbm = DEBLEND_NBRANCH,
 			out;
 
@@ -73,42 +73,41 @@ objliststruct	*deblend_parcelout(objstruct *objin, subimagestruct *subimage,
 
   xn = prefs.deblend_nthresh;
 
-// Initialize object list tree
-  QMALLOC(objlist, objliststruct *,  prefs.deblend_nthresh);
-  for (k=0; k<prefs.deblend_nthresh; k++)
-    objlist[k] = objlist_new();
-
 // Allocate memory for son and selection tables
-  QMALLOC(son, short,  prefs.deblend_nthresh*DEBLEND_NSONMAX*DEBLEND_NBRANCH);
-  QMALLOC(ok, short,  prefs.deblend_nthresh*DEBLEND_NSONMAX);
+  QMALLOC(son, short, xn * DEBLEND_NSONMAX*DEBLEND_NBRANCH);
+  QMALLOC(ok, short, xn * DEBLEND_NSONMAX);
+
+// Initialize object list tree
+  QMALLOC(objlist, objliststruct *,  xn);
+  for (k=0; k<xn; k++)
+    objlist[k] = objlist_new();
 
 // Initialize working object list
   debobjlist2 = objlist_new();
   objlistout = objlist_new();
-
-// Calculate threshold
-  dthresh = objin->fdpeak;
-  if (dthresh>0.0) {
-    if (prefs.detector_type[0] == DETECTOR_PHOTO)
-      dthresh = thresh + (dthresh-thresh) * (double)k/xn;
-    else
-      dthresh = thresh * pow(dthresh/thresh, (double)k/xn);
-  } else
-    dthresh = thresh;
-
-// Calculate flux threshold from DEBLEND_MINCONT
-  value0 = objin->fdflux*prefs.deblend_mincont;
 
   if ((out = objlist_addobj(objlist[0], objin, plist)) == RETURN_FATAL_ERROR)
     goto exit_parcelout;
   if ((out = objlist_addobj(debobjlist2, objin, plist)) == RETURN_FATAL_ERROR)
     goto exit_parcelout;
 
+// Calculate flux threshold from DEBLEND_MINCONT
+  value0 = objin->fdflux*prefs.deblend_mincont;
 
   ok[0] = (short)1;
-  for (k=1; k<xn; k++) {
 
-// Build tree (bottom->up)
+  for (k=1; k<xn; k++) {
+//-- Calculate threshold
+    dthresh = objin->fdpeak;
+    if (dthresh>0.0) {
+      if (prefs.detector_type[0] == DETECTOR_PHOTO)
+        dthresh = thresh + (dthresh-thresh) * (double)k/xn;
+      else
+        dthresh = thresh * pow(dthresh/thresh, (double)k/xn);
+    } else
+      dthresh = thresh;
+
+//-- Build tree (bottom->up)
     if (objlist[k-1]->nobj >= DEBLEND_NSONMAX) {
       out = RETURN_FATAL_ERROR;
       goto exit_parcelout;
@@ -126,13 +125,13 @@ objliststruct	*deblend_parcelout(objstruct *objin, subimagestruct *subimage,
       for (j=h=0; j<debobjlist->nobj; j++)
         if (deblend_belong(j, debobjlist, i, objlist[k-1])) {
           debobjlist->obj[j].dthresh = dthresh;
-          if (objlist[k]->nobj >= DEBLEND_NSONMAX
+          if ((m = objlist[k]->nobj) >= DEBLEND_NSONMAX
 		|| objlist_addobj(objlist[k], debobjlist->obj + j,
 			debobjlist->plist) == RETURN_FATAL_ERROR) {
             out = RETURN_FATAL_ERROR;
             goto exit_parcelout;
           }
-          if ( h >= nbm - 1 && !(son = (short *)realloc(son,
+          if (h >= (nbm - 1) && !(son = (short *)realloc(son,
 		xn*DEBLEND_NSONMAX*(nbm+=16)*sizeof(short)))) {
             out = RETURN_FATAL_ERROR;
             goto exit_parcelout;
@@ -175,8 +174,8 @@ objliststruct	*deblend_parcelout(objstruct *objin, subimagestruct *subimage,
     out = objlist_addobj(objlistout, debobjlist2->obj, debobjlist2->plist);
   else {
 /*-- Now we have passed the deblending section, reset thresholds */
-    obj = debobjlist2->obj;
-    for (i=debobjlist2->nobj; i--;) {
+    obj = debobjlist2->obj + 1;
+    for (i=debobjlist2->nobj; --i; obj++) {
       obj->dthresh = objin->dthresh;
       obj->thresh = objin->thresh;
     }
