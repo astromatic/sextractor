@@ -1,7 +1,7 @@
 /**
 * @file		subimage.c
 * @brief	Manage sub-images
-* @date		11/09/2014
+* @date		21/10/2014
 * @copyright
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 *
@@ -52,7 +52,7 @@ Create a sub-image from an object and a pixel list, without any margin.
 @param[out] 		Pointer to a new subimage.
 
 @author 		E. Bertin (IAP)
-@date			16/10/2014
+@date			21/10/2014
  ***/
 subimagestruct	*subimage_fromplist(fieldstruct *field, fieldstruct *wfield,
 			objstruct *obj, pliststruct *plist) {
@@ -91,6 +91,7 @@ subimagestruct	*subimage_fromplist(fieldstruct *field, fieldstruct *wfield,
 
   if (prefs.filter_flag) {
     if (!(subimage->fimage = (PIXTYPE *)malloc(npix*sizeof(PIXTYPE)))) {
+      free(subimage->image);
       free(subimage);
       return NULL;
     }
@@ -103,6 +104,7 @@ subimagestruct	*subimage_fromplist(fieldstruct *field, fieldstruct *wfield,
   if (subimage->wfield) {
     if (!(subimage->imvar = (PIXTYPE *)malloc(npix*sizeof(PIXTYPE)))) {
       free(subimage->image);
+      free(subimage->fimage);
       free(subimage);
       return NULL;
     }

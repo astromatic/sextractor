@@ -546,6 +546,10 @@
   {"DISK_THETA_B1950", "Disk position angle (east of north, B1950)",
 	&flagobj2.prof_disk_theta1950, H_FLOAT, T_FLOAT, "%+7.3f", "deg",
 	"pos.posAng;src.morph;stat.fit.param", "deg"},
+
+  {"FWHM_DEBLEND_IMAGE", "FWHM from deblending model fitting",
+	&flagobj2.deblend_fwhm, H_FLOAT, T_FLOAT, "%10.4f", "pixel",
+	"phys.size.diameter;stat.fit.param;instr.det", "pix"},
 /*
   {"DISK_PATTERN_VECTOR", "Disk pattern fitted coefficients",
 	&flagobj2.prof_disk_patternvector, H_FLOAT, T_FLOAT, "%12.4g", "",

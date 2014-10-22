@@ -1,7 +1,7 @@
 /**
 * @file		objlist.h
 * @brief	Include file for objlist.c.
-* @date		25/06/2014
+* @date		20/10/2014
 * @copyright
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 *
@@ -34,7 +34,7 @@
 /*----------------------------- Internal constants --------------------------*/
 
 #define	OBJLIST_NOBJMAXINC	16	/// memory allocation increment */
-#define	GROUP_NDEBLENDITER	3	/// number of deblending iterations
+#define	GROUP_NDEBLENDITER	2	/// number of deblending iterations
 #define	GROUP_NMULTITER		7	/// number of multi-model iterations
 
 /*--------------------------------- typedefs --------------------------------*/
@@ -64,7 +64,8 @@ int		objlist_addobj(objliststruct *objlist, objstruct *obj,
 		objlist_subobj(objliststruct *objlist, int objindex);
 
 void		obj_end(objstruct *obj),
-		objlist_end(objliststruct *objlist);
+		objlist_end(objliststruct *objlist),
+		objlist_multifit(objliststruct *objlist, int niter);
 
 #ifdef	USE_THREADS
 void		*pthread_objlist_analyse(void *arg),
