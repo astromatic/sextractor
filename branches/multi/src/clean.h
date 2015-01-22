@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2014 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,26 +22,29 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/01/2012
+*	Last modified:		10/07/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
+
+#ifndef _OBJLIST_H_
+#include "objlist.h"
+#endif
 
 /*------------------------------ definitions --------------------------------*/
 
 #define		CLEAN_ZONE		10.0	/* zone (in sigma) to */
 						/* consider for processing */
 
-/*------------------------------- variables ---------------------------------*/
-
-objliststruct	*cleanobjlist;		/* laconic, isn't it? */
-
 /*------------------------------- functions ---------------------------------*/
 
-extern void	clean_add(objstruct *objin),
-		clean_end(void),
-		clean_init(void),
-		clean_merge(objstruct *objin, objstruct *objout),
-		clean_sub(int);
+objliststruct	*clean_init(void);
 
-extern int	clean_process(fieldstruct *field, objstruct *objin);
+
+extern int	clean_process(objliststruct *cleanobjlist, fieldstruct *field,
+			objstruct *objin);
+
+extern void	clean_end(objliststruct *cleanobjlist),
+		clean_merge(objstruct *objin, objstruct *objout),
+		clean_sub(objliststruct *cleanobjlist, int objindex);
+
 

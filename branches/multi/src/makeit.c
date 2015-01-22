@@ -125,8 +125,7 @@ void	makeit(void)
 		prefs.nthreads>1? "s":"");
 
   NFPRINTF(OUTPUT, "Setting catalog parameters");
-  thecat.obj2list = catout_readparams(prefs.param, prefs.nparam,
-					prefs.obj2_stacksize);
+  catout_readparams(prefs.param, prefs.nparam);
   prefs_use();	/* update things a first time according to prefs parameters */
 
   if (prefs.filter_flag)
@@ -441,24 +440,11 @@ void	makeit(void)
       }
     }
 
-/* Allocate memory for multidimensional catalog parameter arrays */
-  catout_allocparams(thecat.obj2list);
 /* Allocate memory for other arrays (not catalogue measurements) */
 /* Sky background */
-  catout_allocother(thecat.obj2list, &flagobj2.dbkg, nimage*sizeof(float));
-  catout_allocother(thecat.obj2list, &flagobj2.sigbkg, nimage*sizeof(float));
+//  catout_allocother(thecat.obj2list, &flagobj2.dbkg, nimage*sizeof(float));
+//  catout_allocother(thecat.obj2list, &flagobj2.sigbkg, nimage*sizeof(float));
 /* Flux combination */
-  catout_allocother(thecat.obj2list, &flagobj2.cflux,
-		prefs.nphotinstru*sizeof(double));
-  catout_allocother(thecat.obj2list, &flagobj2.cfluxw,
-		prefs.nphotinstru*sizeof(double));
-/* Position combination */
-  catout_allocother(thecat.obj2list, &flagobj2.cposx,
-		prefs.nphotinstru*sizeof(double));
-  catout_allocother(thecat.obj2list, &flagobj2.cposy,
-		prefs.nphotinstru*sizeof(double));
-  catout_allocother(thecat.obj2list, &flagobj2.cposw,
-		prefs.nphotinstru*sizeof(double));
   prefs_use();
 
 
@@ -658,13 +644,8 @@ void	makeit(void)
     xml_write(prefs.xml_name);
 
 /* Free memory allocated for arrays that are not catalogue measurements */
-  catout_freeother(thecat.obj2list, &flagobj2.dbkg);
-  catout_freeother(thecat.obj2list, &flagobj2.sigbkg);
-  catout_freeother(thecat.obj2list, &flagobj2.cflux);
-  catout_freeother(thecat.obj2list, &flagobj2.cfluxw);
-  catout_freeother(thecat.obj2list, &flagobj2.cposx);
-  catout_freeother(thecat.obj2list, &flagobj2.cposy);
-  catout_freeother(thecat.obj2list, &flagobj2.cposw);
+//  catout_freeother(thecat.obj2list, &flagobj2.dbkg);
+//  catout_freeother(thecat.obj2list, &flagobj2.sigbkg);
 
 /* End catalog */
   catout_end((char *)NULL);

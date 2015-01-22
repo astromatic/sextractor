@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2014 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		18/09/2013
+*	Last modified:		11/09/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -89,6 +89,7 @@ typedef struct
   int		nfilter_thresh;				/* nb of params */
   int		deblend_nthresh;			/* threshold number */
   double	deblend_mincont;			/* minimum contrast */
+  double	deblend_fittol;				/* fitting tolerance */
   detectorenum	detector_type[MAXIMAGE];		/* detector type */
   int		ndetector_type;				/* nb of params */
 /*----- Flagging */
@@ -268,6 +269,7 @@ typedef struct
   int		prof_disk_patternmodncomp;		/* nb of params */
   int		prof_disk_patternargvectorsize;		/* nb of params */
   int		prof_disk_patternargncomp;		/* nb of params */
+  int		flexion_flag;
 /*----- Pattern-fitting */
   pattypenum	pattern_type;				/* Disk pattern type */
 /*----- customize */

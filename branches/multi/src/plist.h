@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2014 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,9 +22,12 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/01/2012
+*	Last modified:		09/06/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
+
+#ifndef _PLIST_H_
+#define _PLIST_H_
 
 /*------------------------------- definitions -------------------------------*/
 
@@ -57,5 +60,4 @@ int	plistexist_value, plistexist_cvalue,
 
 void	init_plist(void);
 
-int	createblank(objliststruct *objlist, int n),
-	createsubmap(objliststruct *objlist, int n);
+#endif

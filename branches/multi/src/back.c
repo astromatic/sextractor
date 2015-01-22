@@ -39,7 +39,6 @@
 #include <stdbool.h>
 #include <sys/mman.h>
 #include <time.h>
-#include "fits/fitscat_defs.h"
 
 #include	"define.h"
 #include	"globals.h"
@@ -1722,7 +1721,7 @@ void free_objmask(objmaskstruct *omask)
  * index, making the name rather unique.
  *
  * @author MK
- * @date   June 2014
+ * @date   Jan 2015
  *
  * @param[in] index    file index
  * @param[in] filename file name   y-coordinate of element
@@ -1733,7 +1732,7 @@ void get_obmask_name(const int index, char *filename)
   struct tm *tm= localtime(&thetime);
 
   // get the swap filename
-  sprintf(filename, "%s/objmask_%02d-%02d_%02d:%02d:%02d_%05ld_%03i.tmp", BODY_DEFSWAPDIR,
+  sprintf(filename, "./objmask_%02d-%02d_%02d:%02d:%02d_%05ld_%03i.tmp",
       tm->tm_mon+1, tm->tm_mday, tm->tm_hour, tm->tm_min, tm->tm_sec,
       (long)getpid(), index);
 

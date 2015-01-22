@@ -1,27 +1,28 @@
-# Default configuration file for SExtractor 2.5.0
-# EB 2006-07-14
+# Default configuration file for SExtractor 3.0
+# EB 2014-10-14
 #
  
 #-------------------------------- Catalog ------------------------------------
  
 CATALOG_NAME     test.cat       # name of the output catalog
-CATALOG_TYPE     ASCII_HEAD     # NONE,ASCII,ASCII_HEAD, ASCII_SKYCAT,
+CATALOG_TYPE     FITS_1.0     # NONE,ASCII,ASCII_HEAD, ASCII_SKYCAT,
                                 # ASCII_VOTABLE, FITS_1.0 or FITS_LDAC
-PARAMETERS_NAME  default.param  # name of the file containing catalog contents
+PARAMETERS       @default.param  # name of the file containing catalog contents
  
 #------------------------------- Extraction ----------------------------------
  
 DETECT_TYPE      CCD            # CCD (linear) or PHOTO (with gamma correction)
 DETECT_MINAREA   2            # minimum number of pixels above threshold
 DETECT_THRESH    1.5            # <sigmas> or <threshold>,<ZP> in mag.arcsec-2
-ANALYSIS_THRESH  2            # <sigmas> or <threshold>,<ZP> in mag.arcsec-2
+ANALYSIS_THRESH  1.5           # <sigmas> or <threshold>,<ZP> in mag.arcsec-2
  
 FILTER           Y              # apply filter for detection (Y or N)?
-FILTER_NAME      default.conv   # name of the file containing the filter
+FILTER_NAME      gauss_4.0_7x7.conv   # name of the file containing the filter
  
 DEBLEND_NTHRESH  32             # Number of deblending sub-thresholds
 DEBLEND_MINCONT  0.005          # Minimum contrast parameter for deblending
- 
+DEBLEND_FITTOL   0.3
+
 CLEAN            Y              # Clean spurious detections? (Y or N)?
 CLEAN_PARAM      1.0            # Cleaning efficiency
  
@@ -37,11 +38,12 @@ PHOT_AUTOPARAMS  2.5, 3.5       # MAG_AUTO parameters: <Kron_fact>,<min_radius>
 PHOT_PETROPARAMS 2.0, 3.5       # MAG_PETRO parameters: <Petrosian_fact>,
                                 # <min_radius>
  
-SATUR_LEVEL      50000.0        # level (in ADUs) at which arises saturation
- 
+SATUR_LEVEL      500000.0        # level (in ADUs) at which arises saturation
+SATUR_KEY        TOTO
 MAG_ZEROPOINT    0.0            # magnitude zero-point
 MAG_GAMMA        4.0            # gamma of emulsion (for photographic scans)
 GAIN             0.0            # detector gain in e-/ADU
+GAIN_KEY	 TOTO
 PIXEL_SCALE      1.0            # size of pixel in arcsec (0=use FITS WCS info)
  
 #------------------------- Star/Galaxy Separation ----------------------------
@@ -58,11 +60,11 @@ BACKPHOTO_TYPE   GLOBAL         # can be GLOBAL or LOCAL
  
 #------------------------------ Check Image ----------------------------------
  
-CHECKIMAGE_TYPE  MODELS, -MODELS, -BACKGROUND, FILTERED         # can be NONE, BACKGROUND, BACKGROUND_RMS,
+CHECKIMAGE_TYPE  DEBLEND_MODELS,-DEBLEND_MODELS,-BACKGROUND,APERTURES
                                 # MINIBACKGROUND, MINIBACK_RMS, -BACKGROUND,
                                 # FILTERED, OBJECTS, -OBJECTS, SEGMENTATION,
                                 # or APERTURES
-CHECKIMAGE_NAME  prof.fits,subprof.fits,orig.fits,filter.fits     # Filename for the check-image
+CHECKIMAGE_NAME deblend.fits,subdeblend.fits,noback.fits,aper.fits    # Filename for the check-image
  
 #--------------------- Memory (change with caution!) -------------------------
  

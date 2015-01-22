@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2014 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		30/11/2010
+*	Last modified:		19/05/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -57,7 +57,7 @@ extern void    	addimage(fieldstruct *field, float *psf,
 			PIXTYPE	*pixima, int wima, int hima, int xmin,int ymin),
 		pasteimage(fieldstruct *, PIXTYPE *, int ,int, int, int);
 
-extern int	copyimage(fieldstruct *, PIXTYPE *, int, int, int, int),
+extern int	copyimage(fieldstruct *, PIXTYPE *, int, int, int, int, PIXTYPE),
 		copyimage_center(fieldstruct *, PIXTYPE *, int,int, float,float),
 		vignet_resample(float *pix1, int w1, int h1, float *pix2,
 			int w2, int h2, float dx, float dy, float step2);

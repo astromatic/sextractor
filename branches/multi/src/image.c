@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		03/04/2012
+*	Last modified:		19/05/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -46,9 +46,10 @@ static float	interpm[INTERPW*INTERPW];
 /********************************* copyimage *********************************/
 /*
 Copy a small part of the image. Image parts which lie outside boundaries are
-set to -BIG.
+set to initvalue.
 */
-int	copyimage(fieldstruct *field, PIXTYPE *dest, int w,int h, int ix,int iy)
+int	copyimage(fieldstruct *field, PIXTYPE *dest, int w,int h, int ix,int iy,
+		PIXTYPE initvalue)
   {
    PIXTYPE	*destt;
    OFF_T	offset,step;
@@ -57,7 +58,7 @@ int	copyimage(fieldstruct *field, PIXTYPE *dest, int w,int h, int ix,int iy)
 /* First put the retina background to -BIG */
   destt = dest;
   for (i=w*h; i--;)
-    *(destt++) = -BIG;
+    *(destt++) = initvalue;
 
 /* Don't go further if out of frame!! */
   if (ix<0 || ix>=field->width || iy<field->ymin || iy>=field->ymax)

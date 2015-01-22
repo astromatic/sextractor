@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2013 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2014 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		29/08/2013
+*	Last modified:		08/10/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -91,11 +91,13 @@
    "MODELS", "-MODELS", "SPHEROIDS", "-SPHEROIDS",
    "DISKS", "-DISKS", "PATTERNS",
 #endif
-   "OTHER", ""}, 0, MAXCHECK, &prefs.ncheck_type},
+   "DEBLEND_MODELS", "-DEBLEND_MODELS", "OTHER", ""},
+    0, MAXCHECK, &prefs.ncheck_type},
   {"CLEAN", P_BOOL, &prefs.clean_flag},
   {"CLEAN_PARAM", P_FLOAT, &prefs.clean_param, 0,0, 0.1,10.0},
   {"DEBLEND_MINCONT", P_FLOAT, &prefs.deblend_mincont, 0,0, 0.0,1.0},
   {"DEBLEND_NTHRESH", P_INT, &prefs.deblend_nthresh, 1,64},
+  {"DEBLEND_FITTOL", P_FLOAT, &prefs.deblend_fittol, 0,0, 0.0, BIG},
   {"DETECT_MINAREA", P_INT, &prefs.ext_minarea, 1,1000000},
   {"DETECT_MAXAREA", P_INT, &prefs.ext_maxarea, 0,1000000000},
   {"DETECT_THRESH", P_FLOATLIST, prefs.dthresh, 0,0, -BIG, BIG,
@@ -222,6 +224,7 @@ char *default_prefs[] =
 " ",
 "DEBLEND_NTHRESH  32             # Number of deblending sub-thresholds",
 "DEBLEND_MINCONT  0.005          # Minimum contrast parameter for deblending",
+"DEBLEND_FITTOL   0.1            # Tolerance for deblending model fitting",
 " ",
 "CLEAN            Y              # Clean spurious detections (Y or N)?",
 "CLEAN_PARAM      1.0            # Cleaning efficiency",

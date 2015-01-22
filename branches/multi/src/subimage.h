@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		03/01/2014
+*	Last modified:		17/10/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -33,33 +33,45 @@
 #include        "field.h"
 #endif
 
+/*--------------------------------- typedefs --------------------------------*/
+typedef enum	{SUBIMAGE_FILL_BLANK, SUBIMAGE_FILL_INPUT}
+			subimage_fillenum;
+
 /*------------------------------- structures --------------------------------*/
 typedef struct subimage
   {
-  struct field	*field;	/* pointer to the image field that hosts local data */
-  struct field	*wfield;/* pointer to the field that hosts local weights */
-  PIXTYPE	*image;				/* Copy of local image data */
-  PIXTYPE	*weight;			/* Copy of local weight data */
-  double	dpos[2];		/* Local object coordinates of centre */
-  int		ipos[2];		/* Local coordinates of image centre */
-  int		imsize[2];			/* Local image data size */
-  int		immin[2];			/* Local image data min x/y */
-  int		immax[2];			/* Local image data max x/y */
-  double	djacob[4];			/* Local image Jacobian matrix*/
-  double	dinvjacob[4];			/* Inverse Jacobian matrix */
-  double	dscale;				/* Local relative pixel scale */
-  PIXTYPE	bkg;				/* Local background level */
+  struct field	*field;		/// pointer to the field hosting local data
+  struct field	*wfield;	/// pointer to the field hosting local weights
+  PIXTYPE	*image;			/// Pointer to subimage data
+  PIXTYPE	*fimage;		/// Pointer to filtered subimage data
+  PIXTYPE	*imvar;			/// Pointer to subimage inverse weights
+  PIXTYPE	*fimvar;		/// Pointer to filtered inverse weights
+  double	dpos[2];		/// Object coordinates (if applicable)
+  int		ipos[2];		/// Coordinates of subimage centre
+  int		size[2];		/// Subimage dimensions [pixels]
+  int		xmin[2];		/// Subimage min x/y coordinates
+  int		xmax[2];		/// Subimage max x/y coordinates - 1
+  double	djacob[4];		/// Local astrometric Jacobian matrix
+  double	dinvjacob[4];		/// Inverse Jacobian matrix
+  double	dscale;			/// Local relative pixel scale
+  PIXTYPE	bkg;			/// Subimage background level
   }	subimagestruct;
 
 /*------------------------------- functions ---------------------------------*/
 
-subimagestruct	*subimage_getall(fieldstruct **fields, fieldstruct **wfields,
+subimagestruct	*subimage_fromfield(fieldstruct *field, fieldstruct *wfield,
+			int xmin, int xmax, int ymin, int ymax),
+		*subimage_fromplist(fieldstruct *field, fieldstruct *wfield,
+			objstruct *obj, pliststruct *plist),
+		*subimage_getall(fieldstruct **fields, fieldstruct **wfields,
 				int nfield, obj2struct *obj2),
 		*subimage_new(fieldstruct *field, fieldstruct *wfield,
 			int xmin, int xmax, int ymin, int ymax);
 
 void		subimage_end(subimagestruct *subimage),
 		subimage_endall(obj2struct *obj2),
+		subimage_fill(subimagestruct *subimage,
+			subimagestruct *submask, subimage_fillenum fill_type),
 		subimage_init(subimagestruct *subimage,
 				fieldstruct *field, fieldstruct *wfield,
 				obj2struct *obj2, subimagestruct *dsubimage);
