@@ -150,14 +150,13 @@ objliststruct	*deblend_parcelout(objstruct *objin, subimagestruct *subimage,
     obj = objlist[k+1]->obj;
     for (i=0; i<objlist[k]->nobj; i++) {
       for (m=h=0; (j=(int)son[k+xn*(i+DEBLEND_NSONMAX*h)])!=-1; h++) {
-        if (obj[j].fdflux - obj[j].dthresh*obj[j].fdnpix > value0)
+        if (obj[j].fdflux > value0)
           m++;
         ok[k+xn*i] &= ok[k+1+xn*j];
       }
       if (m > 1) {
         for (h=0; (j=(int)son[k+xn*(i+DEBLEND_NSONMAX*h)])!=-1; h++)
-          if (ok[k+1+xn*j] && obj[j].fdflux-obj[j].dthresh*obj[j].fdnpix
-			> value0) {
+          if (ok[k+1+xn*j] && obj[j].fdflux > value0) {
             objlist[k+1]->obj[j].flag |= OBJ_MERGED	// Merge flag on
 		| ((OBJ_ISO_PB|OBJ_APERT_PB|OBJ_OVERFLOW)
 			& debobjlist2->obj[0].flag);

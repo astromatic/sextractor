@@ -2,13 +2,13 @@
 * @file		lutz.c
 * @brief	Lutz (1980) algorithm to extract connected pixels from an image
 		raster.
-* @date		21/10/2014
+* @date		05/01/2015
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2014 IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2015 IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -61,7 +61,7 @@ OUTPUT	Pointer to the objlist if no memory allocation problem occured,
 NOTES	Global preferences are used.
 AUTHOR	E. Bertin (IAP)
 TODO    Check propagation of flags and filtering.
-VERSION	21/10/2014
+VERSION	05/01/2015
  ***/
 objliststruct	*lutz_subextract(subimagestruct *subimage, PIXTYPE thresh,
 			int xmin, int xmax, int ymin, int ymax, int extflags) {
@@ -131,42 +131,35 @@ objliststruct	*lutz_subextract(subimagestruct *subimage, PIXTYPE thresh,
   objlist = objlist_new();
 
 // Allocate memory for the pixel list
-  if (!(objlist->plist = (pliststruct *)malloc(subw*subh*plistsize)))
-    {
+  if (!(objlist->plist = (pliststruct *)malloc(subw*subh*plistsize))) {
     out = RETURN_FATAL_ERROR;
     goto exit_lutz;
-    }
+  }
 
   pixel = plist = objlist->plist;
   co = pstop = 0;
   curpixinfo.pixnb = 1;
 
-  for (yl=0; yl<=subh; yl++)
-    {
+  for (yl=0; yl<=subh; yl++) {
     ps = COMPLETE;
     cs = NONOBJECT;
     trunflag =  (yl==-ymin || yl==hminus1) ? OBJ_TRUNC : 0;
     if (yl==subh)
       cvarscan = varscan = cscan = scan = dumscan;
-
-    for (xl=0; xl<=subw; xl++)
-      {
+    for (xl=0; xl<=subw; xl++) {
       newmarker = marker[xl];
       marker[xl] = 0;
       cnewsymbol = (xl==subw)? -BIG-1 : cscan[xl];
-
-      curpixinfo.flag = trunflag;
 
       if (varthreshflag)
         thresh = relthresh*sqrt((xl==subw || yl==subh)? 0.0 : cvarscan[xl]);
 
       luflag =  (cnewsymbol > thresh);
 
-      if (luflag)
-        {
+      if (luflag) {
+        curpixinfo.flag = trunflag;
         if (xl==-xmin || xl==wminus1)
           curpixinfo.flag |= OBJ_TRUNC;
-        PLIST(pixel, nextpix) = -1;
         PLIST(pixel, x) = xl + xmin;
         PLIST(pixel, y) = yl + ymin;
         PLIST(pixel, value) = scan[xl];
@@ -174,41 +167,34 @@ objliststruct	*lutz_subextract(subimagestruct *subimage, PIXTYPE thresh,
           PLISTPIX(pixel, cvalue) = cnewsymbol;
         if (PLISTEXIST(var))
           PLISTPIX(pixel, var) = varscan[xl];
+        PLIST(pixel, nextpix) = -1;
         curpixinfo.lastpix = curpixinfo.firstpix = cn;
         cn += plistsize;
         pixel += plistsize;
-        if (cs != OBJECT)
+        if (cs != OBJECT) {
 // ----- Start Segment
-          {
           cs = OBJECT;
-          if (ps == OBJECT)
-              {
-              if (start[co] == UNKNOWN)
-                {
+          if (ps == OBJECT) {
+              if (start[co] == UNKNOWN) {
                 marker[xl] = 'S';
                 start[co] = xl;
-                }
-              else  marker[xl] = 's';
               }
-          else
-            {
+              else  marker[xl] = 's';
+            } else {
             psstack[pstop++] = ps;
             marker[xl] = 'S';
             start[++co] = xl;
             ps = COMPLETE;
             info[co] = initinfo;
-            }
           }
         }
+      }
 
-      if (newmarker)
+      if (newmarker) {
 //---- Process New Marker
-        {
-        if (newmarker == 'S')
-          {
+        if (newmarker == 'S') {
           psstack[pstop++] = ps;
-          if (cs == NONOBJECT)
-            {
+          if (cs == NONOBJECT) {
             psstack[pstop++] = COMPLETE;
             info[++co] = store[xl];
             start[co] = UNKNOWN;
@@ -216,71 +202,56 @@ objliststruct	*lutz_subextract(subimagestruct *subimage, PIXTYPE thresh,
           else
             lutz_update(&info[co],&store[xl], plist);
           ps = OBJECT;
-          }
-        else if (newmarker == 's')
-          {
-          if ((cs == OBJECT) && (ps == COMPLETE))
-            {
+        } else if (newmarker == 's') {
+          if ((cs == OBJECT) && (ps == COMPLETE)) {
             pstop--;
             xl2 = start[co];
             lutz_update(&info[co-1],&info[co], plist);
-          if (start[--co] == UNKNOWN)
+            if (start[--co] == UNKNOWN)
               start[co] = xl2;
             else
               marker[xl2] = 's';
-            }
-          ps = OBJECT;
           }
-        else if (newmarker == 'f')
+          ps = OBJECT;
+        } else if (newmarker == 'f')
           ps = INCOMPLETE;
-        else if (newmarker == 'F')
-          {
+        else if (newmarker == 'F') {
           ps = psstack[--pstop];
-          if ((cs == NONOBJECT) && (ps == COMPLETE))
-            {
-          if (start[co] == UNKNOWN)
-              {
+          if ((cs == NONOBJECT) && (ps == COMPLETE)) {
+            if (start[co] == UNKNOWN) {
               if ((int)info[co].pixnb >= minarea
-                && lutz_output(&info[co], objlist) != RETURN_OK)
-                {
+                && lutz_output(&info[co], objlist) != RETURN_OK) {
                 out = RETURN_FATAL_ERROR;
                 goto exit_lutz;
-                }
               }
-            else
-              {
+            } else {
               marker[end[co]] = 'F';
               store[start[co]] = info[co];
-              }
+            }
             co--;
             ps = psstack[--pstop];
-            }
           }
         }
+      }
   
       if (luflag)
         lutz_update(&info[co],&curpixinfo, plist);
-    else
-        {
-        if (cs == OBJECT)
+      else {
+        if (cs == OBJECT) {
 //------ End Segment
-          {
           cs = NONOBJECT;
-          if (ps != COMPLETE)
-            {
+          if (ps != COMPLETE) {
             marker[xl] = 'f';
             end[co] = xl;
-            }
-          else
-            {
+          } else {
             ps = psstack[--pstop];
             marker[xl] = 'F';
             store[start[co]] = info[co];
             co--;
-            }
           }
         }
       }
+    }
 
     scan += imsize;
     cscan += imsize;
@@ -288,7 +259,7 @@ objliststruct	*lutz_subextract(subimagestruct *subimage, PIXTYPE thresh,
       varscan += imsize;
     if (cvarscan)
       cvarscan += imsize;
-    }
+  }
 
 exit_lutz:
 
@@ -332,7 +303,7 @@ Update basic detection properties based on new pixel information
 @param[in] infoin	Pointer to the source detection info
 @param[in] pixel	Pointer to the new pixel
 @author 		E. Bertin (IAP)
-@date			24/06/2014
+@date			05/01/2015
  ***/
 void	lutz_update(infostruct *infoout, infostruct *infoin,
 			pliststruct *pixel) {
@@ -342,7 +313,7 @@ void	lutz_update(infostruct *infoout, infostruct *infoin,
   if (infoout->firstpix == -1) {
     infoout->firstpix = infoin->firstpix;
     infoout->lastpix = infoin->lastpix;
-  } else if (infoout->lastpix != -1) {
+  } else if (infoin->lastpix != -1) {
     PLIST(pixel + infoout->lastpix, nextpix) = infoin->firstpix;
     infoout->lastpix = infoin->lastpix;
   }

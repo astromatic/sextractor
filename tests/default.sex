@@ -17,7 +17,7 @@ DETECT_THRESH    1.5            # <sigmas> or <threshold>,<ZP> in mag.arcsec-2
 ANALYSIS_THRESH  1.5           # <sigmas> or <threshold>,<ZP> in mag.arcsec-2
  
 FILTER           Y              # apply filter for detection (Y or N)?
-FILTER_NAME      gauss_3.0_7x7.conv   # name of the file containing the filter
+FILTER_NAME      gauss_4.0_7x7.conv   # name of the file containing the filter
  
 DEBLEND_NTHRESH  32             # Number of deblending sub-thresholds
 DEBLEND_MINCONT  0.005          # Minimum contrast parameter for deblending
@@ -43,6 +43,7 @@ SATUR_KEY        TOTO
 MAG_ZEROPOINT    0.0            # magnitude zero-point
 MAG_GAMMA        4.0            # gamma of emulsion (for photographic scans)
 GAIN             0.0            # detector gain in e-/ADU
+GAIN_KEY	 TOTO
 PIXEL_SCALE      1.0            # size of pixel in arcsec (0=use FITS WCS info)
  
 #------------------------- Star/Galaxy Separation ----------------------------
@@ -59,11 +60,11 @@ BACKPHOTO_TYPE   GLOBAL         # can be GLOBAL or LOCAL
  
 #------------------------------ Check Image ----------------------------------
  
-#CHECKIMAGE_TYPE  DEBLEND_MODELS,-DEBLEND_MODELS,-BACKGROUND,APERTURES
+CHECKIMAGE_TYPE  DEBLEND_MODELS,-DEBLEND_MODELS,-BACKGROUND,APERTURES
                                 # MINIBACKGROUND, MINIBACK_RMS, -BACKGROUND,
                                 # FILTERED, OBJECTS, -OBJECTS, SEGMENTATION,
                                 # or APERTURES
-#CHECKIMAGE_NAME deblend.fits,subdeblend.fits,noback.fits,aper.fits    # Filename for the check-image
+CHECKIMAGE_NAME deblend.fits,subdeblend.fits,noback.fits,aper.fits    # Filename for the check-image
  
 #--------------------- Memory (change with caution!) -------------------------
  
