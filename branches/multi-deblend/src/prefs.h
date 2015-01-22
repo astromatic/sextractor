@@ -269,6 +269,7 @@ typedef struct
   int		prof_disk_patternmodncomp;		/* nb of params */
   int		prof_disk_patternargvectorsize;		/* nb of params */
   int		prof_disk_patternargncomp;		/* nb of params */
+  int		flexion_flag;
 /*----- Pattern-fitting */
   pattypenum	pattern_type;				/* Disk pattern type */
 /*----- customize */

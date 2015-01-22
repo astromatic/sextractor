@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		14/10/2014
+*	Last modified:		04/12/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -89,11 +89,11 @@
 #define	PROFIT_HIDEFRES	201	/* Hi. def. model resol. (must be <MAXMODSIZE)*/
 #define	PROFIT_REFFFAC	3.0	/* Factor in r_eff for measurement radius*/
 #define	PROFIT_MAXR2MAX	1e6	/* Maximum r2_max for truncating profiles */
-#define	PROFIT_DYNPARAM	3.0	/* Dynamic compression param. in sigma units */
+#define	PROFIT_DYNPARAM	10.0	/* Dynamic compression param. in sigma units */
 #define	PROFIT_SMOOTHR	4.0	/* Profile smoothing radius (pixels) */
-#define	PROFIT_MAXMODSIZE  5120	/* Maximum size allowed for the model raster */
+#define	PROFIT_MAXMODSIZE  512	/* Maximum size allowed for the model raster */
 #define PROFIT_MAXSMODSIZE 64	/* Number of model planes */
-#define	PROFIT_MAXOBJSIZE  5120	/* Maximum size allowed for the object raster */
+#define	PROFIT_MAXOBJSIZE  512	/* Maximum size allowed for the object raster */
 #define	PROFIT_BARXFADE	0.1	/* Fract. of bar length crossfaded with arms */
 #define	PROFIT_MAXEXTRA	3	/* Max. nb of extra free params of profiles */
 #define INTERP_MAXKERNELWIDTH	8	/* Max. range of kernel (pixels) */
@@ -126,8 +126,10 @@ typedef enum	{PARAM_BACK,
 		PARAM_INRING_FLUX, PARAM_INRING_WIDTH, PARAM_INRING_ASPECT,
 		PARAM_OUTRING_FLUX, PARAM_OUTRING_START, PARAM_OUTRING_WIDTH,
 		PARAM_MOFFAT_FLUX, PARAM_MOFFAT_ALPHA, PARAM_MOFFAT_ASPECT,
-		PARAM_MOFFAT_POSANG, PARAM_MOFFAT_BETA,
-		PARAM_MOFFAT_MINKP, PARAM_MOFFAT_OFFSET,
+		PARAM_MOFFAT_POSANG,
+		PARAM_MOFFAT_F_FLEXION_MOD, PARAM_MOFFAT_F_FLEXION_PHI,
+		PARAM_MOFFAT_G_FLEXION_MOD, PARAM_MOFFAT_G_FLEXION_PHI,
+		PARAM_MOFFAT_BETA, PARAM_MOFFAT_MINKP, PARAM_MOFFAT_OFFSET,
 		PARAM_NPARAM}	paramenum;
 
 typedef enum 	{PARFIT_FIXED, PARFIT_UNBOUND, PARFIT_LINBOUND,
@@ -162,6 +164,8 @@ typedef struct
   float		*x[2];			/* Coordinate vector */
   float		*scale;			/* Scaling vector */
   float		*aspect;		/* Aspect ratio */
+  float		*flexion_mod[2];	/* Flexion modulii */
+  float		*flexion_phi[2];	/* Flexion angles */
   float		*posangle;		/* Position angle (CCW/NAXIS1)*/
   float		*featfrac;		/* Feature flux fraction */
   float		*featscale;		/* Feature relative scalelength */

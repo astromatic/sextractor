@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 2006-2014 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 2006-2015 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/09/2014
+*	Last modified:		22/01/2015
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -3061,7 +3061,7 @@ INPUT	Pointer to the profit structure,
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	24/04/2013
+VERSION	04/12/2014
  ***/
 void	profit_resetparam(profitstruct *profit, paramenum paramtype)
   {
@@ -3309,6 +3309,30 @@ void	profit_resetparam(profitstruct *profit, paramenum paramtype)
       parammin = 90.0;
       parammax =  90.0;
       break;
+    case PARAM_MOFFAT_F_FLEXION_MOD:
+      fittype = PARFIT_LINBOUND;
+      param = 0.0;
+      parammin = -1.0;
+      parammax = 1.0;
+      break;
+    case PARAM_MOFFAT_F_FLEXION_PHI:
+      fittype = PARFIT_UNBOUND;
+      param = 0.0;
+      parammin = 90.0;
+      parammax =  90.0;
+      break;
+    case PARAM_MOFFAT_G_FLEXION_MOD:
+      fittype = PARFIT_LINBOUND;
+      param = 0.0001;
+      parammin = -1.0;
+      parammax = 1.0;
+      break;
+    case PARAM_MOFFAT_G_FLEXION_PHI:
+      fittype = PARFIT_UNBOUND;
+      param = 0.0;
+      parammin = 90.0;
+      parammax =  90.0;
+      break;
     case PARAM_MOFFAT_BETA:
       fittype = PARFIT_LINBOUND;
       param = 4.0;
@@ -3319,7 +3343,7 @@ void	profit_resetparam(profitstruct *profit, paramenum paramtype)
       fittype = PARFIT_LINBOUND;
       param = 2.0;
       parammin = 1.9;
-      parammax = 8.0;
+      parammax = 2.1;
       break;
     case PARAM_MOFFAT_OFFSET:
       fittype = PARFIT_LOGBOUND;
@@ -3831,6 +3855,16 @@ profstruct	*prof_init(profitstruct *profit, unsigned int modeltype)
       profit_addparam(profit, PARAM_MOFFAT_ALPHA, &prof->scale);
       profit_addparam(profit, PARAM_MOFFAT_ASPECT, &prof->aspect);
       profit_addparam(profit, PARAM_MOFFAT_POSANG, &prof->posangle);
+      if (prefs.flexion_flag) {
+        profit_addparam(profit, PARAM_MOFFAT_F_FLEXION_MOD,
+		&prof->flexion_mod[0]);
+        profit_addparam(profit, PARAM_MOFFAT_F_FLEXION_PHI,
+		&prof->flexion_phi[0]);
+        profit_addparam(profit, PARAM_MOFFAT_G_FLEXION_MOD,
+		&prof->flexion_mod[1]);
+        profit_addparam(profit, PARAM_MOFFAT_G_FLEXION_PHI,
+		&prof->flexion_phi[1]);
+      }
       profit_addparam(profit, PARAM_MOFFAT_BETA, &prof->extra[0]);
       profit_addparam(profit, PARAM_MOFFAT_MINKP, &prof->extra[1]);
       profit_addparam(profit, PARAM_MOFFAT_OFFSET, &prof->extra[2]);
@@ -3933,16 +3967,17 @@ INPUT	Sub-profile-fitting structure,
 OUTPUT	Total (asymptotic) flux contribution.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	30/12/2013
+VERSION	22/01/2015
  ***/
 float	prof_add(subprofitstruct *subprofit, profstruct *prof,
 		int extfluxfac_flag)
   {
-   double	xscale, yscale, saspect, ctheta,stheta, flux, scaling, bn, n,
-		dx1cout,dx2cout, ddx1[36],ddx2[36];
+   double	xscale, yscale, saspect, ctheta,stheta, flux, scaling, scaling2,
+		 bn, n, dx1cout,dx2cout, ddx1[36],ddx2[36], f1,f2, g1,g2;
    float	posin[PROFIT_MAXEXTRA], posout[2], dnaxisn[2],
 		*pixin, *pixin2, *pixout,
 		pflux, fluxfac, amp,cd11,cd12,cd21,cd22, dx1,dx2,
+		d120,d111,d102, d220,d211,d202,
 		x1,x10,x2, x1cin,x2cin, x1cout,x2cout, x1max,x2max, x1in,x2in,
 		k, hinvn, x1t,x2t, ca,sa, u,umin,
 		armamp,arm2amp, armrdphidr, armrdphidrvar, posang,
@@ -3988,7 +4023,19 @@ float	prof_add(subprofitstruct *subprofit, profstruct *prof,
     cd22 = (float)(yscale*ctheta);
     dx1 = 0.0;	/* Shifting operations have been moved to profit_resample() */
     dx2 = 0.0;	/* Shifting operations have been moved to profit_resample() */
-
+    if (prefs.flexion_flag) {
+      f1 = *prof->flexion_mod[0] * cos(*prof->flexion_phi[0]*DEG);
+      f2 = *prof->flexion_mod[0] * sin(*prof->flexion_phi[0]*DEG);
+      g1 = *prof->flexion_mod[1] * cos(3.0 * *prof->flexion_phi[1]*DEG);
+      g2 = *prof->flexion_mod[1] * sin(3.0 * *prof->flexion_phi[1]*DEG);
+      scaling2 = scaling * scaling;
+      d120 = (float)(-0.5 * (3.0 * f1 + g1) * scaling2);
+      d111 = (float)(-(f2 + g2) * scaling2);
+      d102 = (float)(-0.5 * (f1 - g1) * scaling2);
+      d220 = (float)(-0.5 * (f2 + g2) * scaling2);
+      d211 = (float)(-(f1 - g1) * scaling2);
+      d202 = (float)(-0.5*(3.0 *f2 - g2) * scaling2);
+    }
     x1cout = (float)(subprofit->modnaxisn[0]/2);
     x2cout = (float)(subprofit->modnaxisn[1]/2);
     nx2 = subprofit->modnaxisn[1]/2 + 1;
@@ -4322,13 +4369,20 @@ width = 3.0;
       x10 = -x1cout - dx1;
       x2 = -x2cout - dx2;
       pixin = prof->pix;
-      for (ix2=nx2; ix2--; x2+=1.0)
+      for (ix2=subprofit->modnaxisn[1]; ix2--; x2+=1.0)
         {
         x1 = x10;
         for (ix1=subprofit->modnaxisn[0]; ix1--; x1+=1.0)
           {
-          x1in = fabs(cd12*x2 + cd11*x1);
-          x2in = fabs(cd22*x2 + cd21*x1);
+          if (prefs.flexion_flag) {
+            x1in = fabs((cd11 + d120 * x1 + d111 * x2) * x1
+		+ (cd12 + d102 * x2) * x2);
+            x2in = fabs((cd21 + d220 * x1 + d111 * x2) * x1
+		+ (cd22 + d202 * x2) * x2);
+          } else {
+            x1in = fabs(cd12*x2 + cd11*x1);
+            x2in = fabs(cd22*x2 + cd21*x1);
+          }
           ra = powf(powf(x1in,mofp) + powf(x2in,mofp),invmofp2) - off;
           if (ra<0.0)
             ra = 0.0;
@@ -4341,18 +4395,6 @@ width = 3.0;
           val = expf(-logf(1.0 + ra)*mofbeta);
           *(pixin++) = val;
           }
-        }
-/*---- Copy the symmetric part */
-      if ((npix2=(subprofit->modnaxisn[1]-nx2)*subprofit->modnaxisn[0]) > 0)
-        {
-        pixin2 = pixin - subprofit->modnaxisn[0] - 1;
-        if (!(subprofit->modnaxisn[0]&1))
-          {
-          *(pixin++) = 0.0;
-          npix2--;
-          }
-        for (i=npix2; i--;)
-          *(pixin++) = *(pixin2--);
         }
       prof->lostfluxfrac = 0.0;
       threshflag = 1;

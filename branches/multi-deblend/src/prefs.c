@@ -760,6 +760,7 @@ void	prefs_use(void)
     prefs.psf_flag = 1;
 
 /*----------------------------- Model-fitting -------------------------------*/
+  prefs.flexion_flag = 0;
   if (prefs.check_flag)
     for (i=0; i<prefs.ncheck_type; i++)
       if (prefs.check_type[i] == CHECK_PROFILES

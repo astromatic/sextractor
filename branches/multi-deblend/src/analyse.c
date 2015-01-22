@@ -798,7 +798,7 @@ dfield = dwfield = wfield = NULL;
         sexcircle(check->pix, check->width, check->height,
 		obj2->mx, obj2->my, prefs.apert[i]/2.0, check->overlay);
 
-    if (FLAG(obj2.flux_auto) && obj->deblend_npass > 0)
+    if (FLAG(obj2.flux_auto))
       sexellipse(check->pix, check->width, check->height,
 		obj2->mx, obj2->my, obj2->a*obj2->auto_kronfactor,
 		obj2->b*obj2->auto_kronfactor, obj2->theta,
