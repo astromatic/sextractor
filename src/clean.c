@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2014 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		15/03/2012
+*	Last modified:		10/07/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -41,70 +41,70 @@
 #include	"clean.h"
 #include	"flag.h"
 #include	"image.h"
-
-/*------------------------------- variables ---------------------------------*/
-
-static LONG		*cleanvictim;
+#include	"objlist.h"
 
 
 /****** clean_init ***********************************************************
-PROTO   void clean_init(void)
+PROTO   objliststruct	*clean_init(void)
 PURPOSE Initialize things for CLEANing.
 INPUT   -.
 OUTPUT  -.
 NOTES   -.
 AUTHOR  E. Bertin (IAP)
-VERSION 21/12/2011
+VERSION 26/06/2014
  ***/
-void	clean_init(void)
+objliststruct	*clean_init(void)
   {
-  if (prefs.clean_flag)
-    QMALLOC(cleanvictim, LONG, prefs.clean_stacksize);
-  QMALLOC(cleanobjlist, objliststruct, 1);
-  cleanobjlist->obj = NULL;
-  cleanobjlist->plist = NULL;
-  cleanobjlist->nobj = cleanobjlist->npix = 0;
+   objliststruct	*cleanobjlist;
 
-  return;
+  cleanobjlist = objlist_new();
+
+  if (prefs.clean_flag)
+    QMALLOC(cleanobjlist->objindex, int, prefs.clean_stacksize);
+
+  return cleanobjlist;
   }
 
 
 /****** clean_end ************************************************************
-PROTO   void clean_end(void)
+PROTO   void clean_end(objliststruct *cleanobjlist)
 PURPOSE End things related to CLEANing.
 INPUT   -.
 OUTPUT  -.
 NOTES   -.
 AUTHOR  E. Bertin (IAP)
-VERSION 03/07/2011
+VERSION 26/06/2014
  ***/
-void	clean_end(void)
+void	clean_end(objliststruct *cleanobjlist)
   {
-  if (prefs.clean_flag)
-    free(cleanvictim);
-  free(cleanobjlist);
+  objlist_end(cleanobjlist);
 
   return;
   }
 
 
 /****** clean_process *********************************************************
-PROTO   int clean_process(fieldstruct *field, objstruct *objin)
+PROTO   int clean_process(objliststruct *cleanobjlist, fieldstruct *field,
+			objstruct *objin)
 PURPOSE Examine object in frame-buffer and put it in the "clean object list" if
 	necessary.
 INPUT   Pointer to image field,
         Object (source).
 OUTPUT  0 if the object was CLEANed, 1 otherwise.
 NOTES   Global preferences are used.
+TODO	Implement merging of isoimages.
 AUTHOR  E. Bertin (IAP)
-VERSION 11/01/2012
+VERSION 10/07/2014
  ***/
-int	clean_process(fieldstruct *field, objstruct *objin)
+int	clean_process(objliststruct *cleanobjlist, fieldstruct *field,
+			objstruct *objin)
   {
    objstruct		*obj;
-   int			i,j,k;
+   subimagestruct	*subimage;
    double		amp,ampin,alpha,alphain, unitarea,unitareain,beta,val;
    float	       	dx,dy,rlim;
+   int			*cleanvictim,
+			i,j,k;
 
   beta = prefs.clean_param;
   unitareain = PI*objin->a*objin->b;
@@ -112,6 +112,7 @@ int	clean_process(fieldstruct *field, objstruct *objin)
   alphain = (pow(ampin/objin->dthresh, 1.0/beta)-1)*unitareain/objin->fdnpix;
   j=0;
   obj = cleanobjlist->obj;
+  cleanvictim = cleanobjlist->objindex;
   for (i=0; i<cleanobjlist->nobj; i++, obj++)
     {
     dx = objin->mx - obj->mx;
@@ -139,15 +140,12 @@ int	clean_process(fieldstruct *field, objstruct *objin)
           {
 /*------- the newcomer is eaten!! */
           clean_merge(objin, obj);
-          if (prefs.blank_flag)
+          if (prefs.blank_flag && (subimage = objin->isoimage))
             {
-/*---------- Paste back ``CLEANed'' object pixels before forgetting them */
-            if (objin->blank)
-              {
-              pasteimage(field, objin->blank, objin->subw, objin->subh,
-			objin->subx, objin->suby);
-              free(objin->blank);
-              }
+/*---------- Paste back ``CLEANed'' object pixels */
+            pasteimage(field, subimage->image,
+			subimage->size[0], subimage->size[1],
+			subimage->ipos[0],subimage->ipos[1]);
             }
 
           return 0;
@@ -162,16 +160,13 @@ int	clean_process(fieldstruct *field, objstruct *objin)
     k = cleanvictim[i];
     obj = cleanobjlist->obj + k;
     clean_merge(obj, objin);
-    if (prefs.blank_flag)
-      {
+    if (prefs.blank_flag && (subimage = obj->isoimage))
 /*---- Paste back ``CLEANed'' object pixels before forgetting them */
-      if (obj->blank)
-        {
-        pasteimage(field, obj->blank, obj->subw,obj->subh, obj->subx,obj->suby);
-        free(obj->blank);
-        }
-      }
-    clean_sub(k);
+      pasteimage(field, subimage->image,
+			subimage->size[0], subimage->size[1],
+			subimage->ipos[0],subimage->ipos[1]);
+    obj_end(obj);
+    clean_sub(cleanobjlist, k);
     }
 
   return 1;
@@ -179,37 +174,22 @@ int	clean_process(fieldstruct *field, objstruct *objin)
 
 
 /****** clean_add ************************************************************
-PROTO   void clean_add(objstruct *objin)
+PROTO   void clean_add(objliststruct *cleanobjlist, objstruct *objin)
 PURPOSE Add an object to the "clean object list".
 INPUT   Pointer to object.
 OUTPUT  -.
 NOTES   -.
 AUTHOR  E. Bertin (IAP)
-VERSION 21/12/2011
+VERSION 25/06/2014
  ***/
-void	clean_add(objstruct *objin)
+void	clean_add(objliststruct *cleanobjlist, objstruct *objin)
 
   {
-   objstruct	*cobj;
    int		margin, y;
    float	hh1,hh2;
 
-/* Update the object list */
-  if (cleanobjlist->nobj)
-    {
-    if (!(cleanobjlist->obj = (objstruct *)realloc(cleanobjlist->obj,
-		    (++cleanobjlist->nobj) * sizeof(objstruct))))
-      error(EXIT_FAILURE, "Not enough memory for ", "CLEANing");
-    }
-  else
-    {
-    if (!(cleanobjlist->obj = (objstruct *)malloc((++cleanobjlist->nobj)
-		    * sizeof(objstruct))))
-      error(EXIT_FAILURE, "Not enough memory for ", "CLEANing");
-    }
-
 /* Compute the max. vertical extent of the object: */
-/* First from 2nd order moments, compute y-limit of the 3-sigma ellips... */
+/* First from 2nd order moments, compute y-limit of the 3-sigma ellipse... */
   hh1 = objin->cyy - objin->cxy*objin->cxy/(4.0*objin->cxx);
   hh1 = hh1 > 0.0 ? 1/sqrt(3*hh1) : 0.0;
 /* ... then from the isophotal limit, which should not be TOO different... */
@@ -223,9 +203,8 @@ void	clean_add(objstruct *objin)
   if ((y=(int)(objin->my+0.49999)-prefs.cleanmargin)<objin->ycmin)
     objin->ycmin = y;
 
-  cobj = &cleanobjlist->obj[cleanobjlist->nobj-1];
-  *cobj = *objin;
-  cobj->prev = cobj->next = -1;
+  if (objlist_addobj(cleanobjlist, objin, NULL) != RETURN_OK)
+    error(EXIT_FAILURE, "Not enough memory for ", "CLEANing");
 
   return;
   }
@@ -295,39 +274,26 @@ void	clean_merge(objstruct *objin, objstruct *objout)
 
 
 /****** clean_sub ************************************************************
-PROTO   void clean_sub(int objnb)
+PROTO   void clean_sub(objliststruct *cleanobjlist, int objindex)
 PURPOSE Remove an object from the "clean object list".
 INPUT   Object index.
 OUTPUT  -.
 NOTES   -.
 AUTHOR  E. Bertin (IAP)
-VERSION 21/12/2011
+VERSION 26/06/2014
  ***/
-void	clean_sub(int objnb)
+void	clean_sub(objliststruct *cleanobjlist, int objindex)
   {
-   int prev, next;
+   int	code;
+
+  code = objlist_subobj(cleanobjlist, objindex);
 
 /* Update the object list */
-  if (objnb>=cleanobjlist->nobj)
+  if (code == RETURN_ERROR)
     error(EXIT_FAILURE, "*Internal Error*: no CLEAN object to remove ",
 	"in clean_sub()");
-
-  if (--cleanobjlist->nobj)
-    {
-    if (cleanobjlist->nobj != objnb)
-      {
-      cleanobjlist->obj[objnb] = cleanobjlist->obj[cleanobjlist->nobj];
-      if ((prev=cleanobjlist->obj[objnb].prev)>=0 && prev!=objnb)
-        cleanobjlist->obj[prev].next = objnb;
-      if ((next=cleanobjlist->obj[objnb].next)>=0 && next<cleanobjlist->nobj)
-        cleanobjlist->obj[next].prev = objnb;
-      }
-    if (!(cleanobjlist->obj = (objstruct *)realloc(cleanobjlist->obj,
-		    cleanobjlist->nobj * sizeof(objstruct))))
-      error(EXIT_FAILURE, "Not enough memory for ", "CLEANing");
-    }
-  else
-    free(cleanobjlist->obj);
+  else if (code == RETURN_FATAL_ERROR)
+    error(EXIT_FAILURE, "Not enough memory for ", "CLEANing");
 
   return;
   }

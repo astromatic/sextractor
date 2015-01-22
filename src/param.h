@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		17/02/2014
+*	Last modified:		11/09/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -851,9 +851,11 @@ keystruct	obj2key[] = {
 	&flagobj2.analtime, H_FLOAT, T_FLOAT, "%9.4g", "s",
 	"time.duration;time.processing", "s"},
 
-#ifdef USE_MODEL
+  {"NPASS_DEBLEND", "Number of deblending passes used for detection",
+	&flagobj2.deblend_npass, H_INT, T_BYTE, "%3d", "",
+	"meta.number", ""},
+
 #include "paramprofit.h"
-#endif
 
   {""}
   };

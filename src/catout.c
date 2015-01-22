@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2014 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		20/03/2012
+*	Last modified:		26/06/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -48,26 +48,24 @@
 
 catstruct	*fitscat;
 tabstruct	*objtab = NULL;
+tabstruct	*curobjtab = NULL;
+keystruct	*curobj2key;
 FILE		*ascfile;
 char		*buf;
 int		catopen_flag = 0;
 
 /****** catout_readparams ****************************************************
-PROTO	obj2liststruct *catout_readparams(char **paramlist, int nparam,
-						int nobj2)
+PROTO	void	catout_readparams(char **paramlist, int nparam)
 PURPOSE	Read user's choice of catalog parameters and initialize obj2 list.
 INPUT	Array of pointers to strings containing the measurement parameters,
-	number of parameters,
-	number of obj2list members.
-OUTPUT	Pointer to the allocated obj2list.
+	number of parameters.
+OUTPUT	-.
 NOTES	Requires access to the objtab and obj2key static pointers.
 AUTHOR	E. Bertin (IAP)
-VERSION	15/02/2012
+VERSION	09/06/2014
  ***/
-obj2liststruct	*catout_readparams(char **paramlist, int nparam, int nobj2)
+void catout_readparams(char **paramlist, int nparam)
   {
-   obj2liststruct	*obj2list;
-   obj2struct		*obj2, *prevobj2;
    keystruct		*key, *tabkey;
    char			*keyword, *str;
    int			naxisn[MAXNPARAMAXIS],
@@ -125,44 +123,9 @@ obj2liststruct	*catout_readparams(char **paramlist, int nparam, int nobj2)
       }
     }
 
-/* Allocate memory for the obj2list */
-  QMALLOC(obj2list, obj2liststruct, 1);
-  obj2list->nobj2 = nobj2;
-  obj2list->nkeys = nkeys;
-  QCALLOC(obj2list->obj2, obj2struct, nobj2);
-
-/* Create key arrays for the catalog buffer, with the right pointers */
-/* And initialize the free obj2 linked list */
-  obj2list->freeobj2 = obj2list->obj2;
-  prevobj2 = NULL;
-  for (o=0; o<nobj2; o++)
-    {
-    obj2 = &obj2list->obj2[o];
-    obj2->prevobj2 = prevobj2;
-    if (prevobj2)
-      prevobj2->nextobj2 = obj2;
-    if (nkeys)
-      {
-      QMALLOC(obj2->keys, keystruct, nkeys);
-      key = obj2->keys;
-      tabkey = objtab->key;
-      for (k=nkeys; k--; key++)
-        {
-        *key = *tabkey;
-        key->prevkey = key-1;
-        key->nextkey = key+1;
-        key->ptr = (char *)obj2 + ((char *)tabkey->ptr - (char *)&flagobj2);
-        tabkey = tabkey->nextkey;
-        }
-      obj2->keys[0].prevkey = obj2->keys + nkeys-1;
-      obj2->keys[nkeys-1].nextkey = obj2->keys;
-      }
-    prevobj2 = obj2;
-    }
-
   catout_updateparamflags();
 
-  return obj2list;
+  return;
   }
 
 
@@ -197,93 +160,68 @@ void	catout_changeparamsize(char *keyword, int *axisn, int naxis)
   }
 
 
-/****** catout_allocparams *************************************************
-PROTO	void catout_allocparams(obj2liststruct *obj2list)
+/****** catout_allocobjparams *************************************************
+PROTO	void catout_allocobjparams(objstruct *obj, keystruct *obj2key, int nkey)
 PURPOSE	Allocate arrays for all multidimensional measurement parameters.
-INPUT	Pointer to the obj2list.
+INPUT	Pointer to the obj.
 OUTPUT	-.
 NOTES	Requires access to the obj2key static pointer.
 AUTHOR	E. Bertin (IAP)
-VERSION	15/02/2012
+VERSION	09/06/2014
  ***/
-void	catout_allocparams(obj2liststruct *obj2list)
-  {
+void	catout_allocobjparams(objstruct *obj) {
    obj2struct	*obj2;
-   keystruct	*key, *key2;
+   keystruct	*key;
    char		**ptr;
-   int		i,k,o, nkeys, ptroffset, size;
+   int		i, size;
 
 /* Allocate arrays for multidimensional measurement parameters */
 /* Note that they do not need to be selected for catalog output */
-  nkeys = obj2list->nkeys;
+  obj2 = obj->obj2;
   for (key=obj2key; *key->name; key++)
-    if (key->naxis && *((char *)key->ptr))
-      {
+    if (key->naxis && *((char *)key->ptr)) {
       size=t_size[key->ttype];
       for (i=0; i<key->naxis; i++)
         size *= key->naxisn[i];
       key->nbytes = size;
-      ptroffset = (char *)key->ptr-(char *)&flagobj2;
-      obj2 = obj2list->obj2;
-      for (o=obj2list->nobj2; o--; obj2++)
-        {
-        ptr = (char **)((char *)obj2 + ptroffset);
-        QCALLOC(*ptr, char, size);
-/*------ Now the tricky part: we replace the pointer to the array pointer */
-/*------ with the array pointer itself when applicable */
-        key2=obj2->keys;
-        for (k=nkeys; k--; key2++)
-          if (key2->ptr == ptr)
-            {
-            key2->ptr = *ptr;
-            key2->nbytes = size;
-            }
-        }
-      }
+      ptr = (char **)((char *)obj2 + (int)((char *)key->ptr-(char *)&flagobj2));
+      QCALLOC(*ptr, char, size);
+    }
 
   return;
-  }
+}
 
 
-/****** catout_freeparams *************************************************
-PROTO	void catout_freeparams(obj2liststruct *obj2list)
+/****** catout_freeobjparams *************************************************
+PROTO	void catout_freeparams(objstruct *obj)
 PURPOSE	Free memory for all multidimensional measurement parameters.
-INPUT	Pointer to the obj2list.
+INPUT	Pointer to the obj.
 OUTPUT	-.
 NOTES	Requires access to the obj2key static pointer.
 AUTHOR	E. Bertin (IAP)
-VERSION	15/02/2012
+VERSION	09/06/2014
  ***/
-void	catout_freeparams(obj2liststruct *obj2list)
+void	catout_freeobjparams(objstruct *obj)
   {
    obj2struct	*obj2;
    keystruct	*key;
-   char		**ptr;
-   int		o, ptroffset;
 
 /* Free arrays allocated for multidimensional measurement parameters */
+  obj2 = obj->obj2;
   for (key=obj2key; *key->name; key++)
     if (key->naxis && *((char *)key->ptr))
-      {
-      ptroffset = (char *)key->ptr-(char *)&flagobj2;
-      obj2 = obj2list->obj2;
-      for (o=obj2list->nobj2; o--; obj2++)
-        {
-        ptr = (char **)((char *)obj2 + ptroffset);
-        free(*ptr);
-        }
-      }
+      free(*((char **)((char *)obj2
+	+ (int)((char *)key->ptr-(char *)&flagobj2))));
 
   return;
   }
 
 
-/****** catout_allocother *************************************************
-PROTO	int catout_allocother(obj2liststruct *obj2list, void *flagobj2elem,
-				int nbytes)
+/****** catout_allocobjother *************************************************
+PROTO	int catout_allocobjother(objstruct *obj, void *flagobj2elem, int nbytes)
 PURPOSE	Allocate an array in the obj2 structure that does not correspond
 	to a measurement parameter.
-INPUT	Pointer to the obj2list,
+INPUT	Pointer to the obj,
 	pointer to the flagobj2 element pointer which must be allocated.
 	number of bytes to be allocated
 OUTPUT	RETURN_OK if pointers were not already allocated, or RETURN_ERROR
@@ -292,60 +230,49 @@ NOTES	-.
 AUTHOR	E. Bertin (IAP)
 VERSION	14/02/2012
  ***/
-int	catout_allocother(obj2liststruct *obj2list, void *flagobj2elem,
-				int nbytes)
+int	catout_allocobjother(objstruct *obj, void *flagobj2elem, int nbytes)
   {
    obj2struct	*obj2;
-   char		**ptr;
-   int		o, ptroffset;
+   int		ptroffset;
 
    if (*(char *)flagobj2elem)
      return RETURN_ERROR;
 
    ptroffset = (char *)flagobj2elem - (char *)&flagobj2;
-   obj2 = obj2list->obj2;
-   for (o=obj2list->nobj2; o--; obj2++)
-     {
-     ptr = (char **)((char *)obj2 + ptroffset);
-     QCALLOC(*ptr, char, nbytes);
-     }
+   obj2 = obj->obj2;
+   QCALLOC(*((char **)((char *)obj2 + ptroffset)), char, nbytes);
 
-  *(char *)flagobj2elem = 1;
+//  *(char *)flagobj2elem = 1;
 
   return RETURN_OK;
   }
 
 
-/****** catout_freeother *************************************************
-PROTO	int catout_freeother(obj2liststruct *obj2list, void *flagobj2elem)
+/****** catout_freeobjother *************************************************
+PROTO	int catout_freeobjother(objstruct *obj, void *flagobj2elem)
 PURPOSE	Free an array in the obj2 structure that does not correspond
 	to a measurement parameter.
-INPUT	Pointer to the obj2list,
+INPUT	Pointer to the obj,
 	pointer to the flagobj2 element pointer which must be free'ed.
 OUTPUT	RETURN_OK if pointers were already allocated, or RETURN_ERROR otherwise.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	15/02/2012
+VERSION	09/06/2014
  ***/
-int	catout_freeother(obj2liststruct *obj2list, void *flagobj2elem)
+int	catout_freeother(objstruct *obj, void *flagobj2elem)
   {
    obj2struct	*obj2;
    char		**ptr;
-   int		o, ptroffset;
 
   if (!*(char *)flagobj2elem)
     return RETURN_ERROR;
 
 /* Free arrays allocated for multidimensional measurement parameters */
-  ptroffset = (char *)flagobj2elem - (char *)&flagobj2;
-  obj2 = obj2list->obj2;
-  for (o=obj2list->nobj2; o--; obj2++)
-    {
-    ptr = (char **)((char *)obj2 + ptroffset);
-    free(*ptr);
-    }
+  obj2 = obj->obj2;
+  free(*((char **)((char *)obj2
+	+ (int)((char *)flagobj2elem - (char *)&flagobj2))));
 
-  *(char *)flagobj2elem = 0;
+//  *(char *)flagobj2elem = 0;
 
   return RETURN_OK;
   }
@@ -354,7 +281,7 @@ int	catout_freeother(obj2liststruct *obj2list, void *flagobj2elem)
 /****** catout_updateparamflags **********************************************
 PROTO	void catout_updateparamflags(void)
 PURPOSE	Update parameter flags according to their mutual dependencies.
-INPUT	Pointer to the obj2list.
+INPUT	-.
 OUTPUT	-.
 NOTES	Requires access to the flagobj2 static pointer.
 AUTHOR	E. Bertin (IAP)
@@ -892,17 +819,25 @@ INPUT	-.
 OUTPUT	-.
 NOTES	Requires access to global prefs and the obj2key static pointer.
 AUTHOR	E. Bertin (IAP)
-VERSION	24/02/2012
+VERSION	10/07/2014
  ***/
 void	catout_init(void)
   {
    keystruct	*key;
-   int		i, n;
+   int		i,k, n;
 
   if (prefs.cat_type == CAT_NONE)
     return;
 
+// "Current" object table that will receive the updated data pointers
+  curobjtab = new_tab("OBJECTS");
+  key = objtab->key;
+  for (k=objtab->nkey; k--; key = key->nextkey) {
+    copy_key(objtab, key->name, curobjtab, 0);
+  }
+
   update_tab(objtab);
+
   if (prefs.cat_type == ASCII_HEAD || prefs.cat_type == ASCII ||
 	prefs.cat_type == ASCII_SKYCAT || prefs.cat_type == ASCII_VO)
     {
@@ -1136,21 +1071,34 @@ void	catout_initext(fieldstruct *field)
 
 
 /****** catout_writeobj ******************************************************
-PROTO	void catout_writeobj(obj2struct *obj2)
+PROTO	void catout_writeobj(objstruct *obj)
 PURPOSE	Write one object in the output catalog.
-INPUT	Pointer to the current obj2 structure.
+INPUT	Pointer to the current obj structure.
 OUTPUT	-.
 NOTES	Requires access to global prefs and the objtab static pointer.
 AUTHOR	E. Bertin (IAP)
-VERSION	03/10/2011
+VERSION	10/07/2014
+TODO	Check those static keystructs
  ***/
-void	catout_writeobj(obj2struct *obj2)
+void	catout_writeobj(objstruct *obj)
   {
-   keystruct	*keystore;
+   static keystruct	*keystore, *key, *curkey;
+   char			*ptr;
+   long			ptroffset;
+   int			k;
 
-/* We temporarily replace the objtab key sequence with that from the list */
+// Update obj2curkey pointers to data with that of the current obj
+  ptroffset = (char *)obj->obj2 - (char *)&flagobj2;
+  key = objtab->key;
+  curkey = curobjtab->key;
+  for (k=objtab->nkey; k--; key = key->nextkey, curkey = curkey->nextkey) {
+    ptr = (char *)key->ptr + ptroffset;
+    curkey->ptr = (key->naxis && *((char *)key->ptr)) ? *((char **)ptr) : ptr;
+  }
+
+/// We temporarily replace the objtab key sequence with that from obj2curkey
   keystore = objtab->key;
-  objtab->key = obj2->keys;
+  objtab->key = curobjtab->key;
 
   switch(prefs.cat_type)
     {
@@ -1254,11 +1202,10 @@ INPUT	Error message character string (or NULL if no error).
 OUTPUT	-.
 NOTES	Requires access to global prefs and the objtab static pointer.
 AUTHOR	E. Bertin (IAP)
-VERSION	24/02/2012
+VERSION	10/07/2014
  ***/
 void	catout_end(char *error)
   {
-   obj2liststruct	*obj2list;
    int			o;
 
   if (!catopen_flag)
@@ -1307,17 +1254,13 @@ void	catout_end(char *error)
     }
 
 /* Free allocated memory for arrays and structures */
-  obj2list = thecat.obj2list;
-  catout_freeparams(obj2list);
-  if (obj2list->nkeys)
-    for (o=0; o<obj2list->nobj2; o++)
-      free(obj2list->obj2[o].keys);
-  free(obj2list->obj2);
-  free(obj2list);
   objtab->key = NULL;
   objtab->nkey = 0;
   free_tab(objtab);
   objtab = NULL;
+  blank_keys(curobjtab);
+  free_tab(curobjtab);
+  curobjtab = NULL;
 
   return;
   }

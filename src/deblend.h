@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 2012 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 2012-2014 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,9 +22,18 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		27/03/2012
+*	Last modified:		08/10/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
+
+#ifndef _OBJLIST_H_
+#include "objlist.h"
+#endif
+
+#ifndef _SUBIMAGE_H_
+#include "subimage.h"
+#endif
+
 
 /*------------------------------ definitions --------------------------------*/
 
@@ -35,13 +44,15 @@
 #define	DEBLEND_NBRANCH		16		/* starting number per branch */
 
 /*------------------------------- functions ---------------------------------*/
-void	deblend_alloc(void),
-	deblend_free(void);
 
-int	deblend_addobj(int objnb, objliststruct *objl1, objliststruct *objl2),
-	deblend_belong(int corenb, objliststruct *coreobjlist,
-	       int shellnb, objliststruct *shellobjlist),
-	deblend_gatherup(objliststruct *objlistin,objliststruct *objlistout),
-	deblend_parcelout(objliststruct *objlistin, objliststruct *objlistout);
+objliststruct	*deblend_parcelout(objstruct *objin, subimagestruct *subimage,
+			pliststruct *plist, PIXTYPE thresh);
 
+int		deblend_belong(int corenb, objliststruct *coreobjlist,
+			int shellnb, objliststruct *shellobjlist),
+		deblend_gatherup(objliststruct *objlistin,
+			objliststruct *objlistout);
+	
+void		deblend_alloc(void),
+		deblend_free(void);
 

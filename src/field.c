@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		30/06/2014
+*	Last modified:		26/03/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -57,8 +57,8 @@ INPUT	Image filename,
 	image flags (e.g. DETECT_FIELD, MEASURE_FIELD...).
 OUTPUT	Pointer to a new malloc'ed field structure.
 NOTES	Global preferences are used.
-AUTHOR	E. Bertin (IAP), MK
-VERSION	30/06/2014
+AUTHOR	E. Bertin (IAP)
+VERSION	26/03/2012
  ***/
 fieldstruct	*field_init(char *filename, int imindex, int ext, int flags)
 
@@ -226,11 +226,6 @@ fieldstruct	*field_init(char *filename, int imindex, int ext, int flags)
       field->stripmargin = margin;
     }
 
-  // put that to NULL, which
-  // aids the memory management
-  field->strip=NULL;
-  field->fstrip=NULL;
-
   return field;
   }
 
@@ -282,10 +277,8 @@ void	field_end(fieldstruct *field)
 /* Free cat only if associated with an open file */
   if (field->cat &&  field->cat->file)
     free_cat(&field->cat, 1);
-  if (field->strip)
-    free(field->strip);
-  if (field->fstrip)
-    free(field->fstrip);
+  free(field->strip);
+  free(field->fstrip);
   if (field->wcs)
     end_wcs(field->wcs);
   if (field->interp_flag)

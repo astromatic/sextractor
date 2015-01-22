@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2014 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,17 +22,25 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/01/2012
+*	Last modified:		25/09/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
+
+#ifndef _OBJLIST_H_
+#include "objlist.h"
+#endif
 
 #ifndef _LUTZ_H_
 #define _LUTZ_H_
 
 /*------------------------------ definitions --------------------------------*/
 
-#define	NOBJ			256		/* starting number of obj. */
-#define	UNKNOWN			-1		/* flag for LUTZ */
+/// Subextraction flags
+#define	SUBEX_NONE		0x0		/// No flag
+#define	SUBEX_VARTHRESH		0x01		/// Activate variable threshold	
+
+#define	NSUBOBJ_START		256		/// Nb of subobjects at start
+#define	UNKNOWN			-1		/// Lutz algorithm flag code
 
 /*--------------------------------- typedefs --------------------------------*/
 
@@ -43,24 +51,22 @@ typedef	enum		{COMPLETE, INCOMPLETE, NONOBJECT, OBJECT}
 PIXTYPE		*dumscan;
 
 /*------------------------------- structures --------------------------------*/
-/* Temporary object parameters during extraction */
+/// Temporary detection parameters during extraction
 typedef struct structinfo
   {
-  LONG		pixnb;			/* Number of pixels included */
-  LONG		firstpix;		/* Pointer to first pixel of pixlist */
-  LONG		lastpix;		/* Pointer to last pixel of pixlist */
-  short		flag;			/* Extraction flag */
+  LONG		pixnb;			/// Nb of pixels included in detection
+  LONG		firstpix;		/// Pointer to first pixel of pixel list
+  LONG		lastpix;		/// Pointer to last pixel of pixel list
+  short		flag;			/// Extraction flag
   }       infostruct;
 
-
 /*------------------------------- functions ---------------------------------*/
-void		lutz_alloc(int width, int height),
-		lutz_free(void),
-		lutz_output(infostruct *info, objliststruct *objlist),
-		lutz_update(infostruct *infoptr1, infostruct *infoptr2,
-			pliststruct *pixel);
+objliststruct	*lutz_subextract(subimagestruct *subimage, PIXTYPE thresh,
+			int xmin, int xmax, int ymin, int ymax, int extflags);
 
-int		lutz_subextract(objliststruct *objlistroot, int nroot,
-			objstruct *objparent, objliststruct *objlist);
+int		lutz_output(infostruct *info, objliststruct *objlist);
+
+void		lutz_update(infostruct *infoout, infostruct *infoin,
+			pliststruct *pixel);
 
 #endif

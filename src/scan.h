@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2015 IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		30/06/2014
+*	Last modified:		22/01/2015
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -30,10 +30,20 @@
 #include "lutz.h"
 #endif
 
+#ifndef _PLIST_H_
+#include "plist.h"
+#endif
+
 /*------------------------------ definitions --------------------------------*/
 
 #define	NOBJ			256		/* starting number of obj. */
 #define	UNKNOWN			-1		/* flag for LUTZ */
+
+/*---------------------------- preanalyse flags -----------------------------*/
+
+#define		ANALYSE_FAST		0
+#define		ANALYSE_FULL		1
+#define		ANALYSE_ROBUST		2
 
 /*--------------------------------- typedefs --------------------------------*/
 
@@ -41,9 +51,13 @@
 void		scan_extract(fieldstruct *dfield, fieldstruct *dwfield,
 			fieldstruct **fields, fieldstruct **wfields, int nfield,
 			fieldstruct **ffields, int nffield),
+		scan_initmarkers(fieldstruct *field),
 		scan_output(fieldstruct **fields, fieldstruct **wfields,
-			int nfield, infostruct *info, objliststruct *objlist),
-		scan_preanalyse(objliststruct *objlist, int no,
-			int analyse_type);
-void            scan_initmarkers(fieldstruct *field);
-void            scan_updatemarkers(fieldstruct *field, int yl);
+			int nfield, infostruct *info, pliststruct *plist,
+			objliststruct *cleanobjlist),
+		scan_preanalyse(objstruct *obj, pliststruct *plist,
+			int analyse_type),
+		scan_updatemarkers(fieldstruct *field, int yl),
+		scan_update(infostruct *infoptr1, infostruct *infoptr2,
+			pliststruct *pixel);
+

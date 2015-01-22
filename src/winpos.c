@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 2005-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 2005-2014 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		02/04/2012
+*	Last modified:		11/09/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -50,7 +50,7 @@ INPUT	Pointer to an array of image field pointers,
 OUTPUT  -.
 NOTES   obj2->mx and obj2->my are taken as initial centroid guesses.
 AUTHOR  E. Bertin (IAP)
-VERSION 02/04/2012
+VERSION 11/09/2014
  ***/
 void	win_pos(fieldstruct **fields, fieldstruct **wfields,
 			int nfield, obj2struct *obj2)
@@ -71,7 +71,7 @@ void	win_pos(fieldstruct **fields, fieldstruct **wfields,
                         pflag,corrflag, gainflag, errflag, momentflag, winflag,
 			band,nband, nsubimage;
    long                 pos;
-   PIXTYPE              *image, *imaget, *weight,*weightt,
+   PIXTYPE              *image, *imaget, *imvar,*imvart,
                         wthresh = 0.0;
 
   corrflag = (prefs.mask_type==MASK_CORRECT);
@@ -89,8 +89,8 @@ void	win_pos(fieldstruct **fields, fieldstruct **wfields,
   for (s=0; s<nsubimage; s++, subimage++)
     {
 /*-- Store positions in sub-images */
-    sposx[s] = subimage->dpos[0] - 1.0 - subimage->immin[0];
-    sposy[s] = subimage->dpos[1] - 1.0 - subimage->immin[1];
+    sposx[s] = subimage->dpos[0] - 1.0 - subimage->xmin[0];
+    sposy[s] = subimage->dpos[1] - 1.0 - subimage->xmin[1];
     sokflag[s] = 1;
     }
 
@@ -212,8 +212,8 @@ void	win_pos(fieldstruct **fields, fieldstruct **wfields,
         mx2ph = mx*2.0 + 0.49999;
         my2ph = my*2.0 + 0.49999;
 
-        w = subimage->imsize[0];
-        h = subimage->imsize[1];
+        w = subimage->size[0];
+        h = subimage->size[1];
         if (xmin < 0)
           {
           xmin = 0;
@@ -236,15 +236,15 @@ void	win_pos(fieldstruct **fields, fieldstruct **wfields,
           }
 
         image = subimage->image;
-        weight = weightt = NULL;	/* To avoid gcc -Wall warnings */
+        imvar = imvart = NULL;	/* To avoid gcc -Wall warnings */
         if (wfield)
-          weight = subimage->weight;
+          imvar = subimage->imvar;
         for (y=ymin; y<ymax; y++)
           {
           imaget = image + (pos = y*w + xmin);
           if (wfield)
-            weightt = weight + pos;
-          for (x=xmin; x<xmax; x++, imaget++, weightt++)
+            imvart = imvar + pos;
+          for (x=xmin; x<xmax; x++, imaget++, imvart++)
             {
             dx = x - mx;
             dy = y - my;
@@ -270,7 +270,7 @@ void	win_pos(fieldstruct **fields, fieldstruct **wfields,
 /*------------ Here begin tests for pixel/weight overflows. Things are a */
 /*------------ bit intricated to have it running as fast as possible in the */
 /*------------ most common cases */
-              if ((pix=*imaget)<=-BIG || (wfield && (var=*weightt)>=wthresh))
+              if ((pix=*imaget)<=-BIG || (wfield && (var=*imvart)>=wthresh))
                 {
                 if (corrflag
 			&& (x2=(int)(mx2ph-x))>=0 && x2<w
@@ -279,7 +279,7 @@ void	win_pos(fieldstruct **fields, fieldstruct **wfields,
                   {
                   if (wfield)
                     {
-                    var = *(weight + pos);
+                    var = *(imvar + pos);
                     if (var>=wthresh)
                       pix = var = 0.0;
                     }
@@ -402,10 +402,10 @@ void	win_pos(fieldstruct **fields, fieldstruct **wfields,
 
       f = field->imindex;
       if (FLAG(obj2.winpos_x))
-        obj2->winpos_x[f] = sposx[s] + subimage->immin[0]
+        obj2->winpos_x[f] = sposx[s] + subimage->xmin[0]
 				+ 1.0;	/* Mind the 1 pixel FITS offset */
       if (FLAG(obj2.winpos_y))
-        obj2->winpos_y[f] = sposy[s] + subimage->immin[1]
+        obj2->winpos_y[f] = sposy[s] + subimage->xmin[1]
 				+ 1.0;	/* Mind the 1 pixel FITS offset */
       if (FLAG(obj2.winpos_niter))
         obj2->winpos_niter[f] = i+1;

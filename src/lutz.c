@@ -1,13 +1,14 @@
-/*
-*				lutz.c
-*
-* Lutz (1980) algorithm to extract connected pixels from an image raster.
+/**
+* @file		lutz.c
+* @brief	Lutz (1980) algorithm to extract connected pixels from an image
+		raster.
+* @date		05/01/2015
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2015 IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -21,8 +22,6 @@
 *	GNU General Public License for more details.
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
-*
-*	Last modified:		11/01/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -38,217 +37,164 @@
 #include	"globals.h"
 #include	"prefs.h"
 #include	"lutz.h"
+#include	"objlist.h"
 #include	"plist.h"
 #include	"scan.h"
+#include	"weight.h"
 
-/*------------------------- Static buffers for lutz() -----------------------*/
-
-static infostruct	*info, *store;
-static char		*marker;
-static status		*psstack;
-static int		*start, *end, *discan, xmin,ymin,xmax,ymax;
-
-
-/****** lutz_alloc ***********************************************************
-PROTO	void lutz_alloc(int width, int height)
-PURPOSE	Allocate memory for buffers used by Lutz' extraction algorithm.
-INPUT	Frame width,
-	frame height.
-OUTPUT	-.
-NOTES	-.
-AUTHOR	E. Bertin (IAP)
-VERSION	21/12/2011
- ***/
-void	lutz_alloc(int width, int height)
-  {
-   int	*discant,
-	stacksize, i;
-
-  stacksize = width+1;
-  xmin = ymin = 0;
-  xmax = width-1;
-  ymax = height-1;
-  QMALLOC(info, infostruct, stacksize);
-  QMALLOC(store, infostruct, stacksize);
-  QMALLOC(marker, char, stacksize);
-  QMALLOC(psstack, status, stacksize);
-  QMALLOC(start, int, stacksize);
-  QMALLOC(end, int, stacksize);
-  QMALLOC(discan, int, stacksize);
-  discant = discan;
-  for (i=stacksize; i--;)
-    *(discant++) = -1;
-
-  return;
-  }
-
-
-/****** lutz_free ************************************************************
-PROTO   void lutz_free(void)
-PURPOSE Free memory for buffers used by Lutz' extraction algorithms.
-INPUT	-.
-OUTPUT	-.
-NOTES	-.
-AUTHOR	E. Bertin (IAP)
-VERSION	21/12/2011
- ***/
-void	lutz_free(void)
-  {
-  free(discan);
-  free(info);
-  free(store);
-  free(marker);
-  free(psstack);
-  free(start);
-  free(end);
-
-  return;
-  }
-
-
-/****** lutz_subextract ******************************************************
-PROTO	void lutz_subextract(objliststruct *objlistroot, int nroot,
-		objstruct *objparent, objliststruct *objlist)
+/****** lutz_subextract **************************************************//**
+PROTO	objliststruct	*lutz_subextract(subimagestruct *subimage,
+			PIXTYPE thresh, int xmin, int xmax, int ymin, int ymax,
+			int extflags)
 PURPOSE	C implementation of R.K LUTZ' algorithm for the extraction of
-	8-connected pixels in a sub-image
-INPUT	-.
-OUTPUT	RETURN_OK if no memory allocation problem occured, RETURN_FATAL_ERROR
-	otherwise.
+	8-connected pixels in a sub-image above a given threshold and within
+	given limits
+INPUT	Pointer to sub-image,
+	detection threshold: relative if weighted threshold, absolute otherwise,
+	minimum x pixel coordinate,
+	maximum x pixel coordinate (+1),
+	minimum y pixel coordinate,
+	maximum y pixel coordinate (+1),
+	binary combination of extraction flags.
+OUTPUT	Pointer to the objlist if no memory allocation problem occured,
+	NULL otherwise.
 NOTES	Global preferences are used.
 AUTHOR	E. Bertin (IAP)
-VERSION	21/12/2011
+TODO    Check propagation of flags and filtering.
+VERSION	05/01/2015
  ***/
-int	lutz_subextract(objliststruct *objlistroot, int nroot,
-		objstruct *objparent, objliststruct *objlist)
+objliststruct	*lutz_subextract(subimagestruct *subimage, PIXTYPE thresh,
+			int xmin, int xmax, int ymin, int ymax, int extflags) {
 
-  {
-   static infostruct	curpixinfo,initinfo;
-   objstruct		*obj, *objroot;
-   pliststruct		*plist,*pixel, *plistin, *plistint;
-
-   char			newmarker;
-   int			cn, co, luflag, objnb, pstop, xl,xl2,yl,
-			out, minarea, stx,sty,enx,eny, step,
-			nobjm = NOBJ,
-			inewsymbol, *iscan;
+   objliststruct	*objlist;
+   infostruct		curpixinfo,initinfo,
+			*info, *store;
+   pliststruct		*plist,*pixel;
+   status		*psstack,
+			cs, ps;
    short		trunflag;
-   PIXTYPE		thresh;
-   status		cs, ps;
+   char			*marker,
+			newmarker;
+   PIXTYPE		*scan, *cscan, *varscan, *cvarscan, *dumscan, *dumscant,
+			varbadthresh, relthresh, cnewsymbol;
+   int			*start, *end,
+			i, xl,xl2,yl, wminus1,hminus1, subw,subh,
+			scansize, imsize, pos,
+			varflag, varthreshflag,
+			cn, co, luflag, pstop,
+			out, minarea, inewsymbol;
+
+// Flag the presence of a variance map
+  varflag = subimage->imvar || subimage->fimvar;
+// Flag variable thresholding
+  varthreshflag = (extflags&SUBEX_VARTHRESH) && varflag;
+// Relative threshold will be used only for weighted thresholding
+  relthresh = thresh;
+
+  wminus1 = subimage->field->width - 1 - xmin;
+  hminus1 = subimage->field->height - 1 - ymin;
+  subw = xmax - xmin;				// Sub-subimage width
+  subh = ymax - ymin;				// Sub-subimage height
+  scansize = subw + 1;				// Sub-subimage scan size
+  QMALLOC(info, infostruct, scansize);
+  QMALLOC(store, infostruct, scansize);
+  QCALLOC(marker, char, scansize);		// Must be initialized to 0
+  QMALLOC(psstack, status, scansize);
+  QMALLOC(start, int, scansize);
+  QMALLOC(end, int, scansize);
+  QMALLOC(dumscan, PIXTYPE, scansize);
+  dumscant = dumscan;
+  for (i=scansize; i--;)
+    *(dumscant++) = -BIG;
 
   out = RETURN_OK;
-
   minarea = prefs.deb_maxarea;
-  plistint = plistin = objlistroot->plist;
-  objroot = &objlistroot->obj[nroot];
-  stx = objparent->xmin;
-  sty = objparent->ymin;
-  enx = objparent->xmax;
-  eny = objparent->ymax;
-  thresh = objlist->dthresh;
+
+// Variance threshold for bad pixels (= infinite variance)
+  varbadthresh = varflag && subimage->wfield?
+			subimage->wfield->weight_thresh : 0.0;
+  if (varbadthresh>BIG*WTHRESH_CONVFAC)
+    varbadthresh = BIG*WTHRESH_CONVFAC;
+
   initinfo.pixnb = 0;
   initinfo.flag = 0;
   initinfo.firstpix = initinfo.lastpix = -1;
   cn = 0;
-  iscan = objroot->submap + (sty-objroot->suby)*objroot->subw
-	+ (stx-objroot->subx);
-/* As we only analyse a fraction of the map, a step occurs between lines */
-  step = objroot->subw - (++enx-stx);
-  eny++;
+  imsize = subimage->size[0];
+  pos = (ymin - subimage->xmin[1])*imsize + (xmin - subimage->xmin[0]);
+  scan = subimage->image + pos;
+  cscan = subimage->fimage? subimage->fimage + pos : scan;
+  varscan = subimage->imvar? subimage->imvar + pos : NULL;
+  cvarscan = subimage->fimvar? subimage->fimvar + pos : varscan;
 
-/*------Allocate memory to store object data */
+// Allocate memory to store object data
+  objlist = objlist_new();
 
-  free(objlist->obj);
-  if (!(obj=objlist->obj=(objstruct *)malloc(nobjm*sizeof(objstruct))))
-    {
+// Allocate memory for the pixel list
+  if (!(objlist->plist = (pliststruct *)malloc(subw*subh*plistsize))) {
     out = RETURN_FATAL_ERROR;
-    plist = NULL;			/* To avoid gcc -Wall warnings */
     goto exit_lutz;
-    }
-
-/*------Allocate memory for the pixel list */
-
-  free(objlist->plist);
-  if (!(objlist->plist
-	= (pliststruct *)malloc((eny-sty)*(enx-stx)*plistsize)))
-    {
-    out = RETURN_FATAL_ERROR;
-    plist = NULL;			/* To avoid gcc -Wall warnings */
-    goto exit_lutz;
-    }
+  }
 
   pixel = plist = objlist->plist;
-
-/*----------------------------------------*/
-
-  for (xl=stx; xl<=enx; xl++)
-    marker[xl] = 0 ;
-
-  objnb = objlist->nobj = 0;
   co = pstop = 0;
   curpixinfo.pixnb = 1;
 
-  for (yl=sty; yl<=eny; yl++, iscan += step)
-    {
+  for (yl=0; yl<=subh; yl++) {
     ps = COMPLETE;
     cs = NONOBJECT;
-    trunflag =  (yl==0 || yl==ymax) ? OBJ_TRUNC : 0;
-    if (yl==eny)
-      iscan = discan;
-
-    for (xl=stx; xl<=enx; xl++)
-      {
+    trunflag =  (yl==-ymin || yl==hminus1) ? OBJ_TRUNC : 0;
+    if (yl==subh)
+      cvarscan = varscan = cscan = scan = dumscan;
+    for (xl=0; xl<=subw; xl++) {
       newmarker = marker[xl];
       marker[xl] = 0;
-      if ((inewsymbol = (xl!=enx)?*(iscan++):-1) < 0)
-        luflag = 0;
-      else
-        {
+      cnewsymbol = (xl==subw)? -BIG-1 : cscan[xl];
+
+      if (varthreshflag)
+        thresh = relthresh*sqrt((xl==subw || yl==subh)? 0.0 : cvarscan[xl]);
+
+      luflag =  (cnewsymbol > thresh);
+
+      if (luflag) {
         curpixinfo.flag = trunflag;
-        plistint = plistin+inewsymbol;
-        luflag = (PLISTPIX(plistint, cvalue) > thresh?1:0);
-        }
-      if (luflag)
-        {
-        if (xl==0 || xl==xmax)
+        if (xl==-xmin || xl==wminus1)
           curpixinfo.flag |= OBJ_TRUNC;
-        memcpy(pixel, plistint, (size_t)plistsize);
+        PLIST(pixel, x) = xl + xmin;
+        PLIST(pixel, y) = yl + ymin;
+        PLIST(pixel, value) = scan[xl];
+        if (PLISTEXIST(cvalue))
+          PLISTPIX(pixel, cvalue) = cnewsymbol;
+        if (PLISTEXIST(var))
+          PLISTPIX(pixel, var) = varscan[xl];
         PLIST(pixel, nextpix) = -1;
         curpixinfo.lastpix = curpixinfo.firstpix = cn;
         cn += plistsize;
         pixel += plistsize;
-        if (cs != OBJECT)
-/*------------------------------- Start Segment -----------------------------*/
-          {
+        if (cs != OBJECT) {
+// ----- Start Segment
           cs = OBJECT;
-          if (ps == OBJECT)
-              {
-              if (start[co] == UNKNOWN)
-                {
+          if (ps == OBJECT) {
+              if (start[co] == UNKNOWN) {
                 marker[xl] = 'S';
                 start[co] = xl;
-                }
-              else  marker[xl] = 's';
               }
-          else
-            {
+              else  marker[xl] = 's';
+            } else {
             psstack[pstop++] = ps;
             marker[xl] = 'S';
             start[++co] = xl;
             ps = COMPLETE;
             info[co] = initinfo;
-            }
           }
         }
-/*---------------------------------------------------------------------------*/
-      if (newmarker)
-/*---------------------------- Process New Marker ---------------------------*/
+      }
 
-        {
-        if (newmarker == 'S')
-          {
+      if (newmarker) {
+//---- Process New Marker
+        if (newmarker == 'S') {
           psstack[pstop++] = ps;
-          if (cs == NONOBJECT)
-            {
+          if (cs == NONOBJECT) {
             psstack[pstop++] = COMPLETE;
             info[++co] = store[xl];
             start[co] = UNKNOWN;
@@ -256,171 +202,146 @@ int	lutz_subextract(objliststruct *objlistroot, int nroot,
           else
             lutz_update(&info[co],&store[xl], plist);
           ps = OBJECT;
-          }
-        else if (newmarker == 's')
-          {
-          if ((cs == OBJECT) && (ps == COMPLETE))
-            {
+        } else if (newmarker == 's') {
+          if ((cs == OBJECT) && (ps == COMPLETE)) {
             pstop--;
             xl2 = start[co];
             lutz_update(&info[co-1],&info[co], plist);
-          if (start[--co] == UNKNOWN)
+            if (start[--co] == UNKNOWN)
               start[co] = xl2;
             else
               marker[xl2] = 's';
-            }
-          ps = OBJECT;
           }
-        else if (newmarker == 'f')
+          ps = OBJECT;
+        } else if (newmarker == 'f')
           ps = INCOMPLETE;
-        else if (newmarker == 'F')
-          {
+        else if (newmarker == 'F') {
           ps = psstack[--pstop];
-          if ((cs == NONOBJECT) && (ps == COMPLETE))
-            {
-          if (start[co] == UNKNOWN)
-              {
-              if ((int)info[co].pixnb >= minarea)
-                {
-                if (objlist->nobj>=nobjm)
-                  if (!(obj = objlist->obj = (objstruct *)
-  			realloc(obj, (nobjm+=nobjm/2)* sizeof(objstruct))))
-                    {
-                    out = RETURN_FATAL_ERROR;
-                    goto exit_lutz;
-                    }
-                lutz_output(&info[co], objlist);
-                }
+          if ((cs == NONOBJECT) && (ps == COMPLETE)) {
+            if (start[co] == UNKNOWN) {
+              if ((int)info[co].pixnb >= minarea
+                && lutz_output(&info[co], objlist) != RETURN_OK) {
+                out = RETURN_FATAL_ERROR;
+                goto exit_lutz;
               }
-            else
-              {
+            } else {
               marker[end[co]] = 'F';
               store[start[co]] = info[co];
-              }
+            }
             co--;
             ps = psstack[--pstop];
-            }
           }
         }
+      }
   
-/*---------------------------------------------------------------------------*/
-
       if (luflag)
         lutz_update(&info[co],&curpixinfo, plist);
-    else
-        {
-        if (cs == OBJECT)
-/*-------------------------------- End Segment ------------------------------*/
-          {
+      else {
+        if (cs == OBJECT) {
+//------ End Segment
           cs = NONOBJECT;
-          if (ps != COMPLETE)
-            {
+          if (ps != COMPLETE) {
             marker[xl] = 'f';
             end[co] = xl;
-            }
-          else
-            {
+          } else {
             ps = psstack[--pstop];
             marker[xl] = 'F';
             store[start[co]] = info[co];
             co--;
-            }
           }
         }
-/*---------------------------------------------------------------------------*/
       }
     }
 
+    scan += imsize;
+    cscan += imsize;
+    if (varscan)
+      varscan += imsize;
+    if (cvarscan)
+      cvarscan += imsize;
+  }
+
 exit_lutz:
 
-   if (objlist->nobj && out == RETURN_OK)
-    {
-    if (!(objlist->obj=(objstruct *)realloc(obj,
-		objlist->nobj*sizeof(objstruct))))
-      error(EXIT_FAILURE,"problem with mem. realloc. in lutz()","");
-    }
-  else
-    {
-    free(obj);
-    objlist->obj = NULL;
-    }
+  free(dumscan);
+  free(info);
+  free(store);
+  free(marker);
+  free(psstack);
+  free(start);
+  free(end);
 
-  if (cn && out == RETURN_OK)
-    {
-    if (!(objlist->plist=(pliststruct *)realloc(plist,cn)))
-      error(EXIT_FAILURE,"problem with mem. realloc. in lutz()","");
+  if (out == RETURN_OK) {
+    if (objlist->nobj) {
+      objlist->nobjmax = objlist->nobj;
+      if (!(objlist->obj=(objstruct *)realloc(objlist->obj,
+		objlist->nobjmax*sizeof(objstruct))))
+        error(EXIT_FAILURE,"problem with mem. realloc. in lutz()","");
+    } else {
+      free(objlist->obj);
+      objlist->nobjmax = 0;
+      objlist->obj = NULL;
+      }
+    if (cn) {
+      if (!(objlist->plist=(pliststruct *)realloc(plist,cn)))
+        error(EXIT_FAILURE,"problem with mem. realloc. in lutz()","");
+    } else {
+      free(objlist->plist);
+      objlist->plist = NULL;
     }
-  else
-    {
-    free(objlist->plist);
-    objlist->plist = NULL;
-    }
-
-  return  out;
+    return objlist;
+  } else {
+    objlist_end(objlist);
+    return NULL;
   }
+}
 
 
-/****** lutz_update **********************************************************
-PROTO	void lutz_update(infostruct *infoptr1, infostruct *infoptr2,
-		pliststruct *pixel)
-PURPOSE	Update the properties of a detection each time one of its pixels is
-	scanned.
-INPUT	Pointer to detection info,
-	pointer to pointer to new object info,
-	pointer to pixel list.
-OUTPUT	-.
-NOTES	-.
-AUTHOR	E. Bertin (IAP)
-VERSION	15/03/2012
+/****** lutz_update ******************************************************//**
+Update basic detection properties based on new pixel information
+@param[in] infoout	Pointer to the destination detection info
+@param[in] infoin	Pointer to the source detection info
+@param[in] pixel	Pointer to the new pixel
+@author 		E. Bertin (IAP)
+@date			05/01/2015
  ***/
-void	lutz_update(infostruct *infoptr1, infostruct *infoptr2,
-		pliststruct *pixel)
+void	lutz_update(infostruct *infoout, infostruct *infoin,
+			pliststruct *pixel) {
 
-  {
-  infoptr1->pixnb += infoptr2->pixnb;
-  infoptr1->flag |= infoptr2->flag;
-  if (infoptr1->firstpix == -1)
-    {
-    infoptr1->firstpix = infoptr2->firstpix;
-    infoptr1->lastpix = infoptr2->lastpix;
-    }
-  else if (infoptr2->lastpix != -1)
-    {
-    PLIST(pixel+infoptr1->lastpix, nextpix) = infoptr2->firstpix;
-    infoptr1->lastpix = infoptr2->lastpix;
-    }
+  infoout->pixnb += infoin->pixnb;
+  infoout->flag |= infoin->flag;
+  if (infoout->firstpix == -1) {
+    infoout->firstpix = infoin->firstpix;
+    infoout->lastpix = infoin->lastpix;
+  } else if (infoin->lastpix != -1) {
+    PLIST(pixel + infoout->lastpix, nextpix) = infoin->firstpix;
+    infoout->lastpix = infoin->lastpix;
+  }
 
   return;
-  }
+}
 
 
-/****** lutz_output **********************************************************
-PROTO	void lutz_output(infostruct *info, objliststruct *objlist)
-PURPOSE	Convert an output detection to a new (sub-)object.
-INPUT	-.
-OUTPUT	-.
-NOTES	Global preferences are used.
-AUTHOR	E. Bertin (IAP)
-VERSION	15/03/2012
+/****** lutz_output ******************************************************//**
+Convert a basic detection to a new object in the provided objlist
+@param[in]  info	Pointer to the input detection info
+@param[in]  objlist	Pointer to the destination objlist
+@param[out] RETURN_OK, or RETURN_ERROR / RETURN_FATAL_ERROR in case of a problem
+@author 		E. Bertin (IAP)
+@date			24/06/2014
  ***/
-/*
-Build the object structure.
-*/
-void  lutz_output(infostruct *info, objliststruct *objlist)
+int  lutz_output(infostruct *info, objliststruct *objlist) {
 
-  {
-  objstruct  *obj = objlist->obj+objlist->nobj;
+   objstruct	obj;
 
-  memset(obj, 0, (size_t)sizeof(objstruct));
-  obj->firstpix = info->firstpix;
-  obj->lastpix = info->lastpix;
-  obj->flag = info->flag;
+  memset(&obj, 0, (size_t)sizeof(objstruct));
+  obj.firstpix = info->firstpix;
+  obj.lastpix = info->lastpix;
+  obj.flag = info->flag;
   objlist->npix += info->pixnb;
 
-  scan_preanalyse(objlist, objlist->nobj, ANALYSE_FAST);
+  scan_preanalyse(&obj, objlist->plist, ANALYSE_FAST);
 
-  objlist->nobj++;
-
-  return;
-  }
+  return objlist_addobj(objlist, &obj, NULL);	// Pixels are already in plist
+}
 

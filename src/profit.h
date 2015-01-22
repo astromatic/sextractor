@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		03/01/2014
+*	Last modified:		04/12/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -89,7 +89,7 @@
 #define	PROFIT_HIDEFRES	201	/* Hi. def. model resol. (must be <MAXMODSIZE)*/
 #define	PROFIT_REFFFAC	3.0	/* Factor in r_eff for measurement radius*/
 #define	PROFIT_MAXR2MAX	1e6	/* Maximum r2_max for truncating profiles */
-#define	PROFIT_DYNPARAM	30.0	/* Dynamic compression param. in sigma units */
+#define	PROFIT_DYNPARAM	10.0	/* Dynamic compression param. in sigma units */
 #define	PROFIT_SMOOTHR	4.0	/* Profile smoothing radius (pixels) */
 #define	PROFIT_MAXMODSIZE  512	/* Maximum size allowed for the model raster */
 #define PROFIT_MAXSMODSIZE 64	/* Number of model planes */
@@ -126,8 +126,10 @@ typedef enum	{PARAM_BACK,
 		PARAM_INRING_FLUX, PARAM_INRING_WIDTH, PARAM_INRING_ASPECT,
 		PARAM_OUTRING_FLUX, PARAM_OUTRING_START, PARAM_OUTRING_WIDTH,
 		PARAM_MOFFAT_FLUX, PARAM_MOFFAT_ALPHA, PARAM_MOFFAT_ASPECT,
-		PARAM_MOFFAT_POSANG, PARAM_MOFFAT_BETA,
-		PARAM_MOFFAT_MINKP,PARAM_MOFFAT_OFFSET,
+		PARAM_MOFFAT_POSANG,
+		PARAM_MOFFAT_F_FLEXION_MOD, PARAM_MOFFAT_F_FLEXION_PHI,
+		PARAM_MOFFAT_G_FLEXION_MOD, PARAM_MOFFAT_G_FLEXION_PHI,
+		PARAM_MOFFAT_BETA, PARAM_MOFFAT_MINKP, PARAM_MOFFAT_OFFSET,
 		PARAM_NPARAM}	paramenum;
 
 typedef enum 	{PARFIT_FIXED, PARFIT_UNBOUND, PARFIT_LINBOUND,
@@ -162,6 +164,8 @@ typedef struct
   float		*x[2];			/* Coordinate vector */
   float		*scale;			/* Scaling vector */
   float		*aspect;		/* Aspect ratio */
+  float		*flexion_mod[2];	/* Flexion modulii */
+  float		*flexion_phi[2];	/* Flexion angles */
   float		*posangle;		/* Position angle (CCW/NAXIS1)*/
   float		*featfrac;		/* Feature flux fraction */
   float		*featscale;		/* Feature relative scalelength */
@@ -183,7 +187,6 @@ typedef struct
 
 typedef struct profit
   {
-  obj2struct	*obj2;		/* Current object */
   int		nparam;		/* Number of parameters to be fitted */
   float		*paramlist[PARAM_NPARAM];	/* flat parameter list */
   int		paramindex[PARAM_NPARAM];/* Vector of parameter indices */
@@ -227,13 +230,11 @@ typedef struct subprofit
   float		*psfpix;	/* Full res. pixmap of the PSF */
   float		*psfdft;	/* Compressed Fourier Transform of the PSF */
   PIXTYPE	*lmodpix;	/* Low resolution pixmaps of the model */
-  PIXTYPE	*lmodpix2;	/* 2nd low resolution pixmaps of the model */
   PIXTYPE	*objpix;	/* Copy of object pixmaps */
   PIXTYPE	*objweight;	/* Copy of object weight-maps */
   int		objnaxisn[2];	/* Dimensions along each axis */
   int		nobjpix;	/* Total number of "final" pixels */
   float		*modpix;	/* Full res. pixmap of the complete model */
-  float		*modpix2;	/* 2nd full res. pixmap of the complete model */
   float		*cmodpix;	/* Full res. pixmap of the convolved model */
   int		modnaxisn[3];	/* Dimensions along each axis */
   int		nmodpix;	/* Total number of model pixels */
@@ -253,8 +254,8 @@ typedef struct subprofit
 /*----------------------------- Global variables ----------------------------*/
 /*-------------------------------- functions --------------------------------*/
 
-profitstruct	*profit_init(obj2struct *obj2, unsigned int modeltype,
-			int conv_flag);
+profitstruct	*profit_init(objstruct *obj, subimagestruct *subimage,
+			int nsubimage, unsigned int modeltype, int conv_flag);
 
 profstruct	*prof_init(profitstruct *profit, unsigned int modeltype);
 
@@ -275,7 +276,7 @@ int		profit_boundtounbound(profitstruct *profit,
 			subimagestruct *subimage),
 		profit_covarunboundtobound(profitstruct *profit,
 			double *dparam, float *param),
-		profit_fit(profitstruct *profit, obj2struct *obj2),
+		profit_fit(profitstruct *profit, objstruct *obj),
 		profit_minimize(profitstruct *profit, int niter),
 		prof_moments(profitstruct *profit, profstruct *prof,
 				double *jac),
@@ -307,8 +308,8 @@ void		prof_end(profstruct *prof),
 		profit_resetparam(profitstruct *profit, paramenum paramtype),
 		profit_resetparams(profitstruct *profit),
 		profit_spread(profitstruct *profit,  fieldstruct *field,
-			fieldstruct *wfield, obj2struct *obj2),
-		subprofit_submodpix(subprofitstruct *subprofitmod,
+			fieldstruct *wfield, objstruct *obj),
+		subprofit_addmodpix(subprofitstruct *subprofitmod,
 			PIXTYPE *pixout, int ix, int iy, int width, int height,
 			float oversamp, float fac),
 		subprofit_surface(profitstruct *profit,

@@ -22,9 +22,13 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		03/01/2014
+*	Last modified:		11/06/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
+
+#ifndef _OBJLIST_H_
+#include "objlist.h"
+#endif
 
 #ifndef _ANALYSE_H_
 #define _ANALYSE_H_
@@ -37,29 +41,17 @@
 /*------------------------------ Prototypes ---------------------------------*/
 
 obj2struct	*analyse_obj2obj2(fieldstruct **fields, fieldstruct **wfields,
-			int nfield, objstruct *obj, obj2liststruct *obj2list);
+			int nfield, objstruct *obj);
 int		analyse_full(fieldstruct **fields, fieldstruct **wfields,
-			int nfield, obj2struct *obj2),
-		analyse_overlapness(objliststruct *objlist, int iobj);
+			int nfield, objstruct *obj);
 
 void		analyse_end(fieldstruct **fields, fieldstruct **wfields,
-			int nfield, obj2groupstruct *group2),
+			int nfield, objliststruct *objlist),
 		analyse_final(fieldstruct **fields, fieldstruct **wfields,
-			int nfield, objliststruct *objlist, int iobj),
-		analyse_group(fieldstruct **fields, fieldstruct **wfields,
-			int nfield, obj2groupstruct *group2),
+			int nfield, objliststruct *obj),
 		analyse_iso(fieldstruct **fields, fieldstruct **wfields,
 			int nfield, objliststruct *objlist, int n);
 
-#ifdef	USE_THREADS
-void		*pthread_analyse_obj2group(void *arg),
-		pthread_add_obj2group(obj2groupstruct group2),
-		pthread_end_obj2group(void),
-		pthread_init_obj2group(fieldstruct **fields,
-			fieldstruct **wfields, int nfield, int nthreads);
-
-pthread_mutex_t	pthread_countobj2mutex;
-#endif
 
 #endif
 

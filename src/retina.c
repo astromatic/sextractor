@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1995-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1995-2014 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/10/2010
+*	Last modified:		19/05/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -62,7 +62,7 @@ float    readretina(fieldstruct *field, retistruct *retina, float x, float y)
     norm = retina->minnorm;
 /* Copy the right pixels to the retina */
   pix = retina->pix;
-  copyimage(field, pix, retina->width, retina->height, ix,iy);
+  copyimage(field, pix, retina->width, retina->height, ix,iy, -BIG);
   for (i=retina->npix; i--;)
     *(pix++) /= norm;
   *pix = -2.5*log10(norm/retina->minnorm);
