@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		22/01/2015
+*	Last modified:		05/02/2015
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -3967,7 +3967,7 @@ INPUT	Sub-profile-fitting structure,
 OUTPUT	Total (asymptotic) flux contribution.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	22/01/2015
+VERSION	05/02/2015
  ***/
 float	prof_add(subprofitstruct *subprofit, profstruct *prof,
 		int extfluxfac_flag)
@@ -4377,7 +4377,7 @@ width = 3.0;
           if (prefs.flexion_flag) {
             x1in = fabs((cd11 + d120 * x1 + d111 * x2) * x1
 		+ (cd12 + d102 * x2) * x2);
-            x2in = fabs((cd21 + d220 * x1 + d111 * x2) * x1
+            x2in = fabs((cd21 + d220 * x1 + d211 * x2) * x1
 		+ (cd22 + d202 * x2) * x2);
           } else {
             x1in = fabs(cd12*x2 + cd11*x1);
