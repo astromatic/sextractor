@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2014 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2015 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		26/06/2014
+*	Last modified:		27/02/2015
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -62,7 +62,7 @@ INPUT	Array of pointers to strings containing the measurement parameters,
 OUTPUT	-.
 NOTES	Requires access to the objtab and obj2key static pointers.
 AUTHOR	E. Bertin (IAP)
-VERSION	09/06/2014
+VERSION	27/02/2015
  ***/
 void catout_readparams(char **paramlist, int nparam)
   {
@@ -101,14 +101,14 @@ void catout_readparams(char **paramlist, int nparam)
             }
           if (ntaxis)
 /*---------- Read only axis sizes that are not already set */
-            for (i=0; (str = strtok(NULL, " \t,;.)]}\r")) && *str!=(char)'#'
+            for (i=0; (str = strtok(NULL, " \t,;:.)]}\r")) && *str!=(char)'#'
 		&& *str!=(char)'\n'; i++)
               {
               naxisn[i] = 1;
               if (i>=ntaxis)
                 error(EXIT_FAILURE,
 			"*Error*: too many dimensions for keyword ", keyword);
-              if (!(size*=(naxisn[i]=atoi(str))))
+              if (!(naxisn[i]=atoi(str)))
           	    error(EXIT_FAILURE,
 			"*Error*: wrong array syntax for keyword ", keyword);
               }
@@ -976,7 +976,7 @@ INPUT	Pointer to image field.
 OUTPUT	-.
 NOTES	Requires access to global prefs and the objtab static pointer.
 AUTHOR	E. Bertin (IAP)
-VERSION	08/12/2011
+VERSION	27/02/2015
  ***/
 void	catout_initext(fieldstruct *field)
   {
@@ -986,6 +986,7 @@ void	catout_initext(fieldstruct *field)
   if (prefs.cat_type == CAT_NONE)
     return;
 
+  thefield = *field;
   if (prefs.cat_type != ASCII_HEAD && prefs.cat_type != ASCII &&
 	prefs.cat_type != ASCII_SKYCAT && prefs.cat_type != ASCII_VO)
     {

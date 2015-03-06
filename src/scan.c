@@ -72,7 +72,7 @@ INPUT	Pointer to the detection image field,
 OUTPUT	-.
 NOTES	Global preferences are used.
 AUTHOR	E. Bertin (IAP), MK (LMU)
-VERSION	22/01/2015
+VERSION	06/03/2015
  ***/
 void	scan_extract(fieldstruct *dfield, fieldstruct *dwfield,
 			fieldstruct **fields, fieldstruct **wfields, int nfield,
@@ -576,7 +576,6 @@ void	scan_extract(fieldstruct *dfield, fieldstruct *dwfield,
             overobjlist = objlist_deblend(fields, wfields, nfield,
 			cleanobjlist, i);
             analyse_final(fields, wfields, nfield, overobjlist);
-            objlist_end(overobjlist);
             break;
           }
         }
@@ -624,7 +623,6 @@ void	scan_extract(fieldstruct *dfield, fieldstruct *dwfield,
   while (cleanobjlist->nobj) {
     overobjlist = objlist_deblend(fields, wfields, nfield, cleanobjlist, 0);
     analyse_final(fields, wfields, nfield, overobjlist);
-    objlist_end(overobjlist);
   }
   clean_end(cleanobjlist);
 
@@ -741,7 +739,7 @@ INPUT	Pointer to an array of image field pointers,
 OUTPUT	-.
 NOTES	Global preferences are used.
 AUTHOR	E. Bertin (IAP)
-VERSION	08/10/2014
+VERSION	06/03/2015
  ***/
 void	scan_output(fieldstruct **fields, fieldstruct **wfields, int nfield,
 		infostruct *info, pliststruct *plistin,
@@ -850,7 +848,6 @@ void	scan_output(fieldstruct **fields, fieldstruct **wfields, int nfield,
       overobjlist = objlist_deblend(fields, wfields, nfield, cleanobjlist,
 			victim);
       analyse_final(fields, wfields, nfield, overobjlist);
-      objlist_end(overobjlist);
     }
 
 /*-- Add the object only if it is not "swallowed" by cleaning */

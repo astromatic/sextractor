@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2014 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2015 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/09/2014
+*	Last modified:		27/02/2015
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -51,7 +51,7 @@ INPUT	Pointer to the image structure,
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	11/09/2014
+VERSION	27/02/20145
  ***/
 void  photom_aper(fieldstruct *field, fieldstruct *wfield, obj2struct *obj2,
 		int aper)
@@ -202,14 +202,16 @@ void  photom_aper(fieldstruct *field, fieldstruct *wfield, obj2struct *obj2,
       sigtv += tv/gain;
     }
 
-  if (aper<prefs.aper_size[0])
+  if (aper<prefs.aper_size[0]) {
     obj2->flux_aper[aper] = tv;
-  if (aper<prefs.aper_size[0])
-    obj2->fluxerr_aper[aper] = sqrt(sigtv);
-  if (aper<prefs.aper_size[0])
-    obj2->mag_aper[aper] = tv>0.0? -2.5*log10(tv) + field->mag_zeropoint : 99.0;
-  if (aper<prefs.aper_size[0])
-    obj2->magerr_aper[aper] = tv>0.0? 1.086*sqrt(sigtv)/tv:99.0;
+    if (FLAG(obj2.fluxerr_aper))
+      obj2->fluxerr_aper[aper] = sqrt(sigtv);
+    if (FLAG(obj2.mag_aper))
+      obj2->mag_aper[aper] = tv>0.0?
+			-2.5*log10(tv) + field->mag_zeropoint : 99.0;
+    if (FLAG(obj2.magerr_aper))
+      obj2->magerr_aper[aper] = tv>0.0? 1.086*sqrt(sigtv)/tv:99.0;
+  }
 
   return;
   }
