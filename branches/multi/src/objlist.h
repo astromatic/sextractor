@@ -1,13 +1,13 @@
 /**
 * @file		objlist.h
 * @brief	Include file for objlist.c.
-* @date		20/10/2014
+* @date		06/03/2015
 * @copyright
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 2011-2014 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 2011-2015 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -69,7 +69,7 @@ void		obj_end(objstruct *obj),
 
 #ifdef	USE_THREADS
 void		*pthread_objlist_analyse(void *arg),
-		pthread_objlist_add(objliststruct objlist),
+		pthread_objlist_add(objliststruct *objlist),
 		pthread_objlist_end(void),
 		pthread_objlist_init(fieldstruct **fields,
 			fieldstruct **wfields, int nfield, int nthreads);

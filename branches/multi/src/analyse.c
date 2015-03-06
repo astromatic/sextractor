@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2014 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2015 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		17/10/2014
+*	Last modified:		06/03/2015
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -71,7 +71,7 @@ extern pthread_attr_t	pthread_attr;
 extern pthread_mutex_t	pthread_objlistmutex, pthread_freeobjmutex;
 extern pthread_cond_t	pthread_objlistaddcond, pthread_objsavecond;
 extern fieldstruct	**pthread_fields,**pthread_wfields;
-extern objliststruct	*pthread_objlist;
+extern objliststruct	**pthread_objlist;
 extern int		pthread_nobjlist, pthread_objlistaddindex,
 			pthread_objlistprocindex, pthread_objlistsaveindex,
 			pthread_nfield, pthread_nthreads, pthread_endflag;
@@ -410,7 +410,7 @@ INPUT	Pointer to an array of image field pointers,
 OUTPUT  -.
 NOTES   Global preferences are used.
 AUTHOR  E. Bertin (IAP)
-VERSION 15/05/2014
+VERSION 06/03/2015
  ***/
 void analyse_final(fieldstruct **fields, fieldstruct **wfields,
 			int nfield, objliststruct *objlist)
@@ -431,7 +431,7 @@ void analyse_final(fieldstruct **fields, fieldstruct **wfields,
 #ifdef USE_THREADS
   if (prefs.nthreads>1)
 /*-- Push in objlist */
-    pthread_objlist_add(*objlist);
+    pthread_objlist_add(objlist);
   else
     {
 /*-- 1 single thread: don't bother with independent measurement threads */
@@ -442,7 +442,7 @@ void analyse_final(fieldstruct **fields, fieldstruct **wfields,
 	= (analyse_full(fields, wfields, nfield, obj) == RETURN_OK);
 /*-- Write to catalogue */
     analyse_end(fields, wfields, nfield, objlist);
-    }
+    objlist_end(objlist);    }
 #else
     obj = objlist->obj;
     for (o=objlist->nobj; o--; obj++)
@@ -450,6 +450,7 @@ void analyse_final(fieldstruct **fields, fieldstruct **wfields,
 	= (analyse_full(fields, wfields, nfield, obj) == RETURN_OK);
 /*-- Write to catalogue */
     analyse_end(fields, wfields, nfield, objlist);
+    objlist_end(objlist);
 #endif
 
   return;
@@ -611,7 +612,7 @@ INPUT   Pointer to an array of image field pointers,
 OUTPUT  RETURN_OK if the object has been processed, RETURN_ERROR otherwise.
 NOTES   -.
 AUTHOR  E. Bertin (IAP)
-VERSION 19/05/2014
+VERSION 27/02/2015
  ***/
 int	analyse_full(fieldstruct **fields, fieldstruct **wfields,
 			int nfield, objstruct *obj)
@@ -874,9 +875,17 @@ dfield = dwfield = wfield = NULL;
   photom_mags(field, obj2);
 
 /*--------------------------------- "Vignets" ------------------------------*/
-  if (FLAG(obj2.vignet))
+  if (FLAG(obj2.vignet)) {
     copyimage(field,obj2->vignet,prefs.vignet_size[0],prefs.vignet_size[1],
 	obj2->ix, obj2->iy, -BIG);
+    deblankimage(obj2->subimage->image,
+		obj2->subimage->size[0],obj2->subimage->size[1],
+		obj2->vignet, prefs.vignet_size[0],prefs.vignet_size[1],
+		prefs.vignet_size[0]/2
+			- obj2->subimage->ipos[0] + obj2->subimage->xmin[0],
+		prefs.vignet_size[1]/2
+			- obj2->subimage->ipos[1] + obj2->subimage->xmin[1]);
+  }
 
   if (FLAG(obj2.vigshift))
     copyimage_center(field, obj2->vigshift, prefs.vigshift_size[0],

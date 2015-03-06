@@ -1,13 +1,13 @@
 /**
 * @file		objlist.c
 * @brief	Manage object lists (e.g., for advanced deblending)
-* @date		18/10/2014
+* @date		06/03/2015
 * @copyright
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2014 IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2015 IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -60,7 +60,7 @@ pthread_attr_t	pthread_attr;
 pthread_mutex_t	pthread_objlistmutex, pthread_freeobjmutex;
 pthread_cond_t	pthread_objlistaddcond, pthread_objsavecond;
 fieldstruct	**pthread_fields,**pthread_wfields;
-objliststruct	*pthread_objlist;
+objliststruct	**pthread_objlist;
 int		pthread_nobjlist, pthread_objlistaddindex,
 		pthread_objlistprocindex, pthread_objlistsaveindex,
 		pthread_nfield, pthread_nthreads, pthread_endflag;
@@ -649,7 +649,7 @@ void	pthread_objlist_init(fieldstruct **fields, fieldstruct **wfields,
   pthread_nthreads = nthreads;
   pthread_nobjlist = prefs.obj2_stacksize;
   QMALLOC(pthread_thread, pthread_t, nthreads);
-  QCALLOC(pthread_objlist, objliststruct, pthread_nobjlist);
+  QCALLOC(pthread_objlist, objliststruct *, pthread_nobjlist);
   QPTHREAD_COND_INIT(&pthread_objlistaddcond, NULL);
   QPTHREAD_COND_INIT(&pthread_objsavecond, NULL);
   QPTHREAD_MUTEX_INIT(&pthread_objlistmutex, NULL);
@@ -709,9 +709,9 @@ Add an objlist to the list of objlists that need to be processed.
 @param[in] objlist	objlist to be added (note: not a pointer!)
 
 @author 	E. Bertin (IAP)
-@date		09/06/2014
+@date		06/03/2015
  ***/
-void	pthread_objlist_add(objliststruct objlist)
+void	pthread_objlist_add(objliststruct *objlist)
   {
 
   QPTHREAD_MUTEX_LOCK(&pthread_objlistmutex);
@@ -731,7 +731,7 @@ Thread that takes care of measuring and saving objlists.
 @param[in] arg	unused (here only for compliancy with POSIX threads)
 
 @author 	E. Bertin (IAP)
-@date		09/06/2014
+@date		06/03/2015
  ***/
 void	*pthread_objlist_analyse(void *arg)
   {
@@ -744,9 +744,11 @@ void	*pthread_objlist_analyse(void *arg)
     QPTHREAD_MUTEX_LOCK(&pthread_objlistmutex);
 /*-- Flush objects for which measurements have been completed */
     while (pthread_objlistsaveindex<pthread_objlistprocindex
-		&& (pthread_objlist[pthread_objlistsaveindex].done_flag))
-      analyse_end(pthread_fields, pthread_wfields, pthread_nfield,
-		&pthread_objlist[pthread_objlistsaveindex++]);
+		&& (pthread_objlist[pthread_objlistsaveindex]->done_flag)) {
+      objlist = pthread_objlist[pthread_objlistsaveindex++];
+      analyse_end(pthread_fields, pthread_wfields, pthread_nfield, objlist);
+      objlist_end(objlist);
+    }
     while (pthread_objlistprocindex>=pthread_objlistaddindex)
 /*---- Wait for more objects to be pushed in stack */
       {
@@ -757,7 +759,7 @@ void	*pthread_objlist_analyse(void *arg)
         }
       QPTHREAD_COND_WAIT(&pthread_objlistaddcond, &pthread_objlistmutex);
       }
-    objlist = &pthread_objlist[pthread_objlistprocindex++%pthread_nobjlist];
+    objlist = pthread_objlist[pthread_objlistprocindex++%pthread_nobjlist];
     QPTHREAD_MUTEX_UNLOCK(&pthread_objlistmutex);
     obj = objlist->obj;
     for (o=objlist->nobj; o--; obj++)
