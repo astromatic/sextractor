@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 2005-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 2005-2015 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		03/05/2011
+*	Last modified:		04/03/2015
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -50,23 +50,25 @@ INPUT	Picture structure pointer,
 OUTPUT  -.
 NOTES   obj->posx and obj->posy are taken as initial centroid guesses.
 AUTHOR  E. Bertin (IAP)
-VERSION 03/05/2011
+VERSION 04/03/2015
  ***/
-void	compute_winpos(picstruct *field, picstruct *wfield, objstruct *obj)
+void	compute_winpos(picstruct *field, picstruct *wfield, 
+			picstruct *dgeofield, objstruct *obj)
 
   {
    float		r2,invtwosig2, raper,raper2, rintlim,rintlim2,rextlim2,
-			dx,dx1,dy,dy2, sig, invngamma, pdbkg,
+			dx,dx1,dy,dy2, ddx, ddy, sig, invngamma, pdbkg,
                         offsetx,offsety,scalex,scaley,scale2, locarea;
    double               tv, norm, pix, var, backnoise2, invgain, locpix,
-			dxpos,dypos, err,err2, emx2,emy2,emxy,
+			dxpos,dypos, ddxpos, ddypos, err,err2, emx2,emy2,emxy,
 			esum, temp,temp2, mx2, my2,mxy,pmx2, theta, mx,my,
-			mx2ph, my2ph;
+			dmx, dmy, mx2ph, my2ph, cx2, cy2, cxy;
    int                  i,x,y, x2,y2, xmin,xmax,ymin,ymax, sx,sy, w,h,
                         fymin,fymax, pflag,corrflag, gainflag, errflag,
 			momentflag;
    long                 pos;
-   PIXTYPE              *strip,*stript, *wstrip,*wstript,
+   PIXTYPE              *strip,*stript, *wstrip, *wstript,
+			*dgeoxstrip, *dgeoystrip, *dgeoxstript, *dgeoystript,
                         wthresh = 0.0;
 
   if (wfield)
@@ -113,6 +115,8 @@ void	compute_winpos(picstruct *field, picstruct *wfield, objstruct *obj)
 /* Use isophotal centroid as a first guess */
   mx = obj2->posx - 1.0;
   my = obj2->posy - 1.0;
+  dmx = obj2->pos_dgeox;
+  dmy = obj2->pos_dgeoy;
 
   for (i=0; i<WINPOS_NITERMAX; i++)
     {
@@ -120,8 +124,8 @@ void	compute_winpos(picstruct *field, picstruct *wfield, objstruct *obj)
     xmax = (int)(mx+raper+1.499999);
     ymin = (int)(my-raper+0.499999);
     ymax = (int)(my+raper+1.499999);
-    mx2ph = mx*2.0 + 0.49999;
-    my2ph = my*2.0 + 0.49999;
+    mx2ph = (mx+dmx)*2.0 + 0.49999;	// Pixel position, not the physical one
+    my2ph = (my+dmy)*2.0 + 0.49999;
 
     if (xmin < 0)
       {
@@ -145,23 +149,35 @@ void	compute_winpos(picstruct *field, picstruct *wfield, objstruct *obj)
       }
 
     tv = esum = emxy = emx2 = emy2 = mx2 = my2 = mxy = 0.0;
-    dxpos = dypos = 0.0;
+    dxpos = dypos = ddxpos = ddypos = 0.0;
     strip = field->strip;
     wstrip = wstript = NULL;		/* To avoid gcc -Wall warnings */
     if (wfield)
       wstrip = wfield->strip;
+    if (dgeofield) {			// Differential geometry map is present
+      dgeoxstrip = dgeofield->dgeostrip[0];
+      dgeoystrip = dgeofield->dgeostrip[1];
+    }
     for (y=ymin; y<ymax; y++)
       {
       stript = strip + (pos = (y%h)*w + xmin);
       if (wfield)
         wstript = wstrip + pos;
-      for (x=xmin; x<xmax; x++, stript++, wstript++)
+      if (dgeofield) {
+        dgeoxstript = dgeoxstrip + pos;
+        dgeoystript = dgeoystrip + pos;
+      }
+      for (x=xmin; x<xmax; x++)
         {
         dx = x - mx;
         dy = y - my;
+        if (dgeofield) {
+          dx -= (ddx = *(dgeoxstript++));
+          dy -= (ddy = *(dgeoystript++));
+        }
         if ((r2=dx*dx+dy*dy)<rextlim2)
           {
-          if (WINPOS_OVERSAMP>1 && r2> rintlim2)
+          if (WINPOS_OVERSAMP > 1 && r2 > rintlim2)
             {
             dx += offsetx;
             dy += offsety;
@@ -204,10 +220,16 @@ void	compute_winpos(picstruct *field, picstruct *wfield, objstruct *obj)
             }
           if (pflag)
             pix = expf(pix*invngamma);
-          dx = x - mx;
-          dy = y - my;
           locpix = locarea*pix;
           tv += locpix;
+          dx = x - mx;
+          dy = y - my;
+          if (dgeofield) {
+            dx -= ddx;
+            dy -= ddy;
+            ddxpos += locpix*ddx;
+            ddypos += locpix*ddy;
+          }
           dxpos += locpix*dx;
           dypos += locpix*dy;
           if (errflag)
@@ -228,20 +250,20 @@ void	compute_winpos(picstruct *field, picstruct *wfield, objstruct *obj)
             emy2 += err2*(dy*dy+0.0833);	/* Finite pixel size */
             emxy += err2*dx*dy;
             }
-          if (momentflag)
-            {
-            mx2 += locpix*dx*dx;
-            my2 += locpix*dy*dy;
-            mxy += locpix*dx*dy;
-            }
+          mx2 += locpix*dx*dx;
+          my2 += locpix*dy*dy;
+          mxy += locpix*dx*dy;
           }
+        stript++;
+        if (wfield)
+          wstript++;
         }
       }
 
     if (tv>0.0)
       {
-      mx += (dxpos /= tv)*WINPOS_FAC;
-      my += (dypos /= tv)*WINPOS_FAC;
+      mx += (dxpos /= tv) * WINPOS_FAC;
+      my += (dypos /= tv) * WINPOS_FAC;
       }
     else
       break;
@@ -250,11 +272,17 @@ void	compute_winpos(picstruct *field, picstruct *wfield, objstruct *obj)
     if (dxpos*dxpos+dypos*dypos < WINPOS_STEPMIN*WINPOS_STEPMIN)
       break;
     }
+
   mx2 = mx2/tv - dxpos*dxpos;
   my2 = my2/tv - dypos*dypos;
   mxy = mxy/tv - dxpos*dypos;
   obj2->winpos_x = mx + 1.0;	/* The dreaded 1.0 FITS offset */
   obj2->winpos_y = my + 1.0; 	/* The dreaded 1.0 FITS offset */
+  if (dgeofield) {
+    obj2->winpos_dgeox = (ddxpos / tv) * WINPOS_FAC;
+    obj2->winpos_dgeoy = (ddypos / tv) * WINPOS_FAC;
+  }
+
   obj2->winpos_niter = i+1;
 
 /* WINdowed flux */
@@ -265,10 +293,24 @@ void	compute_winpos(picstruct *field, picstruct *wfield, objstruct *obj)
     obj2->snr_win = esum>(1.0/BIG)? obj2->flux_win / obj2->fluxerr_win: BIG;
     }
   temp2=mx2*my2-mxy*mxy;
-  obj2->win_flag = (tv <= 0.0)*4 + (mx2 < 0.0 || my2 < 0.0)*2 + (temp2<0.0);
+  cx2 = obj->cxx;
+  cy2 = obj->cyy;
+  cxy = obj->cxy;
+  dx = obj2->winpos_x - obj2->posx;
+  dy = obj2->winpos_y - obj2->posy;
+  obj2->win_flag = 8 * (dx*dx > 1.0 && dy*dy > 1.0
+			&& (cx2*dx*dx + cy2*dy*dy + cxy*dx*dy) > 1.0)
+			// Check that the difference vector with isophotal
+			// centroid does not lie outside of the 1-sigma
+			// footprint ellipse
+		 | 4 * (tv <= 0.0)	// Check negative flux
+		 | 2 * (mx2 < 0.0 || my2 < 0.0)	// Negative 2nd order moments
+		 | (temp2<0.0);
   if (obj2->win_flag)
     {
 /*--- Negative values: revert to isophotal estimates */
+    obj2->winpos_x = obj2->posx;
+    obj2->winpos_y = obj2->posy;
     if (FLAG(obj2.winposerr_mx2))
       {
       obj2->winposerr_mx2 = obj->poserr_mx2;

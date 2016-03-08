@@ -5,9 +5,9 @@
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 *
-*	This file part of:	AstrOmatic WCS library
+*	This file part of:	AstrOmatic software
 *
-*	Copyright:		(C) 1998-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1998-2011 IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -23,7 +23,7 @@
 *	along with AstrOmatic software.
 *	If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		10/10/2010
+*	Last modified:		20/11/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -33,7 +33,8 @@
 /*--------------------------------- constants -------------------------------*/
 
 #define	POLY_MAXDIM		4	/* Max dimensionality of polynom */
-#define POLY_MAXDEGREE		10	/* Max degree of the polynom */
+#define POLY_MAXDEGREE		40	/* Max degree of the polynom */
+#define	POLY_TINY		1e-30	/* A tiny number */
 
 /*---------------------------------- macros ---------------------------------*/
 
@@ -42,27 +43,40 @@
 typedef struct poly
   {
   double	*basis;		/* Current values of the basis functions */
+  double	*orthobasis;	/* Curr orthonormalized basis function values */
   double	*coeff;		/* Polynom coefficients */
   int		ncoeff;		/* Number of coefficients */
   int		*group;		/* Groups */
   int		ndim;		/* dimensionality of the polynom */
   int		*degree;	/* Degree in each group */
   int		ngroup;		/* Number of different groups */
+  double	*orthomat;	/* Orthonormalization matrix */
+  double	*deorthomat;	/* "Deorthonormalization" matrix */
   }	polystruct;
 
 /*---------------------------------- protos --------------------------------*/
 
-extern polystruct	*poly_init(int *group,int ndim,int *degree,int ngroup);
+extern polystruct	*poly_copy(polystruct *poly),
+			*poly_init(int *group,int ndim,int *degree,int ngroup);
 
-extern double			poly_func(polystruct *poly, double *pos);
+extern double		poly_func(polystruct *poly, double *pos);
 
 extern int		cholsolve(double *a, double *b, int n),
-			*poly_powers(polystruct *poly);
+			poly_fit(polystruct *poly, double *x, double *y,
+				double *w, int ndata, double *extbasis,
+				double regul),
+			*poly_powers(polystruct *poly),
+			poly_solve(double *a, double *b, int n);
 
 extern void		poly_addcste(polystruct *poly, double *cste),
-			poly_end(polystruct *poly),
-			poly_fit(polystruct *poly, double *x, double *y,
-				double *w, int ndata, double *extbasis),
-			poly_solve(double *a, double *b, int n);
+			poly_end(polystruct *poly);
+
+extern double		*poly_deortho(polystruct *poly, double *datain,
+				double *dataout),
+			*poly_ortho(polystruct *poly, double *datain,
+				double *dataout);
+extern void		poly_initortho(polystruct *poly, double *data,
+				int ndata);
+
 #endif
 

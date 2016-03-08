@@ -7,7 +7,7 @@
 *
 *	This file part of:	AstrOmatic software
 *
-*	Copyright:		(C) 1998-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1998-2015 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -23,7 +23,7 @@
 *	along with AstrOmatic software.
 *	If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		10/10/2010
+*	Last modified:		23/11/2015
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -41,11 +41,11 @@ char	celsysname[][2][8] = {  {"RA--", "DEC-"},
 double	celsysorig[][2] = {	{0.0, 0.0},
 				{266.40499625, -28.93617242},
 				{0.0, 0.0},
-				{42.29235, 59.52315}},
+				{42.308333, 59.528333}},
 	celsyspole[][2] = {	{0.0, 90.0},
 				{192.85948123, 27.12825120},
-				{273.85261111, 66.99111111},
-				{283.7514, 15.70480}},
+				{270.00000000, 66.560709},
+				{283.754167, 15.708889}},
 /* Note: the code to handle the rotation sign is not yet implemented!!! */
 	celsyssign[]	= {	 1.0,
 				 1.0,

@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2014 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		23/03/2011
+*	Last modified:		17/06/2014
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -1125,31 +1125,40 @@ void	subbackline(picstruct *field, int y, PIXTYPE *line)
   if (nbx>1)
     {
     nx = field->backw;
-    xstep = 1.0/nx;
-    changepoint = nx/2;
-    dx  = (xstep - 1)/2;	/* dx of the first pixel in the row */
-    dx0 = ((nx+1)%2)*xstep/2;	/* dx of the 1st pixel right to a bkgnd node */
-    blo = node;
-    bhi = node + 1;
-    dblo = dnode;
-    dbhi = dnode + 1;
-    for (x=i=0,j=width; j--; i++, dx += xstep)
+    if (nx==1)		/* special handling of 1-pixel mesh sizes */
       {
-      if (i==changepoint && x>0 && x<nbxm1)
+      blo = node;
+      for (j=width; j--;)
+        *(line++) -= (*(backline++) = (PIXTYPE)*(blo++));
+      }
+    else
+      {
+      xstep = 1.0/nx;
+      changepoint = nx/2;
+      dx  = (xstep - 1)/2;	/* dx of the first pixel in the row */
+      dx0 = ((nx+1)%2)*xstep/2;	/* dx of the 1st pixel right to a bkgnd node */
+      blo = node;
+      bhi = node + 1;
+      dblo = dnode;
+      dbhi = dnode + 1;
+      for (x=i=0,j=width; j--; i++, dx += xstep)
         {
-        blo++;
-        bhi++;
-        dblo++;
-        dbhi++;
-        dx = dx0;
-        }
-      cdx = 1 - dx;
-      *(line++) -= (*(backline++) = (PIXTYPE)(cdx*(*blo+(cdx*cdx-1)**dblo)
+        if (i==changepoint && x>0 && x<nbxm1)
+          {
+          blo++;
+          bhi++;
+          dblo++;
+          dbhi++;
+          dx = dx0;
+          }
+        cdx = 1 - dx;
+        *(line++) -= (*(backline++) = (PIXTYPE)(cdx*(*blo+(cdx*cdx-1)**dblo)
 			+ dx*(*bhi+(dx*dx-1)**dbhi)));
-      if (i==nx)
-        {
-        x++;
-        i = 0;
+        if (i==nx)
+          {
+          x++;
+          i = 0;
+          }
         }
       }
     }

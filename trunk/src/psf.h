@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1998-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1998-2014 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		13/06/2012
+*	Last modified:		15/12/2015
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -81,6 +81,7 @@ typedef struct psf
   float		*maskcomp;      /* Complete pix. data (PSF components) */
   float		*maskloc;	/* Local PSF */
   double	**context;	/* Contexts */
+  int		*contextindex;	/* Context index (for arrays) */
   t_type	*contexttyp;	/* Context types */
   char		**contextname;	/* Array of context key-names */
   double	*contextoffset;	/* Offset to apply to context data */
@@ -90,6 +91,7 @@ typedef struct psf
   double	fwhm;		/* Typical PSF FWHM */
   float		pixstep;	/* PSF sampling step */
   int		build_flag;	/* Set if the current PSF has been computed */
+  int		mag_flag;	/* Set if PSF contexts include magnitudes */
   }	psfstruct;
 
 typedef struct

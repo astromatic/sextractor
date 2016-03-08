@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2015 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/10/2010
+*	Last modified:		26/01/2015
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -55,7 +55,8 @@ void		lutzalloc(int, int),
 		lutzfree(void),
 		lutzsort(infostruct *, objliststruct *),
 		sortit(picstruct *, picstruct *, picstruct *, picstruct *,
-			infostruct *, objliststruct *, PIXTYPE *, PIXTYPE *),
+			picstruct *, infostruct *, objliststruct *,
+			PIXTYPE *, PIXTYPE *),
 		update(infostruct *, infostruct *, pliststruct *);
 
 int		lutz(objliststruct *, int, objstruct *, objliststruct *); 

@@ -1,13 +1,13 @@
 /*
 *				poly.c
 *
-* Manage polynomials.
+* Polynomial functions.
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 *
-*	This file part of:	AstrOmatic WCS library
+*	This file part of:	AstrOmatic software
 *
-*	Copyright:		(C) 1998-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1998-2012 IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -23,7 +23,7 @@
 *	along with AstrOmatic software.
 *	If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		20/12/2011
+*	Last modified:		20/11/2012
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -36,15 +36,16 @@
 #include	<stdlib.h>
 #include	<string.h>
 
+#include	"poly.h"
+
 #ifdef HAVE_ATLAS
 #include ATLAS_LAPACK_H
 #endif
 
 #ifdef HAVE_LAPACKE
 #include LAPACKE_H
+//#define MATSTORAGE_PACKED 1
 #endif
-
-#include	"poly.h"
 
 #define	QCALLOC(ptr, typ, nel) \
 		{if (!(ptr = (typ *)calloc((size_t)(nel),sizeof(typ)))) \
@@ -55,6 +56,13 @@
 		{if (!(ptr = (typ *)malloc((size_t)(nel)*sizeof(typ)))) \
 		  qerror("Not enough memory for ", \
 			#ptr " (" #nel " elements) !");;}
+
+#define QMEMCPY(ptrin, ptrout, typ, nel) \
+		{if (ptrin) \
+		  {if (!(ptrout = (typ *)malloc((size_t)(nel)*sizeof(typ)))) \
+		    qerror("Not enough memory for ", \
+			#ptrout " (" #nel " elements) !"); \
+		memcpy(ptrout, ptrin, (size_t)(nel)*sizeof(typ));};;}
 
 /********************************* qerror ************************************/
 /*
@@ -149,8 +157,8 @@ PURPOSE Free a polynom structure and everything it contains.
 INPUT   polystruct pointer.
 OUTPUT  -.
 NOTES   -.
-AUTHOR  E. Bertin (IAP, Leiden observatory & ESO)
-VERSION 09/04/2000
+AUTHOR  E. Bertin (IAP)
+VERSION 04/11/2008
  ***/
 void	poly_end(polystruct *poly)
   {
@@ -158,16 +166,63 @@ void	poly_end(polystruct *poly)
     {
     free(poly->coeff);
     free(poly->basis);
+    free(poly->orthobasis);
     free(poly->degree);
     free(poly->group);
+    free(poly->orthomat);
+    free(poly->deorthomat);
     free(poly);
     }
+
+  return;
+  }
+
+
+/****** poly_copy *************************************************************
+PROTO   polystruct *poly_copy(polystruct *poly)
+PURPOSE Copy a polynom structure and everything it contains.
+INPUT   polystruct pointer.
+OUTPUT  -.
+NOTES   -.
+AUTHOR  E. Bertin (IAP)
+VERSION 04/11/2008
+ ***/
+polystruct *poly_copy(polystruct *poly)
+  {
+   polystruct	*newpoly;
+
+  if (poly)
+    {
+    QMALLOC(newpoly, polystruct, 1);
+    *newpoly = *poly;
+    if (poly->ncoeff)
+      {
+      QMEMCPY(poly->coeff, newpoly->coeff, double, poly->ncoeff);
+      QMEMCPY(poly->basis, newpoly->basis, double, poly->ncoeff);
+      }
+    if (poly->ndim)
+      QMEMCPY(poly->group, newpoly->group, int, poly->ndim);
+    if (poly->ngroup)
+      QMEMCPY(poly->degree, newpoly->degree, int, poly->ngroup);
+    if (poly->orthomat)
+      {
+      QMEMCPY(poly->orthomat, newpoly->orthomat, double,
+		poly->ncoeff*poly->ncoeff);
+      QMEMCPY(poly->deorthomat, newpoly->deorthomat, double,
+		poly->ncoeff*poly->ncoeff);
+      QMEMCPY(poly->orthobasis, newpoly->orthobasis, double, poly->ncoeff);
+      }
+
+    return newpoly;
+    }
+  else
+    return NULL;
   }
 
 
 /****** poly_func ************************************************************
 PROTO   double poly_func(polystruct *poly, double *pos)
-PURPOSE Evaluate a multidimensional polynom.
+PURPOSE Evaluate a multidimensional polynomial.
 INPUT   polystruct pointer,
         pointer to the 1D array of input vector data.
 OUTPUT  Polynom value.
@@ -243,9 +298,88 @@ double	poly_func(polystruct *poly, double *pos)
   }
 
 
+/****** poly_cfunc ************************************************************
+PROTO   double poly_cfunc(polystruct *poly, double *pos)
+PURPOSE Evaluate a multidimensional Chebyshev polynomial.
+INPUT   polystruct pointer,
+        pointer to the 1D array of input vector data.
+OUTPUT  Polynom value.
+NOTES   Values of the basis functions are updated in poly->basis.
+AUTHOR  E. Bertin (IAP)
+VERSION 29/01/2013
+ ***/
+double	poly_cfunc(polystruct *poly, double *pos)
+  {
+   double	pol[POLY_MAXDIM*(POLY_MAXDEGREE+1)],
+	      	*polt, *post, *basis, *coeff, xval;
+   long double	val;
+   int		expo[POLY_MAXDIM+1], gexpo[POLY_MAXDIM+1];
+   int	       	*expot, *degree,*degreet, *group,*groupt, *gexpot,
+			d,d2,g,t, ndim;
+
+/* Prepare the vectors and counters */
+  ndim = poly->ndim;
+  basis = poly->basis;
+  coeff = poly->coeff;
+  group = poly->group;
+  degree = poly->degree;
+  if (ndim)
+    {
+    for (groupt=group, expot=expo, post=pos, d=0; d<ndim; d++)
+      {
+      *(expot++) = 0;
+      polt = pol + d*(POLY_MAXDEGREE+1);
+      *(polt++) = 1.0;
+      *(polt++) = xval = *(post++);
+      for (d2 = degree[*(groupt++)]; --d2 > 0; polt++)
+        *polt = 2.0*xval**(polt-1) - *(polt-2);
+      }
+    for (gexpot=gexpo, degreet=degree, g=poly->ngroup; g--;)
+      *(gexpot++) = *(degreet++);
+    if (gexpo[*group])
+      gexpo[*group]--;
+    }
+
+/* The constant term is handled separately */
+  val = *(coeff++);
+  *(basis++) = 1.0;
+  *expo = 1;
+
+/* Compute the rest of the polynom */
+  for (t=poly->ncoeff; --t; )
+    {
+    polt = pol;
+    expot = expo;
+/*-- xval contains the current product of the polynomials */
+    xval = 1.0;
+    for (d=ndim; d--; polt += POLY_MAXDEGREE+1)
+      xval *= polt[*(expot++)];
+    val += (*(basis++)=xval)**(coeff++);
+/*-- A complex recursion between terms of the polynom speeds up computations */
+/*-- Not too good for roundoff errors (prefer Horner's), but much easier for */
+/*-- multivariate polynomials: this is why we use a long double accumulator */
+    expot = expo;
+    groupt = group;
+    for (d=0; d<ndim; d++, groupt++)
+      if (gexpo[*groupt]--)
+        {
+        ++*(expot++);
+        break;
+        }
+      else
+        {
+        gexpo[*groupt] = *expot;
+        *(expot++) = 0;
+        }
+    }
+
+  return (double)val;
+  }
+
+
 /****** poly_fit *************************************************************
-PROTO   double poly_fit(polystruct *poly, double *x, double *y, double *w,
-        int ndata, double *extbasis)
+PROTO   int poly_fit(polystruct *poly, double *x, double *y, double *w,
+        int ndata, double *extbasis, double regul)
 PURPOSE Least-Square fit of a multidimensional polynom to weighted data.
 INPUT   polystruct pointer,
         pointer to the (pseudo)2D array of inputs to basis functions,
@@ -253,23 +387,24 @@ INPUT   polystruct pointer,
         pointer to the 1D array of data weights,
         number of data points,
         pointer to a (pseudo)2D array of computed basis function values.
+	Tikhonov regularization parameter (0 = no regularization).
 OUTPUT  Chi2 of the fit.
 NOTES   If different from NULL, extbasis can be provided to store the
         values of the basis functions. If x==NULL and extbasis!=NULL, the
         precomputed basis functions stored in extbasis are used (which saves
         CPU). If w is NULL, all points are given identical weight.
-AUTHOR  E. Bertin (IAP, Leiden observatory & ESO)
-VERSION 08/03/2005
+AUTHOR  E. Bertin (IAP)
+VERSION 20/11/2012
  ***/
-void	poly_fit(polystruct *poly, double *x, double *y, double *w, int ndata,
-		double *extbasis)
+int	poly_fit(polystruct *poly, double *x, double *y, double *w, int ndata,
+		double *extbasis, double regul)
   {
    void	qerror(char *msg1, char *msg2);
    double	/*offset[POLY_MAXDIM],*/x2[POLY_MAXDIM],
 		*alpha,*alphat, *beta,*betat, *basis,*basis1,*basis2, *coeff,
 		*extbasist,*xt,
 		val,wval,yval;
-   int		ncoeff, ndim, matsize,
+   int		ncoeff, ndim, matsize, info,
 		d,i,j,n;
 
   if (!x && !extbasis)
@@ -331,8 +466,13 @@ void	poly_fit(polystruct *poly, double *x, double *y, double *w, int ndata,
       }
     }
 
+  if (regul>POLY_TINY)
+/*-- Simple Tikhonov regularization */
+    for (i=0; i<ncoeff; i++)
+      alpha[i*(ncoeff+1)] += regul;
+
 /* Solve the system */
-  poly_solve(alpha,beta,ncoeff);
+  info = poly_solve(alpha,beta,ncoeff);
 
   free(alpha);
 
@@ -346,7 +486,7 @@ void	poly_fit(polystruct *poly, double *x, double *y, double *w, int ndata,
 */
   free(beta);
 
-  return;
+  return info;
   }
 
 
@@ -433,33 +573,32 @@ void	poly_addcste(polystruct *poly, double *cste)
   return;
   }
 
+
 /****** poly_solve ************************************************************
-PROTO   void poly_solve(double *a, double *b, int n)
+PROTO   int poly_solve(double *a, double *b, int n)
 PURPOSE Solve a system of linear equations, using Cholesky decomposition.
 INPUT   Pointer to the (pseudo 2D) matrix of coefficients,
         pointer to the 1D column vector,
         matrix size.
-OUTPUT  -.
+OUTPUT  0 if solution OK, !=0 otherwise (e.g., singular matrix).
 NOTES   -.
-AUTHOR  E. Bertin (IAP, Leiden observatory & ESO)
-VERSION 20/12/2011
+AUTHOR  E. Bertin (IAP)
+VERSION 20/11/2012
  ***/
-void	poly_solve(double *a, double *b, int n)
+int	poly_solve(double *a, double *b, int n)
   {
 #if defined(HAVE_LAPACKE)
-  LAPACKE_dposv(LAPACK_COL_MAJOR, 'L', n, 1, a, n, b, n);
+  return LAPACKE_dposv(LAPACK_COL_MAJOR, 'L', n, 1, a, n, b, n);
 #elif defined(HAVE_ATLAS)
-  clapack_dposv(CblasRowMajor, CblasUpper, n, 1, a, n, b, n);
+  return clapack_dposv(CblasRowMajor, CblasUpper, n, 1, a, n, b, n);
 #else
-  cholsolve(a,b,n);
+  return cholsolve(a,b,n);
 #endif
-
-  return;
   }
 
 
 /****** cholsolve *************************************************************
-PROTO	int cholsolve(double *a, double *b, int n)
+PROTO	void cholsolve(double *a, double *b, int n)
 PURPOSE	Solve a system of linear equations, using Cholesky decomposition.
 INPUT	Pointer to the (pseudo 2D) matrix of coefficients,
 	pointer to the 1D column vector,
@@ -581,4 +720,182 @@ int	*poly_powers(polystruct *poly)
 
   return powers;
   }
+
+
+/****** poly_initortho ********************************************************
+PROTO   void poly_initortho(polystruct *poly, double *data, int ndata)
+PURPOSE Compute orthonormalization and de-orthonormalization matrices for a
+	polynomial basis on a data set.
+INPUT   polystruct pointer,
+        pointer to the 1D array of input vector data,
+	number of data vectors.
+OUTPUT  -.
+NOTES   -.
+AUTHOR  E. Bertin (IAP)
+VERSION 10/07/2012
+ ***/
+void	poly_initortho(polystruct *poly, double *data, int ndata)
+  {
+   double	*basis, *coeff, *invec,*invect0,*invect,*invect02,*invect2,
+		*rdiag, *deortho,
+		scale,s, dval;
+   int		c,i,j,m,n, ndmc, ndim,ncoeff;
+
+/* Prepare the vectors and counters */
+  ndim = poly->ndim;
+  ncoeff = poly->ncoeff;
+  basis = poly->basis;
+  coeff = poly->coeff;
+
+/* Allocate memory for orthonormalization matrix and vector */
+  QCALLOC(poly->deorthomat, double, ncoeff*ncoeff);
+  QMALLOC(poly->orthobasis, double, poly->ncoeff);
+  QMALLOC(rdiag, double, ncoeff);
+
+/* Do a QR decomposition of input vector set */
+/* Vectors are stored as rows to speed up the Householder transformation */
+  n = ncoeff;
+  m = ndata;
+  invec = data;
+  for (c=0; c<ncoeff; c++)
+    {
+    ndmc = ndata - c;
+    scale = 0.0;
+    invect = invect0 = data + c*(ndata+1);
+    for (i=ndmc; i--; invect++)
+      scale = sqrt(scale*scale + *invect**invect);
+    if (scale > POLY_TINY)
+      {
+      if (*invect0 < 0.0)
+        scale = -scale;
+      invect = invect0;
+      for (i=ndmc; i--;)
+        *(invect++) /= scale;
+      *invect0 += 1.0;
+      invect02 = invect0 + ndata;
+      for (j=ncoeff-c; --j; invect02+=ndata)
+        {
+        s = 0.0;
+        invect = invect0;
+        invect2 = invect02;
+        for (i=ndmc; i--;)
+          s += *(invect++)**(invect2++);
+        s /= -*invect0;
+        invect = invect0;
+        invect2 = invect02;
+        for (i=ndmc; i--;)
+          *(invect2++) += s**(invect++);
+        }
+      }
+    rdiag[c] = -scale;
+    }
+
+/* Convert to deorthonormalization matrix */
+  deortho = poly->deorthomat;
+  for (j=0; j<ncoeff; j++)
+    for (i=0; i<ncoeff; i++)
+      deortho[j*ncoeff+i] = i<j? data[j*ndata+i] : (i==j?rdiag[i] : 0.0);
+
+  free(rdiag);
+
+/* Compute the "unorthonormalization" matrix */
+  QMEMCPY(poly->deorthomat, poly->orthomat, double, ncoeff*ncoeff);
+#if defined(HAVE_LAPACKE)
+  LAPACKE_dtrtri(LAPACK_ROW_MAJOR, 'L', 'N', ncoeff,poly->orthomat,ncoeff);
+#elif defined(HAVE_ATLAS)
+  clapack_dtrtri(CblasRowMajor, CblasLower, CblasNonUnit, ncoeff,
+	poly->orthomat, ncoeff);
+#else
+  qerror("*Internal Error*: no routine available", " for triangular inverse");
+#endif
+
+/* Transpose orthonormalization matrix to speed up later use */
+  deortho = poly->deorthomat;
+  for (j=0; j<ncoeff; j++)
+    for (i=j; i<ncoeff; i++)
+      {
+      dval = deortho[j*ncoeff+i];
+      deortho[j*ncoeff+i] = deortho[i*ncoeff+j];
+      deortho[i*ncoeff+j] = dval;
+      }
+
+  return;
+  }
+
+
+/****** poly_ortho ************************************************************
+PROTO   double *poly_ortho(polystruct *poly, double *datain, double *dataout)
+PURPOSE Apply orthonormalization to the poly basis vector ("ket>").
+INPUT   polystruct pointer,
+	pointer to the input vector,
+	pointer to the output vector.
+OUTPUT  Pointer to poly->orthobasis, or poly->basis if no ortho. matrix exists.
+NOTES   The poly->basis vector must have been updated with poly_func() first.
+AUTHOR  E. Bertin (IAP)
+VERSION 04/11/2008
+ ***/
+double	*poly_ortho(polystruct *poly, double *datain, double *dataout)
+  {
+   double	*omat,*basis,*obasis,
+		dval;
+   int		i,j, ncoeff;
+
+  if (!poly->orthomat)
+    return datain;
+
+  ncoeff = poly->ncoeff;
+
+/* Compute matrix product */
+  omat = poly->orthomat;
+  obasis = dataout;
+  for (j=ncoeff; j--;)
+    {
+    basis = datain;
+    dval = 0.0;
+    for (i=ncoeff; i--;)
+      dval += *(omat++)**(basis++);
+    *(obasis++) = dval;
+    }
+
+  return dataout;
+  }
+
+
+/****** poly_deortho **********************************************************
+PROTO   void poly_deortho(polystruct *poly, double *datain, double *dataout)
+PURPOSE Apply deorthonormalization to the poly basis component vector("<bra|").
+INPUT   polystruct pointer,
+	pointer to the input vector,
+	pointer to the output vector.
+OUTPUT  Pointer to poly->basis.
+NOTES   -.
+AUTHOR  E. Bertin (IAP)
+VERSION 04/11/2008
+ ***/
+double	*poly_deortho(polystruct *poly, double *datain, double *dataout)
+  {
+   double	*omat,*basis,*obasis,
+		dval;
+   int		i,j, ncoeff;
+
+  if (!poly->deorthomat)
+    return datain;
+
+  ncoeff = poly->ncoeff;
+
+/* Compute matrix product */
+  omat = poly->deorthomat;
+  basis = dataout;
+  for (j=ncoeff; j--;)
+    {
+    obasis = datain;
+    dval = 0.0;
+    for (i=ncoeff; i--;)
+      dval += *(omat++)**(obasis++);
+    *(basis++) = dval;
+    }
+
+  return dataout;
+  }
+
 

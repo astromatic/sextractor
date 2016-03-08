@@ -114,11 +114,12 @@ picstruct	*newfield(char *filename, int flags, int ext)
   if (cat->ntab>1)
     sprintf(gstr, " [%d/%d]", ext, cat->tab->naxis<2? cat->ntab-1 : cat->ntab);
   QPRINTF(OUTPUT, "----- %s %s%s\n",
-	flags&FLAG_FIELD?   "Flagging  from:" :
-       (flags&(RMS_FIELD|VAR_FIELD|WEIGHT_FIELD)?
-			     "Weighting from:" :
-       (flags&MEASURE_FIELD? "Measuring from:" :
-			     "Detecting from:")),
+	flags&DGEO_FIELD?   "Shifting  from:" :
+	(flags&FLAG_FIELD?   "Flagging  from:" :
+	(flags&(RMS_FIELD|VAR_FIELD|WEIGHT_FIELD)?
+		"Weighting from:" :
+	(flags&MEASURE_FIELD? "Measuring from:" :
+			     "Detecting from:"))),
 	field->rfilename,
         cat->ntab>1? gstr : "");
   QPRINTF(OUTPUT, "      \"%.20s\" / %s / %dx%d / %d bits %s\n",
@@ -215,6 +216,7 @@ picstruct	*inheritfield(picstruct *infield, int flags)
   field->assoc = NULL;
   field->strip = NULL;
   field->fstrip = NULL;
+  field->dgeostrip[0] = field->dgeostrip[1] = NULL;
   field->reffield = infield;
   field->file = NULL;
 
@@ -235,6 +237,8 @@ void	endfield(picstruct *field)
     free_cat(&field->cat, 1);
   free(field->strip);
   free(field->fstrip);
+  free(field->dgeostrip[0]);
+  free(field->dgeostrip[1]);
   if (field->wcs)
     end_wcs(field->wcs);
   if (field->interp_flag)

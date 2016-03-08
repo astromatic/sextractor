@@ -7,7 +7,7 @@
 *
 *	This file part of:	AstrOmatic software
 *
-*	Copyright:		(C) 1993-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2016 IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -23,7 +23,7 @@
 *	along with AstrOmatic software.
 *	If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		14/06/2012
+*	Last modified:		08/03/2016
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -40,8 +40,14 @@
 #define		ARCMIN	(DEG/60.0)	/* 1 arcsec in radians */
 #define		ARCSEC	(DEG/3600.0)	/* 1 arcsec in radians */
 #define		MAS	(ARCSEC/1000.0)	/* 1 mas in radians */
+#define		YEAR	(365.25*DAY)	/* 1 year in seconds */
+#define		DAY	(24.0*HOUR)	/* 1 day in seconds */
+#define		HOUR	(60.0*MINUTE)	/* 1 hour in seconds */
+#define		MINUTE	60.0		/* 1 minute in seconds */
 #define		MJD2000	51544.50000	/* Modified Julian date for J2000.0 */
+#define		JD2000	(2400000.5+MJD2000)	/* Julian date for J2000.0 */
 #define		MJD1950	33281.92346	/* Modified Julian date for B1950.0 */
+#define		JD1950	(2400000.5+MJD1950)	/* Julian date for B1950.0 */
 #define		JU2TROP	1.0000214	/* 1 Julian century in tropical units*/
 #define		WCS_NOCOORD	1e31	/* Code for non-existing coordinates */
 
@@ -158,6 +164,7 @@ extern void		b2j(double yearobs, double alphain, double deltain,
 			precess_wcs(wcsstruct *wcs, double yearin,
 				double yearout),
 			range_wcs(wcsstruct *wcs),
+			wipe_wcs(tabstruct *tab),
 			write_wcs(tabstruct *tab, wcsstruct *wcs);
 
 #endif

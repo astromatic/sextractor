@@ -7,7 +7,7 @@
 #
 #	This file part of:	SExtractor
 #
-#	Copyright:		(C) 2002-2013 Emmanuel Bertin -- IAP/CNRS/UPMC
+#	Copyright:		(C) 2002-2015 Emmanuel Bertin -- IAP/CNRS/UPMC
 #
 #	License:		GNU General Public License
 #
@@ -22,7 +22,7 @@
 #	You should have received a copy of the GNU General Public License
 #	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 #
-#	Last modified:		03/04/2013
+#	Last modified:		02/12/2015
 #
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -37,16 +37,16 @@ SUBDIRS			= fits $(LEVDIR) wcs
 bin_PROGRAMS		= sex ldactoasc
 check_PROGRAMS		= sex
 sex_SOURCES		= analyse.c assoc.c astrom.c back.c bpro.c catout.c \
-			  check.c clean.c extract.c $(FFTSOURCE) field.c \
-			  filter.c fitswcs.c flag.c graph.c growth.c header.c \
-			  image.c interpolate.c main.c makeit.c manobjlist.c \
-			  misc.c neurro.c $(PATTERNSOURCE) pc.c photom.c \
-			  plist.c prefs.c $(PROFITSOURCE) psf.c readimage.c \
-			  refine.c retina.c scan.c som.c weight.c winpos.c \
-			  xml.c \
+			  check.c clean.c dgeo.c extract.c $(FFTSOURCE) \
+			  field.c filter.c fitswcs.c flag.c graph.c growth.c \
+			  header.c image.c interpolate.c main.c makeit.c \
+			  manobjlist.c misc.c neurro.c $(PATTERNSOURCE) pc.c \
+			  photom.c plist.c prefs.c $(PROFITSOURCE) psf.c \
+			  readimage.c refine.c retina.c scan.c som.c weight.c \
+			  winpos.c xml.c \
 			  assoc.h astrom.h back.h bpro.h check.h clean.h \
-			  define.h extract.h fft.h field.h filter.h fitswcs.h \
-			  flag.h globals.h growth.h header.h image.h \
+			  define.h dgeo.h extract.h fft.h field.h filter.h \
+			  fitswcs.h flag.h globals.h growth.h header.h image.h \
 			  interpolate.h key.h neurro.h param.h paramprofit.h \
 			  pattern.h photom.h plist.h prefs.h preflist.h \
 			  profit.h psf.h retina.h sexhead1.h sexhead.h \

@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2015 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		26/06/2012
+*	Last modified:		14/01/2015
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -58,11 +58,12 @@ void	*loadstrip(picstruct *field, picstruct *wfield)
   {
    tabstruct	*tab;
    checkstruct	*check;
-   int		y, w, flags, interpflag;
+   int		y, w, flags, interpflag, npixtot;
    PIXTYPE	*data, *wdata, *rmsdata;
 
   tab = field->tab;
   w = field->width;
+  npixtot = field->width*field->height;
   flags = field->flags;
   interpflag = (wfield && wfield->interp_flag);
   wdata = NULL;			/* To avoid gcc -Wall warnings */
@@ -74,7 +75,7 @@ void	*loadstrip(picstruct *field, picstruct *wfield)
 
     nbpix = w*field->stripheight;
 
-    if (flags ^ FLAG_FIELD)
+    if (!(flags & (FLAG_FIELD|DGEO_FIELD)))
       {
 /*---- Allocate space for the frame-buffer */
       if (!(field->strip=(PIXTYPE *)malloc(field->stripheight*field->width
@@ -138,13 +139,35 @@ void	*loadstrip(picstruct *field, picstruct *wfield)
           }
         }
       }
-    else
+    else if (flags & FLAG_FIELD)
       {
+/*---- flag map */
       if (!(field->fstrip=(FLAGTYPE *)malloc(field->stripheight*field->width
 		*sizeof(FLAGTYPE))))
       error(EXIT_FAILURE,"Not enough memory for the flag buffer of ",
 	field->rfilename);
       read_ibody(field->tab, field->fstrip, nbpix);
+      }
+    else
+      {
+/*---- differential geometry map */
+      if (!(field->dgeostrip[0]=(PIXTYPE *)malloc(field->stripheight
+		* field->width * sizeof(PIXTYPE)))
+	|| !(field->dgeostrip[1]=(PIXTYPE *)malloc(field->stripheight
+		* field->width * sizeof(PIXTYPE))))
+        error(EXIT_FAILURE,
+		"Not enough memory for differential geometry buffers of ",
+		field->rfilename);
+/*---- Read first data plane (x shift) */
+      read_body(tab, field->dgeostrip[0], nbpix);
+/*---- Move to second data plane */
+      QFSEEK(tab->cat->file,tab->bodypos + npixtot*tab->bytepix, SEEK_SET,
+	field->rfilename);
+/*---- Read second data plane (y shift) */
+      read_body(tab, field->dgeostrip[1], nbpix);
+/*---- Move back to first data plane */
+      QFSEEK(tab->cat->file,tab->bodypos + nbpix*tab->bytepix, SEEK_SET,
+	field->rfilename);
       }
 
     field->ymax = field->stripheight;
@@ -154,7 +177,7 @@ void	*loadstrip(picstruct *field, picstruct *wfield)
   else
     {
 /*- other strips */
-    if (flags ^ FLAG_FIELD)
+    if (!(flags & (FLAG_FIELD|DGEO_FIELD)))
       {
       data = field->strip + field->stripylim*w;
 /*---- We assume weight data have been read just before */
@@ -216,17 +239,34 @@ void	*loadstrip(picstruct *field, picstruct *wfield)
           }
         }
       }
-    else
+    else if (flags & FLAG_FIELD)
       read_ibody(tab, field->fstrip + field->stripylim*w, w);
+    else
+      {
+/*---- differential geometry map */
+/*---- Read first data plane (x shift) */
+      read_body(tab, field->dgeostrip[0] + field->stripylim*w, w);
+/*---- Move to second data plane */
+      QFSEEK(tab->cat->file,tab->bodypos
+	+ (field->ymax * w + npixtot) * tab->bytepix, SEEK_SET,
+	field->rfilename);
+/*---- Read second data plane (y shift) */
+      read_body(tab, field->dgeostrip[1] + field->stripylim*w, w);
+/*---- Move back to first data plane */
+      QFSEEK(tab->cat->file, tab->bodypos
+	+ (field->ymax + 1) * w * tab->bytepix, SEEK_SET, field->rfilename);
+      }
 
     field->stripylim = (++field->ymin)%field->stripheight;
     if ((++field->ymax)<field->height)
       field->stripysclim = (++field->stripysclim)%field->stripheight;
     }
 
-  return (flags ^ FLAG_FIELD)?
-		  (void *)(field->strip + field->stripy*w)
-		: (void *)(field->fstrip + field->stripy*w);
+  return !(flags & (FLAG_FIELD|DGEO_FIELD))?
+		(void *)(field->strip + field->stripy*w)
+		: ((flags & FLAG_FIELD)?
+			(void *)(field->fstrip + field->stripy*w)
+			: (void *)(field->dgeostrip[0] + field->stripy*w));
   }
 
 
