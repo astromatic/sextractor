@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2014 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2016 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		17/02/2014
+*	Last modified:		13/01/2016
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -34,6 +34,9 @@ keystruct	objkey[] = {
   {"NUMBER", "Running object number",
 	&outobj.number, H_INT, T_LONG, "%10d", "",
 	"meta.record", ""},
+  {"ID_PARENT", "Parent ID (before deblending)",
+	&outobj.id_parent, H_INT, T_LONG, "%10d", "",
+	"meta.id.parent", ""},
   {"EXT_NUMBER", "FITS extension number",
 	&outobj2.ext_number, H_INT, T_SHORT, "%3d", "",
 	"meta.id;meta.dataset", ""},
@@ -277,24 +280,35 @@ keystruct	objkey[] = {
   {"Y_IMAGE", "Object position along y",
 	&outobj2.sposy, H_FLOAT, T_FLOAT, "%11.4f", "pixel",
 	"pos.cartesian.y;pos.barycenter;instr.det;meta.main", "pix"},
+
+  {"DGEOX_IMAGE", "Differential geometry correction to X_IMAGE",
+	&outobj2.pos_dgeox, H_FLOAT, T_FLOAT, "%+7.4f", "pixel",
+	"pos.cartesian.x;pos.barycenter;instr.det;arith.diff", "pix"},
+  {"DGEOY_IMAGE", "Differential geometry correction to Y_IMAGE",
+	&outobj2.pos_dgeoy, H_FLOAT, T_FLOAT, "%+7.4f", "pixel",
+	"pos.cartesian.y;pos.barycenter;instr.det;arith.diff", "pix"},
+
   {"X_IMAGE_DBL", "Object position along x (double precision)",
 	&outobj2.posx, H_FLOAT, T_DOUBLE, "%11.4f", "pixel",
 	"pos.cartesian.x;pos.barycenter;instr.det", "pix"},
   {"Y_IMAGE_DBL", "Object position along y (double precision)",
 	&outobj2.posy, H_FLOAT, T_DOUBLE, "%11.4f", "pixel",
 	"pos.cartesian.x;pos.barycenter;instr.det", "pix"},
+
   {"X_FOCAL", "Barycenter position along focal-plane x axis",
 	&outobj2.mxf, H_FLOAT, T_DOUBLE, "%18.10e", "",
 	"pos.cartesian.x", ""},
   {"Y_FOCAL", "Barycenter position along focal-plane y axis",
 	&outobj2.myf, H_FLOAT, T_DOUBLE, "%18.10e", "",
 	"pos.cartesian.y", ""},
+
   {"X_WORLD", "Barycenter position along world x axis",
 	&outobj2.mxw, H_FLOAT, T_DOUBLE, "%18.10e", "deg",
 	"pos.eq.ra", "deg"},
   {"Y_WORLD", "Barycenter position along world y axis",
 	&outobj2.myw, H_FLOAT, T_DOUBLE, "%18.10e", "deg",
 	"pos.eq.dec", "deg"},
+
   {"X_MAMA", "Barycenter position along MAMA x axis",
 	&outobj2.mamaposx, H_FLOAT, T_DOUBLE, "%8.1f", "m**(-6)",
 	"pos.cartesian.x;instr.det;pos.barycenter", "um"},
@@ -461,6 +475,13 @@ keystruct	objkey[] = {
   {"YWIN_IMAGE", "Windowed position estimate along y",
 	&outobj2.winpos_y, H_FLOAT, T_DOUBLE, "%11.4f", "pixel",
 	"pos.cartesian.y;instr.det", "pix"},
+
+  {"DGEOXWIN_IMAGE", "Differential geometry correction to XWIN_IMAGE",
+	&outobj2.winpos_dgeox, H_FLOAT, T_FLOAT, "%+7.4f", "pixel",
+	"pos.cartesian.x;instr.det;arith.diff", "pix"},
+  {"DGEOYWIN_IMAGE", "Differential geometry correction to YWIN_IMAGE",
+	&outobj2.winpos_dgeoy, H_FLOAT, T_FLOAT, "%+7.4f", "pixel",
+	"pos.cartesian.y;instr.det;arith.diff", "pix"},
 
   {"XWIN_FOCAL", "Windowed position along focal-plane x axis",
 	&outobj2.winpos_xf, H_FLOAT, T_DOUBLE, "%18.10e", "",
@@ -725,6 +746,12 @@ keystruct	objkey[] = {
   {"VIGNET_SHIFT", "Pixel data around detection, corrected for shift",
 	&outobj2.vigshift, H_FLOAT, T_FLOAT, "%12.7g", "count",
 	"obs.image", "ct", 2, prefs.vigshiftsize},
+  {"VIGNET_DGEOX", "Differential x geometry data around detection",
+	&outobj2.vignet_dgeox, H_FLOAT, T_FLOAT, "%+10.6f", "pix",
+	"pos.cartesian.x;instr.det;arith.diff", "px", 2, prefs.vignet_dgeoxsize},
+  {"VIGNET_DGEOY", "Differential y geometry data around detection",
+	&outobj2.vignet_dgeoy, H_FLOAT, T_FLOAT, "%+10.6f", "pix",
+	"pos.cartesian.y;instr.det;arith.diff", "px", 2, prefs.vignet_dgeoysize},
   {"VECTOR_ASSOC", "ASSOCiated parameter vector",
 	&outobj2.assoc, H_FLOAT, T_DOUBLE, "%12.7g", "",
 	"src", "", 1, &prefs.assoc_size},

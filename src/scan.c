@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2016 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		21/12/2011
+*	Last modified:		13/01/2016
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -49,7 +49,7 @@
 
 /****************************** scanimage ************************************
 PROTO   void scanimage(picstruct *field, picstruct *dfield, picstruct *ffield,
-        picstruct *wfield, picstruct *dwfield)
+        picstruct *wfield, picstruct *dwfield, picstruct *dgeofield)
 PURPOSE Scan of the large pixmap(s). Main loop and heart of the program.
 INPUT   Measurement field pointer,
         Detection field pointer,
@@ -59,10 +59,11 @@ INPUT   Measurement field pointer,
 OUTPUT  -.
 NOTES   -.
 AUTHOR  E. Bertin (IAP)
-VERSION 21/12/2011
+VERSION 14/01/2015
  ***/
 void	scanimage(picstruct *field, picstruct *dfield, picstruct **pffield,
-		int nffield, picstruct *wfield, picstruct *dwfield)
+		int nffield, picstruct *wfield, picstruct *dwfield,
+		picstruct *dgeofield)
 
   {
    static infostruct	curpixinfo, *info, *store,
@@ -82,7 +83,7 @@ void	scanimage(picstruct *field, picstruct *dfield, picstruct **pffield,
    PIXTYPE		thresh, relthresh, cdnewsymbol, cdwthresh,wthresh,
 			*scan,*dscan,*cdscan,*dwscan,*dwscanp,*dwscann,
 			*cdwscan,*cdwscanp,*cdwscann,*wscand,
-			*scant, *wscan,*wscann,*wscanp;
+			*scant, *wscan,*wscann,*wscanp, *dgeoscanx, *dgeoscany;
    FLAGTYPE		*pfscan[MAXFLAG];
    status		cs, ps, *psstack;
    int			*start, *end, ymax;
@@ -90,7 +91,7 @@ void	scanimage(picstruct *field, picstruct *dfield, picstruct **pffield,
 /* Avoid gcc -Wall warnings */
   scan = dscan = cdscan = cdwscan = cdwscann = cdwscanp
 	= dwscan = dwscann = dwscanp
-	= wscan = wscann = wscanp = NULL;
+	= wscan = wscann = wscanp = dgeoscanx = dgeoscany = NULL;
   victim = NULL;			/* Avoid gcc -Wall warnings */
   blankh = 0;				/* Avoid gcc -Wall warnings */
 /*----- Beginning of the main loop: Initialisations  */
@@ -102,7 +103,7 @@ void	scanimage(picstruct *field, picstruct *dfield, picstruct **pffield,
 /* cdwfield is the detection weight-field if available */
   cdwfield = dwfield? dwfield:(prefs.dweight_flag?wfield:NULL);
   cdwthresh = cdwfield ? cdwfield->weight_thresh : 0.0;
-  if (cdwthresh>BIG*WTHRESH_CONVFAC);
+  if (cdwthresh>BIG*WTHRESH_CONVFAC)
     cdwthresh = BIG*WTHRESH_CONVFAC;
   wthresh = wfield? wfield->weight_thresh : 0.0;
 
@@ -143,6 +144,13 @@ void	scanimage(picstruct *field, picstruct *dfield, picstruct **pffield,
     dwfield->ymin = dwfield->stripylim = 0;
     dwfield->stripysclim = 0;
     }
+
+
+  if (dgeofield) {
+    dgeofield->y = dgeofield->stripy = 0;
+    dgeofield->ymin = dgeofield->stripylim = 0;
+    dgeofield->stripysclim = 0;
+  }
 
 /*Allocate memory for buffers */
   stacksize = w+1;
@@ -301,6 +309,15 @@ void	scanimage(picstruct *field, picstruct *dfield, picstruct **pffield,
       else
         dscan = scan;
 
+      if (dgeofield) {
+        dgeoscanx = (dgeofield->stripy==dgeofield->stripysclim) ?
+		  (PIXTYPE *)loadstrip(dgeofield, (picstruct *)NULL)
+		: dgeofield->dgeostrip[0]
+		+ dgeofield->stripy * dgeofield->width;
+        dgeoscany = dgeofield->dgeostrip[1]
+		+ dgeofield->stripy * dgeofield->width;
+      }
+
       if (prefs.filter_flag)
         {
         filter(cfield, cdscan, cfield->y);
@@ -443,6 +460,10 @@ void	scanimage(picstruct *field, picstruct *dfield, picstruct **pffield,
           PLISTPIX(pixt, dthresh) = thresh;
         if (PLISTEXIST(var))
           PLISTPIX(pixt, var) = wscan[xl];
+        if (PLISTEXIST(dgeo)) {
+          PLISTPIX(pixt, dgeox) = dgeoscanx[xl];
+          PLISTPIX(pixt, dgeoy) = dgeoscany[xl];
+        }
 
         if (cs != OBJECT)
 /*------------------------------- Start Segment -----------------------------*/
@@ -515,8 +536,8 @@ void	scanimage(picstruct *field, picstruct *dfield, picstruct **pffield,
               {
               if ((int)info[co].pixnb >= prefs.ext_minarea)
                 {
-                sortit(field, dfield, wfield, cdwfield, &info[co], &objlist,
-		       cdwscan, wscan);
+                sortit(field, dfield, wfield, cdwfield, dgeofield,
+			&info[co], &objlist, cdwscan, wscan);
                 }
 /* ------------------------------------ free the chain-list */
 
@@ -613,6 +634,8 @@ void	scanimage(picstruct *field, picstruct *dfield, picstruct **pffield,
       wfield->stripy = (wfield->y=yl)%wfield->stripheight;
     if (dwfield)
       dwfield->stripy = (dwfield->y=yl)%dwfield->stripheight;
+    if (dgeofield)
+      dgeofield->stripy = (dgeofield->y=yl)%dgeofield->stripheight;
 
 /*-- Remove objects close to the ymin limit if ymin is ready to increase */
     if (cfield->stripy==cfield->stripysclim)
@@ -645,7 +668,8 @@ void	scanimage(picstruct *field, picstruct *dfield, picstruct **pffield,
 		"Objects: %8d detected / %8d sextracted\n\33[1A",
 		yl>h? h:yl, thecat.ndetect, thecat.ntotal);
           ontotal = thecat.ntotal;
-          endobject(field, dfield, wfield, cdwfield, i, cleanobjlist);
+          endobject(field, dfield, wfield, cdwfield, dgeofield,
+		i, cleanobjlist);
           subcleanobj(i);
           cleanobj = cleanobjlist->obj+i;	/* realloc in subcleanobj() */
           }
@@ -691,7 +715,7 @@ void	scanimage(picstruct *field, picstruct *dfield, picstruct **pffield,
 		"Objects: %8d detected / %8d sextracted\n\33[1A",
 	h, thecat.ndetect, thecat.ntotal);
     ontotal = thecat.ntotal;
-    endobject(field, dfield, wfield, cdwfield, 0, cleanobjlist);
+    endobject(field, dfield, wfield, cdwfield, dgeofield, 0, cleanobjlist);
     subcleanobj(0);
     }
 
@@ -745,8 +769,9 @@ void  update(infostruct *infoptr1, infostruct *infoptr2, pliststruct *pixel)
 build the object structure.
 */
 void  sortit(picstruct *field, picstruct *dfield, picstruct *wfield,
-	picstruct *dwfield, infostruct *info, objliststruct *objlist,
-	     PIXTYPE *cdwscan, PIXTYPE *wscan)
+		picstruct *dwfield, picstruct *dgeofield,
+		infostruct *info, objliststruct *objlist,
+		PIXTYPE *cdwscan, PIXTYPE *wscan)
 
   {
    picstruct		*cfield;
@@ -754,6 +779,7 @@ void  sortit(picstruct *field, picstruct *dfield, picstruct *wfield,
    static objstruct	obj;
    objstruct		*cobj;
    pliststruct		*pixel;
+   static int		id_parent;
    int 			i,j,n;
 
   cfield = dfield? dfield: field;
@@ -775,6 +801,7 @@ void  sortit(picstruct *field, picstruct *dfield, picstruct *wfield,
   obj.flag = info->flag;
   obj.dthresh = objlist->dthresh;
   obj.thresh = objlist->thresh;
+  obj.id_parent = ++id_parent;
 
   preanalyse(0, objlist, ANALYSE_FAST);
 
@@ -852,7 +879,8 @@ void  sortit(picstruct *field, picstruct *dfield, picstruct *wfield,
           }
         }
 
-      endobject(field, dfield, wfield, dwfield, victim, cleanobjlist);
+      endobject(field, dfield, wfield, dwfield, dgeofield,
+		victim, cleanobjlist);
       subcleanobj(victim);
       }
 
@@ -877,16 +905,16 @@ INPUT   objlist number,
 OUTPUT  -.
 NOTES   -.
 AUTHOR  E. Bertin (IAP & Leiden & ESO)
-VERSION 28/11/2003
+VERSION 21/01/2015
  ***/
 void  preanalyse(int no, objliststruct *objlist, int analyse_type)
 
   {
    objstruct	*obj = &objlist->obj[no];
    pliststruct	*pixel = objlist->plist, *pixt;
-   PIXTYPE	peak, cpeak, val, cval, minthresh, thresht;
+   PIXTYPE	peak, cpeak, val, cval, minthresh, thresht, dx, dy;
    double	thresh,thresh2, t1t2,darea,
-		mx,my, mx2,my2,mxy, rv, tv,
+		mx,my, mx2,my2,mxy, rv, tv, mdx, mdy,
 		xm,ym, xm2,ym2,xym,
 		temp,temp2, theta,pmx2,pmy2;
    int		x, y, xmin,xmax, ymin,ymax,area2, fdnpix, dnpix;
@@ -926,7 +954,7 @@ void  preanalyse(int no, objliststruct *objlist, int analyse_type)
     if (ymax < y)
       ymax = y;
     fdnpix++;
-    }    
+    }
 
   if (PLISTEXIST(dthresh))
     obj->dthresh = thresh = minthresh;
@@ -944,20 +972,26 @@ void  preanalyse(int no, objliststruct *objlist, int analyse_type)
 
   if (analyse_type & ANALYSE_FULL)
     {
-    mx = my = tv = 0.0;
+    mx = my = tv = mdx = mdy = 0.0;
     mx2 = my2 = mxy = 0.0;
     thresh2 = (thresh + peak)/2.0;
     area2 = 0;
     for (pixt=pixel+obj->firstpix; pixt>=pixel; pixt=pixel+PLIST(pixt,nextpix))
       {
-      x = PLIST(pixt,x)-xmin;	/* avoid roundoff errors on big images */
-      y = PLIST(pixt,y)-ymin;	/* avoid roundoff errors on big images */
       cval = PLISTPIX(pixt, cdvalue);
       tv += (val = PLISTPIX(pixt, dvalue));
       if (val>thresh)
         dnpix++;
       if (val > thresh2)
         area2++;
+      x = PLIST(pixt,x)-xmin;	/* avoid roundoff errors on big images */
+      y = PLIST(pixt,y)-ymin;	/* avoid roundoff errors on big images */
+      if PLISTEXIST(dgeo) {
+        x -= (dx = PLISTPIX(pixt, dgeox));
+        y -= (dy = PLISTPIX(pixt, dgeoy));
+        mdx += cval * dx;
+        mdy += cval * dy;
+      }
       mx += cval * x;
       my += cval * y;
       mx2 += cval * x*x;
@@ -968,6 +1002,8 @@ void  preanalyse(int no, objliststruct *objlist, int analyse_type)
 /*----- compute object's properties */
     xm = mx / rv;			/* mean x */
     ym = my / rv;			/* mean y */
+    mdx /= rv;				/* mean Delta-x */
+    mdy /= rv;				/* mean Delta-y */
 
 /*-- In case of blending, use previous barycenters */
     if ((analyse_type&ANALYSE_ROBUST) && (obj->flag&OBJ_MERGED))
@@ -1014,6 +1050,8 @@ void  preanalyse(int no, objliststruct *objlist, int analyse_type)
     obj->dflux = tv;
     obj->mx = xm+xmin;	/* add back xmin */
     obj->my = ym+ymin;	/* add back ymin */
+    obj->dmx = (float)mdx;
+    obj->dmy = (float)mdy;
     obj->mx2 = xm2;
     obj->my2 = ym2;
     obj->mxy = xym;

@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2015 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		30/10/2012
+*	Last modified:		12/01/2015
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -100,6 +100,9 @@
    {""}, 1, 2, &prefs.ndthresh},
   {"DETECT_TYPE", P_KEY, &prefs.detect_type, 0,0, 0.0,0.0,
    {"CCD","PHOTO",""}},
+  {"DGEO_IMAGE", P_STRING, prefs.dgeoimage_name},
+  {"DGEO_TYPE", P_KEY, &prefs.dgeo_type, 0,0, 0.0,0.0,
+   {"NONE","PIXEL", ""}},
   {"FILTER", P_BOOL, &prefs.filter_flag},
   {"FILTER_NAME", P_STRING, prefs.filter_name},
   {"FILTER_THRESH", P_FLOATLIST, prefs.filter_thresh, 0,0,-BIG,BIG,
@@ -224,6 +227,11 @@ char *default_prefs[] =
 "*FLAG_IMAGE       flag.fits      # filename for an input FLAG-image",
 "*FLAG_TYPE        OR             # flag pixel combination: OR, AND, MIN, MAX",
 "*                                # or MOST",
+"*",
+"*#----------------------- Differential Geometry Map ---------------------------",
+"*",
+"*DGEO_TYPE        NONE           # Differential geometry map type: NONE or PIXEL",
+"*DGEO_IMAGE       dgeo.fits      # Filename for input differential geometry image",
 "*",
 "#------------------------------ Photometry -----------------------------------",
 " ",

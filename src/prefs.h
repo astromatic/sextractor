@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2015 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		02/11/2011
+*	Last modified:		02/12/2015
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -98,6 +98,9 @@ typedef struct
   int		weightgain_flag;			/* weight gain? */
   int		wscale_flag[2];		/* Weight rescaling */
   int		nwscale_flag;				/* nb of params */
+/*----- differential geometry map */
+  char		dgeoimage_name[MAXCHAR];		/* diff.geo. filename */
+  enum {DGEO_NONE, DGEO_PIXELMAP}	dgeo_type;	/* diff.geo. scheme */
 /*----- photometry */
   enum	{CAT_NONE, ASCII, ASCII_HEAD, ASCII_SKYCAT, ASCII_VO,
 	FITS_LDAC, FITS_TPX, FITS_10}
@@ -178,6 +181,8 @@ typedef struct
   char		retina_name[MAXCHAR];			/* retina filename */
   int		vignetsize[2];				/* vignet size */
   int		vigshiftsize[2];			/* shift-vignet size */
+  int		vignet_dgeoxsize[2];			/* dgeo-x vignet size */
+  int		vignet_dgeoysize[2];			/* dgeo-y vignet size */
   int		cleanmargin;				/* CLEANing margin */
   char		som_name[MAXCHAR];			/* SOM filename */
   int		somfit_flag;				/* ASSOCiation flag */

@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2016 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/10/2010
+*	Last modified:		13/01/2016
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -166,9 +166,10 @@ int	parcelout(objliststruct *objlistin, objliststruct *objlistout)
               if (ok[k+1+xn*j] && obj[j].fdflux-obj[j].dthresh*obj[j].fdnpix
 			> value0)
                 {
-                objlist[k+1].obj[j].flag |= OBJ_MERGED	/* Merge flag on */
+                obj[j].flag |= OBJ_MERGED	/* Merge flag on */
 			| ((OBJ_ISO_PB|OBJ_APERT_PB|OBJ_OVERFLOW)
 			&debobjlist2.obj[0].flag);
+		obj[j].id_parent = debobjlist2.obj[0].id_parent;
                 if ((out = addobj(j, &objlist[k+1], &debobjlist2))
 			== RETURN_FATAL_ERROR)
                   goto exit_parcelout;

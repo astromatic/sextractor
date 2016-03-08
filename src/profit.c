@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 2006-2013 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 2006-2015 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		23/09/2013
+*	Last modified:		25/09/2015
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -47,7 +47,6 @@
 #include	"fft.h"
 #include	"fitswcs.h"
 #include	"check.h"
-#include	"image.h"
 #include	"pattern.h"
 #include	"psf.h"
 #include	"profit.h"
@@ -87,7 +86,7 @@ INPUT	Pointer to PSF structure,
 OUTPUT	A pointer to an allocated profit structure.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	22/04/2011
+VERSION	17/02/2015
  ***/
 profitstruct	*profit_init(psfstruct *psf, unsigned int modeltype)
   {
@@ -108,6 +107,8 @@ profitstruct	*profit_init(psfstruct *psf, unsigned int modeltype)
   QMALLOC16(profit->psfpix, float, PROFIT_MAXMODSIZE*PROFIT_MAXMODSIZE);
   QMALLOC16(profit->objpix, PIXTYPE, PROFIT_MAXOBJSIZE*PROFIT_MAXOBJSIZE);
   QMALLOC16(profit->objweight, PIXTYPE, PROFIT_MAXOBJSIZE*PROFIT_MAXOBJSIZE);
+  QMALLOC16(profit->dgeopix[0], PIXTYPE, PROFIT_MAXOBJSIZE*PROFIT_MAXOBJSIZE);
+  QMALLOC16(profit->dgeopix[1], PIXTYPE, PROFIT_MAXOBJSIZE*PROFIT_MAXOBJSIZE);
   QMALLOC16(profit->lmodpix, PIXTYPE, PROFIT_MAXOBJSIZE*PROFIT_MAXOBJSIZE);
   QMALLOC16(profit->lmodpix2, PIXTYPE, PROFIT_MAXOBJSIZE*PROFIT_MAXOBJSIZE);
   QMALLOC16(profit->resi, float, PROFIT_MAXOBJSIZE*PROFIT_MAXOBJSIZE);
@@ -127,7 +128,7 @@ INPUT	Prof structure.
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	12/07/2012
+VERSION	17/02/2015
  ***/
 void	profit_end(profitstruct *profit)
   {
@@ -143,6 +144,8 @@ void	profit_end(profitstruct *profit)
   free(profit->lmodpix2);
   free(profit->objpix);
   free(profit->objweight);
+  free(profit->dgeopix[0]);
+  free(profit->dgeopix[1]);
   free(profit->resi);
   free(profit->presi);
   free(profit->prof);
@@ -156,22 +159,24 @@ void	profit_end(profitstruct *profit)
 
 /****** profit_fit ************************************************************
 PROTO	void profit_fit(profitstruct *profit, picstruct *field,
-		picstruct *wfield, objstruct *obj, obj2struct *obj2)
+		picstruct *wfield, picstruct *dgeofield,
+		objstruct *obj, obj2struct *obj2)
 PURPOSE	Fit profile(s) convolved with the PSF to a detected object.
 INPUT	Array of profile structures,
 	Number of profiles,
 	Pointer to the profile-fitting structure,
 	Pointer to the field,
 	Pointer to the field weight,
+	Pointer to the differential geometry field,
 	Pointer to the obj.
 OUTPUT	Pointer to an allocated fit structure (containing details about the
 	fit).
 NOTES	It is a modified version of the lm_minimize() of lmfit.
 AUTHOR	E. Bertin (IAP)
-VERSION	23/09/2013
+VERSION	09/09/2015
  ***/
 void	profit_fit(profitstruct *profit,
-		picstruct *field, picstruct *wfield,
+		picstruct *field, picstruct *wfield, picstruct *dgeofield,
 		objstruct *obj, obj2struct *obj2)
   {
     profitstruct	*pprofit, *qprofit;
@@ -201,6 +206,8 @@ void	profit_fit(profitstruct *profit,
   psf = profit->psf;
   profit->pixstep = psf->pixstep;
   obj2->prof_flag = 0;
+
+  profit->dgeoflag = (dgeofield != NULL);
 
 /* Create pixmaps at image resolution */
   profit->ix = (int)(obj->mx + 0.49999);/* internal convention: 1st pix = 0 */
@@ -253,7 +260,7 @@ void	profit_fit(profitstruct *profit,
 /* Compute the local PSF */
   profit_psf(profit);
 
-  profit->nresi = profit_copyobjpix(profit, field, wfield);
+  profit->nresi = profit_copyobjpix(profit, field, wfield, dgeofield);
   profit->npresi = 0;
 /* Check if the number of constraints exceeds the number of free parameters */
   if (profit->nresi < nparam)
@@ -906,7 +913,7 @@ profit->niter = profit_minimize(profit, PROFIT_MAXITER);
     pprofit->nobjpix = profit->nobjpix;
     pprofit->obj = obj;
     pprofit->obj2 = obj2;
-    pprofit->nresi = profit_copyobjpix(pprofit, field, wfield);
+    pprofit->nresi = profit_copyobjpix(pprofit, field, wfield, dgeofield);
     pprofit->modnaxisn[0] = profit->modnaxisn[0];
     pprofit->modnaxisn[1] = profit->modnaxisn[1];
     pprofit->nmodpix = profit->nmodpix;
@@ -921,7 +928,7 @@ profit->niter = profit_minimize(profit, PROFIT_MAXITER);
     fft_reset();
     pprofit->paraminit[pprofit->paramindex[PARAM_DIRAC_FLUX]] = profit->flux;
     pprofit->niter = profit_minimize(pprofit, PROFIT_MAXITER);
-    profit_residuals(pprofit,field,wfield, PROFIT_DYNPARAM, pprofit->paraminit,
+    profit_residuals(pprofit,field,wfield, 0.0, pprofit->paraminit,
 			FLAG(obj2.prof_class_star)? pprofit->resi : NULL);
     qprofit = theqprofit;
     nparam = qprofit->nparam;
@@ -944,7 +951,7 @@ profit->niter = profit_minimize(profit, PROFIT_MAXITER);
     qprofit->nobjpix = profit->nobjpix;
     qprofit->obj = obj;
     qprofit->obj2 = obj2;
-    qprofit->nresi = profit_copyobjpix(qprofit, field, wfield);
+    qprofit->nresi = profit_copyobjpix(qprofit, field, wfield, dgeofield);
     qprofit->modnaxisn[0] = profit->modnaxisn[0];
     qprofit->modnaxisn[1] = profit->modnaxisn[1];
     qprofit->nmodpix = profit->nmodpix;
@@ -961,7 +968,7 @@ profit->niter = profit_minimize(profit, PROFIT_MAXITER);
     qprofit->paraminit[qprofit->paramindex[PARAM_DISK_SCALE]] = psf->fwhm/16.0;
     qprofit->paraminit[qprofit->paramindex[PARAM_DISK_ASPECT]] = 1.0;
     qprofit->paraminit[qprofit->paramindex[PARAM_DISK_POSANG]] = 0.0;
-    profit_residuals(qprofit,field,wfield, PROFIT_DYNPARAM, qprofit->paraminit,
+    profit_residuals(qprofit,field,wfield, 0.0, qprofit->paraminit,
 			FLAG(obj2.prof_class_star)? qprofit->resi : NULL);
     sump = sumq = sumpw2 = sumqw2 = sumpqw = sump0 = sumq0 = 0.0;
     for (p=0; p<pprofit->nobjpix; p++)
@@ -1077,7 +1084,7 @@ void	profit_dfit(profitstruct *profit, profitstruct *dprofit,
   dprofit->obj = obj;
   dprofit->obj2 = obj2;
 
-  dprofit->nresi = profit_copyobjpix(dprofit, dfield, dwfield);
+  dprofit->nresi = profit_copyobjpix(dprofit, dfield, dwfield, NULL);
 
 /* Check if the number of constraints exceeds the number of free parameters */
   if (dprofit->nresi < nparam || profit->nresi < 1)
@@ -1978,29 +1985,36 @@ PROTO	int	prof_resample(profitstruct *profit, float *inpix,
 PURPOSE	Resample the current full resolution model to image resolution.
 INPUT	Profile-fitting structure,
 	pointer to input raster,
+	pointer to differential geometry raster (or NULL if absent),
 	pointer to output raster,
 	multiplicating factor.
 OUTPUT	RETURN_ERROR if the rasters don't overlap, RETURN_OK otherwise.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	17/07/2013
+VERSION	17/02/2015
  ***/
 int	profit_resample(profitstruct *profit, float *inpix, PIXTYPE *outpix,
 	float factor)
   {
+   interpenum	interptype;
    PIXTYPE	*pixout,*pixout0;
-   float	*pixin,*pixin0, *mask,*maskt, *pixinout, *dpixin,*dpixin0,
-		*dpixout,*dpixout0, *dx,*dy,
-		xcin,xcout,ycin,ycout, xsin,ysin, xin,yin, x,y, dxm,dym, val,
-		invpixstep, norm, fluxnorm;
-   int		*start,*startt, *nmask,*nmaskt,
-		i,j,k,n,t, 
+   float	kernel[INTERP_MAXKERNELWIDTH], pos[2],
+		*kernelt, *pixin,*pixin0, *mask,*maskt, *pixinout,
+		*dpixin,*dpixin0, *dpixout,*dpixout0, *dx,*dy,
+		*dgeoxpix0,*dgeoypix0, *dgeoxpix,*dgeoypix,
+		xcin,xcout,ycin,ycout, xsin,ysin, xin,yin, x,y, val,
+		invpixstep;
+   int		*start,*startt, *nmask,*nmaskt, *modnaxisn,
+		i,j,k,n,t,w,
 		ixsout,iysout, ixout,iyout, dixout,diyout, nxout,nyout,
-		iysina, nyin, hmw,hmh, ix,iy, ixin,iyin;
+		iysina, nyin, hmw,hmh, ix,iy, ixin,iyin, interpw, offout;
 
+  modnaxisn = profit->modnaxisn;
+  interptype = INTERP_LANCZOS4;
+  interpw = interp_kernwidth[interptype];
   invpixstep = profit->subsamp/profit->pixstep;
 
-  xcin = (float)(profit->modnaxisn[0]/2);
+  xcin = (float)(modnaxisn[0]/2);
   xcout = ((int)(profit->subsamp*profit->objnaxisn[0])/2 + 0.5)
 		/ profit->subsamp - 0.5;
   if ((dx=profit->paramlist[PARAM_X]))
@@ -2008,7 +2022,7 @@ int	profit_resample(profitstruct *profit, float *inpix, PIXTYPE *outpix,
 
   xsin = xcin - xcout*invpixstep;			/* Input start x-coord*/
 
-  if ((int)xsin >= profit->modnaxisn[0]
+  if ((int)xsin >= modnaxisn[0]
 #if defined(HAVE_ISNAN) && defined(HAVE_ISINF)
 	|| isnan(xsin) || isinf(xsin)
 #endif
@@ -2024,21 +2038,21 @@ int	profit_resample(profitstruct *profit, float *inpix, PIXTYPE *outpix,
     ixsout += dixout;
     xsin += dixout*invpixstep;
     }
-  nxout = (int)((profit->modnaxisn[0]-xsin)/invpixstep);/* nb of interpolated
+  nxout = (int)((modnaxisn[0]-xsin)/invpixstep);	/* nb of interpolated
 							input pixels along x */
   if (nxout>(ixout=profit->objnaxisn[0]-ixsout))
     nxout = ixout;
   if (!nxout)
     return RETURN_ERROR;
 
-  ycin = (float)(profit->modnaxisn[1]/2);
+  ycin = (float)(modnaxisn[1]/2);
   ycout = ((int)(profit->subsamp*profit->objnaxisn[1])/2 + 0.5)
 		/ profit->subsamp - 0.5;
   if ((dy=profit->paramlist[PARAM_Y]))
     ycout += *dy/profit->subsamp;
 
   ysin = ycin - ycout*invpixstep;		/* Input start y-coord*/
-  if ((int)ysin >= profit->modnaxisn[1]
+  if ((int)ysin >= modnaxisn[1]
 #if defined(HAVE_ISNAN) && defined(HAVE_ISINF)
 	|| isnan(ysin) || isinf(ysin)
 #endif
@@ -2054,31 +2068,62 @@ int	profit_resample(profitstruct *profit, float *inpix, PIXTYPE *outpix,
     iysout += diyout;
     ysin += diyout*invpixstep;
     }
-  nyout = (int)((profit->modnaxisn[1]-ysin)/invpixstep);/* nb of interpolated
+  nyout = (int)((modnaxisn[1]-ysin)/invpixstep);/* nb of interpolated
 							input pixels along y */
   if (nyout>(iyout=profit->objnaxisn[1]-iysout))
     nyout = iyout;
   if (!nyout)
     return RETURN_ERROR;
 
+  w = profit->objnaxisn[0];
+
+/* Initialize destination buffer to zero */
+  memset(outpix, 0, (size_t)profit->nobjpix*sizeof(PIXTYPE));
+
+  if (profit->dgeoflag) {
+/*-- Resample taking into account differential geometry maps */
+    offout = iysout*w + ixsout;
+    pixout0 = outpix + offout;
+    dgeoxpix0 = profit->dgeopix[0] + offout;
+    dgeoypix0 = profit->dgeopix[1] + offout;
+    yin = ysin + 1.0;    
+    for (j = nyout; j--; yin += invpixstep) {
+      pixout = pixout0;
+      dgeoxpix = dgeoxpix0;
+      dgeoypix = dgeoypix0;
+      dgeoxpix0 += w;
+      dgeoypix0 += w;
+      pixout0 += w;
+      xin = xsin + 1.0;
+      for (i=nxout; i--; xin += invpixstep) {
+        pos[0] = xin - *(dgeoxpix++)*invpixstep;
+        pos[1] = yin - *(dgeoypix++)*invpixstep;
+        *(pixout++) = (PIXTYPE)(factor*interpolate_pix(pos, inpix, modnaxisn,
+			interptype));
+      }
+    }
+  return RETURN_OK;
+  }
+
 /* Set the yrange for the x-resampling with some margin for interpolation */
   iysina = (int)ysin;	/* Int. part of Input start y-coord with margin */
-  hmh = INTERPW/2 - 1;	/* Interpolant start */
+  hmh = interpw/2 - 1;	/* Interpolant start */
   if (iysina<0 || ((iysina -= hmh)< 0))
     iysina = 0;
-  nyin = (int)(ysin+nyout*invpixstep)+INTERPW-hmh;/* Interpolated Input y size*/
-  if (nyin>profit->modnaxisn[1])						/* with margin */
-    nyin = profit->modnaxisn[1];
+  nyin = (int)(ysin+nyout*invpixstep)+interpw-hmh;/* Interpolated Input y size*/
+  if (nyin > modnaxisn[1])			/* with margin */
+    nyin = modnaxisn[1];
 /* Express everything relative to the effective Input start (with margin) */
   nyin -= iysina;
   ysin -= (float)iysina;
 
 /* Allocate interpolant stuff for the x direction */
-  QMALLOC(mask, float, nxout*INTERPW);	/* Interpolation masks */
+  QMALLOC(mask, float, nxout*interpw);	/* Interpolation masks */
   QMALLOC(nmask, int, nxout);		/* Interpolation mask sizes */
   QMALLOC(start, int, nxout);		/* Int. part of Input conv starts */
+
 /* Compute the local interpolant and data starting points in x */
-  hmw = INTERPW/2 - 1;
+  hmw = interpw/2 - 1;
   xin = xsin;
   maskt = mask;
   nmaskt = nmask;
@@ -2086,34 +2131,30 @@ int	profit_resample(profitstruct *profit, float *inpix, PIXTYPE *outpix,
   for (j=nxout; j--; xin+=invpixstep)
     {
     ix = (ixin=(int)xin) - hmw;
-    dxm = ixin - xin - hmw;	/* starting point in the interpolation func */
+    make_kernel(xin - ixin, kernel, interptype);
+    kernelt = kernel;
     if (ix < 0)
       {
-      n = INTERPW+ix;
-      dxm -= (float)ix;
+      n = interpw + ix;
       ix = 0;
+      kernelt -= ix;
       }
     else
-      n = INTERPW;
-    if (n>(t=profit->modnaxisn[0]-ix))
+      n = interpw;
+    if (n>(t=modnaxisn[0]-ix))
       n=t;
     *(startt++) = ix;
     *(nmaskt++) = n;
-    norm = 0.0;
-    for (x=dxm, i=n; i--; x+=1.0)
-      norm += (*(maskt++) = INTERPF(x));
-    norm = norm>0.0? 1.0/norm : 1.0;
-    maskt -= n;
     for (i=n; i--;)
-      *(maskt++) *= norm;
+      *(maskt++) = *(kernelt++);
     }
 
   QCALLOC(pixinout, float, nxout*nyin);	/* Intermediary frame-buffer */
 
 /* Make the interpolation in x (this includes transposition) */
-  pixin0 = inpix + iysina*profit->modnaxisn[0];
+  pixin0 = inpix + iysina*modnaxisn[0];
   dpixout0 = pixinout;
-  for (k=nyin; k--; pixin0+=profit->modnaxisn[0], dpixout0++)
+  for (k=nyin; k--; pixin0+=modnaxisn[0], dpixout0++)
     {
     maskt = mask;
     nmaskt = nmask;
@@ -2130,12 +2171,12 @@ int	profit_resample(profitstruct *profit, float *inpix, PIXTYPE *outpix,
     }
 
 /* Reallocate interpolant stuff for the y direction */
-  QREALLOC(mask, float, nyout*INTERPW);	/* Interpolation masks */
+  QREALLOC(mask, float, nyout*interpw);	/* Interpolation masks */
   QREALLOC(nmask, int, nyout);			/* Interpolation mask sizes */
   QREALLOC(start, int, nyout);		/* Int. part of Input conv starts */
 
 /* Compute the local interpolant and data starting points in y */
-  hmh = INTERPW/2 - 1;
+  hmh = interpw/2 - 1;
   yin = ysin;
   maskt = mask;
   nmaskt = nmask;
@@ -2143,41 +2184,34 @@ int	profit_resample(profitstruct *profit, float *inpix, PIXTYPE *outpix,
   for (j=nyout; j--; yin+=invpixstep)
     {
     iy = (iyin=(int)yin) - hmh;
-    dym = iyin - yin - hmh;	/* starting point in the interpolation func */
+    make_kernel(yin - iyin, kernel, interptype);
+    kernelt = kernel;
     if (iy < 0)
       {
-      n = INTERPW+iy;
-      dym -= (float)iy;
+      n = interpw + iy;
+      kernelt -= iy;
       iy = 0;
       }
     else
-      n = INTERPW;
+      n = interpw;
     if (n>(t=nyin-iy))
       n=t;
     *(startt++) = iy;
     *(nmaskt++) = n;
-    norm = 0.0;
-    for (y=dym, i=n; i--; y+=1.0)
-      norm += (*(maskt++) = INTERPF(y));
-    norm = norm>0.0? 1.0/norm : 1.0;
-    maskt -= n;
     for (i=n; i--;)
-      *(maskt++) *= norm;
+      *(maskt++) = *(kernelt++);
     }
-
-/* Initialize destination buffer to zero */
-  memset(outpix, 0, (size_t)profit->nobjpix*sizeof(PIXTYPE));
 
 /* Make the interpolation in y and transpose once again */
   dpixin0 = pixinout;
-  pixout0 = outpix+ixsout+iysout*profit->objnaxisn[0];
+  pixout0 = outpix+ixsout+iysout*w;
   for (k=nxout; k--; dpixin0+=nyin, pixout0++)
     {
     maskt = mask;
     nmaskt = nmask;
     startt = start;
     pixout = pixout0;
-    for (j=nyout; j--; pixout+=profit->objnaxisn[0])
+    for (j=nyout; j--; pixout+=w)
       {
       dpixin = dpixin0+*(startt++);
       val = 0.0; 
@@ -2334,32 +2368,37 @@ void	profit_makedft(profitstruct *profit)
 
 /****** profit_copyobjpix *****************************************************
 PROTO	int profit_copyobjpix(profitstruct *profit, picstruct *field,
-			picstruct *wfield)
+			picstruct *wfield, picstruct *dgeofield)
 PURPOSE	Copy a piece of the input field image to a profit structure.
 INPUT	Pointer to the profit structure,
 	Pointer to the field structure,
-	Pointer to the field weight structure.
+	Pointer to the field weight structure,
+	Pointer to the differential geometry field structure
 OUTPUT	The number of valid pixels copied.
 NOTES	Global preferences are used.
 AUTHOR	E. Bertin (IAP)
-VERSION	01/12/2009
+VERSION	17/02/2015
  ***/
 int	profit_copyobjpix(profitstruct *profit, picstruct *field,
-			picstruct *wfield)
+			picstruct *wfield, picstruct *dgeofield)
   {
    float	dx, dy2, dr2, rad2;
-   PIXTYPE	*pixin,*spixin, *wpixin,*swpixin, *pixout,*wpixout,
-		backnoise2, invgain, satlevel, wthresh, pix,spix, wpix,swpix;
+   PIXTYPE	*pixin,*wpixin,*dgeoxpixin,*dgeoypixin, *pixout,*wpixout,
+		*dgeoxpixout, *dgeoypixout,
+		backnoise2, invgain, satlevel, wthresh, pix,spix, wpix,swpix,
+		dgeoxpix,dgeoypix,sdgeoxpix,sdgeoypix;
    int		i,x,y, xmin,xmax,ymin,ymax, w,h,dw, npix, off, gainflag,
 		badflag, sflag, sx,sy,sn,sw, ix,iy;
 
 /* First put the image background to -BIG */
   pixout = profit->objpix;
   wpixout = profit->objweight;
+  dgeoxpixout = profit->dgeopix[0];
+  dgeoypixout = profit->dgeopix[1];
   for (i=profit->objnaxisn[0]*profit->objnaxisn[1]; i--;)
     {
     *(pixout++) = -BIG;
-    *(wpixout++) = 0.0;
+    *(wpixout++) = *(dgeoxpixout++) = *(dgeoypixout++) = 0.0;
     }
 
 /* Don't go further if out of frame!! */
@@ -2373,8 +2412,6 @@ int	profit_copyobjpix(profitstruct *profit, picstruct *field,
   sflag = (sn>1);
   w = profit->objnaxisn[0]*sn;
   h = profit->objnaxisn[1]*sn;
-  if (sflag)
-    backnoise2 *= (PIXTYPE)sn;
   invgain = (field->gain > 0.0) ? 1.0/field->gain : 0.0;
   satlevel = field->satur_level - profit->obj->bkg;
   rad2 = h/2.0;
@@ -2385,6 +2422,8 @@ int	profit_copyobjpix(profitstruct *profit, picstruct *field,
 /* Set the image boundaries */
   pixout = profit->objpix;
   wpixout = profit->objweight;
+  dgeoxpixout = profit->dgeopix[0];
+  dgeoypixout = profit->dgeopix[1];
   ymin = iy-h/2;
   ymax = ymin + h;
   if (ymin<field->ymin)
@@ -2392,6 +2431,8 @@ int	profit_copyobjpix(profitstruct *profit, picstruct *field,
     off = (field->ymin-ymin-1)/sn + 1;
     pixout += off*profit->objnaxisn[0];
     wpixout += off*profit->objnaxisn[0];
+    dgeoxpixout += off*profit->objnaxisn[0];
+    dgeoypixout += off*profit->objnaxisn[0];
     ymin += off*sn;
     }
   if (ymax>field->ymax)
@@ -2411,6 +2452,8 @@ int	profit_copyobjpix(profitstruct *profit, picstruct *field,
     off = (-xmin-1)/sn + 1;
     pixout += off;
     wpixout += off;
+    dgeoxpixout += off;
+    dgeoypixout += off;
     dw += off;
     xmin += off*sn;
     }
@@ -2437,140 +2480,121 @@ int	profit_copyobjpix(profitstruct *profit, picstruct *field,
 
 /* Copy the right pixels to the destination */
   npix = 0;
-  if (wfield)
-    {
-    wthresh = wfield->weight_thresh;
+  if (wfield) {
     gainflag = prefs.weightgain_flag;
-    if (sflag)
+    wthresh = wfield->weight_thresh;
+  } else {
+    gainflag = 0;
+    wthresh = BIG;
+  }
+  if (sflag)
+    {
+    swpix = backnoise2 / (double)(sn*sn);
+    sdgeoxpix = sdgeoypix = 0.0;
+/*-- Sub-sampling case */
+    for (y=ymin; y<ymax; y+=sn)
       {
-/*---- Sub-sampling case */
-      for (y=ymin; y<ymax; y+=sn, pixout+=dw,wpixout+=dw)
+      for (x=xmin; x<xmax; x+=sn)
         {
-        for (x=xmin; x<xmax; x+=sn)
+        pix = wpix = 0.0;
+        badflag = 0;
+        for (sy=0; sy<sn; sy++)
           {
-          pix = wpix = 0.0;
-          badflag = 0;
-          for (sy=0; sy<sn; sy++)
+          dy2 = (y+sy-iy);
+          dy2 *= dy2;
+          dx = (x-ix);
+          pixin = &PIX(field, x, y+sy);
+          if (wfield)
+            wpixin = &PIX(wfield, x, y+sy);
+          if (dgeofield) {
+            dgeoxpixin = &DGEOPIXX(dgeofield, x, y+sy);
+            dgeoypixin = &DGEOPIXY(dgeofield, x, y+sy);
+          }
+          for (sx=sn; sx--;)
             {
-            dy2 = (y+sy-iy);
-            dy2 *= dy2;
-            dx = (x-ix);
-            spixin = &PIX(field, x, y+sy);
-            swpixin = &PIX(wfield, x, y+sy);
-            for (sx=sn; sx--;)
+            dr2 = dy2 + dx*dx;
+            dx++;
+            spix = *(pixin++);
+            if (wfield)
+              swpix = *(wpixin++);
+            if (dgeofield) {
+                sdgeoxpix = *(dgeoxpixin++);
+                sdgeoypix = *(dgeoypixin++);
+            }
+            if (dr2<rad2 && spix>-BIG && spix<satlevel && swpix<wthresh)
               {
-              dr2 = dy2 + dx*dx;
-              dx++;
-              spix = *(spixin++);
-              swpix = *(swpixin++);
-              if (dr2<rad2 && spix>-BIG && spix<satlevel && swpix<wthresh)
-                {
-                pix += spix;
-                wpix += swpix;
-                }
-              else
-                badflag=1;
+              pix += spix;
+              wpix += swpix;
+              dgeoxpix += sdgeoxpix;
+              dgeoypix += sdgeoypix;
               }
+            else
+              badflag=1;
             }
-          *(pixout++) = pix;
-          if (!badflag)	/* A single bad pixel ruins is all (saturation, etc.)*/
-            {
-            *(wpixout++) = 1.0 / sqrt(wpix+(pix>0.0?
-		(gainflag? pix*wpix/backnoise2:pix)*invgain : 0.0));
-            npix++;
-            }
-          else
-            *(wpixout++) = 0.0;
           }
-        }
-      }
-    else
-      for (y=ymin; y<ymax; y++, pixout+=dw,wpixout+=dw)
-        {
-        dy2 = y-iy;
-        dy2 *= dy2;
-        pixin = &PIX(field, xmin, y);
-        wpixin = &PIX(wfield, xmin, y);
-        for (x=xmin; x<xmax; x++)
+        *(pixout++) = pix;
+        *(dgeoxpixout++) = dgeoxpix;
+        *(dgeoypixout++) = dgeoypix;
+        if (!badflag)	/* A single bad pixel ruins is all (saturation, etc.)*/
           {
-          dx = x-ix;
-          dr2 = dy2 + dx*dx;
-          pix = *(pixin++);
-          wpix = *(wpixin++);
-          if (dr2<rad2 && pix>-BIG && pix<satlevel && wpix<wthresh)
-            {
-            *(pixout++) = pix;
-            *(wpixout++) = 1.0 / sqrt(wpix+(pix>0.0?
+          *(wpixout++) = 1.0 / sqrt(wpix+(pix>0.0?
 		(gainflag? pix*wpix/backnoise2:pix)*invgain : 0.0));
-            npix++;
-            }
-          else
-            *(pixout++) = *(wpixout++) = 0.0;
+          npix++;
           }
+        else
+          *(wpixout++) = 0.0;
         }
+      pixout += dw;
+      wpixout += dw;
+      dgeoxpixout += dw;
+      dgeoypixout += dw;
+      }
     }
   else
     {
-    if (sflag)
+    wpix = backnoise2;
+    dgeoxpix = dgeoypix = 0.0;
+    for (y=ymin; y<ymax; y++)
       {
-/*---- Sub-sampling case */
-      for (y=ymin; y<ymax; y+=sn, pixout+=dw, wpixout+=dw)
-        {
-        for (x=xmin; x<xmax; x+=sn)
-          {
-          pix = 0.0;
-          badflag = 0;
-          for (sy=0; sy<sn; sy++)
-            {
-            dy2 = y+sy-iy;
-            dy2 *= dy2;
-            dx = x-ix;
-            spixin = &PIX(field, x, y+sy);
-            for (sx=sn; sx--;)
-              {
-              dr2 = dy2 + dx*dx;
-              dx++;
-              spix = *(spixin++);
-              if (dr2<rad2 && spix>-BIG && spix<satlevel)
-                pix += spix;
-              else
-                badflag=1;
-              }
-            }
-          *(pixout++) = pix;
-          if (!badflag)	/* A single bad pixel ruins is all (saturation, etc.)*/
-            {
-            *(wpixout++) = 1.0 / sqrt(backnoise2 + (pix>0.0?pix*invgain:0.0));
-            npix++;
-            }
-          else
-            *(wpixout++) = 0.0;
-          }
-        }
+      dy2 = y-iy;
+      dy2 *= dy2;
+      pixin = &PIX(field, xmin, y);
+      if (wfield)
+        wpixin = &PIX(wfield, xmin, y);
+      if (dgeofield) {
+        dgeoxpixin = &DGEOPIXX(dgeofield, xmin, y);
+        dgeoypixin = &DGEOPIXY(dgeofield, xmin, y);
       }
-    else
-      for (y=ymin; y<ymax; y++, pixout+=dw,wpixout+=dw)
+      for (x=xmin; x<xmax; x++)
         {
-        dy2 = y-iy;
-        dy2 *= dy2;
-        pixin = &PIX(field, xmin, y);
-        for (x=xmin; x<xmax; x++)
-          {
-          dx = x-ix;
-          dr2 = dy2 + dx*dx;
-          pix = *(pixin++);
-          if (dr2<rad2 && pix>-BIG && pix<satlevel)
-            {
-            *(pixout++) = pix;
-            *(wpixout++) = 1.0 / sqrt(backnoise2 + (pix>0.0?pix*invgain : 0.0));
-            npix++;
-            }
-          else
-            *(pixout++) = *(wpixout++) = 0.0;
-          }
+        dx = x-ix;
+        dr2 = dy2 + dx*dx;
+        pix = *(pixin++);
+        if (wfield)
+          wpix = *(wpixin++);
+        if (dgeofield) {
+          dgeoxpix = *(dgeoxpixin++);
+          dgeoypix = *(dgeoypixin++);
         }
+        if (dr2<rad2 && pix>-BIG && pix<satlevel && wpix<wthresh)
+          {
+          *(pixout++) = pix;
+          *(wpixout++) = 1.0 / sqrt(wpix+(pix>0.0?
+		(gainflag? pix*wpix/backnoise2:pix)*invgain : 0.0));
+          npix++;
+          *(dgeoxpixout++) = dgeoxpix;
+          *(dgeoypixout++) = dgeoypix;
+          }
+        else
+          *(pixout++) = *(wpixout++) = *(dgeoxpixout++) = *(dgeoypixout++) = 0.0;
+        }
+      pixout += dw;
+      wpixout += dw;
+      dgeoxpixout += dw;
+      dgeoypixout += dw;
+      }
     }
- 
+
   return npix;
   }
 
@@ -3163,7 +3187,7 @@ INPUT	Pointer to the profit structure,
 OUTPUT	.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	24/04/2013
+VERSION	25/09/2015
  ***/
 void	profit_resetparam(profitstruct *profit, paramenum paramtype)
   {
@@ -3224,8 +3248,8 @@ void	profit_resetparam(profitstruct *profit, paramenum paramtype)
       param = FLAG(obj2.prof_disk_flux)? 1.0 : profit->guessaspect;
       parammin = FLAG(obj2.prof_disk_flux)? 0.5 : 0.01;
       parammax = FLAG(obj2.prof_disk_flux)? 2.0 : 100.0;
-      priorcen = 0.3;
-      priorsig = 0.0 /*0.4*/;
+      priorcen = 0.0;
+      priorsig = 1.0 /*0.4*/;
       break;
     case PARAM_SPHEROID_POSANG:
       fittype = PARFIT_UNBOUND;
@@ -4793,21 +4817,21 @@ void	make_kernel(float pos, float *kernel, interpenum interptype)
     *kernel = 1;
   else if (interptype == INTERP_BILINEAR)
     {
-    *(kernel++) = 1.0-pos;
+    *(kernel++) = 1.0f-pos;
     *kernel = pos;
     }
   else if (interptype == INTERP_LANCZOS2)
     {
-    if (pos<1e-5 && pos>-1e-5)
+    if (pos<1e-5f && pos>-1e-5f)
       {
-      *(kernel++) = 0.0;
-      *(kernel++) = 1.0;
-      *(kernel++) = 0.0;
-      *kernel = 0.0;
+      *(kernel++) = 0.0f;
+      *(kernel++) = 1.0f;
+      *(kernel++) = 0.0f;
+      *kernel = 0.0f;
       }
     else
       {
-      x = -PI/2.0*(pos+1.0);
+      x = -PI/2.0f*(pos+1.0f);
 #ifdef HAVE_SINCOSF
       sincosf(x, &sinx1, &cosx1);
 #else
@@ -4815,13 +4839,13 @@ void	make_kernel(float pos, float *kernel, interpenum interptype)
       cosx1 = cosf(x);
 #endif
       val = (*(kernel++) = sinx1/(x*x));
-      x += PI/2.0;
+      x += PI/2.0f;
       val += (*(kernel++) = -cosx1/(x*x));
-      x += PI/2.0;
+      x += PI/2.0f;
       val += (*(kernel++) = -sinx1/(x*x));
-      x += PI/2.0;
+      x += PI/2.0f;
       val += (*kernel = cosx1/(x*x));
-      val = 1.0/val;
+      val = 1.0f/val;
       *(kernel--) *= val;
       *(kernel--) *= val;
       *(kernel--) *= val;
@@ -4830,18 +4854,18 @@ void	make_kernel(float pos, float *kernel, interpenum interptype)
     }
   else if (interptype == INTERP_LANCZOS3)
     {
-    if (pos<1e-5 && pos>-1e-5)
+    if (pos<1e-5f && pos>-1e-5f)
       {
-      *(kernel++) = 0.0;
-      *(kernel++) = 0.0;
-      *(kernel++) = 1.0;
-      *(kernel++) = 0.0;
-      *(kernel++) = 0.0;
-      *kernel = 0.0;
+      *(kernel++) = 0.0f;
+      *(kernel++) = 0.0f;
+      *(kernel++) = 1.0f;
+      *(kernel++) = 0.0f;
+      *(kernel++) = 0.0f;
+      *kernel = 0.0f;
       }
     else
       {
-      x = -PI/3.0*(pos+2.0);
+      x = -PI/3.0f*(pos+2.0f);
 #ifdef HAVE_SINCOSF
       sincosf(x, &sinx1, &cosx1);
 #else
@@ -4849,19 +4873,19 @@ void	make_kernel(float pos, float *kernel, interpenum interptype)
       cosx1 = cosf(x);
 #endif
       val = (*(kernel++) = sinx1/(x*x));
-      x += PI/3.0;
-      val += (*(kernel++) = (sinx2=-0.5*sinx1-0.866025403785*cosx1)
+      x += PI/3.0f;
+      val += (*(kernel++) = (sinx2=-0.5f*sinx1-0.866025403785f*cosx1)
 				/ (x*x));
-      x += PI/3.0;
-      val += (*(kernel++) = (sinx3=-0.5*sinx1+0.866025403785*cosx1)
+      x += PI/3.0f;
+      val += (*(kernel++) = (sinx3=-0.5f*sinx1+0.866025403785f*cosx1)
 				/(x*x));
-      x += PI/3.0;
+      x += PI/3.0f;
       val += (*(kernel++) = sinx1/(x*x));
-      x += PI/3.0;
+      x += PI/3.0f;
       val += (*(kernel++) = sinx2/(x*x));
-      x += PI/3.0;
+      x += PI/3.0f;
       val += (*kernel = sinx3/(x*x));
-      val = 1.0/val;
+      val = 1.0f/val;
       *(kernel--) *= val;
       *(kernel--) *= val;
       *(kernel--) *= val;
@@ -4872,20 +4896,20 @@ void	make_kernel(float pos, float *kernel, interpenum interptype)
     }
   else if (interptype == INTERP_LANCZOS4)
     {
-    if (pos<1e-5 && pos>-1e-5)
+    if (pos<1e-5f && pos>-1e-5f)
       {
-      *(kernel++) = 0.0;
-      *(kernel++) = 0.0;
-      *(kernel++) = 0.0;
-      *(kernel++) = 1.0;
-      *(kernel++) = 0.0;
-      *(kernel++) = 0.0;
-      *(kernel++) = 0.0;
-      *kernel = 0.0;
+      *(kernel++) = 0.0f;
+      *(kernel++) = 0.0f;
+      *(kernel++) = 0.0f;
+      *(kernel++) = 1.0f;
+      *(kernel++) = 0.0f;
+      *(kernel++) = 0.0f;
+      *(kernel++) = 0.0f;
+      *kernel = 0.0f;
       }
     else
       {
-      x = -PI/4.0*(pos+3.0);
+      x = -PI/4.0f*(pos+3.0f);
 #ifdef HAVE_SINCOSF
       sincosf(x, &sinx1, &cosx1);
 #else
@@ -4893,22 +4917,22 @@ void	make_kernel(float pos, float *kernel, interpenum interptype)
       cosx1 = cosf(x);
 #endif
       val = (*(kernel++) = sinx1/(x*x));
-      x += PI/4.0;
-      val +=(*(kernel++) = -(sinx2=0.707106781186*(sinx1+cosx1))
+      x += PI/4.0f;
+      val +=(*(kernel++) = -(sinx2=0.707106781186f*(sinx1+cosx1))
 				/(x*x));
-      x += PI/4.0;
+      x += PI/4.0f;
       val += (*(kernel++) = cosx1/(x*x));
-      x += PI/4.0;
-      val += (*(kernel++) = -(sinx3=0.707106781186*(cosx1-sinx1))/(x*x));
-      x += PI/4.0;
+      x += PI/4.0f;
+      val += (*(kernel++) = -(sinx3=0.707106781186f*(cosx1-sinx1))/(x*x));
+      x += PI/4.0f;
       val += (*(kernel++) = -sinx1/(x*x));
-      x += PI/4.0;
+      x += PI/4.0f;
       val += (*(kernel++) = sinx2/(x*x));
-      x += PI/4.0;
+      x += PI/4.0f;
       val += (*(kernel++) = -cosx1/(x*x));
-      x += PI/4.0;
+      x += PI/4.0f;
       val += (*kernel = sinx3/(x*x));
-      val = 1.0/val;
+      val = 1.0f/val;
       *(kernel--) *= val;
       *(kernel--) *= val;
       *(kernel--) *= val;

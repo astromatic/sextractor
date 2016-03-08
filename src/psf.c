@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1998-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1998-2015 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		12/07/2012
+*	Last modified:		15/12/2015
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -37,6 +37,7 @@
 
 #include	"define.h"
 #include	"globals.h"
+#include	"key.h"
 #include	"prefs.h"
 #include	"fits/fitscat.h"
 #include	"check.h"
@@ -89,6 +90,7 @@ void	psf_end(psfstruct *psf, psfitstruct *psfit)
   for (d=0; d<ndim; d++)
     free(psf->contextname[d]);
   free(psf->context);
+  free(psf->contextindex);
   free(psf->contextname);
   free(psf->contextoffset);
   free(psf->contextscale);
@@ -118,15 +120,17 @@ Read the PSF data from a FITS file.
 */
 psfstruct	*psf_load(char *filename, int ext)
   {
+   extern tabstruct	*objtab;
    static objstruct	saveobj;
    static obj2struct	saveobj2;
    psfstruct		*psf;
    catstruct		*cat;
    tabstruct		*tab;
    keystruct		*key;
-   char			*head, *ci,*co;
+   char			rkeyname[80],
+			*head, *ci,*co, *pstr, *pstrbuf;
    int			deg[POLY_MAXDIM], group[POLY_MAXDIM], ndim, ngroup,
-			e,i,k;
+			d,e,i,k,p,n, keyn;
 
 /* Open the cat (well it is not a "cat", but simply a FITS file */
   if (!(cat = read_cat(filename)))
@@ -152,8 +156,7 @@ psfstruct	*psf_load(char *filename, int ext)
   head = tab->headbuf;
 
 /*-- Dimension of the polynomial */
-  if (fitsread(head, "POLNAXIS", &ndim, H_INT,T_LONG) == RETURN_OK
-	&& ndim)
+  if (fitsread(head, "POLNAXIS", &ndim, H_INT,T_LONG) == RETURN_OK && ndim)
     {
 /*-- So we have a polynomial description of the PSF variations */
     if (ndim > POLY_MAXDIM)
@@ -165,6 +168,7 @@ psfstruct	*psf_load(char *filename, int ext)
 
     QMALLOC(psf->contextname, char *, ndim);
     QMALLOC(psf->context, double *, ndim);
+    QMALLOC(psf->contextindex, int, ndim);
     QMALLOC(psf->contexttyp, t_type, ndim);
     QMALLOC(psf->contextoffset, double, ndim);
     QMALLOC(psf->contextscale, double, ndim);
@@ -194,18 +198,42 @@ psfstruct	*psf_load(char *filename, int ext)
       else
 /*------ The context element is a dynamic object parameter */
         {
-        if ((k = findkey(psf->contextname[i], (char *)objkey,
+        strncpy(rkeyname, psf->contextname[i],40);
+        strtok_r(rkeyname, "([{}])", &pstrbuf);
+        if ((k = findkey(rkeyname, (char *)objkey,
 		sizeof(keystruct)))==RETURN_ERROR)
           {
           sprintf(gstr, "*Error*: %s CONTEXT parameter in %s unknown",
-		psf->contextname[i], psf->name);
+		rkeyname, psf->name);
           error(EXIT_FAILURE, gstr, "");
           }
+        keyn = (pstr = strtok_r(NULL,"([{}])", &pstrbuf))? atoi(pstr) - 1 : 0;
         key = objkey+k;
-        psf->context[i] = key->ptr;
+        if (key->naxis)
+          {
+          n = 1;
+          for (d=0; d<key->naxis; d++)
+            n *= key->naxisn[d];
+          if (keyn >= n)
+            {
+/*---------- Increase vector size: we restrict ourselves to vectors (1D) */
+            key->nbytes = key->naxisn[0] = keyn+1;
+            key->naxis = 1;
+            changecatparamarrays(rkeyname, key->naxisn, key->naxis);
+            }
+          }
+        else
+          keyn = -1;
+        psf->context[i] = (double *)((char *)key->ptr);
+        psf->contextindex[i] = keyn;
         psf->contexttyp[i] = key->ttype;
 /*------ Declare the parameter "active" to trigger computation by SExtractor */
         *((char *)key->ptr) = (char)'\1';
+/*------ Add the key to the catalog */
+        if (add_key(key, objtab, 0) != RETURN_ERROR)
+          thecat.nparam++;
+        if (!cistrcmp("MAG", rkeyname, FIND_NOSTRICT))
+          psf->mag_flag = 1;
         }
 /*---- Scaling of the context parameter */
       sprintf(gstr, "POLZERO%1d", i+1);
@@ -1046,7 +1074,10 @@ void	psf_build(psfstruct *psf)
   ndim = psf->poly->ndim;
   for (i=0; i<ndim; i++)
     {
-    ttypeconv(psf->context[i], &pos[i], psf->contexttyp[i],T_DOUBLE);
+    ttypeconv(psf->contextindex[i]<0? (char *)psf->context[i]
+		: *((char **)psf->context[i])
+			+ psf->contextindex[i]*t_size[psf->contexttyp[i]],
+		&pos[i], psf->contexttyp[i],T_DOUBLE);
     pos[i] = (pos[i] - psf->contextoffset[i]) / psf->contextscale[i];
     }
   poly_func(psf->poly, pos);

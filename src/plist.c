@@ -148,8 +148,8 @@ PURPOSE	initialize a pixel-list and its components.
 INPUT	-.
 OUTPUT  -.
 NOTES   The preparation of components relies on the preferences.
-AUTHOR  E. Bertin (IAP, Leiden observatory & ESO)
-VERSION 29/11/2005
+AUTHOR  E. Bertin (IAP)
+VERSION 14/01/2015
  ***/
 void	init_plist(void)
 
@@ -222,6 +222,17 @@ void	init_plist(void)
     }
   else
     plistexist_dthresh = 0;
+
+  if (prefs.dgeo_type != DGEO_NONE)
+    {
+    plistexist_dgeo = 1;
+    plistoff_dgeox = plistsize;
+    plistsize += sizeof(PIXTYPE);
+    plistoff_dgeoy = plistsize;
+    plistsize += sizeof(PIXTYPE);
+    }
+  else
+    plistexist_dgeo = 0;
 
   return;
   }

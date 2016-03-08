@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2015 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		12/04/2012
+*	Last modified:		11/03/2015
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -38,7 +38,7 @@
 #define		BANNER		"SExtractor"
 #define		MYVERSION	VERSION
 #define		EXECUTABLE	"sex"
-#define         COPYRIGHT       "2012 IAP/CNRS/UPMC"
+#define         COPYRIGHT       "2012-2015 IAP/CNRS/UPMC"
 #define		DISCLAIMER	BANNER " comes with ABSOLUTELY NO WARRANTY\n" \
 		"You may redistribute copies of " BANNER "\n" \
 		"under the terms of the GNU General Public License."
@@ -220,6 +220,10 @@
 #define	RINT(x)	(int)(floor(x+0.5))
 
 #define	PIX(pic, x, y)	pic->strip[(((int)y)%pic->stripheight) \
+				*pic->width +(int)x]
+#define	DGEOPIXX(pic, x, y)	pic->dgeostrip[0][(((int)y)%pic->stripheight) \
+				*pic->width +(int)x]
+#define	DGEOPIXY(pic, x, y)	pic->dgeostrip[1][(((int)y)%pic->stripheight) \
 				*pic->width +(int)x]
 
 #define	NPRINTF		if (prefs.verbose_type == NORM \

@@ -85,13 +85,14 @@ PROTO	void	propagate_covar(double *vi, double *d, double *vo,
 PURPOSE	Compute Dt.V.D (propagate covariance matrix errors)
 INPUT	Pointer to the original covariance matrix,
 	pointer to the matrix of derivatives,
+	pointer to the destination covariance matrix;
 	input number of parameters,
 	output number of parameters,
 	pointer to a ni*no work array.
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	20/08/2010
+VERSION	29/04/2014
  ***/
 void propagate_covar(double *vi, double *d, double *vo,
 				int ni, int no,	double *temp)

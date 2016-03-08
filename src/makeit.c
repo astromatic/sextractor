@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2013 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2015 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		17/08/2013
+*	Last modified:		21/01/2015
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -73,7 +73,8 @@ void	makeit()
 
   {
    checkstruct		*check;
-   picstruct		*dfield, *field,*pffield[MAXFLAG], *wfield,*dwfield;
+   picstruct		*dfield, *field,*pffield[MAXFLAG], *wfield,*dwfield,
+			*dgeofield;
    catstruct		*imacat;
    tabstruct		*imatab;
    patternstruct	*pattern;
@@ -82,7 +83,8 @@ void	makeit()
    unsigned int		modeltype;
    int			nflag[MAXFLAG], nparam2[2],
 			i, nok, ntab, next, ntabmax, forcextflag,
-			nima0,nima1, nweight0,nweight1, npsf0,npsf1, npat,npat0;
+			nima0,nima1, nweight0,nweight1, npsf0,npsf1, npat,npat0,
+			ndgeo;
 
 /* Install error logging */
   error_installfunc(write_error);
@@ -134,6 +136,7 @@ void	makeit()
     npsf0 = selectext(prefs.psf_name[0]);
   for (i=0; i<prefs.nfimage_name; i++)
     nflag[i] = selectext(prefs.fimage_name[i]);
+  ndgeo = selectext(prefs.dgeoimage_name);
 
   if (prefs.psf_flag)
     {
@@ -319,7 +322,7 @@ void	makeit()
     time(&thetime1);
     thecat.currext = nok;
 
-    dfield = field = wfield = dwfield = NULL;
+    dfield = field = wfield = dwfield = dgeofield = NULL;
 
     if (prefs.dimage_flag)
       {
@@ -419,6 +422,18 @@ void	makeit()
         error(EXIT_FAILURE,
 	"*Error*: Incompatible FLAG-map size in ", prefs.fimage_name[i]);
       }
+
+/*-- Init the differential geometry images */
+    if (prefs.dgeo_type != DGEO_NONE) {
+      dgeofield = newfield(prefs.dgeoimage_name, DGEO_FIELD,
+		nima0<0? ntab : (ndgeo<0?1:ndgeo));
+      if ((dgeofield->width != field->width)
+		|| (dgeofield->height != field->height))
+        error(EXIT_FAILURE,
+		"*Error*: Incompatible differential geometry map size in ",
+		prefs.dgeoimage_name);
+    }
+
 
 /*-- Compute background maps for `standard' fields */
     QPRINTF(OUTPUT, dfield? "Measurement image:"
@@ -541,7 +556,8 @@ void	makeit()
 
 /*-- Start the extraction pipeline */
     NFPRINTF(OUTPUT, "Scanning image");
-    scanimage(field, dfield, pffield, prefs.nimaflag, wfield, dwfield);
+    scanimage(field, dfield, pffield, prefs.nimaflag, wfield, dwfield,
+		dgeofield);
 
 /*-- Finish the current CHECK-image processing */
     if (prefs.check_flag)
@@ -579,6 +595,8 @@ void	makeit()
       endfield(wfield);
     if (dwfield)
       endfield(dwfield);
+    if (dgeofield)
+      endfield(dgeofield);
 
     QPRINTF(OUTPUT, "      Objects: detected %-8d / sextracted %-8d        \n\n",
 	thecat.ndetect, thecat.ntotal);

@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2015 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,18 +22,17 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/10/2010
+*	Last modified:		08/01/2015
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
 /*------------------------------ field flags -------------------------------*/
-#define		DETECT_FIELD	0x01	/* Detection */
-#define		MEASURE_FIELD	0x02	/* Measurement */
-#define		FLAG_FIELD	0x04	/* Flagging */
-#define		RMS_FIELD	0x08	/* Weighting with std deviations */
-#define		VAR_FIELD	0x10	/* Weighting with variances */
-#define		WEIGHT_FIELD	0x20	/* Weighting with weights */
-#define		BACKRMS_FIELD	0x40	/* Weighting from a backrms matrix */
-#define		INTERP_FIELD	0x80	/* Purely interpolated data */
-
-
+#define		DETECT_FIELD	0x0001	/* Detection */
+#define		MEASURE_FIELD	0x0002	/* Measurement */
+#define		FLAG_FIELD	0x0004	/* Flagging */
+#define		RMS_FIELD	0x0008	/* Weighting with std deviations */
+#define		VAR_FIELD	0x0010	/* Weighting with variances */
+#define		WEIGHT_FIELD	0x0020	/* Weighting with weights */
+#define		BACKRMS_FIELD	0x0040	/* Weighting from a backrms matrix */
+#define		INTERP_FIELD	0x0080	/* Purely interpolated data */
+#define		DGEO_FIELD	0x0100	/* Differential geometry map */

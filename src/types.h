@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2013 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2015 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		05/07/2013
+*	Last modified:		02/12/2015
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -92,6 +92,7 @@ typedef struct
   {
 /* ---- basic parameters */
   int		number;				/* ID */
+  int		id_parent;			/* Parent ID */
   int		fdnpix;				/* nb of extracted pix */
   int		dnpix;				/* nb of pix above thresh  */
   int		npix;				/* "" in measured frame */
@@ -107,6 +108,7 @@ typedef struct
 /* ---- astrometric data */
   int		peakx,peaky;			/* pos of brightest pix */
   double       	mx, my;				/* barycenter */
+  float		dmx, dmy;			/* dgeo barycenter correction */
   double	poserr_mx2, poserr_my2,
 		poserr_mxy;			/* Error ellips moments */
 /* ---- morphological data */			
@@ -129,8 +131,7 @@ typedef struct
   float		dthresh;		       	/* detect. threshold (ADU) */
   float		mthresh;		       	/* max. threshold (ADU) */
   int		iso[NISO];			/* isophotal areas */
-  float		fwhm;				/* IMAGE FWHM */
-  
+  float		fwhm;				/* IMAGE FWHM */  
   }	objstruct;
 
 /* II: "BLIND" parameters */
@@ -175,6 +176,7 @@ typedef struct
   double	pixscale2;			/* Local pixel area */
   double	mamaposx,mamaposy;		/* "MAMA" pos. in pixels */
   float		sposx,sposy;			/* single precision pos. */
+  float		pos_dgeox, pos_dgeoy;		/* d.geom. correction to pos. */
   float		poserr_a, poserr_b,
 		poserr_theta;			/* Error ellips parameters */
   float		poserr_cxx, poserr_cyy,
@@ -220,9 +222,12 @@ typedef struct
   int		assoc_number;			/* nb of ASSOCiated objects */
   float		*vignet;			/* Pixel data */
   float		*vigshift;			/* (Shifted) pixel data */
+  float		*vignet_dgeox;			/* Differential x geom. data */
+  float		*vignet_dgeoy;			/* Differential y geom. data */
 
 /* Windowed measurements */
   double	winpos_x,winpos_y;		/* Windowed barycenter */
+  float		winpos_dgeox, winpos_dgeoy;	/* d.geom. corr. to win. pos */
   double	winposerr_mx2, winposerr_my2,
 		winposerr_mxy;			/* Error ellips moments */
   float		winposerr_a, winposerr_b,
@@ -574,6 +579,7 @@ typedef struct pic
   int		yblank;			/* y blanking limit (highest+1) */
   PIXTYPE	*strip;			/* pointer to the image buffer */
   FLAGTYPE	*fstrip;		/* pointer to the FLAG buffer */
+  PIXTYPE	*dgeostrip[2];		/* pointers to diff. geometry buffers */
   int		stripheight;		/* height  of a strip (in lines) */
   int		stripmargin;		/* number of lines in margin */
   int		stripstep;		/* number of lines at each read */

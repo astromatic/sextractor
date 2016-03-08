@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 2006-2013 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 2006-2015 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		13/02/2013
+*	Last modified:		17/02/2015
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -73,9 +73,9 @@
 #define	PROFIT_MAXR2MAX	1e6	/* Maximum r2_max for truncating profiles */
 #define	PROFIT_DYNPARAM	10.0	/* Dynamic compression param. in sigma units */
 #define	PROFIT_SMOOTHR	4.0	/* Profile smoothing radius (pixels) */
-#define	PROFIT_MAXMODSIZE  512	/* Maximum size allowed for the model raster */
+#define	PROFIT_MAXMODSIZE  8192	/* Maximum size allowed for the model raster */
 #define PROFIT_MAXSMODSIZE 64	/* Number of model planes */
-#define	PROFIT_MAXOBJSIZE  512	/* Maximum size allowed for the object raster */
+#define	PROFIT_MAXOBJSIZE  8192	/* Maximum size allowed for the object raster */
 #define	PROFIT_BARXFADE	0.1	/* Fract. of bar length crossfaded with arms */
 #define	PROFIT_MAXEXTRA	2	/* Max. nb of extra free params of profiles */
 #define INTERP_MAXKERNELWIDTH	8	/* Max. range of kernel (pixels) */
@@ -182,6 +182,8 @@ typedef struct
   PIXTYPE	*lmodpix2;	/* 2nd low resolution pixmap of the model */
   PIXTYPE	*objpix;	/* Copy of object pixmap */
   PIXTYPE	*objweight;	/* Copy of object weight-map */
+  PIXTYPE	*dgeopix[2];	/* Copy of object differential geometry maps */
+  int		dgeoflag;	/* Set if diff. geometry maps are provided */
   int		objnaxisn[2];	/* Dimensions along each axis */
   int		nobjpix;	/* Total number of "final" pixels */
   int		ix, iy;		/* Integer coordinates of object pixmap */
@@ -227,7 +229,7 @@ float		*profit_compresi(profitstruct *profit, float dynparam,
 int		profit_boundtounbound(profitstruct *profit,
 			float *param, double *dparam, int index),
 		profit_copyobjpix(profitstruct *profit, picstruct *field,
-			picstruct *wfield),
+			picstruct *wfield, picstruct *dgeofield),
 		profit_covarunboundtobound(profitstruct *profit,
 			double *dparam, float *param),
 		profit_minimize(profitstruct *profit, int niter),
@@ -249,8 +251,8 @@ void		profit_dfit(profitstruct *profit, profitstruct *dprofit,
 		prof_end(profstruct *prof),
 		profit_addparam(profitstruct *profit, paramenum paramindex,
 			float **param),
-		profit_fit(profitstruct *profit,
-			picstruct *field, picstruct *wfield,
+		profit_fit(profitstruct *profit, picstruct *field,
+			picstruct *wfield, picstruct *dgeofield,
 			objstruct *obj, obj2struct *obj2),
 		profit_convmoments(profitstruct *profit, obj2struct *obj2),
 		profit_convolve(profitstruct *profit, float *modpix),
