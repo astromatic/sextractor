@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 2006-2015 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 2006-2016 IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		17/02/2015
+*	Last modified:		16/03/2016
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -73,9 +73,9 @@
 #define	PROFIT_MAXR2MAX	1e6	/* Maximum r2_max for truncating profiles */
 #define	PROFIT_DYNPARAM	10.0	/* Dynamic compression param. in sigma units */
 #define	PROFIT_SMOOTHR	4.0	/* Profile smoothing radius (pixels) */
-#define	PROFIT_MAXMODSIZE  8192	/* Maximum size allowed for the model raster */
+#define	PROFIT_MAXMODSIZE  512	/* Maximum size allowed for the model raster */
 #define PROFIT_MAXSMODSIZE 64	/* Number of model planes */
-#define	PROFIT_MAXOBJSIZE  8192	/* Maximum size allowed for the object raster */
+#define	PROFIT_MAXOBJSIZE  512	/* Maximum size allowed for the object raster */
 #define	PROFIT_BARXFADE	0.1	/* Fract. of bar length crossfaded with arms */
 #define	PROFIT_MAXEXTRA	2	/* Max. nb of extra free params of profiles */
 #define INTERP_MAXKERNELWIDTH	8	/* Max. range of kernel (pixels) */

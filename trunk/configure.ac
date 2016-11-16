@@ -7,7 +7,7 @@
 #
 #	This file part of:	SExtractor
 #
-#	Copyright:		(C) 2002-2016 Emmanuel Bertin -- IAP/CNRS/UPMC
+#	Copyright:		(C) 2002-2016 IAP/CNRS/UPMC
 #
 #	License:		GNU General Public License
 #
@@ -22,7 +22,7 @@
 #	You should have received a copy of the GNU General Public License
 #	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 #
-#	Last modified:		08/03/2016
+#	Last modified:		16/03/2016
 #
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -31,7 +31,7 @@ define([AC_CACHE_LOAD],)
 define([AC_CACHE_SAVE],)
 
 # This is your standard Bertin source code...
-AC_INIT(sextractor, 2.23.1, [bertin@iap.fr])
+AC_INIT(sextractor, 2.23.2, [bertin@iap.fr])
 AC_CONFIG_SRCDIR(src/makeit.c)
 AC_CONFIG_AUX_DIR(autoconf)
 AC_CONFIG_HEADERS(config.h)
@@ -267,7 +267,7 @@ fi
 # "Best" linking option
 if test x$enable_best_link = xyes; then
   if test x$enable_icc = xyes; then
-    AM_LDFLAGS="-static-intel -openmp-link static -shared-libgcc \
+    AM_LDFLAGS="-static-intel -qopenmp-link static -shared-libgcc \
 	-static-libtool-libs -no-intel-extensions -avoid-version $AM_LDFLAGS"
   else
     AM_LDFLAGS="-shared-libgcc -static-libtool-libs -avoid-version $AM_LDFLAGS"

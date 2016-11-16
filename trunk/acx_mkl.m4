@@ -7,7 +7,7 @@ dnl %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 dnl
 dnl	This file part of:	AstrOmatic software
 dnl
-dnl	Copyright:		(C) 2003-2013 Emmanuel Bertin -- IAP/CNRS/UPMC
+dnl	Copyright:		(C) 2003-2016 IAP/CNRS/UPMC
 dnl
 dnl	License:		GNU General Public License
 dnl
@@ -23,7 +23,7 @@ dnl	You should have received a copy of the GNU General Public License
 dnl	along with AstrOmatic software.
 dnl	If not, see <http://www.gnu.org/licenses/>.
 dnl
-dnl	Last modified:		17/04/2013
+dnl	Last modified:		16/03/2016
 dnl
 dnl %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 dnl
@@ -97,7 +97,7 @@ dnl MacOSX
 dnl INTEL compiler uses Intel64 architecture
     if test x$2 = xyes; then
 dnl 64 bit pointers
-      AC_SUBST(MKL_CFLAGS, "-openmp -DMKL_ILP64 -I$mklroot/include")
+      AC_SUBST(MKL_CFLAGS, "-qopenmp -DMKL_ILP64 -I$mklroot/include")
       if test x$3 = xyes; then
 dnl Static linking
         AC_SUBST(MKL_LIBS, ["$mklroot/lib/libmkl_intel_ilp64.a \
@@ -110,7 +110,7 @@ dnl Dynamic linking
       fi
     else
 dnl 32 bit pointers
-      AC_SUBST(MKL_CFLAGS, "-openmp -I$mklroot/include")
+      AC_SUBST(MKL_CFLAGS, "-qopenmp -I$mklroot/include")
       if test x$3 = xyes; then
 dnl Static linking
         AC_SUBST(MKL_LIBS, ["$mklroot/lib/libmkl_intel_lp64.a \
@@ -124,7 +124,7 @@ dnl Dynamic linking
     fi
   else
 dnl INTEL compiler uses IA32 architecture
-    AC_SUBST(MKL_CFLAGS, "-openmp -I$mklroot/include")
+    AC_SUBST(MKL_CFLAGS, "-qopenmp -I$mklroot/include")
     if test x$3 = xyes; then
 dnl Static linking
     AC_SUBST(MKL_LIBS, ["$mklroot/lib/libmkl_intel.a \
@@ -142,7 +142,7 @@ dnl Linux
 dnl INTEL compiler uses Intel64 architecture
     if test x$2 = xyes; then
 dnl 64 bit pointers
-      AC_SUBST(MKL_CFLAGS, "-openmp -DMKL_ILP64 -I$mklroot/include")
+      AC_SUBST(MKL_CFLAGS, "-qopenmp -DMKL_ILP64 -I$mklroot/include")
       if test x$3 = xyes; then
 dnl Static linking
       AC_SUBST(MKL_LIBS,
@@ -156,7 +156,7 @@ dnl Dynamic linking
       fi
     else
 dnl 32 bit pointers
-      AC_SUBST(MKL_CFLAGS, "-openmp -I$mklroot/include")
+      AC_SUBST(MKL_CFLAGS, "-qopenmp -I$mklroot/include")
       if test x$3 = xyes; then
 dnl Static linking
         AC_SUBST(MKL_LIBS,
@@ -171,7 +171,7 @@ dnl Dynamic linking
     fi
   else
 dnl INTEL compiler uses IA32 architecture
-    AC_SUBST(MKL_CFLAGS, "-openmp -I$mklroot/include")
+    AC_SUBST(MKL_CFLAGS, "-qopenmp -I$mklroot/include")
     if test x$3 = xyes; then
 dnl Static linking
       AC_SUBST(MKL_LIBS, ["$startgroup,$mklroot/lib/ia32/libmkl_intel.a,\
