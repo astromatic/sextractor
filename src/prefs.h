@@ -235,7 +235,7 @@ typedef struct
   int		prof_flag;				/* Profile-fitting */
   int		dprof_flag;				/* Det. Prof.-fitting */
   int		pattern_flag;				/* Pattern-fitting */
-/*----- Profile-fitting */
+/*----- Model-fitting */
   int		prof_vectorsize;			/* nb of params */
   int		prof_errvectorsize;			/* nb of params */
   int		prof_errmatrixsize[2];			/* nb of params */

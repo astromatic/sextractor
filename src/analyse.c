@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2015 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2016 IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		02/12/2015
+*	Last modified:		16/11/2016
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -728,7 +728,7 @@ void	endobject(picstruct *field, picstruct *dfield, picstruct *wfield,
     }
 
 /*----- Pre-compute mags in case they are needed for PSF dependency */
-    if ((prefs.psffit_flag || prefs.prof_flag) && thepsf->mag_flag)
+    if (prefs.psffit_flag || prefs.prof_flag)
       computemags(field, obj);
 
 /*------------------------------- PSF fitting ------------------------------*/

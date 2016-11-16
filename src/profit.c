@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 2006-2015 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 2006-2016 IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		25/09/2015
+*	Last modified:		16/03/2016
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -1980,12 +1980,11 @@ float	*profit_compresi(profitstruct *profit, float dynparam, float *resi)
 
 
 /****** profit_resample ******************************************************
-PROTO	int	prof_resample(profitstruct *profit, float *inpix,
+PROTO	int	profit_resample(profitstruct *profit, float *inpix,
 		PIXTYPE *outpix, float factor)
 PURPOSE	Resample the current full resolution model to image resolution.
 INPUT	Profile-fitting structure,
 	pointer to input raster,
-	pointer to differential geometry raster (or NULL if absent),
 	pointer to output raster,
 	multiplicating factor.
 OUTPUT	RETURN_ERROR if the rasters don't overlap, RETURN_OK otherwise.
@@ -3187,7 +3186,7 @@ INPUT	Pointer to the profit structure,
 OUTPUT	.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	25/09/2015
+VERSION	16/03/2016
  ***/
 void	profit_resetparam(profitstruct *profit, paramenum paramtype)
   {
@@ -3249,7 +3248,7 @@ void	profit_resetparam(profitstruct *profit, paramenum paramtype)
       parammin = FLAG(obj2.prof_disk_flux)? 0.5 : 0.01;
       parammax = FLAG(obj2.prof_disk_flux)? 2.0 : 100.0;
       priorcen = 0.0;
-      priorsig = 1.0 /*0.4*/;
+      priorsig = 1.0;
       break;
     case PARAM_SPHEROID_POSANG:
       fittype = PARFIT_UNBOUND;
@@ -3262,8 +3261,6 @@ void	profit_resetparam(profitstruct *profit, paramenum paramtype)
       param = 4.0;
       parammin = FLAG(obj2.prof_disk_flux)? 1.0 : 0.3;
       parammax = 10.0;
-      priorcen = 1.0;
-      priorsig = 0.0 /*2.0*/;
       break;
     case PARAM_DISK_FLUX:
       fittype = PARFIT_LOGBOUND;
@@ -3423,15 +3420,22 @@ INPUT	Pointer to the profit structure.
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	18/09/2008
+VERSION	18/03/2014
  ***/
 void	profit_resetparams(profitstruct *profit)
   {
-   int		p;
+   int		p, npresi;
 
 
   for (p=0; p<PARAM_NPARAM; p++)
     profit_resetparam(profit, (paramenum)p);
+
+  npresi = 0;
+  for (p=0; p<profit->nparam; p++)
+    if (profit->dparampsig[p]>0.0)
+      npresi++;
+
+  profit->npresi = npresi;
 
   return;
   }
@@ -3472,7 +3476,9 @@ int	profit_setparam(profitstruct *profit, paramenum paramtype,
     profit->parammin[index] = parammin;
     profit->parammax[index] = parammax;
     profit->parfittype[index] = parfittype;
-    profit_boundtounbound(profit, &priorcen, &profit->dparampcen[index], index);
+// Does not make much sense to express Gaussian prior center in model space
+//  profit_boundtounbound(profit, &priorcen, &profit->dparampcen[index], index);
+    profit->dparampcen[index] = priorcen;
     profit->dparampsig[index] = priorsig;
     return RETURN_OK;
     }
