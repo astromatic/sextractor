@@ -30,9 +30,7 @@
 #include        "config.h"
 #endif
 
-#ifndef HAVE_MATHIMF_H
 #define _GNU_SOURCE
-#endif
 
 #include	<math.h>
 #include	<stdio.h>

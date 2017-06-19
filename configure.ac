@@ -291,6 +291,8 @@ else
   fi
 fi
 
+AM_CONDITIONAL(USE_MODEL, [test "$enable_model_fitting" != "no"])
+
 # Compile with profiling option
 if test "$enable_profiling" = "yes"; then
   if test "$enable_icc" = "yes"; then
@@ -336,4 +338,5 @@ src/fits/Makefile
 src/levmar/Makefile
 src/wcs/Makefile
 tests/Makefile
+])
 AC_OUTPUT

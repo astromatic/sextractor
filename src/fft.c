@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 2007-2013 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 2007-2017 IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		17/04/2013
+*	Last modified:		19/06/2017
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -36,10 +36,6 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-
-#ifndef FFTW3_H
-#include FFTW_H
-#endif
 
 #include "define.h"
 #include "globals.h"

@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 2007-2013 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 2007-2017 IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,12 +22,16 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		15/02/2013
+*	Last modified:		19/06/2017
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
 #ifndef _FITSCAT_H_
 #include "fits/fitscat.h"
+#endif
+
+#ifndef FFTW3_H
+#include FFTW_H
 #endif
 
 /*---------------------------- Internal constants ---------------------------*/
