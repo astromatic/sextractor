@@ -1,0 +1,2 @@
+The files in that subdirectory are for building custom, optimized binary Debian packages with the command make deb (using gcc) or make deb-best (using icc/MKL). They are not meant to be used for building packages of the official Debian/Ubuntu distros.
+

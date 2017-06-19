@@ -22,13 +22,13 @@
 #	You should have received a copy of the GNU General Public License
 #	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 #
-#	Last modified:		12/07/2012
+#	Last modified:		19/06/2017
 #
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%define name @PACKAGE_NAME@
+%define name @PACKAGE_TARNAME@
 %define version @PACKAGE_VERSION@
-%define release 1
+%define release 1%{?dist}
 %undefine _missing_build_ids_terminate_build
 
 Summary: Extract catalogs of sources from astronomical images
@@ -45,16 +45,16 @@ BuildRequires: fftw-devel >= 3.1
 BuildRequires: atlas-devel >= 3.6.0
 
 %description
-SExtractor stands for ``Source Extractor'': a software for making catalog of sources from astronomical images.
+Extract catalogs of sources from astronomical images
 
 %prep
 %setup -q
 
 %build
 if test "$USE_BEST"; then
-%configure --enable-icc --enable-mkl --enable-auto-flags --enable-best-link
+%configure --enable-mkl --enable-auto-flags --enable-best-link
 elif test "$USE_ICC"; then
-%configure --enable-icc --enable-mkl
+%configure --enable-icc
 else
 %configure
 fi
@@ -69,12 +69,12 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(-,root,root)
-%doc AUTHORS BUGS ChangeLog COPYRIGHT HISTORY INSTALL LICENSE README THANKS doc/README.DOC doc/sextractor.pdf
+%doc config AUTHORS BUGS ChangeLog COPYRIGHT HISTORY INSTALL LICENSE README.md THANKSf
 %{_bindir}/sex
 %{_bindir}/ldactoasc
 %{_mandir}/man1/sex.1*
 %{_mandir}/manx/sex.x*
-%{_datadir}/@PACKAGE_NAME@
+%{_datadir}/@PACKAGE_TARNAME@
 
 %changelog
 * @DATE2@ @PACKAGER@ <@PACKAGE_BUGREPORT@>

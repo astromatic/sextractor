@@ -1,0 +1,37 @@
+#
+#				control
+#
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+#
+#	This file part of:	SCAMP
+#
+#	Copyright:		(C) 2006-2017 IAP/CNRS/UPMC
+#
+#	License:		GNU General Public License
+#
+#	SCAMP is free software: you can redistribute it and/or modify
+#	it under the terms of the GNU General Public License as published by
+#	the Free Software Foundation, either version 3 of the License, or
+# 	(at your option) any later version.
+#	SCAMP is distributed in the hope that it will be useful,
+#	but WITHOUT ANY WARRANTY; without even the implied warranty of
+#	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#	GNU General Public License for more details.
+#	You should have received a copy of the GNU General Public License
+#	along with SCAMP.  If not, see <http://www.gnu.org/licenses/>.
+#
+#	Last modified:		19/06/2017
+#
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Source: sextractor
+Section: science
+Priority: optional
+Maintainer: Emmanuel Bertin <bertin@iap.fr>
+Build-Depends: debhelper (>= 9)
+Homepage: http://astromatic.net/software/sextractor
+
+Package: sextractor
+Architecture: any
+Depends: ${misc:Depends}, ${shlibs:Depends}
+Description: Extract catalogs of sources from astronomical images

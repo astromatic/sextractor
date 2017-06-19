@@ -1,3 +1,7 @@
+June 2017: 2.24
+	- Auto-config based on autogen.sh
+	- Main repository moved to GitHub
+
 October 2010: 2.13
 	- Adaptive CLASS_STAR
 	- Model-fitting.

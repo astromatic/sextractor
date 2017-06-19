@@ -1,0 +1,36 @@
+#! /usr/bin/make -f
+
+# These are used for cross-compiling and for saving the configure script
+# from having to guess our platform (since we know it already)
+DEB_HOST_GNU_TYPE   ?= $(shell dpkg-architecture -qDEB_HOST_GNU_TYPE)
+DEB_BUILD_GNU_TYPE  ?= $(shell dpkg-architecture -qDEB_BUILD_GNU_TYPE)
+DEB_BUILD_ARCH ?= $(shell dpkg-architecture -qDEB_BUILD_ARCH)
+DEB_BUILD_OPTIONS = noddebs
+
+%:
+	dh $@ --parallel --with autoreconf
+
+override_dh_auto_configure:
+ifeq ($(USE_BEST),1)
+	dh_auto_configure -- --host=$(DEB_HOST_GNU_TYPE) \
+			--build=$(DEB_BUILD_GNU_TYPE) \
+			--prefix=/usr --mandir=\$${prefix}/share/man \
+			--enable-icc --enable-mkl \
+			--enable-auto-flags --enable-best-link
+else
+ifeq ($(USE_ICC),1)
+	dh_auto_configure -- --host=$(DEB_HOST_GNU_TYPE) \
+			--build=$(DEB_BUILD_GNU_TYPE) \
+			--prefix=/usr --mandir=\$${prefix}/share/man \
+			--enable-icc
+else
+	dh_auto_configure -- --host=$(DEB_HOST_GNU_TYPE) \
+			--build=$(DEB_BUILD_GNU_TYPE) \
+			--prefix=/usr --mandir=\$${prefix}/share/man
+endif
+endif
+
+override_dh_installchangelogs:
+	dh_installchangelogs ChangeLog
+
+

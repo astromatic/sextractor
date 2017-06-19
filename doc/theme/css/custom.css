@@ -1,0 +1,47 @@
+/* Change heading font */
+/*
+h1,h2,h3 {
+	font-weight: 700;
+	font-family: "CherrySoda","ff-tisa-web-pro","Georgia",Arial,sans-serif;
+}
+
+@font-face {
+	font-family: "CherrySoda";
+	font-style: normal;
+	font-weight: 700;
+	src: url(../fonts/CherrySoda.ttf) format('truetype');
+}
+*/
+/* Extend page width size limit */
+.wy-nav-content {
+	max-width: 1600px;
+}
+
+/* Justified and slightly lower line interval for text */
+li, p {
+	text-align: justify;
+	line-height: 20px;
+}
+
+/* Smaller caption text, further away from the figure */
+.caption {
+	font-size: smaller;
+	margin-top: 1em;
+}
+
+/* Override responsive image scaling */
+img {
+	width: auto;
+}
+
+/* Move equation no to the right */
+.eqno {
+	float: right;
+	margin: 1em 0em;
+}
+
+/* Override Mathjax colors forced to dark grey */
+span[id*="MathJax-Span"] {
+	color: inherit;
+}
+

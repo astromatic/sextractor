@@ -5,7 +5,7 @@
 #
 #	This file part of:	SExtractor
 #
-#	Copyright:		(C) 1997-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+#	Copyright:		(C) 1997-2017 IAP/CNRS/UPMC
 #
 #	License:		GNU General Public License
 #
@@ -20,9 +20,359 @@
 #	You should have received a copy of the GNU General Public License
 #	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 #
-#	Last modified:		11/10/2010
+#	Last modified:		19/06/2017
 #
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+------------------------------------------------------------------------
+r381 | bertin | 2016-03-08 22:35:51 +0100 (Tue, 08 Mar 2016) | 2 lines
+
+Added missing dgeo.c and dgeo.h files.
+
+------------------------------------------------------------------------
+r380 | bertin | 2016-03-08 18:02:20 +0100 (Tue, 08 Mar 2016) | 13 lines
+
+Fixed PCi_j WCS keyword parsing issue (thanks to O.Fors for reporting this issue).
+Fixed issue with magnitudes when used as PSF model parameters (thanks to A.Donnarumma for reporting this issue).
+Added ID_PARENT catalog parameter to identify the common parent of deblended sources (thanks to R.McMahon for the suggestion).
+Introduced regularization of Sersic model ellipticities based on AMALGAm prescriptions for the Great3 challenge (see Mandelbaum et al. 2015).
+Fixed error in ecliptic coordinate computations (thanks to H.Bouy for reporting this issue).
+Added support for differential geometry maps, with new DGEO_TYPE and DGEO_IMAGE configuration keywords and new DGEOX/Y_IMAGE and DGEOX/YWIN_IMAGE measurement parameters.
+Added differential geometry map correction to model-fitting.
+Added VIGNET_DGEOX and VIGNET_DGEOY differential geometry map cutouts in catalogs (for use in PSFEx).
+Added support for PSF model dependencies in ASSOC vectors.
+Fixed issue with single-line background meshes.
+Fixed positional offsets of large galaxy models on MODELS and -MODELS check-images.
+Pushed version number to 2.23.1.
+
+------------------------------------------------------------------------
+r332 | bertin | 2014-03-19 14:56:33 +0100 (Wed, 19 Mar 2014) | 3 lines
+
+Refactored management of aspect ratios in model-fitting.
+Pushed version number to 2.19.5.
+
+------------------------------------------------------------------------
+r323 | bertin | 2013-09-24 10:03:28 +0200 (Tue, 24 Sep 2013) | 4 lines
+
+Fixed positional offsets of large galaxy models on MODELS and -MODELS check-ima\
+ges.
+Pushed version number to 2.19.4.
+
+------------------------------------------------------------------------
+r321 | bertin | 2013-09-12 14:44:12 +0200 (Thu, 12 Sep 2013) | 2 lines
+
+Added missing reset of measurements parameters at each catalog initialization.
+
+------------------------------------------------------------------------
+r320 | bertin | 2013-09-12 14:09:40 +0200 (Thu, 12 Sep 2013) | 5 lines
+
+Fixed regression with --disable-model-fitting option.
+Fixed issue with model fitting measurement leftovers with masked sources (thank
+s to E. Rykoff).
+Pushed version number to 2.19.3.
+
+------------------------------------------------------------------------
+r319 | marmo | 2013-08-17 22:41:03 +0200 (Sat, 17 Aug 2013) | 2 lines
+
+Solved issue with --disable-model-fitting configuration option. Pushed version number to 2.19.2
+
+------------------------------------------------------------------------
+r314 | bertin | 2013-07-17 17:00:34 +0200 (Wed, 17 Jul 2013) | 2 lines
+
+Fixed obsolete SExtractor measurement parameters in "make check" tests.
+
+------------------------------------------------------------------------
+r313 | bertin | 2013-07-17 16:40:17 +0200 (Wed, 17 Jul 2013) | 3 lines
+
+Fixed compilation issue with finitef() function in profit.c on OSX 10.8.
+Pushed version number to 2.19.1.
+
+------------------------------------------------------------------------
+r312 | bertin | 2013-07-05 15:52:54 +0200 (Fri, 05 Jul 2013) | 10 lines
+
+Fixed issue with MINIBACKGROUND	and MINIBACK_RMS multi-extension check-images.
+Added new measurement parameters:
+FLUXRATIO_POINTSOURCE :    Point-source flux-to-total ratio from fitting,
+FLUXRATIOERR_POINTSOURCE : Uncertainty on point-source flux-to-total ratio,
+FLUXRATIO_SPHEROID :       Spheroid flux-to-total ratio from fitting,
+FLUXRATIOERR_SPHEROID :    Uncertainty on spheroid flux-to-total ratio,
+FLUXRATIO_DISK :           Disk flux-to-total ratio from fitting, and
+FLUXRATIOERR_DISK :        Uncertainty on disk flux-to-total ratio.
+Pushed version number to 2.19.0
+
+------------------------------------------------------------------------
+r311 | bertin | 2013-06-18 12:35:54 +0200 (Tue, 18 Jun 2013) | 2 lines
+
+Fixed uninitialized 2nd BACK_VALUE in double image + BACK_TYPE MANUAL modes.
+
+------------------------------------------------------------------------
+r310 | bertin | 2013-06-06 17:06:51 +0200 (Thu, 06 Jun 2013) | 3 lines
+
+Fixed missing image name in sex.xml VOTable output in double image mode when input filenames are separated by a comma instead of a space.
+Pushed version number to 2.18.12
+
+------------------------------------------------------------------------
+r309 | bertin | 2013-04-27 15:35:48 +0200 (Sat, 27 Apr 2013) | 8 lines
+
+Fixed issue with ASSOC_TYPE NEAREST (Thanks to V. de Lapparent).
+Fixed regression with Eli Rykoff's fixes.
+Fixed issue with FFTW includes.
+Fixed typos in VOTable output.
+Added translation of Boolean T and F to Y and N in XSLT.
+Added --with-mkl-dir option in configure.
+Pushed version number to 2.18.11.
+
+------------------------------------------------------------------------
+r307 | bertin | 2013-04-05 10:23:35 +0200 (Fri, 05 Apr 2013) | 3 lines
+
+Added proper correction of model subsampling to SPHEROIDS and DISKS check-images.
+Pushed version number to 2.18.9.
+
+------------------------------------------------------------------------
+r306 | bertin | 2013-04-04 17:54:11 +0200 (Thu, 04 Apr 2013) | 2 lines
+
+Fixed typo in acx_mkl (no consequence here).
+
+------------------------------------------------------------------------
+r305 | bertin | 2013-04-04 00:04:38 +0200 (Thu, 04 Apr 2013) | 11 lines
+
+Added support for Gaussian priors on (transformed) model parameters (deactivated).
+Fixed model sub-sampling issues with large objects, including check-image resizing.
+Fixed initialization of DETMODEL size guess (thanks to Eli Rykoff).
+Fixed image extension pb in double weighting/single image mode.
+Improved debug info for memory allocations in FFT and FITS libraries.
+Fixed crashes with DETMODEL magnitudes on null measurement weight maps.
+Added Eli Rykoff's fix to discard sources with NaNs in the fitted positions.
+Improved MKL autoconfiguration.
+Improved vectorization in FITS data transformations and FFT-based convolutions.
+Pushed SExtractor version number to 3.18.8.
+
+------------------------------------------------------------------------
+r302 | bertin | 2012-09-23 18:27:09 +0200 (Sun, 23 Sep 2012) | 4 lines
+
+Fixed issue with the position, positional uncertainties and flux of (large) sub-sampled models.
+Fixed padding issue for binary FITS catalogs >2GB.
+Pushed version number to 2.18.4.
+
+------------------------------------------------------------------------
+r300 | bertin | 2012-07-19 18:21:32 +0200 (Thu, 19 Jul 2012) | 4 lines
+
+Added support for CORE-AVX2 and CORE-AVC-I optimized code when using INTEL compiler.
+Added better control of the number of threads used in MKL library calls (when used).
+Pushed version number to 2.18.3.
+
+------------------------------------------------------------------------
+r298 | bertin | 2012-07-17 22:20:15 +0200 (Tue, 17 Jul 2012) | 3 lines
+
+Fixed issue with --with-fftw-libdir configure option (thanks to John P. Marriner).
+Fixed minor issue with the reading of TNX and TPV WCS coefficients.
+
+------------------------------------------------------------------------
+r297 | bertin | 2012-07-12 18:05:39 +0200 (Thu, 12 Jul 2012) | 5 lines
+
+Fixed regression with FITS image extension numbering.
+Fixed issues with PSF image extension numbering.
+Fixed crashes when calling FFT routines with the MKL library.
+Pushed version number to 2.18.2.
+
+------------------------------------------------------------------------
+r296 | bertin | 2012-07-12 11:31:00 +0200 (Thu, 12 Jul 2012) | 3 lines
+
+Replaced --enable-gprof configuration with --enable-profiling.
+Switched on --enable-mkl for make rpm-best.
+
+------------------------------------------------------------------------
+r295 | bertin | 2012-07-11 18:51:29 +0200 (Wed, 11 Jul 2012) | 5 lines
+
+Fixed obsolete autoconf macros in configure.ac
+Added control of the number of threads in MKL calls.
+Added support for negative NTHREADS (= max number of threads).
+Pushed version number to 2.18.1.
+
+------------------------------------------------------------------------
+r294 | bertin | 2012-07-10 00:02:36 +0200 (Tue, 10 Jul 2012) | 4 lines
+
+Added support for the INTEL MKL library in place of ATLAS and FFTW (configure --enable-mkl option).
+Updated LevMar library to V2.6.
+Pushed version number to 2.18.0.
+
+------------------------------------------------------------------------
+r293 | bertin | 2012-07-09 10:53:30 +0200 (Mon, 09 Jul 2012) | 5 lines
+
+Updated WCS library: fixed issue with TPV CTYPEs and added support for MJDSTART header keyword.
+Updated FITS library to the latest version, removing potential conflicts with the CFITSIO library.
+Added PSF/model-fitting support for MEFs.
+Pushed version number to 2.17.0
+
+------------------------------------------------------------------------
+r292 | bertin | 2012-06-06 22:01:59 +0200 (Wed, 06 Jun 2012) | 2 lines
+
+Fixed Inf in some instances of SPREADERR_MODEL.
+
+------------------------------------------------------------------------
+r291 | bertin | 2012-06-03 21:43:35 +0200 (Sun, 03 Jun 2012) | 3 lines
+
+Fixed obsolete behaviour with 8 bit images (would suppose 8 bit integers  are signed by default).
+Pushed version number to 2.16.3.
+
+------------------------------------------------------------------------
+r290 | bertin | 2012-06-01 21:08:09 +0200 (Fri, 01 Jun 2012) | 4 lines
+
+Fixed sporadic occurences of NaN in SPREADERR_MODEL and ERRBMODEL_IMAGE.
+Updated WCS library to the latest version.
+Pushed version number to 2.16.2.
+
+------------------------------------------------------------------------
+r284 | bertin | 2012-04-18 13:57:02 +0200 (Wed, 18 Apr 2012) | 12 lines
+
+Fixed potential issues in ASSOCCOORD_TYPE WORLD mode.
+Fixed triggering of model surface brightness measurement.
+Added new FLUX_DETMODEL,FLUXERR_DETMODEL, MAG_DETMODEL,MAGERR_DETMODEL, FLAGS_DE
+TMODEL and CHI2_DETMODEL measurement parameters that apply on the measurement im
+age a model fitted on the detection image (two PSF models required); these new p
+arameters are meant for measuring faint galaxy colors.
+Improved displayed info for memory allocation failures.
+Increased default maximum number of threads set by configure to 1024.
+Updated Copyright display line (2012).
+Added support for "TPV" WCS projection.
+Pushed version number to 2.16.0.
+
+------------------------------------------------------------------------
+r271 | bertin | 2011-10-08 22:31:03 +0200 (Sat, 08 Oct 2011) | 2 lines
+
+Fixed large memory leak in model-fitting.
+
+------------------------------------------------------------------------
+r265 | bertin | 2011-09-06 19:08:22 +0200 (Tue, 06 Sep 2011) | 2 lines
+
+Fixed triggering of model surface brightness measurement.
+
+------------------------------------------------------------------------
+r264 | bertin | 2011-09-06 17:46:57 +0200 (Tue, 06 Sep 2011) | 5 lines
+
+Fixed scaling issue with surface brightness measurements on galaxy models (thanks to V. de Lapparent).
+Optimized the setup of astrometric polynoms.
+Removed confusing FITS header keywords from non-MEF check-images.
+Pushed version number to 2.14.7.
+
+------------------------------------------------------------------------
+r263 | bertin | 2011-08-22 15:11:43 +0200 (Mon, 22 Aug 2011) | 3 lines
+
+Removed (dummy) WCS information from FITS_1.0 catalog primary header (thanks to H.J. McCracken for reporting).
+Pushed version number to 2.14.5
+
+------------------------------------------------------------------------
+r262 | bertin | 2011-08-05 16:14:18 +0200 (Fri, 05 Aug 2011) | 2 lines
+
+Added missing README in src/wcs/ subdirectory.
+
+------------------------------------------------------------------------
+r261 | bertin | 2011-08-05 16:13:20 +0200 (Fri, 05 Aug 2011) | 2 lines
+
+Added forgotten LICENSE file in main directory.
+
+------------------------------------------------------------------------
+r257 | bertin | 2011-07-25 11:49:12 +0200 (Mon, 25 Jul 2011) | 2 lines
+
+Replaced a third missing F in HAVE_SINCOSF!
+
+------------------------------------------------------------------------
+r256 | bertin | 2011-07-25 10:43:22 +0200 (Mon, 25 Jul 2011) | 2 lines
+
+Replaced a second missing F in HAVE_SINCOSF.
+
+------------------------------------------------------------------------
+r255 | bertin | 2011-07-25 10:23:25 +0200 (Mon, 25 Jul 2011) | 2 lines
+
+Had forgotten the final F in HAVE_SINCOSF in add_prof().
+
+------------------------------------------------------------------------
+r254 | bertin | 2011-07-25 10:20:17 +0200 (Mon, 25 Jul 2011) | 5 lines
+
+Fixed missing test for sincosf() that prevented the code to compile on MacOS (thanks to C.Aspin).
+Added support for RADESYS WCS keyword (non-standard RADECSYS still supported).
+Fixed display precision issues with SPREAD_MODEL.
+Pushed version number to 2.14.4.
+
+------------------------------------------------------------------------
+r250 | bertin | 2011-07-01 15:49:04 +0200 (Fri, 01 Jul 2011) | 4 lines
+
+Fixed issue with FWHMPSF_WORLD.
+Added support for AVX extensions with INTEL compiler v12.
+Version number pushed to 2.14.2.
+
+------------------------------------------------------------------------
+r246 | bertin | 2011-05-31 22:07:38 +0200 (Tue, 31 May 2011) | 4 lines
+
+Fixed regression involving SPREAD_MODEL and SPREADERR_MODEL (Thanks Shantanu for reporting).
+Added Rescale_Weights PARAM in XML output.
+Pushed version number to 2.14.1
+
+------------------------------------------------------------------------
+r244 | bertin | 2011-05-06 15:45:20 +0200 (Fri, 06 May 2011) | 8 lines
+
+Fixed FLUX_HYBRID and MAG_HYBRID centering issues.
+Added 2nd order moments measurements of the convolved model.
+Fixed issues introduced in a recent updates with check-images.
+Implemented new algorithms for SPREAD_MODEL and SPREADERR_MODEL (no optimization yet and the scaling is still variable however).
+Added experimental SNR_WIN measurement parameter.
+Fixed crash with empty ASSOC lists.
+Pushed version number to 2.13.6.
+
+------------------------------------------------------------------------
+r243 | bertin | 2011-03-13 17:52:46 +0100 (Sun, 13 Mar 2011) | 3 lines
+
+Added one extra decimal to position measurements in pixel coordinates.
+Preliminary implementation of a RESCALE_WEIGHTS configuration switch.
+
+------------------------------------------------------------------------
+r242 | bertin | 2011-01-26 11:34:58 +0100 (Wed, 26 Jan 2011) | 2 lines
+
+Added missing .vcproj distribution files in LevMar library directory.
+
+------------------------------------------------------------------------
+r241 | bertin | 2011-01-25 01:16:47 +0100 (Tue, 25 Jan 2011) | 4 lines
+
+Added new ASSOCCOORD_TYPE configuration parameter for ASSOCiating detections either in PIXEL or WORLD coordinates.
+Fixed sampling issues for Sersic, de Vaucouleurs and exponential model-fitting.
+Version number pushed to 2.13.2.
+
+------------------------------------------------------------------------
+r239 | bertin | 2010-12-02 18:58:35 +0100 (Thu, 02 Dec 2010) | 2 lines
+
+Fixed issue with output Check-image headers when reading individual extensions from MEFs (thanks to user Lantern for the bug report).
+
+------------------------------------------------------------------------
+r236 | bertin | 2010-11-11 15:55:08 +0100 (Thu, 11 Nov 2010) | 4 lines
+
+Fixed issue with zero-sized columns in FITS binary tables,
+Removed unused variables in poly.c.
+Fixed issue with invalid comment in XSL stylesheet.
+
+------------------------------------------------------------------------
+r235 | bertin | 2010-10-25 22:50:17 +0200 (Mon, 25 Oct 2010) | 2 lines
+
+Added FLUXHYBRID_,MAG_HYBRID
+
+------------------------------------------------------------------------
+r234 | bertin | 2010-10-14 16:06:58 +0200 (Thu, 14 Oct 2010) | 3 lines
+
+Fixed issue with duplicated sources when PSF_NMAX is >1.
+Pushed version number to 2.13.1.
+
+------------------------------------------------------------------------
+r233 | bertin | 2010-10-11 18:14:04 +0200 (Mon, 11 Oct 2010) | 11 lines
+
+Moved the whole package back to GPL.
+Added more complete headers to all files.
+Clarified licensing issues.
+Updated FITS library.
+Updated configuration files.
+Added configuration files to the list of data that get installed in ${prefix}/share/sextractor.
+Added background offset and point-source model components: FLUX_BACKOFFSET,FLUXERR_BACKOFFSET,FLUX_POINTSOURCE,FLUXERR_POINTSOURCE,MAG_POINTSOURCE,MAGERR_POINTSOURCE.
+Tweaked model-fitting convergence parameters.
+Fixed catalogue source ordering/number issue in dual-image mode.
+Pushed version number to 2.13.0.
 
 ------------------------------------------------------------------------
 r231 | bertin | 2010-09-29 17:11:15 +0200 (Wed, 29 Sep 2010) | 3 lines

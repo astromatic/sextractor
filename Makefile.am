@@ -7,7 +7,7 @@
 #
 #	This file part of:	SExtractor
 #
-#	Copyright:		(C) 2002-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
+#	Copyright:		(C) 2002-2017 IAP/CNRS/UPMC
 #
 #	License:		GNU General Public License
 #
@@ -22,31 +22,44 @@
 #	You should have received a copy of the GNU General Public License
 #	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 #
-#	Last modified:		09/07/2012
+#	Last modified:		19/06/2017
 #
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+ACLOCAL_AMFLAGS		= -I m4
 AUTOMAKE_OPTIONS	= foreign no-dependencies
-SUBDIRS			= man src tests
+SUBDIRS			= src man doc tests debian
 dist_pkgdata_DATA	= config/* xsl/sextractor.xsl
-EXTRA_DIST		= doc AUTHORS BUGS ChangeLog COPYRIGHT HISTORY \
-			  INSTALL LICENSE README THANKS \
-			  acx_atlas.m4 acx_fftw.m4 acx_mkl.m4 \
-			  acx_prog_cc_optim.m4 acx_urbi_resolve_dir.m4
+EXTRA_DIST		= autogen.sh AUTHORS BUGS ChangeLog COPYRIGHT \
+			  HISTORY INSTALL LICENSE README THANKS
 RPM_ROOTDIR		= `rpmbuild --nobuild -E %_topdir`
 RPM_SRCDIR		= $(RPM_ROOTDIR)/SOURCES
+DEB_SRCDIR		= ~/DEBIAN/SOURCES
+
 dist-hook:
-	rm -rf `find $(distdir) -name .svn`
+	rm -rf `find $(distdir) -type d \( -name .svn -o -name .git \)`
 
 rpm:	dist
-	cp -f $(PACKAGE_NAME)-$(PACKAGE_VERSION).tar.gz $(RPM_SRCDIR)
-	rpmbuild -ba --clean --nodeps $(PACKAGE_NAME).spec
+	cp -f $(PACKAGE_TARNAME)-$(PACKAGE_VERSION).tar.gz $(RPM_SRCDIR)
+	rpmbuild -ba --clean --nodeps $(PACKAGE_TARNAME).spec
 
 rpm-icc:	dist
-	cp -f $(PACKAGE_NAME)-$(PACKAGE_VERSION).tar.gz $(RPM_SRCDIR)
-	USE_ICC="1" rpmbuild -ba --clean --nodeps $(PACKAGE_NAME).spec
+	cp -f $(PACKAGE_TARNAME)-$(PACKAGE_VERSION).tar.gz $(RPM_SRCDIR)
+	USE_ICC="1" rpmbuild -ba --clean --nodeps $(PACKAGE_TARNAME).spec
 
 rpm-best:	dist
-	cp -f $(PACKAGE_NAME)-$(PACKAGE_VERSION).tar.gz $(RPM_SRCDIR)
-	USE_BEST="1" rpmbuild -ba --clean --nodeps $(PACKAGE_NAME).spec
+	cp -f $(PACKAGE_TARNAME)-$(PACKAGE_VERSION).tar.gz $(RPM_SRCDIR)
+	USE_BEST="1" rpmbuild -ba --clean --nodeps $(PACKAGE_TARNAME).spec
+
+deb:	dist
+	mkdir -p $(DEB_SRCDIR)
+	tar -xvf $(PACKAGE_TARNAME)-$(PACKAGE_VERSION).tar.gz -C $(DEB_SRCDIR) 
+	cd $(DEB_SRCDIR)/$(PACKAGE_TARNAME)-$(PACKAGE_VERSION)
+	debuild -j4 -b -us -uc
+
+deb-best:	dist
+	mkdir -p $(DEB_SRCDIR)
+	tar -xvf $(PACKAGE_TARNAME)-$(PACKAGE_VERSION).tar.gz -C $(DEB_SRCDIR) 
+	cd $(DEB_SRCDIR)/$(PACKAGE_TARNAME)-$(PACKAGE_VERSION)
+	debuild --set-envvar=USE_BEST=1 --preserve-env --preserve-envvar=PATH -j4 -b -us -uc
 
