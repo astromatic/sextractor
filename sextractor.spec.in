@@ -69,7 +69,7 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(-,root,root)
-%doc config AUTHORS BUGS ChangeLog COPYRIGHT HISTORY INSTALL LICENSE README.md THANKSf
+%doc config AUTHORS BUGS ChangeLog COPYRIGHT HISTORY INSTALL LICENSE README.md THANKS
 %{_bindir}/sex
 %{_bindir}/ldactoasc
 %{_mandir}/man1/sex.1*

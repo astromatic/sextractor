@@ -31,7 +31,7 @@ AUTOMAKE_OPTIONS	= foreign no-dependencies
 SUBDIRS			= src man doc tests debian
 dist_pkgdata_DATA	= config/* xsl/sextractor.xsl
 EXTRA_DIST		= autogen.sh AUTHORS BUGS ChangeLog COPYRIGHT \
-			  HISTORY INSTALL LICENSE README THANKS
+			  HISTORY INSTALL LICENSE README.md THANKS
 RPM_ROOTDIR		= `rpmbuild --nobuild -E %_topdir`
 RPM_SRCDIR		= $(RPM_ROOTDIR)/SOURCES
 DEB_SRCDIR		= ~/DEBIAN/SOURCES
