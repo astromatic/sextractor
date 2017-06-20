@@ -22,7 +22,7 @@
 #	You should have received a copy of the GNU General Public License
 #	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 #
-#	Last modified:		19/06/2017
+#	Last modified:		20/06/2017
 #
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -238,56 +238,59 @@ if test "$use_pthreads" = "yes"; then
 fi
 AM_CONDITIONAL(USE_THREADS, test $use_pthreads = "yes")
 
+############# Actions to complete if model-fitting is activated ##############
+if test "$enable_model_fitting" != "no"; then
+  AC_DEFINE(USE_MODEL, 1, [Triggers model-fitting])
 ############ handle the INTEL MKL library (FFTW + LAPACKe) ###########
-if test "$enable_mkl" = "yes"; then
-  convlibs="${srcdir}/wcs/libwcs_c.a,${srcdir}/levmar/liblevmar.a"
-  ACX_MKL($with_mkl_dir,yes,$enable_best_link,$convlibs)
-  if test "$MKL_WARN" == ""; then
-    AC_MSG_RESULT([yes])
+  if test "$enable_mkl" = "yes"; then
+    convlibs="${srcdir}/wcs/libwcs_c.a,${srcdir}/levmar/liblevmar.a"
+    ACX_MKL($with_mkl_dir,yes,$enable_best_link,$convlibs)
+    if test "$MKL_WARN" == ""; then
+      AC_MSG_RESULT([yes])
+    else
+      AC_MSG_RESULT([no])
+      AC_MSG_WARN([$MKL_WARN])
+    fi
+    AM_CFLAGS="$AM_CFLAGS $MKL_CFLAGS "
+    AM_LDFLAGS="$AM_LDFLAGS $MKL_LDFLAGS "
+    LIBS="$LIBS $MKL_LIBS"
   else
-    AC_MSG_RESULT([no])
-    AC_MSG_WARN([$MKL_WARN])
-  fi
-  AM_CFLAGS="$AM_CFLAGS $MKL_CFLAGS "
-  AM_LDFLAGS="$AM_LDFLAGS $MKL_LDFLAGS "
-  LIBS="$LIBS $MKL_LIBS"
-else
 ################ handle the FFTW library (Fourier transforms) ################
-  ACX_FFTW($with_fftw_libdir, $with_fftw_incdir, $use_pthreads,yes,
-    [
-      [LIBS="$FFTW_LIBS $LIBS"]
-      if test "$FFTW_WARN" != ""; then
-        AC_MSG_WARN([$FFTW_WARN])
-      fi
-    ],
-    AC_MSG_ERROR([$FFTW_ERROR Exiting.])
-  )
-
-  if test "x$enable_openblas" = "xyes"; then
-######## Handle the OpenBLAS library (linear algebra: BLAS + LAPACKe) ########
-    ACX_OPENBLAS($with_openblas_libdir, $with_openblas_incdir, $use_pthreads, no,
+    ACX_FFTW($with_fftw_libdir, $with_fftw_incdir, $use_pthreads,yes,
       [
-        AM_CFLAGS="$AM_CFLAGS $OPENBLAS_CFLAGS "
-        AM_LDFLAGS="$AM_LDFLAGS $OPENBLAS_LDFLAGS "
-        LIBS="$OPENBLAS_LIBS $LIBS"
-        if test "$OPENBLAS_WARN" != ""; then
-          AC_MSG_WARN([$OPENBLAS_WARN])
+        [LIBS="$FFTW_LIBS $LIBS"]
+        if test "$FFTW_WARN" != ""; then
+          AC_MSG_WARN([$FFTW_WARN])
         fi
       ],
-      AC_MSG_ERROR([$OPENBLAS_ERROR Exiting.])
+      AC_MSG_ERROR([$FFTW_ERROR Exiting.])
     )
 
-  else
+    if test "x$enable_openblas" = "xyes"; then
+######## Handle the OpenBLAS library (linear algebra: BLAS + LAPACKe) ########
+      ACX_OPENBLAS($with_openblas_libdir, $with_openblas_incdir, $use_pthreads, no,
+        [
+          AM_CFLAGS="$AM_CFLAGS $OPENBLAS_CFLAGS "
+          AM_LDFLAGS="$AM_LDFLAGS $OPENBLAS_LDFLAGS "
+          LIBS="$OPENBLAS_LIBS $LIBS"
+          if test "$OPENBLAS_WARN" != ""; then
+            AC_MSG_WARN([$OPENBLAS_WARN])
+          fi
+        ],
+        AC_MSG_ERROR([$OPENBLAS_ERROR Exiting.])
+      )
+    else
 ######### handle the ATLAS library (linear algebra: BLAS + cLAPACK) ##########
-    ACX_ATLAS($with_atlas_libdir, $with_atlas_incdir, $use_pthreads,
-      [
-        [LIBS="$ATLAS_LIBS $LIBS"]
-        if test "$ATLAS_WARN" != ""; then
-	  AC_MSG_WARN([$ATLAS_WARN])
-	fi
-      ],
-      AC_MSG_ERROR([$ATLAS_ERROR Exiting.])
-    )
+      ACX_ATLAS($with_atlas_libdir, $with_atlas_incdir, $use_pthreads,
+        [
+          [LIBS="$ATLAS_LIBS $LIBS"]
+          if test "$ATLAS_WARN" != ""; then
+            AC_MSG_WARN([$ATLAS_WARN])
+	  fi
+        ],
+        AC_MSG_ERROR([$ATLAS_ERROR Exiting.])
+      )
+    fi
   fi
 fi
 
