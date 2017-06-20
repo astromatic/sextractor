@@ -24,7 +24,7 @@ install the standard binary package the comes with your Linux distribution.
 Run, e.g., ``apt-get sextractor`` (on Debian) or ``dnf sextractor`` (Fedora) as
 root and |SExtractor|, as well as all its dependencies, will automatically be
 installed. If you decided to install the package this way you may skip the
-following and move straight to the :ref:`next section <using_SExtractor>`.
+following and move straight to the :ref:`next section <using_sextractor>`.
 
 However if |SExtractor| is not available in your distribution, or to obtain the
 most recent version, the |SExtractor| source package can be downloaded from
