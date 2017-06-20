@@ -31,7 +31,7 @@ define([AC_CACHE_LOAD],)
 define([AC_CACHE_SAVE],)
 
 # This is your standard Bertin source code...
-AC_INIT(SExtractor, 2.24.0,[astromatic@astromatic.net],
+AC_INIT(SExtractor, 2.24.1,[astromatic@astromatic.net],
 	sextractor, [http://astromatic.net/software/sextractor])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_AUX_DIR(autoconf)
