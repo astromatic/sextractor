@@ -22,7 +22,7 @@
 #	You should have received a copy of the GNU General Public License
 #	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 #
-#	Last modified:		20/06/2017
+#	Last modified:		21/06/2017
 #
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -31,7 +31,7 @@ define([AC_CACHE_LOAD],)
 define([AC_CACHE_SAVE],)
 
 # This is your standard Bertin source code...
-AC_INIT(SExtractor, 2.24.1,[astromatic@astromatic.net],
+AC_INIT(SExtractor, 2.24.2,[astromatic@astromatic.net],
 	sextractor, [http://astromatic.net/software/sextractor])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_AUX_DIR(autoconf)
@@ -244,7 +244,7 @@ if test "$enable_model_fitting" != "no"; then
 ############ handle the INTEL MKL library (FFTW + LAPACKe) ###########
   if test "$enable_mkl" = "yes"; then
     convlibs="${srcdir}/wcs/libwcs_c.a,${srcdir}/levmar/liblevmar.a"
-    ACX_MKL($with_mkl_dir,yes,$enable_best_link,$convlibs)
+    ACX_MKL($with_mkl_dir,,$enable_best_link,$convlibs)
     if test "$MKL_WARN" == ""; then
       AC_MSG_RESULT([yes])
     else
