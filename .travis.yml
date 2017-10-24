@@ -1,0 +1,34 @@
+language: c
+
+compiler:
+  - gcc
+
+before_install:
+  - echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-
+  - sudo apt-get update
+  # Install dependencies required for configuration
+  - sudo apt-get install autoconf libtool pkg-config 
+  # Upgrade gcc
+  - gcc --version
+  # Install dependencies
+  - sudo apt-get install libatlas-base-dev libfftw3-dev
+  
+install :
+  - sh autogen.sh
+  
+script :
+  - ./configure
+  - make
+
+addons:
+  coverity_scan:
+    project:
+      name: "astromatic/sextractor"
+      description: "Build submitted via Travis CI"
+    notification_email: bertin@iap.fr
+    build_command_prepend: "./configure; make clean"
+    build_command:   "make -j 4"
+    branch_pattern: coverity_scan
+
+os : 
+  - linux
