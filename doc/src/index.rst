@@ -17,6 +17,7 @@ Contents
    Introduction
    License
    Installing
+   Position
    references
 
 Indices and tables
