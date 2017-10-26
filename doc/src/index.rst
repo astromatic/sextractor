@@ -17,6 +17,7 @@ Contents
    Introduction
    License
    Installing
+   Using
    Position
    references
 
