@@ -1,10 +1,11 @@
 .. File Installing.rst
 
+***********************
 Installing the software
-=======================
+***********************
 
 Hardware requirements
----------------------
+=====================
 
 |SExtractor| runs in (ANSI) text-mode from a shell. A graphical environment
 is not necessary to operate the software.
@@ -24,7 +25,7 @@ install the standard binary package the comes with your Linux distribution.
 Run, e.g., ``apt-get sextractor`` (on Debian) or ``dnf sextractor`` (Fedora) as
 root and |SExtractor|, as well as all its dependencies, will automatically be
 installed. If you decided to install the package this way you may skip the
-following and move straight to the :ref:`next section <using_sextractor>`.
+following and move straight to the :ref:`next section <Using Sextractor>`.
 
 However if |SExtractor| is not available in your distribution, or to obtain the
 most recent version, the |SExtractor| source package can be downloaded from

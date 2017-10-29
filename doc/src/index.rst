@@ -18,7 +18,9 @@ Contents
    License
    Installing
    Using
-   Position
+   Config
+   Param
+   Measurements
    references
 
 Indices and tables

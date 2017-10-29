@@ -1,13 +1,15 @@
-Positional parameters derived from the isophotal profile
-========================================================
+.. File Position.rst
+
+Position and shape parameters derived from the isophotal profile
+================================================================
 
 The following parameters are derived from the spatial distribution
 :math:`\cal S` of pixels detected above the extraction threshold. *The
 pixel values* :math:`I_i` *are taken from the (filtered) detection image*.
 
 **Note that, unless otherwise noted, all parameter names given below are
-only prefixes. They must be followed by “\_IMAGE” if the results shall
-be expressed in pixel units (see §..), or “\_WORLD” for World Coordinate
+only prefixes. They must be followed by “_IMAGE” if the results shall
+be expressed in pixel units (see §..), or “_WORLD” for World Coordinate
 System (WCS) units (see §[astrom])**. For example: THETA
 :math:`\rightarrow` THETA\_IMAGE. In all cases, parameters are first
 computed in the image coordinate system, and then converted to WCS if
@@ -60,7 +62,7 @@ with likelihood maps, or when searching for artifacts. For better
 robustness, PEAK coordinates are computed on *filtered* profiles if
 available. On symmetrical profiles, PEAK positions and barycenters
 coincide within a fraction of pixel (XPEAK and YPEAK coordinates are
-quantized by steps of 1 pixel, thus XPEAK\_IMAGE and YPEAK\_IMAGE are
+quantized by steps of 1 pixel, thus XPEAK_IMAGE and YPEAK_IMAGE are
 integers). This is no longer true for skewed profiles, therefore a
 simple comparison between PEAK and barycenter coordinates can be used to
 identify asymmetrical objects on well-sampled images.
@@ -69,7 +71,7 @@ identify asymmetrical objects on well-sampled images.
 -----------------------------
 
 (Centered) second-order moments are convenient for measuring the spatial
-spread of a source profile. In SExtractor they are computed with:
+spread of a source profile. In |SExtractor| they are computed with:
 
 .. math::
 
@@ -163,17 +165,17 @@ following equations derived from ([eq:varproj]) after some algebra:
        - \sqrt{\left(\frac{\overline{x^2}-\overline{y^2}}{2}\right)^2 + \overline{xy}^2}.\end{aligned}
 
 Note that A and B are exactly halves the :math:`a` and :math:`b`
-parameters computed by the COSMOS image analyser (Stobie 1980,1986).
-Actually, :math:`a` and :math:`b` are defined by Stobie as the
-semi-major and semi-minor axes of an elliptical shape with constant
+parameters computed by the COSMOS image analyser :cite:`1980SPIE..264..208S`.
+Actually, :math:`a` and :math:`b` are defined in :cite:`1980SPIE..264..208S`
+as the semi-major and semi-minor axes of an elliptical shape with constant
 surface brightness, which would have the same 2nd-order moments as the
-analysed object.
+analyzed object.
 
 Ellipse parameters: CXX, CYY, CXY
 ---------------------------------
 
 A, B and THETA are not very convenient to use when, for instance, one
-wants to know if a particular SExtractor detection extends over some
+wants to know if a particular |SExtractor| detection extends over some
 position. For this kind of application, three other ellipse parameters
 are provided; CXX, CYY and CXY. They do nothing more than describing the
 same ellipse, but in a different way: the elliptical shape associated to
@@ -186,7 +188,7 @@ a detection is now parameterized as
 
 where :math:`R` is a parameter which scales the ellipse, in units of A
 (or B). Generally, the isophotal limit of a detected object is well
-represented by :math:`R\approx 3` (Fig. [fig:ellipse]). Ellipse
+represented by :math:`R\approx 3` (:numref:`fig_ellipse`). Ellipse
 parameters can be derived from the 2nd order moments:
 
 .. math::
@@ -202,6 +204,14 @@ parameters can be derived from the 2nd order moments:
    THETA} \left( \frac{1}{{\tt A}^2} - \frac{1}{{\tt B}^2}\right) = -2\,
    \frac{\overline{xy}}{\overline{x^2} \overline{y^2} - \overline{xy}^2}\end{aligned}
 
+.. _fig_ellipse:
+
+.. figure:: figures/ellipse.*
+   :figwidth: 100%
+   :align: center
+
+   Meaning of shape parameters.
+
 By-products of shape parameters: ELONGATION and ELLIPTICITY [1]_
 ----------------------------------------------------------------
 
@@ -213,15 +223,15 @@ These parameters are directly derived from A and B:
    {\tt ELONGATION} & = & \frac{\tt A}{\tt B}\ \ \ \ \ \mbox{and}\\
    {\tt ELLIPTICITY} & = & 1 - \frac{\tt B}{\tt A}.\end{aligned}
 
-Position errors: ERRX2, ERRY2, ERRXY, ERRA, ERRB, ERRTHETA, ERRCXX, ERRCYY, ERRCXY
-----------------------------------------------------------------------------------
+Position uncertainties: ERRX2, ERRY2, ERRXY, ERRA, ERRB, ERRTHETA, ERRCXX, ERRCYY, ERRCXY
+-----------------------------------------------------------------------------------------
 
 Uncertainties on the position of the barycenter can be estimated using
-photon statistics. Of course, this kind of estimate has to be considered
-as a lower-value of the real error since it does not include, for
-instance, the contribution of detection biases or the contamination by
-neighbours. As SExtractor does not currently take into account possible
-correlations between pixels, the variances simply write:
+photon statistics. In practice, such estimates are a lower-value of the full
+uncertainties because they do not include, for instance, the contribution of
+detection biases or contamination by neighbors. Furthermore, |SExtractor| does
+not currently take into account possible correlations of the noise between adjacent
+pixels. Hence variances simply write:
 
 .. math::
 
@@ -288,7 +298,7 @@ Handling of “infinitely thin” detections
 ----------------------------------------
 
 Apart from the mathematical singularities that can be found in some of
-the above equations describing shape parameters (and which SExtractor
+the above equations describing shape parameters (and which |SExtractor|
 handles, of course), some detections with very specific shapes may yield
 quite unphysical parameters, namely null values for B, ERRB, or even A
 and ERRA. Such detections include single-pixel objects and horizontal,
@@ -306,14 +316,14 @@ sufficiently thin line of pixels, which we translate mathematically by
    \overline{x^2}\,\overline{y^2} - \overline{xy}^2 < \rho^2,
 
 then :math:`\overline{x^2}` and :math:`\overline{y^2}` are incremented
-by :math:`\rho`. SExtractor sets :math:`\rho=1/12`, which is the
+by :math:`\rho`. |SExtractor| sets :math:`\rho=1/12`, which is the
 variance of a 1-dimensional top-hat distribution with unit width.
 Therefore :math:`1/\sqrt{12}` represents the typical minor-axis values
-assigned (in pixels units) to undersampled sources in SExtractor.
+assigned (in pixels units) to undersampled sources in |SExtractor|.
 
 Positional errors are more difficult to handle, as objects with very
 high signal-to-noise can yield extremely small position uncertainties,
-just like singular profiles do. Therefore SExtractor first checks that
+just like singular profiles do. Therefore |SExtractor| first checks that
 ([eq:singutest]) is true. If this is the case, a new test is conducted:
 
 .. math::
@@ -329,4 +339,7 @@ where :math:`\rho_e` is arbitrarily set to :math:`\left( \sum_{i \in {\cal S}}
 
 .. [1]
    Such parameters are dimensionless and therefore do not accept any
-   \_IMAGE or \_WORLD suffix
+   _IMAGE or _WORLD suffix
+
+.. include:: keys.rst
+
