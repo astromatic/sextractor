@@ -18,6 +18,7 @@ processing (after CLEANing and MASKing).
 
   Position
   PositionWin
+  Photom
 
 .. include:: keys.rst
 

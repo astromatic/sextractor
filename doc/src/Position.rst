@@ -45,9 +45,9 @@ are simply computed as the first order moments of the profile:
 
    \begin{aligned}
    {\tt X} & = & \overline{x} = \frac{\displaystyle \sum_{i \in {\cal S}}
-   I_i x_i}{\displaystyle \sum_{i \in {\cal S}} I_i},\\ {\tt Y} & = &
-   \overline{y} = \frac{\displaystyle \sum_{i \in {\cal S}} I_i
-   y_i}{\displaystyle \sum_{i \in {\cal S}} I_i}.
+   I_i x_i}{\displaystyle \sum_{i \in {\cal S}} I_i},\\
+   {\tt Y} & = & \overline{y} = \frac{\displaystyle \sum_{i \in {\cal S}}
+   I_i y_i}{\displaystyle \sum_{i \in {\cal S}} I_i}.
    \end{aligned}
 
 In practice, :math:`x_i` and :math:`y_i` are summed relative to XMIN
