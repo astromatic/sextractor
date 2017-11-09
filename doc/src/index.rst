@@ -20,6 +20,7 @@ Contents
    Using
    Config
    Param
+   Weighting
    Measurements
    references
 
