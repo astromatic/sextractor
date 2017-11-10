@@ -1,5 +1,7 @@
 .. File Using.rst
 
+.. _using-sextractor:
+
 Using SExtractor
 ================
 
