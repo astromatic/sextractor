@@ -27,6 +27,8 @@ and constant over the image. In that case one can apply a simple *fudge factor* 
 correlations on small scales. This proves to be a good approximation in general, although it certainly leads to
 underestimations for the smallest patterns.
 
+.. _weigth-map-format:
+
 Weight-map formats
 ------------------
 
@@ -36,27 +38,32 @@ Those weight-maps can either be read from a FITS file, whose name is specified b
 or computed internally.
 Valid ``WEIGHT_TYPE`` values are:
 
-* ``NONE`` : No weighting is applied. The related ``WEIGHT_IMAGE`` and ``WEIGHT_THRESH`` (see below) parameters are ignored.
+* ``NONE`` :
+    No weighting is applied. The related ``WEIGHT_IMAGE`` and ``WEIGHT_THRESH`` (see below) parameters are ignored.
 
 
-* ``BACKGROUND`` : the science image itself is used to compute internally a variance map (the related ``WEIGHT_IMAGE``
+* ``BACKGROUND`` :
+    the science image itself is used to compute internally a variance map (the related ``WEIGHT_IMAGE``
     parameter is ignored). Robust (:math:`3\sigma`-clipped) variance estimates are first computed within the same
-    background meshes as those described in ?? [12] (The mesh-filtering procedures act on the variance map, too.).
+    background meshes as those described in ?? [#f1].
     The resulting low-resolution variance map is then bicubic-spline-interpolated on the fly to produce
     the actual full-size variance map.
     A check-image with ``CHECKIMAGE_TYPE`` ``MINIBACK_RMS`` can be requested to examine the low-resolution variance map.
 
 
-* ``MAP_RMS`` : the FITS image specified by the ``WEIGHT_IMAGE`` file name must contain a weight-map in units of
+* ``MAP_RMS`` :
+    the FITS image specified by the ``WEIGHT_IMAGE`` file name must contain a weight-map in units of
     absolute standard deviations (in ADUs per pixel).
 
 
-* ``MAP_VAR`` : the FITS image specified by the ``WEIGHT_IMAGE`` file name must contain a weight-map in units of
+* ``MAP_VAR`` :
+    the FITS image specified by the ``WEIGHT_IMAGE`` file name must contain a weight-map in units of
     relative variance. A robust scaling to the appropriate absolute level is then performed by comparing this
     variance map to an internal, low-resolution, absolute variance map built from the science image itself.
 
 
-* ``MAP_WEIGHT`` : the FITS image specified by the ``WEIGHT_IMAGE`` file name must contain a weight-map in units of
+* ``MAP_WEIGHT`` :
+    the FITS image specified by the ``WEIGHT_IMAGE`` file name must contain a weight-map in units of
     relative weights.
     The data are converted to variance units (by definition variance :math:`\propto\frac{1}{weight}`),
     and scaled as for ``MAP_VAR``.
@@ -100,8 +107,8 @@ Weight-maps modify the working of |SExtractor| in the following respects:
 Combining weight maps
 ---------------------
 
-All the weighting options listed in ?? can be applied separately to detection and measurement images (??),
-even if some combinations may not always make sense.
+All the weighting options listed in :ref:`weigth-map-format` can be applied separately to detection and measurement images
+(:ref:`using-sextractor`), even if some combinations may not always make sense.
 For instance, the following set of configuration lines:
 
 ``WEIGHT_IMAGE`` *rms.fits*, *weight.fits*
@@ -110,7 +117,7 @@ For instance, the following set of configuration lines:
 
 will load the FITS file *rms.fits* and use it as an RMS map for adjusting the detection threshold and cleaning,
 while the *weight.fits* weight map will only be used for scaling the error estimates on measurements.
-This can be done in single- as well as in dual-image mode (??).
+This can be done in single- as well as in dual-image mode (:ref:`using-sextractor`).
 ``WEIGHT_IMAGE`` can be ignored for ``BACKGROUND`` ``WEIGHT_TYPE``.
 It is of course possible to use weight-maps for detection or for measurement only.
 The following configuration:
@@ -120,6 +127,10 @@ The following configuration:
 ``WEIGHT_TYPE`` ``NONE``, ``MAP_WEIGHT``
 
 will apply weighting only for measurements; detection and cleaning operations will remain unaffected.
+
+.. rubric:: Footnotes
+
+.. [#f1] The mesh-filtering procedures act on the variance map, too.
 
 .. include:: keys.rst
 
