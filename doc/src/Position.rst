@@ -285,7 +285,7 @@ error ellipse are computed from the covariance matrix exactly like in
    \tan (2{\tt ERRTHETA}) & = & 2 \,\frac{{\rm cov}(\overline{x},\overline{y})}
                        {{\rm var}(\overline{x}) - {\rm var}(\overline{y})}.\end{aligned}
 
-And the ellipse parameters are:
+And the error ellipse parameters are:
 
 .. math::
   :label: errellipse
