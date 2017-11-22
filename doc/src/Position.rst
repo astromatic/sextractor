@@ -165,8 +165,8 @@ following equations derived from ([eq:varproj]) after some algebra:
        - \sqrt{\left(\frac{\overline{x^2}-\overline{y^2}}{2}\right)^2 + \overline{xy}^2}.\end{aligned}
 
 Note that A and B are exactly halves the :math:`a` and :math:`b`
-parameters computed by the COSMOS image analyser :cite:`1980SPIE..264..208S`.
-Actually, :math:`a` and :math:`b` are defined in :cite:`1980SPIE..264..208S`
+parameters computed by the COSMOS image analyser :cite:`1980SPIE_264_208S`.
+Actually, :math:`a` and :math:`b` are defined in :cite:`1980SPIE_264_208S`
 as the semi-major and semi-minor axes of an elliptical shape with constant
 surface brightness, which would have the same 2nd-order moments as the
 analyzed object.

@@ -47,7 +47,7 @@ compatibility with |SExtractor| v1. If we make the assumption that the
 intensity profiles of the faint objects recorded in the frame are
 roughly Gaussian because of atmospheric blurring, then the fraction
 :math:`\eta = \frac{I_{\rm iso}}{I_{\rm tot}}` of the total flux enclosed
-within a particular isophote reads :cite:`1990MNRAS.246..433M`:
+within a particular isophote reads :cite:`1990MNRAS_246_433M`:
 
 .. math::
   :label: isocor

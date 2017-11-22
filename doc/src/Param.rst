@@ -37,7 +37,7 @@ Fluxes
 ~~~~~~
 
 Fluxes may be expressed in linear (ADU) units or as Pogson
-:cite:`1856MNRAS..17...12P` magnitudes. Flux measurements in ADUs
+:cite:`1856MNRAS_17_12P` magnitudes. Flux measurements in ADUs
 are prefixed with ``FLUX_``, for example: ``FLUX_AUTO``, ``FLUX_ISO``, etc.
 Magnitudes are prefixed with ``MAG_`` e.g., ``MAG_AUTO``, ``MAG_ISO``, ... In
 |SExtractor| the magnitude :math:`m` of a source is derived from the flux
@@ -78,10 +78,10 @@ _IMAGE
   Measurements are given in pixel coordinates, in units of pixels. For example: ``Y_IMAGE``, ``ERRAWIN_IMAGE``, ``THETA_IMAGE`` etc. Following the FITS convention, in |SExtractor| the center of the first image pixel has coordinates (1.0,1.0). Position angles are counted from the *x* axis (axis 1), positive towards the *y* axis (axis 2)
 
 _WORLD
-  Measurements are given in so-called “world coordinates”. This requires World Coordinate System (|WCS|_) metadata :cite:`2002A&A...395.1061G` to be present in the FITS image header(s). Position angles are counted from the first world axis, positive towards the second world axis.
+  Measurements are given in so-called “world coordinates”. This requires World Coordinate System (|WCS|_) metadata :cite:`2002AA_395_1061G` to be present in the FITS image header(s). Position angles are counted from the first world axis, positive towards the second world axis.
 
 _SKY, _J2000, _B1950
-  Measurements are given in celestial (equatorial) coordinates, in units of degrees. This requires celestial |WCS| metadata :cite:`2002A&A...395.1077C` to be present in the FITS image header(s). _SKY measurements are given in the native world coordinate system. _J2000 and _B1950 measurements are automatically converted from the native |WCS|, taking into account the change of reference frame. In all cases, positions angles are counted East-of-North.
+  Measurements are given in celestial (equatorial) coordinates, in units of degrees. This requires celestial |WCS| metadata :cite:`2002AA_395_1077C` to be present in the FITS image header(s). _SKY measurements are given in the native world coordinate system. _J2000 and _B1950 measurements are automatically converted from the native |WCS|, taking into account the change of reference frame. In all cases, positions angles are counted East-of-North.
 
 .. include:: keys.rst
 
