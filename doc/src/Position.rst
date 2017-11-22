@@ -1,5 +1,7 @@
 .. File Position.rst
 
+.. _position_iso:
+
 Position and shape parameters derived from the isophotal profile
 ================================================================
 
@@ -89,6 +91,8 @@ These expressions are more subject to roundoff errors than if the
 however kept to a negligible value by measuring all positions relative
 here again to XMIN and YMIN.
 
+.. _shape_iso:
+
 Basic shape parameters: A, B, THETA
 -----------------------------------
 
@@ -159,12 +163,12 @@ A and B can be computed directly from the 2nd-order moments, using the
 following equations derived from :eq:`varproj` after some algebra:
 
 .. math::
-  :label: aimage2
+  :label: aimage_2
 
    \begin{aligned}
    {\tt A}^2 & = & \frac{\overline{x^2}+\overline{y^2}}{2}
        + \sqrt{\left(\frac{\overline{x^2}-\overline{y^2}}{2}\right)^2 + \overline{xy}^2},\\
-   {\tt B}^2 & = & \frac{\overline{x^2}+\overline{y^2}}{2}
+   {\tt B}^2 & = & \frac{\overline{x^2}+\overline{y^2}}{2},
        - \sqrt{\left(\frac{\overline{x^2}-\overline{y^2}}{2}\right)^2 + \overline{xy}^2}.\end{aligned}
 
 Note that A and B are exactly halves the :math:`a` and :math:`b`
@@ -173,6 +177,8 @@ Actually, :math:`a` and :math:`b` are defined in :cite:`1980SPIE_264_208S`
 as the semi-major and semi-minor axes of an elliptical shape with constant
 surface brightness, which would have the same 2nd-order moments as the
 analyzed object.
+
+.. _ellipse_iso:
 
 Ellipse parameters: CXX, CYY, CXY
 ---------------------------------
@@ -228,6 +234,8 @@ These parameters [#elongation]_ are directly derived from A and B:
    \begin{aligned}
    {\tt ELONGATION} & = & \frac{\tt A}{\tt B}\ \ \ \ \ \mbox{and}\\
    {\tt ELLIPTICITY} & = & 1 - \frac{\tt B}{\tt A}.\end{aligned}
+
+.. _poserr:
 
 Position uncertainties: ERRX2, ERRY2, ERRXY, ERRA, ERRB, ERRTHETA, ERRCXX, ERRCYY, ERRCXY
 -----------------------------------------------------------------------------------------
