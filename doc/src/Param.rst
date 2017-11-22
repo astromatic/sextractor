@@ -36,7 +36,7 @@ available:
 Fluxes
 ~~~~~~
 
-may be expressed in linear (ADU) units or as Pogson
+Fluxes may be expressed in linear (ADU) units or as Pogson
 :cite:`1856MNRAS..17...12P` magnitudes. Flux measurements in ADUs
 are prefixed with ``FLUX_``, for example: ``FLUX_AUTO``, ``FLUX_ISO``, etc.
 Magnitudes are prefixed with ``MAG_`` e.g., ``MAG_AUTO``, ``MAG_ISO``, ... In
@@ -56,7 +56,7 @@ where :math:`m_{ZP}` is the magnitude zero-point set with the
 Flux uncertainties
 ~~~~~~~~~~~~~~~~~~
 
-They follow a scheme similar to that of fluxes. Flux uncertainties are
+Flux uncertainties follow a scheme similar to that of fluxes. Flux uncertainties are
 prefixed with ``FLUXERR_``, as in ``FLUXERR_AUTO`` or ``FLUXERR_ISO``. Magnitude
 uncertainties start with ``MAGERR_``, for instance: ``MAGERR_AUTO``,
 ``MAGERR_ISO``,... Magnitude uncertainties :math:`\sigma_m` are derived
@@ -72,14 +72,16 @@ from the estimated 1-\ :math:`\sigma` flux error :math:`\sigma_f`:
 Positions
 ~~~~~~~~~
 
-Positions and distances can be expressed in image pixels, world coordinates,
-or in celestial coordinates. Measurements in units of image pixels are
-indicated by the suffix ``_IMAGE``, for example: ``Y_IMAGE``,
-``ERRAWIN_IMAGE``, ... Following the FITS convention, in SExtractor the
-center of the first image pixel has coordinates (1.0,1.0). Positions and
-small distances may also be expressed in so-called “world coordinates”,
-if World Coordinate System (WCS) metadata :cite:`2002A&A...395.1061G` are
-present in the FITS image header.
+Positions, distances and position angles can be expressed in image pixels, world coordinates, or in celestial coordinates, depending on the suffix:
+
+_IMAGE
+  Measurements are given in pixel coordinates, in units of pixels. For example: ``Y_IMAGE``, ``ERRAWIN_IMAGE``, ``THETA_IMAGE`` etc. Following the FITS convention, in |SExtractor| the center of the first image pixel has coordinates (1.0,1.0). Position angles are counted from the *x* axis (axis 1), positive towards the *y* axis (axis 2)
+
+_WORLD
+  Measurements are given in so-called “world coordinates”. This requires World Coordinate System (|WCS|_) metadata :cite:`2002A&A...395.1061G` to be present in the FITS image header(s). Position angles are counted from the first world axis, positive towards the second world axis.
+
+_SKY, _J2000, _B1950
+  Measurements are given in celestial (equatorial) coordinates, in units of degrees. This requires celestial |WCS| metadata :cite:`2002A&A...395.1077C` to be present in the FITS image header(s). _SKY measurements are given in the native world coordinate system. _J2000 and _B1950 measurements are automatically converted from the native |WCS|, taking into account the change of reference frame. In all cases, positions angles are counted East-of-North.
 
 .. include:: keys.rst
 
