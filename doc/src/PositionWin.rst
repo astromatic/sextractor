@@ -173,10 +173,10 @@ to :eq:`xywin` writes:
 
    \begin{aligned}
    {\tt ERRX2WIN} & = {\rm var}(\overline{x_{\tt WIN}})
-   = & 4\,\frac{\sum_{r_i < r_{\rm max}} w_i^2 \sigma^2_i (x_i-\overline{x})^2}
+   = & 4\,\frac{\sum_{r_i < r_{\rm max}} w_i^2 \sigma^2_i (x_i-\overline{x_{\tt WIN}})^2}
    {\left(\sum_{r_i < r_{\rm max}} w_i I_i\right)^2},\\
    {\tt ERRY2WIN} & = {\rm var}(\overline{y_{\tt WIN}})
-   = & 4\,\frac{\sum_{r_i < r_{\rm max}} w_i^2 \sigma^2_i (y_i-\overline{y})^2}
+   = & 4\,\frac{\sum_{r_i < r_{\rm max}} w_i^2 \sigma^2_i (y_i-\overline{y_{\tt WIN}})^2}
    {\left(\sum_{r_i < r_{\rm max}} w_i I_i\right)^2},\\
    {\tt ERRXYWIN} & = {\rm cov}(\overline{x_{\tt WIN}},\overline{y_{\tt WIN}})
    = & 4\,\frac{\sum_{r_i < r_{\rm max}}
@@ -189,7 +189,44 @@ from the covariance matrix elements
 :math:`{\rm var}(\overline{x_{\tt WIN}})`,
 :math:`{\rm var}(\overline{y_{\tt WIN}})`,
 :math:`{\rm cov}(\overline{x_{\tt WIN}},\overline{y_{\tt WIN}})`,
-similarly to the :ref:`isophotal error ellipse <poserr>`.
+similarly to the :ref:`isophotal error ellipse <poserr>`:
+
+.. math::
+  :label: errabthetawin
+
+   \begin{aligned}
+   {\tt ERRAWIN}^2 & = & \frac{{\rm var}(\overline{x_{\tt WIN}})+{\rm var}(\overline{y_{\tt WIN}})}{2}
+       + \sqrt{\left(\frac{{\rm var}(\overline{x_{\tt WIN}})-{\rm var}(\overline{y_{\tt WIN}})}{2}\right)^2
+       + {\rm cov}^2(\overline{x_{\tt WIN}},\overline{y_{\tt WIN}})},\\
+   {\tt ERRBWIN}^2 & = & \frac{{\rm var}(\overline{x_{\tt WIN}})+{\rm var}(\overline{y_{\tt WIN}})}{2}
+       - \sqrt{\left(\frac{{\rm var}(\overline{x_{\tt WIN}})-{\rm var}(\overline{y_{\tt WIN}})}{2}\right)^2
+       + {\rm cov}^2(\overline{x_{\tt WIN}},\overline{y_{\tt WIN}})},\\
+   \tan (2{\tt ERRTHETAWIN}) & = & 2 \,\frac{{\rm cov}(\overline{x_{\tt WIN}},\overline{y_{\tt WIN}})}
+                       {{\rm var}(\overline{x_{\tt WIN}}) - {\rm var}(\overline{y_{\tt WIN}})}.
+    \end{aligned}
+
+And the error ellipse parameters are:
+
+.. math::
+  :label: errellipsewin
+
+   \begin{aligned}
+   {\tt ERRCXXWIN} & = & \frac{\cos^2 {\tt ERRTHETAWIN}}{{\tt ERRAWIN}^2} +
+   \frac{\sin^2 {\tt ERRTHETAWIN}}{{\tt ERRBWIN}^2} = \frac{{\rm
+   var}(\overline{y_{\tt WIN}})}{{\rm var}(\overline{x_{\tt WIN}}) {\rm var}(\overline{y_{\tt WIN}}) -
+   {\rm cov}^2(\overline{x_{\tt WIN}},\overline{y_{\tt WIN}})},\\
+   {\tt ERRCYYWIN} & = & \frac{\sin^2 {\tt ERRTHETAWIN}}{{\tt ERRAWIN}^2} +
+   \frac{\cos^2 {\tt ERRTHETAWIN}}{{\tt ERRBWIN}^2} =
+   \frac{{\rm var}(\overline{x_{\tt WIN}})}{{\rm var}(\overline{x_{\tt WIN}}) {\rm var}(\overline{y_{\tt WIN}}) -
+   {\rm cov}^2(\overline{x_{\tt WIN}},\overline{y_{\tt WIN}})},\\
+   {\tt ERRCXYWIN} & = & 2 \cos {\tt
+   ERRTHETAWIN}\sin {\tt ERRTHETAWIN} \left( \frac{1}{{\tt ERRAWIN}^2} -
+   \frac{1}{{\tt ERRBWIN}^2}\right)\\ & = & -2 \frac{{\rm
+   cov}(\overline{x_{\tt WIN}},\overline{y_{\tt WIN}})}{{\rm var}(\overline{x_{\tt WIN}}) {\rm var}(\overline{y_{\tt WIN}}) -
+   {\rm cov}^2(\overline{x_{\tt WIN}},\overline{y_{\tt WIN}})}.
+   \end{aligned}
+
+
 
 .. [#win_accuracy] See http://www.astromatic.net/forum/showthread.php?tid=581 .
 
