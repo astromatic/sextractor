@@ -4,16 +4,11 @@ Position and shape parameters derived from the isophotal profile
 ================================================================
 
 The following parameters are derived from the spatial distribution
-:math:`\cal S` of pixels detected above the extraction threshold. *The
+:math:`\cal S` of pixels detected above the analysis threshold (see :ref:`description<isophotal_measurements>`). *Unless otherwise noted,
 pixel values* :math:`I_i` *are taken from the (filtered) detection image*.
 
-**Note that, unless otherwise noted, all parameter names given below are
-only prefixes. They must be followed by “_IMAGE” if the results shall
-be expressed in pixel units (see §..), or “_WORLD” for World Coordinate
-System (WCS) units (see §[astrom])**. For example: THETA
-:math:`\rightarrow` THETA\_IMAGE. In all cases, parameters are first
-computed in the image coordinate system, and then converted to WCS if
-requested.
+.. note::
+  Unless otherwise noted, all parameter names given below are only prefixes. They must be followed by _IMAGE if the results shall be expressed in pixel coordinates or _WORLD, _SKY, _J2000 or _B1950 for |WCS|_ coordinates (see :ref:`coord_suffix`).
 
 Limits: XMIN, YMIN, XMAX, YMAX
 ------------------------------
@@ -22,6 +17,7 @@ These coordinates define two corners of a rectangle which encloses the
 detected object:
 
 .. math::
+  :label: xminymax
 
    \begin{aligned}
    {\tt XMIN} & = & \min_{i \in {\cal S}} x_i,\\
@@ -42,6 +38,7 @@ its spatial profile shows a strong skewness or very large wings. X and Y
 are simply computed as the first order moments of the profile:
 
 .. math::
+  :label: xy
 
    \begin{aligned}
    {\tt X} & = & \overline{x} = \frac{\displaystyle \sum_{i \in {\cal S}}
@@ -74,6 +71,7 @@ identify asymmetrical objects on well-sampled images.
 spread of a source profile. In |SExtractor| they are computed with:
 
 .. math::
+  :label: x2y2
 
    \begin{aligned}
    {\tt X2} & = \overline{x^2} = & \frac{\displaystyle \sum_{i \in {\cal
@@ -106,8 +104,8 @@ is how they are computed:
 the :math:`x,y` image coordinate system by an angle +\ :math:`\theta`:
 
 .. math::
+  :label: varproj
 
-   \label{eq:varproj}
    \begin{array}{lcrrr}
    \overline{x_{\theta}^2} & = & \cos^2\theta\:\overline{x^2} & +\,\sin^2\theta\:\overline{y^2}
                & -\,2 \cos\theta \sin\theta\:\overline{xy},\\
@@ -121,11 +119,15 @@ the :math:`x,y` image coordinate system by an angle +\ :math:`\theta`:
 One can find interesting angles :math:`\theta_0` for which the variance
 is minimized (or maximized) along :math:`x_{\theta}`:
 
-.. math:: {\left.\frac{\partial \overline{x_{\theta}^2}}{\partial \theta} \right|}_{\theta_0} = 0,
+.. math::
+  :label: theta0
+
+  {\left.\frac{\partial \overline{x_{\theta}^2}}{\partial \theta} \right|}_{\theta_0} = 0,
 
 which leads to
 
 .. math::
+  :label: theta0_2
 
    2 \cos\theta \sin\theta_0\:(\overline{y^2} - \overline{x^2})
        + 2 (\cos^2\theta_0 - \sin^2\theta_0)\:\overline{xy} = 0.
@@ -133,32 +135,33 @@ which leads to
 If :math:`\overline{y^2} \neq \overline{x^2}`, this implies:
 
 .. math::
+   :label: theta0_3
 
-   \label{eq:theta0}
    \tan 2\theta_0 = 2 \frac{\overline{xy}}{\overline{x^2} - \overline{y^2}},
 
 a result which can also be obtained by requiring the covariance
 :math:`\overline{xy_{\theta_0}}` to be null. Over the domain
 :math:`[-\pi/2, +\pi/2[`, two different angles — with opposite signs —
-satisfy ([eq:theta0]). By definition, THETA is the position angle for
+satisfy :eq:`theta0_3`. By definition, THETA is the position angle for
 which :math:`\overline{x_{\theta}^2}` is *max*\ imized. THETA is
-therefore the solution to ([eq:theta0]) that has the same sign as the
+therefore the solution to :eq:`theta0_3`. that has the same sign as the
 covariance :math:`\overline{xy}`. A and B can now simply be expressed
 as:
 
 .. math::
+  :label: aimage
 
    \begin{aligned}
    {\tt A}^2 & = & \overline{x^2}_{\tt THETA},\ \ \ {\rm and}\\
    {\tt B}^2 & = & \overline{y^2}_{\tt THETA}.\end{aligned}
 
 A and B can be computed directly from the 2nd-order moments, using the
-following equations derived from ([eq:varproj]) after some algebra:
+following equations derived from :eq:`varproj` after some algebra:
 
 .. math::
+  :label: aimage2
 
    \begin{aligned}
-   \label{eq:aimage}
    {\tt A}^2 & = & \frac{\overline{x^2}+\overline{y^2}}{2}
        + \sqrt{\left(\frac{\overline{x^2}-\overline{y^2}}{2}\right)^2 + \overline{xy}^2},\\
    {\tt B}^2 & = & \frac{\overline{x^2}+\overline{y^2}}{2}
@@ -182,6 +185,7 @@ same ellipse, but in a different way: the elliptical shape associated to
 a detection is now parameterized as
 
 .. math::
+  :label: ellipse
 
    {\tt CXX} (x-\overline{x})^2 + {\tt CYY} (y-\overline{y})^2
        + {\tt CXY} (x-\overline{x})(y-\overline{y}) = R^2,
@@ -192,6 +196,7 @@ represented by :math:`R\approx 3` (:numref:`fig_ellipse`). Ellipse
 parameters can be derived from the 2nd order moments:
 
 .. math::
+  :label: ellipse_2
 
    \begin{aligned}
    {\tt CXX} & = & \frac{\cos^2 {\tt THETA}}{{\tt A}^2} + \frac{\sin^2
@@ -212,12 +217,13 @@ parameters can be derived from the 2nd order moments:
 
    Meaning of shape parameters.
 
-By-products of shape parameters: ELONGATION and ELLIPTICITY [1]_
-----------------------------------------------------------------
+By-products of shape parameters: ELONGATION and ELLIPTICITY
+-----------------------------------------------------------
 
-These parameters are directly derived from A and B:
+These parameters [#elongation]_ are directly derived from A and B:
 
 .. math::
+  :label: elongation
 
    \begin{aligned}
    {\tt ELONGATION} & = & \frac{\tt A}{\tt B}\ \ \ \ \ \mbox{and}\\
@@ -234,6 +240,7 @@ not currently take into account possible correlations of the noise between adjac
 pixels. Hence variances simply write:
 
 .. math::
+  :label: errxy
 
    \begin{aligned}
    {\tt ERRX2} & = {\rm var}(\overline{x}) = & \frac{\displaystyle
@@ -252,42 +259,38 @@ pixels. Hence variances simply write:
 
 where :math:`{\sigma_B}_i` is the local background noise and
 :math:`g_i` the local gain — conversion factor — for pixel :math:`i`
-(see §[chap:weight] for more details). Semi-major axis ERRA, semi-minor
+(see :ref:`effect_of_weighting` for more details). Semi-major axis ERRA, semi-minor
 axis ERRB, and position angle ERRTHETA of the :math:`1\sigma` position
 error ellipse are computed from the covariance matrix exactly like in
 [chap:abtheta] for shape parameters:
 
 .. math::
+  :label: errabtheta
 
    \begin{aligned}
-   \label{eq:erra}
    {\tt ERRA}^2 & = & \frac{{\rm var}(\overline{x})+{\rm var}(\overline{y})}{2}
        + \sqrt{\left(\frac{{\rm var}(\overline{x})-{\rm var}(\overline{y})}{2}\right)^2
        + {\rm cov}^2(\overline{x},\overline{y})},\\
-   \label{eq:errb}
    {\tt ERRB}^2 & = & \frac{{\rm var}(\overline{x})+{\rm var}(\overline{y})}{2}
        - \sqrt{\left(\frac{{\rm var}(\overline{x})-{\rm var}(\overline{y})}{2}\right)^2
        + {\rm cov}^2(\overline{x},\overline{y})},\\
-   \label{eq:errtheta}
    \tan (2{\tt ERRTHETA}) & = & 2 \,\frac{{\rm cov}(\overline{x},\overline{y})}
                        {{\rm var}(\overline{x}) - {\rm var}(\overline{y})}.\end{aligned}
 
 And the ellipse parameters are:
 
 .. math::
+  :label: errellipse
 
    \begin{aligned}
-   \label{eq:errcxx}
    {\tt ERRCXX} & = & \frac{\cos^2 {\tt ERRTHETA}}{{\tt ERRA}^2} +
    \frac{\sin^2 {\tt ERRTHETA}}{{\tt ERRB}^2} = \frac{{\rm
    var}(\overline{y})}{{\rm var}(\overline{x}) {\rm var}(\overline{y}) -
    {\rm cov}^2(\overline{x},\overline{y})},\\
-   \label{eq:errcyy}
    {\tt ERRCYY} & = & \frac{\sin^2 {\tt ERRTHETA}}{{\tt ERRA}^2} +
    \frac{\cos^2 {\tt ERRTHETA}}{{\tt ERRB}^2} =
    \frac{{\rm var}(\overline{x})}{{\rm var}(\overline{x}) {\rm var}(\overline{y}) -
    {\rm cov}^2(\overline{x},\overline{y})},\\
-   \label{eq:errcxy}
    {\tt ERRCXY} & = & 2 \cos {\tt
    ERRTHETA}\sin {\tt ERRTHETA} \left( \frac{1}{{\tt ERRA}^2} -
    \frac{1}{{\tt ERRB}^2}\right)\\ & = & -2 \frac{{\rm
@@ -311,8 +314,8 @@ light distribution of the object falls on one single pixel, or lies on a
 sufficiently thin line of pixels, which we translate mathematically by
 
 .. math::
+  :label: singutest
 
-   \label{eq:singutest}
    \overline{x^2}\,\overline{y^2} - \overline{xy}^2 < \rho^2,
 
 then :math:`\overline{x^2}` and :math:`\overline{y^2}` are incremented
@@ -324,22 +327,20 @@ assigned (in pixels units) to undersampled sources in |SExtractor|.
 Positional errors are more difficult to handle, as objects with very
 high signal-to-noise can yield extremely small position uncertainties,
 just like singular profiles do. Therefore |SExtractor| first checks that
-([eq:singutest]) is true. If this is the case, a new test is conducted:
+:eq:`singutest` is true. If this is the case, a new test is conducted:
 
 .. math::
+  :label: singutest2
 
-   \label{eq:singutest2}
    {\rm var}(\overline{x})\,{\rm var}(\overline{y}) - {\rm
    covar}^2(\overline{x}, \overline{y}) < \rho^2_e,
 
 where :math:`\rho_e` is arbitrarily set to :math:`\left( \sum_{i \in {\cal S}}
 \sigma^2_i \right) / \left(\sum_{i \in {\cal S}} I_i\right)^2`. If
-([eq:singutest2]) is true, then :math:`\overline{x^2}` and
+:eq:`singutest2` is true, then :math:`\overline{x^2}` and
 :math:`\overline{y^2}` are incremented by :math:`\rho_e`.
 
-.. [1]
-   Such parameters are dimensionless and therefore do not accept any
-   _IMAGE or _WORLD suffix
+.. [#elongation] These parameters are dimensionless, and for historical reasons do not accept suffixes such as _IMAGE or _WORLD.
 
 .. include:: keys.rst
 

@@ -69,19 +69,21 @@ from the estimated 1-\ :math:`\sigma` flux error :math:`\sigma_f`:
    99.0 &\mbox{otherwise}.
    \end{array}\right.
 
-Positions
-~~~~~~~~~
+.. _coord_suffix:
 
-Positions, distances and position angles can be expressed in image pixels, world coordinates, or in celestial coordinates, depending on the suffix:
+Positions and shapes
+~~~~~~~~~~~~~~~~~~~~
+
+Positions, distances and position angles are computed in pixel coordinates. They may be expressed in image pixels, world coordinates, or in celestial coordinates, depending on the suffix:
 
 _IMAGE
   Measurements are given in pixel coordinates, in units of pixels. For example: ``Y_IMAGE``, ``ERRAWIN_IMAGE``, ``THETA_IMAGE`` etc. Following the FITS convention, in |SExtractor| the center of the first image pixel has coordinates (1.0,1.0). Position angles are counted from the *x* axis (axis 1), positive towards the *y* axis (axis 2)
 
 _WORLD
-  Measurements are given in so-called “world coordinates”. This requires World Coordinate System (|WCS|_) metadata :cite:`2002AA_395_1061G` to be present in the FITS image header(s). Position angles are counted from the first world axis, positive towards the second world axis.
+  Measurements are given in so-called “world coordinates”, converted from pixel coordinates using the local Jacobian of the transformation between both systems. This requires World Coordinate System (|WCS|_) metadata :cite:`2002AA_395_1061G` to be present in the FITS image header(s). Position angles are counted from the first world axis, positive towards the second world axis.
 
 _SKY, _J2000, _B1950
-  Measurements are given in celestial (equatorial) coordinates, in units of degrees. This requires celestial |WCS| metadata :cite:`2002AA_395_1077C` to be present in the FITS image header(s). _SKY measurements are given in the native world coordinate system. _J2000 and _B1950 measurements are automatically converted from the native |WCS|, taking into account the change of reference frame. In all cases, positions angles are counted East-of-North.
+  Measurements are given in celestial (equatorial) coordinates, converted from pixel coordinates using the local Jacobian of the transformation between both systems. Positions and distances are in units of degrees. This requires celestial |WCS| metadata :cite:`2002AA_395_1077C` to be present in the FITS image header(s). _SKY measurements are given in the native world coordinate system. _J2000 and _B1950 measurements are automatically converted from the native |WCS|, taking into account the change of reference frame. In all cases, positions angles are counted East-of-North.
 
 .. include:: keys.rst
 

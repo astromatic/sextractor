@@ -70,6 +70,8 @@ Valid ``WEIGHT_TYPE`` values are:
     ``MAP_WEIGHT`` is the most commonly used type of weight-map: a flat-field, for example, is generally
     a good approximation to a perfect weight-map.
 
+.. _effect_of_weighting:
+
 Effect of weighting
 -------------------
 
