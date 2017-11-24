@@ -1,13 +1,9 @@
 .. File Param.rst
 
-The catalog parameter file
-============================
+The measurement (or catalog) parameter file
+===========================================
 
-In addition to the configuration file detailed above, |SExtractor| requires a
-file containing the list of parameters that will be listed in the output
-catalog for every detection. This allows the software to compute only
-catalog parameters that are needed. The name of this
-catalog-parameter file is traditionally suffixed with ``.param``, and must
+In addition to the configuration file detailed above, |SExtractor| requires a file containing the list of measurements ("catalog parameters") that will be listed in the output catalog for every detection. This allows the software to compute only the measurements that are needed. The name of this catalog parameter file is traditionally suffixed with ``.param``, and must
 be specified using the ``PARAMETERS_NAME`` config parameter. The full set
 of parameters can be queried with the command
 
@@ -84,6 +80,23 @@ _WORLD
 
 _SKY, _J2000, _B1950
   Measurements are given in celestial (equatorial) coordinates, converted from pixel coordinates using the local Jacobian of the transformation between both systems. Positions and distances are in units of degrees. This requires celestial |WCS| metadata :cite:`2002AA_395_1077C` to be present in the FITS image header(s). _SKY measurements are given in the native world coordinate system. _J2000 and _B1950 measurements are automatically converted from the native |WCS|, taking into account the change of reference frame. In all cases, positions angles are counted East-of-North.
+
+Measurement parameter list
+--------------------------
+
+Below is an exhaustive list of all the measurement parameters known to
+|SExtractor|. Please refer to the next sections for a detailed description
+of their meaning.
+
+.. csv-table:: |SExtractor| measurement parameters
+  :header: "Name", "Unit", "Description"
+  :widths: 15 10 30
+
+  NUMBER,, Running object number
+  ID_PARENT,..., Parent ID (before deblending)
+  EXT_NUMBER,..., FITS extension number
+  :ref:`FLUX_ISO<flux_iso>`, count, Isophotal flux
+  :ref:`FLUXERR_ISO<flux_iso>`, count, RMS error estimate for isophotal flux
 
 .. include:: keys.rst
 

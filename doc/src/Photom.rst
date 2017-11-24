@@ -23,6 +23,8 @@ Magnitude uncertainties (error estimates) are computed using
 
    {\tt MAGERR} = \frac{2.5}{\ln 10}\frac{\tt FLUXERR}{\tt FLUX}
 
+.. _FLUX_ISO:
+
 Isophotal flux
 --------------
 
@@ -121,13 +123,10 @@ smallest accessible aperture to :math:`R_{\rm min}` (typically
 PHOT\_AUTOPARAMS; by default, PHOT\_AUTOPARAMS is set to 2.5,3.5.
 
 .. figure:: ps/simlostflux.ps
-   :alt:  Flux lost (expressed as a mean magnitude difference) with
-   different faint-object photometry techniques as a function of total
-   magnitude (see text). Only isolated galaxies (no blends) of the
-   simulations have been considered.
+   :alt:  Flux lost (expressed as a mean magnitude difference) with different faint-object photometry techniques as a function of total magnitude (see text). Only isolated galaxies (no blends) of the simulations have been considered.
    :width: 15.00000cm
 
-    Flux lost (expressed as a mean magnitude difference) with different
+   Flux lost (expressed as a mean magnitude difference) with different
    faint-object photometry techniques as a function of total magnitude
    (see text). Only isolated galaxies (no blends) of the simulations
    have been considered. 

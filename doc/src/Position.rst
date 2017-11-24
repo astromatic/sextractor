@@ -6,8 +6,10 @@ Position and shape parameters derived from the isophotal profile
 ================================================================
 
 The following parameters are derived from the spatial distribution
-:math:`\cal S` of pixels detected above the analysis threshold (see :ref:`description<isophotal_measurements>`). *Unless otherwise noted,
-pixel values* :math:`I_i` *are taken from the (filtered) detection image*.
+:math:`\cal S` of pixels detected above the analysis threshold (see :ref:`description<isophotal_measurements>`).
+
+.. important::
+  Unless otherwise noted, pixel values :math:`I_i` are taken from the (filtered) detection image.
 
 .. note::
   Unless otherwise noted, all parameter names given below are only prefixes. They must be followed by _IMAGE if the results shall be expressed in pixel coordinates or _WORLD, _SKY, _J2000 or _B1950 for |WCS|_ coordinates (see :ref:`coord_suffix`).
