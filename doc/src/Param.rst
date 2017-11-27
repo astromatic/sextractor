@@ -1,11 +1,11 @@
 .. File Param.rst
 
+.. include:: global.rst
+
 The measurement (or catalog) parameter file
 ===========================================
 
-In addition to the configuration file detailed above, |SExtractor| requires a file containing the list of measurements ("catalog parameters") that will be listed in the output catalog for every detection. This allows the software to compute only the measurements that are needed. The name of this catalog parameter file is traditionally suffixed with ``.param``, and must
-be specified using the ``PARAMETERS_NAME`` config parameter. The full set
-of parameters can be queried with the command
+In addition to the configuration file detailed above, |SExtractor| requires a file containing the list of measurements ("catalog parameters") that will be listed in the output catalog for every detection. This allows the software to compute only the measurements that are needed. The name of this catalog parameter file is traditionally suffixed with ``.param``, and must be specified using the :param:`PARAMETERS_NAME` config parameter. The full set of parameters can be queried with the command
 
 .. code-block:: console
 
@@ -16,11 +16,11 @@ Format
 
 The format of the catalog parameter list is ASCII, and there must be
 *a single keyword per line*. Presently two kinds of keywords are
-recognized by |SExtractor|: scalars and vectors. Scalars, like ``X_IMAGE``,
-produce single numbers in the output catalog. Vectors, like ``MAG_APER(4)``
-or ``VIGNET(15,15)``, produce arrays of numbers. The ordering of measurements
+recognized by |SExtractor|: scalars and vectors. Scalars, like :param:`X_IMAGE`,
+produce single numbers in the output catalog. Vectors, like :param:`MAG_APER(4)`
+or :param:`VIGNET(15,15)`, produce arrays of numbers. The ordering of measurements
 in the output catalog is identical to that of the keywords in the parameter
-list. Comments are allowed, they must begin with a ``#``.
+list. Comments are allowed, they must begin with a :param:`#`.
 
 Variants
 --------
@@ -32,10 +32,7 @@ available:
 Fluxes
 ~~~~~~
 
-Fluxes may be expressed in linear (ADU) units or as Pogson
-:cite:`1856MNRAS_17_12P` magnitudes. Flux measurements in ADUs
-are prefixed with ``FLUX_``, for example: ``FLUX_AUTO``, ``FLUX_ISO``, etc.
-Magnitudes are prefixed with ``MAG_`` e.g., ``MAG_AUTO``, ``MAG_ISO``, ... In
+Fluxes may be expressed in linear (ADU) units or as Pogson :cite:`1856MNRAS_17_12P` magnitudes. Flux measurements in ADUs are prefixed with :param:`FLUX_`, for example: :param:`FLUX_AUTO`, :param:`FLUX_ISO`, etc. Magnitudes are prefixed with :param:`MAG_` e.g., :param:`MAG_AUTO`, :param:`MAG_ISO`, ... In
 |SExtractor| the magnitude :math:`m` of a source is derived from the flux
 :math:`f`:
 
@@ -52,11 +49,7 @@ where :math:`m_{ZP}` is the magnitude zero-point set with the
 Flux uncertainties
 ~~~~~~~~~~~~~~~~~~
 
-Flux uncertainties follow a scheme similar to that of fluxes. Flux uncertainties are
-prefixed with ``FLUXERR_``, as in ``FLUXERR_AUTO`` or ``FLUXERR_ISO``. Magnitude
-uncertainties start with ``MAGERR_``, for instance: ``MAGERR_AUTO``,
-``MAGERR_ISO``,... Magnitude uncertainties :math:`\sigma_m` are derived
-from the estimated 1-\ :math:`\sigma` flux error :math:`\sigma_f`:
+Flux uncertainties follow a scheme similar to that of fluxes. Flux uncertainties are prefixed with :param:`FLUXERR_`, as in :param:`FLUXERR_AUTO` or :param:`FLUXERR_ISO`. Magnitude uncertainties start with :param:`MAGERR_`, for instance: :param:`MAGERR_AUTO`, :param:`MAGERR_ISO`,... Magnitude uncertainties :math:`\sigma_m` are derived from the estimated 1-\ :math:`\sigma` flux error :math:`\sigma_f`:
 
 .. math::
 
@@ -72,14 +65,14 @@ Positions and shapes
 
 Positions, distances and position angles are computed in pixel coordinates. They may be expressed in image pixels, world coordinates, or in celestial coordinates, depending on the suffix:
 
-_IMAGE
-  Measurements are given in pixel coordinates, in units of pixels. For example: ``Y_IMAGE``, ``ERRAWIN_IMAGE``, ``THETA_IMAGE`` etc. Following the FITS convention, in |SExtractor| the center of the first image pixel has coordinates (1.0,1.0). Position angles are counted from the *x* axis (axis 1), positive towards the *y* axis (axis 2)
+:param:`_IMAGE`
+  Measurements are given in pixel coordinates, in units of pixels. For example: :param:`Y_IMAGE`, :param:`ERRAWIN_IMAGE`, :param:`THETA_IMAGE` etc. Following the FITS convention, in |SExtractor| the center of the first image pixel has coordinates (1.0,1.0). Position angles are counted from the *x* axis (axis 1), positive towards the *y* axis (axis 2)
 
-_WORLD
+:param:`_WORLD`
   Measurements are given in so-called “world coordinates”, converted from pixel coordinates using the local Jacobian of the transformation between both systems. This requires World Coordinate System (|WCS|_) metadata :cite:`2002AA_395_1061G` to be present in the FITS image header(s). Position angles are counted from the first world axis, positive towards the second world axis.
 
-_SKY, _J2000, _B1950
-  Measurements are given in celestial (equatorial) coordinates, converted from pixel coordinates using the local Jacobian of the transformation between both systems. Positions and distances are in units of degrees. This requires celestial |WCS| metadata :cite:`2002AA_395_1077C` to be present in the FITS image header(s). _SKY measurements are given in the native world coordinate system. _J2000 and _B1950 measurements are automatically converted from the native |WCS|, taking into account the change of reference frame. In all cases, positions angles are counted East-of-North.
+:param:`_SKY`, :param:`_J2000`, :param:`_B1950`
+  Measurements are given in celestial (equatorial) coordinates, converted from pixel coordinates using the local Jacobian of the transformation between both systems. Positions and distances are in units of degrees. This requires celestial |WCS| metadata :cite:`2002AA_395_1077C` to be present in the FITS image header(s). :param:`_SKY` measurements are given in the native world coordinate system. :param:`_J2000` and :param:`_B1950` measurements are automatically converted from the native |WCS|, taking into account the change of reference frame. In all cases, positions angles are counted East-of-North.
 
 Measurement parameter list
 --------------------------
@@ -89,14 +82,19 @@ Below is an exhaustive list of all the measurement parameters known to
 of their meaning.
 
 .. csv-table:: |SExtractor| measurement parameters
+  :class: targetparam
   :header: "Name", "Unit", "Description"
   :widths: 15 10 30
 
   NUMBER,, Running object number
   ID_PARENT,..., Parent ID (before deblending)
   EXT_NUMBER,..., FITS extension number
-  :ref:`FLUX_ISO<flux_iso>`, count, Isophotal flux
-  :ref:`FLUXERR_ISO<flux_iso>`, count, RMS error estimate for isophotal flux
-
-.. include:: keys.rst
+  _`FLUX_ISO`, count, :ref:`Isophotal flux<flux_iso_def>`
+  _`FLUXERR_ISO`, count, :ref:`RMS error estimate for the isophotal flux<flux_iso_def>`
+  _`MAG_ISO`, mag, :ref:`Isophotal magnitude<flux_iso_def>`
+  _`MAGERR_ISO`, mag, :ref:`RMS error estimate for the isophotal magnitude<flux_iso_def>`
+  _`FLUX_ISOCOR`, count, :ref:`Corrected isophotal flux<mag_isocor_def>`
+  _`FLUXERR_ISOCOR`, count, :ref:`RMS error estimate for the corrected isophotal flux<mag_isocor_def>`
+  _`MAG_ISOCOR`, mag, :ref:`Corrected isophotal magnitude<mag_isocor_def>`
+  _`MAGERR_ISOCOR`, mag, :ref:`RMS error estimate for the corrected isophotal magnitude<mag_isocor_def>`
 
