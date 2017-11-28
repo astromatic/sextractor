@@ -22,6 +22,7 @@ Magnitude uncertainties (error estimates) are computed using
 
    {\tt MAGERR} = \frac{2.5}{\ln 10}\frac{\tt FLUXERR}{\tt FLUX}
 
+
 .. _flux_iso_def:
 
 Isophotal flux
@@ -67,7 +68,8 @@ A “total” magnitude :param:`MAG_ISOCOR` estimate is then
 
 Clearly this cheap correction works best with stars; and although it is shown to give tolerably accurate results with most disk galaxies, it fails with ellipticals because of the broader wings of their profiles.
 
-.. flux_aper_def:
+
+.. _flux_aper_def:
 
 Fixed-aperture flux
 -------------------
@@ -80,10 +82,13 @@ before measuring the flux within the aperture. If :param:`FLUX_APER` is provided
 vector :param:`FLUX_APER[n]`, at least :math:`n` apertures must be
 specified with ``PHOTOM_APERTURES``.
 
-Automatic aperture magnitudes
------------------------------
 
-:param:`MAG_AUTO` provides an estimate of the “total magnitude” by integrating the source flux within an adaptively scaled aperture.
+.. _flux_auto_def:
+
+Automatic aperture flux
+-----------------------
+
+:param:`FLUX_AUTO` provides an estimate of the “total flux” by integrating pixel values within an adaptively scaled aperture.
 |SExtractor|’s automatic aperture photometry routine is inspired by Kron’s “first moment” algorithm :cite:`1980ApJS_43_305K`.
 
 #. An elliptical aperture is defined whose elongation :math:`\epsilon` and position angle :math:`\theta` are defined by second order moments of the object’s light distribution. The ellipse is scaled to :math:`R_{\rm max}.\sigma_{\rm iso}`
@@ -110,17 +115,20 @@ The user has full control over the parameters :math:`k` and :math:`R_{\rm min}` 
    (see text). Only isolated galaxies (no blends) of the simulations
    have been considered. 
 
-Aperture magnitudes are sensitive to crowding.
-In |SExtractor| v1, :param:`MAG_AUTO` measurements were not very robust in that respect.
-It was therefore suggested to replace the aperture magnitude by the corrected-isophotal one when an object is too close to its neighbors (2 isophotal radii for instance).
-This was done automatically when using the :param:`MAG_BEST` magnitude: :math:`{\tt MAG\_BEST} = {\tt MAG\_AUTO}` when it is sure that no neighbor can bias :param:`MAG_AUTO` by more than 10%, and :math:`{\tt MAG\_BEST} = {\tt MAG\_ISOCOR}` otherwise.
-Experience showed that the :param:`MAG_ISOCOR` and :param:`MAG_AUTO` magnitude would loose about the same fraction of flux on stars or compact galaxy profiles: around 0.06 % for default extraction parameters.
-The use of :param:`MAG_BEST` is now deprecated as :param:`MAG_AUTO` measurements are much more robust in versions 2.x of |SExtractor|.
-The first improvement is a crude subtraction of all the neighbors that have been detected around the measured source (``MASK_TYPE BLANK`` option).
-The second improvement is an automatic correction of parts of the aperture that are suspected to be contaminated by a neighbor.
-This is done by mirroring the opposite, cleaner side of the measurement ellipse if available (``MASK_TYPE CORRECT`` option, which is also the default).
-Figure [figphot] shows the mean loss of flux measured with isophotal (threshold :math:`= 24.4\ \mbox{\rm magnitude\,arsec}^{-2}`), corrected isophotal and automatic aperture photometries for simulated galaxy :math:`B_J` on a typical Schmidt-survey plate image. 
+.. hint::
+  Aperture magnitudes are sensitive to crowding.
+  In |SExtractor| v1, :param:`MAG_AUTO` measurements were not very robust in that respect.
+  It was therefore suggested to replace the aperture magnitude by the corrected-isophotal one when an object is too close to its neighbors (2 isophotal radii for instance).
+  This was done automatically when using the :param:`MAG_BEST` magnitude: :math:`{\tt MAG\_BEST} = {\tt MAG\_AUTO}` when it is sure that no neighbor can bias :param:`MAG_AUTO` by more than 10%, and :math:`{\tt MAG\_BEST} = {\tt MAG\_ISOCOR}` otherwise.
+  Experience showed that the :param:`MAG_ISOCOR` and :param:`MAG_AUTO` magnitude would loose about the same fraction of flux on stars or compact galaxy profiles: around 0.06 % for default extraction parameters.
+  The use of :param:`MAG_BEST` is now deprecated as :param:`MAG_AUTO` measurements are much more robust in versions 2.x of |SExtractor|.
+  The first improvement is a crude subtraction of all the neighbors that have been detected around the measured source (``MASK_TYPE BLANK`` option).
+  The second improvement is an automatic correction of parts of the aperture that are suspected to be contaminated by a neighbor.
+  This is done by mirroring the opposite, cleaner side of the measurement ellipse if available (``MASK_TYPE CORRECT`` option, which is also the default).
+
+Figure [figphot] shows the mean loss of flux measured with isophotal (threshold 24.4 magnitude.arsec\ :sup:`-2`), corrected isophotal and automatic aperture photometry for simulated galaxies on a typical Schmidt-survey B\ :sub:`J` plate image.
 The automatic adaptive aperture photometry leads to the lowest loss of flux.
+
 
 Photographic photometry
 -----------------------
@@ -139,6 +147,7 @@ where :math:`\gamma` (``MAG_GAMMA``) is the contrast index of the emulsion, :mat
 .. math:: I_0 = \frac{\gamma}{\ln 10} \,10^{-0.4\, m_0} \ .
 
 One advantage of using a density-to-intensity transformation relative to the local sky background is that it corrects (to some extent) large-scale inhomogeneities in sensitivity (see :cite:`1996PhDT_68B` for details).
+
 
 Magnitude uncertainties
 -----------------------
@@ -166,6 +175,7 @@ Making the assumption that plate-noise is the major contributor to photometric e
 
 where :math:`I(x,y)` is the contribution of pixel :math:`(x,y)` to the
 total flux (Eq. [eq:dtoi]). ``GAIN`` is ignored in ``PHOTO`` mode.
+
 
 Background
 ----------

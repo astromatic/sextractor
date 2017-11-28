@@ -89,12 +89,68 @@ of their meaning.
   NUMBER,, Running object number
   ID_PARENT,..., Parent ID (before deblending)
   EXT_NUMBER,..., FITS extension number
-  _`FLUX_ISO`, count, :ref:`Isophotal flux<flux_iso_def>`
-  _`FLUXERR_ISO`, count, :ref:`RMS error estimate for the isophotal flux<flux_iso_def>`
-  _`MAG_ISO`, mag, :ref:`Isophotal magnitude<flux_iso_def>`
-  _`MAGERR_ISO`, mag, :ref:`RMS error estimate for the isophotal magnitude<flux_iso_def>`
-  _`FLUX_ISOCOR`, count, :ref:`Corrected isophotal flux<mag_isocor_def>`
-  _`FLUXERR_ISOCOR`, count, :ref:`RMS error estimate for the corrected isophotal flux<mag_isocor_def>`
-  _`MAG_ISOCOR`, mag, :ref:`Corrected isophotal magnitude<mag_isocor_def>`
-  _`MAGERR_ISOCOR`, mag, :ref:`RMS error estimate for the corrected isophotal magnitude<mag_isocor_def>`
+  _`FLUX_ISO`, count, :ref:`Isophotal flux <flux_iso_def>`
+  _`FLUXERR_ISO`, count, :ref:`RMS error estimate for the isophotal flux <flux_iso_def>`
+  _`MAG_ISO`, magnitude, :ref:`Isophotal magnitude <flux_iso_def>`
+  _`MAGERR_ISO`, magnitude, :ref:`RMS error estimate for the isophotal magnitude <flux_iso_def>`
+  _`FLUX_ISOCOR`, count, :ref:`Corrected isophotal flux <mag_isocor_def>`
+  _`FLUXERR_ISOCOR`, count, :ref:`RMS error estimate for the corrected isophotal flux <mag_isocor_def>`
+  _`MAG_ISOCOR`, magnitude, :ref:`Corrected isophotal magnitude <mag_isocor_def>`
+  _`MAGERR_ISOCOR`, magnitude, :ref:`RMS error estimate for the corrected isophotal magnitude <mag_isocor_def>`
+  _`FLUX_APER`, count, :ref:`Flux(es) within fixed circular aperture(s) <flux_aper_def>`
+  _`FLUXERR_APER`, count, :ref:`RMS error estimate(s) for the flux(es) within fixed circular aperture(s) <flux_aper_def>`
+  _`MAG_APER`, magnitude, :ref:`Circular aperture magnitude(s) <flux_aper_def>`
+  _`MAGERR_APER`, magnitude, :ref:`RMS error estimate(s) for circular aperture magnitude(s) <flux_aper_def>`
+  _`FLUX_AUTO`, count, :ref:`Kron-like automated aperture flux <flux_auto_def>`
+  _`FLUXERR_AUTO`, count, :ref:`RMS error estimate for Kron-like automated aperture flux <flux_auto_def>`
+  _`MAG_AUTO`, magnitude, :ref:`Kron-like automated aperture magnitude <flux_auto_def>`
+  _`MAGERR_AUTO`, magnitude, :ref:`RMS error estimate for Kron-like automated aperture magnitude <flux_auto_def>`
+  _`X_IMAGE`, pixel, :ref:`Isophotal image centroid along axis 1 (x) <pos_iso_def>`
+  _`Y_IMAGE`, pixel, :ref:`Isophotal image centroid along axis 2 (y) <pos_iso_def>`
+  _`ERRX2_IMAGE`, pixel\ :sup:`2`, :ref:`Estimated variance of isophotal image centroid x coordinate <poserr_iso_def>`
+  _`ERRY2_IMAGE`, pixel\ :sup:`2`, :ref:`Estimated variance of isophotal image centroid y coordinate <poserr_iso_def>`
+  _`ERRXY_IMAGE`, pixel\ :sup:`2`, :ref:`Estimated covariance of isophotal image centroid x and y coordinates <poserr_iso_def>`
+  _`ERRA_IMAGE`, pixel, :ref:`Major axis of the isophotal image centroid error ellipse <poserr_iso_def>`
+  _`ERRB_IMAGE`, pixel, :ref:`Minor axis of the isophotal image centroid error ellipse <poserr_iso_def>`
+  _`ERRTHETA_IMAGE`, degree, :ref:`Position angle of the isophotal image centroid ellipse <poserr_iso_def>`
+  _`ERRCXX_IMAGE`, pixel\ :sup:`-2`, :ref:`Isophotal image centroid Cxx error ellipse parameter <poserr_iso_def>`
+  _`ERRCYY_IMAGE`, pixel\ :sup:`-2`, :ref:`Isophotal image centroid Cyy error ellipse parameter <poserr_iso_def>`
+  _`ERRCXY_IMAGE`, pixel\ :sup:`-2`, :ref:`Isophotal image centroid Cxy error ellipse parameter <poserr_iso_def>`
+  _`XPEAK_IMAGE`, pixel, :ref:`x coordinate of the brightest pixel <pospeak_def>`
+  _`YPEAK_IMAGE`, pixel, :ref:`y coordinate of the brightest pixel <pospeak_def>`
+  _`XMIN_IMAGE`, pixel, :ref:`Minimum x coordinate among detected pixels <xyminmax_def>`
+  _`YMIN_IMAGE`, pixel, :ref:`Minimum y coordinate among detected pixels <xyminmax_def>`
+  _`XMAX_IMAGE`, pixel, :ref:`Maximum x coordinate among detected pixels <xyminmax_def>`
+  _`YMAX_IMAGE`, pixel, :ref:`Maximum y coordinate among detected pixels <xyminmax_def>`
+  _`XWIN_IMAGE`, pixel, :ref:`x coordinate of windowed image centroid <pos_win_def>`
+  _`YWIN_IMAGE`, pixel, :ref:`y coordinate of windowed image centroid <pos_win_def>`
+  _`ERRX2WIN_IMAGE`, pixel\ :sup:`2`, :ref:`Estimated variance of windowed image centroid x coordinate <poserr_win_def>`
+  _`ERRY2WIN_IMAGE`, pixel\ :sup:`2`, :ref:`Estimated variance of windowed image centroid y coordinate <poserr_win_def>`
+  _`ERRXYWIN_IMAGE`, pixel\ :sup:`2`, :ref:`Estimated covariance of windowed image centroid x and y coordinates <poserr_win_def>`
+  _`ERRAWIN_IMAGE`, pixel, :ref:`Major axis of the windowed image centroid error ellipse <poserr_win_def>`
+  _`ERRBWIN_IMAGE`, pixel, :ref:`Minor axis of the windowed image centroid error ellipse <poserr_win_def>`
+  _`ERRTHETAWIN_IMAGE`, degree, :ref:`Position angle of the windowed image centroid ellipse <poserr_win_def>`
+  _`ERRCXXWIN_IMAGE`, pixel\ :sup:`-2`, :ref:`Windowed image centroid Cxx error ellipse parameter <poserr_win_def>`
+  _`ERRCYYWIN_IMAGE`, pixel\ :sup:`-2`, :ref:`Windowed image centroid Cyy error ellipse parameter <poserr_win_def>`
+  _`ERRCXYWIN_IMAGE`, pixel\ :sup:`-2`, :ref:`Windowed image centroid Cxy error ellipse parameter <poserr_win_def>`
+  _`X2_IMAGE`, pixel\ :sup:`2`, :ref:`Isophotal image 2nd order central moment in x <moments_iso_def>`
+  _`Y2_IMAGE`, pixel\ :sup:`2`, :ref:`Isophotal image 2nd order central moment in y <moments_iso_def>`
+  _`XY_IMAGE`, pixel\ :sup:`2`, :ref:`Isophotal image 2nd order central cross-moment in xy <moments_iso_def>`
+  _`A_IMAGE`, pixel, :ref:`Isophotal image major axis <shape_iso_def>`
+  _`B_IMAGE`, pixel, :ref:`Isophotal image minor axis <shape_iso_def>`
+  _`THETA_IMAGE`, degree, :ref:`Isophotal image position angle<shape_iso_def>`
+  _`ELONGATION`, ..., :ref:`A_IMAGE / B_IMAGE <elong_iso_def>`
+  _`ELLIPTICITY`, ..., :ref:`1 - B_IMAGE / A_IMAGE <elong_iso_def>`
+  _`CXX_IMAGE`, pixel\ :sup:`-2`, :ref:`Isophotal image Cxx ellipse parameter <ellipse_iso_def>`
+  _`CYY_IMAGE`, pixel\ :sup:`-2`, :ref:`Isophotal image Cyy ellipse parameter <ellipse_iso_def>`
+  _`CXY_IMAGE`, pixel\ :sup:`-2`, :ref:`Isophotal image Cxy ellipse parameter <ellipse_iso_def>`
+  _`X2WIN_IMAGE`, pixel\ :sup:`2`, :ref:`Windowed image 2nd order central moment in x <moments_win_def>`
+  _`Y2WIN_IMAGE`, pixel\ :sup:`2`, :ref:`Windowed image 2nd order central moment in y <moments_win_def>`
+  _`XYWIN_IMAGE`, pixel\ :sup:`2`, :ref:`Windowed image 2nd order central cross-moment in xy <moments_win_def>`
+  _`CXXWIN_IMAGE`, pixel\ :sup:`-2`, :ref:`Windowed image Cxx ellipse parameter <ellipse_win_def>`
+  _`CYYWIN_IMAGE`, pixel\ :sup:`-2`, :ref:`Windowed image Cyy ellipse parameter <ellipse_win_def>`
+  _`CXYWIN_IMAGE`, pixel\ :sup:`-2`, :ref:`Windowed image Cxy ellipse parameter <ellipse_win_def>`
+  _`AWIN_IMAGE`, pixel, :ref:`Windowed image major axis <shape_win_def>`
+  _`BWIN_IMAGE`, pixel, :ref:`Windowed image minor axis <shape_win_def>`
+  _`THETAWIN_IMAGE`, degree, :ref:`Windowed image position angle <shape_win_def>`
 

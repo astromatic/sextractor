@@ -2,8 +2,6 @@
 
 .. include:: global.rst
 
-.. _position_iso_def:
-
 Position and shape parameters derived from the isophotal profile
 ================================================================
 
@@ -13,7 +11,11 @@ The following parameters are derived from the spatial distribution :math:`\cal S
   Unless otherwise noted, pixel values :math:`I_i` are taken from the (filtered) detection image.
 
 .. note::
-  Unless otherwise noted, all parameter names given below are only prefixes. They must be followed by _IMAGE if the results shall be expressed in pixel coordinates or :param:`_WORLD`, :param:`_SKY, :param:`_J2000` or :param:`_B1950` for |WCS|_ coordinates (see :ref:`coord_suffix`).
+  Unless otherwise noted, all parameter names given below are only prefixes.
+  They must be followed by _IMAGE if the results shall be expressed in pixel coordinates or :param:`_WORLD`, :param:`_SKY, :param:`_J2000` or :param:`_B1950` for |WCS|_ coordinates (see :ref:`coord_suffix`).
+
+
+.. _xyminmax_def:
 
 Limits: :param:`XMIN`, :param:`YMIN`, :param:`XMAX`, :param:`YMAX`
 ------------------------------------------------------------------
@@ -32,6 +34,9 @@ These coordinates define two corners of a rectangle which encloses the detected 
 
 where :math:`x_i` and :math:`y_i` are respectively the x-coordinate and y-coordinate of pixel :math:`i`.
 
+
+.. _pos_iso_def:
+
 Barycenter: :param:`X`, :param:`Y`
 ----------------------------------
 
@@ -49,10 +54,16 @@ Barycenter coordinates generally define the position of the “center” of a so
 
 In practice, :math:`x_i` and :math:`y_i` are summed relative to :param:`XMIN` and :param:`YMIN` in order to reduce roundoff errors in the summing.
 
+
+.. _pospeak_def:
+
 Position of the peak: :param:`XPEAK`, :param:`YPEAK`
 ----------------------------------------------------
 
 It is sometimes useful to have the position :param:`XPEAK`, :param:`YPEAK` of the pixel with maximum intensity in a detected object, for instance when working with likelihood maps, or when searching for artifacts. For better robustness, PEAK coordinates are computed on *filtered* profiles if available. On symmetrical profiles, PEAK positions and barycenters coincide within a fraction of pixel (:param:`XPEAK` and :param:`YPEAK` coordinates are quantized by steps of 1 pixel, hence :param:`XPEAK_IMAGE` and :param:`YPEAK_IMAGE` are integers). This is no longer true for skewed profiles, therefore a simple comparison between PEAK and barycenter coordinates can be used to identify asymmetrical objects on well-sampled images.
+
+
+.. _moments_iso_def:
 
 2nd order moments: :param:`X2`, :param:`Y2`, :param:`XY`
 --------------------------------------------------------
@@ -75,6 +86,7 @@ It is sometimes useful to have the position :param:`XPEAK`, :param:`YPEAK` of th
 These expressions are more subject to roundoff errors than if the 1st-order moments were subtracted before summing, but allow both 1st and
 2nd order moments to be computed in one pass.
 Roundoff errors are however kept to a negligible value by measuring all positions relative here again to :param:`XMIN` and :param:`YMIN`.
+
 
 .. _shape_iso_def:
 
@@ -153,6 +165,23 @@ covariance :math:`\overline{xy}`.
 Note that :param:`A` and :param:`B` are exactly halves the :math:`a` and :math:`b` parameters computed by the COSMOS image analyser :cite:`1980SPIE_264_208S`.
 Actually, :math:`a` and :math:`b` are defined in :cite:`1980SPIE_264_208S` as the semi-major and semi-minor axes of an elliptical shape with constant surface brightness, which would have the same 2nd-order moments as the analyzed object.
 
+
+.. _elong_iso_def:
+
+By-products of shape parameters: :param:`ELONGATION` and :param:`ELLIPTICITY`
+-----------------------------------------------------------------------------
+
+These parameters [#elongation]_ are directly derived from :param:`A` and :param:`B`:
+
+.. math::
+  :label: elongation
+
+   \begin{aligned}
+   {\tt ELONGATION} & = & \frac{\tt A}{\tt B}\ \ \ \ \ \mbox{and}\\
+   {\tt ELLIPTICITY} & = & 1 - \frac{\tt B}{\tt A}.
+   \end{aligned}
+
+
 .. _ellipse_iso_def:
 
 Ellipse parameters: :param:`CXX`, :param:`CYY`, :param:`CXY`
@@ -197,20 +226,8 @@ parameters can be derived from the 2nd order moments:
 
    Meaning of shape parameters.
 
-By-products of shape parameters: :param:`ELONGATION` and :param:`ELLIPTICITY`
------------------------------------------------------------------------------
 
-These parameters [#elongation]_ are directly derived from :param:`A` and :param:`B`:
-
-.. math::
-  :label: elongation
-
-   \begin{aligned}
-   {\tt ELONGATION} & = & \frac{\tt A}{\tt B}\ \ \ \ \ \mbox{and}\\
-   {\tt ELLIPTICITY} & = & 1 - \frac{\tt B}{\tt A}.
-   \end{aligned}
-
-.. _poserr:
+.. _poserr_iso_def:
 
 Position uncertainties: :param:`ERRX2`, :param:`ERRY2`, :param:`ERRXY`, :param:`ERRA`, :param:`ERRB`, :param:`ERRTHETA`, :param:`ERRCXX`, :param:`ERRCYY`, :param:`ERRCXY`
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -275,6 +292,7 @@ And the error ellipse parameters are:
    cov}(\overline{x},\overline{y})}{{\rm var}(\overline{x}) {\rm var}(\overline{y}) -
    {\rm cov}^2(\overline{x},\overline{y})}.
    \end{aligned}
+
 
 Handling of “infinitely thin” detections
 ----------------------------------------

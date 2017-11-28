@@ -6,7 +6,7 @@ Windowed positional parameters
 ==============================
 
 Measurements performed through a *window* function (an *envelope*) do not have many of the drawbacks of isophotal measurements. |SExtractor| implements “windowed” versions for most
-of the measurements described in the :ref:`previous section<position_iso_def>`:
+of the measurements described in the :ref:`previous section<pos_iso_def>`:
 
 .. note::
   Unless otherwise noted, all parameter names given below are only prefixes. They must be followed by _IMAGE if the results shall be expressed in pixel coordinates or :param:`_WORLD`, :param:`_SKY`, :param:`_J2000` or :param:`_B1950` for |WCS|_ coordinates (see :ref:`coord_suffix`).
@@ -30,7 +30,7 @@ the object’s isophotal footprint.
 The Gaussian window is scaled to each object; the Gaussian FWHM is the diameter of the disk that contains half of the object flux (:math:`d_{50}`).
 Note that in double-image mode (§[chap:using]) the window is scaled based on the *measurement* image.
 
-.. _xywin:
+.. _pos_win_def:
 
 Windowed centroid: :param:`XWIN`, :param:`YWIN`
 -----------------------------------------------
@@ -86,10 +86,12 @@ It has been verified that for isolated objects with Gaussian-like profiles, thei
    *Left*: histogram of the difference between :param:`X_IMAGE` and the true centroid in x.
    *Right*: histogram of the difference between :param:`XWIN_IMAGE` and the true centroid in x.
 
+.. _moments_win_def:
+
 Windowed 2nd order moments: :param:`X2`, :param:`Y2`, :param:`XY`
 -----------------------------------------------------------------
 
-Windowed second-order moments are computed on the image data once the :ref:`centering process <xywin>` has converged:
+Windowed second-order moments are computed on the image data once the :ref:`centering process <pos_win_def>` has converged:
 
 .. math::
   :label: x2y2win
@@ -108,6 +110,8 @@ Windowed second-order moments are computed on the image data once the :ref:`cent
 
 Windowed second-order moments are typically twice smaller than their isophotal equivalent.
 
+.. _shape_win_def:
+
 Windowed shape parameters: :param:`AWIN`, :param:`BWIN`, :param:`THETAWIN`
 --------------------------------------------------------------------------
 
@@ -125,6 +129,8 @@ way as in :eq:`theta0_3` and :eq:`aimage_2` from the :ref:`isophotal shape param
    \tan (2\,{\tt THETAWIN}) & = & 2 \frac{\overline{xy_{\tt WIN}}}{\overline{x_{\tt WIN}^2} - \overline{y_{\tt WIN}^2}}.
    \end{aligned}
 
+
+.. _ellipse_win_def:
 
 Windowed ellipse parameters: :param:`CXXWIN`, :param:`CYYWIN`, :param:`CXYWIN`
 ------------------------------------------------------------------------------
@@ -146,10 +152,12 @@ Ellipse parameters are computed from the windowed 2nd order moments exactly the 
    \frac{\overline{xy_{\tt WIN}}}{\overline{x_{\tt WIN}^2} \overline{y_{\tt WIN}^2} - \overline{xy_{\tt WIN}}^2}.
    \end{aligned}
 
+.. _poserr_win_def:
+
 Windowed position uncertainties: :param:`ERRX2WIN`, :param:`ERRY2WIN`, :param:`ERRXYWIN`, :param:`ERRAWIN`, :param:`ERRBWIN`, :param:`ERRTHETAWIN`, :param:`ERRCXXWIN`, :param:`ERRCYYWIN`, :param:`ERRCXYWIN`
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-Windowed position uncertainties are computed on the image data once the centering process of the :ref:`windowed centroid <xywin>` has converged.
+Windowed position uncertainties are computed on the image data once the centering process of the :ref:`windowed centroid <pos_win_def>` has converged.
 Assuming that noise is uncorrelated among pixels, standard error propagation applied to :eq:`xywin` writes:
 
 .. math::
@@ -168,7 +176,7 @@ Assuming that noise is uncorrelated among pixels, standard error propagation app
    {\left(\sum_{r_i < r_{\rm max}} w_i I_i\right)^2}.
    \end{aligned}
 
-Semi-major axis :param:`ERRAWIN`, semi-minor axis :param:`ERRBWIN`, and position angle :param:`ERRTHETAWIN` of the :math:`1\sigma` position error ellipse are computed from the covariance matrix elements :math:`{\rm var}(\overline{x_{\tt WIN}})`, :math:`{\rm var}(\overline{y_{\tt WIN}})`, :math:`{\rm cov}(\overline{x_{\tt WIN}},\overline{y_{\tt WIN}})`, similarly to the :ref:`isophotal error ellipse <poserr>`:
+Semi-major axis :param:`ERRAWIN`, semi-minor axis :param:`ERRBWIN`, and position angle :param:`ERRTHETAWIN` of the :math:`1\sigma` position error ellipse are computed from the covariance matrix elements :math:`{\rm var}(\overline{x_{\tt WIN}})`, :math:`{\rm var}(\overline{y_{\tt WIN}})`, :math:`{\rm cov}(\overline{x_{\tt WIN}},\overline{y_{\tt WIN}})`, similarly to the :ref:`isophotal error ellipse <poserr_iso_def>`:
 
 .. math::
   :label: errabthetawin
