@@ -1,46 +1,43 @@
 .. File PositionWin.rst
 
+.. include:: global.rst
+
 Windowed positional parameters
 ==============================
 
 Measurements performed through a *window* function (an *envelope*) do not have many of the drawbacks of isophotal measurements. |SExtractor| implements “windowed” versions for most
-of the measurements described in the :ref:`previous section<position_iso>`:
+of the measurements described in the :ref:`previous section<position_iso_def>`:
 
 .. note::
-  Unless otherwise noted, all parameter names given below are only prefixes. They must be followed by _IMAGE if the results shall be expressed in pixel coordinates or _WORLD, _SKY, _J2000 or _B1950 for |WCS|_ coordinates (see :ref:`coord_suffix`).
+  Unless otherwise noted, all parameter names given below are only prefixes. They must be followed by _IMAGE if the results shall be expressed in pixel coordinates or :param:`_WORLD`, :param:`_SKY`, :param:`_J2000` or :param:`_B1950` for |WCS|_ coordinates (see :ref:`coord_suffix`).
 
-+----------------------+-------------------------------+
-| Isophotal parameters | Equivalent windowed parameters|
-+======================+===============================+
-| X, Y                 | XWIN, YWIN                    |
-+----------------------+-------------------------------+
-| ERRA, ERRB, ERRTHETA | ERRAWIN, ERRBWIN, ERRTHETAWIN |
-+----------------------+-------------------------------+
-| A, B, THETA          | AWIN, BWIN, THETAWIN          |
-+----------------------+-------------------------------+
-| X2, Y2, XY           | X2WIN, Y2WIN, XYWIN           |
-+----------------------+-------------------------------+
-| CXX, CYY, CXY        | CXXWIN, CYYWIN, CXYWIN        |
-+----------------------+-------------------------------+
++-------------------------------------------------+----------------------------------------------------------+
+| Isophotal parameters                            | Equivalent windowed parameters                           |
++=================================================+==========================================================+
+| :param:`X`, :param:`Y`                          | :param:`XWIN`, :param:`YWIN`                             |
++-------------------------------------------------+----------------------------------------------------------+
+| :param:`ERRA`, :param:`ERRB`, :param:`ERRTHETA` | :param:`ERRAWIN`, :param:`ERRBWIN`, :param:`ERRTHETAWIN` |
++-------------------------------------------------+----------------------------------------------------------+
+| :param:`A`, :param:`B`, :param:`THETA`          | :param:`AWIN`, :param:`BWIN`, :param:`THETAWIN`          |
++-------------------------------------------------+----------------------------------------------------------+
+| :param:`X2`, :param:`Y2`, :param:`XY`           | :param:`X2WIN`, :param:`Y2WIN`, :param:`XYWIN`           |
++-------------------------------------------------+----------------------------------------------------------+
+| :param:`CXX`, :param:`CYY`, :param:`CXY`        | :param:`CXXWIN`, :param:`CYYWIN`, :param:`CXYWIN`        |
++-------------------------------------------------+----------------------------------------------------------+
 
-The computations involved are roughly the same except that the pixel
-values are integrated within a circular Gaussian window as opposed to
-the object’s isophotal footprint. The Gaussian window is scaled to each
-object; its FWHM is the diameter of the disk that contains half of the
-object flux (:math:`d_{50}`). Note that in double-image mode
-(§[chap:using]) the window is scaled based on the *measurement* image.
+The computations involved are roughly the same except that the pixel values are integrated within a circular Gaussian window as opposed to
+the object’s isophotal footprint.
+The Gaussian window is scaled to each object; the Gaussian FWHM is the diameter of the disk that contains half of the object flux (:math:`d_{50}`).
+Note that in double-image mode (§[chap:using]) the window is scaled based on the *measurement* image.
 
 .. _xywin:
 
-Windowed centroid: XWIN, YWIN
------------------------------
+Windowed centroid: :param:`XWIN`, :param:`YWIN`
+-----------------------------------------------
 
-This is an iterative process. The computation starts by initializing the
-windowed centroid coordinates :math:`\overline{x_{\tt WIN}}^{(0)}` and
-:math:`\overline{y_{\tt WIN}}^{(0)}` to their basic :math:`\overline{x}`
-and :math:`\overline{y}` isophotal equivalents, respectively. Then at
-each iteration :math:`t`, :math:`\overline{x_{\tt WIN}}` and
-:math:`\overline{y_{\tt WIN}}` are refined using:
+This is an iterative process.
+Computation starts by initializing the windowed centroid coordinates :math:`\overline{x_{\tt WIN}}^{(0)}` and :math:`\overline{y_{\tt WIN}}^{(0)}` to their basic :math:`\overline{x}` and :math:`\overline{y}` isophotal equivalents, respectively.
+Then at each iteration :math:`t`, :math:`\overline{x_{\tt WIN}}` and :math:`\overline{y_{\tt WIN}}` are refined using:
 
 .. math::
   :label: xywin
@@ -54,7 +51,8 @@ each iteration :math:`t`, :math:`\overline{x_{\tt WIN}}` and
    {\tt YWIN}^{(t+1)} & = & \overline{y_{\tt WIN}}^{(t+1)}
    = \overline{y_{\tt WIN}}^{(t)} + 2\,\frac{\sum_{r_i^{(t)} < r_{\rm max}}
    w_i^{(t)} I_i\ (y_i - \overline{y_{\tt WIN}}^{(t)})}
-   {\sum_{r_i^{(t)} < r_{\rm max}} w_i^{(t)} I_i},\end{aligned}
+   {\sum_{r_i^{(t)} < r_{\rm max}} w_i^{(t)} I_i},
+   \end{aligned}
 
 where
 
@@ -71,20 +69,12 @@ with
    r_i^{(t)} = \sqrt{\left(x_i - \overline{x_{\tt WIN}}^{(t)}\right)^2 + \left(y_i
    - \overline{y_{\tt WIN}}^{(t)}\right)^2}
 
-and :math:`s_{\tt WIN} = d_{50} / \sqrt{8 \ln 2}`. The process stops
-when the change in position between two iterations is less than
-:math:`2\times10^{-4}` pixel, a condition which is generally achieved in
-about 3 to 5 iterations.
+and :math:`s_{\tt WIN} = d_{50} / \sqrt{8 \ln 2}`.
+Process stops when the change in position between two iterations is less than :math:`2\times10^{-4}` pixel, a condition which is achieved in about 3 to 5 iterations in practice.
 
-Although the iterative nature of the processing slows down the
-processing , it is recommended to use whenever possible windowed
-parameters instead of their isophotal equivalents, since the
-measurements they provide are much more precise (:numref:`fig_xwinprec`).
-The precision in centroiding offered by XWIN_IMAGE and YWIN_IMAGE is
-actually very close to that of PSF-fitting on focused and properly
-sampled star images, and can also be applied to galaxies. It has been
-verified that for isolated, Gaussian-like PSFs, its accuracy is close to
-the theoretical limit set by image noise [#win_accuracy]_.
+Although they are slower, it is recommended to use whenever possible windowed position parameters instead of their isophotal equivalents; the measurements they provide are generally much more accurate (:numref:`fig_xwinprec`).
+The centroiding accuracy of :param:`XWIN_IMAGE` and :param:`YWIN_IMAGE` is actually very close to that of PSF-fitting on focused and properly sampled star images. Windowed measurements can also be applied to galaxies.
+It has been verified that for isolated objects with Gaussian-like profiles, their accuracy is close to the theoretical limit set by image noise [#win_accuracy]_.
 
 .. _fig_xwinprec:
 
@@ -92,15 +82,12 @@ the theoretical limit set by image noise [#win_accuracy]_.
    :figwidth: 100%
    :align: center
 
-   Comparison between isophotal and windowed centroid measurement residuals on
-   simulated, background noise-limited images.
-   *Left*: histogram of the difference between X_IMAGE and the true centroid
-   in x.
-   *Right*: histogram of the difference between XWIN_IMAGE and the true centroid
-   in x.
+   Comparison between isophotal and windowed centroid measurement residuals on simulated, background noise-limited images.
+   *Left*: histogram of the difference between :param:`X_IMAGE` and the true centroid in x.
+   *Right*: histogram of the difference between :param:`XWIN_IMAGE` and the true centroid in x.
 
-Windowed 2nd order moments: X2, Y2, XY
---------------------------------------
+Windowed 2nd order moments: :param:`X2`, :param:`Y2`, :param:`XY`
+-----------------------------------------------------------------
 
 Windowed second-order moments are computed on the image data once the :ref:`centering process <xywin>` has converged:
 
@@ -119,14 +106,13 @@ Windowed second-order moments are computed on the image data once the :ref:`cent
    (y_i - \overline{y_{\tt WIN}})}
    {\sum_{r_i < r_{\rm max}} w_i I_i}.\end{aligned}
 
-Windowed second-order moments are typically twice smaller than their
-isophotal equivalent.
+Windowed second-order moments are typically twice smaller than their isophotal equivalent.
 
-Windowed shape parameters: AWIN, BWIN, THETAWIN
------------------------------------------------
+Windowed shape parameters: :param:`AWIN`, :param:`BWIN`, :param:`THETAWIN`
+--------------------------------------------------------------------------
 
 They are computed from the windowed 2nd order moments exactly the same
-way as in :eq:`theta0_3` and :eq:`aimage_2` from the :ref:`isophotal shape parameter<shape_iso>` section:
+way as in :eq:`theta0_3` and :eq:`aimage_2` from the :ref:`isophotal shape parameter<shape_iso_def>` section:
 
 .. math::
   :label: shapewin
@@ -140,11 +126,10 @@ way as in :eq:`theta0_3` and :eq:`aimage_2` from the :ref:`isophotal shape param
    \end{aligned}
 
 
-Windowed ellipse parameters: CXXWIN, CYYWIN, CXYWIN
----------------------------------------------------
+Windowed ellipse parameters: :param:`CXXWIN`, :param:`CYYWIN`, :param:`CXYWIN`
+------------------------------------------------------------------------------
 
-They are computed from the windowed 2nd order moments exactly the same
-way as in :eq:`ellipse_2` describing the :ref:`isophotal ellipse parameters<ellipse_iso>`:
+Ellipse parameters are computed from the windowed 2nd order moments exactly the same way as in :eq:`ellipse_2` describing the :ref:`isophotal ellipse parameters<ellipse_iso_def>`:
 
 .. math::
   :label: ellipsewin_2
@@ -158,15 +143,14 @@ way as in :eq:`ellipse_2` describing the :ref:`isophotal ellipse parameters<elli
    \frac{\overline{x_{\tt WIN}^2}}{\overline{x_{\tt WIN}^2} \overline{y_{\tt WIN}^2} - \overline{xy_{\tt WIN}}^2}\\
    {\tt CXYWIN} & = & 2 \,\cos {\tt THETAWIN}\,\sin {\tt
    THETAWIN} \left( \frac{1}{{\tt AWIN}^2} - \frac{1}{{\tt BWIN}^2}\right) = -2\,
-   \frac{\overline{xy_{\tt WIN}}}{\overline{x_{\tt WIN}^2} \overline{y_{\tt WIN}^2} - \overline{xy_{\tt WIN}}^2}\end{aligned}
+   \frac{\overline{xy_{\tt WIN}}}{\overline{x_{\tt WIN}^2} \overline{y_{\tt WIN}^2} - \overline{xy_{\tt WIN}}^2}.
+   \end{aligned}
 
-Windowed position uncertainties: ERRX2WIN, ERRY2WIN, ERRXYWIN, ERRAWIN, ERRBWIN, ERRTHETAWIN, ERRCXXWIN, ERRCYYWIN, ERRCXYWIN
------------------------------------------------------------------------------------------------------------------------------
+Windowed position uncertainties: :param:`ERRX2WIN`, :param:`ERRY2WIN`, :param:`ERRXYWIN`, :param:`ERRAWIN`, :param:`ERRBWIN`, :param:`ERRTHETAWIN`, :param:`ERRCXXWIN`, :param:`ERRCYYWIN`, :param:`ERRCXYWIN`
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-Windowed position uncertainties are computed on the image data once the
-centering process of the :ref:`windowed centroid <xywin>` has converged. Assuming that
-noise is uncorrelated among pixels, standard error propagation applied
-to :eq:`xywin` writes:
+Windowed position uncertainties are computed on the image data once the centering process of the :ref:`windowed centroid <xywin>` has converged.
+Assuming that noise is uncorrelated among pixels, standard error propagation applied to :eq:`xywin` writes:
 
 .. math::
   :label: errwin
@@ -181,15 +165,10 @@ to :eq:`xywin` writes:
    {\tt ERRXYWIN} & = {\rm cov}(\overline{x_{\tt WIN}},\overline{y_{\tt WIN}})
    = & 4\,\frac{\sum_{r_i < r_{\rm max}}
    w_i^2 \sigma^2_i (x_i-\overline{x_{\tt WIN}})(y_i-\overline{y_{\tt WIN}})}
-   {\left(\sum_{r_i < r_{\rm max}} w_i I_i\right)^2}.\end{aligned}
+   {\left(\sum_{r_i < r_{\rm max}} w_i I_i\right)^2}.
+   \end{aligned}
 
-The semi-major axis ERRAWIN, semi-minor axis ERRBWIN, and position angle
-ERRTHETAWIN of the :math:`1\sigma` position error ellipse are computed
-from the covariance matrix elements
-:math:`{\rm var}(\overline{x_{\tt WIN}})`,
-:math:`{\rm var}(\overline{y_{\tt WIN}})`,
-:math:`{\rm cov}(\overline{x_{\tt WIN}},\overline{y_{\tt WIN}})`,
-similarly to the :ref:`isophotal error ellipse <poserr>`:
+Semi-major axis :param:`ERRAWIN`, semi-minor axis :param:`ERRBWIN`, and position angle :param:`ERRTHETAWIN` of the :math:`1\sigma` position error ellipse are computed from the covariance matrix elements :math:`{\rm var}(\overline{x_{\tt WIN}})`, :math:`{\rm var}(\overline{y_{\tt WIN}})`, :math:`{\rm cov}(\overline{x_{\tt WIN}},\overline{y_{\tt WIN}})`, similarly to the :ref:`isophotal error ellipse <poserr>`:
 
 .. math::
   :label: errabthetawin
@@ -205,7 +184,7 @@ similarly to the :ref:`isophotal error ellipse <poserr>`:
                        {{\rm var}(\overline{x_{\tt WIN}}) - {\rm var}(\overline{y_{\tt WIN}})}.
     \end{aligned}
 
-And the error ellipse parameters are:
+The error ellipse parameters are:
 
 .. math::
   :label: errellipsewin
@@ -229,6 +208,4 @@ And the error ellipse parameters are:
 
 
 .. [#win_accuracy] See http://www.astromatic.net/forum/showthread.php?tid=581 .
-
-.. include:: keys.rst
 

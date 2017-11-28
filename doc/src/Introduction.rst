@@ -1,12 +1,11 @@
 .. File Introduction.rst
 
+.. include:: global.rst
+
 Introduction
 ============
 
-|SExtractor|_ (Source-Extractor) is a program that builds a catalog
-of objects from an astronomical image. It is particularly oriented
-towards the reduction of large scale galaxy-survey data, but it also performs
-well on moderately crowded star fields. Its main features are:
+|SExtractor|_ (Source-Extractor) is a program that builds a catalog of objects from an astronomical image. It is particularly oriented towards the reduction of large scale galaxy-survey data, but it also performs well on moderately crowded star fields. Its main features are:
 
 * Support for multi-extension FITS (|MEF|_)
 * Speed: up to about 50 Mpixel/s or 10,000 sources/s with a 3 GHz processor
@@ -22,8 +21,5 @@ well on moderately crowded star fields. Its main features are:
 * Built-in catalog cross-identification.
 * Special mode for photographic scans.
 * |XML|_ |VOTable|_-compliant catalog output.
-* |XSLT|_ filter sheet provided for convenient access to metadata from a
-  regular web browser.
-
-.. include:: keys.rst
+* |XSLT|_ filter sheet provided for convenient access to metadata from a regular web browser.
 
