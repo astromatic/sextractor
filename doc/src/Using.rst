@@ -1,5 +1,7 @@
 .. File Using.rst
 
+.. include:: global.rst
+
 .. _using-sextractor:
 
 Using SExtractor
@@ -39,5 +41,4 @@ about the source extraction process:
   remote web server), alternative |XSLT| translation URLs may be specified
   using the ``XSL_URL`` configuration parameter.
 
-.. include:: keys.rst
 

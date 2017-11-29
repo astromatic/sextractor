@@ -11,6 +11,7 @@ h1,h2,h3 {
 	font-weight: 700;
 	src: url(../fonts/CherrySoda.ttf) format('truetype');
 }
+
 */
 /* Extend page width size limit */
 .wy-nav-content {
@@ -69,5 +70,16 @@ span[id*="MathJax-Span"] {
 
 .math .eqno:hover a.headerlink {
 	visibility: visible;
+}
+
+/* new param class */
+@font-face {
+ font-family: MathJax_Typewriter;
+ src: url('https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/fonts/HTML-CSS/TeX/woff/MathJax_Typewriter-Regular.woff?V=2.7.1') format('woff'), url('https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/fonts/HTML-CSS/TeX/otf/MathJax_Typewriter-Regular.otf?V=2.7.1') format('opentype')
+}
+
+.targetparam .target, .param {
+	font-family: "MathJax_Typewriter",monospace;
+	font-size: 116%;
 }
 
