@@ -47,7 +47,6 @@ Then at each iteration :math:`t`, :math:`\overline{x_{\tt WIN}}` and :math:`\ove
    = \overline{x_{\tt WIN}}^{(t)} + 2\,\frac{\sum_{r_i^{(t)} < r_{\rm max}}
    w_i^{(t)} I_i \ (x_i  - \overline{x_{\tt WIN}}^{(t)})}
    {\sum_{r_i^{(t)} < r_{\rm max}} w_i^{(t)} I_i},\\
-   \label{eq:ywin}
    {\tt YWIN}^{(t+1)} & = & \overline{y_{\tt WIN}}^{(t+1)}
    = \overline{y_{\tt WIN}}^{(t)} + 2\,\frac{\sum_{r_i^{(t)} < r_{\rm max}}
    w_i^{(t)} I_i\ (y_i - \overline{y_{\tt WIN}}^{(t)})}

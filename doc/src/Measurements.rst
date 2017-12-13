@@ -22,6 +22,7 @@ Model-fitting
   Position
   PositionWin
   Photom
+  Model
 
 .. [#thresh] Pixel values also have to exceed the local detection threshold set with ``DETECT_THRESH``.
 .. [#psf_models] PSF models be computed using the |PSFEx|_ package.
