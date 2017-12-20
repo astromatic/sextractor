@@ -83,3 +83,12 @@ span[id*="MathJax-Span"] {
 	font-size: 116%;
 }
 
+/* Hide permalinks on captions */
+caption a.headerlink {
+	visibility: hidden;
+}
+
+caption:hover a.headerlink {
+	visibility: visible;
+}
+

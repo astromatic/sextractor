@@ -29,8 +29,8 @@ For many catalog parameters, especially those related to flux,
 position, or shape, several variants of the same measurement are
 available:
 
-Fluxes
-~~~~~~
+Fluxes and magnitudes
+~~~~~~~~~~~~~~~~~~~~~
 
 Fluxes may be expressed in linear (ADU) units or as Pogson :cite:`1856MNRAS_17_12P` magnitudes. Flux measurements in ADUs are prefixed with :param:`FLUX_`, for example: :param:`FLUX_AUTO`, :param:`FLUX_ISO`, etc. Magnitudes are prefixed with :param:`MAG_` e.g., :param:`MAG_AUTO`, :param:`MAG_ISO`, ... In
 |SExtractor| the magnitude :math:`m` of a source is derived from the flux
@@ -46,8 +46,8 @@ Fluxes may be expressed in linear (ADU) units or as Pogson :cite:`1856MNRAS_17_1
 where :math:`m_{ZP}` is the magnitude zero-point set with the
 ``MAG_ZEROPOINT`` configuration parameter.
 
-Flux uncertainties
-~~~~~~~~~~~~~~~~~~
+Flux and magnitude uncertainties
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Flux uncertainties follow a scheme similar to that of fluxes. Flux uncertainties are prefixed with :param:`FLUXERR_`, as in :param:`FLUXERR_AUTO` or :param:`FLUXERR_ISO`. Magnitude uncertainties start with :param:`MAGERR_`, for instance: :param:`MAGERR_AUTO`, :param:`MAGERR_ISO`,... Magnitude uncertainties :math:`\sigma_m` are derived from the estimated 1-\ :math:`\sigma` flux error :math:`\sigma_f`:
 
@@ -65,14 +65,28 @@ Positions and shapes
 
 Positions, distances and position angles are computed in pixel coordinates. They may be expressed in image pixels, world coordinates, or in celestial coordinates, depending on the suffix:
 
+.. _image_coords:
+
 :param:`_IMAGE`
   Measurements are given in pixel coordinates, in units of pixels. For example: :param:`Y_IMAGE`, :param:`ERRAWIN_IMAGE`, :param:`THETA_IMAGE` etc. Following the FITS convention, in |SExtractor| the center of the first image pixel has coordinates (1.0,1.0). Position angles are counted from the *x* axis (axis 1), positive towards the *y* axis (axis 2)
+
+.. _world_coords:
 
 :param:`_WORLD`
   Measurements are given in so-called “world coordinates”, converted from pixel coordinates using the local Jacobian of the transformation between both systems. This requires World Coordinate System (|WCS|_) metadata :cite:`2002AA_395_1061G` to be present in the FITS image header(s). Position angles are counted from the first world axis, positive towards the second world axis.
 
+.. _sky_coords:
+
 :param:`_SKY`, :param:`_J2000`, :param:`_B1950`
   Measurements are given in celestial (equatorial) coordinates, converted from pixel coordinates using the local Jacobian of the transformation between both systems. Positions and distances are in units of degrees. This requires celestial |WCS| metadata :cite:`2002AA_395_1077C` to be present in the FITS image header(s). :param:`_SKY` measurements are given in the native world coordinate system. :param:`_J2000` and :param:`_B1950` measurements are automatically converted from the native |WCS|, taking into account the change of reference frame. In all cases, positions angles are counted East-of-North.
+
+.. _focal_coords:
+
+:param:`_FOCAL`
+  Measurements are given in “focal plane coordinates”, which are actually projected coordinates, in degrees. This requires World Coordinate System (|WCS|_) metadata :cite:`2002AA_395_1061G` to be present in the FITS image header(s). The computation of focal plane coordinates from pixel coordinates is similar to that of :param:`_SKY` coordinates except that they are not de-projected and remain Cartesian. The main purpose of focal plane coordinates is to provide a common system for all the chips in a mosaic camera.
+
+.. note::
+  Conversion to :param:`_FOCAL` coordinates is available only for a limited subset of measurements.
 
 Measurement parameter list
 --------------------------
@@ -86,10 +100,10 @@ of their meaning.
   :header: "Name", "Unit", "Description"
   :widths: 15 10 30
 
-  _`NUMBER`,, Running object number
-  _`ID_PARENT`,..., Parent ID (before deblending)
-  _`EXT_NUMBER`,..., FITS extension number
-  _`FLAGS`,..., Extraction flags
+  _`NUMBER`, ..., Running object number
+  _`ID_PARENT`, ..., Parent ID (before deblending)
+  _`EXT_NUMBER`, ..., FITS extension number
+  _`FLAGS`, ..., Extraction flags
   _`FLUX_ISO`, count, :ref:`Isophotal flux <flux_iso_def>`
   _`FLUXERR_ISO`, count, :ref:`RMS error estimate for the isophotal flux <flux_iso_def>`
   _`MAG_ISO`, magnitude, :ref:`Isophotal magnitude <flux_iso_def>`
@@ -106,8 +120,18 @@ of their meaning.
   _`FLUXERR_AUTO`, count, :ref:`RMS error estimate for Kron-like automated aperture flux <flux_auto_def>`
   _`MAG_AUTO`, magnitude, :ref:`Kron-like automated aperture magnitude <flux_auto_def>`
   _`MAGERR_AUTO`, magnitude, :ref:`RMS error estimate for Kron-like automated aperture magnitude <flux_auto_def>`
-  _`X_IMAGE`, pixel, :ref:`Isophotal image centroid along axis 1 (x) <pos_iso_def>`
-  _`Y_IMAGE`, pixel, :ref:`Isophotal image centroid along axis 2 (y) <pos_iso_def>`
+  _`X_IMAGE`, pixel, :ref:`Pixel x coordinate <image_coords>` of the :ref:`isophotal image centroid <pos_iso_def>`
+  _`Y_IMAGE`, pixel, :ref:`Pixel y coordinate <image_coords>` of the :ref:`isophotal image centroid <pos_iso_def>`
+  _`X_FOCAL`, degree, :ref:`Focal plane x coordinate <focal_coords>` of :ref:`isophotal image centroid <pos_iso_def>`
+  _`Y_FOCAL`, degree, :ref:`Focal plane y coordinate <focal_coords>` of :ref:`isophotal image centroid <pos_iso_def>`
+  _`X_WORLD`, ..., :ref:`World x coordinate <world_coords>` of the :ref:`isophotal image centroid <pos_iso_def>`
+  _`Y_WORLD`, ..., :ref:`World y coordinate <world_coords>` of the :ref:`isophotal image centroid <pos_iso_def>`
+  _`ALPHA_SKY`, degree, :ref:`Native right ascension <sky_coords>` of the :ref:`isophotal image centroid <pos_iso_def>`
+  _`DELTA_SKY`, degree, :ref:`Native declination <sky_coords>` of the :ref:`isophotal image centroid <pos_iso_def>`
+  _`ALPHA_J2000`, degree, :ref:`J2000 right ascension <sky_coords>` of the :ref:`isophotal image centroid <pos_iso_def>`
+  _`DELTA_J2000`, degree, :ref:`J2000 declination <sky_coords>` of the :ref:`isophotal image centroid <pos_iso_def>`
+  _`ALPHA_B1950`, degree, :ref:`B1950 right ascension <sky_coords>` of the :ref:`isophotal image centroid <pos_iso_def>`
+  _`DELTA_B1950`, degree, :ref:`B1950 declination <sky_coords>` of the :ref:`isophotal image centroid <pos_iso_def>`
   _`ERRX2_IMAGE`, pixel\ :sup:`2`, :ref:`Estimated variance of isophotal image centroid x coordinate <poserr_iso_def>`
   _`ERRY2_IMAGE`, pixel\ :sup:`2`, :ref:`Estimated variance of isophotal image centroid y coordinate <poserr_iso_def>`
   _`ERRXY_IMAGE`, pixel\ :sup:`2`, :ref:`Estimated covariance of isophotal image centroid x and y coordinates <poserr_iso_def>`
@@ -117,8 +141,18 @@ of their meaning.
   _`ERRCXX_IMAGE`, pixel\ :sup:`-2`, :ref:`Isophotal image centroid Cxx error ellipse parameter <poserr_iso_def>`
   _`ERRCYY_IMAGE`, pixel\ :sup:`-2`, :ref:`Isophotal image centroid Cyy error ellipse parameter <poserr_iso_def>`
   _`ERRCXY_IMAGE`, pixel\ :sup:`-2`, :ref:`Isophotal image centroid Cxy error ellipse parameter <poserr_iso_def>`
-  _`XPEAK_IMAGE`, pixel, :ref:`x coordinate of the brightest pixel <pospeak_def>`
-  _`YPEAK_IMAGE`, pixel, :ref:`y coordinate of the brightest pixel <pospeak_def>`
+  _`XPEAK_IMAGE`, pixel, :ref:`Pixel x coordinate <image_coords>` of the :ref:`brightest pixel <pospeak_def>`
+  _`YPEAK_IMAGE`, pixel, :ref:`Pixel y coordinate <image_coords>` of the :ref:`brightest pixel <pospeak_def>`
+  _`XPEAK_FOCAL`, degree, :ref:`Focal plane x coordinate <focal_coords>` of the :ref:`brightest pixel <pospeak_def>`
+  _`YPEAK_FOCAL`, degree, :ref:`Focal plane y coordinate <focal_coords>` of the :ref:`brightest pixel <pospeak_def>`
+  _`XPEAK_WORLD`, ..., :ref:`World x coordinate <world_coords>` of the :ref:`brightest pixel <pospeak_def>`
+  _`YPEAK_WORLD`, ..., :ref:`World y coordinate <world_coords>` of the :ref:`brightest pixel <pospeak_def>`
+  _`ALPHAPEAK_SKY`, degree, :ref:`Native right ascension <sky_coords>` of the :ref:`brightest pixel <pospeak_def>`
+  _`DELTAPEAK_SKY`, degree, :ref:`Native declination <sky_coords>` of the :ref:`brightest pixel <pospeak_def>`
+  _`ALPHAPEAK_J2000`, degree, :ref:`J2000 right ascension <sky_coords>` of the :ref:`brightest pixel <pospeak_def>`
+  _`DELTAPEAK_J2000`, degree, :ref:`J2000 declination <sky_coords>` of the :ref:`brightest pixel <pospeak_def>`
+  _`ALPHAPEAK_B1950`, degree, :ref:`J2000 right ascension <sky_coords>` of the :ref:`brightest pixel <pospeak_def>`
+  _`DELTAPEAK_B1950`, degree, :ref:`J2000 declination <sky_coords>` of the :ref:`brightest pixel <pospeak_def>`
   _`XMIN_IMAGE`, pixel, :ref:`Minimum x coordinate among detected pixels <xyminmax_def>`
   _`YMIN_IMAGE`, pixel, :ref:`Minimum y coordinate among detected pixels <xyminmax_def>`
   _`XMAX_IMAGE`, pixel, :ref:`Maximum x coordinate among detected pixels <xyminmax_def>`
