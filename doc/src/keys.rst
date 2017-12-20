@@ -19,6 +19,9 @@
 .. |Intel| replace:: Intel\ :sup:`®`\ 
 .. _Intel: http://intel.com
 
+.. |LevMar| replace:: :program:`LevMar`
+.. _LevMar: http://users.ics.forth.gr/~lourakis/levmar
+
 .. |MEF| replace:: :abbr:`MEF (Multi-Extension FITS)`
 .. _MEF: http://www.stsci.edu/hst/HST_overview/documents/datahandbook/intro_ch23.html
 

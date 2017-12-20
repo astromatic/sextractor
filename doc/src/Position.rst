@@ -224,7 +224,7 @@ parameters can be derived from the 2nd order moments:
    :figwidth: 100%
    :align: center
 
-   Meaning of shape parameters.
+   Meaning of basic shape parameters.
 
 
 .. _poserr_iso_def:
