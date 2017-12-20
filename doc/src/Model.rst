@@ -226,7 +226,6 @@ allowed values between 1 and 10.
   plus the index for the Sérsic model. For example, fitting a Sérsic +
   exponential disk involves a fitting 11 parameters.
 
-
   The measurement parameters related to model-fitting follow the usual
   SExtractor rules:
 
