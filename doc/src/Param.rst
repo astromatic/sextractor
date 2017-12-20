@@ -86,9 +86,10 @@ of their meaning.
   :header: "Name", "Unit", "Description"
   :widths: 15 10 30
 
-  NUMBER,, Running object number
-  ID_PARENT,..., Parent ID (before deblending)
-  EXT_NUMBER,..., FITS extension number
+  _`NUMBER`,, Running object number
+  _`ID_PARENT`,..., Parent ID (before deblending)
+  _`EXT_NUMBER`,..., FITS extension number
+  _`FLAGS`,..., Extraction flags
   _`FLUX_ISO`, count, :ref:`Isophotal flux <flux_iso_def>`
   _`FLUXERR_ISO`, count, :ref:`RMS error estimate for the isophotal flux <flux_iso_def>`
   _`MAG_ISO`, magnitude, :ref:`Isophotal magnitude <flux_iso_def>`
@@ -153,4 +154,95 @@ of their meaning.
   _`AWIN_IMAGE`, pixel, :ref:`Windowed image major axis <shape_win_def>`
   _`BWIN_IMAGE`, pixel, :ref:`Windowed image minor axis <shape_win_def>`
   _`THETAWIN_IMAGE`, degree, :ref:`Windowed image position angle <shape_win_def>`
+  _`VECTOR_MODEL`, ..., :ref:`Model-fitting coefficients <models_def>`
+  _`VECTOR_MODELERR`, ..., :ref:`Model-fitting coefficient uncertainties <models_def>`
+  _`MATRIX_MODELERR`, ..., :ref:`Model-fitting covariance matrix <model_minimization_def>`
+  _`CHI2_MODEL`, ..., :ref:`Reduced modified Chi2 of the fit <model_minimization_def>`
+  _`FLAGS_MODEL`, ..., :ref:`Model-fitting flags <model_minimization_def>`
+  _`NITER_MODEL`, ..., :ref:`Number of model-fitting iterations <model_minimization_def>`  
+  _`FLUX_MODEL`, count, :ref:`Flux from model-fitting <models_def>`
+  _`FLUXERR_MODEL`, count, :ref:`RMS error estimate for the model-fitting flux <models_def>`
+  _`MAG_MODEL`, magnitude, :ref:`Magnitude from model-fitting <models_def>`
+  _`MAGERR_MODEL`, count, :ref:`RMS error estimate for the model-fitting magnitude <models_def>`
+  _`FLUX_MAX_MODEL`, count, :ref:`Peak model flux above the background <models_def>`
+  _`FLUX_EFF_MODEL`, count, :ref:`Effective model flux above the background <models_def>`
+  _`FLUX_EFF_MODEL`, count, :ref:`Mean effective model flux above the background <models_def>`
+  _`MU_MAX_MODEL`, mag.arcsec\ :sup:`-2`, :ref:`Peak model surface brightness above the background <models_def>`
+  _`MU_EFF_MODEL`, mag.arcsec\ :sup:`-2`, :ref:`Effective model surface brightness above the background <models_def>`
+  _`MU_MEAN_MODEL`, mag.arcsec\ :sup:`-2`, :ref:`Mean effective model surface brightness above the background <models_def>`
+  _`XMODEL_IMAGE`, pixel, :ref:`x coordinate from model-fitting <models_def>`
+  _`YMODEL_IMAGE`, pixel, :ref:`y coordinate from model-fitting <models_def>`
+
+..
+  #XMODEL_WORLD             Fitted position along world x axis                        [deg]
+  #YMODEL_WORLD             Fitted position along world y axis                        [deg]
+  #ALPHAMODEL_SKY           Fitted position along right ascension  (native)           [deg]
+  #DELTAMODEL_SKY           Fitted position along declination (native)                [deg]
+  #ALPHAMODEL_J2000         Fitted position along right ascension (J2000)             [deg]
+  #DELTAMODEL_J2000         Fitted position along declination (J2000)                 [deg]
+  #ALPHAMODEL_B1950         Fitted position along right ascension (B1950)             [deg]
+  #DELTAMODEL_B1950         Fitted position along declination (B1950)                 [deg]
+  #ERRX2MODEL_IMAGE         Variance of fitted position along x                       [pixel**2]
+  #ERRY2MODEL_IMAGE         Variance of fitted position along y                       [pixel**2]
+  #ERRXYMODEL_IMAGE         Covariance of fitted position between x and y             [pixel**2]
+  #ERRX2MODEL_WORLD         Variance of fitted position along X-WORLD (alpha)         [deg**2]
+  #ERRY2MODEL_WORLD         Variance of fitted position along Y-WORLD (delta)         [deg**2]
+  #ERRXYMODEL_WORLD         Covariance of fitted position X-WORLD/Y-WORLD             [deg**2]
+  #ERRCXXMODEL_IMAGE        Cxx error ellipse parameter of fitted position            [pixel**(-2)]
+  #ERRCYYMODEL_IMAGE        Cyy error ellipse parameter of fitted position            [pixel**(-2)]
+  #ERRCXYMODEL_IMAGE        Cxy error ellipse parameter of fitted position            [pixel**(-2)]
+  #ERRCXXMODEL_WORLD        Cxx fitted error ellipse parameter (WORLD units)          [deg**(-2)]
+  #ERRCYYMODEL_WORLD        Cyy fitted error ellipse parameter (WORLD units)          [deg**(-2)]
+  #ERRCXYMODEL_WORLD        Cxy fitted error ellipse parameter (WORLD units)          [deg**(-2)]
+  #ERRAMODEL_IMAGE          RMS error of fitted position along major axis             [pixel]
+  #ERRBMODEL_IMAGE          RMS error of fitted position along minor axis             [pixel]
+  #ERRTHETAMODEL_IMAGE      Error ellipse pos.angle of fitted position (CCW/x)        [deg]
+  #ERRAMODEL_WORLD          World RMS error of fitted position along major axis       [deg]
+  #ERRBMODEL_WORLD          World RMS error of fitted position along minor axis       [deg]
+  #ERRTHETAMODEL_WORLD      Error ellipse pos.angle of fitted position (CCW/world-x)  [deg]
+  #ERRTHETAMODEL_SKY        Native fitted error ellipse pos. angle (east of north)    [deg]
+  #ERRTHETAMODEL_J2000      J2000 fitted error ellipse pos. angle (east of north)     [deg]
+  #ERRTHETAMODEL_B1950      B1950 fitted error ellipse pos. angle (east of north)     [deg]
+  #X2MODEL_IMAGE            Variance along x from model-fitting                       [pixel**2]
+  #Y2MODEL_IMAGE            Variance along y from model-fitting                       [pixel**2]
+  #XYMODEL_IMAGE            Covariance between x and y from model-fitting             [pixel**2]
+  #ELLIP1MODEL_IMAGE        Ellipticity component from model-fitting                 
+  #ELLIP2MODEL_IMAGE        Ellipticity component from model-fitting                 
+  #POLAR1MODEL_IMAGE        Ellipticity component (quadratic) from model-fitting     
+  #POLAR2MODEL_IMAGE        Ellipticity component (quadratic) from model-fitting     
+  #ELLIP1ERRMODEL_IMAGE     Ellipticity component std.error from model-fitting       
+  #ELLIP2ERRMODEL_IMAGE     Ellipticity component std.error from model-fitting       
+  #ELLIPCORRMODEL_IMAGE     Corr.coeff between ellip.components from model-fitting   
+  #POLAR1ERRMODEL_IMAGE     Polarisation component std.error from model-fitting      
+  #POLAR2ERRMODEL_IMAGE     Polarisation component std.error from model-fitting      
+  #POLARCORRMODEL_IMAGE     Corr.coeff between polar. components from fitting        
+  #X2MODEL_WORLD            Variance along X-WORLD (alpha) from model-fitting         [deg**2]
+  #Y2MODEL_WORLD            Variance along Y_WORLD (delta) from model-fitting         [deg**2]
+  #XYMODEL_WORLD            Covariance between X-WORLD and Y-WORLD from model-fitting [deg**2]
+  #ELLIP1MODEL_WORLD        Ellipticity component from model-fitting                 
+  #ELLIP2MODEL_WORLD        Ellipticity component from model-fitting                 
+  #POLAR1MODEL_WORLD        Polarisation component from model-fitting                
+  #POLAR2MODEL_WORLD        Polarisation component from model-fitting                
+  #ELLIP1ERRMODEL_WORLD     Ellipticity component std.error from model-fitting       
+  #ELLIP2ERRMODEL_WORLD     Ellipticity component std.error from model-fitting       
+  #ELLIPCORRMODEL_WORLD     Corr.coeff between ellip.components from model-fitting   
+  #POLAR1ERRMODEL_WORLD     Polarisation component std.error from model-fitting      
+  #POLAR2ERRMODEL_WORLD     Polarisation component std.error from model-fitting      
+  #POLARCORRMODEL_WORLD     Corr.coeff between polar. components from fitting        
+  #CXXMODEL_IMAGE           Cxx ellipse parameter from model-fitting                  [pixel**(-2)]
+  #CYYMODEL_IMAGE           Cyy ellipse parameter from model-fittinh                  [pixel**(-2)]
+  #CXYMODEL_IMAGE           Cxy ellipse parameter from model-fitting                  [pixel**(-2)]
+  #CXXMODEL_WORLD           Cxx ellipse parameter (WORLD) from model-fitting          [deg**(-2)]
+  #CYYMODEL_WORLD           Cyy ellipse parameter (WORLD) from model-fitting          [deg**(-2)]
+  #CXYMODEL_WORLD           Cxy ellipse parameter (WORLD) from model-fitting          [deg**(-2)]
+  #AMODEL_IMAGE             Model RMS along major axis                                [pixel]
+  #BMODEL_IMAGE             Model RMS along minor axis                                [pixel]
+  #THETAMODEL_IMAGE         Model position angle (CCW/x)                              [deg]
+  #AMODEL_WORLD             Model RMS along major axis (WORLD units)                  [deg]
+  #BMODEL_WORLD             Model RMS along minor axis (WORLD units)                  [deg]
+  #THETAMODEL_WORLD         Model position angle (CCW/WORLD-x)                        [deg]
+  #THETAMODEL_SKY           Model position angle (east of north) (native)             [deg]
+  #THETAMODEL_J2000         Model position angle (east of north) (J2000)              [deg]
+  #THETAMODEL_B1950         Model position angle (east of north) (B1950)              [deg]
+  #SPREAD_MODEL             Spread parameter from model-fitting                      
 
