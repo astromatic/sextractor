@@ -92,3 +92,7 @@ caption:hover a.headerlink {
 	visibility: visible;
 }
 
+/* Remove space before muliline cells in tables */
+td div.line-block {
+	margin-left: 0px !important;
+}

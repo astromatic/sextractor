@@ -13,7 +13,7 @@ SExtractor can fit models to the images of detected objects since version 2.8. T
 .. math::
   :label: loss_func
 
-  \lambda(\boldsymbol{q}) = \sum_i \left(g\left(\frac{p_i - \tilde{m}_i(\boldsymbol{q})}{\sigma_i}\right)\right)^2 + \sum_j \left(\frac{q_j - \mu_j}{\rho_j}\right)^2
+  \lambda(\boldsymbol{q}) = \sum_i \left(g\left(\frac{p_i - \tilde{m}_i(\boldsymbol{q})}{\sigma_i}\right)\right)^2 + \sum_j \left(\frac{f_j(Q_j) - \mu_j}{s_j}\right)^2
 
 with respect to components of the model parameter vector :math:`\boldsymbol{q}`. :math:`\boldsymbol{q}` comprises parameters describing the shape of the model and the model pixel coordinates :math:`\boldsymbol{x}`.
 
@@ -62,8 +62,56 @@ The vector :math:`\tilde{\boldsymbol{m}}(\boldsymbol{q})` is obtained by convolv
 where :math:`h` is a 2-dimensional interpolant (interpolating function), :math:`\boldsymbol{x}_i` is the coordinate vector of image pixel :math:`i`, :math:`\boldsymbol{x}_j` the coordinate vector of model sample :math:`j`, and :math:`\eta` is the image-to-model sampling step ratio (sampling factor) which is by default defined by the PSF model sampling.
 We adopt a Lánczos-4 function :cite:`duchon1979` as interpolant.
 
+Change of variables
+~~~~~~~~~~~~~~~~~~~
+
+Many model parameters are valid only over a restricted domain.
+Fluxes, for instance, cannot be negative. 
+In order to avoid invalid values and also to facilitate convergence, a change of variables is applied individually to each model parameter:
+
+.. math::
+  :label: change_of_variables
+
+  q_j = f_j(a_j, b_j, Q_j).
+
+The "model" variable :math:`q_j` is bounded by the lower limit :math:`a_j` and the upper limit :math:`b_j` by construction.
+The "engine" variable :math:`Q_j` can take any value, and is actually the parameter that is being adjusted in the fit, although it does not have any physical meaning.
+In |SExtractor| three different types of changes of variables :math:`f_j()` are applied, depending on the parameter (:numref:`change_of_variable_table`).
+
+.. _change_of_variable_table:
+
+.. list-table:: Types of changes of variables applied to model parameters
+  :header-rows: 1
+
+  * - Type
+    - Model :math:`\stackrel{f^{-1}}{\to}` Engine
+    - Engine :math:`\stackrel{f}{\to}` Model
+    - Examples
+  * - Unbounded (linear)
+    - :math:`Q_j = q_j`
+    - :math:`q_j = Q_j`
+    - | :param:`SPHEROID_POSANGLE`
+      | :param:`DISK_POSANGLE`
+  * - Bounded linear
+    - :math:`Q_j = \ln \frac{q_j - a_j}{b_j - q_j}`
+    - :math:`q_j = \frac{b_j - a_j}{1 + \exp -Q_j} + a_j`
+    - | :param:`XMODEL_IMAGE`
+      | :param:`SPHEROID_SERSICN`
+  * - Bounded logarithmic
+    - :math:`Q_j = \ln \frac{\ln q_j - \ln a_j}{\ln b_j - \ln q_j}`
+    - :math:`q_j = a_j \frac{\ln b_j - \ln a_j}{1 + \exp -Q_j}`
+    - | :param:`FLUX_SPHEROID`
+      | :param:`DISK_ASPECT`
+
+In practice, this approach works well, and was found to be much more reliable than a box constrained algorithm :cite:`Kanzow2004375`.
+
 Regularization
 ~~~~~~~~~~~~~~
+
+Although minimizing the (modified) weighted sum of least squares gives a solution that fits best the data, it does not necessarily correspond to the most probable solution given what we know about celestial objects.
+The discrepancy is particularly significant in very faint (|SNR| :math:`\le 20`) and barely resolved galaxies, for which there is, for example, a tendency to overestimate the elongation, known as the "noise bias" in the weak-lensing community :cite:`2004MNRAS_353_529H,2012MNRAS_424_2757M,2012MNRAS_425_1951R,2012MNRAS_427_2711K`.
+To mitigate this issue, |SExtractor| implements a simple `Tikhonov regularization <https://en.wikipedia.org/wiki/Tikhonov_regularization>`_ scheme on some engine parameters, in the form of an additional penalty term in :eq:`loss_func`.
+This term acts as a Gaussian prior on the selected *engine* parameters. However for the associated *model* parameters, the change of variable can make the (improper) prior far from Gaussian.
 
 .. _model_minimization_def:
 
@@ -71,11 +119,14 @@ Minimization
 ~~~~~~~~~~~~
 
 Minimization of the loss function :math:`\lambda(\boldsymbol{q})` is carried out using the `Levenberg-Marquardt algorithm <http://en.wikipedia.org/wiki/Levenberg%E2%80%93Marquardt_algorithm>`_, and more specifically the |LevMar|_ implementation :cite:`lourakis04LM`.
+The library approximates the Jacobian matrix of the model from finite differences using Broyden's :cite:`Broyden1965ACo` rank one updates.
 The fit is done inside a disk which diameter is scaled to include the isophotal footprint of the object, plus the FWHM of the PSF, plus a 20 % margin.
 The number of iterations is returned in the :param:`NITER_MODEL` measurement parameter.
 It is generally a few tens.
 The final value of the modified chi square term in :eq:`loss_func`, divided by the number of degrees of freedom, is returned in :param:`CHI2_MODEL`.
 The :param:`FLAGS_MODEL` parameter flags various issues which may happen during the fitting process (see the flags section for details on how flags are managed in |SExtractor|):
+
+.. _flags_model_table:
 
 .. csv-table:: :param:`FLAGS_MODEL` flag description
   :header: "Value", "Meaning"
@@ -87,7 +138,7 @@ The :param:`FLAGS_MODEL` parameter flags various issues which may happen during 
   8, "at least one of the fitted parameters hits the lower bound"
   16, "at least one of the fitted parameters hits the upper bound"
 
-:math:`1\,\sigma` error estimates are provided for most measurement parameters; they are obtained by marginalizing the full covariance matrix of the fit.
+:math:`1\,\sigma` error estimates are provided for most measurement parameters; they are obtained from the full covariance matrix of the fit, which is itself computed by inverting the approximate `Hessian matrix <https://en.wikipedia.org/wiki/Hessian_matrix>`_ of :math:`\lambda(\boldsymbol{q})` at the solution.
 
 .. _models_def:
 

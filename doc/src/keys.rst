@@ -43,6 +43,9 @@
 .. |SExtractor| replace:: :program:`SExtractor`
 .. _SExtractor: http://astromatic.net/software/sextractor
 
+.. |SNR| replace:: :abbr:`SNR (Signal-to-Noise Ratio)`
+.. _SNR: https://en.wikipedia.org/wiki/Signal-to-noise_ratio
+
 .. |SWarp| replace:: :program:`SWarp`
 .. _SWarp: http://astromatic.net/software/swarp
 
