@@ -76,7 +76,7 @@ In order to avoid invalid values and also to facilitate convergence, a change of
 
 The "model" variable :math:`q_j` is bounded by the lower limit :math:`a_j` and the upper limit :math:`b_j` by construction.
 The "engine" variable :math:`Q_j` can take any value, and is actually the parameter that is being adjusted in the fit, although it does not have any physical meaning.
-In |SExtractor| three different types of changes of variables :math:`f_j()` are applied, depending on the parameter (:numref:`change_of_variable_table`).
+In |SExtractor| three different types of transforms :math:`f_j()` are applied, depending on the parameter (:numref:`change_of_variable_table`).
 
 .. _change_of_variable_table:
 
@@ -109,9 +109,20 @@ Regularization
 ~~~~~~~~~~~~~~
 
 Although minimizing the (modified) weighted sum of least squares gives a solution that fits best the data, it does not necessarily correspond to the most probable solution given what we know about celestial objects.
-The discrepancy is particularly significant in very faint (|SNR| :math:`\le 20`) and barely resolved galaxies, for which there is, for example, a tendency to overestimate the elongation, known as the "noise bias" in the weak-lensing community :cite:`2004MNRAS_353_529H,2012MNRAS_424_2757M,2012MNRAS_425_1951R,2012MNRAS_427_2711K`.
-To mitigate this issue, |SExtractor| implements a simple `Tikhonov regularization <https://en.wikipedia.org/wiki/Tikhonov_regularization>`_ scheme on some engine parameters, in the form of an additional penalty term in :eq:`loss_func`.
-This term acts as a Gaussian prior on the selected *engine* parameters. However for the associated *model* parameters, the change of variable can make the (improper) prior far from Gaussian.
+The discrepancy is particularly significant in very faint (|SNR| :math:`\le 20`) and barely resolved galaxies, for which there is a tendency to overestimate the elongation, known as the "noise bias" in the weak-lensing community :cite:`2004MNRAS_353_529H,2012MNRAS_424_2757M,2012MNRAS_425_1951R,2012MNRAS_427_2711K`.
+To mitigate this issue, |SExtractor| implements a simple `Tikhonov regularization <https://en.wikipedia.org/wiki/Tikhonov_regularization>`_ scheme on selected engine parameters, in the form of an additional penalty term in :eq:`loss_func`.
+This term acts as a Gaussian prior on the selected *engine* parameters. However for the associated *model* parameters, the change of variables can make the (improper) prior far from Gaussian.
+Currently the only regularized parameter is :param:`SPHEROID_ASPECT_IMAGE` (and its derivatives :param:`SPHEROID_ASPECT_WORLD`, :param:`ELLIP1MODEL_IMAGE`, etc.), for which :math:`\mu_{SPHEROID\_ASPECT} = 0` and :math:`s_{SPHEROID\_ASPECT} = 1`
+(:numref:`fig_aspectprior`).
+
+
+.. _fig_aspectprior:
+
+.. figure:: figures/aspectprior.*
+   :figwidth: 100%
+   :align: center
+
+   Effect of the Gaussian prior on the :param:`SPHEROID_ASPECT_IMAGE` model parameter. *Left:* change of variables between the model (in abscissa) and the engine (in ordinate) parameters. *Right*: equivalent (improper) prior applied to :param:`SPHEROID_ASPECT_IMAGE` for :math:`\mu_{SPHEROID\_ASPECT} = 0` and :math:`s_{SPHEROID\_ASPECT} = 1` in equation :eq:`loss_func`.
 
 .. _model_minimization_def:
 
