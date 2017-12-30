@@ -258,6 +258,42 @@ ellipticities greater than unity, SExtractor avoids dichotomies of
 position angle when the ellipticity is very low. The Sérsic index is
 allowed values between 1 and 10.
 
+.. _spread_model_def:
+
+Star-Galaxy separation
+----------------------
+
+The :param:`SPREAD_MODEL` estimator has been developed as a star/galaxy classifier for the DESDM pipeline :cite:`2012SPIE_8451E_0DM`, and has also been used in other surveys :cite:`2012ApJ_757_83D,2013AA_554A_101B`.
+:param:`SPREAD_MODEL` indicates which of the best fitting local PSF model resampled at the current position :math:`\tilde{\boldsymbol{\phi}}` (representing a point source) or a slightly ``fuzzier'' resampled model :math:`\tilde{\boldsymbol{G}}` (representing a galaxy) matches best the image data.
+:math:`\tilde{\boldsymbol{G}}` is obtained by convolving the local PSF model with a circular exponential model with scalelength = 1/16 |FWHM|, and resampling the result at the current position on the pixel grid. :param:`SPREAD_MODEL` is normalized to allow comparing sources with different PSFs throughout the field:
+
+.. math::
+  :label: spread_model
+
+  {\tt SPREAD\_MODEL} = \frac{\tilde{\boldsymbol{G}}^\mathsf{T} {\bf W}\,\boldsymbol{p}}{\tilde{\boldsymbol{\phi}}^\mathsf{T} {\bf W}\,\boldsymbol{p}}
+    - \frac{\tilde{\boldsymbol{G}}^\mathsf{T} {\bf W}\,\tilde{\boldsymbol{\phi}}}{\tilde{\boldsymbol{\phi}}^\mathsf{T} {\bf W}\,\tilde{\boldsymbol{\phi}}},
+
+where :math:`\boldsymbol{p}` is the image vector centered on the source.
+:math:`{\bf W}` is a weight matrix constant along the diagonal except for bad pixels where the weight is 0.
+By construction, :param:`SPREAD_MODEL` is close to zero for point sources, positive for extended sources (galaxies), and negative for detections smaller than the PSF, such as cosmic ray hits.
+
+.. note::
+  The definition of :param:`SPREAD_MODEL` above differs from the one given in previous papers, which was incorrect, although in practice both estimators give very similar results.
+
+The |RMS| error on :param:`SPREAD_MODEL` is estimated by propagating the uncertainties on individual pixel values:
+
+.. math::
+  :label: spreaderr_model
+
+  \begin{eqnarray}
+  {\tt SPREADERR\_MODEL} & = & \frac{1}{(\tilde{\boldsymbol{\phi}}^\mathsf{T} {\bf W}\,\boldsymbol{p})^2} \left((\tilde{\boldsymbol{G}}^\mathsf{T} {\bf V}\,\tilde{\boldsymbol{G}})\,(\tilde{\boldsymbol{\phi}}^\mathsf{T} {\bf W}\,\boldsymbol{p})^2\right.\nonumber \\
+  & & + (\tilde{\boldsymbol{\phi}}^\mathsf{T} {\bf V}\,\tilde{\boldsymbol{\phi}})\,(\tilde{\boldsymbol{G}}^\mathsf{T} {\bf W}\,\boldsymbol{p})^2\nonumber \\
+  & & \left. - 2\,(\tilde{\boldsymbol{G}}^\mathsf{T} {\bf V}\,\tilde{\boldsymbol{\phi}})\,(\tilde{\boldsymbol{G}}^\mathsf{T} {\bf W}\,\boldsymbol{p})\,(\tilde{\boldsymbol{\phi}}^\mathsf{T} {\bf W}\,\boldsymbol{p}) \right)^{1/2},
+  \end{eqnarray}
+
+where :math:`{\bf V}` is the noise covariance matrix, which we assume to be diagonal.
+
+
 ..
    Models are measured according to the following table.
 

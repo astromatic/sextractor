@@ -7,6 +7,9 @@
 .. |FFTw| replace:: :program:`FFTw`
 .. _FFTw: http://www.fftw.org
 
+.. |FWHM| replace:: :abbr:`FWHM (Full Width at Half Maximum)`
+.. _FWHM: https://en.wikipedia.org/wiki/Full_width_at_half_maximum
+
 .. |FITS| replace:: :abbr:`FITS (Flexible Image Transport System)`
 .. _FITS: http://fits.gsfc.nasa.gov
 
@@ -36,6 +39,9 @@
 
 .. |RPM| replace:: :program:`RPM`
 .. _RPM: http://www.rpm.org
+
+.. |RMS| replace:: :abbr:`RMS (Root Mean Square)`
+.. _RMS: https://en.wikipedia.org/wiki/Root_mean_square
 
 .. |SCAMP| replace:: :program:`SCAMP`
 .. _SCAMP: http://astromatic.net/software/scamp
