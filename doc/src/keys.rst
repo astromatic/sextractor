@@ -34,6 +34,12 @@
 .. |OSX| replace:: Apple OS X\ :sup:`®`\ 
 .. _OSX: http://www.apple.com/osx
 
+.. |pdf| replace:: :abbr:`pdf (Probability Density Function)`
+.. _pdf: https://en.wikipedia.org/wiki/Probability_density_function
+
+.. |PSF| replace:: :abbr:`PSF (Point Spread Function)`
+.. _PSF: https://en.wikipedia.org/wiki/Point_spread_function
+
 .. |PSFEx| replace:: :program:`PSFEx`
 .. _PSFEx: http://astromatic.net/software/psfex
 
