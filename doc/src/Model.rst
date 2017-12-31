@@ -36,6 +36,9 @@ The first term in :eq:`loss_func` is a modified `weighted sum of squares <http:/
 :math:`u_0` sets the level below which :math:`g(u)\approx u`.
 In practice, choosing :math:`u_0 = \kappa \sigma_i` with :math:`\kappa = 10` makes the first term in :eq:`loss_func` behave like a traditional weighted sum of squares for residuals close to the noise level.
 
+.. caution::
+  The cost function in :eq:`loss_func` is optimized for Gaussian noise and makes model-fitting in |SExtractor| appropriate only for image noise with a |pdf| symmetrical around the mean.
+
 .. _fig_robustgalfit:
 
 .. figure:: figures/robustgalfit.*
@@ -43,7 +46,6 @@ In practice, choosing :math:`u_0 = \kappa \sigma_i` with :math:`\kappa = 10` mak
    :align: center
 
    Effect of the modified least squares loss function on fitting a model to a galaxy with a bright neighbor. *Left*: the original image; *Middle*: residuals of the model fitting with a regular least squares (:math:`\kappa = +\infty`); *Right*: modified least squares with :math:`\kappa = 10`.
-
 
 The vector :math:`\tilde{\boldsymbol{m}}(\boldsymbol{q})` is obtained by convolving the high resolution model :math:`\boldsymbol{m}(\boldsymbol{q})` with the local PSF model :math:`\boldsymbol{\phi}` and applying a resampling operator :math:`\mathbf{R}(\boldsymbol{x})` to generate the final model raster at position :math:`\boldsymbol{x}` at the nominal image resolution:
 
@@ -112,9 +114,8 @@ Although minimizing the (modified) weighted sum of least squares gives a solutio
 The discrepancy is particularly significant in very faint (|SNR| :math:`\le 20`) and barely resolved galaxies, for which there is a tendency to overestimate the elongation, known as the "noise bias" in the weak-lensing community :cite:`2004MNRAS_353_529H,2012MNRAS_424_2757M,2012MNRAS_425_1951R,2012MNRAS_427_2711K`.
 To mitigate this issue, |SExtractor| implements a simple `Tikhonov regularization <https://en.wikipedia.org/wiki/Tikhonov_regularization>`_ scheme on selected engine parameters, in the form of an additional penalty term in :eq:`loss_func`.
 This term acts as a Gaussian prior on the selected *engine* parameters. However for the associated *model* parameters, the change of variables can make the (improper) prior far from Gaussian.
-Currently the only regularized parameter is :param:`SPHEROID_ASPECT_IMAGE` (and its derivatives :param:`SPHEROID_ASPECT_WORLD`, :param:`ELLIP1MODEL_IMAGE`, etc.), for which :math:`\mu_{SPHEROID\_ASPECT} = 0` and :math:`s_{SPHEROID\_ASPECT} = 1`
+Currently the only regularized parameter is :param:`SPHEROID_ASPECT_IMAGE` (and its derivatives :param:`SPHEROID_ASPECT_WORLD`, :param:`ELLIP1MODEL_IMAGE`, etc.), for which :math:`\mu_{\tt SPHEROID\_ASPECT} = 0` and :math:`s_{\tt SPHEROID\_ASPECT} = 1`
 (:numref:`fig_aspectprior`).
-
 
 .. _fig_aspectprior:
 
@@ -122,7 +123,7 @@ Currently the only regularized parameter is :param:`SPHEROID_ASPECT_IMAGE` (and 
    :figwidth: 100%
    :align: center
 
-   Effect of the Gaussian prior on the :param:`SPHEROID_ASPECT_IMAGE` model parameter. *Left:* change of variables between the model (in abscissa) and the engine (in ordinate) parameters. *Right*: equivalent (improper) prior applied to :param:`SPHEROID_ASPECT_IMAGE` for :math:`\mu_{SPHEROID\_ASPECT} = 0` and :math:`s_{SPHEROID\_ASPECT} = 1` in equation :eq:`loss_func`.
+   Effect of the Gaussian prior on the :param:`SPHEROID_ASPECT_IMAGE` model parameter. *Left:* change of variables between the model (in abscissa) and the engine (in ordinate) parameters. *Right*: equivalent (improper) prior applied to :param:`SPHEROID_ASPECT_IMAGE` for :math:`\mu_{\tt SPHEROID\_ASPECT} = 0` and :math:`s_{\tt SPHEROID\_ASPECT} = 1` in equation :eq:`loss_func`.
 
 .. _model_minimization_def:
 
@@ -275,10 +276,12 @@ The :param:`SPREAD_MODEL` estimator has been developed as a star/galaxy classifi
 
 where :math:`\boldsymbol{p}` is the image vector centered on the source.
 :math:`{\bf W}` is a weight matrix constant along the diagonal except for bad pixels where the weight is 0.
-By construction, :param:`SPREAD_MODEL` is close to zero for point sources, positive for extended sources (galaxies), and negative for detections smaller than the PSF, such as cosmic ray hits.
 
-.. note::
+.. warning::
   The definition of :param:`SPREAD_MODEL` above differs from the one given in previous papers, which was incorrect, although in practice both estimators give very similar results.
+
+By construction, :param:`SPREAD_MODEL` is close to zero for point sources, positive for extended sources (galaxies), and negative for detections smaller than the |PSF|, such as cosmic ray hits.
+On images taken with linear detectors, :param:`SPREAD_MODEL` should not depend on the source flux or |SNR|. This property may be used to identify bad exposures or |PSF| modeling issues (:numref:`fig_spread`).
 
 The |RMS| error on :param:`SPREAD_MODEL` is estimated by propagating the uncertainties on individual pixel values:
 
@@ -292,6 +295,14 @@ The |RMS| error on :param:`SPREAD_MODEL` is estimated by propagating the uncerta
   \end{eqnarray}
 
 where :math:`{\bf V}` is the noise covariance matrix, which we assume to be diagonal.
+
+.. _fig_spread:
+
+.. figure:: figures/spread.png
+   :figwidth: 100%
+   :align: center
+
+   :param:`SPREAD_MODEL`.
 
 
 ..

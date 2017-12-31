@@ -206,6 +206,8 @@ of their meaning.
   _`MU_MEAN_MODEL`, mag.arcsec\ :sup:`-2`, :ref:`Mean effective model surface brightness above the background <models_def>`
   _`XMODEL_IMAGE`, pixel, :ref:`x coordinate from model-fitting <models_def>`
   _`YMODEL_IMAGE`, pixel, :ref:`y coordinate from model-fitting <models_def>`
+  _`SPREAD_MODEL`, ..., :ref:`Spread parameter from model-fitting <spread_model_def>`
+  _`SPREADERR_MODEL`, ..., :ref:`RMS error estimate on spread parameter from model-fitting <spread_model_def>`
 
 ..
   #XMODEL_WORLD             Fitted position along world x axis                        [deg]
