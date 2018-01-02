@@ -120,6 +120,7 @@ of their meaning.
   _`FLUXERR_AUTO`, count, :ref:`RMS error estimate for Kron-like automated aperture flux <flux_auto_def>`
   _`MAG_AUTO`, magnitude, :ref:`Kron-like automated aperture magnitude <flux_auto_def>`
   _`MAGERR_AUTO`, magnitude, :ref:`RMS error estimate for Kron-like automated aperture magnitude <flux_auto_def>`
+  _`KRON_RADIUS`, ..., :ref:`Kron radius in units of A or B <flux_auto_def>`
   _`X_IMAGE`, pixel, :ref:`Pixel x coordinate <image_coords>` of the :ref:`isophotal image centroid <pos_iso_def>`
   _`Y_IMAGE`, pixel, :ref:`Pixel y coordinate <image_coords>` of the :ref:`isophotal image centroid <pos_iso_def>`
   _`X_FOCAL`, degree, :ref:`Focal plane x coordinate <focal_coords>` of :ref:`isophotal image centroid <pos_iso_def>`

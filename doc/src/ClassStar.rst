@@ -7,12 +7,13 @@
 :param:`CLASS_STAR` classifier
 ==============================
 
-.. important::
+.. note::
   The :param:`CLASS_STAR` classifier has been superseded by the :param:`SPREAD_MODEL` estimator (see :ref:`spread_model_def`), which offers better performance by making explicit use of the full, variable |PSF| model.
 
 A good discrimination between stars and galaxies is essential for both galactic and extragalactic statistical studies.
 The common assumption is that galaxy images look more extended or fuzzier than those of stars (or |QSO|\ s).
-The :param:`CLASS_STAR` classifier relies on a `multilayer feed-forward neural network <https://en.wikipedia.org/wiki/Multilayer_perceptron>`_ trained using `supervised learning <https://en.wikipedia.org/wiki/Supervised_learning>`_ to estimate the *a posteriori* probability :cite:`Richard1991,Saerens2002` of a |SExtractor| detection to be a point source or an extended object.
+|SExtractor| provides the :param:`CLASS_STAR` catalog parameter for separating both types of sources.
+The  :param:`CLASS_STAR` classifier relies on a `multilayer feed-forward neural network <https://en.wikipedia.org/wiki/Multilayer_perceptron>`_ trained using `supervised learning <https://en.wikipedia.org/wiki/Supervised_learning>`_ to estimate the *a posteriori* probability :cite:`Richard1991,Saerens2002` of a |SExtractor| detection to be a point source or an extended object.
 Below is a shortened description of the estimator, see :cite:`1996AAS_117_393B` for more details.
 
 Inputs and outputs

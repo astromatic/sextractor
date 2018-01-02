@@ -2,13 +2,13 @@
 
 .. include:: global.rst
 
-Position and shape parameters derived from the isophotal profile
-================================================================
+Position and shape measurements derived from the isophotal profile
+==================================================================
 
-The following parameters are derived from the spatial distribution :math:`\cal S` of pixels detected above the analysis threshold (see :ref:`description<isophotal_measurements>`).
+The following quantities are derived from the spatial distribution :math:`\cal S` of pixels detected above the analysis threshold (see :ref:`description<isophotal_measurements>`).
 
 .. important::
-  Unless otherwise noted, pixel values :math:`I_i` are taken from the (filtered) detection image.
+  Unless otherwise noted, in this section pixel values :math:`p_i` above the local background are taken from the (filtered) detection image.
 
 .. note::
   Unless otherwise noted, all parameter names given below are only prefixes.
@@ -25,12 +25,12 @@ These coordinates define two corners of a rectangle which encloses the detected 
 .. math::
   :label: xminymax
 
-   \begin{aligned}
+   \begin{eqnarray}
    {\tt XMIN} & = & \min_{i \in {\cal S}} x_i,\\
    {\tt YMIN} & = & \min_{i \in {\cal S}} y_i,\\
    {\tt XMAX} & = & \max_{i \in {\cal S}} x_i,\\
    {\tt YMAX} & = & \max_{i \in {\cal S}} y_i,
-   \end{aligned}
+   \end{eqnarray}
 
 where :math:`x_i` and :math:`y_i` are respectively the x-coordinate and y-coordinate of pixel :math:`i`.
 
@@ -45,12 +45,12 @@ Barycenter coordinates generally define the position of the “center” of a so
 .. math::
   :label: xy
 
-   \begin{aligned}
+   \begin{eqnarray}
    {\tt X} & = & \overline{x} = \frac{\displaystyle \sum_{i \in {\cal S}}
-   I_i x_i}{\displaystyle \sum_{i \in {\cal S}} I_i},\\
+   p_i x_i}{\displaystyle \sum_{i \in {\cal S}} p_i},\\
    {\tt Y} & = & \overline{y} = \frac{\displaystyle \sum_{i \in {\cal S}}
-   I_i y_i}{\displaystyle \sum_{i \in {\cal S}} I_i}.
-   \end{aligned}
+   p_i y_i}{\displaystyle \sum_{i \in {\cal S}} p_i}.
+   \end{eqnarray}
 
 In practice, :math:`x_i` and :math:`y_i` are summed relative to :param:`XMIN` and :param:`YMIN` in order to reduce roundoff errors in the summing.
 
@@ -65,7 +65,7 @@ It is sometimes useful to have the position :param:`XPEAK`, :param:`YPEAK` of th
 
 .. _moments_iso_def:
 
-2nd order moments: :param:`X2`, :param:`Y2`, :param:`XY`
+Second-order moments: :param:`X2`, :param:`Y2`, :param:`XY`
 --------------------------------------------------------
 
 (Centered) second-order moments are convenient for measuring the spatial spread of a source profile. In |SExtractor| they are computed with:
@@ -73,15 +73,11 @@ It is sometimes useful to have the position :param:`XPEAK`, :param:`YPEAK` of th
 .. math::
   :label: x2y2
 
-   \begin{aligned}
-   {\tt X2} & = \overline{x^2} = & \frac{\displaystyle \sum_{i \in {\cal
-   S}} I_i x_i^2}{\displaystyle \sum_{i \in {\cal S}} I_i} -
-   \overline{x}^2,\\ {\tt Y2} & = \overline{y^2} = & \frac{\displaystyle
-   \sum_{i \in {\cal S}} I_i y_i^2}{\displaystyle \sum_{i \in {\cal S}}
-   I_i} - \overline{y}^2,\\ {\tt XY} & = \overline{xy} = &
-   \frac{\displaystyle \sum_{i \in {\cal S}} I_i x_i y_i}{\displaystyle
-   \sum_{i \in {\cal S}} I_i} - \overline{x}\,\overline{y},
-   \end{aligned}
+   \begin{eqnarray}
+   {\tt X2} & = \overline{x^2} = & \frac{\displaystyle \sum_{i \in {\cal S}} p_i x_i^2}{\displaystyle \sum_{i \in {\cal S}} p_i} - \overline{x}^2,\\
+   {\tt Y2} & = \overline{y^2} = & \frac{\displaystyle \sum_{i \in {\cal S}} p_i y_i^2}{\displaystyle \sum_{i \in {\cal S}} p_i} - \overline{y}^2,\\
+   {\tt XY} & = \overline{xy} = & \frac{\displaystyle \sum_{i \in {\cal S}} p_i x_i y_i}{\displaystyle \sum_{i \in {\cal S}} p_i} - \overline{x}\,\overline{y},
+   \end{eqnarray}
 
 These expressions are more subject to roundoff errors than if the 1st-order moments were subtracted before summing, but allow both 1st and
 2nd order moments to be computed in one pass.
@@ -145,22 +141,22 @@ covariance :math:`\overline{xy}`.
 .. math::
   :label: aimage
 
-   \begin{aligned}
+   \begin{eqnarray}
    {\tt A}^2 & = & \overline{x^2}_{\tt THETA},\ \ \ {\rm and}\\
    {\tt B}^2 & = & \overline{y^2}_{\tt THETA}.
-   \end{aligned}
+   \end{eqnarray}
 
 :param:`A` and :param:`B` can be computed directly from the 2nd-order moments, using the following equations derived from :eq:`varproj` after some algebra:
 
 .. math::
   :label: aimage_2
 
-   \begin{aligned}
+   \begin{eqnarray}
    {\tt A}^2 & = & \frac{\overline{x^2}+\overline{y^2}}{2}
        + \sqrt{\left(\frac{\overline{x^2}-\overline{y^2}}{2}\right)^2 + \overline{xy}^2},\\
    {\tt B}^2 & = & \frac{\overline{x^2}+\overline{y^2}}{2},
        - \sqrt{\left(\frac{\overline{x^2}-\overline{y^2}}{2}\right)^2 + \overline{xy}^2}.
-   \end{aligned}
+   \end{eqnarray}
 
 Note that :param:`A` and :param:`B` are exactly halves the :math:`a` and :math:`b` parameters computed by the COSMOS image analyser :cite:`1980SPIE_264_208S`.
 Actually, :math:`a` and :math:`b` are defined in :cite:`1980SPIE_264_208S` as the semi-major and semi-minor axes of an elliptical shape with constant surface brightness, which would have the same 2nd-order moments as the analyzed object.
@@ -176,10 +172,10 @@ These parameters [#elongation]_ are directly derived from :param:`A` and :param:
 .. math::
   :label: elongation
 
-   \begin{aligned}
+   \begin{eqnarray}
    {\tt ELONGATION} & = & \frac{\tt A}{\tt B}\ \ \ \ \ \mbox{and}\\
    {\tt ELLIPTICITY} & = & 1 - \frac{\tt B}{\tt A}.
-   \end{aligned}
+   \end{eqnarray}
 
 
 .. _ellipse_iso_def:
@@ -206,7 +202,7 @@ parameters can be derived from the 2nd order moments:
 .. math::
   :label: ellipse_2
 
-   \begin{aligned}
+   \begin{eqnarray}
    {\tt CXX} & = & \frac{\cos^2 {\tt THETA}}{{\tt A}^2} + \frac{\sin^2
    {\tt THETA}}{{\tt B}^2} =
    \frac{\overline{y^2}}{\overline{x^2} \overline{y^2} - \overline{xy}^2}\\
@@ -216,7 +212,7 @@ parameters can be derived from the 2nd order moments:
    {\tt CXY} & = & 2 \,\cos {\tt THETA}\,\sin {\tt
    THETA} \left( \frac{1}{{\tt A}^2} - \frac{1}{{\tt B}^2}\right) = -2\,
    \frac{\overline{xy}}{\overline{x^2} \overline{y^2} - \overline{xy}^2}.
-   \end{aligned}
+   \end{eqnarray}
 
 .. _fig_ellipse:
 
@@ -240,28 +236,28 @@ Furthermore, |SExtractor| does not currently take into account possible correlat
 .. math::
   :label: errxy
 
-   \begin{aligned}
-   {\tt ERRX2} & = {\rm var}(\overline{x}) = & \frac{\displaystyle
-   \sum_{i \in {\cal S}} \sigma^2_i (x_i-\overline{x})^2} {\displaystyle
-   \left(\sum_{i \in {\cal S}} I_i\right)^2},\\ {\tt ERRY2} & = {\rm
-   var}(\overline{y}) = & \frac{\displaystyle \sum_{i \in {\cal S}}
-   \sigma^2_i (y_i-\overline{y})^2} {\displaystyle \left(\sum_{i \in
-   {\cal S}} I_i\right)^2},\\ {\tt ERRXY} & = {\rm
-   cov}(\overline{x},\overline{y}) = & \frac{\displaystyle \sum_{i \in
-   {\cal S}} \sigma^2_i (x_i-\overline{x})(y_i-\overline{y})}
-   {\displaystyle \left(\sum_{i \in {\cal S}} I_i\right)^2}.
-   \end{aligned}
+   \begin{eqnarray}
+   {\tt ERRX2} & = {\rm var}(\overline{x}) =
+   & \frac{\displaystyle \sum_{i \in {\cal S}} \sigma^2_i (x_i-\overline{x})^2}
+   {\displaystyle \left(\sum_{i \in {\cal S}} p_i\right)^2},\\
+   {\tt ERRY2} & = {\rm var}(\overline{y}) =
+   & \frac{\displaystyle \sum_{i \in {\cal S}} \sigma^2_i (y_i-\overline{y})^2}
+   {\displaystyle \left(\sum_{i \in {\cal S}} p_i\right)^2},\\
+   {\tt ERRXY} & = {\rm cov}(\overline{x},\overline{y}) =
+   & \frac{\displaystyle \sum_{i \in {\cal S}} \sigma^2_i (x_i-\overline{x})(y_i-\overline{y})}
+   {\displaystyle \left(\sum_{i \in {\cal S}} p_i\right)^2}.
+   \end{eqnarray}
 
 :math:`\sigma_i` is the flux uncertainty estimated for pixel :math:`i`:
 
-.. math:: \sigma^2_i = {\sigma_B}^2_i + \frac{I_i}{g_i},
+.. math:: \sigma^2_i = {\sigma_B}^2_i + \frac{p_i}{g_i},
 
 where :math:`{\sigma_B}_i` is the local background noise and :math:`g_i` the local gain — conversion factor — for pixel :math:`i` (see :ref:`effect_of_weighting` for more details). Semi-major axis :param:`ERRA`, semi-minor axis :param:`ERRB`, and position angle :param:`ERRTHETA` of the :math:`1\sigma` position error ellipse are computed from the covariance matrix exactly like for :ref:`basic shape parameters<shape_iso_def>`:
 
 .. math::
   :label: errabtheta
 
-   \begin{aligned}
+   \begin{eqnarray}
    {\tt ERRA}^2 & = & \frac{{\rm var}(\overline{x})+{\rm var}(\overline{y})}{2}
        + \sqrt{\left(\frac{{\rm var}(\overline{x})-{\rm var}(\overline{y})}{2}\right)^2
        + {\rm cov}^2(\overline{x},\overline{y})},\\
@@ -270,14 +266,14 @@ where :math:`{\sigma_B}_i` is the local background noise and :math:`g_i` the loc
        + {\rm cov}^2(\overline{x},\overline{y})},\\
    \tan (2{\tt ERRTHETA}) & = & 2 \,\frac{{\rm cov}(\overline{x},\overline{y})}
                        {{\rm var}(\overline{x}) - {\rm var}(\overline{y})}.
-   \end{aligned}
+   \end{eqnarray}
 
 And the error ellipse parameters are:
 
 .. math::
   :label: errellipse
 
-   \begin{aligned}
+   \begin{eqnarray}
    {\tt ERRCXX} & = & \frac{\cos^2 {\tt ERRTHETA}}{{\tt ERRA}^2} +
    \frac{\sin^2 {\tt ERRTHETA}}{{\tt ERRB}^2} = \frac{{\rm
    var}(\overline{y})}{{\rm var}(\overline{x}) {\rm var}(\overline{y}) -
@@ -291,7 +287,7 @@ And the error ellipse parameters are:
    \frac{1}{{\tt ERRB}^2}\right)\\ & = & -2 \frac{{\rm
    cov}(\overline{x},\overline{y})}{{\rm var}(\overline{x}) {\rm var}(\overline{y}) -
    {\rm cov}^2(\overline{x},\overline{y})}.
-   \end{aligned}
+   \end{eqnarray}
 
 
 Handling of “infinitely thin” detections
@@ -320,7 +316,7 @@ Positional errors are more difficult to handle, as objects with very high signal
    {\rm var}(\overline{x})\,{\rm var}(\overline{y}) - {\rm
    covar}^2(\overline{x}, \overline{y}) < \rho^2_e,
 
-where :math:`\rho_e` is arbitrarily set to :math:`\left( \sum_{i \in {\cal S}} \sigma^2_i \right) / \left(\sum_{i \in {\cal S}} I_i\right)^2`.
+where :math:`\rho_e` is arbitrarily set to :math:`\left( \sum_{i \in {\cal S}} \sigma^2_i \right) / \left(\sum_{i \in {\cal S}} p_i\right)^2`.
 If :eq:`singutest2` is true, then :math:`\overline{x^2}` and :math:`\overline{y^2}` are incremented by :math:`\rho_e`.
 
 .. [#elongation] These parameters are dimensionless, and for historical reasons do not accept suffixes such as :param:`_IMAGE` or :param:`_WORLD`.
