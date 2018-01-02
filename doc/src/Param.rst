@@ -280,5 +280,4 @@ of their meaning.
   #THETAMODEL_SKY           Model position angle (east of north) (native)             [deg]
   #THETAMODEL_J2000         Model position angle (east of north) (J2000)              [deg]
   #THETAMODEL_B1950         Model position angle (east of north) (B1950)              [deg]
-  #SPREAD_MODEL             Spread parameter from model-fitting                      
 

@@ -43,6 +43,9 @@
 .. |PSFEx| replace:: :program:`PSFEx`
 .. _PSFEx: http://astromatic.net/software/psfex
 
+.. |QSO| replace:: :abbr:`QSO (Quasi-Stellar Object)`
+.. _QSO: https://en.wikipedia.org/wiki/Quasar
+
 .. |RPM| replace:: :program:`RPM`
 .. _RPM: http://www.rpm.org
 
@@ -54,6 +57,12 @@
 
 .. |SExtractor| replace:: :program:`SExtractor`
 .. _SExtractor: http://astromatic.net/software/sextractor
+
+.. |SkyMaker| replace:: :program:`SkyMaker`
+.. _SkyMaker: http://astromatic.net/software/skymaker
+
+.. |seeing| replace:: *seeing*
+.. _seeing: https://en.wikipedia.org/wiki/Astronomical_seeing
 
 .. |SNR| replace:: :abbr:`SNR (Signal-to-Noise Ratio)`
 .. _SNR: https://en.wikipedia.org/wiki/Signal-to-noise_ratio
