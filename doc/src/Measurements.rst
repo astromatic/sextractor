@@ -1,7 +1,9 @@
-Measurements
-============
+.. File Measurements.rst
 
 .. include:: global.rst
+
+Measurements
+============
 
 Once sources have been detected and deblended, they enter the measurement phase.
 |SExtractor| performs three categories of measurements: isophotal, full, and model-fitting.
@@ -23,6 +25,7 @@ Model-fitting
   PositionWin
   Photom
   Model
+  ClassStar
 
 .. [#thresh] Pixel values also have to exceed the local detection threshold set with ``DETECT_THRESH``.
 .. [#psf_models] PSF models be computed using the |PSFEx|_ package.

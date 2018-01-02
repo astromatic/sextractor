@@ -188,6 +188,7 @@ of their meaning.
   _`AWIN_IMAGE`, pixel, :ref:`Windowed image major axis <shape_win_def>`
   _`BWIN_IMAGE`, pixel, :ref:`Windowed image minor axis <shape_win_def>`
   _`THETAWIN_IMAGE`, degree, :ref:`Windowed image position angle <shape_win_def>`
+  _`CLASS_STAR`, ..., :ref:`Star/galaxy classifier <class_star_def>`
   _`VECTOR_MODEL`, ..., :ref:`Model-fitting coefficients <models_def>`
   _`VECTOR_MODELERR`, ..., :ref:`Model-fitting coefficient uncertainties <models_def>`
   _`MATRIX_MODELERR`, ..., :ref:`Model-fitting covariance matrix <model_minimization_def>`
@@ -280,5 +281,4 @@ of their meaning.
   #THETAMODEL_SKY           Model position angle (east of north) (native)             [deg]
   #THETAMODEL_J2000         Model position angle (east of north) (J2000)              [deg]
   #THETAMODEL_B1950         Model position angle (east of north) (B1950)              [deg]
-  #SPREAD_MODEL             Spread parameter from model-fitting                      
 

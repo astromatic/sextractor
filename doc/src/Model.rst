@@ -261,8 +261,8 @@ allowed values between 1 and 10.
 
 .. _spread_model_def:
 
-Star-Galaxy separation
-----------------------
+Model-based star-galaxy separation
+----------------------------------
 
 The :param:`SPREAD_MODEL` estimator has been developed as a star/galaxy classifier for the DESDM pipeline :cite:`2012SPIE_8451E_0DM`, and has also been used in other surveys :cite:`2012ApJ_757_83D,2013AA_554A_101B`.
 :param:`SPREAD_MODEL` indicates which of the best fitting local PSF model resampled at the current position :math:`\tilde{\boldsymbol{\phi}}` (representing a point source) or a slightly ``fuzzier'' resampled model :math:`\tilde{\boldsymbol{G}}` (representing a galaxy) matches best the image data.
@@ -281,9 +281,24 @@ where :math:`\boldsymbol{p}` is the image vector centered on the source.
   The definition of :param:`SPREAD_MODEL` above differs from the one given in previous papers, which was incorrect, although in practice both estimators give very similar results.
 
 By construction, :param:`SPREAD_MODEL` is close to zero for point sources, positive for extended sources (galaxies), and negative for detections smaller than the |PSF|, such as cosmic ray hits.
-On images taken with linear detectors, :param:`SPREAD_MODEL` should not depend on the source flux or |SNR|. This property may be used to identify bad exposures or |PSF| modeling issues (:numref:`fig_spread`).
+On images taken with linear detectors, the average :param:`SPREAD_MODEL` of point sources should not depend on flux nor |SNR|.
+This property may be used to identify bad exposures or |PSF| modeling issues (:numref:`fig_spread`).
+More importantly, this makes :param:`SPREAD_MODEL` a very convenient estimator for star-galaxy classification, using a positive threshold to identify extended sources.
 
-The |RMS| error on :param:`SPREAD_MODEL` is estimated by propagating the uncertainties on individual pixel values:
+.. _fig_spread:
+
+.. figure:: figures/spread.png
+   :figwidth: 100%
+   :align: center
+
+   |SNR| *vs* :param:`SPREAD_MODEL` for three exposures from :cite:`2013AA_554A_101B`.
+   *Left plot*: "good" exposure; extended sources (galaxies and nebulous features) are on the right handside of the stellar locus, and electronic glitches create a small cloud of points on the left handside.
+   *Middle*: exposure with an unusual amount of electronic glitches.
+   *Right*: exposure with tracking/guiding issues; the |PSF| is too complex for individual sources to be identified as a single objects.
+
+
+The |pdf| of :param:`SPREAD_MODEL` is close to Gaussian for isolated point sources at a given |SNR|; it gets larger for the fainter sources because of image noise.
+In order to maintain a certain level of purity or completeness across the whole magnitude range, it is therefore necessary to take into account the uncertainty on :param:`SPREAD_MODEL`, which can be estimated by propagating the uncertainties on individual pixel values:
 
 .. math::
   :label: spreaderr_model
@@ -295,15 +310,7 @@ The |RMS| error on :param:`SPREAD_MODEL` is estimated by propagating the uncerta
   \end{eqnarray}
 
 where :math:`{\bf V}` is the noise covariance matrix, which we assume to be diagonal.
-
-.. _fig_spread:
-
-.. figure:: figures/spread.png
-   :figwidth: 100%
-   :align: center
-
-   :param:`SPREAD_MODEL`.
-
+In practice, one may for instance adopt a threshold for star-galaxy separation which is a combination of a fixed and a variable components, such as :math:`\sqrt{\epsilon^2 + (\kappa \times {\tt SPREADERR\_MODEL})^2}`, with :math:`\epsilon \approx 5.10^{-3}` and :math:`\kappa \approx 4`.
 
 ..
    Models are measured according to the following table.
