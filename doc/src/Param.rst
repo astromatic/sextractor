@@ -105,6 +105,8 @@ of their meaning.
   _`EXT_NUMBER`, ..., FITS extension number
   _`FLAGS`, ..., :ref:`Source extraction flags <flags_def>`
   _`FLAGS_WEIGHT`, ..., :ref:`Weighting flags <flags_weight_def>`
+  _`IMAFLAGS_ISO`, ..., :ref:`External flags combined within the isophotal footprint <imaflags_iso_def>`
+  _`NIMAFLAGS_ISO`, ..., :ref:`Number of combined external flags <imaflags_iso_def>`
   _`FLUX_ISO`, count, :ref:`Isophotal flux <flux_iso_def>`
   _`FLUXERR_ISO`, count, :ref:`RMS error estimate for the isophotal flux <flux_iso_def>`
   _`MAG_ISO`, magnitude, :ref:`Isophotal magnitude <flux_iso_def>`
