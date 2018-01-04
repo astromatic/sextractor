@@ -2,6 +2,8 @@
 
 .. include:: global.rst
 
+.. _photometry:
+
 Photometry
 ==========
 

@@ -85,6 +85,9 @@
 .. |WCSLIB| replace:: :program:`WCSLIB`
 .. _WCSLIB: http://www.atnf.csiro.au/people/mcalabre/WCS/wcslib
 
+.. |WeightWatcher| replace:: :program:`WeightWatcher`
+.. _WeightWatcher: http://astromatic.net/software/weightwatcher
+
 .. |Windows| replace:: Microsoft Windows\ :sup:`®`\ 
 .. _Windows: http://www.microsoft.com/windows
 

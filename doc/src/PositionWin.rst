@@ -5,8 +5,8 @@
 Windowed positional parameters
 ==============================
 
-Measurements performed through a *window* function (an *envelope*) do not have many of the drawbacks of isophotal measurements. |SExtractor| implements “windowed” versions for most
-of the measurements described in the :ref:`previous section<pos_iso_def>`:
+Measurements performed through a *window* function (an *envelope*) do not have many of the drawbacks of isophotal measurements.
+|SExtractor| implements “windowed” versions for most of the measurements described in the :ref:`previous section<pos_iso_def>`:
 
 .. note::
   Unless otherwise noted, all parameter names given below are only prefixes. They must be followed by _IMAGE if the results shall be expressed in pixel coordinates or :param:`_WORLD`, :param:`_SKY`, :param:`_J2000` or :param:`_B1950` for |WCS|_ coordinates (see :ref:`coord_suffix`).
@@ -25,8 +25,7 @@ of the measurements described in the :ref:`previous section<pos_iso_def>`:
 | :param:`CXX`, :param:`CYY`, :param:`CXY`        | :param:`CXXWIN`, :param:`CYYWIN`, :param:`CXYWIN`        |
 +-------------------------------------------------+----------------------------------------------------------+
 
-The computations involved are roughly the same except that the pixel values are integrated within a circular Gaussian window as opposed to
-the object’s isophotal footprint.
+The computations involved are roughly the same except that the pixel values are integrated within a circular Gaussian window as opposed to the object’s isophotal footprint.
 The Gaussian window is scaled to each object; the Gaussian FWHM is the diameter of the disk that contains half of the object flux (:math:`d_{50}`).
 Note that in double-image mode (§[chap:using]) the window is scaled based on the *measurement* image.
 
@@ -212,7 +211,22 @@ The error ellipse parameters are:
    {\rm cov}^2(\overline{x_{\tt WIN}},\overline{y_{\tt WIN}})}.
    \end{aligned}
 
+.. _flags_win_def:
 
+Windowed measurement flags: :param:`FLAGS_WIN`
+----------------------------------------------
+
+The :param:`FLAGS_WIN` catalog parameter flags various issues which may happen with windowed measurements (see the :ref:`flagging` section for details on how flags are managed in |SExtractor|):
+
+.. _flags_win_table:
+
+.. csv-table:: :param:`FLAGS_WIN` description
+  :header: "Value", "Meaning"
+  :widths: 3 60
+
+  1, ":ref:`Windowed second-order moments <moments_win_def>` are inconsistent (:math:`\overline{x_{\tt WIN}^2}\overline{y_{\tt WIN}^2} \le \overline{x_{\tt WIN}y_{\tt WIN}}^2`)"
+  2, ":ref:`Windowed second-order moments <moments_win_def>` are less than or equal to 0"
+  4, "Windowed flux is less than or equal to 0"
 
 .. [#win_accuracy] See http://www.astromatic.net/forum/showthread.php?tid=581 .
 
