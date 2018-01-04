@@ -133,10 +133,14 @@ Minimization
 Minimization of the loss function :math:`\lambda(\boldsymbol{q})` is carried out using the `Levenberg-Marquardt algorithm <http://en.wikipedia.org/wiki/Levenberg%E2%80%93Marquardt_algorithm>`_, and more specifically the |LevMar|_ implementation :cite:`lourakis04LM`.
 The library approximates the Jacobian matrix of the model from finite differences using Broyden's :cite:`Broyden1965ACo` rank one updates.
 The fit is done inside a disk which diameter is scaled to include the isophotal footprint of the object, plus the FWHM of the PSF, plus a 20 % margin.
+
 The number of iterations is returned in the :param:`NITER_MODEL` measurement parameter.
 It is generally a few tens.
 The final value of the modified chi square term in :eq:`loss_func`, divided by the number of degrees of freedom, is returned in :param:`CHI2_MODEL`.
-The :param:`FLAGS_MODEL` parameter flags various issues which may happen during the fitting process (see the flags section for details on how flags are managed in |SExtractor|):
+
+.. _flags_model_def:
+
+The :param:`FLAGS_MODEL` catalog parameter flags various issues which may happen during the fitting process (see the :ref:`flagging` section for details on how flags are managed in |SExtractor|):
 
 .. _flags_model_table:
 

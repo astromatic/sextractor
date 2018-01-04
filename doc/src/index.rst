@@ -21,6 +21,7 @@ Contents
    Config
    Param
    Weighting
+   Flagging
    Measurements
    references
 

@@ -20,7 +20,7 @@ Fortunately, the correlation length of the noise is often smaller than the patte
 In that case one can apply a simple *fudge factor* to the estimated variance to account for correlations on small scales.
 This proves to be a good approximation in general, although it certainly leads to underestimations for the smallest patterns.
 
-.. _weigth-map-format:
+.. _weight-map_format:
 
 Weight-map formats
 ------------------
@@ -66,7 +66,7 @@ Weight-maps modify the working of |SExtractor| in the following respects:
 #. Bad pixels are discarded from the background statistics.
    If more than :math:`50\%` of the pixels in a background mesh are bad, the local background value and the background standard deviation are replaced by interpolation of the nearest valid meshes.
 
-#. The detection threshold *t* above the local sky background is adjusted for each pixel *i* with variance :math:`\sigma^2_i` : :math:`t_i=DETECT\_THRESH\times\sqrt{\sigma^2_i}`, where ``DETECT_THRESH`` is expressed in units of standard deviations of the background noise.
+#. The detection threshold *t* above the local sky background is adjusted for each pixel *i* with variance :math:`\sigma^2_i`: :math:`t_i=`\ ``DETECT_THRESH``\ :math:`\times\sqrt{\sigma^2_i}`, where ``DETECT_THRESH`` is expressed in units of standard deviations of the background noise.
    Pixels with variance above the threshold set with the ``WEIGHT_THRESH`` parameter are therefore simply not detected.
    This may result in splitting objects crossed by a group of bad pixels.
    Interpolation (see ???) should be used to avoid this problem.
@@ -88,7 +88,7 @@ Weight-maps modify the working of |SExtractor| in the following respects:
 Combining weight maps
 ---------------------
 
-All the weighting options listed in :ref:`weigth-map-format` can be applied separately to detection and measurement images (:ref:`using-sextractor`), even if some combinations may not always make sense.
+All the weighting options listed in :ref:`weight-map_format` can be applied separately to detection and measurement images (:ref:`using-sextractor`), even if some combinations may not always make sense.
 For instance, the following set of configuration lines:
 
 ``WEIGHT_IMAGE`` *rms.fits*, *weight.fits*
@@ -96,7 +96,7 @@ For instance, the following set of configuration lines:
 ``WEIGHT_TYPE`` ``MAP_RMS``, ``MAP_WEIGHT``
 
 will load the FITS file *rms.fits* and use it as an RMS map for adjusting the detection threshold and cleaning, while the *weight.fits* weight map will only be used for scaling the error estimates on measurements.
-This can be done in single- as well as in dual-image mode (:ref:`using-sextractor`).
+This can be done in single- as well as in dual-image mode (see :ref:`using-sextractor`).
 ``WEIGHT_IMAGE`` can be ignored for ``BACKGROUND`` ``WEIGHT_TYPE``.
 It is of course possible to use weight-maps for detection or for measurement only.
 The following configuration:
@@ -106,6 +106,22 @@ The following configuration:
 ``WEIGHT_TYPE`` ``NONE``, ``MAP_WEIGHT``
 
 will apply weighting only for measurements; detection and cleaning operations will remain unaffected.
+
+.. _flags_weight_def:
+
+Weight-map flags: :param:`FLAGS_WEIGHT`
+---------------------------------------
+
+The :param:`FLAGS_WEIGHT` catalog parameter flags various issues which may happen during the weighting process (see the :ref:`flagging` section for details on how flags are managed in |SExtractor|):
+
+.. _flags_weight_table:
+
+.. csv-table:: :param:`FLAGS_WEIGHT` description
+  :header: "Value", "Meaning"
+  :widths: 3 60
+
+  1, "at least one measurement-image weight with a value below ``WEIGHT_THRESH`` *overlaps* the isophotal footprint of the detected object"
+  2, "at least one measurement-image weight with a value below ``WEIGHT_THRESH`` *touches* the isophotal footprint of the detected object"
 
 .. rubric:: Footnotes
 
