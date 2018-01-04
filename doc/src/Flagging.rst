@@ -42,6 +42,7 @@ Extraction flags: :param:`FLAGS`
   64, "a memory overflow occurred during deblending"
   128, "a memory overflow occurred during extraction"
 
+.. _imaflags_iso_def:
 
 External flags: :param:`IMAFLAGS_ISO`
 -------------------------------------
