@@ -66,7 +66,7 @@ It is sometimes useful to have the position :param:`XPEAK`, :param:`YPEAK` of th
 .. _moments_iso_def:
 
 Second-order moments: :param:`X2`, :param:`Y2`, :param:`XY`
---------------------------------------------------------
+-----------------------------------------------------------
 
 (Centered) second-order moments are convenient for measuring the spatial spread of a source profile. In |SExtractor| they are computed with:
 

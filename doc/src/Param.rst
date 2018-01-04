@@ -103,7 +103,8 @@ of their meaning.
   _`NUMBER`, ..., Running object number
   _`ID_PARENT`, ..., Parent ID (before deblending)
   _`EXT_NUMBER`, ..., FITS extension number
-  _`FLAGS`, ..., Extraction flags
+  _`FLAGS`, ..., :ref:`Source extraction flags <flags_def>`
+  _`FLAGS_WEIGHT`, ..., :ref:`Weighting flags <flags_weight_def>`
   _`FLUX_ISO`, count, :ref:`Isophotal flux <flux_iso_def>`
   _`FLUXERR_ISO`, count, :ref:`RMS error estimate for the isophotal flux <flux_iso_def>`
   _`MAG_ISO`, magnitude, :ref:`Isophotal magnitude <flux_iso_def>`
@@ -169,6 +170,7 @@ of their meaning.
   _`ERRCXXWIN_IMAGE`, pixel\ :sup:`-2`, :ref:`Windowed image centroid Cxx error ellipse parameter <poserr_win_def>`
   _`ERRCYYWIN_IMAGE`, pixel\ :sup:`-2`, :ref:`Windowed image centroid Cyy error ellipse parameter <poserr_win_def>`
   _`ERRCXYWIN_IMAGE`, pixel\ :sup:`-2`, :ref:`Windowed image centroid Cxy error ellipse parameter <poserr_win_def>`
+  _`FLAGS_WIN`, ..., :ref:`Windowed measurement flags <flags_win_def>`
   _`X2_IMAGE`, pixel\ :sup:`2`, :ref:`Isophotal image 2nd order central moment in x <moments_iso_def>`
   _`Y2_IMAGE`, pixel\ :sup:`2`, :ref:`Isophotal image 2nd order central moment in y <moments_iso_def>`
   _`XY_IMAGE`, pixel\ :sup:`2`, :ref:`Isophotal image 2nd order central cross-moment in xy <moments_iso_def>`
@@ -202,7 +204,7 @@ of their meaning.
   _`MAGERR_MODEL`, count, :ref:`RMS error estimate for the model-fitting magnitude <models_def>`
   _`FLUX_MAX_MODEL`, count, :ref:`Peak model flux above the background <models_def>`
   _`FLUX_EFF_MODEL`, count, :ref:`Effective model flux above the background <models_def>`
-  _`FLUX_EFF_MODEL`, count, :ref:`Mean effective model flux above the background <models_def>`
+  _`FLUX_MEAN_MODEL`, count, :ref:`Mean effective model flux above the background <models_def>`
   _`MU_MAX_MODEL`, mag.arcsec\ :sup:`-2`, :ref:`Peak model surface brightness above the background <models_def>`
   _`MU_EFF_MODEL`, mag.arcsec\ :sup:`-2`, :ref:`Effective model surface brightness above the background <models_def>`
   _`MU_MEAN_MODEL`, mag.arcsec\ :sup:`-2`, :ref:`Mean effective model surface brightness above the background <models_def>`
