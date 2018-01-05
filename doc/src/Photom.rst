@@ -30,7 +30,7 @@ Magnitude uncertainties (error estimates) are computed using
 Isophotal flux: :param:`FLUX_ISO`
 ---------------------------------
 
-:param:`FLUX_ISO` is computed simply by integrating pixels values :math:`p_i` within the detection footprint, with the additional constraint that the background-subtracted, filtered value of detection image pixels must exceed the threshold set with the ``ANALYSIS_THRESH`` configuration parameter:
+:param:`FLUX_ISO` is computed simply by integrating the background-subracted pixels values :math:`p_i` from the measurement image within the detection footprint, with the additional constraint that the background-subtracted, filtered value of detection image pixels must exceed the threshold set with the ``ANALYSIS_THRESH`` configuration parameter:
  
 .. math::
  :label: fluxiso
@@ -78,7 +78,7 @@ Clearly this cheap correction works best with stars; and although it gives reaso
 Fixed-aperture flux: :param:`FLUX_APER`
 ---------------------------------------
 
-:param:`FLUX_APER` estimates the flux above the background within a circular aperture.
+:param:`FLUX_APER` estimates the flux from the measurement image above the background inside a circular aperture.
 The diameter of the aperture in pixels is defined by the ``PHOTOM_APERTURES`` configuration parameter.
 It does not have to be an integer: each "regular" pixel is subdivided in :math:`5\times 5` sub-pixels before measuring the flux within the aperture.
 If :param:`FLUX_APER` is provided as a vector :param:`FLUX_APER[n]`, at least :math:`n` apertures must be specified with the ``PHOTOM_APERTURES`` configuration parameter.
@@ -89,40 +89,49 @@ Automatic aperture flux: :param:`FLUX_AUTO`
 -------------------------------------------
 
 :param:`FLUX_AUTO` provides an estimate of the “total flux” by integrating pixel values within an adaptively scaled aperture.
-|SExtractor|’s automatic aperture photometry routine is inspired by Kron’s “first moment” algorithm :cite:`1980ApJS_43_305K`.
+|SExtractor|’s automatic aperture photometry routine derives from Kron’s “first moment” algorithm :cite:`1980ApJS_43_305K`:
 
-#. An elliptical aperture is :ref:`defined by the second order moments of the object’s light distribution <shape_iso_def>`, with semi-major axis :math:`a={\tt A\_IMAGE}`, semi-minor axis :math:`b={\tt B\_IMAGE}`, and position angle :param:`THETA_IMAGE`.
-   The ellipse's major and minor axes are multiplied by 6 (which corresponds roughly to twice the size of the isophotal footprint on each axis).
-#. Within this elliptical aperture :math:`{\cal E}`, Kron's "first moment" is computed:
+#. An elliptical aperture is :ref:`defined by the second order moments of the object’s light distribution <ellipse_iso_def>`, with semi-major axis :math:`a={\tt A\_IMAGE}`, semi-minor axis :math:`b={\tt B\_IMAGE}`, and position angle :param:`THETA_IMAGE`.
+#. The ellipse's major and minor axes are multiplied by 6 (which corresponds roughly to twice the size of the isophotal footprint on each axis).
+#. Inside this elliptical aperture :math:`{\cal E}`, an analog of Kron's "first moment" is computed:
 
 .. math::
-  :label: kron_r1
+  :label: kron_radius
 
-  r_1 = \frac{\sum_{i\in\cal E} d_i\,p_i}{\sum_{i\in\cal E} p_i},
+  r_{\rm Kron} = \frac{\sum_{i\in\cal E} r_i\,p^{(d)}_i}{\sum_{i\in\cal E} p^{(d)}_i},
 
-where :math:`d_i` and :math:`p_i` are respectively the Euclidean distance to the (isophotal) centroid and the pixel value above the local background at image pixel :math:`i`.
-:cite:`1980ApJS_43_305K` and :cite:`1987AA_183_177I` have shown that for stars and galaxy profiles convolved with Gaussian seeing, :math:`\ge 90\%` of the flux is expected to lie within a circular aperture of radius :math:`k r_1` if :math:`k = 2`, almost independently of the magnitude.
-Experiments have shown :cite:`1996AAS_117_393B` that this conclusion remains unchanged if one replaces the circular aperture with a "Kron ellipse" :math:`{\cal K}`, which is simply the ellipse :math:`{\cal E}` above, scaled such that the principle axes become :math:`\sqrt{a/b}\,k r_1` and :math:`\sqrt{b/a}\,k r_1`.
+where :math:`p^{(d)}_i` is the pixel value *in the detection image*. :math:`r_i` is what we shall call the "reduced pseudo-radius" at pixel :math:`i` 
 
-:param:`FLUX_AUTO` is the flux above the background summed over the Kron ellipse:
+.. math::
+  :label: reduced_radius
+
+  r_i \equiv \sqrt{{\tt CXX\_IMAGE} \times \Delta x_i^2 + {\tt CYY\_IMAGE} \times \Delta y_i^2 + {\tt CXY\_IMAGE} \times \Delta x_i \Delta y_i},
+
+where :math:`\Delta x_i` and  :math:`\Delta y_i` are the pixel coordinates relative to the detection centroid:
+
+.. math::
+
+  \begin{aligned}
+  \Delta x_i & = x_i - {\tt X\_IMAGE}\\
+  \Delta y_i & = y_i - {\tt Y\_IMAGE}.
+  \end{aligned}
+
+
+:cite:`1980ApJS_43_305K` and :cite:`1987AA_183_177I` have shown that for stars and galaxy profiles convolved with Gaussian seeing, :math:`\ge 90\%` of the flux is expected to lie inside a circular aperture of radius :math:`k r_{\rm Kron}` with :math:`k = 2`, almost independently of the magnitude.
+Experiments have shown :cite:`1996AAS_117_393B` that this conclusion remains unchanged if one replaces the circular aperture with the "Kron elliptical aperture" :math:`{\cal K}` with reduced pseudo-radius :math:`k r_{\rm Kron}`.
+
+:param:`FLUX_AUTO` is the sum of pixel values from the measurement image, subtracted from the local background, inside the Kron ellipse:
 
 .. math::
   :label: flux_auto
 
   {\tt FLUX\_AUTO} = \sum_{i\in\cal K} p_i.
 
-The quantity :math:`kr_1` is known as the *Kron radius*, and is provided in |SExtractor| by the :param:`KRON_RADIUS` catalog parameter in units of :param:`A_IMAGE` (or :param:`B_IMAGE`):
-
-.. math::
-  :label: kron_radius
-
-  {\tt KRON\_RADIUS} = \frac{1}{\sqrt{{\tt A\_IMAGE}\times{\tt B\_IMAGE}}}\,k\,r_1.
-
-
+The quantity :math:`k r_{\rm Kron}`, known as the *Kron radius* (which in |SExtractor| is actually a "reduced pseudo-radius") is provided by the :param:`KRON_RADIUS`.
 :math:`k = 2` defines a sort of balance between systematic and random errors.
 By choosing a larger :math:`k = 2.5`, the mean fraction of flux lost drops from about 10% to 6%, at the expense of |SNR| in the measurement.
-Very noisy objects may sometimes end up with a Kron radius being too small, even smaller that the isophotal footprint of the object itself. For this reason, |SExtractor| imposes a minimum size for the Kron radius, which must be larger than :math:`\sqrt{ab}\, r_{\rm min}`
-The user has full control over the parameters :math:`k` and :math:`r_{\rm min}` through the ``PHOT_AUTOPARAMS`` configuration parameters. ``PHOT_AUTOPARAMS`` is set by default to ``2.5,3.5``.
+Very noisy objects may sometimes end up with a Kron ellipse being too small, even smaller that the isophotal footprint of the object itself. For this reason, |SExtractor| imposes a minimum size for the Kron radius, which cannot be less than :math:`r_{\rm Kron,min}`.
+The user has full control over the parameters :math:`k` and :math:`r_{\rm Kron,min}` through the ``PHOT_AUTOPARAMS`` configuration parameters. ``PHOT_AUTOPARAMS`` is set by default to ``2.5,3.5``.
 
 ..
    .. figure:: ps/simlostflux.ps
@@ -148,6 +157,43 @@ The user has full control over the parameters :math:`k` and :math:`r_{\rm min}` 
 ..
   Figure [figphot] shows the mean loss of flux measured with isophotal (threshold 24.4 magnitude.arsec\ :sup:`-2`), corrected isophotal and automatic aperture photometry for simulated galaxies on a typical Schmidt-survey B\ :sub:`J` plate image.
   The automatic adaptive aperture photometry leads to the lowest loss of flux.
+
+.. _flux_petro_def:
+
+Petrosian aperture flux: :param:`FLUX_PETRO`
+--------------------------------------------
+
+Similar to :param:`FLUX_AUTO`, :param:`FLUX_PETRO` provides an estimate of the “total flux” by integrating pixel values within an adaptively scaled elliptical aperture. :param:`FLUX_PETRO`\ 's algorithm derives from Petrosian’s photometric estimator :cite:`1976ApJ_209L_1P,2001AJ_121_2358B,2001AJ_122_1104Y`:
+
+#. An elliptical aperture is :ref:`defined by the second order moments of the object’s light distribution <ellipse_iso_def>`, with semi-major axis :math:`a={\tt A\_IMAGE}`, semi-minor axis :math:`b={\tt B\_IMAGE}`, and position angle :param:`THETA_IMAGE`.
+#. The ellipse's major and minor axes are multiplied by 6 (which corresponds roughly to twice the size of the isophotal footprint on each axis).
+#. Within this elliptical aperture :math:`{\cal E}`, the *Petrosian ratio* :math:`R_{\rm P}(r)` is computed:
+
+.. math::
+  :label: petrosian_ratio
+
+  R_{\rm P}(r) = \frac{\sum_{0.9r < r_i < 1.1r} p^{(d)}_i}{\sum_{r_i < r} p^{(d)}_i} \frac{N_{r_i < r}}{N_{0.9r < r_i < 1.1r}},
+
+where :math:`p^{(d)}_i` is the pixel value *in the detection image*. :math:`r_i` is the "reduced pseudo-radius" at pixel :math:`i` as defined in :eq:`reduced_radius`.
+The *Petrosian ellipse* :math:`{\cal P}` is the ellipse with reduced pseudo-radius :math:`N_{\rm P}r_{\rm P}`, where :math:`r_{\rm P}` is the *Petrosian radius* defined by
+
+.. math::
+  :label: petrosian_radius
+
+  R_{\rm P}(r_{\rm p}) \equiv 0.2
+
+:math:`r_{\rm P}` is provided in |SExtractor| by the :param:`PETRO_RADIUS` catalog parameter.
+The Petrosian factor :math:`N_{\rm P}` is set to 2.0 by default.
+Very noisy objects may sometimes end up with a Petrosian ellipse being too small.
+For this reason, |SExtractor| imposes a minimum size for the Petrosian radius, which cannot be less than :math:`r_{\rm P,min}`.
+The user has full control over the parameters :math:`N_{\rm P}` and :math:`r_{\rm P,min}` through the ``PHOT_PETROPARAMS`` configuration parameters. ``PHOT_PETROPARAMS`` is set by default to ``2.0,3.5``.
+
+The Petrosian flux is the sum of pixel values from the measurement image, subtracted from the local background, inside the Petrosian ellipse:
+
+.. math::
+  :label: flux_petro
+
+  {\tt FLUX\_PETRO} = \sum_{i\in\cal P} p_i.
 
 
 Photographic photometry
