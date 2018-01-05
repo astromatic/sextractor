@@ -24,6 +24,15 @@ Magnitude uncertainties (error estimates) are computed using
 
    {\tt MAGERR} = \frac{2.5}{\ln 10}\frac{\tt FLUXERR}{\tt FLUX}
 
+An estimate of the error is available for each type of flux.
+For aperture fluxes, the flux uncertainty is computed using
+
+.. math::
+  :label: fluxerr
+
+  {\rm FLUXERR} = \sqrt{\sum_{i\in{\cal A}}\, (\sigma_i^2 + \frac{p_i}{g_i})}
+
+where :math:`{\cal A}` is the set of pixels defining the photometric aperture, and :math:`\sigma_i`, :math:`p_i`, :math:`g_i` respectively the standard deviation of noise (in ADU) estimated from the local background, :math:`p_i` the measurement image pixel value subtracted from the background, and :math:`g_i` the effective detector gain in :math:`e^- / \mbox{ADU}` at pixel :math:`i`. Note that this error estimate provides a lower limit of the true uncertainty, as it only takes into account photon and detector noise.
 
 .. _flux_iso_def:
 
@@ -71,7 +80,7 @@ A “total” magnitude :param:`MAG_ISOCOR` estimate is then
 
    {\tt MAG\_ISOCOR} = {\tt MAG\_ISO} + 2.5 \log_{10} \eta.
 
-Clearly this cheap correction works best with stars; and although it gives reasonably accurate results with most disk galaxies, it breaks down for ellipticals because of the broader wings in the profiles.
+Clearly the :param:`MAG_ISOCOR` correction works best with stars; and although it gives reasonably accurate results with most disk galaxies, it breaks down for ellipticals because of the broader wings in the profiles.
 
 .. _flux_aper_def:
 
@@ -175,14 +184,14 @@ Similar to :param:`FLUX_AUTO`, :param:`FLUX_PETRO` provides an estimate of the �
   R_{\rm P}(r) = \frac{\sum_{0.9r < r_i < 1.1r} p^{(d)}_i}{\sum_{r_i < r} p^{(d)}_i} \frac{N_{r_i < r}}{N_{0.9r < r_i < 1.1r}},
 
 where :math:`p^{(d)}_i` is the pixel value *in the detection image*. :math:`r_i` is the "reduced pseudo-radius" at pixel :math:`i` as defined in :eq:`reduced_radius`.
-The *Petrosian ellipse* :math:`{\cal P}` is the ellipse with reduced pseudo-radius :math:`N_{\rm P}r_{\rm P}`, where :math:`r_{\rm P}` is the *Petrosian radius* defined by
+The *Petrosian ellipse* :math:`{\cal P}` is the ellipse with reduced pseudo-radius :math:`N_{\rm P}r_{\rm P}`, where :math:`r_{\rm P}` is defined by
 
 .. math::
   :label: petrosian_radius
 
   R_{\rm P}(r_{\rm p}) \equiv 0.2
 
-:math:`r_{\rm P}` is provided in |SExtractor| by the :param:`PETRO_RADIUS` catalog parameter.
+The quantity :math:`N_{\rm P}r_{\rm P}` is called *Petrosian radius* in |SExtractor|\ [#petro_radius]_ and is provided by the :param:`PETRO_RADIUS` catalog parameter.
 The Petrosian factor :math:`N_{\rm P}` is set to 2.0 by default.
 Very noisy objects may sometimes end up with a Petrosian ellipse being too small.
 For this reason, |SExtractor| imposes a minimum size for the Petrosian radius, which cannot be less than :math:`r_{\rm P,min}`.
@@ -204,46 +213,37 @@ This is generally a good approximation for photographic density on deep exposure
 Photometric procedures described above remain unchanged, except that for each pixel we apply first the transformation
 
 .. math::
+  :label: dtoi
 
-   I = I_0\,10^{D/\gamma} \ ,
-   \label{eq:dtoi}
+  I = I_0\,10^{D/\gamma},
 
 where :math:`\gamma` (``MAG_GAMMA``) is the contrast index of the emulsion, :math:`D` the original pixel value from the background-subtracted image, and :math:`I_0` is computed from the magnitude zero-point :math:`m_0`:
 
-.. math:: I_0 = \frac{\gamma}{\ln 10} \,10^{-0.4\, m_0} \ .
+.. math::
+  :label: m0toi0
+
+  I_0 = \frac{\gamma}{\ln 10} \,10^{-0.4\, m_0}.
 
 One advantage of using a density-to-intensity transformation relative to the local sky background is that it corrects (to some extent) large-scale inhomogeneities in sensitivity (see :cite:`1996PhDT_68B` for details).
 
+..
+  Magnitude uncertainties
+  -----------------------
 
-Magnitude uncertainties
------------------------
+  In ``DETECT_TYPE PHOTO`` mode, things are slightly more complex.
+  Making the assumption that plate-noise is the major contributor to photometric errors, and that it is roughly constant in density, one can write:
 
-An estimate of the error [#error]_ is available for each type of magnitude.
-It is computed through
-
-.. math:: \Delta m = 1.0857\, \frac{\sqrt{A\,\sigma^2 + F/g}}{F}
-
-where :math:`A` is the area (in pixels) over which the total flux
-:math:`F` (in ADU) is summed, :math:`\sigma` the standard deviation of
-noise (in ADU) estimated from the background, and g the detector gain
-(GAIN parameter [#gain]_ , in :math:`e^- / \mbox{ADU}`).
-For corrected-isophotal magnitudes, a term, derived from Eq. [eq:isocor] is quadratically added to take into account the error on the correction itself.
-
-In ``DETECT_TYPE PHOTO`` mode, things are slightly more complex.
-Making the assumption that plate-noise is the major contributor to photometric errors, and that it is roughly constant in density, one can write:
-
-.. math::
+  .. math::
+  :label: magerr_photo
 
    \Delta m = 1.0857 \,\ln 10\, {\sigma\over \gamma}\,
      \frac{\sqrt{\sum_{x,y}{I^2(x,y)}}}{\sum_{x,y}I(x,y)}
    =2.5\,{\sigma\over \gamma}\,
    \frac{\sqrt{\sum_{x,y}{I^2(x,y)}}}{\sum_{x,y}I(x,y)}
 
-where :math:`I(x,y)` is the contribution of pixel :math:`(x,y)` to the
-total flux (Eq. [eq:dtoi]). ``GAIN`` is ignored in ``PHOTO`` mode.
+  where :math:`I(x,y)` is the contribution of pixel :math:`(x,y)` to the total flux :eq:`dtoi`. ``GAIN`` is ignored in ``PHOTO`` mode.
 
 
-..
   Background
   ----------
 
@@ -253,12 +253,6 @@ total flux (Eq. [eq:dtoi]). ``GAIN`` is ignored in ``PHOTO`` mode.
   When this option is switched on (``BACKPHOTO_TYPE LOCAL`` instead of ``GLOBAL``), the "photometric"   background is estimated within a "rectangular annulus" around the isophotal limits of the object.
   The thickness of the annulus (in pixels) can be specified by the user with ``BACKPHOTO_SIZE``. A typical value is ``BACKPHOTO_SIZE``=``24``.
 
-.. [#error]
-   It is important to note that this error provides a lower limit, since
-   it does not take into account the (complex) uncertainty on the local
-   background estimate.
-
-.. [#gain]
-   Setting GAIN to 0 in the configuration file is equivalent to
-   :math:`g = +\infty`
+.. [#petro_radius]
+   Some authors prefer to define the Petrosian radius as :math:`r_{\rm P}` instead of :math:`N_{\rm P}r_{\rm P}`.
 
