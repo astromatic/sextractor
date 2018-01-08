@@ -129,6 +129,7 @@ of their meaning.
   _`MAG_PETRO`, magnitude, :ref:`Petrosian-like aperture magnitude <flux_petro_def>`
   _`MAGERR_PETRO`, magnitude, :ref:`RMS error estimate for Petrosian-like aperture magnitude <flux_petro_def>`
   _`PETRO_RADIUS`, ..., :ref:`Petrosian radius in units of A or B <flux_petro_def>`
+  _`BACKGROUND`, count, :ref:`Background level at the position of the centroid <background_def>`
   _`X_IMAGE`, pixel, :ref:`Pixel x coordinate <image_coords>` of the :ref:`isophotal image centroid <pos_iso_def>`
   _`Y_IMAGE`, pixel, :ref:`Pixel y coordinate <image_coords>` of the :ref:`isophotal image centroid <pos_iso_def>`
   _`X_FOCAL`, degree, :ref:`Focal plane x coordinate <focal_coords>` of :ref:`isophotal image centroid <pos_iso_def>`
