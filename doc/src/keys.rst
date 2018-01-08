@@ -1,6 +1,9 @@
 .. |ATLAS| replace:: :program:`ATLAS`
 .. _ATLAS: http://math-atlas.sourceforge.net
 
+.. |DAOPHOT| replace:: :program:`DAOPHOT`
+.. _DAOPHOT: http://ascl.net/phpBB3/viewtopic.php?t=23410
+
 .. |.dmg| replace:: :file:`.dmg`
 .. _.dmg: https://en.wikipedia.org/wiki/Apple_Disk_Image
 
@@ -21,6 +24,9 @@
 
 .. |Intel| replace:: Intel\ :sup:`®`\ 
 .. _Intel: http://intel.com
+
+.. |I/O| replace:: :abbr:`I/O (Input/Output)`
+.. _I/O: https://en.wikipedia.org/wiki/Input/output
 
 .. |LevMar| replace:: :program:`LevMar`
 .. _LevMar: http://users.ics.forth.gr/~lourakis/levmar
