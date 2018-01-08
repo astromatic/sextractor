@@ -243,15 +243,21 @@ One advantage of using a density-to-intensity transformation relative to the loc
 
   where :math:`I(x,y)` is the contribution of pixel :math:`(x,y)` to the total flux :eq:`dtoi`. ``GAIN`` is ignored in ``PHOTO`` mode.
 
+.. _background_def:
 
-  Background
-  ----------
+Local background
+----------------
 
-  Background is the last point relative to photometry. The assumption made in §[chap:backest] — that the "local" background associated to an object can be interpolated from the global background map — is no longer valid in crowded regions.
-  An example is a globular cluster superimposed to a bulge of galaxy.
-  SExtractor offers the possibility to estimate locally the background used to compute magnitudes.
-  When this option is switched on (``BACKPHOTO_TYPE LOCAL`` instead of ``GLOBAL``), the "photometric"   background is estimated within a "rectangular annulus" around the isophotal limits of the object.
-  The thickness of the annulus (in pixels) can be specified by the user with ``BACKPHOTO_SIZE``. A typical value is ``BACKPHOTO_SIZE``=``24``.
+Almost all |SExtractor| measurements are done using background-subtracted pixel values.
+In crowded fields, or in images where the background is irregular, the :ref:`background model` may be significantly inaccurate, locally creating biases in photometric estimates.
+
+The user has the possibility to force |SExtractor| to correct, for every detection, the background used to compute fluxes by setting the ``BACKPHOTO_TYPE`` configuration parameter to ``LOCAL`` (``GLOBAL`` is the default).
+In ``LOCAL`` mode, a mean background residual level is estimated from background-subtracted pixel values within a "rectangular annulus" around the isophotal limits of the object.
+The user can specify the thickness of the annulus, in pixels, with the ``BACKPHOTO_SIZE`` configuration parameter. The default thickness is ``24`` pixels.
+The residual background level computed in ``LOCAL`` mode is used by |SExtractor| to correct all aperture photometry measurements, as well as basic surface brightness estimations such as :param:`FLUX_MAX`.
+However in practice the ``BACKPHOTO_TYPE LOCAL`` option has not proven as being really beneficial to photometric accuracy, and it is generally advised to leave ``BACKPHOTO_TYPE`` set to ``GLOBAL``.
+
+In both ``LOCAL`` and ``GLOBAL`` modes, the :param:`BACKGROUND` catalog parameter gives the value of the background estimated at the centroid of the object.
 
 .. [#petro_radius]
    Some authors prefer to define the Petrosian radius as :math:`r_{\rm P}` instead of :math:`N_{\rm P}r_{\rm P}`.
