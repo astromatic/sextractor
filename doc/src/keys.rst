@@ -1,3 +1,6 @@
+.. |ADU| replace:: :abbr:`ADU (Analog-to-Digital Unit)`
+.. _ADU: https://en.wikipedia.org/wiki/Analog-to-digital_converter
+
 .. |ATLAS| replace:: :program:`ATLAS`
 .. _ATLAS: http://math-atlas.sourceforge.net
 
