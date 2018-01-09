@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2015 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2018 IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		02/12/2015
+*	Last modified:		09/01/2018
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -50,7 +50,7 @@ typedef struct
   char		**command_line;				/* Command line */
   int		ncommand_line;				/* nb of params */
   char		prefs_name[MAXCHAR];			/* prefs filename*/
-  char		*(image_name[2]);			/* image filenames */
+  char		image_name[2][MAXCHAR];			/* image filenames */
   int		nimage_name;				/* nb of params */
   char		cat_name[MAXCHAR];			/* catalog filename*/
   char		head_suffix[MAXCHAR];			/* ext. header suffix */

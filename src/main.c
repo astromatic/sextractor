@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2013 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2018 IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		04/06/2013
+*	Last modified:		09/01/2018
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -76,7 +76,7 @@ setlinebuf(stdout);
   prefs.ncommand_line = argc;
   prefs.pipe_flag = 0;
   prefs.nimage_name = 1;
-  prefs.image_name[0] = "image";
+  strcpy(prefs.image_name[0], "image");
   strcpy(prefs.prefs_name, "default.sex");
   narg = nim = 0;
 
@@ -132,7 +132,7 @@ setlinebuf(stdout);
         strncpy(str, argv[a], MAXCHARL-1);
         for (pstr=NULL;(pstr=strtok(pstr?NULL:str, notokstr)); nim++)
           if (nim<MAXIMAGE)
-            prefs.image_name[nim] = pstr;
+            strncpy(prefs.image_name[nim], pstr, MAXCHAR-1);
           else
             error(EXIT_FAILURE, "*Error*: Too many input images: ", pstr);
         }
