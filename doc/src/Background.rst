@@ -2,6 +2,8 @@
 
 .. include:: global.rst
 
+.. _background_model:
+
 Modeling the background
 =======================
 

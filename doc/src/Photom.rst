@@ -249,7 +249,7 @@ Local background
 ----------------
 
 Almost all |SExtractor| measurements are done using background-subtracted pixel values.
-In crowded fields, or in images where the background is irregular, the :ref:`background model` may be significantly inaccurate, locally creating biases in photometric estimates.
+In crowded fields, or in images where the background is irregular, the :ref:`background model <background_model>` may be significantly inaccurate, locally creating biases in photometric estimates.
 
 The user has the possibility to force |SExtractor| to correct, for every detection, the background used to compute fluxes by setting the ``BACKPHOTO_TYPE`` configuration parameter to ``LOCAL`` (``GLOBAL`` is the default).
 In ``LOCAL`` mode, a mean background residual level is estimated from background-subtracted pixel values within a "rectangular annulus" around the isophotal limits of the object.
