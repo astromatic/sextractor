@@ -29,34 +29,57 @@ For many catalog parameters, especially those related to flux,
 position, or shape, several variants of the same measurement are
 available:
 
+.. _fluxes_and_magnitudes:
+
 Fluxes and magnitudes
 ~~~~~~~~~~~~~~~~~~~~~
 
-Fluxes may be expressed in linear (ADU) units or as Pogson :cite:`1856MNRAS_17_12P` magnitudes. Flux measurements in ADUs are prefixed with :param:`FLUX_`, for example: :param:`FLUX_AUTO`, :param:`FLUX_ISO`, etc. Magnitudes are prefixed with :param:`MAG_` e.g., :param:`MAG_AUTO`, :param:`MAG_ISO`, ... In
-|SExtractor| the magnitude :math:`m` of a source is derived from the flux
-:math:`f`:
+Fluxes may be expressed in counts (|ADU|\ s) or as Pogson :cite:`1856MNRAS_17_12P` magnitudes.
+Flux measurements in |ADU|\ s are prefixed with :param:`FLUX_`, for example: :param:`FLUX_AUTO`, :param:`FLUX_ISO`, etc.
+Magnitudes are prefixed with :param:`MAG_` e.g., :param:`MAG_AUTO`, :param:`MAG_ISO`, ...
+The ``MAG_ZEROPOINT`` configuration parameter sets the magnitude zero-point of magnitudes:
 
 .. math::
+ :label: mag
 
-   m = \left\{\begin{array}{ll}
-   m_{ZP} -2.5 \log_{10} f\ &\mbox{if } f > 0\\
-   99.0 &\mbox{otherwise},
+   {\tt MAG} = \left\{\begin{array}{ll}
+   \mathrm{MAG\_ZEROPOINT} - 2.5 \log_{10} {\tt FLUX}\ &\mbox{if } {\tt FLUX} > 0\\
+   99.0\ &\mbox{otherwise},
    \end{array}\right.
-
-where :math:`m_{ZP}` is the magnitude zero-point set with the
-``MAG_ZEROPOINT`` configuration parameter.
 
 Flux and magnitude uncertainties
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Flux uncertainties follow a scheme similar to that of fluxes. Flux uncertainties are prefixed with :param:`FLUXERR_`, as in :param:`FLUXERR_AUTO` or :param:`FLUXERR_ISO`. Magnitude uncertainties start with :param:`MAGERR_`, for instance: :param:`MAGERR_AUTO`, :param:`MAGERR_ISO`,... Magnitude uncertainties :math:`\sigma_m` are derived from the estimated 1-\ :math:`\sigma` flux error :math:`\sigma_f`:
+Flux uncertainties (error estimates) follow a scheme similar to that of fluxes.
+They are prefixed with :param:`FLUXERR_`, as in :param:`FLUXERR_AUTO` or :param:`FLUXERR_ISO`.
+Magnitude uncertainties start with :param:`MAGERR_`, for instance: :param:`MAGERR_AUTO`, :param:`MAGERR_ISO`,...
+They are computed using
 
 .. math::
+ :label: magerr
 
-   \sigma_m = \left\{\begin{array}{ll}
-   (2.5/\ln 10) (\sigma_f/f)\ &\mbox{if } f > 0\\
-   99.0 &\mbox{otherwise}.
+   {\tt MAGERR} = \left\{\begin{array}{ll}
+   \frac{2.5}{\ln 10}({\tt FLUXERR}/{\tt FLUX})\ &\mbox{if } {\tt FLUX} > 0\\
+   99.0\ &\mbox{otherwise}.
    \end{array}\right.
+
+Pixel values and Surface brightnesses
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Pixel values (averaged or not) :math:`p` are expressed in counts (|ADU|\ s).
+There is no specific prefix (:param:`THRESHOLD`, :param:`BACKGROUND`, :param:`FLUX_MAX`, etc.).
+Surface brightnesses are given in magnitudes per square arcsecond, and prefixed with :param:`MU_` e.g., :param:`MU_THRESHOLD`, :param:`MU_MAX`, ...
+The conversion to surface brightness relies on the ``MAG_ZEROPOINT`` and the ``PIXEL_SCALE`` configuration parameters:
+
+.. math::
+ :label: mu
+
+   {\tt MU} = \left\{\begin{array}{ll}
+   \mathrm{MAG\_ZEROPOINT} - 2.5 \log_{10} (p \times {\rm PIXEL\_SCALE}\,^2)\ &\mbox{if } p > 0\\
+   99.0\ &\mbox{otherwise}.
+   \end{array}\right.
+
+Setting ``PIXEL_SCALE`` to 0 instructs |SExtractor| to compute the pixel scale from the local Jacobian of the astrometric deprojection, based on the celestial |WCS| info in the |FITS| image header, if available.
 
 .. _coord_suffix:
 

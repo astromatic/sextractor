@@ -8,21 +8,7 @@ Photometry
 ==========
 
 Besides |PSF| and :ref:`model-fitting <models_def>` flux estimates, |SExtractor| can currently perform four types of flux measurements: :ref:`isophotal <flux_iso_def>`, :ref:`corrected-isophotal <mag_isocor_def>`, :ref:`fixed-aperture <flux_aper_def>` and :ref:`adaptive-aperture <flux_auto_def>`.
-For every :param:`FLUX_` measurement, an error estimate :param:`FLUXERR_`, a magnitude :param:`MAG_` and a magnitude error estimate :param:`MAGERR_` are also available.
-The ``MAG_ZEROPOINT`` configuration parameter sets the magnitude zero-point
-of magnitudes:
-
-.. math::
- :label: mag
-
-   {\tt MAG} = \mathrm{MAG\_ZEROPOINT} - 2.5 \log_{10} {\tt FLUX}
-
-Magnitude uncertainties (error estimates) are computed using
-
-.. math::
- :label: magerr
-
-   {\tt MAGERR} = \frac{2.5}{\ln 10}\frac{\tt FLUXERR}{\tt FLUX}
+For every :param:`FLUX_` measurement, an error estimate :param:`FLUXERR_`, a magnitude :param:`MAG_` and a magnitude error estimate :param:`MAGERR_` are also available: see :ref:`fluxes_and_magnitudes`.
 
 An estimate of the error is available for each type of flux.
 For aperture fluxes, the flux uncertainty is computed using
@@ -30,7 +16,7 @@ For aperture fluxes, the flux uncertainty is computed using
 .. math::
   :label: fluxerr
 
-  {\rm FLUXERR} = \sqrt{\sum_{i\in{\cal A}}\, (\sigma_i^2 + \frac{p_i}{g_i})}
+  {\tt FLUXERR} = \sqrt{\sum_{i\in{\cal A}}\, (\sigma_i^2 + \frac{p_i}{g_i})}
 
 where :math:`{\cal A}` is the set of pixels defining the photometric aperture, and :math:`\sigma_i`, :math:`p_i`, :math:`g_i` respectively the standard deviation of noise (in ADU) estimated from the local background, :math:`p_i` the measurement image pixel value subtracted from the background, and :math:`g_i` the effective detector gain in :math:`e^- / \mbox{ADU}` at pixel :math:`i`. Note that this error estimate provides a lower limit of the true uncertainty, as it only takes into account photon and detector noise.
 
@@ -204,6 +190,8 @@ The Petrosian flux is the sum of pixel values from the measurement image, subtra
 
   {\tt FLUX\_PETRO} = \sum_{i\in\cal P} p_i.
 
+.. [#petro_radius]
+   Some authors prefer to define the Petrosian radius as :math:`r_{\rm P}` instead of :math:`N_{\rm P}r_{\rm P}`.
 
 Photographic photometry
 -----------------------
@@ -259,6 +247,4 @@ However in practice the ``BACKPHOTO_TYPE LOCAL`` option has not proven as being 
 
 In both ``LOCAL`` and ``GLOBAL`` modes, the :param:`BACKGROUND` catalog parameter gives the value of the background estimated at the centroid of the object.
 
-.. [#petro_radius]
-   Some authors prefer to define the Petrosian radius as :math:`r_{\rm P}` instead of :math:`N_{\rm P}r_{\rm P}`.
 
