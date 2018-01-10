@@ -37,7 +37,7 @@ Valid ``WEIGHT_TYPE`` values are:
 
 * ``BACKGROUND`` :
     The science image itself is used to compute internally a variance map (the related ``WEIGHT_IMAGE`` parameter is ignored).
-    Robust (:math:`3\sigma`-clipped) variance estimates are first computed within the same background meshes as those described in ?? [#f1]_.
+    Robust (:math:`3\sigma`-clipped) variance estimates are first computed within the same background meshes as the :ref:`background model <background_model>` [#f1]_.
     The resulting low-resolution variance map is then bicubic-spline-interpolated on the fly to produce the actual full-size variance map.
     A check-image with ``CHECKIMAGE_TYPE`` ``MINIBACK_RMS`` can be requested to examine the low-resolution variance map.
 
@@ -69,12 +69,12 @@ Weight-maps modify the working of |SExtractor| in the following respects:
 #. The detection threshold *t* above the local sky background is adjusted for each pixel *i* with variance :math:`\sigma^2_i`: :math:`t_i=`\ ``DETECT_THRESH``\ :math:`\times\sqrt{\sigma^2_i}`, where ``DETECT_THRESH`` is expressed in units of standard deviations of the background noise.
    Pixels with variance above the threshold set with the ``WEIGHT_THRESH`` parameter are therefore simply not detected.
    This may result in splitting objects crossed by a group of bad pixels.
-   Interpolation (see ???) should be used to avoid this problem.
+   Interpolation should be used to avoid this problem.
    If convolution filtering is applied for detection, the variance map is convolved too.
    This yields optimum scaling of the detection threshold in the case where noise is uncorrelated from pixel to pixel.
    Non-linear filtering operations (like those offered by artificial retinae) are not affected.
 
-#. The cleaning process (??) takes into account the exact individual thresholds assigned to each pixel for deciding about the fate of faint detections.
+#. The cleaning process takes into account the exact individual thresholds assigned to each pixel for deciding about the fate of faint detections.
 
 #. Error estimates like ``FLUXISO_ERR`` , ``ERRA_IMAGE`` , etc. also make use of individual variances.
    Local background-noise standard deviation is simply set to :math:`\sqrt{\sigma^2_i}`.
@@ -83,7 +83,7 @@ Weight-maps modify the working of |SExtractor| in the following respects:
    This is the most common case: correction for vignetting, or coverage depth.
    When this is not the case, for instance when changes are purely dominated by those of the read-out noise, ``WEIGHT_GAIN`` shall be set to ``N``.
 
-#. Finally, pixels with weights beyond ``WEIGHT_THRESH`` are treated just like pixels discarded by the masking process (??).
+#. Finally, pixels with weights beyond ``WEIGHT_THRESH`` are treated just like pixels discarded by the masking process.
 
 Combining weight maps
 ---------------------
