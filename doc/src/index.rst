@@ -11,7 +11,6 @@ Contents
 --------
 
 .. toctree::
-   :numbered:
    :maxdepth: 2
 
    Introduction
