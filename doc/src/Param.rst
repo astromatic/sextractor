@@ -5,7 +5,7 @@
 The measurement (or catalog) parameter file
 ===========================================
 
-In addition to the configuration file detailed above, |SExtractor| requires a file containing the list of measurements ("catalog parameters") that will be listed in the output catalog for every detection. This allows the software to compute only the measurements that are needed. The name of this catalog parameter file is traditionally suffixed with ``.param``, and must be specified using the :param:`PARAMETERS_NAME` config parameter. The full set of parameters can be queried with the command
+In addition to the configuration file detailed above, |SExtractor| requires a file containing the list of measurements ("catalog parameters") that will be listed in the output catalog for every detection. This allows the software to compute only the measurements that are needed. The name of this catalog parameter file is traditionally suffixed with :file:`.param`, and must be specified using the :param:`PARAMETERS_NAME` config parameter. The full set of parameters can be queried with the command
 
 .. code-block:: console
 
@@ -44,7 +44,7 @@ The ``MAG_ZEROPOINT`` configuration parameter sets the magnitude zero-point of m
 
    {\tt MAG} = \left\{\begin{array}{ll}
    \mathrm{MAG\_ZEROPOINT} - 2.5 \log_{10} {\tt FLUX}\ &\mbox{if } {\tt FLUX} > 0\\
-   99.0\ &\mbox{otherwise},
+   99.0\ &\mbox{otherwise}.
    \end{array}\right.
 
 Flux and magnitude uncertainties
@@ -79,7 +79,7 @@ The conversion to surface brightness relies on the ``MAG_ZEROPOINT`` and the ``P
    99.0\ &\mbox{otherwise}.
    \end{array}\right.
 
-Setting ``PIXEL_SCALE`` to 0 instructs |SExtractor| to compute the pixel scale from the local Jacobian of the astrometric deprojection, based on the celestial |WCS| info in the |FITS| image header, if available.
+Setting ``PIXEL_SCALE`` to 0 instructs |SExtractor| to compute the pixel scale from the local `Jacobian <https://en.wikipedia.org/wiki/Jacobian_matrix_and_determinant>`_ of the astrometric deprojection, based on the celestial |WCS|_ info :cite:`2002AA_395_1077C` in the |FITS| image header, if available.
 
 .. _coord_suffix:
 
@@ -96,7 +96,7 @@ Positions, distances and position angles are computed in pixel coordinates. They
 .. _world_coords:
 
 :param:`_WORLD`
-  Measurements are given in so-called “world coordinates”, converted from pixel coordinates using the local Jacobian of the transformation between both systems. This requires World Coordinate System (|WCS|_) metadata :cite:`2002AA_395_1061G` to be present in the FITS image header(s). Position angles are counted from the first world axis, positive towards the second world axis.
+  Measurements are given in so-called “world coordinates”, converted from pixel coordinates using the local Jacobian of the transformation between both systems. This requires |WCS| metadata :cite:`2002AA_395_1061G` to be present in the FITS image header(s). Position angles are counted from the first world axis, positive towards the second world axis.
 
 .. _sky_coords:
 
@@ -106,7 +106,7 @@ Positions, distances and position angles are computed in pixel coordinates. They
 .. _focal_coords:
 
 :param:`_FOCAL`
-  Measurements are given in “focal plane coordinates”, which are actually projected coordinates, in degrees. This requires World Coordinate System (|WCS|_) metadata :cite:`2002AA_395_1061G` to be present in the FITS image header(s). The computation of focal plane coordinates from pixel coordinates is similar to that of :param:`_SKY` coordinates except that they are not de-projected and remain Cartesian. The main purpose of focal plane coordinates is to provide a common system for all the chips in a mosaic camera.
+  Measurements are given in “focal plane coordinates”, which are actually projected coordinates, in degrees. This requires |WCS| metadata :cite:`2002AA_395_1061G` to be present in the FITS image header(s). The computation of focal plane coordinates from pixel coordinates is similar to that of :param:`_SKY` coordinates except that they are not de-projected and remain Cartesian. The main purpose of focal plane coordinates is to provide a common system for all the chips in a mosaic camera.
 
 .. note::
   Conversion to :param:`_FOCAL` coordinates is available only for a limited subset of measurements.
@@ -213,6 +213,8 @@ of their meaning.
   _`CXX_IMAGE`, pixel\ :sup:`-2`, :ref:`Isophotal image Cxx ellipse parameter <ellipse_iso_def>`
   _`CYY_IMAGE`, pixel\ :sup:`-2`, :ref:`Isophotal image Cyy ellipse parameter <ellipse_iso_def>`
   _`CXY_IMAGE`, pixel\ :sup:`-2`, :ref:`Isophotal image Cxy ellipse parameter <ellipse_iso_def>`
+  _`ISOAREAF_IMAGE`, pixel\ :sup:`2`, :ref:`Isophotal area (filtered) above Detection threshold <isoarea_def>`
+  _`ISOAREA_IMAGE`, pixel\ :sup:`2`, :ref:`Isophotal area above Analysis threshold <isoarea_def>`
   _`X2WIN_IMAGE`, pixel\ :sup:`2`, :ref:`Windowed image 2nd order central moment in x <moments_win_def>`
   _`Y2WIN_IMAGE`, pixel\ :sup:`2`, :ref:`Windowed image 2nd order central moment in y <moments_win_def>`
   _`XYWIN_IMAGE`, pixel\ :sup:`2`, :ref:`Windowed image 2nd order central cross-moment in xy <moments_win_def>`

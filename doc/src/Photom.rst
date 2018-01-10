@@ -4,10 +4,10 @@
 
 .. _photometry:
 
-Photometry
-==========
+Aperture photometry
+===================
 
-Besides |PSF| and :ref:`model-fitting <models_def>` flux estimates, |SExtractor| can currently perform four types of flux measurements: :ref:`isophotal <flux_iso_def>`, :ref:`corrected-isophotal <mag_isocor_def>`, :ref:`fixed-aperture <flux_aper_def>` and :ref:`adaptive-aperture <flux_auto_def>`.
+Besides :ref:`isophotal <flux_iso_def>`, |PSF| and :ref:`model-fitting <models_def>` flux estimates, |SExtractor| can currently perform two types of flux measurements: :ref:`fixed-aperture <flux_aper_def>` and :ref:`adaptive-aperture <flux_auto_def>`.
 For every :param:`FLUX_` measurement, an error estimate :param:`FLUXERR_`, a magnitude :param:`MAG_` and a magnitude error estimate :param:`MAGERR_` are also available: see :ref:`fluxes_and_magnitudes`.
 
 An estimate of the error is available for each type of flux.
@@ -18,55 +18,8 @@ For aperture fluxes, the flux uncertainty is computed using
 
   {\tt FLUXERR} = \sqrt{\sum_{i\in{\cal A}}\, (\sigma_i^2 + \frac{p_i}{g_i})}
 
-where :math:`{\cal A}` is the set of pixels defining the photometric aperture, and :math:`\sigma_i`, :math:`p_i`, :math:`g_i` respectively the standard deviation of noise (in ADU) estimated from the local background, :math:`p_i` the measurement image pixel value subtracted from the background, and :math:`g_i` the effective detector gain in :math:`e^- / \mbox{ADU}` at pixel :math:`i`. Note that this error estimate provides a lower limit of the true uncertainty, as it only takes into account photon and detector noise.
-
-.. _flux_iso_def:
-
-Isophotal flux: :param:`FLUX_ISO`
----------------------------------
-
-:param:`FLUX_ISO` is computed simply by integrating the background-subracted pixels values :math:`p_i` from the measurement image within the detection footprint, with the additional constraint that the background-subtracted, filtered value of detection image pixels must exceed the threshold set with the ``ANALYSIS_THRESH`` configuration parameter:
- 
-.. math::
- :label: fluxiso
-
-   {\tt FLUX\_ISO} = F_{\rm iso} = \sum_{i \in {\cal D}} p_i.
-
-
-.. _mag_isocor_def:
-
-Corrected isophotal magnitude: :param:`MAG_ISOCOR`
---------------------------------------------------
-
-.. note::
-  Corrected isophotal magnitudes are now deprecated; they remain in |SExtractor| v2.x for compatibility with |SExtractor| v1.
-
-:param:`MAG_ISOCOR` magnitudes are a quick-and-dirty way of retrieving the fraction of flux lost by isophotal magnitudes.
-
-If one makes the assumption that the intensity profiles of faint objects recorded in the frame are roughly Gaussian because of atmospheric blurring, then the fraction :math:`\eta = \frac{F_{\rm iso}}{F_{\rm tot}}` of the total flux enclosed within a particular isophote reads :cite:`1990MNRAS_246_433M`:
-
-.. math::
-  :label: isocor
-
-   \left(1-\frac{1}{\eta}\right ) \ln (1-\eta) = \frac{A\,t}{F_{\rm iso}},
-
-where :math:`A` is the area and :math:`t` the threshold related to this isophote.
-:eq:isocor is not analytically invertible, but a good approximation to :math:`\eta` (error :math:`< 10^{-2}` for :math:`\eta > 0.4`) can be done with the second-order polynomial fit:
-
-.. math::
- :label: isocor2
-
-   \eta \approx 1 - 0.1961 \frac{A\,t}{F_{\rm iso}} - 0.7512
-   \left( \frac{A\,t}{F_{\rm iso}}\right)^2.
-
-A “total” magnitude :param:`MAG_ISOCOR` estimate is then
-
-.. math::
- :label: magisocor
-
-   {\tt MAG\_ISOCOR} = {\tt MAG\_ISO} + 2.5 \log_{10} \eta.
-
-Clearly the :param:`MAG_ISOCOR` correction works best with stars; and although it gives reasonably accurate results with most disk galaxies, it breaks down for ellipticals because of the broader wings in the profiles.
+where :math:`{\cal A}` is the set of pixels defining the photometric aperture, and :math:`\sigma_i`, :math:`p_i`, :math:`g_i` respectively the standard deviation of noise (in ADU) estimated from the local background, :math:`p_i` the measurement image pixel value subtracted from the background, and :math:`g_i` the effective detector gain in :math:`e^- / \mbox{ADU}` at pixel :math:`i`.
+Note that this error estimate provides a lower limit of the true uncertainty, as it only takes into account photon and detector noise.
 
 .. _flux_aper_def:
 
