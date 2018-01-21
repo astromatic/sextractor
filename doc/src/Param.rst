@@ -3,7 +3,7 @@
 .. include:: global.rst
 
 The measurement (or catalog) parameter file
-===========================================
+-------------------------------------------
 
 In addition to the configuration file detailed above, |SExtractor| requires a file containing the list of measurements ("catalog parameters") that will be listed in the output catalog for every detection. This allows the software to compute only the measurements that are needed. The name of this catalog parameter file is traditionally suffixed with :file:`.param`, and must be specified using the :param:`PARAMETERS_NAME` config parameter. The full set of parameters can be queried with the command
 
@@ -12,7 +12,7 @@ In addition to the configuration file detailed above, |SExtractor| requires a fi
  $ sex -dp
 
 Format
-------
+~~~~~~
 
 The format of the catalog parameter list is ASCII, and there must be
 *a single keyword per line*. Presently two kinds of keywords are
@@ -23,7 +23,7 @@ in the output catalog is identical to that of the keywords in the parameter
 list. Comments are allowed, they must begin with a :param:`#`.
 
 Variants
---------
+~~~~~~~~
 
 For many catalog parameters, especially those related to flux,
 position, or shape, several variants of the same measurement are
@@ -32,7 +32,7 @@ available:
 .. _fluxes_and_magnitudes:
 
 Fluxes and magnitudes
-~~~~~~~~~~~~~~~~~~~~~
+"""""""""""""""""""""
 
 Fluxes may be expressed in counts (|ADU|\ s) or as Pogson :cite:`1856MNRAS_17_12P` magnitudes.
 Flux measurements in |ADU|\ s are prefixed with :param:`FLUX_`, for example: :param:`FLUX_AUTO`, :param:`FLUX_ISO`, etc.
@@ -48,7 +48,7 @@ The ``MAG_ZEROPOINT`` configuration parameter sets the magnitude zero-point of m
    \end{array}\right.
 
 Flux and magnitude uncertainties
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+""""""""""""""""""""""""""""""""
 
 Flux uncertainties (error estimates) follow a scheme similar to that of fluxes.
 They are prefixed with :param:`FLUXERR_`, as in :param:`FLUXERR_AUTO` or :param:`FLUXERR_ISO`.
@@ -64,7 +64,7 @@ They are computed using
    \end{array}\right.
 
 Pixel values and Surface brightnesses
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+"""""""""""""""""""""""""""""""""""""
 
 Pixel values (averaged or not) :math:`p` are expressed in counts (|ADU|\ s).
 There is no specific prefix (:param:`THRESHOLD`, :param:`BACKGROUND`, :param:`FLUX_MAX`, etc.).
@@ -84,7 +84,7 @@ Setting ``PIXEL_SCALE`` to 0 instructs |SExtractor| to compute the pixel scale f
 .. _coord_suffix:
 
 Positions and shapes
-~~~~~~~~~~~~~~~~~~~~
+""""""""""""""""""""
 
 Positions, distances and position angles are computed in pixel coordinates. They may be expressed in image pixels, world coordinates, or in celestial coordinates, depending on the suffix:
 
@@ -96,7 +96,7 @@ Positions, distances and position angles are computed in pixel coordinates. They
 .. _world_coords:
 
 :param:`_WORLD`
-  Measurements are given in so-called “world coordinates”, converted from pixel coordinates using the local Jacobian of the transformation between both systems. This requires |WCS| metadata :cite:`2002AA_395_1061G` to be present in the FITS image header(s). Position angles are counted from the first world axis, positive towards the second world axis.
+  Measurements are given in so-called “world coordinates”, converted from pixel coordinates using the local Jacobian of the transformation between both systems. This requires |WCS|_ metadata :cite:`2002AA_395_1061G` to be present in the FITS image header(s). Position angles are counted from the first world axis, positive towards the second world axis.
 
 .. _sky_coords:
 
@@ -111,8 +111,12 @@ Positions, distances and position angles are computed in pixel coordinates. They
 .. note::
   Conversion to :param:`_FOCAL` coordinates is available only for a limited subset of measurements.
 
+.. important::
+  The |WCS| library currently implemented in |SExtractor| is a customized version of an early implementation (v1.1.1) by Calabretta.
+  Several projections from later versions and alternative astrometric descriptions such as `AST <https://starlink.eao.hawaii.edu/starlink/AST>`_ or `that of original DSS plates <https://archive.stsci.edu/dss/booklet_n.pdf>`_ are not supported at this time.
+
 Measurement parameter list
---------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Below is an exhaustive list of all the measurement parameters known to
 |SExtractor|. Please refer to the next sections for a detailed description
