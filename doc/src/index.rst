@@ -17,8 +17,6 @@ Contents
    License
    Installing
    Using
-   Config
-   Param
    Background
    Weighting
    Flagging
