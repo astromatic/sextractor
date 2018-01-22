@@ -25,7 +25,6 @@ Model-fitting
   PositionWin
   Photom
   Model
-  ClassStar
 
 .. [#thresh] For some isophotal measurements pixel values also have to exceed the local analysis threshold set with ``ANALYSIS_THRESH``.
 .. [#psf_models] PSF models be computed using the |PSFEx|_ package.

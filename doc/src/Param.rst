@@ -3,16 +3,16 @@
 .. include:: global.rst
 
 The measurement (or catalog) parameter file
-===========================================
+-------------------------------------------
 
-In addition to the configuration file detailed above, |SExtractor| requires a file containing the list of measurements ("catalog parameters") that will be listed in the output catalog for every detection. This allows the software to compute only the measurements that are needed. The name of this catalog parameter file is traditionally suffixed with ``.param``, and must be specified using the :param:`PARAMETERS_NAME` config parameter. The full set of parameters can be queried with the command
+In addition to the configuration file detailed above, |SExtractor| requires a file containing the list of measurements ("catalog parameters") that will be listed in the output catalog for every detection. This allows the software to compute only the measurements that are needed. The name of this catalog parameter file is traditionally suffixed with :file:`.param`, and must be specified using the :param:`PARAMETERS_NAME` config parameter. The full set of parameters can be queried with the command
 
 .. code-block:: console
 
  $ sex -dp
 
 Format
-------
+~~~~~~
 
 The format of the catalog parameter list is ASCII, and there must be
 *a single keyword per line*. Presently two kinds of keywords are
@@ -23,45 +23,68 @@ in the output catalog is identical to that of the keywords in the parameter
 list. Comments are allowed, they must begin with a :param:`#`.
 
 Variants
---------
+~~~~~~~~
 
 For many catalog parameters, especially those related to flux,
 position, or shape, several variants of the same measurement are
 available:
 
-Fluxes and magnitudes
-~~~~~~~~~~~~~~~~~~~~~
+.. _fluxes_and_magnitudes:
 
-Fluxes may be expressed in linear (ADU) units or as Pogson :cite:`1856MNRAS_17_12P` magnitudes. Flux measurements in ADUs are prefixed with :param:`FLUX_`, for example: :param:`FLUX_AUTO`, :param:`FLUX_ISO`, etc. Magnitudes are prefixed with :param:`MAG_` e.g., :param:`MAG_AUTO`, :param:`MAG_ISO`, ... In
-|SExtractor| the magnitude :math:`m` of a source is derived from the flux
-:math:`f`:
+Fluxes and magnitudes
+"""""""""""""""""""""
+
+Fluxes may be expressed in counts (|ADU|\ s) or as Pogson :cite:`1856MNRAS_17_12P` magnitudes.
+Flux measurements in |ADU|\ s are prefixed with :param:`FLUX_`, for example: :param:`FLUX_AUTO`, :param:`FLUX_ISO`, etc.
+Magnitudes are prefixed with :param:`MAG_` e.g., :param:`MAG_AUTO`, :param:`MAG_ISO`, ...
+The ``MAG_ZEROPOINT`` configuration parameter sets the magnitude zero-point of magnitudes:
 
 .. math::
+ :label: mag
 
-   m = \left\{\begin{array}{ll}
-   m_{ZP} -2.5 \log_{10} f\ &\mbox{if } f > 0\\
-   99.0 &\mbox{otherwise},
+   {\tt MAG} = \left\{\begin{array}{ll}
+   \mathrm{MAG\_ZEROPOINT} - 2.5 \log_{10} {\tt FLUX}\ &\mbox{if } {\tt FLUX} > 0\\
+   99.0\ &\mbox{otherwise}.
    \end{array}\right.
-
-where :math:`m_{ZP}` is the magnitude zero-point set with the
-``MAG_ZEROPOINT`` configuration parameter.
 
 Flux and magnitude uncertainties
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+""""""""""""""""""""""""""""""""
 
-Flux uncertainties follow a scheme similar to that of fluxes. Flux uncertainties are prefixed with :param:`FLUXERR_`, as in :param:`FLUXERR_AUTO` or :param:`FLUXERR_ISO`. Magnitude uncertainties start with :param:`MAGERR_`, for instance: :param:`MAGERR_AUTO`, :param:`MAGERR_ISO`,... Magnitude uncertainties :math:`\sigma_m` are derived from the estimated 1-\ :math:`\sigma` flux error :math:`\sigma_f`:
+Flux uncertainties (error estimates) follow a scheme similar to that of fluxes.
+They are prefixed with :param:`FLUXERR_`, as in :param:`FLUXERR_AUTO` or :param:`FLUXERR_ISO`.
+Magnitude uncertainties start with :param:`MAGERR_`, for instance: :param:`MAGERR_AUTO`, :param:`MAGERR_ISO`,...
+They are computed using
 
 .. math::
+ :label: magerr
 
-   \sigma_m = \left\{\begin{array}{ll}
-   (2.5/\ln 10) (\sigma_f/f)\ &\mbox{if } f > 0\\
-   99.0 &\mbox{otherwise}.
+   {\tt MAGERR} = \left\{\begin{array}{ll}
+   \frac{2.5}{\ln 10}({\tt FLUXERR}/{\tt FLUX})\ &\mbox{if } {\tt FLUX} > 0\\
+   99.0\ &\mbox{otherwise}.
    \end{array}\right.
+
+Pixel values and Surface brightnesses
+"""""""""""""""""""""""""""""""""""""
+
+Pixel values (averaged or not) :math:`p` are expressed in counts (|ADU|\ s).
+There is no specific prefix (:param:`THRESHOLD`, :param:`BACKGROUND`, :param:`FLUX_MAX`, etc.).
+Surface brightnesses are given in magnitudes per square arcsecond, and prefixed with :param:`MU_` e.g., :param:`MU_THRESHOLD`, :param:`MU_MAX`, ...
+The conversion to surface brightness relies on the ``MAG_ZEROPOINT`` and the ``PIXEL_SCALE`` configuration parameters:
+
+.. math::
+ :label: mu
+
+   {\tt MU} = \left\{\begin{array}{ll}
+   \mathrm{MAG\_ZEROPOINT} - 2.5 \log_{10} (p \times {\rm PIXEL\_SCALE}\,^2)\ &\mbox{if } p > 0\\
+   99.0\ &\mbox{otherwise}.
+   \end{array}\right.
+
+Setting ``PIXEL_SCALE`` to 0 instructs |SExtractor| to compute the pixel scale from the local `Jacobian <https://en.wikipedia.org/wiki/Jacobian_matrix_and_determinant>`_ of the astrometric deprojection, based on the celestial |WCS|_ info :cite:`2002AA_395_1077C` in the |FITS| image header, if available.
 
 .. _coord_suffix:
 
 Positions and shapes
-~~~~~~~~~~~~~~~~~~~~
+""""""""""""""""""""
 
 Positions, distances and position angles are computed in pixel coordinates. They may be expressed in image pixels, world coordinates, or in celestial coordinates, depending on the suffix:
 
@@ -73,7 +96,7 @@ Positions, distances and position angles are computed in pixel coordinates. They
 .. _world_coords:
 
 :param:`_WORLD`
-  Measurements are given in so-called “world coordinates”, converted from pixel coordinates using the local Jacobian of the transformation between both systems. This requires World Coordinate System (|WCS|_) metadata :cite:`2002AA_395_1061G` to be present in the FITS image header(s). Position angles are counted from the first world axis, positive towards the second world axis.
+  Measurements are given in so-called “world coordinates”, converted from pixel coordinates using the local Jacobian of the transformation between both systems. This requires |WCS|_ metadata :cite:`2002AA_395_1061G` to be present in the FITS image header(s). Position angles are counted from the first world axis, positive towards the second world axis.
 
 .. _sky_coords:
 
@@ -83,13 +106,17 @@ Positions, distances and position angles are computed in pixel coordinates. They
 .. _focal_coords:
 
 :param:`_FOCAL`
-  Measurements are given in “focal plane coordinates”, which are actually projected coordinates, in degrees. This requires World Coordinate System (|WCS|_) metadata :cite:`2002AA_395_1061G` to be present in the FITS image header(s). The computation of focal plane coordinates from pixel coordinates is similar to that of :param:`_SKY` coordinates except that they are not de-projected and remain Cartesian. The main purpose of focal plane coordinates is to provide a common system for all the chips in a mosaic camera.
+  Measurements are given in “focal plane coordinates”, which are actually projected coordinates, in degrees. This requires |WCS| metadata :cite:`2002AA_395_1061G` to be present in the FITS image header(s). The computation of focal plane coordinates from pixel coordinates is similar to that of :param:`_SKY` coordinates except that they are not de-projected and remain Cartesian. The main purpose of focal plane coordinates is to provide a common system for all the chips in a mosaic camera.
 
 .. note::
   Conversion to :param:`_FOCAL` coordinates is available only for a limited subset of measurements.
 
+.. important::
+  The |WCS| library currently implemented in |SExtractor| is a customized version of an early implementation (v1.1.1) by Calabretta.
+  Several projections from later versions and alternative astrometric descriptions such as `AST <https://starlink.eao.hawaii.edu/starlink/AST>`_ or `that of original DSS plates <https://archive.stsci.edu/dss/booklet_n.pdf>`_ are not supported at this time.
+
 Measurement parameter list
---------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Below is an exhaustive list of all the measurement parameters known to
 |SExtractor|. Please refer to the next sections for a detailed description
@@ -190,6 +217,8 @@ of their meaning.
   _`CXX_IMAGE`, pixel\ :sup:`-2`, :ref:`Isophotal image Cxx ellipse parameter <ellipse_iso_def>`
   _`CYY_IMAGE`, pixel\ :sup:`-2`, :ref:`Isophotal image Cyy ellipse parameter <ellipse_iso_def>`
   _`CXY_IMAGE`, pixel\ :sup:`-2`, :ref:`Isophotal image Cxy ellipse parameter <ellipse_iso_def>`
+  _`ISOAREAF_IMAGE`, pixel\ :sup:`2`, :ref:`Isophotal area (filtered) above Detection threshold <isoarea_def>`
+  _`ISOAREA_IMAGE`, pixel\ :sup:`2`, :ref:`Isophotal area above Analysis threshold <isoarea_def>`
   _`X2WIN_IMAGE`, pixel\ :sup:`2`, :ref:`Windowed image 2nd order central moment in x <moments_win_def>`
   _`Y2WIN_IMAGE`, pixel\ :sup:`2`, :ref:`Windowed image 2nd order central moment in y <moments_win_def>`
   _`XYWIN_IMAGE`, pixel\ :sup:`2`, :ref:`Windowed image 2nd order central cross-moment in xy <moments_win_def>`

@@ -11,18 +11,13 @@ Contents
 --------
 
 .. toctree::
-   :numbered:
    :maxdepth: 2
 
    Introduction
    License
    Installing
    Using
-   Config
-   Param
-   Background
-   Weighting
-   Flagging
+   Processing
    Measurements
    references
 
