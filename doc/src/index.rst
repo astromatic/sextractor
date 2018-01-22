@@ -17,9 +17,7 @@ Contents
    License
    Installing
    Using
-   Background
-   Weighting
-   Flagging
+   Processing
    Measurements
    references
 
