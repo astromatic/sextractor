@@ -939,7 +939,7 @@ void	reinitcat(picstruct *field)
   return;
   }
 
-
+int currext = 0;
 /********************************* writecat **********************************/
 /*
 Write out in the catalog each one object.
@@ -959,6 +959,11 @@ void	writecat(int n, objliststruct *objlist)
     case ASCII:
     case ASCII_HEAD:
     case ASCII_SKYCAT:
+      if (thecat.currext != currext)
+        {
+        fprintf(ascfile, "# EXTENSION %d\n", thecat.currext);
+        currext = thecat.currext;
+        }
       print_obj(ascfile, objtab);
       break;
     case ASCII_VO:
