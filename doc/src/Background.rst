@@ -25,7 +25,7 @@ Briefly, the local background histogram is clipped iteratively until convergence
 
   \mbox{Mode} = 2.5 \times \mbox{Median} - 1.5 \times \mbox{Mean}.
 
-Using simulated images, the expression above was found more accurate with clipped distributions :cite:1996AAS_117_393B than the usual approximation (e.g., :cite:`stuart2009kendall`):
+Using simulated images, the expression above was found more accurate with clipped distributions :cite:`1996AAS_117_393B` than the usual approximation (e.g., :cite:`stuart2009kendall`):
 
 .. math::
   :label: ksbackmode
