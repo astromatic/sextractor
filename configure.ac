@@ -90,6 +90,7 @@ AC_ARG_ENABLE(mkl,
 # Checks for programs.
 AC_LANG(C)
 
+AC_SEARCH_LIBS([ffmahd],[cfitsio])
 AC_SEARCH_LIBS([strerror],[cposix])
 if test x$enable_auto_flags = xyes; then
   CFLAGS=""
