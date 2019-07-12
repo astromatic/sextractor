@@ -36,6 +36,9 @@
 #include <sys/types.h>
 #endif
 
+// CFITSIO
+#include "fitsio.h"
+
 #define	MAXCHARS	256	/* max. number of characters */
 #define WARNING_NMAX	1000	/* max. number of recorded warnings */
 
@@ -107,10 +110,11 @@ typedef long long			SLONGLONG;
 typedef union {int l[2];}		SLONGLONG;
 #endif
 
-#if defined(_FILE_OFFSET_BITS) && !defined(OFF_T)
-#define OFF_T	off_t
+// CFITSIO changed OFF_T to OFF_T2 due to clash with cfitsio lib
+#if defined(_FILE_OFFSET_BITS) && !defined(OFF_T2)
+#define OFF_T2	off_t
 #else
-#define OFF_T	long
+#define OFF_T2	long
 #endif
 
 /*------------------------------- constants ---------------------------------*/
@@ -180,8 +184,8 @@ typedef struct structtab
   char		*headbuf;		/* buffer containing the header */
   int		headnblock;		/* number of FITS blocks */
   char		*bodybuf;		/* buffer containing the body */
-  OFF_T		bodypos;		/* position of the body in the file */
-  OFF_T		headpos;		/* position of the head in the file */
+  OFF_T2		bodypos;		/* position of the body in the file */
+  OFF_T2		headpos;		/* position of the head in the file */
   struct structcat *cat;		/* (original) parent catalog */
   struct structtab *prevtab, *nexttab;	/* previous and next tab in chain */
   int		seg;			/* segment position */
@@ -191,6 +195,13 @@ typedef struct structtab
   int		swapflag;		/* mapped to a swap file ? */
   char		swapname[MAXCHARS];	/* name of the swapfile */
   unsigned int	bodysum;		/* Checksum of the FITS body */
+
+  // CFITSIO
+  fitsfile *infptr;                     /* a cfitsio pointer to the file */
+  int hdunum;                           /* FITS HDU number for this 'table' */
+  int isTileCompressed;                 /* is this a tile compressed image?  */
+  long currentElement;                  /* tracks the current image pixel */
+
   }		tabstruct;
 
 
@@ -271,6 +282,7 @@ extern int	about_cat(catstruct *cat, FILE *stream),
 		add_tab(tabstruct *tab, catstruct *cat, int pos),
 		blank_keys(tabstruct *tab),
 		close_cat(catstruct *cat),
+		close_cfitsio(catstruct *cat),
 		copy_key(tabstruct *tabin, char *keyname, tabstruct *tabout,
 			int pos),
 		copy_tab(catstruct *catin, char *tabname, int seg,

@@ -70,6 +70,7 @@ picstruct	*newfield(char *filename, int flags, int ext)
   field->cat = cat;
   nok = 0;
   tab = cat->tab;
+  if(tab->isTileCompressed) nok++;
   if (tab->naxis >= 2
 	&& strncmp(tab->xtension, "BINTABLE", 8)
 	&& strncmp(tab->xtension, "ASCTABLE", 8))
@@ -78,6 +79,7 @@ picstruct	*newfield(char *filename, int flags, int ext)
   for (ntab=cat->ntab; ext2-- && ntab--;)
     {
     tab=tab->nexttab;
+    if(tab->isTileCompressed) nok++;
     if (tab->naxis >= 2
 	&& strncmp(tab->xtension, "BINTABLE", 8)
 	&& strncmp(tab->xtension, "ASCTABLE", 8))

@@ -114,15 +114,35 @@ void	readbasic_head(tabstruct *tab)
 
   filename = (tab->cat? tab->cat->filename : strcpy(name, "internal header"));
 
-  if (fitsread(tab->headbuf, "BITPIX  ", &tab->bitpix, H_INT, T_LONG)
+// CFITSIO
+  char NAXIS_KEYWORD[14];
+  char BITPIX_KEYWORD[14];
+
+  if (fitsread(tab->headbuf, "ZIMAGE  ", str, H_STRING, T_STRING) == RETURN_OK) {
+
+          tab->isTileCompressed = 1;
+
+          strcpy(NAXIS_KEYWORD, "ZNAXIS  ");
+          strcpy(BITPIX_KEYWORD, "ZBITPIX ");
+  }
+  else {
+          tab->isTileCompressed = 0;
+
+          strcpy(NAXIS_KEYWORD, "NAXIS   ");
+          strcpy(BITPIX_KEYWORD, "BITPIX  ");
+  }
+
+  if (fitsread(tab->headbuf, BITPIX_KEYWORD, &tab->bitpix, H_INT, T_LONG)
 	==RETURN_ERROR)
     error(EXIT_FAILURE, "*Error*: Corrupted FITS header in ", filename);
 
   tab->bytepix = tab->bitpix>0?(tab->bitpix/8):(-tab->bitpix/8);
 
-  if (fitsread(tab->headbuf, "NAXIS   ", &tab->naxis, H_INT, T_LONG)
-	==RETURN_ERROR)
+  if (fitsread(tab->headbuf, NAXIS_KEYWORD, &tab->naxis, H_INT, T_LONG)
+                  ==RETURN_ERROR) {
     error(EXIT_FAILURE, "*Error*: Corrupted FITS header in ", filename);
+  }
+
 
   tabsize = 0;
   if (tab->naxis>0)
@@ -133,7 +153,11 @@ void	readbasic_head(tabstruct *tab)
     tabsize = 1;
     for (i=0; i<tab->naxis && i<999; i++)
       {
-      sprintf(key,"NAXIS%-3d", i+1);
+       // CFITSIO
+       if (tab->isTileCompressed)
+               sprintf(key,"ZNAXIS%-2d", (i+1));
+       else
+               sprintf(key,"NAXIS%-3d", (i+1));
       if (fitsread(tab->headbuf, key, &tab->naxisn[i], H_INT, T_LONG)
 		==RETURN_ERROR)
         error(EXIT_FAILURE, "*Error*: incoherent FITS header in ", filename);
@@ -144,6 +168,10 @@ void	readbasic_head(tabstruct *tab)
 /*random groups parameters (optional)*/
   tab->pcount = 0;
   fitsread(tab->headbuf, "PCOUNT  ", &tab->pcount, H_INT, T_LONG);
+
+  // CFITSIO TODO HACK
+  if (tab->isTileCompressed) tab->pcount = 0;
+
   tab->gcount = 1;
   fitsread(tab->headbuf, "GCOUNT  ", &tab->gcount, H_INT, T_LONG);
 
@@ -284,7 +312,9 @@ int	readbintabparam_head(tabstruct *tab)
         key->htype = H_STRING;
         break;
       default:
-        error(EXIT_FAILURE, "*Error*: Unknown TFORM in ", cat->filename);
+        // CFITSIO TODO dodgy
+    	key->ttype = T_FLOAT;
+        //error(EXIT_FAILURE, "*Error*: Unknown TFORM in ", cat->filename);
       }
 
 /*--handle the special case of multimensional arrays*/
