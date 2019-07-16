@@ -37,7 +37,7 @@
 #endif
 
 // CFITSIO
-#include "fitsio.h"
+#include FITSIO_H
 
 #define	MAXCHARS	256	/* max. number of characters */
 #define WARNING_NMAX	1000	/* max. number of recorded warnings */
