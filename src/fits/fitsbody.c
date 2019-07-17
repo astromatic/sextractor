@@ -297,7 +297,7 @@ void	free_body(tabstruct *tab)
   return;
   }
 
-
+#ifdef HAVE_CFITSIO
 void readTileCompressed(tabstruct *tab,  size_t	spoonful, double* bufdata0) {
 
 	int status, hdutype;
@@ -352,6 +352,7 @@ void readTileCompressed(tabstruct *tab,  size_t	spoonful, double* bufdata0) {
  	// update file 'pointer'
  	tab->currentElement += spoonful;
  }
+#endif
 
 /******* read_body ************************************************************
 PROTO	read_body(tabstruct *tab, PIXTYPE *ptr, long size)
@@ -409,10 +410,11 @@ void	read_body(tabstruct *tab, PIXTYPE *ptr, size_t size)
           spoonful = size;
         bufdata = (char *)bufdata0;
 
-        // CFITSIO
+#ifdef HAVE_CFITSIO
         if (tab->isTileCompressed)
         	readTileCompressed(tab, spoonful, bufdata0);
         else
+#endif
         QFREAD(bufdata, spoonful*tab->bytepix, cat->file, cat->filename);
 
         switch(tab->bitpix)
@@ -732,9 +734,11 @@ void	read_ibody(tabstruct *tab, FLAGTYPE *ptr, size_t size)
         bufdata = (char *)bufdata0;
 
         // CFITSIO
+#ifdef HAVE_CFITSIO
          if (tab->isTileCompressed)
          	readTileCompressed(tab, spoonful, bufdata0);
          else
+#endif
         QFREAD(bufdata, spoonful*tab->bytepix, cat->file, cat->filename);
 
         switch(tab->bitpix)
@@ -1033,6 +1037,7 @@ void	write_body(tabstruct *tab, PIXTYPE *ptr, size_t size)
           }
 
         // CFITSIO - if cfitsio output file has been set up, then proceed to write using cfitsio
+#ifdef HAVE_CFITSIO
         if (0 && tab->infptr != NULL) { // TODO
 
         	int status = 0; fits_write_img(tab->infptr, TFLOAT, tab->currentElement, spoonful, cbufdata0, &status);
@@ -1047,6 +1052,7 @@ void	write_body(tabstruct *tab, PIXTYPE *ptr, size_t size)
         }
         // otherwise, continue with usual AstrOmatic fits writing routine
         else
+#endif
         QFWRITE(cbufdata0, spoonful*tab->bytepix, cat->file, cat->filename);
         }
       break;

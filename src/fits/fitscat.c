@@ -166,6 +166,7 @@ int	close_cat(catstruct *cat)
   }
 
 
+#ifdef HAVE_CFITSIO
 int	close_cfitsio(catstruct *cat)
 {
 
@@ -184,6 +185,7 @@ int	close_cfitsio(catstruct *cat)
 	}
 	//printf("NO CFITSIO FILE TO CLOSE\n");
 }
+#endif
 
 /****** free_cat ***************************************************************
 PROTO	void free_cat(catstruct **cat, int ncat)
@@ -343,6 +345,7 @@ int	map_cat(catstruct *cat)
   tab->cat = cat;
   QFTELL(cat->file, tab->headpos, cat->filename);
 
+#ifdef HAVE_CFITSIO
    // CFITSIO
    fitsfile *infptr;
    int status, hdutype, hdunum;
@@ -352,6 +355,7 @@ int	map_cat(catstruct *cat)
      printf("ERROR could not open FITS file with cfitsio: %s\n", cat->filename);
    }
    hdunum = 1;
+#endif
 
   for (ntab=0; !get_head(tab); ntab++)
     {
@@ -360,7 +364,7 @@ int	map_cat(catstruct *cat)
     QFTELL(cat->file, tab->bodypos, cat->filename);
     tab->nseg = tab->seg = 1;
 
-    // CFITSIO
+#ifdef HAVE_CFITSIO
     tab->hdunum = hdunum;
     tab->infptr = infptr;
     status = 0; fits_movabs_hdu(tab->infptr, tab->hdunum, &hdutype, &status);
@@ -368,14 +372,15 @@ int	map_cat(catstruct *cat)
     //tab->tabsize = infptr->Fptr->rowlength;
 
     //printf("TABSIZE = %ld\n", tab->tabsize);
-
+#endif
     if (tab->tabsize) {
-
+#ifdef HAVE_CFITSIO
       // IMPORTANT: moving to start of next header using fseek and cfitsio position rather than table size, as done previously
       fseek(cat->file, infptr->Fptr->headstart[hdunum], SEEK_SET);
-
+#else
       // this is how it was done previously
-      //QFSEEK(cat->file, PADTOTAL(tab->tabsize), SEEK_CUR, cat->filename);
+      QFSEEK(cat->file, PADTOTAL(tab->tabsize), SEEK_CUR, cat->filename);
+#endif
     }
     if (prevtab)
       {
@@ -389,8 +394,9 @@ int	map_cat(catstruct *cat)
     tab->cat = cat;
     QFTELL(cat->file, tab->headpos, cat->filename);
 
-    // CFITSIO
+#ifdef HAVE_CFITSIO
     hdunum++;
+#endif
     }
 
   cat->ntab = ntab;

@@ -36,8 +36,9 @@
 #include <sys/types.h>
 #endif
 
-// CFITSIO
+#ifdef HAVE_CFITSIO
 #include FITSIO_H
+#endif
 
 #define	MAXCHARS	256	/* max. number of characters */
 #define WARNING_NMAX	1000	/* max. number of recorded warnings */
@@ -196,8 +197,9 @@ typedef struct structtab
   char		swapname[MAXCHARS];	/* name of the swapfile */
   unsigned int	bodysum;		/* Checksum of the FITS body */
 
-  // CFITSIO
+#ifdef HAVE_CFITSIO
   fitsfile *infptr;                     /* a cfitsio pointer to the file */
+#endif
   int hdunum;                           /* FITS HDU number for this 'table' */
   int isTileCompressed;                 /* is this a tile compressed image?  */
   long currentElement;                  /* tracks the current image pixel */
