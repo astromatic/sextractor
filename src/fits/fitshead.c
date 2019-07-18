@@ -121,7 +121,9 @@ void	readbasic_head(tabstruct *tab)
   if (fitsread(tab->headbuf, "ZIMAGE  ", str, H_STRING, T_STRING) == RETURN_OK) {
 
           tab->isTileCompressed = 1;
-
+#ifndef HAVE_CFITSIO
+          error(EXIT_FAILURE, "*Error*: No CFITSIO support but detected tile compression in ", filename);
+#endif
           strcpy(NAXIS_KEYWORD, "ZNAXIS  ");
           strcpy(BITPIX_KEYWORD, "ZBITPIX ");
   }
