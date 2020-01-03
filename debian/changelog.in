@@ -1,4 +1,4 @@
-@PACKAGE_TARNAME@ (@PACKAGE_VERSION@-1) UNRELEASED; urgency=low
+@PACKAGE_TARNAME@ (@PACKAGE_VERSION@-@PACKAGE_RELEASE@) UNRELEASED; urgency=low
 
   * Automatic Debian release.
 

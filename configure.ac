@@ -7,7 +7,7 @@
 #
 #	This file part of:	SExtractor
 #
-#	Copyright:		(C) 2002-2018 IAP/CNRS/UPMC
+#	Copyright:		(C) 2002-2018 IAP/CNRS/SorbonneU
 #
 #	License:		GNU General Public License
 #
@@ -22,7 +22,7 @@
 #	You should have received a copy of the GNU General Public License
 #	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 #
-#	Last modified:		08/02/2018
+#	Last modified:		24/08/2018
 #
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -30,8 +30,8 @@
 define([AC_CACHE_LOAD],)
 define([AC_CACHE_SAVE],)
 
-# This is your standard Bertin source code...
-AC_INIT(SExtractor, 2.25.0,[astromatic@astromatic.net],
+# This is your standard AstrOmatic source code...
+AC_INIT(SExtractor, 2.25.1,[astromatic@astromatic.net],
 	sextractor, [http://astromatic.net/software/sextractor])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_AUX_DIR(autoconf)
@@ -50,14 +50,26 @@ AC_SUBST(DATE3, "$date3")
 
 # Include macros
 sinclude(acx_atlas.m4)
+sinclude(acx_openblas.m4)
 sinclude(acx_fftw.m4)
 sinclude(acx_mkl.m4)
 sinclude(acx_prog_cc_optim.m4)
 sinclude(acx_pthread.m4)
 sinclude(acx_urbi_resolve_dir.m4)
 
+# Provide a special option for setting the package release number
+AC_ARG_WITH(release,
+	[AS_HELP_STRING([--with-release=<release number>],
+	[set the package release number (default = 1)])],
+	[],
+	[with_release="no"])
+if test "$with_release" = "no"; then
+  with_release=1
+fi
+AC_SUBST(PACKAGE_RELEASE, "$with_release")
+
 # Display pakage and version number
-AC_MSG_RESULT([******** Configuring:  $PACKAGE_NAME $VERSION ($date) ********])
+AC_MSG_RESULT([******** Configuring:  $PACKAGE_NAME $PACKAGE_VERSION - $PACKAGE_RELEASE ($date) ********])
 
 # Provide special option for choosing automatically the compilation flags.
 AC_MSG_CHECKING([if compilation flags are set automatically])
@@ -91,7 +103,7 @@ AC_ARG_ENABLE(mkl,
 AC_LANG(C)
 
 AC_SEARCH_LIBS([strerror],[cposix])
-if test x$enable_auto_flags = xyes; then
+if test "$enable_auto_flags" = "yes"; then
   CFLAGS=""
   LDFLAGS=""
   ACX_PROG_CC_OPTIM
@@ -222,7 +234,6 @@ AC_ARG_ENABLE(best-link,
 the executable as portable as possible (default = no)])],
 	AC_MSG_RESULT([yes]),
 	AC_MSG_RESULT([no]))
-
 
 ################# Actions to complete in case of multhreading ################
 AC_DEFINE_UNQUOTED(THREADS_NMAX, $n_pthreads,[Maximum number of POSIX threads])

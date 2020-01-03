@@ -7,7 +7,7 @@
 #
 #	This file part of:	SExtractor
 #
-#	Copyright:		(C) 2002-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
+#	Copyright:		(C) 2002-2018 IAP/CNRS/SorbonneU
 #
 #	License:		GNU General Public License
 #
@@ -22,21 +22,22 @@
 #	You should have received a copy of the GNU General Public License
 #	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 #
-#	Last modified:		19/06/2017
+#	Last modified:		24/08/2018
 #
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %define name @PACKAGE_TARNAME@
 %define version @PACKAGE_VERSION@
-%define release 1%{?dist}
+%define release @PACKAGE_RELEASE@%{?dist}
+%define debug_package %{nil}
 %undefine _missing_build_ids_terminate_build
 
 Summary: Extract catalogs of sources from astronomical images
 Name: %{name}
 Version: %{version}
 Release: %{release}
-Source0: ftp://ftp.iap.fr/pub/from_users/bertin/sextractor/%{name}-%{version}.tar.gz
-URL: http://astromatic.net/software/%{name}
+Source0: http://astromatic.net/download/%{name}/%{name}-%{version}.tar.gz
+URL: http://astromatic.net/software/%{name}/
 License: GPL v3+
 Group: Sciences/Astronomy
 BuildRoot: %{_tmppath}/%{name}-buildroot
@@ -52,11 +53,11 @@ Extract catalogs of sources from astronomical images
 
 %build
 if test "$USE_BEST"; then
-%configure --enable-mkl --enable-auto-flags --enable-best-link
+%configure --enable-mkl --enable-auto-flags --enable-best-link --with-release=@PACKAGE_RELEASE@
 elif test "$USE_ICC"; then
-%configure --enable-icc
+%configure --enable-icc --with-release=@PACKAGE_RELEASE@
 else
-%configure
+%configure --with-release=@PACKAGE_RELEASE@
 fi
 make %{?_smp_mflags}
 
