@@ -7,7 +7,7 @@
 #
 #	This file part of:	SExtractor
 #
-#	Copyright:		(C) 2002-2018 IAP/CNRS/SorbonneU
+#	Copyright:		(C) 2002-2020 IAP/CNRS/SorbonneU
 #
 #	License:		GNU General Public License
 #
@@ -22,7 +22,7 @@
 #	You should have received a copy of the GNU General Public License
 #	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 #
-#	Last modified:		24/08/2018
+#	Last modified:		02/01/2020
 #
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -55,7 +55,7 @@ Extract catalogs of sources from astronomical images
 if test "$USE_BEST"; then
 %configure --enable-mkl --enable-auto-flags --enable-best-link --with-release=@PACKAGE_RELEASE@
 elif test "$USE_ICC"; then
-%configure --enable-icc --with-release=@PACKAGE_RELEASE@
+%configure --enable-mkl --with-release=@PACKAGE_RELEASE@
 else
 %configure --with-release=@PACKAGE_RELEASE@
 fi
