@@ -55,7 +55,7 @@ Extract catalogs of sources from astronomical images
 if test "$USE_BEST"; then
 %configure --enable-mkl --enable-auto-flags --enable-best-link --with-release=@PACKAGE_RELEASE@
 elif test "$USE_ICC"; then
-%configure --enable-mkl --with-release=@PACKAGE_RELEASE@
+%configure --enable-icc --with-release=@PACKAGE_RELEASE@
 else
 %configure --with-release=@PACKAGE_RELEASE@
 fi
