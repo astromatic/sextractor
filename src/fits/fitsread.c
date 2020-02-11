@@ -7,7 +7,7 @@
 *
 *	This file part of:	AstrOmatic FITS/LDAC library
 *
-*	Copyright:		(C) 1995-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1995-2020 IAP/CNRS/SorbonneU
 *
 *	License:		GNU General Public License
 *
@@ -23,7 +23,7 @@
 *	along with AstrOmatic software.
 *	If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		09/10/2010
+*	Last modified:		11/02/2020
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -162,18 +162,21 @@ INPUT	Table which will be accessed from disk (provided by init_readobj()),
 	pointer to the temporary buffer.
 OUTPUT	The number of table lines that remain to be read.
 NOTES	-.
-AUTHOR	E. Bertin (IAP & Leiden observatory)
-VERSION	26/09/2004
+AUTHOR	E. Bertin (IAP)
+VERSION	11/02/2020
  ***/
 int	read_obj(tabstruct *keytab, tabstruct *tab, char *buf)
 
   {
-   keystruct	*key;
-   char		*pin, *pout;
-   int		b,k;
-   int		esize;
+   keystruct		*key;
+   char			*pin, *pout;
+   unsigned short	ashort = 1;
+   int			b, k, esize, bswapflag;
+
 
   QFREAD(buf,keytab->naxisn[0],keytab->cat->file,keytab->cat->filename);
+
+  bswapflag = *((char *)&ashort);	// Byte-swapping flag
   key = tab->key;
   for (k=tab->nkey; k--; key = key->nextkey)
     if (key->pos>=0)
@@ -202,22 +205,23 @@ INPUT	Table which will be accessed from disk (provided by init_readobj()),
 	position number in table.
 OUTPUT	RETURN_OK if the object has been accessed, RETURN_ERROR otherwise.
 NOTES	-.
-AUTHOR	E. Bertin (IAP & Leiden observatory)
-VERSION	26/09/2004
+AUTHOR	E. Bertin (IAP)
+VERSION	11/02/2020
  ***/
 int	read_obj_at(tabstruct *keytab, tabstruct *tab, char *buf, long pos)
 
   {
-   keystruct	*key;
-   char		*pin, *pout;
-   size_t	n;
-   int		b,k;
-   int		esize;
+   keystruct		*key;
+   char			*pin, *pout;
+   size_t		n;
+   unsigned short	ashort = 1;
+   int			b, k, esize, bswapflag;
 
   if ((n=keytab->naxisn[0]*pos) >= keytab->tabsize)
     return RETURN_ERROR;
   QFSEEK(keytab->cat->file,keytab->bodypos+n, SEEK_SET, keytab->cat->filename);
   QFREAD(buf,keytab->naxisn[0],keytab->cat->file,keytab->cat->filename);
+  bswapflag = *((char *)&ashort);	// Byte-swapping flag
   key = tab->key;
   for (k=tab->nkey; k--; key = key->nextkey)
     if (key->pos>=0)

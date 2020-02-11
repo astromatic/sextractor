@@ -7,7 +7,7 @@
 *
 *	This file part of:	AstrOmatic FITS/LDAC library
 *
-*	Copyright:		(C) 1995-2013 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1995-2020 IAP/CNRS/SorbonneU
 *
 *	License:		GNU General Public License
 *
@@ -23,7 +23,7 @@
 *	along with AstrOmatic software.
 *	If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		15/02/2013
+*	Last modified:		11/02/2020
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -89,8 +89,6 @@ typedef	int		LONG;			/* for DEC-Alpha... */
 char		gstr[MAXCHAR];
 
 /*----------------------------- External constants --------------------------*/
-
-extern int	bswapflag;		/* != 0 if bytes are swapped/IEEE */
 
 /*------------------------------- Other Macros -----------------------------*/
 

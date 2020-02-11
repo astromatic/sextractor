@@ -7,7 +7,7 @@
 *
 *	This file part of:	AstrOmatic FITS/LDAC library
 *
-*	Copyright:		(C) 1995-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1995-2020 IAP/CNRS/SorbonneU
 *
 *	License:		GNU General Public License
 *
@@ -23,7 +23,7 @@
 *	along with AstrOmatic software.
 *	If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		13/06/2012
+*	Last modified:		11/02/2020
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -208,18 +208,19 @@ INPUT	pointer to the table,
 OUTPUT	A pointer to the relevant key, or NULL if the desired key is not
 	found in the table.
 NOTES	If key->ptr is not NULL, the function doesn't do anything.
-AUTHOR	E. Bertin (IAP & Leiden observatory)
+AUTHOR	E. Bertin (IAP)
         E.R. Deul (Sterrewacht Leiden) (Added open_cat error checking)
-VERSION	18/02/2000
+VERSION	11/02/2020
  ***/
 keystruct *read_key(tabstruct *tab, char *keyname)
 
   {
-   catstruct	*cat;
-   keystruct	*key;
-   char		*buf, *ptr, *fptr,*fptr0;
-   int		i,j, larray,narray,size;
-   int		esize;
+   catstruct		*cat;
+   keystruct		*key;
+   char			*buf, *ptr, *fptr,*fptr0;
+   unsigned short	ashort = 1;
+   int			i,j, larray,narray,size,
+			esize, bswapflag;
 
   if (!(key = name_to_key(tab, keyname)))
     return NULL;
@@ -256,6 +257,7 @@ keystruct *read_key(tabstruct *tab, char *keyname)
 /*allocate memory for the array*/
   QMALLOC(ptr, char, size*narray);
   key->ptr = ptr;
+  bswapflag = *((char *)&ashort);	// Byte-swapping flag
 
 /*read line by line*/
   for (i=narray; i--;)
@@ -289,19 +291,20 @@ NOTES	The array of pointers pointed by keys is filled with pointers
 	A NULL keys pointer can be given (no info returned of course).
 	A NULL keynames pointer means read ALL keys belonging to the table.
 	A NULL mask pointer means NO selection for reading.
-AUTHOR	E. Bertin (IAP & Leiden observatory)
-VERSION	18/02/2000
+AUTHOR	E. Bertin (IAP)
+VERSION	11/02/2020
  ***/
 void	read_keys(tabstruct *tab, char **keynames, keystruct **keys, int nkeys,
 		BYTE *mask)
 
   {
-   catstruct	*cat;
-   keystruct	*key, **ckeys;
-   BYTE		*mask2;
-   char		*buf, *ptr, *fptr;
-   int		i,j,k,n, larray,narray, nb, kflag = 0, size;
-   int		esize;
+   catstruct		*cat;
+   keystruct		*key, **ckeys;
+   BYTE			*mask2;
+   char			*buf, *ptr, *fptr;
+   unsigned short	ashort = 1;
+   int			i,j,k,n, larray,narray, nb, kflag = 0, size,
+			esize, bswapflag;
 
 /*!! It is not necessarily the original table */
   tab = tab->key->tab;
@@ -378,6 +381,7 @@ void	read_keys(tabstruct *tab, char **keynames, keystruct **keys, int nkeys,
   QFSEEK(cat->file, tab->bodypos , SEEK_SET, cat->filename);
 
 /*read line by line*/
+  bswapflag = *((char *)&ashort);	// Byte-swapping flag
   n = 0;
   mask2 = mask;
   for (i=narray; i--;)
@@ -587,20 +591,23 @@ NOTES	This is approximately the same code as for read_keys.
 	A NULL keys pointer can be given (no info returned of course).
 	A NULL keynames pointer means read ALL keys belonging to the table.
 	A NULL mask pointer means NO selection for reading.
-AUTHOR	E. Bertin (IAP & Leiden observatory)
-VERSION	13/06/2012
+AUTHOR	E. Bertin (IAP)
+VERSION	11/02/2020
  ***/
 void	show_keys(tabstruct *tab, char **keynames, keystruct **keys, int nkeys,
 		BYTE *mask, FILE *stream,
 		int strflag, int banflag, int leadflag, output_type o_type)
 
   {
-   catstruct	*cat;
-   keystruct	*key, **ckeys;
-   BYTE		*mask2;
-   char		*buf, *rfield, *ptr;
-   int		i,j,k,n,c, larray,narray, nb, kflag, maxnbytes, nelem,
-		esize, *key_col;
+   catstruct		*cat;
+   keystruct		*key, **ckeys;
+   BYTE			*mask2;
+   char			*buf, *rfield, *ptr;
+   unsigned short	ashort = 1;
+   int			*key_col,
+			i,j,k,n,c, larray,narray, nb, kflag, maxnbytes, nelem,
+			esize, bswapflag;
+
    typedef struct structreq_keyname
       {
       char    oldname[80];         /* Name of the original pipeline key */
@@ -793,6 +800,7 @@ void	show_keys(tabstruct *tab, char **keynames, keystruct **keys, int nkeys,
   QFSEEK(cat->file, tab->bodypos , SEEK_SET, cat->filename);
 
 /*read line by line*/
+  bswapflag = *((char *)&ashort);	// Byte-swapping flag
   n = 0;
   mask2 = mask;
   for (i=narray; i--;)

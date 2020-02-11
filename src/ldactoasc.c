@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 2007-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 2007-2020 IAP/CNRS/SorbonneU
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/10/2010
+*	Last modified:		11/02/2020
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -47,7 +47,6 @@ int	main(int argc, char *argv[])
   {
    catstruct		*cat;
    tabstruct		*tab;
-   unsigned short	ashort=1;
    char			catname[MAXCHAR];
    int			a, t, opt,opt2, flag;
 
@@ -58,9 +57,6 @@ int	main(int argc, char *argv[])
     fprintf(OUTPUT, "\nFor information, please contact: %s\n", COPYRIGHT);
     error(EXIT_SUCCESS, "SYNTAX: ", SYNTAX);
     }
-
-/* Test if byteswapping will be needed */
-  bswapflag = *((char *)&ashort);
 
 /* Default parameters */
   for (a=1; a<argc; a++)

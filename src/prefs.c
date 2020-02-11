@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2013 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2020 IAP/CNRS/SorbonneU
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		18/06/2012
+*	Last modified:		11/02/2020
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -404,13 +404,9 @@ void	preprefs()
 
   {
    char			str[80];
-   unsigned short	ashort=1;
 #ifdef USE_THREADS
    int			nproc;
 #endif
-
-/* Test if byteswapping will be needed */
-  bswapflag = *((char *)&ashort);
 
 /* Multithreading */
 #ifdef USE_THREADS
