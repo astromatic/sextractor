@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/02/2020
+*	Last modified:		19/02/2020
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -504,6 +504,8 @@ void	useprefs()
 
 /*-------------------------------- Images ----------------------------------*/
   prefs.dimage_flag = (prefs.nimage_name>1);
+  if(!prefs.dimage_flag)
+    strcpy(prefs.image_name[1], prefs.image_name[0]);
 
 /*--------------------------------- ASSOC ----------------------------------*/
   prefs.assoc_flag = FLAG(obj2.assoc) || FLAG(obj2.assoc_number);
@@ -712,13 +714,13 @@ void	useprefs()
 /*-- If detection-only interpolation is needed with 1 Weight image... */
 /*-- ...pretend we're using 2, with only one being interpolated */
     if (prefs.nweight_type==1
-	&& prefs.nwimage_name && prefs.wimage_name[1]==prefs.wimage_name[0]
+	&& prefs.nwimage_name && prefs.nwimage_name < 2
 	&& prefs.interp_type[0]==INTERP_VARONLY )
       {
-      prefs.nweight_type = 2;
-      prefs.weight_type[1] = prefs.weight_type[0];
+      prefs.nwimage_name = prefs.nweight_type = 2;
       prefs.weight_type[0] = WEIGHT_FROMINTERP;
-      prefs.wimage_name[1] = prefs.wimage_name[0];
+      QMEMCPY(prefs.wimage_name[0], prefs.wimage_name[1], char,
+		strlen(prefs.wimage_name[0])+1);
       prefs.interp_type[1] = INTERP_NONE;
       prefs.dweight_flag = 1;
       if (prefs.nweight_thresh<2)
