@@ -7,7 +7,7 @@
 *
 *	This file part of:	AstrOmatic FITS/LDAC library
 *
-*	Copyright:		(C) 1995-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1995-2020 IAP/CNRS/SorbonneU
 *
 *	License:		GNU General Public License
 *
@@ -23,7 +23,7 @@
 *	along with AstrOmatic software.
 *	If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		09/10/2010
+*	Last modified:		11/02/2020
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -97,14 +97,15 @@ OUTPUT	Checksum.
 NOTES	Straightforward copy of  Seaman & Pence 1995
 	(ftp://iraf.noao.edu/misc/checksum/).
 AUTHOR	E. Bertin (IAP)
-VERSION	08/05/2001
+VERSION	11/02/2020
  ***/
 unsigned int	decode_checksum(char *str)
 
   {
    char			cbuf[16];
    unsigned short	*sbuf,
-			los,his;
+			los,his,
+			ashort = 1;
    unsigned int		hi,lo, hicarry,locarry;
    int			i;
 
@@ -113,7 +114,7 @@ unsigned int	decode_checksum(char *str)
     cbuf[i] = str[(i+1)%16] - 0x30;
   sbuf = (unsigned short *)cbuf;
   hi = lo = 0;
-  if (bswapflag)
+  if (*((char *)&ashort))	// Byte-swapping required
     for (i=4; i--;)
       {
       his = *(sbuf++);
@@ -153,19 +154,20 @@ NOTES	From Seaman & Pence 1995 (ftp://iraf.noao.edu/misc/checksum/). But
 	depends on the endianity of the machine. The routine below adds
 	support for ix386-like processors (non-IEEE).
 AUTHOR	E. Bertin (IAP)
-VERSION	08/05/2001
+VERSION	11/02/2020
  ***/
 unsigned int	compute_blocksum(char *buf, unsigned int sum)
   {
    unsigned short	*sbuf,
-			his,los;
+			his,los,
+			ashort = 1;
    unsigned int		hi,lo, hicarry,locarry;
    int			i;
 
   sbuf = (unsigned short *)buf;
   hi = (sum >> 16);
   lo = (sum << 16) >> 16;
-  if (bswapflag)
+  if (*((char *)&ashort))	// Byte-swapping required
      for (i=FBSIZE/4; i--;)
       {
       his = *(sbuf++);
