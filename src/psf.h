@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1998-2014 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1998-2020 IAP/CNRS/SorbonneU
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		15/12/2015
+*	Last modified:		15/07/2020
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -104,9 +104,9 @@ typedef struct
   }	psfitstruct;
 
 /*----------------------------- Global variables ----------------------------*/
-psfstruct	*psf,*thedpsf,*thepsf;
-psfitstruct	*thepsfit,*thedpsfit;
-PIXTYPE		*checkmask;
+extern psfstruct	*psf,*thedpsf,*thepsf;
+extern psfitstruct	*thepsfit,*thedpsfit;
+extern PIXTYPE		*checkmask;
 
 /*-------------------------------- functions --------------------------------*/
 extern void	compute_pos(int *pnpsf,int *pconvflag,int *pnpsfflag,

@@ -23,7 +23,7 @@
 *	along with AstrOmatic software.
 *	If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/02/2020
+*	Last modified:		15/07/2020
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -86,7 +86,7 @@ typedef	unsigned char	BYTE;			/* a byte */
 typedef	int		LONG;			/* for DEC-Alpha... */
 	
 /*----------------------------- Internal constants --------------------------*/
-char		gstr[MAXCHAR];
+extern char		fits_str[MAXCHAR];
 
 /*----------------------------- External constants --------------------------*/
 
@@ -124,30 +124,30 @@ char		gstr[MAXCHAR];
 #define	QCALLOC(ptr, typ, nel) \
 		{if (!(ptr = (typ *)calloc((size_t)(nel),sizeof(typ)))) \
 		   { \
-		   sprintf(gstr, #ptr " (" #nel "=%lld elements) " \
+		   sprintf(fits_str, #ptr " (" #nel "=%zd elements) " \
 			"at line %d in module " __FILE__ " !", \
 			(size_t)(nel)*sizeof(typ), __LINE__); \
-		   error(EXIT_FAILURE, "Could not allocate memory for ", gstr);\
+		   error(EXIT_FAILURE, "Could not allocate memory for ", fits_str);\
                    }; \
                  }
 
 #define	QMALLOC(ptr, typ, nel) \
 		{if (!(ptr = (typ *)malloc((size_t)(nel)*sizeof(typ)))) \
 		   { \
-		   sprintf(gstr, #ptr " (" #nel "=%lld elements) " \
+		   sprintf(fits_str, #ptr " (" #nel "=%zd elements) " \
 			"at line %d in module " __FILE__ " !", \
 			(size_t)(nel)*sizeof(typ), __LINE__); \
-		   error(EXIT_FAILURE, "Could not allocate memory for ", gstr);\
+		   error(EXIT_FAILURE, "Could not allocate memory for ", fits_str);\
                    }; \
                  }
 
 #define	QREALLOC(ptr, typ, nel) \
 		{if (!(ptr = (typ *)realloc(ptr, (size_t)(nel)*sizeof(typ))))\
 		   { \
-		   sprintf(gstr, #ptr " (" #nel "=%lld elements) " \
+		   sprintf(fits_str, #ptr " (" #nel "=%zd elements) " \
 			"at line %d in module " __FILE__ " !", \
 			(size_t)(nel)*sizeof(typ), __LINE__); \
-		   error(EXIT_FAILURE, "Could not allocate memory for ", gstr);\
+		   error(EXIT_FAILURE, "Could not allocate memory for ", fits_str);\
                    }; \
                  }
 
@@ -155,10 +155,10 @@ char		gstr[MAXCHAR];
 		{if (ptrin) \
                   {if (!(ptrout = (typ *)malloc((size_t)(nel)*sizeof(typ)))) \
 		     { \
-		     sprintf(gstr, #ptrout " (" #nel "=%lld elements) " \
+		     sprintf(fits_str, #ptrout " (" #nel "=%zd elements) " \
 			"at line %d in module " __FILE__ " !", \
 			(size_t)(nel)*sizeof(typ), __LINE__); \
-		     error(EXIT_FAILURE,"Could not allocate memory for ",gstr);\
+		     error(EXIT_FAILURE,"Could not allocate memory for ",fits_str);\
                      }; \
                    memcpy(ptrout, ptrin, (size_t)(nel)*sizeof(typ)); \
                    }; \

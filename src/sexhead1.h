@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1996-2011 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1996-2020 IAP/CNRS/SorbonneU
 *
 *	License:		GNU General Public License
 *
@@ -22,12 +22,12 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		22/08/2011
+*	Last modified:		15/07/2020
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-int	idummy;
-double	ddummy;
+extern int	idummy;
+extern double	ddummy;
 
 keystruct	headkey1[] = {
   {"EPOCH   ", "",

@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2018 IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2020 IAP/CNRS/SorbonneU
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		09/01/2018
+*	Last modified:		15/07/2020
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -254,7 +254,7 @@ typedef struct
   int		nthreads;			/* Number of active threads */
   }	prefstruct;
 
-  prefstruct		prefs;
+extern prefstruct	prefs;
 
 /*-------------------------------- protos -----------------------------------*/
 extern int	cistrcmp(char *cs, char *ct, int mode);

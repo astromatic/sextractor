@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2015 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2020 IAP/CNRS/SorbonneU
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		12/01/2015
+*	Last modified:		15/07/2020
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -39,7 +39,7 @@
 #endif
 
 /*-------------------------------- initialization ---------------------------*/
- int	idummy;
+ extern int	idummy;
 
  pkeystruct key[] =
  {

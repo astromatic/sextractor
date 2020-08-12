@@ -7,7 +7,7 @@
 *
 *	This file part of:	AstrOmatic FITS/LDAC library
 *
-*	Copyright:		(C) 1995-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1995-2020 IAP/CNRS/SorbonneU
 *
 *	License:		GNU General Public License
 *
@@ -23,7 +23,7 @@
 *	along with AstrOmatic software.
 *	If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		29/08/2012
+*	Last modified:		15/07/2020
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -41,6 +41,8 @@
 
 #include	"fitscat_defs.h"
 #include	"fitscat.h"
+
+char		fits_str[MAXCHAR];
 
 /****** about_cat **************************************************************
 PROTO	int about_cat(catstruct *cat, FILE *stream)

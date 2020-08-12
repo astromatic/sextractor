@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2020 IAP/CNRS/SorbonneU
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/10/2010
+*	Last modified:		15/07/2020
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -37,6 +37,13 @@
 #include	"globals.h"
 #include	"prefs.h"
 #include	"plist.h"
+
+int	plistexist_value, plistexist_dvalue, plistexist_cdvalue,
+	plistexist_flag, plistexist_wflag, plistexist_dthresh, plistexist_var,
+	plistexist_dgeo,
+	plistoff_value, plistoff_dvalue, plistoff_cdvalue,
+	plistoff_flag[MAXFLAG], plistoff_wflag, plistoff_dthresh, plistoff_var,
+	plistoff_dgeox, plistoff_dgeoy, plistsize;
 
 
 /******************************** createblank *******************************
