@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2015 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2020 IAP/CNRS/SorbonneU
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		21/01/2015
+*	Last modified:		15/07/2020
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -56,14 +56,20 @@
 #include	"xml.h"
 
 static int		selectext(char *filename);
+
 time_t			thetimet, thetimet2;
 #ifdef USE_MODEL
 extern profitstruct	*theprofit,*thedprofit, *thepprofit,*theqprofit;
 #else
-profitstruct	*theprofit,*thedprofit, *thepprofit,*theqprofit;
+profitstruct		*theprofit,*thedprofit, *thepprofit,*theqprofit;
 #endif
 extern char		profname[][32];
-double			dtime;
+extern float		ctg[37], stg[37];
+
+sexcatstruct		thecat;
+picstruct		thefield1,thefield2, thewfield1,thewfield2;
+char			gstr[MAXCHAR];
+
 
 /******************************** makeit *************************************/
 /*
@@ -80,6 +86,7 @@ void	makeit()
    patternstruct	*pattern;
    static time_t        thetime1, thetime2;
    struct tm		*tm;
+   double		dtime;
    unsigned int		modeltype;
    int			nflag[MAXFLAG], nparam2[2],
 			i, nok, ntab, next, ntabmax, forcextflag,

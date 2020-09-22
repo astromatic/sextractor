@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		19/02/2020
+*	Last modified:		15/07/2020
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -56,6 +56,9 @@
 #include	"preflist.h"
 #include	"fits/fitscat.h"
 
+int		findkeys(char *str, char key[][32], int mode);
+
+prefstruct	prefs;
 
 /********************************* dumpprefs ********************************/
 /*

@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2020 IAP/CNRS/SorbonneU
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		12/09/2013
+*	Last modified:		15/07/2020
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -30,13 +30,11 @@
 
 /*----------------------- miscellaneous variables ---------------------------*/
 
-sexcatstruct		thecat;
-picstruct		thefield1,thefield2, thewfield1,thewfield2;
-objstruct		flagobj;
-obj2struct		flagobj2;
-extern obj2struct	outobj2;
-float			ctg[37], stg[37];
-char			gstr[MAXCHAR];
+extern sexcatstruct	thecat;
+extern picstruct	thefield1,thefield2, thewfield1,thewfield2;
+extern objstruct	flagobj, outobj;
+extern obj2struct	flagobj2, outobj2;
+extern char		gstr[MAXCHAR];
 
 /*------------------------------- functions ---------------------------------*/
 extern void	alloccatparams(void),
