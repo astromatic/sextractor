@@ -365,7 +365,7 @@ void	end_writeobj(catstruct *cat, tabstruct *tab, char *buf)
 
   {
    keystruct	*key;
-   OFF_T	pos;
+   OFF_T2	pos;
    int		k;
 
 /* Make the table parameters reflect its content*/

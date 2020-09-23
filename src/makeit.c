@@ -282,6 +282,7 @@ void	makeit()
       if ((imatab->naxis < 2)
 	|| !strncmp(imatab->xtension, "BINTABLE", 8)
 	|| !strncmp(imatab->xtension, "ASCTABLE", 8))
+    	  if (!imatab->isTileCompressed)
         continue;
       next++;
       }
@@ -321,6 +322,7 @@ void	makeit()
     if (!forcextflag && ((imatab->naxis < 2)
 	|| !strncmp(imatab->xtension, "BINTABLE", 8)
 	|| !strncmp(imatab->xtension, "ASCTABLE", 8)))
+if (!imatab->isTileCompressed)
       continue;
 
     nok++;
@@ -720,6 +722,10 @@ static int	selectext(char *filename)
     if ((bracr=strrchr(bracl+1, ']')))
       *bracr = '\0';
     next = strtol(bracl+1, NULL, 0);
+
+    // VERY BAD HACK to check if this is tile-compressed, if so, add +1 to extension number requested
+    if (strstr(filename, ".fits.fz") != NULL) next = next + 1;
+
     return next;
     }
 

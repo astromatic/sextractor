@@ -53,6 +53,7 @@ sinclude(acx_atlas.m4)
 sinclude(acx_openblas.m4)
 sinclude(acx_fftw.m4)
 sinclude(acx_mkl.m4)
+sinclude(acx_cfitsio.m4)
 sinclude(acx_prog_cc_optim.m4)
 sinclude(acx_pthread.m4)
 sinclude(acx_urbi_resolve_dir.m4)
@@ -180,6 +181,20 @@ AC_ARG_WITH(openblas-incdir,
 	[AS_HELP_STRING([--with-openblas-incdir=<OpenBLAS header dir>],
 	[Provide an alternative path to the OpenBLAS header directory])])
 
+# Provide special option for CFITSIO
+AC_MSG_CHECKING([whether CFITSIO support is enabled])
+AC_ARG_ENABLE(cfitsio,
+	[AS_HELP_STRING([--enable-cfitsio],
+	[Enable support for compressed FITS files through the CFITSIO library (default = no)])],
+	AC_MSG_RESULT([yes]),
+	AC_MSG_RESULT([no]))
+AC_ARG_WITH(cfitsio-libdir,
+	[AS_HELP_STRING([--with-cfitsio-libdir=<CFITSIO library path>],
+	[Provide an alternative path to the CFITSIO library])])
+AC_ARG_WITH(cfitsio-incdir,
+	[AS_HELP_STRING([--with-cfitsio-incdir=<CFITSIO header dir>],
+	[Provide an alternative path to the CFITSIO header directory])])
+
 # Provide a special option for the default XSLT URL
 with_xsl_url="file://"$(URBI_RESOLVE_DIR([$datadir]))"/$PACKAGE_TARNAME/$PACKAGE_TARNAME.xsl"
 AC_ARG_WITH(xsl_url,
@@ -304,6 +319,20 @@ if test "$enable_model_fitting" != "no"; then
     fi
   fi
 fi
+
+AS_IF([test "x$enable_cfitsio" = "xyes"], [
+	ACX_CFITSIO($with_cfitsio_libdir, $with_cfitsio_incdir,, no,
+    [
+      AM_CFLAGS="$AM_CFLAGS $CFITSIO_CFLAGS "
+      AM_LDFLAGS="$AM_LDFLAGS $CFITSIO_LDFLAGS "
+      LIBS="$CFITSIO_LIBS $LIBS"
+      if test "$CFITSIO_WARN" != ""; then
+        AC_MSG_WARN([$CFITSIO_WARN])
+      fi
+    ],
+    AC_MSG_ERROR([$CFITSIO_ERROR Exiting.])
+    )
+])
 
 AM_CONDITIONAL(USE_MODEL, [test "$enable_model_fitting" != "no"])
 

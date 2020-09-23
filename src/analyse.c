@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2016 IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2016 Emmanuel Bertin -- IAP/CNRS/UPMC
 *
 *	License:		GNU General Public License
 *
@@ -280,8 +280,7 @@ void  examineiso(picstruct *field, picstruct *dfield, objstruct *obj,
     emy2 /= flux2;	/* variance of ym */
     emxy /= flux2;	/* covariance */
 
-/*-- Handle fully correlated profile
-s (which cause a singularity...) */
+/*-- Handle fully correlated profiles (which cause a singularity...) */
     esum *= 0.08333/flux2;
     if (obj->singuflag && (emx2*emy2-emxy*emxy) < esum*esum)
       {
@@ -718,10 +717,10 @@ void	endobject(picstruct *field, picstruct *dfield, picstruct *wfield,
         dgeo_copy(dgeofield, outobj2.vignet_dgeox , outobj2.vignet_dgeoy,
 		prefs.vignet_dgeoxsize[0],prefs.vignet_dgeoxsize[1], ix,iy);
       else {
-        if (FLAG(obj2.vignet_dgeox)) 
+        if (FLAG(obj2.vignet_dgeox))
           dgeo_copy(dgeofield, outobj2.vignet_dgeox, NULL,
 		prefs.vignet_dgeoxsize[0],prefs.vignet_dgeoxsize[1], ix,iy);
-        if (FLAG(obj2.vignet_dgeoy)) 
+        if (FLAG(obj2.vignet_dgeoy))
           dgeo_copy(dgeofield, NULL, outobj2.vignet_dgeoy,
 		prefs.vignet_dgeoysize[0],prefs.vignet_dgeoysize[1], ix,iy);
       }
