@@ -43,7 +43,9 @@
 #include	"assoc.h"
 #include	"back.h"
 #include	"check.h"
+#ifdef USE_MODEL 
 #include	"fft.h"
+#endif
 #include	"field.h"
 #include	"filter.h"
 #include	"growth.h"
