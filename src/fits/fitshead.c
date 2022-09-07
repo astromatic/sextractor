@@ -7,7 +7,7 @@
 *
 *	This file part of:	AstrOmatic FITS/LDAC library
 *
-*	Copyright:		(C) 1995-2019 IAP/CNRS/SorbonneU
+*	Copyright:		(C) 1995-2022 IAP/CNRS/SorbonneU
 *
 *	License:		GNU General Public License
 *
@@ -23,7 +23,7 @@
 *	along with AstrOmatic software.
 *	If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		04/12/2019
+*	Last modified:		11/03/2022
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -354,8 +354,8 @@ PURPOSE	Update a FITS header according to what's in the table.
 INPUT	Table structure.
 OUTPUT	RETURN_OK if tab is a binary table, or RETURN_ERROR otherwise.
 NOTES	The headbuf pointer in the tabstruct might be reallocated.
-AUTHOR	E. Bertin (IAP & Leiden observatory)
-VERSION	11/06/2007
+AUTHOR	E. Bertin (IAP/CNRS/SorbonneU)
+VERSION	11/03/2022
  ***/
 int	update_head(tabstruct *tab)
 
@@ -451,7 +451,7 @@ int	update_head(tabstruct *tab)
       str2lim = str+70;	/* Prevent an excessively large string */
       for (n=0; n<key->naxis && str2<str2lim; n++)
         {
-        sprintf(str2, n?", %d%n":"%d%n", key->naxisn[n],&j);
+        sprintf(str2, n?",%d%n":"%d%n", key->naxisn[n],&j);
         str2 += j;
         }
       sprintf(str2, ")");
