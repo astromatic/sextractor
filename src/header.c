@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		12/07/2012
+*	Last modified:		07/09/2022
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -49,7 +49,7 @@ INPUT	Name of the ASCII file,
 OUTPUT	RETURN_OK if the file was found, RETURN_ERROR otherwise.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	12/07/2012
+VERSION	07/09/2022
  ***/
 int     read_aschead(char *filename, int frameno, tabstruct *tab)
   {
@@ -63,7 +63,7 @@ int     read_aschead(char *filename, int frameno, tabstruct *tab)
     {
 /*- Skip previous ENDs in multi-FITS extension headers */
     for (i=frameno-1; i--;)
-      while (fgets(str, MAXCHAR, file)
+      while (fgets(str, 88, file)
 		&& strncmp(str,"END ",4)
 		&& strncmp(str,"END\n",4));
     memset(str, ' ', 80);
