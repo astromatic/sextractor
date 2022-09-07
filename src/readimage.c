@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2015 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2020 IAP/CNRS/SorbonneU
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		14/01/2015
+*	Last modified:		23/09/2020
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -94,10 +94,10 @@ void	*loadstrip(picstruct *field, picstruct *wfield)
         copydata(field, 0, nbpix);
       else
       {
+#ifdef HAVE_CFITSIO
         tab->currentElement = 1;
+#endif
         read_body(tab, data, nbpix);
-
-        //printf("read 1: data[0] = %f %f %f %f %f %f\n", data[0], data[1], data[222], data[777], data[field->width-1], data[nbpix-1]);
       } 
       if (flags & (WEIGHT_FIELD|RMS_FIELD|BACKRMS_FIELD|VAR_FIELD))
         weight_to_var(field, data, nbpix);
@@ -203,12 +203,8 @@ void	*loadstrip(picstruct *field, picstruct *wfield)
         backrmsline(field, field->ymax, data);
       else if (flags & INTERP_FIELD)
         copydata(field, field->stripylim*w, w);
-      else {
-
+      else
         read_body(tab, data, w);
-
-        //printf("read 2: data[0] = %f %f %f %f %f %f\n", data[0], data[1], data[222], data[777], data[field->width-1], data[w-1]);
-      }
       if (flags & (WEIGHT_FIELD|RMS_FIELD|BACKRMS_FIELD|VAR_FIELD))
         weight_to_var(field, data, w);
 

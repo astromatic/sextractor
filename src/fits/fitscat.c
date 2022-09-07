@@ -23,7 +23,7 @@
 *	along with AstrOmatic software.
 *	If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		15/07/2020
+*	Last modified:		26/08/2020
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -167,64 +167,33 @@ int	close_cat(catstruct *cat)
   return RETURN_OK;
   }
 
-int open_cfitsio(catstruct *cat)
-{
-#ifdef HAVE_CFITSIO
-    fitsfile *infptr;
-    int status;
-    status = 0;
-    fits_open_file(&infptr, cat->filename, READONLY, &status);
-    if (status != 0) {
-        fits_report_error(stderr, status);
-        printf("ERROR could not open FITS file with cfitsio: %s\n", cat->filename);
-    }
-    cat->tab->infptr = infptr;
-    return status;
-#else
-    return 1;
-#endif
-}
+#ifdef	HAVE_CFITSIO
+/****** close_cfitsio **************************************************************
 
-int	close_cfitsio(catstruct *cat)
-{
-#ifdef HAVE_CFITSIO
-    int status = 0;
-	if (cat->tab->infptr) {
+Closes a file previously opened by cfitsio 
 
-		; fits_close_file(cat->tab->infptr, &status);
+***/
+int	close_cfitsio(fitsfile *infptr)
+{
+
+	if (infptr != NULL) {
+
+		int status = 0; fits_close_file(infptr, &status);
 		if (status != 0) {
 			fits_report_error(stderr, status);
-			printf("ERROR could not close FITS file with cfitsio: %s\n", cat->filename);
+			printf("ERROR could not close FITS file with cfitsio\n");
 		}
 		else {
-			cat->tab->infptr == NULL;
+			//printf("Successfully closed FITS file with cfitsio\n");
+			infptr == NULL;
 		}
-
 	}
-	return status;
-#else
-    return 1;
-#endif
+	else {
+	    //printf("ERROR no cfitsio file to close\n");
+	}
 }
+#endif // HAVE_CFITSIO
 
-void hdu_seek(tabstruct *tab) {
-#ifdef HAVE_CFITSIO
-    if(!tab->infptr) {
-        tab->infptr = tab->prevtab->infptr;
-    }
-    int status = 0;
-    int hdutype;
-    fits_movabs_hdu(tab->infptr, tab->hdunum, &hdutype, &status);
-    if (status != 0)
-        printf("ERROR could not move to hdu %d in file %s\n", tab->hdunum, tab->cat->filename);
-    if (tab->tabsize)
-        // IMPORTANT: moving to start of next header using fseek and cfitsio position rather than table size, as done previously
-        fseek(tab->cat->file, tab->infptr->Fptr->headstart[tab->hdunum], SEEK_SET);
-#else
-    if (tab->tabsize)
-        QFSEEK(tab->cat->file, PADTOTAL(tab->tabsize), SEEK_CUR, tab->cat->filename);
-#endif
-}
 
 /****** free_cat ***************************************************************
 PROTO	void free_cat(catstruct **cat, int ncat)
@@ -382,9 +351,20 @@ int	map_cat(catstruct *cat)
   prevtab = NULL;
   QCALLOC(tab, tabstruct, 1);
   tab->cat = cat;
-  cat->tab = tab;
   QFTELL(cat->file, tab->headpos, cat->filename);
-  open_cfitsio(cat);
+
+#ifdef	HAVE_CFITSIO
+   fitsfile *infptr;
+   int status, hdutype, hdunum;
+   status = 0; fits_open_file(&infptr, cat->filename, READONLY, &status);
+   if (status != 0) {
+     fits_report_error(stderr, status);
+     printf("ERROR could not open FITS file with cfitsio: %s\n", cat->filename);
+   }
+   hdunum = 1;
+
+  int any_tile_compressed = 0;
+#endif // HAVE_CFITSIO
 
   for (ntab=0; !get_head(tab); ntab++)
     {
@@ -392,18 +372,53 @@ int	map_cat(catstruct *cat)
     readbintabparam_head(tab);
     QFTELL(cat->file, tab->bodypos, cat->filename);
     tab->nseg = tab->seg = 1;
-    tab->hdunum = ntab + 1;
+
+#ifdef	HAVE_CFITSIO
+    if (tab->isTileCompressed) {
+
+      any_tile_compressed = 1;
+      tab->hdunum = hdunum;
+      tab->infptr = infptr;
+
+      status = 0; fits_movabs_hdu(tab->infptr, tab->hdunum, &hdutype, &status);
+      if (status != 0) printf("ERROR could not move to hdu %d in file %s\n", tab->hdunum, cat->filename);
+
+      if (tab->tabsize)
+        fseek(cat->file, infptr->Fptr->headstart[hdunum], SEEK_SET);
+    }
+    // NOT tile-compressed
+    else {
+
+      tab->infptr = NULL;
+
+      if (tab->tabsize)
+        QFSEEK(cat->file, PADTOTAL(tab->tabsize), SEEK_CUR, cat->filename);
+    }
+
+    hdunum++;
+#else
+    if (tab->tabsize)
+      QFSEEK(cat->file, PADTOTAL(tab->tabsize), SEEK_CUR, cat->filename);
+#endif // HAVE_CFITSIO
+
     if (prevtab)
       {
       tab->prevtab = prevtab;
       prevtab->nexttab = tab;
       }
+    else
+      cat->tab = tab;
     prevtab = tab;
-    hdu_seek(tab);
     QCALLOC(tab, tabstruct, 1);
     tab->cat = cat;
     QFTELL(cat->file, tab->headpos, cat->filename);
     }
+
+#ifdef	HAVE_CFITSIO
+  // we will not need CFitsIO, so close CFitsIO file pointer now
+  if (!any_tile_compressed)
+    close_cfitsio(infptr);
+#endif
 
   cat->ntab = ntab;
   free(tab);

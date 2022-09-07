@@ -7,7 +7,7 @@
 *
 *	This file part of:	AstrOmatic FITS/LDAC library
 *
-*	Copyright:		(C) 1995-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1995-2019 IAP/CNRS/SorbonneU
 *
 *	License:		GNU General Public License
 *
@@ -23,7 +23,7 @@
 *	along with AstrOmatic software.
 *	If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		29/08/2012
+*	Last modified:		04/12/2019
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -101,51 +101,38 @@ INPUT	pointer to catstruct.
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	03/06/2012
+VERSION	04/12/2019
  ***/
 void	readbasic_head(tabstruct *tab)
 
   {
    char		str[88];
-   char		key[12], name[16],
+   char		key[12], name[16], bitpix_key[16], naxis_key[16],
 		*filename;
    int		i;
    KINGSIZE_T	tabsize;
 
   filename = (tab->cat? tab->cat->filename : strcpy(name, "internal header"));
+  strncpy(bitpix_key, "BITPIX  ", 9);
+  strncpy(naxis_key, "NAXIS   ", 9);
 
-// CFITSIO
-  char NAXIS_KEYWORD[14];
-  char BITPIX_KEYWORD[14];
-
-  if (fitsread(tab->headbuf, "ZIMAGE  ", str, H_STRING, T_STRING) == RETURN_OK) {
-
-          tab->isTileCompressed = 1;
-#ifndef HAVE_CFITSIO
-          error(EXIT_FAILURE, "*Error*: No CFITSIO support but detected tile compression in ", filename);
+#ifdef HAVE_CFITSIO
+  tab->isTileCompressed = (fitsread(tab->headbuf, "ZIMAGE  ",
+			str, H_STRING, T_STRING) == RETURN_OK)? 1 : 0;
+  if (tab->isTileCompressed) {
+    strncpy(bitpix_key, "ZBITPIX ", 9);
+    strncpy(naxis_key, "ZNAXIS  ", 9);
+  }
 #endif
-          strcpy(NAXIS_KEYWORD, "ZNAXIS  ");
-          strcpy(BITPIX_KEYWORD, "ZBITPIX ");
-  }
-  else {
-          tab->isTileCompressed = 0;
+  if (fitsread(tab->headbuf, bitpix_key, &tab->bitpix, H_INT, T_LONG)
+	==RETURN_ERROR)
+    error(EXIT_FAILURE, "*Error*: Corrupted FITS header in ", filename);
 
-          strcpy(NAXIS_KEYWORD, "NAXIS   ");
-          strcpy(BITPIX_KEYWORD, "BITPIX  ");
-  }
-
-  if (fitsread(tab->headbuf, BITPIX_KEYWORD, &tab->bitpix, H_INT, T_LONG)
+  if (fitsread(tab->headbuf, naxis_key, &tab->naxis, H_INT, T_LONG)
 	==RETURN_ERROR)
     error(EXIT_FAILURE, "*Error*: Corrupted FITS header in ", filename);
 
   tab->bytepix = tab->bitpix>0?(tab->bitpix/8):(-tab->bitpix/8);
-
-  if (fitsread(tab->headbuf, NAXIS_KEYWORD, &tab->naxis, H_INT, T_LONG)
-                  ==RETURN_ERROR) {
-    error(EXIT_FAILURE, "*Error*: Corrupted FITS header in ", filename);
-  }
-
-
   tabsize = 0;
   if (tab->naxis>0)
     {
@@ -155,11 +142,12 @@ void	readbasic_head(tabstruct *tab)
     tabsize = 1;
     for (i=0; i<tab->naxis && i<999; i++)
       {
-       // CFITSIO
+#ifdef HAVE_CFITSIO
        if (tab->isTileCompressed)
-               sprintf(key,"ZNAXIS%-2d", (i+1));
+         sprintf(key,"ZNAXIS%-2d", i+1);
        else
-               sprintf(key,"NAXIS%-3d", (i+1));
+#endif
+      sprintf(key,"NAXIS%-3d", i+1);
       if (fitsread(tab->headbuf, key, &tab->naxisn[i], H_INT, T_LONG)
 		==RETURN_ERROR)
         error(EXIT_FAILURE, "*Error*: incoherent FITS header in ", filename);
@@ -171,8 +159,11 @@ void	readbasic_head(tabstruct *tab)
   tab->pcount = 0;
   fitsread(tab->headbuf, "PCOUNT  ", &tab->pcount, H_INT, T_LONG);
 
+#ifdef HAVE_CFITSIO
   // CFITSIO TODO HACK
-  if (tab->isTileCompressed) tab->pcount = 0;
+  if (tab->isTileCompressed)
+    tab->pcount = 0;
+#endif
 
   tab->gcount = 1;
   fitsread(tab->headbuf, "GCOUNT  ", &tab->gcount, H_INT, T_LONG);
@@ -314,9 +305,12 @@ int	readbintabparam_head(tabstruct *tab)
         key->htype = H_STRING;
         break;
       default:
+#ifdef HAVE_CFITSIO
         // CFITSIO TODO dodgy
     	key->ttype = T_FLOAT;
-        //error(EXIT_FAILURE, "*Error*: Unknown TFORM in ", cat->filename);
+#else
+        error(EXIT_FAILURE, "*Error*: Unknown TFORM in ", cat->filename);
+#endif
       }
 
 /*--handle the special case of multimensional arrays*/

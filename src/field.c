@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2020 IAP/CNRS/SorbonneU
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		12/07/2012
+*	Last modified:		23/09/2020
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -70,7 +70,10 @@ picstruct	*newfield(char *filename, int flags, int ext)
   field->cat = cat;
   nok = 0;
   tab = cat->tab;
-  if(tab->isTileCompressed) nok++;
+#ifdef HAVE_CFITSIO
+  if (tab->isTileCompressed)
+    nok++;
+#endif
   if (tab->naxis >= 2
 	&& strncmp(tab->xtension, "BINTABLE", 8)
 	&& strncmp(tab->xtension, "ASCTABLE", 8))
@@ -79,7 +82,10 @@ picstruct	*newfield(char *filename, int flags, int ext)
   for (ntab=cat->ntab; ext2-- && ntab--;)
     {
     tab=tab->nexttab;
-    if(tab->isTileCompressed) nok++;
+#ifdef HAVE_CFITSIO
+    if (tab->isTileCompressed)
+      nok++;
+#endif
     if (tab->naxis >= 2
 	&& strncmp(tab->xtension, "BINTABLE", 8)
 	&& strncmp(tab->xtension, "ASCTABLE", 8))

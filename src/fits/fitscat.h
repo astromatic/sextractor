@@ -23,7 +23,7 @@
 *	along with AstrOmatic software.
 *	If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/02/2020
+*	Last modified:		26/08/2020
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -37,7 +37,7 @@
 #endif
 
 #ifdef HAVE_CFITSIO
-#include FITSIO_H
+#include CFITSIO_H
 #endif
 
 #define	MAXCHARS	256	/* max. number of characters */
@@ -185,8 +185,8 @@ typedef struct structtab
   char		*headbuf;		/* buffer containing the header */
   int		headnblock;		/* number of FITS blocks */
   char		*bodybuf;		/* buffer containing the body */
-  OFF_T2		bodypos;		/* position of the body in the file */
-  OFF_T2		headpos;		/* position of the head in the file */
+  OFF_T2	bodypos;		/* position of the body in the file */
+  OFF_T2	headpos;		/* position of the head in the file */
   struct structcat *cat;		/* (original) parent catalog */
   struct structtab *prevtab, *nexttab;	/* previous and next tab in chain */
   int		seg;			/* segment position */
@@ -196,14 +196,12 @@ typedef struct structtab
   int		swapflag;		/* mapped to a swap file ? */
   char		swapname[MAXCHARS];	/* name of the swapfile */
   unsigned int	bodysum;		/* Checksum of the FITS body */
-
 #ifdef HAVE_CFITSIO
   fitsfile *infptr;                     /* a cfitsio pointer to the file */
-#endif
   int hdunum;                           /* FITS HDU number for this 'table' */
   int isTileCompressed;                 /* is this a tile compressed image?  */
   long currentElement;                  /* tracks the current image pixel */
-
+#endif
   }		tabstruct;
 
 
@@ -231,8 +229,8 @@ extern void	add_cleanupfilename(char *filename),
 		encode_checksum(unsigned int sum, char *str),
 		end_readobj(tabstruct *keytab, tabstruct *tab, char *buf),
 		end_writeobj(catstruct *cat, tabstruct *tab, char *buf),
-		error(int, char *, char *),
-		error_installfunc(void (*func)(char *msg1, char *msg2)),
+		error(int code, const char *msg1, const char *msg2),
+		error_installfunc(void (*func)(const char *msg1, const char *msg2)),
 		fixexponent(char *s),
 		free_body(tabstruct *tab),
 		free_cat(catstruct **cat, int ncat),
@@ -284,7 +282,9 @@ extern int	about_cat(catstruct *cat, FILE *stream),
 		add_tab(tabstruct *tab, catstruct *cat, int pos),
 		blank_keys(tabstruct *tab),
 		close_cat(catstruct *cat),
-		close_cfitsio(catstruct *cat),
+#ifdef	HAVE_CFITSIO
+		close_cfitsio(fitsfile *infptr),
+#endif
 		copy_key(tabstruct *tabin, char *keyname, tabstruct *tabout,
 			int pos),
 		copy_tab(catstruct *catin, char *tabname, int seg,
@@ -341,9 +341,5 @@ extern FLAGTYPE	*alloc_ibody(tabstruct *tab,
 			void (*func)(FLAGTYPE *ptr, int npix));
 
 extern t_type	ttypeof(char *str);
-
-extern  void	error(int, char *, char *),
-		swapbytes(void *ptr, int nb, int n),
-		warning(char *msg1, char *msg2);
 
 #endif
