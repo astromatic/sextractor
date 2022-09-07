@@ -991,7 +991,7 @@ void	show_keys(tabstruct *tab, char **keynames, keystruct **keys, int nkeys,
   if (kflag)
     free(keys);
   if (o_type == SHOW_SKYCAT) 
-     fprintf(stream, skycattail, 1.0);
+     fprintf(stream, "%s", skycattail);
   return;
   }
 

@@ -31,7 +31,7 @@ define([AC_CACHE_LOAD],)
 define([AC_CACHE_SAVE],)
 
 # This is your standard AstrOmatic source code...
-AC_INIT(SExtractor, 2.25.3, [astromatic@astromatic.net],
+AC_INIT(SExtractor, 2.27.0, [astromatic@astromatic.net],
 	sextractor, [http://astromatic.net/software/sextractor])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_AUX_DIR(autoconf)
@@ -53,6 +53,7 @@ sinclude(acx_atlas.m4)
 sinclude(acx_openblas.m4)
 sinclude(acx_fftw.m4)
 sinclude(acx_mkl.m4)
+sinclude(acx_cfitsio.m4)
 sinclude(acx_prog_cc_optim.m4)
 sinclude(acx_pthread.m4)
 sinclude(acx_urbi_resolve_dir.m4)
@@ -180,6 +181,24 @@ AC_ARG_WITH(openblas-incdir,
 	[AS_HELP_STRING([--with-openblas-incdir=<OpenBLAS header dir>],
 	[Provide an alternative path to the OpenBLAS header directory])])
 
+# Provide special option for CFITSIO
+AC_MSG_CHECKING([whether CFITSIO support should be disabled (default=enabled)])
+AC_ARG_ENABLE(cfitsio,
+	[AS_HELP_STRING([--disable-cfitsio],
+	[Disable support for compressed FITS files through the CFITSIO library (default=enabled)])],
+	if test "$enable_cfitsio" = "no"; then
+	  AC_MSG_RESULT([yes])
+	else
+	  AC_MSG_RESULT([no])
+	fi,
+	AC_MSG_RESULT([no]))
+AC_ARG_WITH(cfitsio-libdir,
+	[AS_HELP_STRING([--with-cfitsio-libdir=<CFITSIO library path>],
+	[Provide an alternative path to the CFITSIO library])])
+AC_ARG_WITH(cfitsio-incdir,
+	[AS_HELP_STRING([--with-cfitsio-incdir=<CFITSIO include dir>],
+	[Provide an alternative path to the CFITSIO include directory])])
+
 # Provide a special option for the default XSLT URL
 with_xsl_url="file://"$(URBI_RESOLVE_DIR([$datadir]))"/$PACKAGE_TARNAME/$PACKAGE_TARNAME.xsl"
 AC_ARG_WITH(xsl_url,
@@ -303,6 +322,16 @@ if test "$enable_model_fitting" != "no"; then
       )
     fi
   fi
+fi
+
+########################## handle the CFITSIO library ########################
+if test "$enable_cfitsio" != "no"; then
+  ACX_CFITSIO($with_cfitsio_libdir, $with_cfitsio_incdir,
+	[LIBS="$CFITSIO_LIBS $LIBS"]
+	if test "$CFITSIO_WARN" != ""; then
+	  AC_MSG_WARN([$CFITSIO_WARN])
+	fi,
+	AC_MSG_ERROR([$CFITSIO_ERROR Exiting.]))
 fi
 
 AM_CONDITIONAL(USE_MODEL, [test "$enable_model_fitting" != "no"])

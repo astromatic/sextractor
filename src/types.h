@@ -621,7 +621,7 @@ typedef struct pic
   int		interp_xtimeout;	/* interpolation timeout value in x */
   int		interp_ytimeout;	/* interpolation timeout value in y */
   struct pic	*reffield;	       	/* pointer to a reference field */
-  OFF_T		mefpos;			/* Position in a MEF file */
+  OFF_T2		mefpos;			/* Position in a MEF file */
   }	picstruct;
 
 

@@ -23,7 +23,7 @@
 *	along with AstrOmatic software.
 *	If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/02/2020
+*	Last modified:		26/08/2020
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -359,13 +359,13 @@ INPUT	catalog structure,
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP & Leiden observatory)
-VERSION	26/09/2004
+VERSION	03/12/2019
  ***/
 void	end_writeobj(catstruct *cat, tabstruct *tab, char *buf)
 
   {
    keystruct	*key;
-   OFF_T	pos;
+   OFF_T2	pos;
    int		k;
 
 /* Make the table parameters reflect its content*/
