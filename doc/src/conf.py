@@ -81,11 +81,7 @@ language = None
 # There are two options for replacing |today|: either, you set today to some
 # non-false value, then it is used:
 #
-<<<<<<< HEAD
-today = 'Fri Mar 11 2022'
-=======
 today = 'Tue Sep 06 2022'
->>>>>>> cfitsio
 #
 # Else, today_fmt is used as the format for a strftime call.
 #
@@ -148,11 +144,7 @@ html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 # The name for this set of Sphinx documents.
 # "<project> v<release> documentation" by default.
 #
-<<<<<<< HEAD
-# html_title = u'SExtractor v2.25.3'
-=======
 # html_title = u'SExtractor v2.27.0'
->>>>>>> cfitsio
 
 # A shorter title for the navigation bar.  Default is the same as html_title.
 #
