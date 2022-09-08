@@ -80,23 +80,23 @@ AC_ARG_ENABLE(auto-flags,
 	AC_MSG_RESULT([yes]),
 	AC_MSG_RESULT([no]))
 
-# Provide special option for the Linux Intel C compiler
+# Provide special option for the Linux Intel OneAPI C compiler
 AC_MSG_CHECKING([whether the INTEL compiler is enabled])
-AC_ARG_ENABLE(icc,
-	[AS_HELP_STRING([--enable-icc],
+AC_ARG_ENABLE(icx,
+	[AS_HELP_STRING([--enable-icx],
 	[Use the Intel compiler (default = no)])],
-        CC="icc"
+        CC="icx"
 	AC_MSG_RESULT([yes]),
 	AC_MSG_RESULT([no]))
 
 # Provide special options for INTEL MKL
-# We force the use of icc
+# We force the use of icx
 AC_MSG_CHECKING([whether INTEL's MKL is enabled])
 AC_ARG_ENABLE(mkl,
 	[AS_HELP_STRING([--enable-mkl],
 	[Use INTEL's MKL for solvers and FFTs (default = no)])],
-        enable_icc="yes"
-        CC="icc"
+        enable_icx="yes"
+        CC="icx"
 	AC_MSG_RESULT([yes]),
 	AC_MSG_RESULT([no]))
 
@@ -120,7 +120,7 @@ AC_HEADER_STDC
 AC_CHECK_HEADERS([fcntl.h limits.h malloc.h stdlib.h string.h sys/mman.h \
 		sys/types.h unistd.h])
 # Checks for INTEL math header files.
-if test "$enable_icc" = "yes"; then
+if test "$enable_icx" = "yes"; then
   AC_CHECK_HEADERS(mathimf.h)
 fi
 
@@ -338,7 +338,7 @@ AM_CONDITIONAL(USE_MODEL, [test "$enable_model_fitting" != "no"])
 
 # Compile with profiling option
 if test "$enable_profiling" = "yes"; then
-  if test "$enable_icc" = "yes"; then
+  if test "$enable_icx" = "yes"; then
     AM_CFLAGS="$AM_CFLAGS -pq"
   else
     AM_CFLAGS="$AM_CFLAGS -pg"
@@ -348,9 +348,9 @@ fi
 
 # "Best" linking option
 if test "$enable_best_link" = "yes"; then
-  if test "$enable_icc" = "yes"; then
-    AM_LDFLAGS="-static-intel -qopenmp-link static -shared-libgcc \
-	-static-libtool-libs -no-intel-extensions -avoid-version $AM_LDFLAGS"
+  if test "$enable_icx" = "yes"; then
+    AM_LDFLAGS="-static-intel -qopenmp-link=static -shared-libgcc \
+	-static-libtool-libs -avoid-version $AM_LDFLAGS"
   else
     AM_LDFLAGS="-shared-libgcc -static-libtool-libs -avoid-version $AM_LDFLAGS"
   fi
