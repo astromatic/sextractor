@@ -4,7 +4,7 @@ Installing the software
 Hardware requirements
 =====================
 
-PSFEx runs in (ANSI) text-mode from a shell. A window system is
+SExtractor runs in (ANSI) text-mode from a shell. A window system is
 not necessary for basic operation.
 
 When it comes to memory usage, the amount required by SExtractor depends
@@ -75,18 +75,19 @@ locations:
    $ ./configure
 
 Compared to "gcc" and the librairies above, the combination of the
-Intel compiler ("icc") and the MKL (Math Kernel Library) libraries
-can give the SExtractor executable a significant boost in performance,
-thanks to better vectorized code, and reduced memory usage. If "icc"
-and the MKL (Math Kernel Library) are installed on your system [4],
-you can take advantage of those using instead
+Intel compiler ("icc" or "icx") and the MKL (Math Kernel Library)
+libraries can give the SExtractor executable a significant boost in
+performance, thanks to better vectorized code, and reduced memory
+usage. If "icc" (or "icx") and the MKL (Math Kernel Library) are
+installed on your system [4], you can take advantage of those using
+instead
 
    $ ./configure --enable-mkl
 
 Additionally, if the SExtractor binary is to be run on a different
-machine that does not have "icc" and the MKL (Math Kernel Library)
-installed (e.g., a cluster computing node), you must configure a
-partially statically linked executable using
+machine that does not have "icc" (or "icx") and the MKL installed
+(e.g., a cluster computing node), you must configure a partially
+statically linked executable using
 
    $ ./configure --enable-mkl --enable-auto-flags --enable-best-link
 

@@ -7,7 +7,7 @@ dnl %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 dnl
 dnl	This file part of:	AstrOmatic software
 dnl
-dnl	Copyright:		(C) 2003-2016 IAP/CNRS/UPMC
+dnl	Copyright:		(C) 2003-2022 IAP/CNRS/SorbonneU
 dnl
 dnl	License:		GNU General Public License
 dnl
@@ -23,7 +23,7 @@ dnl	You should have received a copy of the GNU General Public License
 dnl	along with AstrOmatic software.
 dnl	If not, see <http://www.gnu.org/licenses/>.
 dnl
-dnl	Last modified:		16/03/2016
+dnl	Last modified:		15/09/2022
 dnl
 dnl %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 dnl
@@ -73,11 +73,11 @@ dnl Set architecture flags
 dnl ----------------------
 
 dnl check if INTEL compiler is present
-icc -V 2>&1 | grep -i "Intel" > /dev/null 2>&1 && flagicc=yes
+$CC -V 2>&1 | grep -i "Intel" > /dev/null 2>&1 && flagicc=yes
 dnl check if INTEL compiler uses x86_64 architecture
-icc -V 2>&1 | grep -i "Intel(R) 64" > /dev/null 2>&1 && flag64=yes
+$CC -V 2>&1 | grep -i "Intel(R) 64" > /dev/null 2>&1 && flag64=yes
 dnl check if the platform is OSX
-icc -dumpmachine 2>&1 | grep -i "darwin" > /dev/null 2>&1 && flagosx=yes
+$CC -dumpmachine 2>&1 | grep -i "darwin" > /dev/null 2>&1 && flagosx=yes
 
 dnl ----------------------
 dnl Exit if INTEL compiler is not found

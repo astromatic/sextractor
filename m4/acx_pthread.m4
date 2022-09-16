@@ -7,7 +7,7 @@ dnl %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 dnl
 dnl	This file part of:	AstrOmatic software
 dnl
-dnl	Copyright:		(C) 2002-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+dnl	Copyright:		(C) 2002-2022 Emmanuel Bertin -- IAP/CNRS/SorbonneU
 dnl				(C) 2001 Steven G. Johnson (original version)
 dnl
 dnl	Licenses:		GPL (this version)
@@ -25,7 +25,7 @@ dnl	You should have received a copy of the GNU General Public License
 dnl	along with AstrOmatic software.
 dnl	If not, see <http://www.gnu.org/licenses/>.
 dnl
-dnl	Last modified:		09/10/2010
+dnl	Last modified:		15/09/2022
 dnl
 dnl %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 dnl
@@ -88,7 +88,7 @@ if test x"$PTHREAD_LIBS$PTHREAD_CFLAGS" != x; then
         save_LIBS="$LIBS"
         LIBS="$PTHREAD_LIBS $LIBS"
         AC_MSG_CHECKING([for pthread_join in LIBS=$PTHREAD_LIBS with CFLAGS=$PTHREAD_CFLAGS])
-        AC_TRY_LINK_FUNC(pthread_join, acx_pthread_ok=yes)
+        AC_LINK_IFELSE([AC_LANG_CALL([], pthread_join)], acx_pthread_ok=yes)
         AC_MSG_RESULT($acx_pthread_ok)
         if test x"$acx_pthread_ok" = xno; then
                 PTHREAD_LIBS=""
@@ -170,10 +170,10 @@ for flag in $acx_pthread_flags; do
         # pthread_cleanup_push because it is one of the few pthread
         # functions on Solaris that doesn't have a non-functional libc stub.
         # We try pthread_create on general principles.
-        AC_TRY_LINK([#include <pthread.h>],
+        AC_LINK_IFELSE([AC_LANG_CALL([#include <pthread.h>],
                     [pthread_t th; pthread_join(th, 0);
                      pthread_attr_init(0); pthread_cleanup_push(0, 0);
-                     pthread_create(0,0,0,0); pthread_cleanup_pop(0); ],
+                     pthread_create(0,0,0,0); pthread_cleanup_pop(0); ])],
                     [acx_pthread_ok=yes])
 
         LIBS="$save_LIBS"
@@ -199,12 +199,12 @@ if test "x$acx_pthread_ok" = xyes; then
         # Detect AIX lossage: threads are created detached by default
         # and the JOINABLE attribute has a nonstandard name (UNDETACHED).
         AC_MSG_CHECKING([for joinable pthread attribute])
-        AC_TRY_LINK([#include <pthread.h>],
-                    [int attr=PTHREAD_CREATE_JOINABLE;],
+        AC_LINK_IFELSE([AC_LANG_CALL([#include <pthread.h>],
+                    [int attr=PTHREAD_CREATE_JOINABLE;])],
                     ok=PTHREAD_CREATE_JOINABLE, ok=unknown)
         if test x"$ok" = xunknown; then
-                AC_TRY_LINK([#include <pthread.h>],
-                            [int attr=PTHREAD_CREATE_UNDETACHED;],
+                AC_LINK_IFELSE([AC_LANG_CALL([#include <pthread.h>],
+                            [int attr=PTHREAD_CREATE_UNDETACHED;])],
                             ok=PTHREAD_CREATE_UNDETACHED, ok=unknown)
         fi
         if test x"$ok" != xPTHREAD_CREATE_JOINABLE; then
