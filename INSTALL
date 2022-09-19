@@ -119,6 +119,5 @@ path).
     options "--enable-threads --enable-float".
 
 [4] The Linux versions of the Intel compiler and MKL (Math
-    Kernel Library) are available for free to academic researchers,
-    students, educators and open source contributors.
+    Kernel Library) are now available for free on Intel's website.
 
