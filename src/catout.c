@@ -1086,6 +1086,7 @@ void	reendcat()
       QFTELL(fitscat->file, pos, fitscat->filename);
       QFSEEK(fitscat->file, tab->headpos, SEEK_SET, fitscat->filename);
       save_tab(fitscat, tab);
+      remove_tab(fitscat, "LDAC_IMHEAD", 0);
       QFSEEK(fitscat->file, pos, SEEK_SET, fitscat->filename);
       break;
 
