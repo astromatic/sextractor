@@ -7,7 +7,7 @@
 #
 #	This file part of:	SExtractor
 #
-#	Copyright:		(C) 2002-2020 IAP/CNRS/SorbonneU
+#	Copyright:		(C) 2002-2022 IAP/CNRS/SorbonneU
 #
 #	License:		GNU General Public License
 #
@@ -22,7 +22,7 @@
 #	You should have received a copy of the GNU General Public License
 #	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 #
-#	Last modified:		02/01/2020
+#	Last modified:		15/09/2022
 #
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -44,6 +44,7 @@ BuildRoot: %{_tmppath}/%{name}-buildroot
 BuildRequires: pkgconfig
 BuildRequires: fftw-devel >= 3.1
 BuildRequires: atlas-devel >= 3.6.0
+BuildRequires: cfitsio-devel >= 3.30
 
 %description
 Extract catalogs of sources from astronomical images

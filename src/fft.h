@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 2007-2017 IAP/CNRS/UPMC
+*	Copyright:		(C) 2007-2022 IAP/CNRS/SorbonneU
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		19/06/2017
+*	Last modified:		07/09/2022
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -40,7 +40,7 @@
 #define	QFFTWF_MALLOC(ptr, typ, nel) \
 		{if (!(ptr = (typ *)fftwf_malloc((size_t)(nel)*sizeof(typ)))) \
 		   { \
-		   sprintf(gstr, #ptr " (" #nel "=%lld elements) " \
+		   sprintf(gstr, #ptr " (" #nel "=%zd elements) " \
 			"at line %d in module " __FILE__ " !", \
 			(size_t)(nel)*sizeof(typ), __LINE__); \
 		   error(EXIT_FAILURE, "Could not allocate memory for ", gstr);\
