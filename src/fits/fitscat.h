@@ -7,7 +7,7 @@
 *
 *	This file part of:	AstrOmatic FITS/LDAC library
 *
-*	Copyright:		(C) 1995-2020 IAP/CNRS/SorbonneU
+*	Copyright:		(C) 1995-2023 CFHT/IAP/CNRS/SorbonneU
 *
 *	License:		GNU General Public License
 *
@@ -23,7 +23,7 @@
 *	along with AstrOmatic software.
 *	If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		26/08/2020
+*	Last modified:		25/02/2023
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -155,6 +155,9 @@ typedef struct structcat
   struct structtab *tab;		/* pointer to the first table */
   int		ntab;			/* number of tables included */
   access_type_t	access_type;		/* READ_ONLY or WRITE_ONLY */
+#ifdef HAVE_CFITSIO
+  fitsfile *infptr;			/* a cfitsio pointer to the file */
+#endif
   }		catstruct;
 
 /*-------------------------------- table  ----------------------------------*/
@@ -195,12 +198,12 @@ typedef struct structtab
   int		nkey;			/* number of keys */
   int		swapflag;		/* mapped to a swap file ? */
   char		swapname[MAXCHARS];	/* name of the swapfile */
-  unsigned int	bodysum;		/* Checksum of the FITS body */
+  unsigned int	bodysum;	/* Checksum of the FITS body */
+  int isTileCompressed;		/* is this a tile compressed image?  */
 #ifdef HAVE_CFITSIO
-  fitsfile *infptr;                     /* a cfitsio pointer to the file */
-  int hdunum;                           /* FITS HDU number for this 'table' */
-  int isTileCompressed;                 /* is this a tile compressed image?  */
-  long currentElement;                  /* tracks the current image pixel */
+  fitsfile *infptr;			/* a cfitsio pointer to the file */
+  int hdunum;				/* FITS HDU number for this 'table' */
+  long currentElement;		/* tracks the current image pixel */
 #endif
   }		tabstruct;
 
@@ -283,7 +286,7 @@ extern int	about_cat(catstruct *cat, FILE *stream),
 		blank_keys(tabstruct *tab),
 		close_cat(catstruct *cat),
 #ifdef	HAVE_CFITSIO
-		close_cfitsio(fitsfile *infptr),
+		close_cfitsio(catstruct *cat),
 #endif
 		copy_key(tabstruct *tabin, char *keyname, tabstruct *tabout,
 			int pos),
@@ -329,6 +332,7 @@ extern int	about_cat(catstruct *cat, FILE *stream),
 		tformof(char *str, t_type ttype, int n),
 		tsizeof(char *str),
 		update_head(tabstruct *tab),
+		decomp_head(tabstruct *tab),
 		update_tab(tabstruct *tab),
 		verify_checksum(tabstruct *tab),
 		write_obj(tabstruct *tab, char *buf),

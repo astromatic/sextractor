@@ -7,7 +7,7 @@
 *
 *	This file part of:	AstrOmatic FITS/LDAC library
 *
-*	Copyright:		(C) 1995-2022 IAP/CNRS/SorbonneU
+*	Copyright:		(C) 1995-2023 CFHT/IAP/CNRS/SorbonneU
 *
 *	License:		GNU General Public License
 *
@@ -23,7 +23,7 @@
 *	along with AstrOmatic software.
 *	If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/03/2022
+*	Last modified:		25/02/2023
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -100,85 +100,92 @@ PURPOSE	Read the current FITS header basic keywords.
 INPUT	pointer to catstruct.
 OUTPUT	-.
 NOTES	-.
-AUTHOR	E. Bertin (IAP)
-VERSION	04/12/2019
+AUTHOR	E. Bertin (CFHT/IAP/SorbonneU)
+VERSION	25/02/2023
  ***/
 void	readbasic_head(tabstruct *tab)
 
   {
    char		str[88];
-   char		key[12], name[16], bitpix_key[16], naxis_key[16],
-		*filename;
-   int		i;
+   char		key[12], name[16],
+		*bitpix_key, *naxis_key, *filename;
+   int		i, bitpix, bytepix, naxis, naxisn;
    KINGSIZE_T	tabsize;
 
   filename = (tab->cat? tab->cat->filename : strcpy(name, "internal header"));
-  strncpy(bitpix_key, "BITPIX  ", 9);
-  strncpy(naxis_key, "NAXIS   ", 9);
 
-#ifdef HAVE_CFITSIO
   tab->isTileCompressed = (fitsread(tab->headbuf, "ZIMAGE  ",
 			str, H_STRING, T_STRING) == RETURN_OK)? 1 : 0;
-  if (tab->isTileCompressed) {
-    strncpy(bitpix_key, "ZBITPIX ", 9);
-    strncpy(naxis_key, "ZNAXIS  ", 9);
-  }
-#endif
-  if (fitsread(tab->headbuf, bitpix_key, &tab->bitpix, H_INT, T_LONG)
-	==RETURN_ERROR)
+
+  if (fitsread(tab->headbuf, tab->isTileCompressed ? "ZBITPIX " : "BITPIX  ",
+  	&tab->bitpix, H_INT, T_LONG) == RETURN_ERROR)
     error(EXIT_FAILURE, "*Error*: Corrupted FITS header in ", filename);
 
-  if (fitsread(tab->headbuf, naxis_key, &tab->naxis, H_INT, T_LONG)
-	==RETURN_ERROR)
+  if (fitsread(tab->headbuf, tab->isTileCompressed ? "ZNAXIS  " : "NAXIS   ",
+  	&tab->naxis, H_INT, T_LONG) == RETURN_ERROR)
     error(EXIT_FAILURE, "*Error*: Corrupted FITS header in ", filename);
 
   tab->bytepix = tab->bitpix>0?(tab->bitpix/8):(-tab->bitpix/8);
-  tabsize = 0;
-  if (tab->naxis>0)
-    {
+  if (tab->naxis>0) {
     QFREE(tab->naxisn);
     QMALLOC(tab->naxisn, int, tab->naxis);
 /*--get the size of the array*/
-    tabsize = 1;
-    for (i=0; i<tab->naxis && i<999; i++)
-      {
-#ifdef HAVE_CFITSIO
-       if (tab->isTileCompressed)
-         sprintf(key,"ZNAXIS%-2d", i+1);
-       else
-#endif
-      sprintf(key,"NAXIS%-3d", i+1);
+    for (i=0; i<tab->naxis && i<999; i++) {
+      sprintf(key, tab->isTileCompressed? "ZNAXIS%-2d" : "NAXIS%-3d", i+1);
       if (fitsread(tab->headbuf, key, &tab->naxisn[i], H_INT, T_LONG)
 		==RETURN_ERROR)
-        error(EXIT_FAILURE, "*Error*: incoherent FITS header in ", filename);
-      tabsize *= tab->naxisn[i];
-      }
+        error(EXIT_FAILURE, "*Error*: inconsistent FITS header in ", filename);
     }
+  }  
 
-/*random groups parameters (optional)*/
-  tab->pcount = 0;
-  fitsread(tab->headbuf, "PCOUNT  ", &tab->pcount, H_INT, T_LONG);
-
-#ifdef HAVE_CFITSIO
-  // CFITSIO TODO HACK
-  if (tab->isTileCompressed)
-    tab->pcount = 0;
-#endif
-
-  tab->gcount = 1;
-  fitsread(tab->headbuf, "GCOUNT  ", &tab->gcount, H_INT, T_LONG);
-
-/*number of fields (only for tables)*/
-  tab->tfields = 0;
-  fitsread(tab->headbuf, "TFIELDS ", &tab->tfields, H_INT, T_LONG);
-
-/*in case of a non-primary header*/
+/* In case of a non-primary header*/
   tab->xtension[0] = (char)'\0';
   fitsread(tab->headbuf, "XTENSION", tab->xtension, H_STRING, T_STRING);
   tab->extname[0] = (char)'\0';
   fitsread(tab->headbuf, "EXTNAME ", tab->extname, H_STRING, T_STRING);
 
-  tab->tabsize = tab->bytepix*tab->gcount*((size_t)tab->pcount+tabsize);
+/* Number of fields (only for tables)*/
+  tab->tfields = 0;
+  fitsread(tab->headbuf, "TFIELDS ", &tab->tfields, H_INT, T_LONG);
+
+/* Random groups parameters (optional)*/
+  tab->gcount = 1;
+  fitsread(tab->headbuf, "GCOUNT  ", &tab->gcount, H_INT, T_LONG);
+  tab->pcount = 0;
+  fitsread(tab->headbuf, "PCOUNT  ", &tab->pcount, H_INT, T_LONG);
+
+/* Compute extension body size in bytes */
+  if (tab->isTileCompressed) {
+    if (fitsread(tab->headbuf, "BITPIX  ",
+    	&bitpix, H_INT, T_LONG) == RETURN_ERROR)
+      error(EXIT_FAILURE, "*Error*: Corrupted FITS header in ", filename);
+    bytepix = bitpix>0?(bitpix/8):(-bitpix/8);
+
+    if (fitsread(tab->headbuf, "NAXIS   ", &naxis, H_INT, T_LONG)
+		==RETURN_ERROR)
+      error(EXIT_FAILURE, "*Error*: Corrupted FITS header in ", filename);
+    if ((naxis)) {
+      tabsize = 1;
+      for (i=0; i<naxis && i<999; i++) {
+        naxisn = 1;
+        sprintf(key,"NAXIS%-3d", i+1);
+        if (fitsread(tab->headbuf, key, &naxisn, H_INT, T_LONG)
+        	==RETURN_ERROR)
+          error(EXIT_FAILURE, "*Error*: inconsistent FITS header in ", filename);
+        tabsize *= naxisn;
+      }
+    } else
+      tabsize = 0;
+  } else {
+    bytepix = tab->bytepix;
+    if ((tab->naxis)) {
+      tabsize = 1;
+      for (i=0; i<tab->naxis && i<999; i++)
+        tabsize *= tab->naxisn[i];
+    } else
+      tabsize = 0;
+  }
+  tab->tabsize = bytepix*tab->gcount*((size_t)tab->pcount+tabsize);
 
 /* Scaling parameters for basic FITS integer arrays */
   tab->bscale = 1.0;
@@ -918,4 +925,50 @@ char	*printftotdisp(char *cprintf, char *str)
 
   return str;
   }
+
+
+/****** decomp_head ***********************************************************
+PROTO	int decomp_head(tabstruct *tab)
+PURPOSE	Update a FITS header so that it now matches uncompressed data format.
+INPUT	Table structure.
+OUTPUT	RETURN_OK if tab is a compressed binary table,
+       	or RETURN_ERROR otherwise.
+NOTES	The headbuf pointer in the tabstruct might be reallocated.
+AUTHOR	E. Bertin (CFHT/IAP/CNRS/SorbonneU)
+VERSION	25/02/2023
+ ***/
+int	decomp_head(tabstruct *tab) {
+
+#ifdef HAVE_CFITSIO
+/* Update XTENSION, the extension type */
+  if (tab->isTileCompressed && *tab->xtension) {
+    strcpy(tab->xtension, "IMAGE");
+    addkeywordto_head(tab, "XTENSION", "EXTENSION TYPE");
+    fitswrite(tab->headbuf, "XTENSION", tab->xtension, H_STRING, T_STRING);
+    addkeywordto_head(tab, "PCOUNT  ", "required keyword; must = 0");      
+    addkeywordto_head(tab, "GCOUNT  ", "required keyword; must = 1");
+    tab->pcount = 0;
+    tab->gcount = 1;
+    fitswrite(tab->headbuf,"PCOUNT  ", &tab->pcount, H_INT, T_LONG);     
+    fitswrite(tab->headbuf,"GCOUNT  ", &tab->gcount, H_INT, T_LONG);
+    tab->isTileCompressed = 0;
+
+/*-- Remove all compression-related keywords */
+    removekeywordfrom_head(tab, "TFIELDS?");
+    removekeywordfrom_head(tab, "TTYPE???");
+    removekeywordfrom_head(tab, "TFORM???");
+    removekeywordfrom_head(tab, "ZIMAGE??");
+    removekeywordfrom_head(tab, "ZBITPIX?");
+    removekeywordfrom_head(tab, "ZNAXIS??");
+    removekeywordfrom_head(tab, "ZTILE???");
+    removekeywordfrom_head(tab, "ZCMPTYPE");
+    removekeywordfrom_head(tab, "ZNAME???");
+    removekeywordfrom_head(tab, "ZVAL????");
+    update_head(tab);
+    return RETURN_OK;
+  } else
+#endif
+  return RETURN_ERROR;
+}
+
 
