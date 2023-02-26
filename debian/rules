@@ -15,7 +15,7 @@ ifeq ($(USE_BEST),1)
 	dh_auto_configure -- --host=$(DEB_HOST_GNU_TYPE) \
 			--build=$(DEB_BUILD_GNU_TYPE) \
 			--prefix=/usr --mandir=\$${prefix}/share/man \
-			--enable-icc --enable-mkl \
+			--enable-icx --enable-mkl \
 			--enable-auto-flags --enable-best-link \
 			--with-release=$(PACKAGE_RELEASE)
 else

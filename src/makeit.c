@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		15/07/2020
+*	Last modified:		23/09/2020
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -43,7 +43,9 @@
 #include	"assoc.h"
 #include	"back.h"
 #include	"check.h"
+#ifdef USE_MODEL 
 #include	"fft.h"
+#endif
 #include	"field.h"
 #include	"filter.h"
 #include	"growth.h"
@@ -282,7 +284,10 @@ void	makeit()
       if ((imatab->naxis < 2)
 	|| !strncmp(imatab->xtension, "BINTABLE", 8)
 	|| !strncmp(imatab->xtension, "ASCTABLE", 8))
-        continue;
+#ifdef HAVE_CFITSIO
+        if (!imatab->isTileCompressed)
+#endif
+          continue;
       next++;
       }
     }
@@ -321,8 +326,10 @@ void	makeit()
     if (!forcextflag && ((imatab->naxis < 2)
 	|| !strncmp(imatab->xtension, "BINTABLE", 8)
 	|| !strncmp(imatab->xtension, "ASCTABLE", 8)))
+#ifdef HAVE_CFITSIO
+        if (!imatab->isTileCompressed)
+#endif
       continue;
-
     nok++;
 
 /*-- Initial time measurement*/
@@ -707,7 +714,7 @@ OUTPUT	Extension number, or RETURN_ERROR if nos extension specified.
 NOTES	The bracket and its extension number are removed from the filename if
 	found.
 AUTHOR  E. Bertin (IAP)
-VERSION 08/10/2007
+VERSION 23/09/2020
  ***/
 static int	selectext(char *filename)
   {
@@ -720,6 +727,11 @@ static int	selectext(char *filename)
     if ((bracr=strrchr(bracl+1, ']')))
       *bracr = '\0';
     next = strtol(bracl+1, NULL, 0);
+
+    // VERY BAD HACK to check if this is tile-compressed, if so, add +1 to extension number requested
+    if (strstr(filename, ".fits.fz") != NULL)
+      next++;
+
     return next;
     }
 
@@ -735,9 +747,9 @@ INPUT	a character string,
 OUTPUT	RETURN_OK if everything went fine, RETURN_ERROR otherwise.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	14/07/2006
+VERSION	23/09/2020
  ***/
-void	write_error(char *msg1, char *msg2)
+void	write_error(const char *msg1, const char *msg2)
   {
    char			error[MAXCHAR];
 
