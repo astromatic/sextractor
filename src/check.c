@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2013 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2023 CFHT/IAP/CNRS/SorbonneU
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		23/09/2013
+*	Last modified:		25/02/2023
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -406,6 +406,7 @@ void	reinitcheck(picstruct *field, checkstruct *check)
   remove_tabs(cat);
   copy_tab_fromptr(field->tab, cat, 0);
   tab = cat->tab;
+  decomp_head(tab);
   tab->cat = cat;
   if (check->next<=1)
     prim_head(tab);

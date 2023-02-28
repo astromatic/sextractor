@@ -7,7 +7,7 @@
 *
 *	This file part of:	AstrOmatic FITS/LDAC library
 *
-*	Copyright:		(C) 1995-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1995-2023 CFHT/IAP/CNRS/SorbonneU
 *
 *	License:		GNU General Public License
 *
@@ -23,7 +23,7 @@
 *	along with AstrOmatic software.
 *	If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/09/2012
+*	Last modified:		25/02/2023
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -34,6 +34,10 @@
 #include	<stdio.h>
 #include	<stdlib.h>
 #include	<string.h>
+
+#ifdef	HAVE_CFITSIO
+#include    CFITSIO_H
+#endif
 
 #include	"fitscat_defs.h"
 #include	"fitscat.h"
@@ -270,8 +274,8 @@ INPUT	Pointer to the original catalog,
 	Position (1= first after the primary HDU, <=0 = at the end)
 OUTPUT	-.
 NOTES	-.
-AUTHOR	E. Bertin (IAP & Leiden observatory)
-VERSION	22/06/2001
+AUTHOR	E. Bertin (IAP/SorbonneU)
+VERSION	25/02/2023
  ***/
 void	copy_tab_fromptr(tabstruct *tabin, catstruct *catout, int pos)
 
@@ -317,6 +321,11 @@ void	copy_tab_fromptr(tabstruct *tabin, catstruct *catout, int pos)
 
   prevtab->nexttab = nexttab;
   nexttab->prevtab = prevtab;
+
+#ifdef	HAVE_CFITSIO
+  // Do not copy CFitsIO file pointer
+    tabout->infptr = NULL;
+#endif
 
   return;
   }
@@ -396,8 +405,8 @@ PURPOSE	Free memory associated to a table pointer.
 INPUT	Pointer to the table.
 OUTPUT	-.
 NOTES	-.
-AUTHOR	E. Bertin (IAP & Leiden observatory)
-VERSION	28/02/2000
+AUTHOR	E. Bertin (CFHT/IAP/CNRS/SorbonneU)
+VERSION	25/02/2023
  ***/
 void	free_tab(tabstruct *tab)
 

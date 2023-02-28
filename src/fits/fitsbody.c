@@ -7,7 +7,7 @@
 *
 *	This file part of:	AstrOmatic FITS/LDAC library
 *
-*	Copyright:		(C) 1995-2020 IAP/CNRS/SorbonneU
+*	Copyright:		(C) 1995-2023 CFHT/IAP/CNRS/SorbonneU
 *
 *	License:		GNU General Public License
 *
@@ -23,7 +23,7 @@
 *	along with AstrOmatic software.
 *	If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		26/08/2020
+*	Last modified:		25/02/2023
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -394,8 +394,8 @@ INPUT	A pointer to the tab structure,
 	the number of elements to be read.
 OUTPUT	-.
 NOTES	.
-AUTHOR	E. Bertin (IAP)
-VERSION	26/08/2020
+AUTHOR	E. Bertin (CFHT/IAP/CNRS/SorbonneU)
+VERSION	25/02/2023
  ***/
 void	read_body(tabstruct *tab, PIXTYPE *ptr, size_t size)
   {
@@ -439,7 +439,7 @@ void	read_body(tabstruct *tab, PIXTYPE *ptr, size_t size)
         bufdata = (char *)bufdata0;
 
 #ifdef	HAVE_CFITSIO
-        if (tab->isTileCompressed)
+        if (tab->isTileCompressed && tab->infptr)
        	  readTileCompressed(tab, spoonful, (void *)bufdata0);
         else
           QFREAD(bufdata, spoonful*tab->bytepix, cat->file, cat->filename);

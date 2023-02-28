@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2020 IAP/CNRS/SorbonneU
+*	Copyright:		(C) 1993-2023 CFHT/IAP/CNRS/SorbonneU
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		23/09/2020
+*	Last modified:		25/02/2023
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -282,12 +282,9 @@ void	makeit()
       {
 /*---- Check for the next valid image extension */
       if ((imatab->naxis < 2)
-	|| !strncmp(imatab->xtension, "BINTABLE", 8)
+    || !(imatab->isTileCompressed || strncmp(imatab->xtension, "BINTABLE", 8))
 	|| !strncmp(imatab->xtension, "ASCTABLE", 8))
-#ifdef HAVE_CFITSIO
-        if (!imatab->isTileCompressed)
-#endif
-          continue;
+        continue;
       next++;
       }
     }
@@ -324,11 +321,8 @@ void	makeit()
     {
 /*--  Check for the next valid image extension */
     if (!forcextflag && ((imatab->naxis < 2)
-	|| !strncmp(imatab->xtension, "BINTABLE", 8)
+    || !(imatab->isTileCompressed || strncmp(imatab->xtension, "BINTABLE", 8))
 	|| !strncmp(imatab->xtension, "ASCTABLE", 8)))
-#ifdef HAVE_CFITSIO
-        if (!imatab->isTileCompressed)
-#endif
       continue;
     nok++;
 
