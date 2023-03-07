@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		25/02/2023
+*	Last modified:		07/03/2023
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -707,8 +707,8 @@ INPUT	Filename character string.
 OUTPUT	Extension number, or RETURN_ERROR if nos extension specified.
 NOTES	The bracket and its extension number are removed from the filename if
 	found.
-AUTHOR  E. Bertin (IAP)
-VERSION 23/09/2020
+AUTHOR  E. Bertin (CFHT/IAP)
+VERSION 07/03/2023
  ***/
 static int	selectext(char *filename)
   {
@@ -721,10 +721,6 @@ static int	selectext(char *filename)
     if ((bracr=strrchr(bracl+1, ']')))
       *bracr = '\0';
     next = strtol(bracl+1, NULL, 0);
-
-    // VERY BAD HACK to check if this is tile-compressed, if so, add +1 to extension number requested
-    if (strstr(filename, ".fits.fz") != NULL)
-      next++;
 
     return next;
     }

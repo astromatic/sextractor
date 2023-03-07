@@ -70,23 +70,41 @@ picstruct	*newfield(char *filename, int flags, int ext)
   field->cat = cat;
   nok = 0;
   tab = cat->tab;
+#ifdef HAVE_CFITSIO
   if ((tab->isTileCompressed) ||
 	(tab->naxis >= 2
 	&& strncmp(tab->xtension, "BINTABLE", 8)
 	&& strncmp(tab->xtension, "ASCTABLE", 8)))
+#else
+  if (tab->isTileCompressed)
+    warning(BANNER " has been compiled without CFITSIO support: "
+	"compressed image skipped in ", filename);
+  if (tab->naxis >= 2
+	&& strncmp(tab->xtension, "BINTABLE", 8)
+	&& strncmp(tab->xtension, "ASCTABLE", 8))
+#endif
     nok++;
   ext2 = ext;
   for (ntab=cat->ntab; ext2-- && ntab--;)
     {
     tab=tab->nexttab;
+#ifdef HAVE_CFITSIO
     if ((tab->isTileCompressed) ||
-		(tab->naxis >= 2
+	(tab->naxis >= 2
 		&& strncmp(tab->xtension, "BINTABLE", 8)
 		&& strncmp(tab->xtension, "ASCTABLE", 8)))
+#else
+    if (tab->isTileCompressed)
+      warning(BANNER " has been compiled without CFITSIO support: "
+		"compressed image skipped in ", filename);
+    if (tab->naxis >= 2
+		&& strncmp(tab->xtension, "BINTABLE", 8)
+		&& strncmp(tab->xtension, "ASCTABLE", 8))
+#endif
       nok++;
     }
   if (!nok)
-    error(EXIT_FAILURE, "Not a valid FITS image in ",filename);
+    error(EXIT_FAILURE, "Not a valid FITS image in ", filename);
 
   field->tab = tab;
   if (ntab<0)
