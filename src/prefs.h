@@ -136,7 +136,7 @@ typedef struct
   int		backfsize[2];				/* bkgnd filt. size */
   int		nbackfsize;				/* nb of params */
   double	backfthresh;				/* bkgnd fil. thresh */
-  double	back_pearsons;				/* Pearson's factor */
+  double	back_pearson;				/* Pearson's factor */
   enum	{GLOBAL, LOCAL}			pback_type;	/* phot. bkgnd type */
   int		pback_size;				/* rect. ann. width */
 /*----- memory */

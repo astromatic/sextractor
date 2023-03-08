@@ -689,8 +689,8 @@ float	backguess(backstruct *bkg, float *mean, float *sigma)
 
   sig = 10.0*nlevelsm1;
   sig1 = 1.0;
-  medfac = prefs.back_pearsons;
-  meafac = prefs.back_pearsons - 1.0;
+  medfac = prefs.back_pearson;
+  meafac = prefs.back_pearson - 1.0;
   mea = med = bkg->mean;
   for (n=100; n-- && (sig>=0.1) && (fabs(sig/sig1-1.0)>EPS);)
     {

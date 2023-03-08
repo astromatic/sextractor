@@ -7,6 +7,9 @@
 .. |DAOPHOT| replace:: :program:`DAOPHOT`
 .. _DAOPHOT: http://ascl.net/phpBB3/viewtopic.php?t=23410
 
+.. |DES| replace:: :abbr:`Dark Energy Survey`
+.. _DES: https://darkenergysurvey.org
+
 .. |.dmg| replace:: :file:`.dmg`
 .. _.dmg: https://en.wikipedia.org/wiki/Apple_Disk_Image
 

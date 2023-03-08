@@ -27,6 +27,7 @@ These coordinates define two corners of a rectangle which encloses the detected 
 
 .. math::
   :label: xminymax
+  :nowrap:
 
    \begin{eqnarray}
    {\tt XMIN} & = & \min_{i \in {\cal S}} x_i,\\
@@ -47,6 +48,7 @@ Barycenter coordinates generally define the position of the “center” of a so
 
 .. math::
   :label: xy
+  :nowrap:
 
    \begin{eqnarray}
    {\tt X} & = & \overline{x} = \frac{\displaystyle \sum_{i \in {\cal S}}
@@ -76,6 +78,7 @@ Second-order moments: :param:`X2`, :param:`Y2`, :param:`XY`
 
 .. math::
   :label: x2y2
+  :nowrap:
 
    \begin{eqnarray}
    {\tt X2} & = \overline{x^2} = & \frac{\displaystyle \sum_{i \in {\cal S}} p^{(f)}_i x_i^2}{\displaystyle \sum_{i \in {\cal S}} p^{(f)}_i} - \overline{x}^2,\\
@@ -144,6 +147,7 @@ covariance :math:`\overline{xy}`.
 
 .. math::
   :label: aimage
+  :nowrap:
 
    \begin{eqnarray}
    {\tt A}^2 & = & \overline{x^2}_{\tt THETA},\ \ \ {\rm and}\\
@@ -154,6 +158,7 @@ covariance :math:`\overline{xy}`.
 
 .. math::
   :label: aimage_2
+  :nowrap:
 
    \begin{eqnarray}
    {\tt A}^2 & = & \frac{\overline{x^2}+\overline{y^2}}{2}
@@ -175,6 +180,7 @@ These parameters [#elongation]_ are directly derived from :param:`A` and :param:
 
 .. math::
   :label: elongation
+  :nowrap:
 
    \begin{eqnarray}
    {\tt ELONGATION} & = & \frac{\tt A}{\tt B}\ \ \ \ \ \mbox{and}\\
@@ -206,6 +212,7 @@ parameters can be derived from the 2nd order moments:
 
 .. math::
   :label: ellipse_2
+  :nowrap:
 
    \begin{eqnarray}
    {\tt CXX} & = & \frac{\cos^2 {\tt THETA}}{{\tt A}^2} + \frac{\sin^2
@@ -240,6 +247,7 @@ Furthermore, |SExtractor| does not currently take into account possible correlat
 
 .. math::
   :label: errxy
+  :nowrap:
 
    \begin{eqnarray}
    {\tt ERRX2} & = {\rm var}(\overline{x}) =
@@ -261,6 +269,7 @@ where :math:`{\sigma_B}_i` is the local background noise and :math:`g_i` the loc
 
 .. math::
   :label: errabtheta
+  :nowrap:
 
    \begin{eqnarray}
    {\tt ERRA}^2 & = & \frac{{\rm var}(\overline{x})+{\rm var}(\overline{y})}{2}
@@ -277,6 +286,7 @@ And the error ellipse parameters are:
 
 .. math::
   :label: errellipse
+  :nowrap:
 
    \begin{eqnarray}
    {\tt ERRCXX} & = & \frac{\cos^2 {\tt ERRTHETA}}{{\tt ERRA}^2} +
