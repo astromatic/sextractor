@@ -673,7 +673,7 @@ float	backguess(backstruct *bkg, float *mean, float *sigma)
   {
    LONG		*histo, *hilow, *hihigh, *histot;
    unsigned long lowsum, highsum, sum;
-   double	ftemp, mea, sig, sig1, med, dpix;
+   double	ftemp, mea,meafac, sig, sig1, med,medfac, dpix;
    int		i, n, lcut,hcut, nlevelsm1, pix;
 
 /* Leave here if the mesh is already classified as `bad' */
@@ -689,6 +689,8 @@ float	backguess(backstruct *bkg, float *mean, float *sigma)
 
   sig = 10.0*nlevelsm1;
   sig1 = 1.0;
+  medfac = prefs.back_pearsons;
+  meafac = prefs.back_pearsons - 1.0;
   mea = med = bkg->mean;
   for (n=100; n-- && (sig>=0.1) && (fabs(sig/sig1-1.0)>EPS);)
     {
@@ -725,7 +727,7 @@ float	backguess(backstruct *bkg, float *mean, float *sigma)
   *mean = fabs(sig)>0.0? (fabs(bkg->sigma/(sig*bkg->qscale)-1) < 0.0 ?
 			    bkg->qzero+mea*bkg->qscale
 			    :(fabs((mea-med)/sig)< 0.3 ?
-			      bkg->qzero+(2.5*med-1.5*mea)*bkg->qscale
+			      bkg->qzero+(medfac*med - meafac*mea)*bkg->qscale
 			     :bkg->qzero+med*bkg->qscale))
                        :bkg->qzero+mea*bkg->qscale;
 
