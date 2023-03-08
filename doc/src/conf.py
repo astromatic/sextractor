@@ -132,11 +132,8 @@ latex_elements = {
 'preamble': r'''
 \usepackage{amssymb}
 \newcommand{\DUrolecredits}{\footnotesize\color{lightgray}\newline}
-''',
-
-     # Latex figure (float) alignment
-     #
-     # 'figure_align': 'htbp',
+\usepackage{etoolbox}
+\AtBeginEnvironment{figure}{\pretocmd{\hyperlink}{\protect}{}{}}'''
 }
 
 # Grouping the document tree into LaTeX files. List of tuples
