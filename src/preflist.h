@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		15/07/2020
+*	Last modified:		07/03/2023
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -61,6 +61,7 @@
   {"BACK_FILTERSIZE", P_INTLIST, prefs.backfsize, 1,11, 0.0,0.0,
     {""}, 1,2, &prefs.nbackfsize},
   {"BACK_FILTTHRESH", P_FLOAT, &prefs.backfthresh, 0,0, 0.0,BIG},
+  {"BACK_PEARSONS", P_FLOAT, &prefs.back_pearsons, 0,0, 1.0,BIG},
   {"BACKPHOTO_THICK", P_INT, &prefs.pback_size, 1, 256},
   {"BACKPHOTO_TYPE", P_KEY, &prefs.pback_type, 0,0, 0.0,0.0,
    {"GLOBAL","LOCAL",""}},
@@ -261,6 +262,9 @@ char *default_prefs[] =
 " ",
 "*BACK_TYPE        AUTO           # AUTO or MANUAL",
 "*BACK_VALUE       0.0            # Default background value in MANUAL mode",
+"*BACK_PEARSONS    2.5            # Pearson's factor P >= 1 with",
+"*                                # (mean - mode) ~ P * (mean - median)",
+"*                                # Legacy value is 2.5, but 3.5 is more accurate",
 "BACK_SIZE        64             # Background mesh: <size> or <width>,<height>",
 "BACK_FILTERSIZE  3              # Background filter: <size> or <width>,<height>",
 " ",
