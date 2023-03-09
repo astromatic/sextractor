@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Installing the software &mdash; SExtractor 2.28.0 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Using SExtractor" href="Using.html" />
+    <link rel="prev" title="License" href="License.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            SExtractor
+          </a>
+              <div class="version">
+                2.28.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="Introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="License.html">License</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Installing the software</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#hardware-requirements">Hardware requirements</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#obtaining-sextractor">Obtaining <strong class="program">SExtractor</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#software-requirements">Software requirements</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#installation">Installation</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="Using.html">Using SExtractor</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Processing.html">Processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Measurements.html">Measurements</a></li>
+<li class="toctree-l1"><a class="reference internal" href="references.html">Bibliography</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">SExtractor</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Installing the software</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/Installing.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="installing-the-software">
+<h1>Installing the software<a class="headerlink" href="#installing-the-software" title="Permalink to this heading"></a></h1>
+<section id="hardware-requirements">
+<h2>Hardware requirements<a class="headerlink" href="#hardware-requirements" title="Permalink to this heading"></a></h2>
+<p><strong class="program">SExtractor</strong> runs in (ANSI) text-mode from a shell. A graphical environment
+is not necessary to operate the software.</p>
+<p>Memory requirements depend on the size of the images to be processed.
+Processing a single image should typically require about 100MB of memory.
+For large images (hundreds of Mpixels or more), or in double-image / weighted mode, <strong class="program">SExtractor</strong>'s  memory footprint should be around 500MB, and up to 2GB in the worst cases.
+Swap-space can be put to contribution, although a strong performance hit is to be expected.</p>
+<section id="obtaining-sextractor">
+<h3>Obtaining <strong class="program">SExtractor</strong><a class="headerlink" href="#obtaining-sextractor" title="Permalink to this heading"></a></h3>
+<p>For Linux users, the simplest way to have <strong class="program">SExtractor</strong> up and running is to install the standard binary package the comes with your Linux distribution.
+Run, e.g., <code class="docutils literal notranslate"><span class="pre">apt-get</span> <span class="pre">sextractor</span></code> (on Debian) or <code class="docutils literal notranslate"><span class="pre">dnf</span> <span class="pre">sextractor</span></code> (Fedora) as root and <strong class="program">SExtractor</strong>, as well as all its dependencies, will automatically be installed.
+If you decided to install the package this way you may skip the following and move straight to the <span class="xref std std-ref">next section</span>.</p>
+<p>However if <strong class="program">SExtractor</strong> is not available in your distribution, or to obtain the most recent version, the <strong class="program">SExtractor</strong> source package can be downloaded from <a class="reference external" href="https://github.com/astromatic/sextractor">the official GitHub repository</a> .
+One may choose <a class="reference external" href="https://github.com/astromatic/sextractor/releases">one of the stable releases</a>, or for the fearless, <a class="reference external" href="https://github.com/astromatic/sextractor/archive/master.zip">a copy of the current master development branch</a>.</p>
+</section>
+<section id="software-requirements">
+<h3>Software requirements<a class="headerlink" href="#software-requirements" title="Permalink to this heading"></a></h3>
+<p><strong class="program">SExtractor</strong> has been developed on <a class="reference external" href="http://en.wikipedia.org/wiki/Linux">GNU/Linux</a> machines and should compile on any <a class="reference external" href="http://en.wikipedia.org/wiki/POSIX">POSIX</a>-compliant system (this includes <a class="reference external" href="http://www.apple.com/osx">Apple OS X<sup>®</sup></a> and <a class="reference external" href="http://www.cygwin.com">Cygwin</a> on <a class="reference external" href="http://www.microsoft.com/windows">Microsoft Windows<sup>®</sup></a>, at the price of some difficulties with the configuration), provided that the <em>development</em> packages of the following libraries have been installed:</p>
+<ul class="simple">
+<li><p><a class="reference external" href="http://math-atlas.sourceforge.net"><strong class="program">ATLAS</strong></a> V3.6 and above <a class="footnote-reference brackets" href="#atlas-install" id="id1" role="doc-noteref"><span class="fn-bracket">[</span>2<span class="fn-bracket">]</span></a>,</p></li>
+<li><p><a class="reference external" href="http://www.fftw.org"><strong class="program">FFTw</strong></a> V3.0 and above <a class="footnote-reference brackets" href="#fftw-install" id="id2" role="doc-noteref"><span class="fn-bracket">[</span>3<span class="fn-bracket">]</span></a>,</p></li>
+</ul>
+<p>On Fedora/Redhat distributions for instance, the development packages above are available as <code class="docutils literal notranslate"><span class="pre">atlas-devel</span></code> and <code class="docutils literal notranslate"><span class="pre">fftw-devel</span></code>.
+Note that <strong class="program">ATLAS</strong> and <strong class="program">FFTw</strong> are not necessary if <strong class="program">SExtractor</strong> is linked with Intel<sup>®</sup>'s <a class="reference external" href="http://software.intel.com/intel-mkl"><abbr title="Math Kernel Library">MKL</abbr></a> library.</p>
+</section>
+<section id="installation">
+<h3>Installation<a class="headerlink" href="#installation" title="Permalink to this heading"></a></h3>
+<p>To install from the GitHub source package, you must first uncompress the archive:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>unzip<span class="w"> </span>sextractor-&lt;version&gt;.zip
+</pre></div>
+</div>
+<p>A new directory called <code class="file docutils literal notranslate"><span class="pre">sextractor-&lt;version&gt;</span></code> should now appear at the current location on your disk.
+Enter the directory and generate the files required by the <a class="reference external" href="http://en.wikipedia.org/wiki/GNU_Build_System">autotools</a>, which the package relies on:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span><span class="nb">cd</span><span class="w"> </span>sextractor-&lt;version&gt;
+<span class="gp">$ </span>sh<span class="w"> </span>autogen.sh
+</pre></div>
+</div>
+<p>A <strong class="program">configure</strong> script is created.
+This script has many options, which may be listed with the <code class="docutils literal notranslate"><span class="pre">--help</span></code> option:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>./configure<span class="w"> </span>--help
+</pre></div>
+</div>
+<p>No options are required for compiling with the default GNU C compiler (<strong class="program">gcc</strong>) if all the required libraries are installed at their default locations:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>./configure
+</pre></div>
+</div>
+<p>Compared to <strong class="program">gcc</strong> and the librairies above, the combination of the Intel<sup>®</sup> compiler (<strong class="program">icc</strong>) and the <a class="reference external" href="http://software.intel.com/intel-mkl"><abbr title="Math Kernel Library">MKL</abbr></a> libraries can give the <strong class="program">SExtractor</strong> executable a strong boost in performance, thanks to better vectorized code.
+If <strong class="program">icc</strong> and the <abbr title="Math Kernel Library">MKL</abbr> are installed on your system <a class="footnote-reference brackets" href="#geticc" id="id3" role="doc-noteref"><span class="fn-bracket">[</span>4<span class="fn-bracket">]</span></a> , you can take advantage of them using</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>./configure<span class="w"> </span>--enable-mkl
+</pre></div>
+</div>
+<p>Additionally, if the <strong class="program">SExtractor</strong> binary is to be run on a different machine that does not have <strong class="program">icc</strong> and the <abbr title="Math Kernel Library">MKL</abbr> installed (e.g., a cluster computing node), you must configure a partially statically linked executable using</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>./configure<span class="w"> </span>--enable-mkl<span class="w"> </span>--enable-auto-flags<span class="w"> </span>--enable-best-link
+</pre></div>
+</div>
+<p>In all cases, <strong class="program">SExtractor</strong> can now be compiled with</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>make<span class="w"> </span>-j
+</pre></div>
+</div>
+<p>An <code class="file docutils literal notranslate"><span class="pre">src/sex</span></code> executable is created. For system-wide installation, run the usual</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>sudo<span class="w"> </span>make<span class="w"> </span>install
+</pre></div>
+</div>
+<p>You may now check that the software is properly installed by simply typing in your shell:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>sex
+</pre></div>
+</div>
+<p>which will return the version number and other basic information (note that some shells require the <strong class="program">rehash</strong> command to be run before making a freshly installed executable accessible in the execution path).</p>
+<aside class="footnote-list brackets">
+<aside class="footnote brackets" id="mac-install" role="note">
+<span class="label"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></span>
+<p>Mac OS X <a class="reference external" href="https://en.wikipedia.org/wiki/Apple_Disk_Image"><code class="file docutils literal notranslate"><span class="pre">.dmg</span></code></a> packages should be available soon.</p>
+</aside>
+<aside class="footnote brackets" id="atlas-install" role="note">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id1">2</a><span class="fn-bracket">]</span></span>
+<p>Use the <code class="docutils literal notranslate"><span class="pre">--with-atlas</span></code> and/or <code class="docutils literal notranslate"><span class="pre">--with-atlas-incdir</span></code> options of the <strong class="program">SExtractor</strong> <strong class="command">configure</strong> script to specify the <strong class="program">ATLAS</strong> library and include paths if <strong class="program">ATLAS</strong> files are  installed at unusual locations.</p>
+</aside>
+<aside class="footnote brackets" id="fftw-install" role="note">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id2">3</a><span class="fn-bracket">]</span></span>
+<p>Make sure that <strong class="program">FFTw</strong> has been compiled with <strong class="command">configure</strong> options <code class="docutils literal notranslate"><span class="pre">--enable-threads</span> <span class="pre">--enable-float</span></code>.</p>
+</aside>
+<aside class="footnote brackets" id="geticc" role="note">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id3">4</a><span class="fn-bracket">]</span></span>
+<p>The Linux versions of the Intel<sup>®</sup> compiler and <abbr title="Math Kernel Library">MKL</abbr> are <a class="reference external" href="http://software.intel.com/qualify-for-free-software">available for free to academic researchers, students, educators and open source contributors</a>.</p>
+</aside>
+</aside>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="License.html" class="btn btn-neutral float-left" title="License" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="Using.html" class="btn btn-neutral float-right" title="Using SExtractor" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2017-2023, CFHT/IAP/CNRS/SorbonneU.</p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

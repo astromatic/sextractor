@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Aperture photometry &mdash; SExtractor 2.28.0 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
+        <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Model fitting" href="Model.html" />
+    <link rel="prev" title="Windowed positional parameters" href="PositionWin.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            SExtractor
+          </a>
+              <div class="version">
+                2.28.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="Introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="License.html">License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Installing.html">Installing the software</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Using.html">Using SExtractor</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Processing.html">Processing</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="Measurements.html">Measurements</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="Position.html">Isophotal measurements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="PositionWin.html">Windowed positional parameters</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Aperture photometry</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#fixed-aperture-flux-flux-aper">Fixed-aperture flux: <span class="param">FLUX_APER</span></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#automatic-aperture-flux-flux-auto">Automatic aperture flux: <span class="param">FLUX_AUTO</span></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#petrosian-aperture-flux-flux-petro">Petrosian aperture flux: <span class="param">FLUX_PETRO</span></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#photographic-photometry">Photographic photometry</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#local-background">Local background</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="Model.html">Model fitting</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="references.html">Bibliography</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">SExtractor</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="Measurements.html">Measurements</a></li>
+      <li class="breadcrumb-item active">Aperture photometry</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/Photom.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="aperture-photometry">
+<span id="photometry"></span><h1>Aperture photometry<a class="headerlink" href="#aperture-photometry" title="Permalink to this heading"></a></h1>
+<p>Besides <a class="reference internal" href="Position.html#flux-iso-def"><span class="std std-ref">isophotal</span></a>, <abbr title="Point Spread Function">PSF</abbr> and <a class="reference internal" href="Model.html#models-def"><span class="std std-ref">model-fitting</span></a> flux estimates, <strong class="program">SExtractor</strong> can currently perform two types of flux measurements: <a class="reference internal" href="#flux-aper-def"><span class="std std-ref">fixed-aperture</span></a> and <a class="reference internal" href="#flux-auto-def"><span class="std std-ref">adaptive-aperture</span></a>.
+For every <span class="param">FLUX_</span> measurement, an error estimate <span class="param">FLUXERR_</span>, a magnitude <span class="param">MAG_</span> and a magnitude error estimate <span class="param">MAGERR_</span> are also available: see <a class="reference internal" href="Param.html#fluxes-and-magnitudes"><span class="std std-ref">Fluxes and magnitudes</span></a>.</p>
+<p>An estimate of the error is available for each type of flux.
+For aperture fluxes, the flux uncertainty is computed using</p>
+<div class="math notranslate nohighlight" id="equation-fluxerr">
+<span class="eqno">(36)<a class="headerlink" href="#equation-fluxerr" title="Permalink to this equation"></a></span>\[{\tt FLUXERR} = \sqrt{\sum_{i\in{\cal A}}\, (\sigma_i^2 + \frac{p_i}{g_i})}\]</div>
+<p>where <span class="math notranslate nohighlight">\({\cal A}\)</span> is the set of pixels defining the photometric aperture, and <span class="math notranslate nohighlight">\(\sigma_i\)</span>, <span class="math notranslate nohighlight">\(p_i\)</span>, <span class="math notranslate nohighlight">\(g_i\)</span> respectively the standard deviation of noise (in ADU) estimated from the local background, <span class="math notranslate nohighlight">\(p_i\)</span> the measurement image pixel value subtracted from the background, and <span class="math notranslate nohighlight">\(g_i\)</span> the effective detector gain in <span class="math notranslate nohighlight">\(e^- / \mbox{ADU}\)</span> at pixel <span class="math notranslate nohighlight">\(i\)</span>.
+Note that this error estimate provides a lower limit of the true uncertainty, as it only takes into account photon and detector noise.</p>
+<section id="fixed-aperture-flux-flux-aper">
+<span id="flux-aper-def"></span><h2>Fixed-aperture flux: <span class="param">FLUX_APER</span><a class="headerlink" href="#fixed-aperture-flux-flux-aper" title="Permalink to this heading"></a></h2>
+<p><span class="param">FLUX_APER</span> estimates the flux from the measurement image above the background inside a circular aperture.
+The diameter of the aperture in pixels is defined by the <code class="docutils literal notranslate"><span class="pre">PHOTOM_APERTURES</span></code> configuration parameter.
+It does not have to be an integer: each &quot;regular&quot; pixel is subdivided in <span class="math notranslate nohighlight">\(5\times 5\)</span> sub-pixels before measuring the flux within the aperture.
+If <span class="param">FLUX_APER</span> is provided as a vector <span class="param">FLUX_APER[n]</span>, at least <span class="math notranslate nohighlight">\(n\)</span> apertures must be specified with the <code class="docutils literal notranslate"><span class="pre">PHOTOM_APERTURES</span></code> configuration parameter.</p>
+</section>
+<section id="automatic-aperture-flux-flux-auto">
+<span id="flux-auto-def"></span><h2>Automatic aperture flux: <span class="param">FLUX_AUTO</span><a class="headerlink" href="#automatic-aperture-flux-flux-auto" title="Permalink to this heading"></a></h2>
+<p><span class="param">FLUX_AUTO</span> provides an estimate of the “total flux” by integrating pixel values within an adaptively scaled aperture.
+<strong class="program">SExtractor</strong>’s automatic aperture photometry routine derives from Kron’s “first moment” algorithm <span id="id1">[<a class="reference internal" href="references.html#id18" title="R. G. Kron, 1980. Photometry of a complete sample of faint galaxies. ApJS, 43:305-325.">23</a>]</span>:</p>
+<ol class="arabic simple">
+<li><p>An elliptical aperture is <a class="reference internal" href="Position.html#ellipse-iso-def"><span class="std std-ref">defined by the second order moments of the object’s light distribution</span></a>, with semi-major axis <span class="math notranslate nohighlight">\(a={\tt A\_IMAGE}\)</span>, semi-minor axis <span class="math notranslate nohighlight">\(b={\tt B\_IMAGE}\)</span>, and position angle <span class="param">THETA_IMAGE</span>.</p></li>
+<li><p>The ellipse's major and minor axes are multiplied by 6 (which corresponds roughly to twice the size of the isophotal footprint on each axis).</p></li>
+<li><p>Inside this elliptical aperture <span class="math notranslate nohighlight">\({\cal E}\)</span>, an analog of Kron's &quot;first moment&quot; is computed:</p></li>
+</ol>
+<div class="math notranslate nohighlight" id="equation-kron-radius">
+<span class="eqno">(37)<a class="headerlink" href="#equation-kron-radius" title="Permalink to this equation"></a></span>\[r_{\rm Kron} = \frac{\sum_{i\in\cal E} r_i\,p^{(d)}_i}{\sum_{i\in\cal E} p^{(d)}_i},\]</div>
+<p>where <span class="math notranslate nohighlight">\(p^{(d)}_i\)</span> is the pixel value <em>in the detection image</em>. <span class="math notranslate nohighlight">\(r_i\)</span> is what we shall call the &quot;reduced pseudo-radius&quot; at pixel <span class="math notranslate nohighlight">\(i\)</span></p>
+<div class="math notranslate nohighlight" id="equation-reduced-radius">
+<span class="eqno">(38)<a class="headerlink" href="#equation-reduced-radius" title="Permalink to this equation"></a></span>\[r_i \equiv \sqrt{{\tt CXX\_IMAGE} \times \Delta x_i^2 + {\tt CYY\_IMAGE} \times \Delta y_i^2 + {\tt CXY\_IMAGE} \times \Delta x_i \Delta y_i},\]</div>
+<p>where <span class="math notranslate nohighlight">\(\Delta x_i\)</span> and  <span class="math notranslate nohighlight">\(\Delta y_i\)</span> are the pixel coordinates relative to the detection centroid:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\begin{aligned}
+\Delta x_i &amp; = x_i - {\tt X\_IMAGE}\\
+\Delta y_i &amp; = y_i - {\tt Y\_IMAGE}.
+\end{aligned}\end{split}\]</div>
+<p><span id="id2">[<a class="reference internal" href="references.html#id18" title="R. G. Kron, 1980. Photometry of a complete sample of faint galaxies. ApJS, 43:305-325.">23</a>]</span> and <span id="id3">[<a class="reference internal" href="references.html#id14" title="L. Infante, 1987. A faint object processing software - Description and testing. A&amp;A, 183:177-184.">15</a>]</span> have shown that for stars and galaxy profiles convolved with Gaussian seeing, <span class="math notranslate nohighlight">\(\ge 90\%\)</span> of the flux is expected to lie inside a circular aperture of radius <span class="math notranslate nohighlight">\(k r_{\rm Kron}\)</span> with <span class="math notranslate nohighlight">\(k = 2\)</span>, almost independently of the magnitude.
+Experiments have shown <span id="id4">[<a class="reference internal" href="references.html#id2" title="E. Bertin and S. Arnouts, 1996. SExtractor: Software for source extraction. A&amp;AS, 117:393-404.">12</a>]</span> that this conclusion remains unchanged if one replaces the circular aperture with the &quot;Kron elliptical aperture&quot; <span class="math notranslate nohighlight">\({\cal K}\)</span> with reduced pseudo-radius <span class="math notranslate nohighlight">\(k r_{\rm Kron}\)</span>.</p>
+<p><span class="param">FLUX_AUTO</span> is the sum of pixel values from the measurement image, subtracted from the local background, inside the Kron ellipse:</p>
+<div class="math notranslate nohighlight" id="equation-flux-auto">
+<span class="eqno">(39)<a class="headerlink" href="#equation-flux-auto" title="Permalink to this equation"></a></span>\[{\tt FLUX\_AUTO} = \sum_{i\in\cal K} p_i.\]</div>
+<p>The quantity <span class="math notranslate nohighlight">\(k r_{\rm Kron}\)</span>, known as the <em>Kron radius</em> (which in <strong class="program">SExtractor</strong> is actually a &quot;reduced pseudo-radius&quot;) is provided by the <span class="param">KRON_RADIUS</span>.
+<span class="math notranslate nohighlight">\(k = 2\)</span> defines a sort of balance between systematic and random errors.
+By choosing a larger <span class="math notranslate nohighlight">\(k = 2.5\)</span>, the mean fraction of flux lost drops from about 10% to 6%, at the expense of <abbr title="Signal-to-Noise Ratio">SNR</abbr> in the measurement.
+Very noisy objects may sometimes end up with a Kron ellipse being too small, even smaller that the isophotal footprint of the object itself. For this reason, <strong class="program">SExtractor</strong> imposes a minimum size for the Kron radius, which cannot be less than <span class="math notranslate nohighlight">\(r_{\rm Kron,min}\)</span>.
+The user has full control over the parameters <span class="math notranslate nohighlight">\(k\)</span> and <span class="math notranslate nohighlight">\(r_{\rm Kron,min}\)</span> through the <code class="docutils literal notranslate"><span class="pre">PHOT_AUTOPARAMS</span></code> configuration parameters. <code class="docutils literal notranslate"><span class="pre">PHOT_AUTOPARAMS</span></code> is set by default to <code class="docutils literal notranslate"><span class="pre">2.5,3.5</span></code>.</p>
+<div class="admonition hint">
+<p class="admonition-title">Hint</p>
+<p>Aperture magnitudes are sensitive to crowding.
+In <strong class="program">SExtractor</strong> v1, <span class="param">MAG_AUTO</span> measurements were not very robust in that respect.
+It was therefore suggested to replace the aperture magnitude by the corrected-isophotal one when an object is too close to its neighbors (2 isophotal radii for instance).
+This was done automatically when using the <span class="param">MAG_BEST</span> magnitude: <span class="param">MAG_BEST</span>=<span class="param">MAG_AUTO</span> when it is sure that no neighbor can bias <span class="param">MAG_AUTO</span> by more than 10%, and <span class="math notranslate nohighlight">\({\tt MAG\_BEST} = {\tt MAG\_ISOCOR}\)</span> otherwise.
+Experience showed that the <span class="param">MAG_ISOCOR</span> and <span class="param">MAG_AUTO</span> magnitude would loose about the same fraction of flux on stars or compact galaxy profiles: around 0.06 % for default extraction parameters.
+The use of <span class="param">MAG_BEST</span> is now deprecated as <span class="param">MAG_AUTO</span> measurements are much more robust in versions 2.x of <strong class="program">SExtractor</strong>.
+The first improvement is a crude subtraction of all the neighbors that have been detected around the measured source (<code class="docutils literal notranslate"><span class="pre">MASK_TYPE</span> <span class="pre">BLANK</span></code> option).
+The second improvement is an automatic correction of parts of the aperture that are suspected to be contaminated by a neighbor.
+This is done by mirroring the opposite, cleaner side of the measurement ellipse if available (<code class="docutils literal notranslate"><span class="pre">MASK_TYPE</span> <span class="pre">CORRECT</span></code> option, which is also the default).</p>
+</div>
+</section>
+<section id="petrosian-aperture-flux-flux-petro">
+<span id="flux-petro-def"></span><h2>Petrosian aperture flux: <span class="param">FLUX_PETRO</span><a class="headerlink" href="#petrosian-aperture-flux-flux-petro" title="Permalink to this heading"></a></h2>
+<p>Similar to <span class="param">FLUX_AUTO</span>, <span class="param">FLUX_PETRO</span> provides an estimate of the “total flux” by integrating pixel values within an adaptively scaled elliptical aperture. <span class="param">FLUX_PETRO</span>'s algorithm derives from Petrosian’s photometric estimator <span id="id5">[<a class="reference internal" href="references.html#id23" title="V. Petrosian, 1976. Surface brightness and evolution of galaxies. ApJL, 209:L1-L5.">24</a>, <a class="reference internal" href="references.html#id4" title="M. R. Blanton, J. Dalcanton, D. Eisenstein, J. Loveday, M. A. Strauss, M. SubbaRao, D. H. Weinberg, J. E. Anderson, Jr., J. Annis, N. A. Bahcall, M. Bernardi, J. Brinkmann, R. J. Brunner, S. Burles, L. Carey, F. J. Castander, A. J. Connolly, I. Csabai, M. Doi, D. Finkbeiner, S. Friedman, J. A. Frieman, M. Fukugita, J. E. Gunn, G. S. Hennessy, R. B. Hindsley, D. W. Hogg, T. Ichikawa, Ž. Ivezić, S. Kent, G. R. Knapp, D. Q. Lamb, R. F. Leger, D. C. Long, R. H. Lupton, T. A. McKay, A. Meiksin, A. Merelli, J. A. Munn, V. Narayanan, M. Newcomb, R. C. Nichol, S. Okamura, R. Owen, J. R. Pier, A. Pope, M. Postman, T. Quinn, C. M. Rockosi, D. J. Schlegel, D. P. Schneider, K. Shimasaku, W. A. Siegmund, S. Smee, Y. Snir, C. Stoughton, C. Stubbs, A. S. Szalay, G. P. Szokoly, A. R. Thakar, C. Tremonti, D. L. Tucker, A. Uomoto, D. Vanden Berk, M. S. Vogeley, P. Waddell, B. Yanny, N. Yasuda, and D. G. York, 2001. The Luminosity Function of Galaxies in SDSS Commissioning Data. AJ, 121:2358-2380.">25</a>, <a class="reference internal" href="references.html#id31" title="N. Yasuda, M. Fukugita, V. K. Narayanan, R. H. Lupton, I. Strateva, M. A. Strauss, Ž. Ivezić, R. S. J. Kim, D. W. Hogg, D. H. Weinberg, K. Shimasaku, J. Loveday, J. Annis, N. A. Bahcall, M. Blanton, J. Brinkmann, R. J. Brunner, A. J. Connolly, I. Csabai, M. Doi, M. Hamabe, S.-I. Ichikawa, T. Ichikawa, D. E. Johnston, G. R. Knapp, P. Z. Kunszt, D. Q. Lamb, T. A. McKay, J. A. Munn, R. C. Nichol, S. Okamura, D. P. Schneider, G. P. Szokoly, M. S. Vogeley, M. Watanabe, and D. G. York, 2001. Galaxy Number Counts from the Sloan Digital Sky Survey Commissioning Data. AJ, 122:1104-1124.">26</a>]</span>:</p>
+<ol class="arabic simple">
+<li><p>An elliptical aperture is <a class="reference internal" href="Position.html#ellipse-iso-def"><span class="std std-ref">defined by the second order moments of the object’s light distribution</span></a>, with semi-major axis <span class="math notranslate nohighlight">\(a={\tt A\_IMAGE}\)</span>, semi-minor axis <span class="math notranslate nohighlight">\(b={\tt B\_IMAGE}\)</span>, and position angle <span class="param">THETA_IMAGE</span>.</p></li>
+<li><p>The ellipse's major and minor axes are multiplied by 6 (which corresponds roughly to twice the size of the isophotal footprint on each axis).</p></li>
+<li><p>Within this elliptical aperture <span class="math notranslate nohighlight">\({\cal E}\)</span>, the <em>Petrosian ratio</em> <span class="math notranslate nohighlight">\(R_{\rm P}(r)\)</span> is computed:</p></li>
+</ol>
+<div class="math notranslate nohighlight" id="equation-petrosian-ratio">
+<span class="eqno">(40)<a class="headerlink" href="#equation-petrosian-ratio" title="Permalink to this equation"></a></span>\[R_{\rm P}(r) = \frac{\sum_{0.9r &lt; r_i &lt; 1.1r} p^{(d)}_i}{\sum_{r_i &lt; r} p^{(d)}_i} \frac{N_{r_i &lt; r}}{N_{0.9r &lt; r_i &lt; 1.1r}},\]</div>
+<p>where <span class="math notranslate nohighlight">\(p^{(d)}_i\)</span> is the pixel value <em>in the detection image</em>. <span class="math notranslate nohighlight">\(r_i\)</span> is the &quot;reduced pseudo-radius&quot; at pixel <span class="math notranslate nohighlight">\(i\)</span> as defined in <a class="reference internal" href="#equation-reduced-radius">(38)</a>.
+The <em>Petrosian ellipse</em> <span class="math notranslate nohighlight">\({\cal P}\)</span> is the ellipse with reduced pseudo-radius <span class="math notranslate nohighlight">\(N_{\rm P}r_{\rm P}\)</span>, where <span class="math notranslate nohighlight">\(r_{\rm P}\)</span> is defined by</p>
+<div class="math notranslate nohighlight" id="equation-petrosian-radius">
+<span class="eqno">(41)<a class="headerlink" href="#equation-petrosian-radius" title="Permalink to this equation"></a></span>\[R_{\rm P}(r_{\rm p}) \equiv 0.2\]</div>
+<p>The quantity <span class="math notranslate nohighlight">\(N_{\rm P}r_{\rm P}\)</span> is called <em>Petrosian radius</em> in <strong class="program">SExtractor</strong><a class="footnote-reference brackets" href="#petro-radius" id="id6" role="doc-noteref"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></a> and is provided by the <span class="param">PETRO_RADIUS</span> catalog parameter.
+The Petrosian factor <span class="math notranslate nohighlight">\(N_{\rm P}\)</span> is set to 2.0 by default.
+Very noisy objects may sometimes end up with a Petrosian ellipse being too small.
+For this reason, <strong class="program">SExtractor</strong> imposes a minimum size for the Petrosian radius, which cannot be less than <span class="math notranslate nohighlight">\(r_{\rm P,min}\)</span>.
+The user has full control over the parameters <span class="math notranslate nohighlight">\(N_{\rm P}\)</span> and <span class="math notranslate nohighlight">\(r_{\rm P,min}\)</span> through the <code class="docutils literal notranslate"><span class="pre">PHOT_PETROPARAMS</span></code> configuration parameters. <code class="docutils literal notranslate"><span class="pre">PHOT_PETROPARAMS</span></code> is set by default to <code class="docutils literal notranslate"><span class="pre">2.0,3.5</span></code>.</p>
+<p>The Petrosian flux is the sum of pixel values from the measurement image, subtracted from the local background, inside the Petrosian ellipse:</p>
+<div class="math notranslate nohighlight" id="equation-flux-petro">
+<span class="eqno">(42)<a class="headerlink" href="#equation-flux-petro" title="Permalink to this equation"></a></span>\[{\tt FLUX\_PETRO} = \sum_{i\in\cal P} p_i.\]</div>
+<aside class="footnote-list brackets">
+<aside class="footnote brackets" id="petro-radius" role="note">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id6">1</a><span class="fn-bracket">]</span></span>
+<p>Some authors prefer to define the Petrosian radius as <span class="math notranslate nohighlight">\(r_{\rm P}\)</span> instead of <span class="math notranslate nohighlight">\(N_{\rm P}r_{\rm P}\)</span>.</p>
+</aside>
+</aside>
+</section>
+<section id="photographic-photometry">
+<h2>Photographic photometry<a class="headerlink" href="#photographic-photometry" title="Permalink to this heading"></a></h2>
+<p>In <code class="docutils literal notranslate"><span class="pre">DETECT_TYPE</span> <span class="pre">PHOTO</span></code> mode, SExtractor assumes that the response of the detector, over the dynamic range of the image, is logarithmic.
+This is generally a good approximation for photographic density on deep exposures.
+Photometric procedures described above remain unchanged, except that for each pixel we apply first the transformation</p>
+<div class="math notranslate nohighlight" id="equation-dtoi">
+<span class="eqno">(43)<a class="headerlink" href="#equation-dtoi" title="Permalink to this equation"></a></span>\[I = I_0\,10^{D/\gamma},\]</div>
+<p>where <span class="math notranslate nohighlight">\(\gamma\)</span> (<code class="docutils literal notranslate"><span class="pre">MAG_GAMMA</span></code>) is the contrast index of the emulsion, <span class="math notranslate nohighlight">\(D\)</span> the original pixel value from the background-subtracted image, and <span class="math notranslate nohighlight">\(I_0\)</span> is computed from the magnitude zero-point <span class="math notranslate nohighlight">\(m_0\)</span>:</p>
+<div class="math notranslate nohighlight" id="equation-m0toi0">
+<span class="eqno">(44)<a class="headerlink" href="#equation-m0toi0" title="Permalink to this equation"></a></span>\[I_0 = \frac{\gamma}{\ln 10} \,10^{-0.4\, m_0}.\]</div>
+<p>One advantage of using a density-to-intensity transformation relative to the local sky background is that it corrects (to some extent) large-scale inhomogeneities in sensitivity (see <span id="id7">[<a class="reference internal" href="references.html#id42" title="E. Bertin. Photométrie automatique de galaxies et contraintes sur leur évolution récente. PhD thesis, Université Paris VI, June 1996.">27</a>]</span> for details).</p>
+</section>
+<section id="local-background">
+<span id="background-def"></span><h2>Local background<a class="headerlink" href="#local-background" title="Permalink to this heading"></a></h2>
+<p>Almost all <strong class="program">SExtractor</strong> measurements are done using background-subtracted pixel values.
+In crowded fields, or in images where the background is irregular, the <a class="reference internal" href="Background.html#background-model"><span class="std std-ref">background model</span></a> may be significantly inaccurate, locally creating biases in photometric estimates.</p>
+<p>The user has the possibility to force <strong class="program">SExtractor</strong> to correct, for every detection, the background used to compute fluxes by setting the <code class="docutils literal notranslate"><span class="pre">BACKPHOTO_TYPE</span></code> configuration parameter to <code class="docutils literal notranslate"><span class="pre">LOCAL</span></code> (<code class="docutils literal notranslate"><span class="pre">GLOBAL</span></code> is the default).
+In <code class="docutils literal notranslate"><span class="pre">LOCAL</span></code> mode, a mean background residual level is estimated from background-subtracted pixel values within a &quot;rectangular annulus&quot; around the isophotal limits of the object.
+The user can specify the thickness of the annulus, in pixels, with the <code class="docutils literal notranslate"><span class="pre">BACKPHOTO_SIZE</span></code> configuration parameter. The default thickness is <code class="docutils literal notranslate"><span class="pre">24</span></code> pixels.
+The residual background level computed in <code class="docutils literal notranslate"><span class="pre">LOCAL</span></code> mode is used by <strong class="program">SExtractor</strong> to correct all aperture photometry measurements, as well as basic surface brightness estimations such as <span class="param">FLUX_MAX</span>.
+However in practice the <code class="docutils literal notranslate"><span class="pre">BACKPHOTO_TYPE</span> <span class="pre">LOCAL</span></code> option has not proven as being really beneficial to photometric accuracy, and it is generally advised to leave <code class="docutils literal notranslate"><span class="pre">BACKPHOTO_TYPE</span></code> set to <code class="docutils literal notranslate"><span class="pre">GLOBAL</span></code>.</p>
+<p>In both <code class="docutils literal notranslate"><span class="pre">LOCAL</span></code> and <code class="docutils literal notranslate"><span class="pre">GLOBAL</span></code> modes, the <span class="param">BACKGROUND</span> catalog parameter gives the value of the background estimated at the centroid of the object.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="PositionWin.html" class="btn btn-neutral float-left" title="Windowed positional parameters" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="Model.html" class="btn btn-neutral float-right" title="Model fitting" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2017-2023, CFHT/IAP/CNRS/SorbonneU.</p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

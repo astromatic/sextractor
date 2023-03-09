@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Windowed positional parameters &mdash; SExtractor 2.28.0 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
+        <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Aperture photometry" href="Photom.html" />
+    <link rel="prev" title="Isophotal measurements" href="Position.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            SExtractor
+          </a>
+              <div class="version">
+                2.28.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="Introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="License.html">License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Installing.html">Installing the software</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Using.html">Using SExtractor</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Processing.html">Processing</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="Measurements.html">Measurements</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="Position.html">Isophotal measurements</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Windowed positional parameters</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#windowed-centroid-xwin-ywin">Windowed centroid: <span class="param">XWIN</span>, <span class="param">YWIN</span></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#windowed-2nd-order-moments-x2-y2-xy">Windowed 2nd order moments: <span class="param">X2</span>, <span class="param">Y2</span>, <span class="param">XY</span></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#windowed-shape-parameters-awin-bwin-thetawin">Windowed shape parameters: <span class="param">AWIN</span>, <span class="param">BWIN</span>, <span class="param">THETAWIN</span></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#windowed-ellipse-parameters-cxxwin-cyywin-cxywin">Windowed ellipse parameters: <span class="param">CXXWIN</span>, <span class="param">CYYWIN</span>, <span class="param">CXYWIN</span></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#windowed-position-uncertainties-errx2win-erry2win-errxywin-errawin-errbwin-errthetawin-errcxxwin-errcyywin-errcxywin">Windowed position uncertainties: <span class="param">ERRX2WIN</span>, <span class="param">ERRY2WIN</span>, <span class="param">ERRXYWIN</span>, <span class="param">ERRAWIN</span>, <span class="param">ERRBWIN</span>, <span class="param">ERRTHETAWIN</span>, <span class="param">ERRCXXWIN</span>, <span class="param">ERRCYYWIN</span>, <span class="param">ERRCXYWIN</span></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#windowed-measurement-flags-flags-win">Windowed measurement flags: <span class="param">FLAGS_WIN</span></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="Photom.html">Aperture photometry</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Model.html">Model fitting</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="references.html">Bibliography</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">SExtractor</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="Measurements.html">Measurements</a></li>
+      <li class="breadcrumb-item active">Windowed positional parameters</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/PositionWin.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="windowed-positional-parameters">
+<h1>Windowed positional parameters<a class="headerlink" href="#windowed-positional-parameters" title="Permalink to this heading"></a></h1>
+<p>Measurements performed through a <em>window</em> function (an <em>envelope</em>) do not have many of the drawbacks of isophotal measurements.
+<strong class="program">SExtractor</strong> implements “windowed” versions for most of the measurements described in the <a class="reference internal" href="Position.html#pos-iso-def"><span class="std std-ref">previous section</span></a>:</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Unless otherwise noted, all parameter names given below are only prefixes. They must be followed by _IMAGE if the results shall be expressed in pixel coordinates or <span class="param">_WORLD</span>, <span class="param">_SKY</span>, <span class="param">_J2000</span> or <span class="param">_B1950</span> for <a class="reference external" href="http://www.atnf.csiro.au/people/mcalabre/WCS/index.html">WCS</a> coordinates (see <a class="reference internal" href="Param.html#coord-suffix"><span class="std std-ref">Positions and shapes</span></a>).</p>
+</div>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Isophotal parameters</p></th>
+<th class="head"><p>Equivalent windowed parameters</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><span class="param">X</span>, <span class="param">Y</span></p></td>
+<td><p><span class="param">XWIN</span>, <span class="param">YWIN</span></p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="param">ERRA</span>, <span class="param">ERRB</span>, <span class="param">ERRTHETA</span></p></td>
+<td><p><span class="param">ERRAWIN</span>, <span class="param">ERRBWIN</span>, <span class="param">ERRTHETAWIN</span></p></td>
+</tr>
+<tr class="row-even"><td><p><span class="param">A</span>, <span class="param">B</span>, <span class="param">THETA</span></p></td>
+<td><p><span class="param">AWIN</span>, <span class="param">BWIN</span>, <span class="param">THETAWIN</span></p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="param">X2</span>, <span class="param">Y2</span>, <span class="param">XY</span></p></td>
+<td><p><span class="param">X2WIN</span>, <span class="param">Y2WIN</span>, <span class="param">XYWIN</span></p></td>
+</tr>
+<tr class="row-even"><td><p><span class="param">CXX</span>, <span class="param">CYY</span>, <span class="param">CXY</span></p></td>
+<td><p><span class="param">CXXWIN</span>, <span class="param">CYYWIN</span>, <span class="param">CXYWIN</span></p></td>
+</tr>
+</tbody>
+</table>
+<p>The computations involved are roughly the same except that the pixel values are integrated within a circular Gaussian window as opposed to the object’s isophotal footprint.
+The Gaussian window is scaled to each object; the Gaussian FWHM is the diameter of the disk that contains half of the object flux (<span class="math notranslate nohighlight">\(d_{50}\)</span>).
+Note that in double-image mode (§[chap:using]) the window is scaled based on the <em>measurement</em> image.</p>
+<section id="windowed-centroid-xwin-ywin">
+<span id="pos-win-def"></span><h2>Windowed centroid: <span class="param">XWIN</span>, <span class="param">YWIN</span><a class="headerlink" href="#windowed-centroid-xwin-ywin" title="Permalink to this heading"></a></h2>
+<p>This is an iterative process.
+Computation starts by initializing the windowed centroid coordinates <span class="math notranslate nohighlight">\(\overline{x_{\tt WIN}}^{(0)}\)</span> and <span class="math notranslate nohighlight">\(\overline{y_{\tt WIN}}^{(0)}\)</span> to their basic <span class="math notranslate nohighlight">\(\overline{x}\)</span> and <span class="math notranslate nohighlight">\(\overline{y}\)</span> isophotal equivalents, respectively.
+Then at each iteration <span class="math notranslate nohighlight">\(t\)</span>, <span class="math notranslate nohighlight">\(\overline{x_{\tt WIN}}\)</span> and <span class="math notranslate nohighlight">\(\overline{y_{\tt WIN}}\)</span> are refined using:</p>
+<div class="math notranslate nohighlight" id="equation-xywin">
+<span class="eqno">(27)<a class="headerlink" href="#equation-xywin" title="Permalink to this equation"></a></span>\[\begin{split} \begin{aligned}
+ {\tt XWIN}^{(t+1)} &amp; = &amp; \overline{x_{\tt WIN}}^{(t+1)}
+ = \overline{x_{\tt WIN}}^{(t)} + 2\,\frac{\sum_{r_i^{(t)} &lt; r_{\rm max}}
+ w_i^{(t)} I_i \ (x_i  - \overline{x_{\tt WIN}}^{(t)})}
+ {\sum_{r_i^{(t)} &lt; r_{\rm max}} w_i^{(t)} I_i},\\
+ {\tt YWIN}^{(t+1)} &amp; = &amp; \overline{y_{\tt WIN}}^{(t+1)}
+ = \overline{y_{\tt WIN}}^{(t)} + 2\,\frac{\sum_{r_i^{(t)} &lt; r_{\rm max}}
+ w_i^{(t)} I_i\ (y_i - \overline{y_{\tt WIN}}^{(t)})}
+ {\sum_{r_i^{(t)} &lt; r_{\rm max}} w_i^{(t)} I_i},
+ \end{aligned}\end{split}\]</div>
+<p>where</p>
+<div class="math notranslate nohighlight" id="equation-wi-t">
+<span class="eqno">(28)<a class="headerlink" href="#equation-wi-t" title="Permalink to this equation"></a></span>\[w_i^{(t)} = \exp \left(-\frac{r_i^{(t)^2}}{2s_{\tt WIN}^2} \right),\]</div>
+<p>with</p>
+<div class="math notranslate nohighlight" id="equation-ri-t">
+<span class="eqno">(29)<a class="headerlink" href="#equation-ri-t" title="Permalink to this equation"></a></span>\[ r_i^{(t)} = \sqrt{\left(x_i - \overline{x_{\tt WIN}}^{(t)}\right)^2 + \left(y_i
+ - \overline{y_{\tt WIN}}^{(t)}\right)^2}\]</div>
+<p>and <span class="math notranslate nohighlight">\(s_{\tt WIN} = d_{50} / \sqrt{8 \ln 2}\)</span>.
+Process stops when the change in position between two iterations is less than <span class="math notranslate nohighlight">\(2\times10^{-4}\)</span> pixel, a condition which is achieved in about 3 to 5 iterations in practice.</p>
+<p>Although they are slower, it is recommended to use whenever possible windowed position parameters instead of their isophotal equivalents; the measurements they provide are generally much more accurate (<a class="reference internal" href="#fig-xwinprec"><span class="std std-numref">Fig. 6</span></a>).
+The centroiding accuracy of <span class="param">XWIN_IMAGE</span> and <span class="param">YWIN_IMAGE</span> is actually very close to that of PSF-fitting on focused and properly sampled star images. Windowed measurements can also be applied to galaxies.
+It has been verified that for isolated objects with Gaussian-like profiles, their accuracy is close to the theoretical limit set by image noise <a class="footnote-reference brackets" href="#win-accuracy" id="id1" role="doc-noteref"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></a>.</p>
+<figure class="align-center" id="id2" style="width: 100%">
+<span id="fig-xwinprec"></span><img alt="_images/xwinprec.svg" src="_images/xwinprec.svg" /><figcaption>
+<p><span class="caption-number">Fig. 6 </span><span class="caption-text">Comparison between isophotal and windowed centroid measurement residuals on simulated, background noise-limited images.
+<em>Left</em>: histogram of the difference between <span class="param">X_IMAGE</span> and the true centroid in x.
+<em>Right</em>: histogram of the difference between <span class="param">XWIN_IMAGE</span> and the true centroid in x.</span><a class="headerlink" href="#id2" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+</section>
+<section id="windowed-2nd-order-moments-x2-y2-xy">
+<span id="moments-win-def"></span><h2>Windowed 2nd order moments: <span class="param">X2</span>, <span class="param">Y2</span>, <span class="param">XY</span><a class="headerlink" href="#windowed-2nd-order-moments-x2-y2-xy" title="Permalink to this heading"></a></h2>
+<p>Windowed second-order moments are computed on the image data once the <a class="reference internal" href="#pos-win-def"><span class="std std-ref">centering process</span></a> has converged:</p>
+<div class="math notranslate nohighlight" id="equation-x2y2win">
+<span class="eqno">(30)<a class="headerlink" href="#equation-x2y2win" title="Permalink to this equation"></a></span>\[\begin{split} \begin{aligned}
+ {\tt X2WIN} &amp; = \overline{x_{\tt WIN}^2}
+ = &amp; \frac{\sum_{r_i &lt; r_{\rm max}} w_i I_i (x_i - \overline{x_{\tt WIN}})^2}
+ {\sum_{r_i &lt; r_{\rm max}} w_i I_i},\\
+ {\tt Y2WIN} &amp; = \overline{y_{\tt WIN}^2}
+ = &amp; \frac{\sum_{r_i &lt; r_{\rm max}} w_i I_i (y_i - \overline{y_{\tt WIN}})^2}
+ {\sum_{r_i &lt; r_{\rm max}} w_i I_i},\\
+ {\tt XYWIN} &amp; = \overline{xy_{\tt WIN}}
+ = &amp; \frac{\sum_{r_i &lt; r_{\rm max}} w_i I_i (x_i - \overline{x_{\tt WIN}})
+ (y_i - \overline{y_{\tt WIN}})}
+ {\sum_{r_i &lt; r_{\rm max}} w_i I_i}.\end{aligned}\end{split}\]</div>
+<p>Windowed second-order moments are typically twice smaller than their isophotal equivalent.</p>
+</section>
+<section id="windowed-shape-parameters-awin-bwin-thetawin">
+<span id="shape-win-def"></span><h2>Windowed shape parameters: <span class="param">AWIN</span>, <span class="param">BWIN</span>, <span class="param">THETAWIN</span><a class="headerlink" href="#windowed-shape-parameters-awin-bwin-thetawin" title="Permalink to this heading"></a></h2>
+<p>They are computed from the windowed 2nd order moments exactly the same
+way as in <a class="reference internal" href="Position.html#equation-theta0-3">(12)</a> and <a class="reference internal" href="Position.html#equation-aimage-2">(14)</a> from the <a class="reference internal" href="Position.html#shape-iso-def"><span class="std std-ref">isophotal shape parameter</span></a> section:</p>
+<div class="math notranslate nohighlight" id="equation-shapewin">
+<span class="eqno">(31)<a class="headerlink" href="#equation-shapewin" title="Permalink to this equation"></a></span>\[\begin{split} \begin{aligned}
+ {\tt AWIN}^2 &amp; = &amp; \frac{\overline{x_{\tt WIN}^2}+\overline{y_{\tt WIN}^2}}{2}
+     + \sqrt{\left(\frac{\overline{x_{\tt WIN}^2}-\overline{y_{\tt WIN}^2}}{2}\right)^2 + \overline{xy_{\tt WIN}}^2},\\
+ {\tt BWIN}^2 &amp; = &amp; \frac{\overline{x_{\tt WIN}^2}+\overline{y_{\tt WIN}^2}}{2}
+     - \sqrt{\left(\frac{\overline{x_{\tt WIN}^2}-\overline{y_{\tt WIN}^2}}{2}\right)^2 + \overline{xy_{\tt WIN}}^2},\\
+ \tan (2\,{\tt THETAWIN}) &amp; = &amp; 2 \frac{\overline{xy_{\tt WIN}}}{\overline{x_{\tt WIN}^2} - \overline{y_{\tt WIN}^2}}.
+ \end{aligned}\end{split}\]</div>
+</section>
+<section id="windowed-ellipse-parameters-cxxwin-cyywin-cxywin">
+<span id="ellipse-win-def"></span><h2>Windowed ellipse parameters: <span class="param">CXXWIN</span>, <span class="param">CYYWIN</span>, <span class="param">CXYWIN</span><a class="headerlink" href="#windowed-ellipse-parameters-cxxwin-cyywin-cxywin" title="Permalink to this heading"></a></h2>
+<p>Ellipse parameters are computed from the windowed 2nd order moments exactly the same way as in <a class="reference internal" href="Position.html#equation-ellipse-2">(17)</a> describing the <a class="reference internal" href="Position.html#ellipse-iso-def"><span class="std std-ref">isophotal ellipse parameters</span></a>:</p>
+<div class="math notranslate nohighlight" id="equation-ellipsewin-2">
+<span class="eqno">(32)<a class="headerlink" href="#equation-ellipsewin-2" title="Permalink to this equation"></a></span>\[\begin{split} \begin{aligned}
+ {\tt CXXWIN} &amp; = &amp; \frac{\cos^2 {\tt THETAWIN}}{{\tt AWIN}^2} + \frac{\sin^2
+ {\tt THETAWIN}}{{\tt BWIN}^2} =
+ \frac{\overline{y_{\tt WIN}^2}}{\overline{x_{\tt WIN}^2} \overline{y_{\tt WIN}^2} - \overline{xy_{\tt WIN}}^2}\\
+ {\tt CYYWIN} &amp; = &amp; \frac{\sin^2 {\tt THETAWIN}}{{\tt
+ AWIN}^2} + \frac{\cos^2 {\tt THETAWIN}}{{\tt BWIN}^2} =
+ \frac{\overline{x_{\tt WIN}^2}}{\overline{x_{\tt WIN}^2} \overline{y_{\tt WIN}^2} - \overline{xy_{\tt WIN}}^2}\\
+ {\tt CXYWIN} &amp; = &amp; 2 \,\cos {\tt THETAWIN}\,\sin {\tt
+ THETAWIN} \left( \frac{1}{{\tt AWIN}^2} - \frac{1}{{\tt BWIN}^2}\right) = -2\,
+ \frac{\overline{xy_{\tt WIN}}}{\overline{x_{\tt WIN}^2} \overline{y_{\tt WIN}^2} - \overline{xy_{\tt WIN}}^2}.
+ \end{aligned}\end{split}\]</div>
+</section>
+<section id="windowed-position-uncertainties-errx2win-erry2win-errxywin-errawin-errbwin-errthetawin-errcxxwin-errcyywin-errcxywin">
+<span id="poserr-win-def"></span><h2>Windowed position uncertainties: <span class="param">ERRX2WIN</span>, <span class="param">ERRY2WIN</span>, <span class="param">ERRXYWIN</span>, <span class="param">ERRAWIN</span>, <span class="param">ERRBWIN</span>, <span class="param">ERRTHETAWIN</span>, <span class="param">ERRCXXWIN</span>, <span class="param">ERRCYYWIN</span>, <span class="param">ERRCXYWIN</span><a class="headerlink" href="#windowed-position-uncertainties-errx2win-erry2win-errxywin-errawin-errbwin-errthetawin-errcxxwin-errcyywin-errcxywin" title="Permalink to this heading"></a></h2>
+<p>Windowed position uncertainties are computed on the image data once the centering process of the <a class="reference internal" href="#pos-win-def"><span class="std std-ref">windowed centroid</span></a> has converged.
+Assuming that noise is uncorrelated among pixels, standard error propagation applied to <a class="reference internal" href="#equation-xywin">(27)</a> writes:</p>
+<div class="math notranslate nohighlight" id="equation-errwin">
+<span class="eqno">(33)<a class="headerlink" href="#equation-errwin" title="Permalink to this equation"></a></span>\[\begin{split} \begin{aligned}
+ {\tt ERRX2WIN} &amp; = {\rm var}(\overline{x_{\tt WIN}})
+ = &amp; 4\,\frac{\sum_{r_i &lt; r_{\rm max}} w_i^2 \sigma^2_i (x_i-\overline{x_{\tt WIN}})^2}
+ {\left(\sum_{r_i &lt; r_{\rm max}} w_i I_i\right)^2},\\
+ {\tt ERRY2WIN} &amp; = {\rm var}(\overline{y_{\tt WIN}})
+ = &amp; 4\,\frac{\sum_{r_i &lt; r_{\rm max}} w_i^2 \sigma^2_i (y_i-\overline{y_{\tt WIN}})^2}
+ {\left(\sum_{r_i &lt; r_{\rm max}} w_i I_i\right)^2},\\
+ {\tt ERRXYWIN} &amp; = {\rm cov}(\overline{x_{\tt WIN}},\overline{y_{\tt WIN}})
+ = &amp; 4\,\frac{\sum_{r_i &lt; r_{\rm max}}
+ w_i^2 \sigma^2_i (x_i-\overline{x_{\tt WIN}})(y_i-\overline{y_{\tt WIN}})}
+ {\left(\sum_{r_i &lt; r_{\rm max}} w_i I_i\right)^2}.
+ \end{aligned}\end{split}\]</div>
+<p>Semi-major axis <span class="param">ERRAWIN</span>, semi-minor axis <span class="param">ERRBWIN</span>, and position angle <span class="param">ERRTHETAWIN</span> of the <span class="math notranslate nohighlight">\(1\sigma\)</span> position error ellipse are computed from the covariance matrix elements <span class="math notranslate nohighlight">\({\rm var}(\overline{x_{\tt WIN}})\)</span>, <span class="math notranslate nohighlight">\({\rm var}(\overline{y_{\tt WIN}})\)</span>, <span class="math notranslate nohighlight">\({\rm cov}(\overline{x_{\tt WIN}},\overline{y_{\tt WIN}})\)</span>, similarly to the <a class="reference internal" href="Position.html#poserr-iso-def"><span class="std std-ref">isophotal error ellipse</span></a>:</p>
+<div class="math notranslate nohighlight" id="equation-errabthetawin">
+<span class="eqno">(34)<a class="headerlink" href="#equation-errabthetawin" title="Permalink to this equation"></a></span>\[\begin{split} \begin{aligned}
+ {\tt ERRAWIN}^2 &amp; = &amp; \frac{{\rm var}(\overline{x_{\tt WIN}})+{\rm var}(\overline{y_{\tt WIN}})}{2}
+     + \sqrt{\left(\frac{{\rm var}(\overline{x_{\tt WIN}})-{\rm var}(\overline{y_{\tt WIN}})}{2}\right)^2
+     + {\rm cov}^2(\overline{x_{\tt WIN}},\overline{y_{\tt WIN}})},\\
+ {\tt ERRBWIN}^2 &amp; = &amp; \frac{{\rm var}(\overline{x_{\tt WIN}})+{\rm var}(\overline{y_{\tt WIN}})}{2}
+     - \sqrt{\left(\frac{{\rm var}(\overline{x_{\tt WIN}})-{\rm var}(\overline{y_{\tt WIN}})}{2}\right)^2
+     + {\rm cov}^2(\overline{x_{\tt WIN}},\overline{y_{\tt WIN}})},\\
+ \tan (2{\tt ERRTHETAWIN}) &amp; = &amp; 2 \,\frac{{\rm cov}(\overline{x_{\tt WIN}},\overline{y_{\tt WIN}})}
+                     {{\rm var}(\overline{x_{\tt WIN}}) - {\rm var}(\overline{y_{\tt WIN}})}.
+  \end{aligned}\end{split}\]</div>
+<p>The error ellipse parameters are:</p>
+<div class="math notranslate nohighlight" id="equation-errellipsewin">
+<span class="eqno">(35)<a class="headerlink" href="#equation-errellipsewin" title="Permalink to this equation"></a></span>\[\begin{split} \begin{aligned}
+ {\tt ERRCXXWIN} &amp; = &amp; \frac{\cos^2 {\tt ERRTHETAWIN}}{{\tt ERRAWIN}^2} +
+ \frac{\sin^2 {\tt ERRTHETAWIN}}{{\tt ERRBWIN}^2} = \frac{{\rm
+ var}(\overline{y_{\tt WIN}})}{{\rm var}(\overline{x_{\tt WIN}}) {\rm var}(\overline{y_{\tt WIN}}) -
+ {\rm cov}^2(\overline{x_{\tt WIN}},\overline{y_{\tt WIN}})},\\
+ {\tt ERRCYYWIN} &amp; = &amp; \frac{\sin^2 {\tt ERRTHETAWIN}}{{\tt ERRAWIN}^2} +
+ \frac{\cos^2 {\tt ERRTHETAWIN}}{{\tt ERRBWIN}^2} =
+ \frac{{\rm var}(\overline{x_{\tt WIN}})}{{\rm var}(\overline{x_{\tt WIN}}) {\rm var}(\overline{y_{\tt WIN}}) -
+ {\rm cov}^2(\overline{x_{\tt WIN}},\overline{y_{\tt WIN}})},\\
+ {\tt ERRCXYWIN} &amp; = &amp; 2 \cos {\tt
+ ERRTHETAWIN}\sin {\tt ERRTHETAWIN} \left( \frac{1}{{\tt ERRAWIN}^2} -
+ \frac{1}{{\tt ERRBWIN}^2}\right)\\ &amp; = &amp; -2 \frac{{\rm
+ cov}(\overline{x_{\tt WIN}},\overline{y_{\tt WIN}})}{{\rm var}(\overline{x_{\tt WIN}}) {\rm var}(\overline{y_{\tt WIN}}) -
+ {\rm cov}^2(\overline{x_{\tt WIN}},\overline{y_{\tt WIN}})}.
+ \end{aligned}\end{split}\]</div>
+</section>
+<section id="windowed-measurement-flags-flags-win">
+<span id="flags-win-def"></span><h2>Windowed measurement flags: <span class="param">FLAGS_WIN</span><a class="headerlink" href="#windowed-measurement-flags-flags-win" title="Permalink to this heading"></a></h2>
+<p>The <span class="param">FLAGS_WIN</span> catalog parameter flags various issues which may happen with windowed measurements (see the <a class="reference internal" href="Flagging.html#flagging"><span class="std std-ref">Flagging</span></a> section for details on how flags are managed in <strong class="program">SExtractor</strong>):</p>
+<span id="flags-win-table"></span><table class="docutils align-default" id="id3">
+<caption><span class="caption-number">Table 4 </span><span class="caption-text"><span class="param">FLAGS_WIN</span> description</span><a class="headerlink" href="#id3" title="Permalink to this table"></a></caption>
+<colgroup>
+<col style="width: 5%" />
+<col style="width: 95%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Value</p></th>
+<th class="head"><p>Meaning</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>1</p></td>
+<td><p><a class="reference internal" href="#moments-win-def"><span class="std std-ref">Windowed second-order moments</span></a> are inconsistent (<span class="math notranslate nohighlight">\(\overline{x_{\tt WIN}^2}\overline{y_{\tt WIN}^2} \le \overline{x_{\tt WIN}y_{\tt WIN}}^2\)</span>)</p></td>
+</tr>
+<tr class="row-odd"><td><p>2</p></td>
+<td><p><a class="reference internal" href="#moments-win-def"><span class="std std-ref">Windowed second-order moments</span></a> are less than or equal to 0</p></td>
+</tr>
+<tr class="row-even"><td><p>4</p></td>
+<td><p>Windowed flux is less than or equal to 0</p></td>
+</tr>
+</tbody>
+</table>
+<aside class="footnote-list brackets">
+<aside class="footnote brackets" id="win-accuracy" role="note">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id1">1</a><span class="fn-bracket">]</span></span>
+<p>See <a class="reference external" href="http://www.astromatic.net/forum/showthread.php?tid=581">http://www.astromatic.net/forum/showthread.php?tid=581</a> .</p>
+</aside>
+</aside>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="Position.html" class="btn btn-neutral float-left" title="Isophotal measurements" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="Photom.html" class="btn btn-neutral float-right" title="Aperture photometry" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2017-2023, CFHT/IAP/CNRS/SorbonneU.</p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CLASS_STAR classifier &mdash; SExtractor 2.28.0 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
+        <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            SExtractor
+          </a>
+              <div class="version">
+                2.28.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="Introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="License.html">License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Installing.html">Installing the software</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Using.html">Using SExtractor</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Processing.html">Processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Measurements.html">Measurements</a></li>
+<li class="toctree-l1"><a class="reference internal" href="references.html">Bibliography</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">SExtractor</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active"><span class="param">CLASS_STAR</span> classifier</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/ClassStar.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="class-star-classifier">
+<span id="class-star-def"></span><h1><span class="param">CLASS_STAR</span> classifier<a class="headerlink" href="#class-star-classifier" title="Permalink to this heading"></a></h1>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The <span class="param">CLASS_STAR</span> classifier has been superseded by the <span class="param">SPREAD_MODEL</span> estimator (see <a class="reference internal" href="Model.html#spread-model-def"><span class="std std-ref">Model-based star-galaxy separation: SPREAD_MODEL</span></a>), which offers better performance by making explicit use of the full, variable <abbr title="Point Spread Function">PSF</abbr> model.</p>
+</div>
+<p>A good discrimination between stars and galaxies is essential for both galactic and extragalactic statistical studies.
+The common assumption is that galaxy images look more extended or fuzzier than those of stars (or <abbr title="Quasi-Stellar Object">QSO</abbr>s).
+<strong class="program">SExtractor</strong> provides the <span class="param">CLASS_STAR</span> catalog parameter for separating both types of sources.
+The  <span class="param">CLASS_STAR</span> classifier relies on a <a class="reference external" href="https://en.wikipedia.org/wiki/Multilayer_perceptron">multilayer feed-forward neural network</a> trained using <a class="reference external" href="https://en.wikipedia.org/wiki/Supervised_learning">supervised learning</a> to estimate the <em>a posteriori</em> probability <span id="id1">[<a class="reference internal" href="references.html#id26" title="M. D. Richard and R. P. Lippmann, 1991. Neural network classifiers estimate bayesian a posteriori probabilities. Neural Computation, pages 461–483.">19</a>, <a class="reference internal" href="references.html#id27" title="M. Saerens, P. Latinne, and C. Decaestecker, 2002. Any reasonable cost function can be used for a posteriori probability approximation. IEEE Transactions on Neural Networks, 13(5):1204-1210.">20</a>]</span> of a <strong class="program">SExtractor</strong> detection to be a point source or an extended object.
+Below is a shortened description of the estimator, see <span id="id2">[<a class="reference internal" href="references.html#id2" title="E. Bertin and S. Arnouts, 1996. SExtractor: Software for source extraction. A&amp;AS, 117:393-404.">12</a>]</span> for more details.</p>
+<section id="inputs-and-outputs">
+<h2>Inputs and outputs<a class="headerlink" href="#inputs-and-outputs" title="Permalink to this heading"></a></h2>
+<p>The neural network is a multilayer Perceptron with a single fully connected, hidden layers.
+Of all neural networks it is probably the best-studied, and it has been intensively applied with success for many classification tasks.</p>
+<p>The classifier (<a class="reference internal" href="Position.html#fig-classstarnn"><span class="std std-numref">Fig. 4</span></a>) has 10 inputs:</p>
+<ul class="simple">
+<li><p>8 isophotal areas <span class="math notranslate nohighlight">\(A_0..A_7\)</span>, measured at isophotes exponentially spaced between the analysis threshold (which may be modified with the <code class="docutils literal notranslate"><span class="pre">ANALYSIS_THRESH</span></code> configuration parameter) and the object's peak pixel value</p></li>
+<li><p>The object's peak pixel value above the local background <span class="math notranslate nohighlight">\(I_{\mathrm max}\)</span></p></li>
+<li><p>A <em>seeing</em> input, which acts as a tuning button.</p></li>
+</ul>
+<p>The output layer contains only one neuron, as &quot;star&quot; and &quot;galaxy&quot; are two classes mutually exclusive.
+The output value is a &quot;stellarity index&quot;, which for images that reasonably match those of the training sample is an estimation of the <em>a posteriori</em> probability for the classified object to be a point-source.
+Hence a <span class="param">CLASS_STAR</span> close to 0 means that the object is very likely a galaxy, and 1 that it is a star.
+In practice, real data always differ at least slightly from the training sample, and the <span class="param">CLASS_STAR</span> output is often a poor approximation of the expected <em>a posteriori</em> probabilities.
+Nevertheless, a <span class="param">CLASS_STAR</span> value closer to 0 or 1 normally indicates a higher confidence in the classification, and the balance between sample completeness and purity may still be adjusted by tweaking the decision threshold .</p>
+<figure class="align-center" id="id6" style="width: 100%">
+<span id="fig-classstarnn"></span><img alt="_images/classstarnn.svg" src="_images/classstarnn.svg" /><figcaption>
+<p><span class="caption-text">Architecture of <strong class="program">SExtractor</strong>'s <span class="param">CLASS_STAR</span> classifier</span><a class="headerlink" href="#id6" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<p>The <em>seeing</em> input must be set by the user with the <code class="docutils literal notranslate"><span class="pre">SEEING_FWHM</span></code> configuration parameter.
+If <code class="docutils literal notranslate"><span class="pre">SEEING_FWHM</span></code> is set to 0,  it is automatically measured on the <abbr title="Point Spread Function">PSF</abbr> model which must be provided (using the <code class="docutils literal notranslate"><span class="pre">PSF_NAME</span></code> configuration parameter).</p>
+<p>If no <abbr title="Point Spread Function">PSF</abbr> model is available, the <code class="docutils literal notranslate"><span class="pre">SEEING_FWHM</span></code> configuration parameter must be adjusted by the user to match the actual average <abbr title="Point Spread Function">PSF</abbr> <abbr title="Full Width at Half Maximum">FWHM</abbr> on the image.
+The accuracy with which <code class="docutils literal notranslate"><span class="pre">SEEING_FWHM</span></code> must be set for optimal results ranges from <span class="math notranslate nohighlight">\(\pm 20\%\)</span> for bright sources to about <span class="math notranslate nohighlight">\(\pm 5\%\)</span> for the faintest (<a class="reference internal" href="Position.html#fig-classstar-seeing"><span class="std std-numref">Fig. 5</span></a>). <code class="docutils literal notranslate"><span class="pre">SEEING_FWHM</span></code> is expressed in arcseconds.
+The <code class="docutils literal notranslate"><span class="pre">PIXEL_SCALE</span></code> configuration parameter must therefore also be set by the user if WCS information is missing from the <abbr title="Flexible Image Transport System">FITS</abbr> image header.
+There are several ways to measure, directly or indirectly, the size of point sources in <strong class="program">SExtractor</strong>; they may lead to slightly discordant results, depending on the exact shape of the <abbr title="Point Spread Function">PSF</abbr>.
+The measurement <span class="param">FWHM_IMAGE</span> (although not the most reliable as an image quality estimator) sets the reference when it comes to setting <code class="docutils literal notranslate"><span class="pre">SEEING_FWHM</span></code>.</p>
+<p>One may check that the <code class="docutils literal notranslate"><span class="pre">SEEING_FWHM</span></code> is set correctly by making sure that the typical <span class="param">CLASS_STAR</span> value of unclassifiable sources at the faint end of the catalog hovers around the 0.5 mark.</p>
+<figure class="align-center" id="id7" style="width: 100%">
+<span id="fig-classstar-seeing"></span><img alt="_images/classstar_seeing.svg" src="_images/classstar_seeing.svg" /><figcaption>
+<p><span class="caption-text">Architecture of <strong class="program">SExtractor</strong>'s <span class="param">CLASS_STAR</span> classifier</span><a class="headerlink" href="#id7" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+</section>
+<section id="training">
+<h2>Training<a class="headerlink" href="#training" title="Permalink to this heading"></a></h2>
+<p>This section gives some insight on how the <span class="param">CLASS_STAR</span> classifier has been trained.
+The main issue with supervised machine learning is the labeling of the large training sample.
+Hopefully a big percentage of contemporary astronomical images share a common set of generic features, which can be simulated with sufficient realism to create a large training sample together with the ground truth (labels).
+The <span class="param">CLASS_STAR</span> classifier was trained on such a sample of artificial images.</p>
+<p>Six hundred <span class="math notranslate nohighlight">\(512\times512\)</span> simulation images containing stars and galaxies were generated to train the network using an early prototype of the <a class="reference external" href="http://astromatic.net/software/skymaker"><strong class="program">SkyMaker</strong></a> package <span id="id3">[<a class="reference internal" href="references.html#id3" title="E. Bertin, 2009. SkyMaker: astronomical image simulations made easy. Mem.Soc.Ast.It, 80:422.">21</a>]</span>.
+They were done in the blue band, where galaxies present very diversified aspects.
+The two parameters governing the shape of the <abbr title="Point Spread Function">PSF</abbr> (<em>seeing</em> <abbr title="Full Width at Half Maximum">FWHM</abbr> and Moffat <span class="math notranslate nohighlight">\(\beta\)</span> parameter <span id="id4">[<a class="reference internal" href="references.html#id21" title="A. F. J. Moffat, 1969. A Theoretical Investigation of Focal Stellar Images in the Photographic Emulsion and Application to Photographic Photometry. A&amp;A, 3:455.">22</a>]</span>) were chosen randomly with <span class="math notranslate nohighlight">\(0.025\le\)</span> FWHM <span class="math notranslate nohighlight">\(\le 5.5\)</span> and <span class="math notranslate nohighlight">\(2\le\beta\le4\)</span>. Note that the <a class="reference external" href="https://en.wikipedia.org/wiki/Moffat_distribution">Moffat function</a> used in the simulation is a poor approximation to diffraction-limited images, hence the <span class="param">CLASS_STAR</span> classifier is not optimized for space-based images.
+The pixel scale was always taken less than <span class="math notranslate nohighlight">\(\approx 0.7\)</span> FWHM to warrant correct sampling of the image.
+Bright galaxies are simply too rare in the sky to constitute a significant training sample on such a small number of simulations.
+So, keeping a constant comoving number density, we increased artificially the number of nearby galaxies by making the volume element proportional to <span class="math notranslate nohighlight">\(zdz\)</span>.
+Stars were given a number-magnitude distribution identical to that of galaxies.
+<strong>Therefore any pattern presented to the network had a 50% chance to correspond to a star or a galaxy, irrespective of magnitude</strong> <a class="footnote-reference brackets" href="#faint" id="id5" role="doc-noteref"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></a>.
+Crowding in the simulated images was higher than what one sees on real images of high galactic latitude fields, allowing for the presence of many “difficult cases” (close double stars, truncated profiles, etc...) that the neural network classifier had to deal with.</p>
+<p><strong class="program">SExtractor</strong> was run on each image with 8 different extraction thresholds. This led to a catalog with about <span class="math notranslate nohighlight">\(10^6\)</span> entries with the 10 input parameters plus the class label. Back-propagation learning took about 15 min on a SUN SPARC20 workstation. The final set of synaptic weights was saved to the file <code class="file docutils literal notranslate"><span class="pre">default.nnw</span></code> , ready to be used in “feed-forward” mode during source extraction.</p>
+<aside class="footnote-list brackets">
+<aside class="footnote brackets" id="faint" role="note">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id5">1</a><span class="fn-bracket">]</span></span>
+<p>Faint galaxies have less chance being detected than faint stars, but it has little effect because the ones that are lost at a given magnitude are predominantly the most extended and consequently the easiest to classify.</p>
+</aside>
+</aside>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2017-2023, CFHT/IAP/CNRS/SorbonneU.</p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Measurements &mdash; SExtractor 2.28.0 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Isophotal measurements" href="Position.html" />
+    <link rel="prev" title="Flagging" href="Flagging.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            SExtractor
+          </a>
+              <div class="version">
+                2.28.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="Introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="License.html">License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Installing.html">Installing the software</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Using.html">Using SExtractor</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Processing.html">Processing</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Measurements</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="Position.html">Isophotal measurements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="PositionWin.html">Windowed positional parameters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Photom.html">Aperture photometry</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Model.html">Model fitting</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="references.html">Bibliography</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">SExtractor</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Measurements</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/Measurements.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="measurements">
+<h1>Measurements<a class="headerlink" href="#measurements" title="Permalink to this heading"></a></h1>
+<p>Once sources have been detected and deblended, they enter the measurement phase.
+<strong class="program">SExtractor</strong> performs three categories of measurements: isophotal, full, and model-fitting.</p>
+<dl class="simple" id="isophotal-measurements">
+<dt>Isophotal</dt><dd><p>Measurements are made on the isophotal object footprints, which are defined on the filtered detection image. Only pixels with values above the detection threshold (set with <code class="docutils literal notranslate"><span class="pre">DETECT_THRESH</span></code>) are considered <a class="footnote-reference brackets" href="#thresh" id="id1" role="doc-noteref"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></a>, which makes the analysis extremely fast, but obviously strongly dependent on the threshold itself. This is an issue particularly when the amplitude of the bakground noise varies over the image. Many of the isophotal measurements (e.g., <span class="param">X_IMAGE</span>, <span class="param">Y_IMAGE</span>, <span class="param">FLUX_ISO</span>) are necessary for the internal operations of <strong class="program">SExtractor</strong> and are therefore executed even if they are not requested.</p>
+</dd>
+<dt>Full</dt><dd><p>Measurements have access to all pixels of the image. These measurements are generally more sophisticated, less affected by variable biases induced by the detection threshold, and still reasonably fast. They are done at a later stage of the processing, after CLEANing and MASKing.</p>
+</dd>
+<dt>Model-fitting</dt><dd><p>Measurements require PSF models <a class="footnote-reference brackets" href="#psf-models" id="id2" role="doc-noteref"><span class="fn-bracket">[</span>2<span class="fn-bracket">]</span></a>. They are often the most accurate and can recover the flux of saturated objects. They are also much slower, allowing typically only a few tens of objects to be processed every second.</p>
+</dd>
+</dl>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="Position.html">Isophotal measurements</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="Position.html#position-and-shape">Position and shape</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="Position.html#limits-xmin-ymin-xmax-ymax">Limits: <span class="param">XMIN</span>, <span class="param">YMIN</span>, <span class="param">XMAX</span>, <span class="param">YMAX</span></a></li>
+<li class="toctree-l3"><a class="reference internal" href="Position.html#barycenter-x-y">Barycenter: <span class="param">X</span>, <span class="param">Y</span></a></li>
+<li class="toctree-l3"><a class="reference internal" href="Position.html#position-of-the-peak-xpeak-ypeak">Position of the peak: <span class="param">XPEAK</span>, <span class="param">YPEAK</span></a></li>
+<li class="toctree-l3"><a class="reference internal" href="Position.html#second-order-moments-x2-y2-xy">Second-order moments: <span class="param">X2</span>, <span class="param">Y2</span>, <span class="param">XY</span></a></li>
+<li class="toctree-l3"><a class="reference internal" href="Position.html#basic-shape-parameters-a-b-theta">Basic shape parameters: <span class="param">A</span>, <span class="param">B</span>, <span class="param">THETA</span></a></li>
+<li class="toctree-l3"><a class="reference internal" href="Position.html#by-products-of-shape-parameters-elongation-and-ellipticity">By-products of shape parameters: <span class="param">ELONGATION</span> and <span class="param">ELLIPTICITY</span></a></li>
+<li class="toctree-l3"><a class="reference internal" href="Position.html#ellipse-parameters-cxx-cyy-cxy">Ellipse parameters: <span class="param">CXX</span>, <span class="param">CYY</span>, <span class="param">CXY</span></a></li>
+<li class="toctree-l3"><a class="reference internal" href="Position.html#position-uncertainties-errx2-erry2-errxy-erra-errb-errtheta-errcxx-errcyy-errcxy">Position uncertainties: <span class="param">ERRX2</span>, <span class="param">ERRY2</span>, <span class="param">ERRXY</span>, <span class="param">ERRA</span>, <span class="param">ERRB</span>, <span class="param">ERRTHETA</span>, <span class="param">ERRCXX</span>, <span class="param">ERRCYY</span>, <span class="param">ERRCXY</span></a></li>
+<li class="toctree-l3"><a class="reference internal" href="Position.html#handling-of-infinitely-thin-detections">Handling of “infinitely thin” detections</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Position.html#isophotal-areas-isoarea-isoareaf">Isophotal areas: <span class="param">ISOAREA</span>, <span class="param">ISOAREAF</span></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="Position.html#photometry">Photometry</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="Position.html#isophotal-flux-flux-iso">Isophotal flux: <span class="param">FLUX_ISO</span></a></li>
+<li class="toctree-l3"><a class="reference internal" href="Position.html#corrected-isophotal-magnitude-mag-isocor">Corrected isophotal magnitude: <span class="param">MAG_ISOCOR</span></a></li>
+<li class="toctree-l3"><a class="reference internal" href="Position.html#peak-value-flux-max">Peak value: <span class="param">FLUX_MAX</span></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="Position.html#class-star-classifier"><span class="param">CLASS_STAR</span> classifier</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="Position.html#inputs-and-outputs">Inputs and outputs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Position.html#training">Training</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="PositionWin.html">Windowed positional parameters</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="PositionWin.html#windowed-centroid-xwin-ywin">Windowed centroid: <span class="param">XWIN</span>, <span class="param">YWIN</span></a></li>
+<li class="toctree-l2"><a class="reference internal" href="PositionWin.html#windowed-2nd-order-moments-x2-y2-xy">Windowed 2nd order moments: <span class="param">X2</span>, <span class="param">Y2</span>, <span class="param">XY</span></a></li>
+<li class="toctree-l2"><a class="reference internal" href="PositionWin.html#windowed-shape-parameters-awin-bwin-thetawin">Windowed shape parameters: <span class="param">AWIN</span>, <span class="param">BWIN</span>, <span class="param">THETAWIN</span></a></li>
+<li class="toctree-l2"><a class="reference internal" href="PositionWin.html#windowed-ellipse-parameters-cxxwin-cyywin-cxywin">Windowed ellipse parameters: <span class="param">CXXWIN</span>, <span class="param">CYYWIN</span>, <span class="param">CXYWIN</span></a></li>
+<li class="toctree-l2"><a class="reference internal" href="PositionWin.html#windowed-position-uncertainties-errx2win-erry2win-errxywin-errawin-errbwin-errthetawin-errcxxwin-errcyywin-errcxywin">Windowed position uncertainties: <span class="param">ERRX2WIN</span>, <span class="param">ERRY2WIN</span>, <span class="param">ERRXYWIN</span>, <span class="param">ERRAWIN</span>, <span class="param">ERRBWIN</span>, <span class="param">ERRTHETAWIN</span>, <span class="param">ERRCXXWIN</span>, <span class="param">ERRCYYWIN</span>, <span class="param">ERRCXYWIN</span></a></li>
+<li class="toctree-l2"><a class="reference internal" href="PositionWin.html#windowed-measurement-flags-flags-win">Windowed measurement flags: <span class="param">FLAGS_WIN</span></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="Photom.html">Aperture photometry</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="Photom.html#fixed-aperture-flux-flux-aper">Fixed-aperture flux: <span class="param">FLUX_APER</span></a></li>
+<li class="toctree-l2"><a class="reference internal" href="Photom.html#automatic-aperture-flux-flux-auto">Automatic aperture flux: <span class="param">FLUX_AUTO</span></a></li>
+<li class="toctree-l2"><a class="reference internal" href="Photom.html#petrosian-aperture-flux-flux-petro">Petrosian aperture flux: <span class="param">FLUX_PETRO</span></a></li>
+<li class="toctree-l2"><a class="reference internal" href="Photom.html#photographic-photometry">Photographic photometry</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Photom.html#local-background">Local background</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="Model.html">Model fitting</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="Model.html#fitting-procedure">Fitting procedure</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="Model.html#modified-least-squares">Modified least squares</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Model.html#change-of-variables">Change of variables</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Model.html#regularization">Regularization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Model.html#minimization">Minimization</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="Model.html#models">Models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Model.html#model-based-star-galaxy-separation-spread-model">Model-based star-galaxy separation: <span class="param">SPREAD_MODEL</span></a></li>
+</ul>
+</li>
+</ul>
+</div>
+<aside class="footnote-list brackets">
+<aside class="footnote brackets" id="thresh" role="note">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id1">1</a><span class="fn-bracket">]</span></span>
+<p>For some isophotal measurements pixel values also have to exceed the local analysis threshold set with <code class="docutils literal notranslate"><span class="pre">ANALYSIS_THRESH</span></code>.</p>
+</aside>
+<aside class="footnote brackets" id="psf-models" role="note">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id2">2</a><span class="fn-bracket">]</span></span>
+<p>PSF models be computed using the <a class="reference external" href="http://astromatic.net/software/psfex"><strong class="program">PSFEx</strong></a> package.</p>
+</aside>
+</aside>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="Flagging.html" class="btn btn-neutral float-left" title="Flagging" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="Position.html" class="btn btn-neutral float-right" title="Isophotal measurements" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2017-2023, CFHT/IAP/CNRS/SorbonneU.</p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
