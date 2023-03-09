@@ -1,0 +1,51 @@
+name: doc
+
+on:
+  push:
+    paths:
+      - 'doc/**'
+  pull_request:
+    paths:
+      - 'doc/**'
+  workflow_dispatch:
+
+jobs:
+
+#############
+# Build doc #
+#############
+  build:
+    name: Make HTML doc
+    continue-on-error: false
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Install dependencies
+        run: |
+          pip3 install -r doc/requirements.txt
+
+      - name: Build doc
+        run: |
+          ./autogen.sh
+          ./configure
+          cd doc
+          make html
+
+      - name: Set destination dir
+        if: github.ref_name != 'main'
+        run: |
+          echo "DOC_DEST=${{ github.ref_name }}" >> $GITHUB_ENV
+
+      - name: Deploy
+        if: success()
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          publish_branch: doc-pages
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: doc/build/html/
+          destination_dir: ${{ env.DOC_DEST }}
+
+
