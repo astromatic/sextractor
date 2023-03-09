@@ -30,7 +30,7 @@ jobs:
       - name: Build doc
         run: |
           ./autogen.sh
-          ./configure
+          ./configure --disable-model-fitting --disable-cfitsio --disable-threads
           cd doc
           make html
 
