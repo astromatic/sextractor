@@ -38,7 +38,7 @@ jobs:
           cp build/latex/sextractor.pdf build/html/
 
       - name: Set destination dir
-        if: github.ref_name != 'main'
+        if: github.ref_name != 'master'
         run: |
           echo "DOC_DEST=${{ github.ref_name }}" >> $GITHUB_ENV
 
