@@ -9,7 +9,7 @@
 Check out the on-line [documentation], the [official web page], and the [discussion forum].
 
 [SExtractor]: https://astromatic.net/software/sextractor
-[documentation]: [https://sextractor.readthedocs.org](https://astromatic.github.io/sextractor/)
+[documentation]: https://astromatic.github.io/sextractor
 [official web page]: https://astromatic.net/software/sextractor
 [discussion forum]: https://github.com/astromatic/sextractor/discussions
 
