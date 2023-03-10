@@ -33,6 +33,8 @@ jobs:
           ./configure --disable-model-fitting --disable-cfitsio --disable-threads
           cd doc
           make html
+          make latexpdf
+          cp build/latex/sextractor.pdf build/html/
 
       - name: Set destination dir
         if: github.ref_name != 'main'

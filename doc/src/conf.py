@@ -160,7 +160,7 @@ latex_documents = [
 
 # If true, show URL addresses after external links.
 #
-latex_show_urls = 'footnote'
+# latex_show_urls = False
 
 # Documents to append as an appendix to all manuals.
 #
