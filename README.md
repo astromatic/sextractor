@@ -6,10 +6,10 @@
 
 [SExtractor] stands for ``Source Extractor'': a software for extracting catalogs of sources from astronomical images.
 
-Check out the on-line [documentation], the [official web page], and the [user forum].
+Check out the on-line [documentation], the [official web page], and the [discussion forum].
 
-[SExtractor]: http://astromatic.net/software/sextractor
-[documentation]: http://sextractor.readthedocs.org
-[official web page]: http://astromatic.net/software/sextractor
-[user forum]: http://astromatic.net/forum/forumdisplay.php?fid=4
+[SExtractor]: https://astromatic.net/software/sextractor
+[documentation]: [https://sextractor.readthedocs.org](https://astromatic.github.io/sextractor/)
+[official web page]: https://astromatic.net/software/sextractor
+[discussion forum]: https://github.com/astromatic/sextractor/discussions
 
