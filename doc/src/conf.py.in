@@ -115,6 +115,8 @@ html_show_sphinx = False
 # If true, "(C) Copyright ..." is shown in the HTML footer. Default is True.
 #
 html_show_copyright = True
+html_logo = 'figures/cover.png'
+html_favicon = '../theme/images/astromaticO.png'
 
 # -- Options for LaTeX output ------------------------------------------------
 
@@ -147,7 +149,7 @@ latex_documents = [
 # The name of an image file (relative to this directory) to place at the top of
 # the title page.
 #
-# latex_logo = None
+latex_logo = 'figures/cover.pdf'
 
 # For "manual" documents, if this is true, then toplevel headings are parts,
 # not chapters.
