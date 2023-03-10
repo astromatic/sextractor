@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/astromatic/sextractor.svg?branch=master)](https://travis-ci.org/astromatic/sextractor)
 [![Coverity Scan Build Status](https://scan.coverity.com/projects/sextractor/badge.svg)](https://scan.coverity.com/projects/sextractor "Coverity Badge")
-[![Documentation Status](https://github.com/astromatic/sextractor/actions/workflows/doc.yml/badge.svg]([http://sextractor.readthedocs.io/en/latest/?badge=latest](https://github.com/astromatic/sextractor/actions/workflows/doc.yml)
+[![Documentation Status](https://github.com/astromatic/sextractor/actions/workflows/doc.yml/badge.svg](https://github.com/astromatic/sextractor/actions/workflows/doc.yml)
 
 [SExtractor] stands for ``Source Extractor'': a software for extracting catalogs of sources from astronomical images.
 
