@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Input files &mdash; SExtractor 2.28.0 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/custom.css" type="text/css" />
+    <link rel="shortcut icon" href="_static/astromaticO.png"/>
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
+        <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Output files" href="Output.html" />
+    <link rel="prev" title="Using SExtractor" href="Using.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            SExtractor
+              <img src="_static/cover.png" class="logo" alt="Logo"/>
+          </a>
+              <div class="version">
+                2.28.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="Introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="License.html">License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Installing.html">Installing the software</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="Using.html">Using SExtractor</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Input files</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#double-image-mode">Double image mode</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="Output.html">Output files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Config.html">The configuration file</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Param.html">The measurement (or catalog) parameter file</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="Processing.html">Processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Measurements.html">Measurements</a></li>
+<li class="toctree-l1"><a class="reference internal" href="references.html">Bibliography</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">SExtractor</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="Using.html">Using SExtractor</a></li>
+      <li class="breadcrumb-item active">Input files</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/Input.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="input-files">
+<span id="input"></span><h1>Input files<a class="headerlink" href="#input-files" title="Permalink to this heading"></a></h1>
+<p><strong class="program">SExtractor</strong> accepts images stored in <a class="reference external" href="http://fits.gsfc.nasa.gov"><abbr title="Flexible Image Transport System">FITS</abbr></a> <span id="id1">[<a class="reference internal" href="references.html#id30" title="D. C. Wells, E. W. Greisen, and R. H. Harten, 1981. FITS - a Flexible Image Transport System. A&amp;AS, 44:363.">1</a>]</span>.
+Both &quot;Basic FITS&quot; (one single header and one single body) and <a class="reference external" href="http://www.stsci.edu/hst/HST_overview/documents/datahandbook/intro_ch23.html"><abbr title="Multi-Extension FITS">MEF</abbr></a>
+files are recognized.
+Binary <strong class="program">SExtractor</strong> catalogs produced from <abbr title="Multi-Extension FITS">MEF</abbr> images are <abbr title="Multi-Extension FITS">MEF</abbr> files themselves.
+If the catalog output format is set to ASCII, all catalogs from the individual extensions are concatenated in one big file; the <span class="param">EXT_NUMBER</span> catalog parameter can be used to tell which extension the detection belongs to.</p>
+<div class="admonition important">
+<p class="admonition-title">Important</p>
+<p>Contrary to most other astronomy packages, <strong class="program">SExtractor</strong> does not rely on the <a class="reference external" href="https://heasarc.gsfc.nasa.gov/fitsio/">FITSIO</a> library and instead uses its own library for managing <abbr title="Flexible Image Transport System">FITS</abbr> files. As a consequence, some features of <abbr title="Flexible Image Transport System">FITS</abbr> such as image compression/tiling are not supported at this time.</p>
+</div>
+<p>For images with <span class="math notranslate nohighlight">\({\rm NAXIS} &gt; 2\)</span>, only the first data-plane is loaded.
+In <strong class="program">SExtractor</strong>, as in all similar programs, <abbr title="Flexible Image Transport System">FITS</abbr> axis #1 is traditionally
+referred to as the <em>x</em> axis, and <abbr title="Flexible Image Transport System">FITS</abbr> axis #2 as the <em>y</em> axis.</p>
+<section id="double-image-mode">
+<h2>Double image mode<a class="headerlink" href="#double-image-mode" title="Permalink to this heading"></a></h2>
+<p>When the pixel data for a given field are available using the same pixel grid in several photometric channels, it is often best to measure object characteristics, like magnitudes, exactly at the same positions and through the same apertures for the different channels.
+This to derive precise color indices for example.
+<strong class="program">SExtractor</strong> makes this possible by providing a special mode dubbed &quot;double image mode&quot; where detections are made on one image while measurements are carried out on another. Both images must have the exact same dimensions, obviously.
+By repeatedly running <strong class="program">SExtractor</strong> with various &quot;measurement images&quot; while keeping the same &quot;detection image&quot;, one ends up with a set of catalogs having the same sources measured through different channels.
+The detection image will generally be chosen in the band where the data are the deepest.
+Alternatively, using a &quot;<span class="math notranslate nohighlight">\(\chi2\)</span> image&quot; <span id="id2">[<a class="reference internal" href="references.html#id29" title="A. S. Szalay, A. J. Connolly, and G. P. Szokoly, 1999. Simultaneous Multicolor Detection of Faint Galaxies in the Hubble Deep Field. AJ, 117:68-74.">2</a>]</span>  <a class="footnote-reference brackets" href="#swarpchi2" id="id3" role="doc-noteref"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></a> as a detection image, will allow most of the sources present in at least one channel to be detected and measured.</p>
+<p>Double image mode is automatically engaged when providing <strong class="program">SExtractor</strong> with two images instead of one:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>sex<span class="w"> </span>detection.fits,measurement.fits
+</pre></div>
+</div>
+<p>A space may be used instead of a coma. In the example above, <code class="file docutils literal notranslate"><span class="pre">detection.fits</span></code> is used as a detection image, while measurements are carried out on <code class="file docutils literal notranslate"><span class="pre">measurement.fits</span></code>.</p>
+<aside class="footnote-list brackets">
+<aside class="footnote brackets" id="swarpchi2" role="note">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id3">1</a><span class="fn-bracket">]</span></span>
+<p><span class="math notranslate nohighlight">\(\chi2\)</span> images can easily be generated using the <a class="reference external" href="http://astromatic.net/software/swarp"><strong class="program">SWarp</strong></a> package <span id="id4">[<a class="reference internal" href="references.html#id32" title="E. Bertin, Y. Mellier, M. Radovich, G. Missonnier, P. Didelon, and B. Morin, 2002. The TERAPIX Pipeline. In D. A. Bohlender, D. Durand, and T. H. Handley, editors, Astronomical Data Analysis Software and Systems XI, volume 281 of Astronomical Society of the Pacific Conference Series, 228. 2002.">3</a>]</span>.</p>
+</aside>
+</aside>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="Using.html" class="btn btn-neutral float-left" title="Using SExtractor" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="Output.html" class="btn btn-neutral float-right" title="Output files" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2017-2023, CFHT/IAP/CNRS/SorbonneU.</p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

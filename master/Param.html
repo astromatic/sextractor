@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The measurement (or catalog) parameter file &mdash; SExtractor 2.28.0 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/custom.css" type="text/css" />
+    <link rel="shortcut icon" href="_static/astromaticO.png"/>
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
+        <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Processing" href="Processing.html" />
+    <link rel="prev" title="The configuration file" href="Config.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            SExtractor
+              <img src="_static/cover.png" class="logo" alt="Logo"/>
+          </a>
+              <div class="version">
+                2.28.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="Introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="License.html">License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Installing.html">Installing the software</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="Using.html">Using SExtractor</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="Input.html">Input files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Output.html">Output files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Config.html">The configuration file</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">The measurement (or catalog) parameter file</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#format">Format</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#variants">Variants</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#fluxes-and-magnitudes">Fluxes and magnitudes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#flux-and-magnitude-uncertainties">Flux and magnitude uncertainties</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pixel-values-and-surface-brightnesses">Pixel values and Surface brightnesses</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#positions-and-shapes">Positions and shapes</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#measurement-parameter-list">Measurement parameter list</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="Processing.html">Processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Measurements.html">Measurements</a></li>
+<li class="toctree-l1"><a class="reference internal" href="references.html">Bibliography</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">SExtractor</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="Using.html">Using SExtractor</a></li>
+      <li class="breadcrumb-item active">The measurement (or catalog) parameter file</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/Param.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="the-measurement-or-catalog-parameter-file">
+<h1>The measurement (or catalog) parameter file<a class="headerlink" href="#the-measurement-or-catalog-parameter-file" title="Permalink to this heading"></a></h1>
+<p>In addition to the configuration file detailed above, <strong class="program">SExtractor</strong> requires a file containing the list of measurements (&quot;catalog parameters&quot;) that will be listed in the output catalog for every detection. This allows the software to compute only the measurements that are needed. The name of this catalog parameter file is traditionally suffixed with <code class="file docutils literal notranslate"><span class="pre">.param</span></code>, and must be specified using the <span class="param">PARAMETERS_NAME</span> config parameter. The full set of parameters can be queried with the command</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>sex<span class="w"> </span>-dp
+</pre></div>
+</div>
+<section id="format">
+<h2>Format<a class="headerlink" href="#format" title="Permalink to this heading"></a></h2>
+<p>The format of the catalog parameter list is ASCII, and there must be
+<em>a single keyword per line</em>. Presently two kinds of keywords are
+recognized by <strong class="program">SExtractor</strong>: scalars and vectors. Scalars, like <span class="param">X_IMAGE</span>,
+produce single numbers in the output catalog. Vectors, like <span class="param">MAG_APER(4)</span>
+or <span class="param">VIGNET(15,15)</span>, produce arrays of numbers. The ordering of measurements
+in the output catalog is identical to that of the keywords in the parameter
+list. Comments are allowed, they must begin with a <span class="param">#</span>.</p>
+</section>
+<section id="variants">
+<h2>Variants<a class="headerlink" href="#variants" title="Permalink to this heading"></a></h2>
+<p>For many catalog parameters, especially those related to flux,
+position, or shape, several variants of the same measurement are
+available:</p>
+<section id="fluxes-and-magnitudes">
+<span id="id1"></span><h3>Fluxes and magnitudes<a class="headerlink" href="#fluxes-and-magnitudes" title="Permalink to this heading"></a></h3>
+<p>Fluxes may be expressed in counts (<abbr title="Analog-to-Digital Unit">ADU</abbr>s) or as Pogson <span id="id2">[<a class="reference internal" href="references.html#id24" title="N. Pogson, 1856. Magnitudes of Thirty-six of the Minor Planets for the first day of each month of the year 1857. MNRAS, 17:12-15.">4</a>]</span> magnitudes.
+Flux measurements in <abbr title="Analog-to-Digital Unit">ADU</abbr>s are prefixed with <span class="param">FLUX_</span>, for example: <span class="param">FLUX_AUTO</span>, <span class="param">FLUX_ISO</span>, etc.
+Magnitudes are prefixed with <span class="param">MAG_</span> e.g., <span class="param">MAG_AUTO</span>, <span class="param">MAG_ISO</span>, ...
+The <code class="docutils literal notranslate"><span class="pre">MAG_ZEROPOINT</span></code> configuration parameter sets the magnitude zero-point of magnitudes:</p>
+<div class="math notranslate nohighlight" id="equation-mag">
+<span class="eqno">(1)<a class="headerlink" href="#equation-mag" title="Permalink to this equation"></a></span>\[\begin{split}  {\tt MAG} = \left\{\begin{array}{ll}
+  \mathrm{MAG\_ZEROPOINT} - 2.5 \log_{10} {\tt FLUX}\ &amp;\mbox{if } {\tt FLUX} &gt; 0\\
+  99.0\ &amp;\mbox{otherwise}.
+  \end{array}\right.\end{split}\]</div>
+</section>
+<section id="flux-and-magnitude-uncertainties">
+<h3>Flux and magnitude uncertainties<a class="headerlink" href="#flux-and-magnitude-uncertainties" title="Permalink to this heading"></a></h3>
+<p>Flux uncertainties (error estimates) follow a scheme similar to that of fluxes.
+They are prefixed with <span class="param">FLUXERR_</span>, as in <span class="param">FLUXERR_AUTO</span> or <span class="param">FLUXERR_ISO</span>.
+Magnitude uncertainties start with <span class="param">MAGERR_</span>, for instance: <span class="param">MAGERR_AUTO</span>, <span class="param">MAGERR_ISO</span>,...
+They are computed using</p>
+<div class="math notranslate nohighlight" id="equation-magerr">
+<span class="eqno">(2)<a class="headerlink" href="#equation-magerr" title="Permalink to this equation"></a></span>\[\begin{split}  {\tt MAGERR} = \left\{\begin{array}{ll}
+  \frac{2.5}{\ln 10}({\tt FLUXERR}/{\tt FLUX})\ &amp;\mbox{if } {\tt FLUX} &gt; 0\\
+  99.0\ &amp;\mbox{otherwise}.
+  \end{array}\right.\end{split}\]</div>
+</section>
+<section id="pixel-values-and-surface-brightnesses">
+<h3>Pixel values and Surface brightnesses<a class="headerlink" href="#pixel-values-and-surface-brightnesses" title="Permalink to this heading"></a></h3>
+<p>Pixel values (averaged or not) <span class="math notranslate nohighlight">\(p\)</span> are expressed in counts (<abbr title="Analog-to-Digital Unit">ADU</abbr>s).
+There is no specific prefix (<span class="param">THRESHOLD</span>, <span class="param">BACKGROUND</span>, <span class="param">FLUX_MAX</span>, etc.).
+Surface brightnesses are given in magnitudes per square arcsecond, and prefixed with <span class="param">MU_</span> e.g., <span class="param">MU_THRESHOLD</span>, <span class="param">MU_MAX</span>, ...
+The conversion to surface brightness relies on the <code class="docutils literal notranslate"><span class="pre">MAG_ZEROPOINT</span></code> and the <code class="docutils literal notranslate"><span class="pre">PIXEL_SCALE</span></code> configuration parameters:</p>
+<div class="math notranslate nohighlight" id="equation-mu">
+<span class="eqno">(3)<a class="headerlink" href="#equation-mu" title="Permalink to this equation"></a></span>\[\begin{split}  {\tt MU} = \left\{\begin{array}{ll}
+  \mathrm{MAG\_ZEROPOINT} - 2.5 \log_{10} (p \times {\rm PIXEL\_SCALE}\,^2)\ &amp;\mbox{if } p &gt; 0\\
+  99.0\ &amp;\mbox{otherwise}.
+  \end{array}\right.\end{split}\]</div>
+<p>Setting <code class="docutils literal notranslate"><span class="pre">PIXEL_SCALE</span></code> to 0 instructs <strong class="program">SExtractor</strong> to compute the pixel scale from the local <a class="reference external" href="https://en.wikipedia.org/wiki/Jacobian_matrix_and_determinant">Jacobian</a> of the astrometric deprojection, based on the celestial <a class="reference external" href="http://www.atnf.csiro.au/people/mcalabre/WCS/index.html">WCS</a> info <span id="id3">[<a class="reference internal" href="references.html#id7" title="M. R. Calabretta and E. W. Greisen, 2002. Representations of celestial coordinates in FITS. A&amp;A, 395:1077-1122.">5</a>]</span> in the <abbr title="Flexible Image Transport System">FITS</abbr> image header, if available.</p>
+</section>
+<section id="positions-and-shapes">
+<span id="coord-suffix"></span><h3>Positions and shapes<a class="headerlink" href="#positions-and-shapes" title="Permalink to this heading"></a></h3>
+<p>Positions, distances and position angles are computed in pixel coordinates. They may be expressed in image pixels, world coordinates, or in celestial coordinates, depending on the suffix:</p>
+<dl class="simple" id="image-coords">
+<dt><span class="param">_IMAGE</span></dt><dd><p>Measurements are given in pixel coordinates, in units of pixels. For example: <span class="param">Y_IMAGE</span>, <span class="param">ERRAWIN_IMAGE</span>, <span class="param">THETA_IMAGE</span> etc. Following the FITS convention, in <strong class="program">SExtractor</strong> the center of the first image pixel has coordinates (1.0,1.0). Position angles are counted from the <em>x</em> axis (axis 1), positive towards the <em>y</em> axis (axis 2)</p>
+</dd>
+</dl>
+<dl class="simple" id="world-coords">
+<dt><span class="param">_WORLD</span></dt><dd><p>Measurements are given in so-called “world coordinates”, converted from pixel coordinates using the local Jacobian of the transformation between both systems. This requires <a class="reference external" href="http://www.atnf.csiro.au/people/mcalabre/WCS/index.html">WCS</a> metadata <span id="id4">[<a class="reference internal" href="references.html#id12" title="E. W. Greisen and M. R. Calabretta, 2002. Representations of world coordinates in FITS. A&amp;A, 395:1061-1075.">6</a>]</span> to be present in the FITS image header(s). Position angles are counted from the first world axis, positive towards the second world axis.</p>
+</dd>
+</dl>
+<dl class="simple" id="sky-coords">
+<dt><span class="param">_SKY</span>, <span class="param">_J2000</span>, <span class="param">_B1950</span></dt><dd><p>Measurements are given in celestial (equatorial) coordinates, converted from pixel coordinates using the local Jacobian of the transformation between both systems. Positions and distances are in units of degrees. This requires celestial WCS metadata <span id="id5">[<a class="reference internal" href="references.html#id7" title="M. R. Calabretta and E. W. Greisen, 2002. Representations of celestial coordinates in FITS. A&amp;A, 395:1077-1122.">5</a>]</span> to be present in the FITS image header(s). <span class="param">_SKY</span> measurements are given in the native world coordinate system. <span class="param">_J2000</span> and <span class="param">_B1950</span> measurements are automatically converted from the native WCS, taking into account the change of reference frame. In all cases, positions angles are counted East-of-North.</p>
+</dd>
+</dl>
+<dl class="simple" id="focal-coords">
+<dt><span class="param">_FOCAL</span></dt><dd><p>Measurements are given in “focal plane coordinates”, which are actually projected coordinates, in degrees. This requires WCS metadata <span id="id6">[<a class="reference internal" href="references.html#id12" title="E. W. Greisen and M. R. Calabretta, 2002. Representations of world coordinates in FITS. A&amp;A, 395:1061-1075.">6</a>]</span> to be present in the FITS image header(s). The computation of focal plane coordinates from pixel coordinates is similar to that of <span class="param">_SKY</span> coordinates except that they are not de-projected and remain Cartesian. The main purpose of focal plane coordinates is to provide a common system for all the chips in a mosaic camera.</p>
+</dd>
+</dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Conversion to <span class="param">_FOCAL</span> coordinates is available only for a limited subset of measurements.</p>
+</div>
+<div class="admonition important">
+<p class="admonition-title">Important</p>
+<p>The WCS library currently implemented in <strong class="program">SExtractor</strong> is a customized version of an early implementation (v1.1.1) by Calabretta.
+Several projections from later versions and alternative astrometric descriptions such as <a class="reference external" href="https://starlink.eao.hawaii.edu/starlink/AST">AST</a> or <a class="reference external" href="https://archive.stsci.edu/dss/booklet_n.pdf">that of original DSS plates</a> are not supported at this time.</p>
+</div>
+</section>
+</section>
+<section id="measurement-parameter-list">
+<h2>Measurement parameter list<a class="headerlink" href="#measurement-parameter-list" title="Permalink to this heading"></a></h2>
+<p>Below is an exhaustive list of all the measurement parameters known to
+<strong class="program">SExtractor</strong>. Please refer to the next sections for a detailed description
+of their meaning.</p>
+<table class="targetparam docutils align-default" id="id7">
+<caption><span class="caption-number">Table 1 </span><span class="caption-text"><strong class="program">SExtractor</strong> measurement parameters</span><a class="headerlink" href="#id7" title="Permalink to this table"></a></caption>
+<colgroup>
+<col style="width: 27%" />
+<col style="width: 18%" />
+<col style="width: 55%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Name</p></th>
+<th class="head"><p>Unit</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><span class="target" id="number">NUMBER</span></p></td>
+<td><p>...</p></td>
+<td><p>Running object number</p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="target" id="id-parent">ID_PARENT</span></p></td>
+<td><p>...</p></td>
+<td><p>Parent ID (before deblending)</p></td>
+</tr>
+<tr class="row-even"><td><p><span class="target" id="ext-number">EXT_NUMBER</span></p></td>
+<td><p>...</p></td>
+<td><p>FITS extension number</p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="target" id="flags">FLAGS</span></p></td>
+<td><p>...</p></td>
+<td><p><a class="reference internal" href="Flagging.html#flags-def"><span class="std std-ref">Source extraction flags</span></a></p></td>
+</tr>
+<tr class="row-even"><td><p><span class="target" id="flags-weight">FLAGS_WEIGHT</span></p></td>
+<td><p>...</p></td>
+<td><p><a class="reference internal" href="Weighting.html#flags-weight-def"><span class="std std-ref">Weighting flags</span></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="target" id="imaflags-iso">IMAFLAGS_ISO</span></p></td>
+<td><p>...</p></td>
+<td><p><a class="reference internal" href="Flagging.html#imaflags-iso-def"><span class="std std-ref">External flags combined within the isophotal footprint</span></a></p></td>
+</tr>
+<tr class="row-even"><td><p><span class="target" id="nimaflags-iso">NIMAFLAGS_ISO</span></p></td>
+<td><p>...</p></td>
+<td><p><a class="reference internal" href="Flagging.html#imaflags-iso-def"><span class="std std-ref">Number of combined external flags</span></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="target" id="flux-iso">FLUX_ISO</span></p></td>
+<td><p>count</p></td>
+<td><p><a class="reference internal" href="Position.html#flux-iso-def"><span class="std std-ref">Isophotal flux</span></a></p></td>
+</tr>
+<tr class="row-even"><td><p><span class="target" id="fluxerr-iso">FLUXERR_ISO</span></p></td>
+<td><p>count</p></td>
+<td><p><a class="reference internal" href="Position.html#flux-iso-def"><span class="std std-ref">RMS error estimate for the isophotal flux</span></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="target" id="mag-iso">MAG_ISO</span></p></td>
+<td><p>magnitude</p></td>
+<td><p><a class="reference internal" href="Position.html#flux-iso-def"><span class="std std-ref">Isophotal magnitude</span></a></p></td>
+</tr>
+<tr class="row-even"><td><p><span class="target" id="magerr-iso">MAGERR_ISO</span></p></td>
+<td><p>magnitude</p></td>
+<td><p><a class="reference internal" href="Position.html#flux-iso-def"><span class="std std-ref">RMS error estimate for the isophotal magnitude</span></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="target" id="flux-isocor">FLUX_ISOCOR</span></p></td>
+<td><p>count</p></td>
+<td><p><a class="reference internal" href="Position.html#mag-isocor-def"><span class="std std-ref">Corrected isophotal flux</span></a></p></td>
+</tr>
+<tr class="row-even"><td><p><span class="target" id="fluxerr-isocor">FLUXERR_ISOCOR</span></p></td>
+<td><p>count</p></td>
+<td><p><a class="reference internal" href="Position.html#mag-isocor-def"><span class="std std-ref">RMS error estimate for the corrected isophotal flux</span></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="target" id="mag-isocor">MAG_ISOCOR</span></p></td>
+<td><p>magnitude</p></td>
+<td><p><a class="reference internal" href="Position.html#mag-isocor-def"><span class="std std-ref">Corrected isophotal magnitude</span></a></p></td>
+</tr>
+<tr class="row-even"><td><p><span class="target" id="magerr-isocor">MAGERR_ISOCOR</span></p></td>
+<td><p>magnitude</p></td>
+<td><p><a class="reference internal" href="Position.html#mag-isocor-def"><span class="std std-ref">RMS error estimate for the corrected isophotal magnitude</span></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="target" id="flux-aper">FLUX_APER</span></p></td>
+<td><p>count</p></td>
+<td><p><a class="reference internal" href="Photom.html#flux-aper-def"><span class="std std-ref">Flux(es) within fixed circular aperture(s)</span></a></p></td>
+</tr>
+<tr class="row-even"><td><p><span class="target" id="fluxerr-aper">FLUXERR_APER</span></p></td>
+<td><p>count</p></td>
+<td><p><a class="reference internal" href="Photom.html#flux-aper-def"><span class="std std-ref">RMS error estimate(s) for the flux(es) within fixed circular aperture(s)</span></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="target" id="mag-aper">MAG_APER</span></p></td>
+<td><p>magnitude</p></td>
+<td><p><a class="reference internal" href="Photom.html#flux-aper-def"><span class="std std-ref">Circular aperture magnitude(s)</span></a></p></td>
+</tr>
+<tr class="row-even"><td><p><span class="target" id="magerr-aper">MAGERR_APER</span></p></td>
+<td><p>magnitude</p></td>
+<td><p><a class="reference internal" href="Photom.html#flux-aper-def"><span class="std std-ref">RMS error estimate(s) for circular aperture magnitude(s)</span></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="target" id="flux-auto">FLUX_AUTO</span></p></td>
+<td><p>count</p></td>
+<td><p><a class="reference internal" href="Photom.html#flux-auto-def"><span class="std std-ref">Kron-like automated aperture flux</span></a></p></td>
+</tr>
+<tr class="row-even"><td><p><span class="target" id="fluxerr-auto">FLUXERR_AUTO</span></p></td>
+<td><p>count</p></td>
+<td><p><a class="reference internal" href="Photom.html#flux-auto-def"><span class="std std-ref">RMS error estimate for Kron-like automated aperture flux</span></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="target" id="mag-auto">MAG_AUTO</span></p></td>
+<td><p>magnitude</p></td>
+<td><p><a class="reference internal" href="Photom.html#flux-auto-def"><span class="std std-ref">Kron-like automated aperture magnitude</span></a></p></td>
+</tr>
+<tr class="row-even"><td><p><span class="target" id="magerr-auto">MAGERR_AUTO</span></p></td>
+<td><p>magnitude</p></td>
+<td><p><a class="reference internal" href="Photom.html#flux-auto-def"><span class="std std-ref">RMS error estimate for Kron-like automated aperture magnitude</span></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="target" id="kron-radius">KRON_RADIUS</span></p></td>
+<td><p>...</p></td>
+<td><p><a class="reference internal" href="Photom.html#flux-auto-def"><span class="std std-ref">Kron radius in units of A or B</span></a></p></td>
+</tr>
+<tr class="row-even"><td><p><span class="target" id="flux-petro">FLUX_PETRO</span></p></td>
+<td><p>count</p></td>
+<td><p><a class="reference internal" href="Photom.html#flux-petro-def"><span class="std std-ref">Petrosian-like aperture flux</span></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="target" id="fluxerr-petro">FLUXERR_PETRO</span></p></td>
+<td><p>count</p></td>
+<td><p><a class="reference internal" href="Photom.html#flux-petro-def"><span class="std std-ref">RMS error estimate for Petrosian-like aperture flux</span></a></p></td>
+</tr>
+<tr class="row-even"><td><p><span class="target" id="mag-petro">MAG_PETRO</span></p></td>
+<td><p>magnitude</p></td>
+<td><p><a class="reference internal" href="Photom.html#flux-petro-def"><span class="std std-ref">Petrosian-like aperture magnitude</span></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="target" id="magerr-petro">MAGERR_PETRO</span></p></td>
+<td><p>magnitude</p></td>
+<td><p><a class="reference internal" href="Photom.html#flux-petro-def"><span class="std std-ref">RMS error estimate for Petrosian-like aperture magnitude</span></a></p></td>
+</tr>
+<tr class="row-even"><td><p><span class="target" id="petro-radius">PETRO_RADIUS</span></p></td>
+<td><p>...</p></td>
+<td><p><a class="reference internal" href="Photom.html#flux-petro-def"><span class="std std-ref">Petrosian radius in units of A or B</span></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="target" id="background">BACKGROUND</span></p></td>
+<td><p>count</p></td>
+<td><p><a class="reference internal" href="Photom.html#background-def"><span class="std std-ref">Background level at the position of the centroid</span></a></p></td>
+</tr>
+<tr class="row-even"><td><p><span class="target" id="x-image">X_IMAGE</span></p></td>
+<td><p>pixel</p></td>
+<td><p><a class="reference internal" href="#image-coords"><span class="std std-ref">Pixel x coordinate</span></a> of the <a class="reference internal" href="Position.html#pos-iso-def"><span class="std std-ref">isophotal image centroid</span></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="target" id="y-image">Y_IMAGE</span></p></td>
+<td><p>pixel</p></td>
+<td><p><a class="reference internal" href="#image-coords"><span class="std std-ref">Pixel y coordinate</span></a> of the <a class="reference internal" href="Position.html#pos-iso-def"><span class="std std-ref">isophotal image centroid</span></a></p></td>
+</tr>
+<tr class="row-even"><td><p><span class="target" id="x-focal">X_FOCAL</span></p></td>
+<td><p>degree</p></td>
+<td><p><a class="reference internal" href="#focal-coords"><span class="std std-ref">Focal plane x coordinate</span></a> of <a class="reference internal" href="Position.html#pos-iso-def"><span class="std std-ref">isophotal image centroid</span></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="target" id="y-focal">Y_FOCAL</span></p></td>
+<td><p>degree</p></td>
+<td><p><a class="reference internal" href="#focal-coords"><span class="std std-ref">Focal plane y coordinate</span></a> of <a class="reference internal" href="Position.html#pos-iso-def"><span class="std std-ref">isophotal image centroid</span></a></p></td>
+</tr>
+<tr class="row-even"><td><p><span class="target" id="x-world">X_WORLD</span></p></td>
+<td><p>...</p></td>
+<td><p><a class="reference internal" href="#world-coords"><span class="std std-ref">World x coordinate</span></a> of the <a class="reference internal" href="Position.html#pos-iso-def"><span class="std std-ref">isophotal image centroid</span></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="target" id="y-world">Y_WORLD</span></p></td>
+<td><p>...</p></td>
+<td><p><a class="reference internal" href="#world-coords"><span class="std std-ref">World y coordinate</span></a> of the <a class="reference internal" href="Position.html#pos-iso-def"><span class="std std-ref">isophotal image centroid</span></a></p></td>
+</tr>
+<tr class="row-even"><td><p><span class="target" id="alpha-sky">ALPHA_SKY</span></p></td>
+<td><p>degree</p></td>
+<td><p><a class="reference internal" href="#sky-coords"><span class="std std-ref">Native right ascension</span></a> of the <a class="reference internal" href="Position.html#pos-iso-def"><span class="std std-ref">isophotal image centroid</span></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="target" id="delta-sky">DELTA_SKY</span></p></td>
+<td><p>degree</p></td>
+<td><p><a class="reference internal" href="#sky-coords"><span class="std std-ref">Native declination</span></a> of the <a class="reference internal" href="Position.html#pos-iso-def"><span class="std std-ref">isophotal image centroid</span></a></p></td>
+</tr>
+<tr class="row-even"><td><p><span class="target" id="alpha-j2000">ALPHA_J2000</span></p></td>
+<td><p>degree</p></td>
+<td><p><a class="reference internal" href="#sky-coords"><span class="std std-ref">J2000 right ascension</span></a> of the <a class="reference internal" href="Position.html#pos-iso-def"><span class="std std-ref">isophotal image centroid</span></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="target" id="delta-j2000">DELTA_J2000</span></p></td>
+<td><p>degree</p></td>
+<td><p><a class="reference internal" href="#sky-coords"><span class="std std-ref">J2000 declination</span></a> of the <a class="reference internal" href="Position.html#pos-iso-def"><span class="std std-ref">isophotal image centroid</span></a></p></td>
+</tr>
+<tr class="row-even"><td><p><span class="target" id="alpha-b1950">ALPHA_B1950</span></p></td>
+<td><p>degree</p></td>
+<td><p><a class="reference internal" href="#sky-coords"><span class="std std-ref">B1950 right ascension</span></a> of the <a class="reference internal" href="Position.html#pos-iso-def"><span class="std std-ref">isophotal image centroid</span></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="target" id="delta-b1950">DELTA_B1950</span></p></td>
+<td><p>degree</p></td>
+<td><p><a class="reference internal" href="#sky-coords"><span class="std std-ref">B1950 declination</span></a> of the <a class="reference internal" href="Position.html#pos-iso-def"><span class="std std-ref">isophotal image centroid</span></a></p></td>
+</tr>
+<tr class="row-even"><td><p><span class="target" id="errx2-image">ERRX2_IMAGE</span></p></td>
+<td><p>pixel<sup>2</sup></p></td>
+<td><p><a class="reference internal" href="Position.html#poserr-iso-def"><span class="std std-ref">Estimated variance of isophotal image centroid x coordinate</span></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="target" id="erry2-image">ERRY2_IMAGE</span></p></td>
+<td><p>pixel<sup>2</sup></p></td>
+<td><p><a class="reference internal" href="Position.html#poserr-iso-def"><span class="std std-ref">Estimated variance of isophotal image centroid y coordinate</span></a></p></td>
+</tr>
+<tr class="row-even"><td><p><span class="target" id="errxy-image">ERRXY_IMAGE</span></p></td>
+<td><p>pixel<sup>2</sup></p></td>
+<td><p><a class="reference internal" href="Position.html#poserr-iso-def"><span class="std std-ref">Estimated covariance of isophotal image centroid x and y coordinates</span></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="target" id="erra-image">ERRA_IMAGE</span></p></td>
+<td><p>pixel</p></td>
+<td><p><a class="reference internal" href="Position.html#poserr-iso-def"><span class="std std-ref">Major axis of the isophotal image centroid error ellipse</span></a></p></td>
+</tr>
+<tr class="row-even"><td><p><span class="target" id="errb-image">ERRB_IMAGE</span></p></td>
+<td><p>pixel</p></td>
+<td><p><a class="reference internal" href="Position.html#poserr-iso-def"><span class="std std-ref">Minor axis of the isophotal image centroid error ellipse</span></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="target" id="errtheta-image">ERRTHETA_IMAGE</span></p></td>
+<td><p>degree</p></td>
+<td><p><a class="reference internal" href="Position.html#poserr-iso-def"><span class="std std-ref">Position angle of the isophotal image centroid ellipse</span></a></p></td>
+</tr>
+<tr class="row-even"><td><p><span class="target" id="errcxx-image">ERRCXX_IMAGE</span></p></td>
+<td><p>pixel<sup>-2</sup></p></td>
+<td><p><a class="reference internal" href="Position.html#poserr-iso-def"><span class="std std-ref">Isophotal image centroid Cxx error ellipse parameter</span></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="target" id="errcyy-image">ERRCYY_IMAGE</span></p></td>
+<td><p>pixel<sup>-2</sup></p></td>
+<td><p><a class="reference internal" href="Position.html#poserr-iso-def"><span class="std std-ref">Isophotal image centroid Cyy error ellipse parameter</span></a></p></td>
+</tr>
+<tr class="row-even"><td><p><span class="target" id="errcxy-image">ERRCXY_IMAGE</span></p></td>
+<td><p>pixel<sup>-2</sup></p></td>
+<td><p><a class="reference internal" href="Position.html#poserr-iso-def"><span class="std std-ref">Isophotal image centroid Cxy error ellipse parameter</span></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="target" id="xpeak-image">XPEAK_IMAGE</span></p></td>
+<td><p>pixel</p></td>
+<td><p><a class="reference internal" href="#image-coords"><span class="std std-ref">Pixel x coordinate</span></a> of the <a class="reference internal" href="Position.html#pospeak-def"><span class="std std-ref">brightest pixel</span></a></p></td>
+</tr>
+<tr class="row-even"><td><p><span class="target" id="ypeak-image">YPEAK_IMAGE</span></p></td>
+<td><p>pixel</p></td>
+<td><p><a class="reference internal" href="#image-coords"><span class="std std-ref">Pixel y coordinate</span></a> of the <a class="reference internal" href="Position.html#pospeak-def"><span class="std std-ref">brightest pixel</span></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="target" id="xpeak-focal">XPEAK_FOCAL</span></p></td>
+<td><p>degree</p></td>
+<td><p><a class="reference internal" href="#focal-coords"><span class="std std-ref">Focal plane x coordinate</span></a> of the <a class="reference internal" href="Position.html#pospeak-def"><span class="std std-ref">brightest pixel</span></a></p></td>
+</tr>
+<tr class="row-even"><td><p><span class="target" id="ypeak-focal">YPEAK_FOCAL</span></p></td>
+<td><p>degree</p></td>
+<td><p><a class="reference internal" href="#focal-coords"><span class="std std-ref">Focal plane y coordinate</span></a> of the <a class="reference internal" href="Position.html#pospeak-def"><span class="std std-ref">brightest pixel</span></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="target" id="xpeak-world">XPEAK_WORLD</span></p></td>
+<td><p>...</p></td>
+<td><p><a class="reference internal" href="#world-coords"><span class="std std-ref">World x coordinate</span></a> of the <a class="reference internal" href="Position.html#pospeak-def"><span class="std std-ref">brightest pixel</span></a></p></td>
+</tr>
+<tr class="row-even"><td><p><span class="target" id="ypeak-world">YPEAK_WORLD</span></p></td>
+<td><p>...</p></td>
+<td><p><a class="reference internal" href="#world-coords"><span class="std std-ref">World y coordinate</span></a> of the <a class="reference internal" href="Position.html#pospeak-def"><span class="std std-ref">brightest pixel</span></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="target" id="alphapeak-sky">ALPHAPEAK_SKY</span></p></td>
+<td><p>degree</p></td>
+<td><p><a class="reference internal" href="#sky-coords"><span class="std std-ref">Native right ascension</span></a> of the <a class="reference internal" href="Position.html#pospeak-def"><span class="std std-ref">brightest pixel</span></a></p></td>
+</tr>
+<tr class="row-even"><td><p><span class="target" id="deltapeak-sky">DELTAPEAK_SKY</span></p></td>
+<td><p>degree</p></td>
+<td><p><a class="reference internal" href="#sky-coords"><span class="std std-ref">Native declination</span></a> of the <a class="reference internal" href="Position.html#pospeak-def"><span class="std std-ref">brightest pixel</span></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="target" id="alphapeak-j2000">ALPHAPEAK_J2000</span></p></td>
+<td><p>degree</p></td>
+<td><p><a class="reference internal" href="#sky-coords"><span class="std std-ref">J2000 right ascension</span></a> of the <a class="reference internal" href="Position.html#pospeak-def"><span class="std std-ref">brightest pixel</span></a></p></td>
+</tr>
+<tr class="row-even"><td><p><span class="target" id="deltapeak-j2000">DELTAPEAK_J2000</span></p></td>
+<td><p>degree</p></td>
+<td><p><a class="reference internal" href="#sky-coords"><span class="std std-ref">J2000 declination</span></a> of the <a class="reference internal" href="Position.html#pospeak-def"><span class="std std-ref">brightest pixel</span></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="target" id="alphapeak-b1950">ALPHAPEAK_B1950</span></p></td>
+<td><p>degree</p></td>
+<td><p><a class="reference internal" href="#sky-coords"><span class="std std-ref">J2000 right ascension</span></a> of the <a class="reference internal" href="Position.html#pospeak-def"><span class="std std-ref">brightest pixel</span></a></p></td>
+</tr>
+<tr class="row-even"><td><p><span class="target" id="deltapeak-b1950">DELTAPEAK_B1950</span></p></td>
+<td><p>degree</p></td>
+<td><p><a class="reference internal" href="#sky-coords"><span class="std std-ref">J2000 declination</span></a> of the <a class="reference internal" href="Position.html#pospeak-def"><span class="std std-ref">brightest pixel</span></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="target" id="xmin-image">XMIN_IMAGE</span></p></td>
+<td><p>pixel</p></td>
+<td><p><a class="reference internal" href="Position.html#xyminmax-def"><span class="std std-ref">Minimum x coordinate among detected pixels</span></a></p></td>
+</tr>
+<tr class="row-even"><td><p><span class="target" id="ymin-image">YMIN_IMAGE</span></p></td>
+<td><p>pixel</p></td>
+<td><p><a class="reference internal" href="Position.html#xyminmax-def"><span class="std std-ref">Minimum y coordinate among detected pixels</span></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="target" id="xmax-image">XMAX_IMAGE</span></p></td>
+<td><p>pixel</p></td>
+<td><p><a class="reference internal" href="Position.html#xyminmax-def"><span class="std std-ref">Maximum x coordinate among detected pixels</span></a></p></td>
+</tr>
+<tr class="row-even"><td><p><span class="target" id="ymax-image">YMAX_IMAGE</span></p></td>
+<td><p>pixel</p></td>
+<td><p><a class="reference internal" href="Position.html#xyminmax-def"><span class="std std-ref">Maximum y coordinate among detected pixels</span></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="target" id="xwin-image">XWIN_IMAGE</span></p></td>
+<td><p>pixel</p></td>
+<td><p><a class="reference internal" href="PositionWin.html#pos-win-def"><span class="std std-ref">x coordinate of windowed image centroid</span></a></p></td>
+</tr>
+<tr class="row-even"><td><p><span class="target" id="ywin-image">YWIN_IMAGE</span></p></td>
+<td><p>pixel</p></td>
+<td><p><a class="reference internal" href="PositionWin.html#pos-win-def"><span class="std std-ref">y coordinate of windowed image centroid</span></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="target" id="errx2win-image">ERRX2WIN_IMAGE</span></p></td>
+<td><p>pixel<sup>2</sup></p></td>
+<td><p><a class="reference internal" href="PositionWin.html#poserr-win-def"><span class="std std-ref">Estimated variance of windowed image centroid x coordinate</span></a></p></td>
+</tr>
+<tr class="row-even"><td><p><span class="target" id="erry2win-image">ERRY2WIN_IMAGE</span></p></td>
+<td><p>pixel<sup>2</sup></p></td>
+<td><p><a class="reference internal" href="PositionWin.html#poserr-win-def"><span class="std std-ref">Estimated variance of windowed image centroid y coordinate</span></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="target" id="errxywin-image">ERRXYWIN_IMAGE</span></p></td>
+<td><p>pixel<sup>2</sup></p></td>
+<td><p><a class="reference internal" href="PositionWin.html#poserr-win-def"><span class="std std-ref">Estimated covariance of windowed image centroid x and y coordinates</span></a></p></td>
+</tr>
+<tr class="row-even"><td><p><span class="target" id="errawin-image">ERRAWIN_IMAGE</span></p></td>
+<td><p>pixel</p></td>
+<td><p><a class="reference internal" href="PositionWin.html#poserr-win-def"><span class="std std-ref">Major axis of the windowed image centroid error ellipse</span></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="target" id="errbwin-image">ERRBWIN_IMAGE</span></p></td>
+<td><p>pixel</p></td>
+<td><p><a class="reference internal" href="PositionWin.html#poserr-win-def"><span class="std std-ref">Minor axis of the windowed image centroid error ellipse</span></a></p></td>
+</tr>
+<tr class="row-even"><td><p><span class="target" id="errthetawin-image">ERRTHETAWIN_IMAGE</span></p></td>
+<td><p>degree</p></td>
+<td><p><a class="reference internal" href="PositionWin.html#poserr-win-def"><span class="std std-ref">Position angle of the windowed image centroid ellipse</span></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="target" id="errcxxwin-image">ERRCXXWIN_IMAGE</span></p></td>
+<td><p>pixel<sup>-2</sup></p></td>
+<td><p><a class="reference internal" href="PositionWin.html#poserr-win-def"><span class="std std-ref">Windowed image centroid Cxx error ellipse parameter</span></a></p></td>
+</tr>
+<tr class="row-even"><td><p><span class="target" id="errcyywin-image">ERRCYYWIN_IMAGE</span></p></td>
+<td><p>pixel<sup>-2</sup></p></td>
+<td><p><a class="reference internal" href="PositionWin.html#poserr-win-def"><span class="std std-ref">Windowed image centroid Cyy error ellipse parameter</span></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="target" id="errcxywin-image">ERRCXYWIN_IMAGE</span></p></td>
+<td><p>pixel<sup>-2</sup></p></td>
+<td><p><a class="reference internal" href="PositionWin.html#poserr-win-def"><span class="std std-ref">Windowed image centroid Cxy error ellipse parameter</span></a></p></td>
+</tr>
+<tr class="row-even"><td><p><span class="target" id="flags-win">FLAGS_WIN</span></p></td>
+<td><p>...</p></td>
+<td><p><a class="reference internal" href="PositionWin.html#flags-win-def"><span class="std std-ref">Windowed measurement flags</span></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="target" id="x2-image">X2_IMAGE</span></p></td>
+<td><p>pixel<sup>2</sup></p></td>
+<td><p><a class="reference internal" href="Position.html#moments-iso-def"><span class="std std-ref">Isophotal image 2nd order central moment in x</span></a></p></td>
+</tr>
+<tr class="row-even"><td><p><span class="target" id="y2-image">Y2_IMAGE</span></p></td>
+<td><p>pixel<sup>2</sup></p></td>
+<td><p><a class="reference internal" href="Position.html#moments-iso-def"><span class="std std-ref">Isophotal image 2nd order central moment in y</span></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="target" id="xy-image">XY_IMAGE</span></p></td>
+<td><p>pixel<sup>2</sup></p></td>
+<td><p><a class="reference internal" href="Position.html#moments-iso-def"><span class="std std-ref">Isophotal image 2nd order central cross-moment in xy</span></a></p></td>
+</tr>
+<tr class="row-even"><td><p><span class="target" id="a-image">A_IMAGE</span></p></td>
+<td><p>pixel</p></td>
+<td><p><a class="reference internal" href="Position.html#shape-iso-def"><span class="std std-ref">Isophotal image major axis</span></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="target" id="b-image">B_IMAGE</span></p></td>
+<td><p>pixel</p></td>
+<td><p><a class="reference internal" href="Position.html#shape-iso-def"><span class="std std-ref">Isophotal image minor axis</span></a></p></td>
+</tr>
+<tr class="row-even"><td><p><span class="target" id="theta-image">THETA_IMAGE</span></p></td>
+<td><p>degree</p></td>
+<td><p><a class="reference internal" href="Position.html#shape-iso-def"><span class="std std-ref">Isophotal image position angle</span></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="target" id="elongation">ELONGATION</span></p></td>
+<td><p>...</p></td>
+<td><p><a class="reference internal" href="Position.html#elong-iso-def"><span class="std std-ref">A_IMAGE / B_IMAGE</span></a></p></td>
+</tr>
+<tr class="row-even"><td><p><span class="target" id="ellipticity">ELLIPTICITY</span></p></td>
+<td><p>...</p></td>
+<td><p><a class="reference internal" href="Position.html#elong-iso-def"><span class="std std-ref">1 - B_IMAGE / A_IMAGE</span></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="target" id="cxx-image">CXX_IMAGE</span></p></td>
+<td><p>pixel<sup>-2</sup></p></td>
+<td><p><a class="reference internal" href="Position.html#ellipse-iso-def"><span class="std std-ref">Isophotal image Cxx ellipse parameter</span></a></p></td>
+</tr>
+<tr class="row-even"><td><p><span class="target" id="cyy-image">CYY_IMAGE</span></p></td>
+<td><p>pixel<sup>-2</sup></p></td>
+<td><p><a class="reference internal" href="Position.html#ellipse-iso-def"><span class="std std-ref">Isophotal image Cyy ellipse parameter</span></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="target" id="cxy-image">CXY_IMAGE</span></p></td>
+<td><p>pixel<sup>-2</sup></p></td>
+<td><p><a class="reference internal" href="Position.html#ellipse-iso-def"><span class="std std-ref">Isophotal image Cxy ellipse parameter</span></a></p></td>
+</tr>
+<tr class="row-even"><td><p><span class="target" id="isoareaf-image">ISOAREAF_IMAGE</span></p></td>
+<td><p>pixel<sup>2</sup></p></td>
+<td><p><a class="reference internal" href="Position.html#isoarea-def"><span class="std std-ref">Isophotal area (filtered) above Detection threshold</span></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="target" id="isoarea-image">ISOAREA_IMAGE</span></p></td>
+<td><p>pixel<sup>2</sup></p></td>
+<td><p><a class="reference internal" href="Position.html#isoarea-def"><span class="std std-ref">Isophotal area above Analysis threshold</span></a></p></td>
+</tr>
+<tr class="row-even"><td><p><span class="target" id="x2win-image">X2WIN_IMAGE</span></p></td>
+<td><p>pixel<sup>2</sup></p></td>
+<td><p><a class="reference internal" href="PositionWin.html#moments-win-def"><span class="std std-ref">Windowed image 2nd order central moment in x</span></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="target" id="y2win-image">Y2WIN_IMAGE</span></p></td>
+<td><p>pixel<sup>2</sup></p></td>
+<td><p><a class="reference internal" href="PositionWin.html#moments-win-def"><span class="std std-ref">Windowed image 2nd order central moment in y</span></a></p></td>
+</tr>
+<tr class="row-even"><td><p><span class="target" id="xywin-image">XYWIN_IMAGE</span></p></td>
+<td><p>pixel<sup>2</sup></p></td>
+<td><p><a class="reference internal" href="PositionWin.html#moments-win-def"><span class="std std-ref">Windowed image 2nd order central cross-moment in xy</span></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="target" id="cxxwin-image">CXXWIN_IMAGE</span></p></td>
+<td><p>pixel<sup>-2</sup></p></td>
+<td><p><a class="reference internal" href="PositionWin.html#ellipse-win-def"><span class="std std-ref">Windowed image Cxx ellipse parameter</span></a></p></td>
+</tr>
+<tr class="row-even"><td><p><span class="target" id="cyywin-image">CYYWIN_IMAGE</span></p></td>
+<td><p>pixel<sup>-2</sup></p></td>
+<td><p><a class="reference internal" href="PositionWin.html#ellipse-win-def"><span class="std std-ref">Windowed image Cyy ellipse parameter</span></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="target" id="cxywin-image">CXYWIN_IMAGE</span></p></td>
+<td><p>pixel<sup>-2</sup></p></td>
+<td><p><a class="reference internal" href="PositionWin.html#ellipse-win-def"><span class="std std-ref">Windowed image Cxy ellipse parameter</span></a></p></td>
+</tr>
+<tr class="row-even"><td><p><span class="target" id="awin-image">AWIN_IMAGE</span></p></td>
+<td><p>pixel</p></td>
+<td><p><a class="reference internal" href="PositionWin.html#shape-win-def"><span class="std std-ref">Windowed image major axis</span></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="target" id="bwin-image">BWIN_IMAGE</span></p></td>
+<td><p>pixel</p></td>
+<td><p><a class="reference internal" href="PositionWin.html#shape-win-def"><span class="std std-ref">Windowed image minor axis</span></a></p></td>
+</tr>
+<tr class="row-even"><td><p><span class="target" id="thetawin-image">THETAWIN_IMAGE</span></p></td>
+<td><p>degree</p></td>
+<td><p><a class="reference internal" href="PositionWin.html#shape-win-def"><span class="std std-ref">Windowed image position angle</span></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="target" id="class-star">CLASS_STAR</span></p></td>
+<td><p>...</p></td>
+<td><p><a class="reference internal" href="Position.html#class-star-def"><span class="std std-ref">Star/galaxy classifier</span></a></p></td>
+</tr>
+<tr class="row-even"><td><p><span class="target" id="vector-model">VECTOR_MODEL</span></p></td>
+<td><p>...</p></td>
+<td><p><a class="reference internal" href="Model.html#models-def"><span class="std std-ref">Model-fitting coefficients</span></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="target" id="vector-modelerr">VECTOR_MODELERR</span></p></td>
+<td><p>...</p></td>
+<td><p><a class="reference internal" href="Model.html#models-def"><span class="std std-ref">Model-fitting coefficient uncertainties</span></a></p></td>
+</tr>
+<tr class="row-even"><td><p><span class="target" id="matrix-modelerr">MATRIX_MODELERR</span></p></td>
+<td><p>...</p></td>
+<td><p><a class="reference internal" href="Model.html#model-minimization-def"><span class="std std-ref">Model-fitting covariance matrix</span></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="target" id="chi2-model">CHI2_MODEL</span></p></td>
+<td><p>...</p></td>
+<td><p><a class="reference internal" href="Model.html#model-minimization-def"><span class="std std-ref">Reduced modified Chi2 of the fit</span></a></p></td>
+</tr>
+<tr class="row-even"><td><p><span class="target" id="flags-model">FLAGS_MODEL</span></p></td>
+<td><p>...</p></td>
+<td><p><a class="reference internal" href="Model.html#model-minimization-def"><span class="std std-ref">Model-fitting flags</span></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="target" id="niter-model">NITER_MODEL</span></p></td>
+<td><p>...</p></td>
+<td><p><a class="reference internal" href="Model.html#model-minimization-def"><span class="std std-ref">Number of model-fitting iterations</span></a></p></td>
+</tr>
+<tr class="row-even"><td><p><span class="target" id="flux-model">FLUX_MODEL</span></p></td>
+<td><p>count</p></td>
+<td><p><a class="reference internal" href="Model.html#models-def"><span class="std std-ref">Flux from model-fitting</span></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="target" id="fluxerr-model">FLUXERR_MODEL</span></p></td>
+<td><p>count</p></td>
+<td><p><a class="reference internal" href="Model.html#models-def"><span class="std std-ref">RMS error estimate for the model-fitting flux</span></a></p></td>
+</tr>
+<tr class="row-even"><td><p><span class="target" id="mag-model">MAG_MODEL</span></p></td>
+<td><p>magnitude</p></td>
+<td><p><a class="reference internal" href="Model.html#models-def"><span class="std std-ref">Magnitude from model-fitting</span></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="target" id="magerr-model">MAGERR_MODEL</span></p></td>
+<td><p>count</p></td>
+<td><p><a class="reference internal" href="Model.html#models-def"><span class="std std-ref">RMS error estimate for the model-fitting magnitude</span></a></p></td>
+</tr>
+<tr class="row-even"><td><p><span class="target" id="flux-max-model">FLUX_MAX_MODEL</span></p></td>
+<td><p>count</p></td>
+<td><p><a class="reference internal" href="Model.html#models-def"><span class="std std-ref">Peak model flux above the background</span></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="target" id="flux-eff-model">FLUX_EFF_MODEL</span></p></td>
+<td><p>count</p></td>
+<td><p><a class="reference internal" href="Model.html#models-def"><span class="std std-ref">Effective model flux above the background</span></a></p></td>
+</tr>
+<tr class="row-even"><td><p><span class="target" id="flux-mean-model">FLUX_MEAN_MODEL</span></p></td>
+<td><p>count</p></td>
+<td><p><a class="reference internal" href="Model.html#models-def"><span class="std std-ref">Mean effective model flux above the background</span></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="target" id="mu-max-model">MU_MAX_MODEL</span></p></td>
+<td><p>mag.arcsec<sup>-2</sup></p></td>
+<td><p><a class="reference internal" href="Model.html#models-def"><span class="std std-ref">Peak model surface brightness above the background</span></a></p></td>
+</tr>
+<tr class="row-even"><td><p><span class="target" id="mu-eff-model">MU_EFF_MODEL</span></p></td>
+<td><p>mag.arcsec<sup>-2</sup></p></td>
+<td><p><a class="reference internal" href="Model.html#models-def"><span class="std std-ref">Effective model surface brightness above the background</span></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="target" id="mu-mean-model">MU_MEAN_MODEL</span></p></td>
+<td><p>mag.arcsec<sup>-2</sup></p></td>
+<td><p><a class="reference internal" href="Model.html#models-def"><span class="std std-ref">Mean effective model surface brightness above the background</span></a></p></td>
+</tr>
+<tr class="row-even"><td><p><span class="target" id="xmodel-image">XMODEL_IMAGE</span></p></td>
+<td><p>pixel</p></td>
+<td><p><a class="reference internal" href="Model.html#models-def"><span class="std std-ref">x coordinate from model-fitting</span></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="target" id="ymodel-image">YMODEL_IMAGE</span></p></td>
+<td><p>pixel</p></td>
+<td><p><a class="reference internal" href="Model.html#models-def"><span class="std std-ref">y coordinate from model-fitting</span></a></p></td>
+</tr>
+<tr class="row-even"><td><p><span class="target" id="spread-model">SPREAD_MODEL</span></p></td>
+<td><p>...</p></td>
+<td><p><a class="reference internal" href="Model.html#spread-model-def"><span class="std std-ref">Spread parameter from model-fitting</span></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="target" id="spreaderr-model">SPREADERR_MODEL</span></p></td>
+<td><p>...</p></td>
+<td><p><a class="reference internal" href="Model.html#spread-model-def"><span class="std std-ref">RMS error estimate on spread parameter from model-fitting</span></a></p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="Config.html" class="btn btn-neutral float-left" title="The configuration file" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="Processing.html" class="btn btn-neutral float-right" title="Processing" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2017-2023, CFHT/IAP/CNRS/SorbonneU.</p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
