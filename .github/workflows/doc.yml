@@ -26,7 +26,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip3 install -r doc/requirements.txt
-          sudo apt-get -y install latexmk texlive-latex-recommended
+          sudo apt-get -y install latexmk texlive-latex-recommended texlive-fonts-recommended
 
       - name: Build doc
         run: |
