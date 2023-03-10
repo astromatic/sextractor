@@ -269,7 +269,7 @@ Model-based star-galaxy separation: :param:`SPREAD_MODEL`
 ---------------------------------------------------------
 
 The :param:`SPREAD_MODEL` estimator has been developed as a star/galaxy classifier for the DESDM pipeline :cite:`2012SPIE_8451E_0DM`, and has also been used in other surveys :cite:`2012ApJ_757_83D,2013AA_554A_101B`.
-:param:`SPREAD_MODEL` indicates which of the best fitting local PSF model resampled at the current position :math:`\tilde{\boldsymbol{\phi}}` (representing a point source) or a slightly ``fuzzier'' resampled model :math:`\tilde{\boldsymbol{G}}` (representing a galaxy) matches best the image data.
+:param:`SPREAD_MODEL` indicates which of the best fitting local PSF model resampled at the current position :math:`\tilde{\boldsymbol{\phi}}` (representing a point source) or a slightly "fuzzier" resampled model :math:`\tilde{\boldsymbol{G}}` (representing a galaxy) matches best the image data.
 :math:`\tilde{\boldsymbol{G}}` is obtained by convolving the local PSF model with a circular exponential model with scalelength = 1/16 |FWHM|, and resampling the result at the current position on the pixel grid. :param:`SPREAD_MODEL` is normalized to allow comparing sources with different PSFs throughout the field:
 
 .. math::
@@ -306,6 +306,7 @@ In order to maintain a certain level of purity or completeness across the whole 
 
 .. math::
   :label: spreaderr_model
+  :nowrap:
 
   \begin{eqnarray}
   {\tt SPREADERR\_MODEL} & = & \frac{1}{(\tilde{\boldsymbol{\phi}}^\mathsf{T} {\bf W}\,\boldsymbol{p})^2} \left((\tilde{\boldsymbol{G}}^\mathsf{T} {\bf V}\,\tilde{\boldsymbol{G}})\,(\tilde{\boldsymbol{\phi}}^\mathsf{T} {\bf W}\,\boldsymbol{p})^2\right.\nonumber \\

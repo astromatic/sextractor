@@ -7,7 +7,7 @@
 *
 *	This file part of:	AstrOmatic FITS/LDAC library
 *
-*	Copyright:		(C) 1995-2020 IAP/CNRS/SorbonneU
+*	Copyright:		(C) 1995-2023 CFHT/IAP/CNRS/SorbonneU
 *
 *	License:		GNU General Public License
 *
@@ -23,7 +23,7 @@
 *	along with AstrOmatic software.
 *	If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		15/07/2020
+*	Last modified:		25/02/2023
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -41,6 +41,8 @@
 
 #include	"fitscat_defs.h"
 #include	"fitscat.h"
+
+extern	float *fits_rand_value;
 
 char		fits_str[MAXCHAR];
 
@@ -167,6 +169,37 @@ int	close_cat(catstruct *cat)
   return RETURN_OK;
   }
 
+#ifdef	HAVE_CFITSIO
+/****** close_cfitsio **********************************************************
+PROTO	int close_cfitsio(fitsfile **infptr)
+PURPOSE	Close a file previously opened by cfitsio 
+INPUT	fitsfile structure.
+OUTPUT	RETURN_OK if everything went as expected (exit in error otherwise).
+NOTES	the fitsfile pointer is set to NULL;
+AUTHOR	E. Bertin (CFHT/IAP/CNRS/SorbonneU)
+VERSION	25/02/2023
+***/
+int	close_cfitsio(catstruct *cat) {
+
+  if ((cat) && (cat->infptr)) {
+    int status = 0; fits_close_file(cat->infptr, &status);
+
+    if (status != 0) {
+      fits_report_error(stderr, status);
+      error(EXIT_FAILURE, "Could not close FITS file with cfitsio: ",
+      	cat->filename);
+    } else {
+      // Successfully closed FITS file with cfitsio
+      cat->infptr == NULL;
+      // Free random seed in CFITSIO.
+      QFREE(fits_rand_value);
+    }
+  } else
+    return RETURN_ERROR;
+  return RETURN_OK;
+}
+#endif // HAVE_CFITSIO
+
 
 /****** free_cat ***************************************************************
 PROTO	void free_cat(catstruct **cat, int ncat)
@@ -175,8 +208,8 @@ INPUT	Pointer to a catalog structure,
 	Number of catalogs.
 OUTPUT	-.
 NOTES	Unallocated pointers should have been put to NULL.
-AUTHOR	E. Bertin (IAP & Leiden observatory)
-VERSION	05/12/2009
+AUTHOR	E. Bertin (CFHT/IAP/CNRS/SorbonneU)
+VERSION	25/02/2023
  ***/
 void	free_cat(catstruct **cat, int ncat)
 
@@ -191,6 +224,10 @@ void	free_cat(catstruct **cat, int ncat)
     if ((*thecat)->file)
       close_cat(*thecat);
     remove_tabs(*thecat);
+#ifdef	HAVE_CFITSIO
+    // Free resources allocated for CFITSIO
+    close_cfitsio(*thecat);
+#endif
     free(*(thecat++));
     }
 
@@ -311,8 +348,8 @@ PURPOSE	Explores the whole FITS file
 INPUT	catalog structure.
 OUTPUT	RETURN_OK if at least one table was found, RETURN_ERROR otherwise.
 NOTES	Memory space for the array of fits structures is reallocated.
-AUTHOR	E. Bertin (IAP & Leiden observatory)
-VERSION	14/12/2002
+AUTHOR	E. Bertin (CFHT/IAP/CNRS/SorbonneU)
+VERSION	25/02/2023
  ***/
 int	map_cat(catstruct *cat)
 
@@ -325,14 +362,38 @@ int	map_cat(catstruct *cat)
   QCALLOC(tab, tabstruct, 1);
   tab->cat = cat;
   QFTELL(cat->file, tab->headpos, cat->filename);
+
+#ifdef	HAVE_CFITSIO
+   fitsfile *infptr;
+   int status, hdutype, hdunum = 1;
+#endif // HAVE_CFITSIO
+
   for (ntab=0; !get_head(tab); ntab++)
     {
     readbasic_head(tab);
     readbintabparam_head(tab);
     QFTELL(cat->file, tab->bodypos, cat->filename);
     tab->nseg = tab->seg = 1;
+
+#ifdef	HAVE_CFITSIO
+    if (tab->isTileCompressed) {
+      // Trigger CFITSIO file opening
+      status = 0;
+      if (!cat->infptr) {
+        fits_open_file(&cat->infptr, cat->filename, READONLY, &status);
+        if (status != 0) {
+          fits_report_error(stderr, status);
+          error(EXIT_FAILURE,
+         	"Could not open FITS file with cfitsio: %s\n", cat->filename);
+        }
+      }
+      tab->infptr = cat->infptr;
+    }
+    tab->hdunum = hdunum++;
+#endif // HAVE_CFITSIO
     if (tab->tabsize)
       QFSEEK(cat->file, PADTOTAL(tab->tabsize), SEEK_CUR, cat->filename);
+
     if (prevtab)
       {
       tab->prevtab = prevtab;

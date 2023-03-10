@@ -18,19 +18,26 @@ Background estimation
 To compute the background map, |SExtractor| makes a first pass through the pixel data, estimating the local background in each mesh of a rectangular grid that covers the whole frame.
 The background estimator is a combination of :math:`\kappa\,\sigma` clipping and mode estimation, similar to Stetson’s |DAOPHOT|_ program :cite:`1987PASP_99_191S,1992ASPC_23_90D`.
 
-Briefly, the local background histogram is clipped iteratively until convergence at :math:`\pm 3\sigma` around its median. The mode of the histogram is estimated using:
-
-.. math::
-  :label: sexbackmode
-
-  \mbox{Mode} = 2.5 \times \mbox{Median} - 1.5 \times \mbox{Mean}.
-
-Using simulated images, the expression above was found more accurate with clipped distributions :cite:`1996AAS_117_393B` than the usual approximation (e.g., :cite:`stuart2009kendall`):
+Briefly, the local background histogram is clipped iteratively until convergence at :math:`\pm 3\sigma` around its median. The mode of the histogram is estimated using the semi-empirical relation
 
 .. math::
   :label: ksbackmode
 
-  \mbox{Mode} = 3 \times \mbox{Median} - 2 \times \mbox{Mean}.
+  \mbox{Mode} - \mbox{Mean} \approx \alpha_{\rm{Pearson}} \times (\mbox{Median} - \mbox{Mean}),
+
+and therefore
+
+.. math::
+  :label: sexbackmode
+
+  \mbox{Mode} \approx \alpha_{\rm{Pearson}} \times \mbox{Median} - (\alpha_{\rm{Pearson}} - 1) \times \mbox{Mean},
+
+with :math:`\alpha_{\rm{Pearson}} \approx 3`  :cite:`1895RSTA_0010,1911AITS,stuart2009kendall`.
+
+Using simulated images, :cite:`1996AAS_117_393B` found :math:`\alpha_{\rm{Pearson}} \approx 2.5` more appropriate for determining the mode of the background histogram in |SExtractor|.
+However, extensive photometric assessments carried out in the context of the `Dark Energy Survey <https://darkenergysurvey.org>`_ later showed that this value leads to a slight overestimation of the local background :cite:`2022ApJS_258_15E`, and a higher :math:`\alpha_{\rm{Pearson}} \approx 3.5` was adopted in |DES|.
+Since |SExtractor| v2.28, :math:`\alpha_{\rm{Pearson}}` can be changed using the ``BACK_PEARSON`` configuration parameter.
+However, for the sake of compatibility with previous results, the default value of ``BACK_PEARSON`` remains ``2.5``.
 
 :numref:`fig_modevsmean` shows that the mode estimation in :eq:`sexbackmode` is considerably less affected by source crowding than a simple clipped mean :cite:`1981AJ_86_476J,1987AA_183_177I` but it is :math:`\approx 30\%` noisier. 
 Obviously :eq:`sexbackmode` is not valid for any distribution; |SExtractor| falls back to a simple median for estimating the local background value if the mode and the median disagree by more than 30%.
@@ -56,7 +63,7 @@ In parallel with the making of the background map, an *RMS background map*, that
 It may be used as an internal weight map if the ``WEIGHT_TYPE`` configuration parameter is to ``BACKGROUND`` (see :ref:`weight-map_format`).
 
 Configuration and tuning
-------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. note::
   All background configuration parameters also affect background-RMS maps.

@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2015 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2020 IAP/CNRS/SorbonneU
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		14/01/2015
+*	Last modified:		23/09/2020
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -93,7 +93,12 @@ void	*loadstrip(picstruct *field, picstruct *wfield)
       else if (flags & INTERP_FIELD)
         copydata(field, 0, nbpix);
       else
+      {
+#ifdef HAVE_CFITSIO
+        tab->currentElement = 1;
+#endif
         read_body(tab, data, nbpix);
+      } 
       if (flags & (WEIGHT_FIELD|RMS_FIELD|BACKRMS_FIELD|VAR_FIELD))
         weight_to_var(field, data, nbpix);
       if ((flags & MEASURE_FIELD) && (check=prefs.check[CHECK_IDENTICAL]))

@@ -7,7 +7,7 @@
 #
 #	This file part of:	SExtractor
 #
-#	Copyright:		(C) 2002-2022 IAP/CNRS/SorbonneU
+#	Copyright:		(C) 2002-2023 CFHT/IAP/CNRS/SorbonneU
 #
 #	License:		GNU General Public License
 #
@@ -22,7 +22,7 @@
 #	You should have received a copy of the GNU General Public License
 #	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 #
-#	Last modified:		11/03/2022
+#	Last modified:		07/03/2023
 #
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -31,8 +31,8 @@ define([AC_CACHE_LOAD],)
 define([AC_CACHE_SAVE],)
 
 # This is your standard AstrOmatic source code...
-AC_INIT(SExtractor, 2.25.3, [astromatic@astromatic.net],
-	sextractor, [http://astromatic.net/software/sextractor])
+AC_INIT([SExtractor],[2.28.0],[astromatic@astromatic.iap.fr],
+        [sextractor],[http://astromatic.net/software/sextractor])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_AUX_DIR(autoconf)
 AC_CONFIG_SRCDIR(src/makeit.c)
@@ -53,6 +53,7 @@ sinclude(acx_atlas.m4)
 sinclude(acx_openblas.m4)
 sinclude(acx_fftw.m4)
 sinclude(acx_mkl.m4)
+sinclude(acx_cfitsio.m4)
 sinclude(acx_prog_cc_optim.m4)
 sinclude(acx_pthread.m4)
 sinclude(acx_urbi_resolve_dir.m4)
@@ -79,24 +80,38 @@ AC_ARG_ENABLE(auto-flags,
 	AC_MSG_RESULT([yes]),
 	AC_MSG_RESULT([no]))
 
-# Provide special option for the Linux Intel C compiler
-AC_MSG_CHECKING([whether the INTEL compiler is enabled])
+# Provide special option for the Linux Intel C "classic" compiler
+AC_MSG_CHECKING([whether the classic INTEL compiler is enabled])
 AC_ARG_ENABLE(icc,
 	[AS_HELP_STRING([--enable-icc],
 	[Use the Intel compiler (default = no)])],
         CC="icc"
+        enable_iccx="yes"
+	AC_MSG_RESULT([yes]),
+	AC_MSG_RESULT([no]))
+
+# Provide special option for the Linux Intel OneAPI C compiler
+AC_MSG_CHECKING([whether the INTEL compiler is enabled])
+AC_ARG_ENABLE(icx,
+	[AS_HELP_STRING([--enable-icx],
+	[Use the Intel compiler (default = no)])],
+        CC="icx"
+        enable_iccx="yes"
 	AC_MSG_RESULT([yes]),
 	AC_MSG_RESULT([no]))
 
 # Provide special options for INTEL MKL
-# We force the use of icc
+# We use icc if available, if not Intel OneAPI's icx
+# (we don't use AC_PROG_CC as it does not play nice
+# in a conditional block)
 AC_MSG_CHECKING([whether INTEL's MKL is enabled])
 AC_ARG_ENABLE(mkl,
 	[AS_HELP_STRING([--enable-mkl],
 	[Use INTEL's MKL for solvers and FFTs (default = no)])],
-        enable_icc="yes"
-        CC="icc"
-	AC_MSG_RESULT([yes]),
+	    AC_MSG_RESULT([yes])
+        CC=""
+        [AC_CHECK_PROGS(CC, [icc icx cc])]
+        enable_iccx="yes",
 	AC_MSG_RESULT([no]))
 
 # Checks for programs.
@@ -115,11 +130,10 @@ AC_PROG_INSTALL
 AC_CHECK_LIB(m, sin)
 
 # Checks for header files.
-AC_HEADER_STDC
 AC_CHECK_HEADERS([fcntl.h limits.h malloc.h stdlib.h string.h sys/mman.h \
 		sys/types.h unistd.h])
 # Checks for INTEL math header files.
-if test "$enable_icc" = "yes"; then
+if test "$enable_iccx" = "yes"; then
   AC_CHECK_HEADERS(mathimf.h)
 fi
 
@@ -135,7 +149,6 @@ AC_TYPE_UID_T
 # Checks for library functions.
 AC_FUNC_ERROR_AT_LINE
 AC_FUNC_MMAP
-AC_TYPE_SIGNAL
 AC_FUNC_STAT
 AC_FUNC_STRFTIME
 AC_CHECK_FUNCS([atexit getenv gettimeofday isinf isnan logf memcpy memmove \
@@ -180,6 +193,24 @@ AC_ARG_WITH(openblas-incdir,
 	[AS_HELP_STRING([--with-openblas-incdir=<OpenBLAS header dir>],
 	[Provide an alternative path to the OpenBLAS header directory])])
 
+# Provide special option for CFITSIO
+AC_MSG_CHECKING([whether CFITSIO support should be disabled (default=enabled)])
+AC_ARG_ENABLE(cfitsio,
+	[AS_HELP_STRING([--disable-cfitsio],
+	[Disable support for compressed FITS files through the CFITSIO library (default=enabled)])],
+	if test "$enable_cfitsio" = "no"; then
+	  AC_MSG_RESULT([yes])
+	else
+	  AC_MSG_RESULT([no])
+	fi,
+	AC_MSG_RESULT([no]))
+AC_ARG_WITH(cfitsio-libdir,
+	[AS_HELP_STRING([--with-cfitsio-libdir=<CFITSIO library path>],
+	[Provide an alternative path to the CFITSIO library])])
+AC_ARG_WITH(cfitsio-incdir,
+	[AS_HELP_STRING([--with-cfitsio-incdir=<CFITSIO include dir>],
+	[Provide an alternative path to the CFITSIO include directory])])
+
 # Provide a special option for the default XSLT URL
 with_xsl_url="file://"$(URBI_RESOLVE_DIR([$datadir]))"/$PACKAGE_TARNAME/$PACKAGE_TARNAME.xsl"
 AC_ARG_WITH(xsl_url,
@@ -222,7 +253,7 @@ use_pthreads="no"
 AC_MSG_CHECKING([for profiler mode])
 AC_ARG_ENABLE(profiling,
 	[AS_HELP_STRING([--enable-profiling],
-	[Enable special mode for profiling (default = no)])]
+	[Enable special mode for profiling (default = no)])],
 	AC_MSG_RESULT([yes]),
 	AC_MSG_RESULT([no]))
 
@@ -256,10 +287,7 @@ if test "$enable_model_fitting" != "no"; then
   if test "$enable_mkl" = "yes"; then
     convlibs="${srcdir}/wcs/libwcs_c.a,${srcdir}/levmar/liblevmar.a"
     ACX_MKL($with_mkl_dir,,$enable_best_link,$convlibs)
-    if test "$MKL_WARN" == ""; then
-      AC_MSG_RESULT([yes])
-    else
-      AC_MSG_RESULT([no])
+    if test "$MKL_WARN" != ""; then
       AC_MSG_WARN([$MKL_WARN])
     fi
     AM_CFLAGS="$AM_CFLAGS $MKL_CFLAGS "
@@ -305,11 +333,21 @@ if test "$enable_model_fitting" != "no"; then
   fi
 fi
 
+########################## handle the CFITSIO library ########################
+if test "$enable_cfitsio" != "no"; then
+  ACX_CFITSIO($with_cfitsio_libdir, $with_cfitsio_incdir,
+	[LIBS="$CFITSIO_LIBS $LIBS"]
+	if test "$CFITSIO_WARN" != ""; then
+	  AC_MSG_WARN([$CFITSIO_WARN])
+	fi,
+	AC_MSG_ERROR([$CFITSIO_ERROR Exiting.]))
+fi
+
 AM_CONDITIONAL(USE_MODEL, [test "$enable_model_fitting" != "no"])
 
 # Compile with profiling option
 if test "$enable_profiling" = "yes"; then
-  if test "$enable_icc" = "yes"; then
+  if test "$enable_iccx" = "yes"; then
     AM_CFLAGS="$AM_CFLAGS -pq"
   else
     AM_CFLAGS="$AM_CFLAGS -pg"
@@ -319,9 +357,9 @@ fi
 
 # "Best" linking option
 if test "$enable_best_link" = "yes"; then
-  if test "$enable_icc" = "yes"; then
-    AM_LDFLAGS="-static-intel -qopenmp-link static -shared-libgcc \
-	-static-libtool-libs -no-intel-extensions -avoid-version $AM_LDFLAGS"
+  if test "$enable_iccx" = "yes"; then
+    AM_LDFLAGS="-static-intel -qopenmp-link=static -shared-libgcc \
+	-static-libtool-libs -avoid-version $AM_LDFLAGS"
   else
     AM_LDFLAGS="-shared-libgcc -static-libtool-libs -avoid-version $AM_LDFLAGS"
   fi

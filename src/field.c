@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1993-2023 CFHT/IAP/CNRS/SorbonneU
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		12/07/2012
+*	Last modified:		25/02/2023
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -70,21 +70,41 @@ picstruct	*newfield(char *filename, int flags, int ext)
   field->cat = cat;
   nok = 0;
   tab = cat->tab;
+#ifdef HAVE_CFITSIO
+  if ((tab->isTileCompressed) ||
+	(tab->naxis >= 2
+	&& strncmp(tab->xtension, "BINTABLE", 8)
+	&& strncmp(tab->xtension, "ASCTABLE", 8)))
+#else
+  if (tab->isTileCompressed)
+    warning(BANNER " has been compiled without CFITSIO support: "
+	"compressed image skipped in ", filename);
   if (tab->naxis >= 2
 	&& strncmp(tab->xtension, "BINTABLE", 8)
 	&& strncmp(tab->xtension, "ASCTABLE", 8))
+#endif
     nok++;
   ext2 = ext;
   for (ntab=cat->ntab; ext2-- && ntab--;)
     {
     tab=tab->nexttab;
+#ifdef HAVE_CFITSIO
+    if ((tab->isTileCompressed) ||
+	(tab->naxis >= 2
+		&& strncmp(tab->xtension, "BINTABLE", 8)
+		&& strncmp(tab->xtension, "ASCTABLE", 8)))
+#else
+    if (tab->isTileCompressed)
+      warning(BANNER " has been compiled without CFITSIO support: "
+		"compressed image skipped in ", filename);
     if (tab->naxis >= 2
-	&& strncmp(tab->xtension, "BINTABLE", 8)
-	&& strncmp(tab->xtension, "ASCTABLE", 8))
+		&& strncmp(tab->xtension, "BINTABLE", 8)
+		&& strncmp(tab->xtension, "ASCTABLE", 8))
+#endif
       nok++;
     }
   if (!nok)
-    error(EXIT_FAILURE, "Not a valid FITS image in ",filename);
+    error(EXIT_FAILURE, "Not a valid FITS image in ", filename);
 
   field->tab = tab;
   if (ntab<0)

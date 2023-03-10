@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2020 IAP/CNRS/SorbonneU
+*	Copyright:		(C) 1993-2023 IAP/CNRS/SorbonneU
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		15/07/2020
+*	Last modified:		07/03/2023
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -136,6 +136,7 @@ typedef struct
   int		backfsize[2];				/* bkgnd filt. size */
   int		nbackfsize;				/* nb of params */
   double	backfthresh;				/* bkgnd fil. thresh */
+  double	back_pearson;				/* Pearson's factor */
   enum	{GLOBAL, LOCAL}			pback_type;	/* phot. bkgnd type */
   int		pback_size;				/* rect. ann. width */
 /*----- memory */

@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2020 IAP/CNRS/SorbonneU
+*	Copyright:		(C) 1993-2023 CFHT/IAP/CNRS/SorbonneU
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		15/07/2020
+*	Last modified:		26/02/2023
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -1059,7 +1059,7 @@ void	reendcat()
   {
    keystruct	*key;
    tabstruct	*tab;
-   OFF_T	pos;
+   OFF_T2	pos;
    char		*head;
 
   switch(prefs.cat_type)
@@ -1086,6 +1086,7 @@ void	reendcat()
       QFTELL(fitscat->file, pos, fitscat->filename);
       QFSEEK(fitscat->file, tab->headpos, SEEK_SET, fitscat->filename);
       save_tab(fitscat, tab);
+      remove_tab(fitscat, "LDAC_IMHEAD", 0);
       QFSEEK(fitscat->file, pos, SEEK_SET, fitscat->filename);
       break;
 
@@ -1125,6 +1126,5 @@ void	zerocat(void)
 
   return;
   }
-
 
 

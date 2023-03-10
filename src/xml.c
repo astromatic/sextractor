@@ -7,7 +7,7 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 2006-2013 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 2006-2023 CFHT/IAP/CNRS/SorbonneU
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +22,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		27/04/2013
+*	Last modified:		07/03/2023
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -231,8 +231,8 @@ INPUT	Pointer to the output file (or stream),
 	Pointer to an error msg (or NULL).
 OUTPUT	RETURN_OK if everything went fine, RETURN_ERROR otherwise.
 NOTES	-.
-AUTHOR	E. Bertin (IAP)
-VERSION	25/04/2013
+AUTHOR	E. Bertin (CFHT/IAP)
+VERSION	07/03/2023
  ***/
 int	write_xml_meta(FILE *file, char *error)
   {
@@ -546,6 +546,7 @@ int	write_xml_meta(FILE *file, char *error)
     write_xmlconfigparam(file, "BackPhoto_Type", "","meta.code;obs.param", "");
     write_xmlconfigparam(file, "BackPhoto_Thick", "pix", "obs.param", "%d");
     write_xmlconfigparam(file, "Back_FiltThresh", "ct", "obs.param;", "%g");
+    write_xmlconfigparam(file, "Back_Pearson", "", "obs.param;", "%g");
 
     write_xmlconfigparam(file, "CheckImage_Type","","meta.code;obs.param", "");
     write_xmlconfigparam(file, "CheckImage_Name", "",
