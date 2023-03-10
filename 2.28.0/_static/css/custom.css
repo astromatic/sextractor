@@ -1,0 +1,98 @@
+/* Change heading font */
+/*
+h1,h2,h3 {
+	font-weight: 700;
+	font-family: "CherrySoda","ff-tisa-web-pro","Georgia",Arial,sans-serif;
+}
+
+@font-face {
+	font-family: "CherrySoda";
+	font-style: normal;
+	font-weight: 700;
+	src: url(../fonts/CherrySoda.ttf) format('truetype');
+}
+
+*/
+/* Extend page width size limit */
+.wy-nav-content {
+	max-width: 1600px;
+}
+
+/* Justified and slightly lower line interval for text */
+li, p {
+	text-align: justify;
+	line-height: 20px;
+}
+
+/* Smaller caption text, further away from the figure */
+.caption {
+	font-size: smaller;
+	margin-top: 1em;
+}
+
+/* Override responsive image scaling */
+img {
+	width: auto;
+}
+
+/* Override Mathjax colors forced to dark grey */
+span[id*="MathJax-Span"] {
+	color: inherit;
+}
+
+/* Move equation no to the right */
+.math .eqno {
+	position: relative;
+	float: right;
+	margin: 1em 0em;
+	z-index: 10;
+}
+
+/* Hide permalinks on equation numbers */
+.section {
+	position: relative
+	z-index: 0;
+}
+
+.math {
+	position: relative;
+	z-index: 1;
+}
+
+.math .MathJax_Display {
+	z-index: 2;
+}
+
+.math .eqno a.headerlink {
+	visibility: hidden;
+	position: absolute;
+}
+
+.math .eqno:hover a.headerlink {
+	visibility: visible;
+}
+
+/* new param class */
+@font-face {
+ font-family: MathJax_Typewriter;
+ src: url('https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/fonts/HTML-CSS/TeX/woff/MathJax_Typewriter-Regular.woff?V=2.7.1') format('woff'), url('https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/fonts/HTML-CSS/TeX/otf/MathJax_Typewriter-Regular.otf?V=2.7.1') format('opentype')
+}
+
+.targetparam .target, .param {
+	font-family: "MathJax_Typewriter",monospace;
+	font-size: 116%;
+}
+
+/* Hide permalinks on captions */
+caption a.headerlink {
+	visibility: hidden;
+}
+
+caption:hover a.headerlink {
+	visibility: visible;
+}
+
+/* Remove space before muliline cells in tables */
+td div.line-block {
+	margin-left: 0px !important;
+}
