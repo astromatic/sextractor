@@ -1,4 +1,4 @@
-#NUMBER                   Running object number                                    
+NUMBER                    # Running object number                                    
 #EXT_NUMBER               FITS extension number                                    
 #FLUX_ISO                 Isophotal flux                                            [count]
 #FLUXERR_ISO              RMS error for isophotal flux                              [count]
@@ -57,8 +57,8 @@
 #DELTAPEAK_J2000          Declination of brightest pix (J2000)                      [deg]
 #ALPHAPEAK_B1950          Right ascension of brightest pix (B1950)                  [deg]
 #DELTAPEAK_B1950          Declination of brightest pix (B1950)                      [deg]
-#X_IMAGE                  Object position along x                                   [pixel]
-#Y_IMAGE                  Object position along y                                   [pixel]
+X_IMAGE                   # Object position along x                                 [pixel]
+Y_IMAGE                   # Object position along y                                 [pixel]
 #X_IMAGE_DBL              Object position along x (double precision)                [pixel]
 #Y_IMAGE_DBL              Object position along y (double precision)                [pixel]
 #X_FOCAL                  Barycenter position along focal-plane x axis             
@@ -182,7 +182,7 @@
 #ISO5                     Isophotal area at level 5                                 [pixel**2]
 #ISO6                     Isophotal area at level 6                                 [pixel**2]
 #ISO7                     Isophotal area at level 7                                 [pixel**2]
-#FLAGS                    Extraction flags                                         
+FLAGS                     # Extraction flags                                         
 #FLAGS_WEIGHT             Weighted extraction flags                                
 #FLAGS_WIN                Flags for WINdowed parameters                            
 #IMAFLAGS_ISO             FLAG-image flags OR'ed over the iso. profile             
