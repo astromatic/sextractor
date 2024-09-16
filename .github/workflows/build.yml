@@ -1,0 +1,34 @@
+name: build
+
+on:
+  push:
+    branches:
+      - master
+      - develop
+      - buildtests
+  pull_request:
+    branches:
+      - master
+      - develop
+  workflow_dispatch:
+
+jobs:
+
+  build-on-linux:
+    name: compile on linux Ubuntu
+    continue-on-error: false
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Install dependency
+        run: |
+          sudo apt-get install libatlas-base-dev libfftw3-dev libplplot-dev
+      - name: Build on Linux Ubuntu
+        run: |
+          ./autogen.sh
+          ./configure
+          make -j
+          make check
+
