@@ -24,7 +24,7 @@ jobs:
         uses: actions/checkout@v2
       - name: Install dependency
         run: |
-          sudo apt-get install libatlas-base-dev libfftw3-dev libplplot-dev
+          sudo apt-get install libatlas-base-dev libfftw3-dev libplplot-dev libcfitsio-dev
       - name: Build on Linux Ubuntu
         run: |
           ./autogen.sh
