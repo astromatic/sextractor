@@ -7,7 +7,7 @@
 *
 *	This file part of:	AstrOmatic FITS/LDAC library
 *
-*	Copyright:		(C) 1995-2023 CFHT/IAP/CNRS/SorbonneU
+*	Copyright:		(C) 1995-2024 CEA/AIM/UParisSaclay
 *
 *	License:		GNU General Public License
 *
@@ -22,8 +22,6 @@
 *	You should have received a copy of the GNU General Public License
 *	along with AstrOmatic software.
 *	If not, see <http://www.gnu.org/licenses/>.
-*
-*	Last modified:		25/02/2023
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -176,8 +174,8 @@ PURPOSE	Close a file previously opened by cfitsio
 INPUT	fitsfile structure.
 OUTPUT	RETURN_OK if everything went as expected (exit in error otherwise).
 NOTES	the fitsfile pointer is set to NULL;
-AUTHOR	E. Bertin (CFHT/IAP/CNRS/SorbonneU)
-VERSION	25/02/2023
+AUTHOR	E. Bertin (CEA/AIM/UParisSaclay)
+VERSION	11/10/2024
 ***/
 int	close_cfitsio(catstruct *cat) {
 
@@ -190,7 +188,7 @@ int	close_cfitsio(catstruct *cat) {
       	cat->filename);
     } else {
       // Successfully closed FITS file with cfitsio
-      cat->infptr == NULL;
+      cat->infptr = NULL;
       // Free random seed in CFITSIO.
       QFREE(fits_rand_value);
     }
