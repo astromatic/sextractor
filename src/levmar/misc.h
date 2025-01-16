@@ -1,3 +1,4 @@
+#pragma once
 /*
 *				misc.h
 *
@@ -43,9 +44,6 @@
 //  GNU General Public License for more details.
 //
 /////////////////////////////////////////////////////////////////////////////////
-
-#ifndef _MISC_H_
-#define _MISC_H_
 
 /* common suffix for LAPACK subroutines. Define empty in case of no prefix. */
 #define LM_LAPACK_SUFFIX _
@@ -137,5 +135,3 @@ extern int dlevmar_chol(double *C, double *W, int m);
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* _MISC_H_ */

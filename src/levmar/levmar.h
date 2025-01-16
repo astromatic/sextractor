@@ -1,3 +1,4 @@
+#pragma once
 /*
 *				levmar.h
 *
@@ -45,9 +46,6 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////
 */
-
-#ifndef _LEVMAR_H_
-#define _LEVMAR_H_
 
 /* Added by EB */
 #ifdef HAVE_CONFIG_H
@@ -431,5 +429,3 @@ extern int slevmar_outlid(float *r, int n, float thresh, float ls[2], char *outl
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* _LEVMAR_H_ */

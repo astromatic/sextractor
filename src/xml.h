@@ -1,3 +1,4 @@
+#pragma once
 /*
 *				xml.h
 *
@@ -30,9 +31,7 @@
 #include	"config.h"
 #endif
 
-#ifndef _FITSCAT_H_
 #include "fits/fitscat.h"
-#endif
 
 /*----------------------------- Internal constants --------------------------*/
 #ifndef XSL_URL

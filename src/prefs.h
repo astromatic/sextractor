@@ -1,3 +1,4 @@
+#pragma once
 /*
 *				prefs.h
 *
@@ -26,16 +27,9 @@
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-#ifndef _PROFIT_H_
 #include        "profit.h"
-#endif
 
-#ifndef _PATTERN_H_
 #include        "pattern.h"
-#endif
-
-#ifndef _PREFS_H_
-#define _PREFS_H_
 
 /*----------------------------- Internal constants --------------------------*/
 
@@ -265,4 +259,3 @@ extern void	dumpprefs(int state),
 		preprefs(void),
 		readprefs(char *filename,char **argkey,char **argval,int narg),
 		useprefs(void);
-#endif

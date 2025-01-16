@@ -1,3 +1,4 @@
+#pragma once
 /*
 *				pattern.h
 *
@@ -26,12 +27,7 @@
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-#ifndef _PROFIT_H_
 #include "profit.h"
-#endif
-
-#ifndef _PATTERN_H_
-#define _PATTERN_H_
 
 /*-------------------------------- flags ------------------------------------*/
 /*-------------------------------- macros -----------------------------------*/
@@ -87,6 +83,3 @@ void		pattern_compmodarg(patternstruct *pattern,profitstruct *profit),
 		pattern_create(patternstruct *pattern, profitstruct *profit),
 		pattern_end(patternstruct *pattern),
 		pattern_fit(patternstruct *pattern, profitstruct *profit);
-
-#endif
-

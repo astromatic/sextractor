@@ -1,3 +1,4 @@
+#pragma once
 /**
 * @file         dgeo.h
 * @brief        Include file for dgeo.c.
@@ -24,12 +25,7 @@
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-#ifndef _DGEO_H_
-#define _DGEO_H_
-
 //----------------------------- Internal constants ----------------------------
 //------------------------------- functions -----------------------------------
 extern int	dgeo_copy(picstruct *dgeofield, PIXTYPE *destx, PIXTYPE *desty,
 		int w,int h, int ix,int iy);
-
-#endif
