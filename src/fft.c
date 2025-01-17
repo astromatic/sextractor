@@ -7,7 +7,9 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 2007-2017 IAP/CNRS/UPMC
+#	Copyright:		(C) 2002-2021 IAP/CNRS/SorbonneU
+#					(C)	2021-2023 CFHT/CNRS
+#					(C) 2023-2024 CEA/AIM/UParisSaclay
 *
 *	License:		GNU General Public License
 *
@@ -69,7 +71,7 @@ void    fft_init(int nthreads)
 #ifdef USE_THREADS
     if (nthreads > 1)
       {
-      if (!fftw_init_threads())
+      if (!fftwf_init_threads())
         error(EXIT_FAILURE, "*Error*: thread initialization failed in ", "FFTW");
       fftwf_plan_with_nthreads(prefs.nthreads);
       }
