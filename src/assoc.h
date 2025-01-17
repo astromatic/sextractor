@@ -1,3 +1,4 @@
+#pragma once
 /*
 *				assoc.h
 *
@@ -26,9 +27,7 @@
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-#ifndef _FITSWCS_H_
 #include        "fitswcs.h"
-#endif
 
 #define		ASSOC_BUFINC	131072	/* Assoc buffer increment (bytes) */
 

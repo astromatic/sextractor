@@ -1,3 +1,4 @@
+#pragma once
 /*
 *				fitswcs.h
 *
@@ -26,9 +27,6 @@
 *	Last modified:		08/03/2016
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
-
-#ifndef _FITSWCS_H_
-#define _FITSWCS_H_
 
 /*-------------------------------- macros -----------------------------------*/
 
@@ -168,5 +166,3 @@ extern void		b2j(double yearobs, double alphain, double deltain,
 			range_wcs(wcsstruct *wcs),
 			wipe_wcs(tabstruct *tab),
 			write_wcs(tabstruct *tab, wcsstruct *wcs);
-
-#endif

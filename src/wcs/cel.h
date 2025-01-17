@@ -57,10 +57,10 @@
 *   Author: Mark Calabretta, Australia Telescope National Facility
 *   $Id: cel.h,v 1.1.1.1 2012/04/11 16:33:26 bertin Exp $
 *===========================================================================*/
- 
+
 #ifndef WCSLIB_CEL
 #define WCSLIB_CEL
-
+ 
 #include "proj.h"
 
 #ifdef __cplusplus
