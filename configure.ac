@@ -7,7 +7,9 @@
 #
 #	This file part of:	SExtractor
 #
-#	Copyright:		(C) 2002-2023 CFHT/IAP/CNRS/SorbonneU
+#	Copyright:		(C) 2002-2021 IAP/CNRS/SorbonneU
+#					(C)	2021-2023 CFHT/CNRS
+#					(C) 2023-2024 CEA/AIM/UParisSaclay
 #
 #	License:		GNU General Public License
 #
@@ -22,7 +24,7 @@
 #	You should have received a copy of the GNU General Public License
 #	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 #
-#	Last modified:		07/03/2023
+#	Last modified:		18/12/2024
 #
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -31,7 +33,7 @@ define([AC_CACHE_LOAD],)
 define([AC_CACHE_SAVE],)
 
 # This is your standard AstrOmatic source code...
-AC_INIT([SExtractor],[2.28.0],[astromatic@astromatic.iap.fr],
+AC_INIT([SExtractor],[2.28.2],[astromatic@astromatic.iap.fr],
         [sextractor],[http://astromatic.net/software/sextractor])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_AUX_DIR(autoconf)
@@ -246,8 +248,6 @@ AC_ARG_ENABLE(threads,
     fi,
     use_pthreads=yes
     )
-# Deactivate multithreading for now
-use_pthreads="no"
 
 # Provide special option for profiling
 AC_MSG_CHECKING([for profiler mode])
