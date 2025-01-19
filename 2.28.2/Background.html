@@ -1,0 +1,200 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Modeling the background &mdash; SExtractor 2.28.2 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=cfc9bc01" />
+
+  
+    <link rel="shortcut icon" href="_static/astromaticO.png"/>
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=fb101e21"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Weighting" href="Weighting.html" />
+    <link rel="prev" title="Processing" href="Processing.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            SExtractor
+              <img src="_static/cover.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="Introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="License.html">License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Installing.html">Installing the software</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Using.html">Using SExtractor</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="Processing.html">Processing</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Modeling the background</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#background-estimation">Background estimation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#background-map">Background map</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#configuration-and-tuning">Configuration and tuning</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#computing-cost">Computing cost</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="Weighting.html">Weighting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Flagging.html">Flagging</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="Measurements.html">Measurements</a></li>
+<li class="toctree-l1"><a class="reference internal" href="references.html">Bibliography</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">SExtractor</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="Processing.html">Processing</a></li>
+      <li class="breadcrumb-item active">Modeling the background</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/Background.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="modeling-the-background">
+<span id="background-model"></span><h1>Modeling the background<a class="headerlink" href="#modeling-the-background" title="Link to this heading"></a></h1>
+<p>On linear detectors, the value measured at each pixel is the sum of a &quot;background&quot; signal and light coming from the sources of interest.
+To be able to detect the faintest objects and make accurate measurements, <strong class="program">SExtractor</strong> needs first computing a precise estimate of the background level at any position of the image: a <em>background map</em>.
+Strictly speaking, there should be one background map per source, that is, what would the image look like if that very source was missing.
+But, at least for detection, one can start by assuming that most discrete sources do not overlap too severely — which is generally the case for high galactic latitude fields —, and that the background varies smoothly across the field.</p>
+<section id="background-estimation">
+<h2>Background estimation<a class="headerlink" href="#background-estimation" title="Link to this heading"></a></h2>
+<p>To compute the background map, <strong class="program">SExtractor</strong> makes a first pass through the pixel data, estimating the local background in each mesh of a rectangular grid that covers the whole frame.
+The background estimator is a combination of <span class="math notranslate nohighlight">\(\kappa\,\sigma\)</span> clipping and mode estimation, similar to Stetson’s <a class="reference external" href="http://ascl.net/phpBB3/viewtopic.php?t=23410"><strong class="program">DAOPHOT</strong></a> program <span id="id1">[<a class="reference internal" href="references.html#id28" title="P. B. Stetson, 1987. DAOPHOT - A computer program for crowded-field stellar photometry. PASP, 99:191-222.">7</a>, <a class="reference internal" href="references.html#id35" title="G. S. Da Costa, 1992. Basic Photometry Techniques. In S. B. Howell, editor, Astronomical CCD Observing and Reduction Techniques, volume 23 of Astronomical Society of the Pacific Conference Series, 90. 1992.">8</a>]</span>.</p>
+<p>Briefly, the local background histogram is clipped iteratively until convergence at <span class="math notranslate nohighlight">\(\pm 3\sigma\)</span> around its median. The mode of the histogram is estimated using the semi-empirical relation</p>
+<div class="math notranslate nohighlight" id="equation-ksbackmode">
+<span class="eqno">(4)<a class="headerlink" href="#equation-ksbackmode" title="Link to this equation"></a></span>\[\mbox{Mode} - \mbox{Mean} \approx \alpha_{\rm{Pearson}} \times (\mbox{Median} - \mbox{Mean}),\]</div>
+<p>and therefore</p>
+<div class="math notranslate nohighlight" id="equation-sexbackmode">
+<span class="eqno">(5)<a class="headerlink" href="#equation-sexbackmode" title="Link to this equation"></a></span>\[\mbox{Mode} \approx \alpha_{\rm{Pearson}} \times \mbox{Median} - (\alpha_{\rm{Pearson}} - 1) \times \mbox{Mean},\]</div>
+<p>with <span class="math notranslate nohighlight">\(\alpha_{\rm{Pearson}} \approx 3\)</span>  <span id="id2">[<a class="reference internal" href="references.html#id22" title="K. Pearson, 1895. Contributions to the mathematical theory of evolution.—II. Skew variation in homogeneous material. Philosophical Transactions of the Royal Society of London, 186:343-414.">9</a>, <a class="reference internal" href="references.html#id41" title="G. U. Yule.  An introduction to the theory of statistics. C. Griffin and Company, limited, 1911.">10</a>, <a class="reference internal" href="references.html#id39" title="A. Stuart and K. Ord. Kendall's Advanced Theory of Statistics: Volume 1: Distribution Theory. Number vol. 1 ;vol. 1994 in Kendall's Advanced Theory of Statistics. Wiley, 2009. ISBN 9780340614303.">11</a>]</span>.</p>
+<p>Using simulated images, <span id="id3">[<a class="reference internal" href="references.html#id2" title="E. Bertin and S. Arnouts, 1996. SExtractor: Software for source extraction. A&amp;AS, 117:393-404.">12</a>]</span> found <span class="math notranslate nohighlight">\(\alpha_{\rm{Pearson}} \approx 2.5\)</span> more appropriate for determining the mode of the background histogram in <strong class="program">SExtractor</strong>.
+However, extensive photometric assessments carried out in the context of the <a class="reference external" href="https://darkenergysurvey.org">Dark Energy Survey</a> later showed that this value leads to a slight overestimation of the local background <span id="id4">[<a class="reference internal" href="references.html#id11" title="S. Everett, B. Yanny, N. Kuropatkin, E. M. Huff, Y. Zhang, J. Myles, A. Masegian, J. Elvin-Poole, S. Allam, G. M. Bernstein, I. Sevilla-Noarbe, M. Splettstoesser, E. Sheldon, M. Jarvis, A. Amon, I. Harrison, A. Choi, W. G. Hartley, A. Alarcon, C. Sánchez, D. Gruen, K. Eckert, J. Prat, M. Tabbutt, V. Busti, M. R. Becker, N. MacCrann, H. T. Diehl, D. L. Tucker, E. Bertin, T. Jeltema, A. Drlica-Wagner, R. A. Gruendl, K. Bechtol, A. Carnero Rosell, T. M. C. Abbott, M. Aguena, J. Annis, D. Bacon, S. Bhargava, D. Brooks, D. L. Burke, M. Carrasco Kind, J. Carretero, F. J. Castander, C. Conselice, M. Costanzi, L. N. da Costa, M. E. S. Pereira, J. De Vicente, J. DeRose, S. Desai, T. F. Eifler, A. E. Evrard, I. Ferrero, P. Fosalba, J. Frieman, J. García-Bellido, E. Gaztanaga, D. W. Gerdes, G. Gutierrez, S. R. Hinton, D. L. Hollowood, K. Honscheid, D. Huterer, D. J. James, S. Kent, E. Krause, K. Kuehn, O. Lahav, M. Lima, H. Lin, M. A. G. Maia, J. L. Marshall, P. Melchior, F. Menanteau, R. Miquel, J. J. Mohr, R. Morgan, J. Muir, R. L. C. Ogando, A. Palmese, F. Paz-Chinchón, A. A. Plazas, M. Rodriguez-Monroy, A. K. Romer, A. Roodman, E. Sanchez, V. Scarpine, S. Serrano, M. Smith, M. Soares-Santos, E. Suchyta, M. E. C. Swanson, G. Tarle, C. To, M. A. Troxel, T. N. Varga, J. Weller, R. D. Wilkinson, and R. D. Wilkinson, 2022. Dark Energy Survey Year 3 Results: Measuring the Survey Transfer Function with Balrog. \apjs , 258(1):15.">13</a>]</span>, and a higher <span class="math notranslate nohighlight">\(\alpha_{\rm{Pearson}} \approx 3.5\)</span> was adopted in <abbr>Dark Energy Survey</abbr>.
+Since <strong class="program">SExtractor</strong> v2.28, <span class="math notranslate nohighlight">\(\alpha_{\rm{Pearson}}\)</span> can be changed using the <code class="docutils literal notranslate"><span class="pre">BACK_PEARSON</span></code> configuration parameter.
+However, for the sake of compatibility with previous results, the default value of <code class="docutils literal notranslate"><span class="pre">BACK_PEARSON</span></code> remains <code class="docutils literal notranslate"><span class="pre">2.5</span></code>.</p>
+<p><a class="reference internal" href="#fig-modevsmean"><span class="std std-numref">Fig. 2</span></a> shows that the mode estimation in <a class="reference internal" href="#equation-sexbackmode">(5)</a> is considerably less affected by source crowding than a simple clipped mean <span id="id5">[<a class="reference internal" href="references.html#id15" title="J. F. Jarvis and J. A. Tyson, 1981. FOCAS - Faint Object Classification and Analysis System. AJ, 86:476-495.">14</a>, <a class="reference internal" href="references.html#id14" title="L. Infante, 1987. A faint object processing software - Description and testing. A&amp;A, 183:177-184.">15</a>]</span> but it is <span class="math notranslate nohighlight">\(\approx 30\%\)</span> noisier.
+Obviously <a class="reference internal" href="#equation-sexbackmode">(5)</a> is not valid for any distribution; <strong class="program">SExtractor</strong> falls back to a simple median for estimating the local background value if the mode and the median disagree by more than 30%.</p>
+<figure class="align-center" id="id7" style="width: 100%">
+<span id="fig-modevsmean"></span><img alt="_images/modevsmean.svg" src="_images/modevsmean.svg" />
+<figcaption>
+<p><span class="caption-number">Fig. 2 </span><span class="caption-text">Simulations of <span class="math notranslate nohighlight">\(32\times32\)</span> pixels background meshes contamined by random Gaussian profiles.
+The true background lies at 0 ADUs.
+While being a bit noisier, the clipped &quot;mode&quot; gives a more robust estimate than the clipped mean in crowded regions.</span><a class="headerlink" href="#id7" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+</section>
+<section id="background-map">
+<h2>Background map<a class="headerlink" href="#background-map" title="Link to this heading"></a></h2>
+<p>Once the grid is set up, a median filter can be applied to suppress possible local overestimations due to bright stars.
+The final background map is simply a (natural) bicubic-spline interpolation between the meshes of the grid.
+Median filtering helps reducing possible ringing effects of the bicubic-spline around bright features.</p>
+<p>In parallel with the making of the background map, an <em>RMS background map</em>, that is, a map of the background noise standard deviation in the image is produced.
+It may be used as an internal weight map if the <code class="docutils literal notranslate"><span class="pre">WEIGHT_TYPE</span></code> configuration parameter is to <code class="docutils literal notranslate"><span class="pre">BACKGROUND</span></code> (see <a class="reference internal" href="Weighting.html#weight-map-format"><span class="std std-ref">Weight-map formats</span></a>).</p>
+<section id="configuration-and-tuning">
+<h3>Configuration and tuning<a class="headerlink" href="#configuration-and-tuning" title="Link to this heading"></a></h3>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>All background configuration parameters also affect background-RMS maps.</p>
+</div>
+<p>The choice of the mesh size <code class="docutils literal notranslate"><span class="pre">BACK_SIZE</span></code> is very important.
+If it is too small, the background estimation is affected by the presence of
+objects and random noise.
+Most importantly, part of the flux of the most extended objects can be absorbed into the background map.
+If the mesh size is too large, it cannot reproduce the small scale variations of the background.
+Therefore a good compromise must be found by the user.
+Typically, for reasonably sampled images, a width <a class="footnote-reference brackets" href="#recmesh" id="id6" role="doc-noteref"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></a> of 32 to 512 pixels works well.</p>
+<p>The user has some control over background map filtering by specifying the size of the median filter <code class="docutils literal notranslate"><span class="pre">BACK_FILTERSIZE</span></code>.
+A width and height of 1 means that no filtering is applied to the background grid.
+A <span class="math notranslate nohighlight">\(3\times3\)</span> filtering is sufficient in most cases.
+Larger dimensions may occasionally be used to compensate for small background mesh sizes, or in the presence of large image artifacts.
+In some specific cases it is desirable to median-filter only background meshes that have values exceeding some threshold above the filtered value.
+This differential threshold is set by the <code class="docutils literal notranslate"><span class="pre">BACK_FILTERTHRESH</span></code> parameter, in ADUs.</p>
+<p>By default, the computed background maps are automatically subtracted from input images.
+However there are some situations where it is more appropriate to subtract a <em>constant</em> from the image (e.g., images with strongly non-Gaussian background noise <abbr title="Probability Density Function">pdf</abbr>s).
+The <code class="docutils literal notranslate"><span class="pre">BACK_TYPE</span></code> configuration parameter (set to <code class="docutils literal notranslate"><span class="pre">AUTO</span></code> by default) may be switched to <code class="docutils literal notranslate"><span class="pre">MANUAL</span></code> to force the value specified by the <code class="docutils literal notranslate"><span class="pre">BACK_VALUE</span></code> parameter to be subtracted from the input image, instead of the background map. <code class="docutils literal notranslate"><span class="pre">BACK_VALUE</span></code> is <code class="docutils literal notranslate"><span class="pre">0</span></code> by default.</p>
+</section>
+</section>
+<section id="computing-cost">
+<h2>Computing cost<a class="headerlink" href="#computing-cost" title="Link to this heading"></a></h2>
+<p>The background estimation operation is generally <abbr title="Input/Output">I/O</abbr>-bound, unless the image file already resides in the disk cache.</p>
+<aside class="footnote-list brackets">
+<aside class="footnote brackets" id="recmesh" role="doc-footnote">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id6">1</a><span class="fn-bracket">]</span></span>
+<p>It is possible to specify rectangular background meshes, although it is advised to use square ones, except in special cases (background varying rapidly along the x or y axis).</p>
+</aside>
+</aside>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="Processing.html" class="btn btn-neutral float-left" title="Processing" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="Weighting.html" class="btn btn-neutral float-right" title="Weighting" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2017-2023, CFHT/IAP/CNRS/SorbonneU.</p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

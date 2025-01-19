@@ -1,0 +1,475 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Isophotal measurements &mdash; SExtractor 2.28.2 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=cfc9bc01" />
+
+  
+    <link rel="shortcut icon" href="_static/astromaticO.png"/>
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=fb101e21"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Windowed positional parameters" href="PositionWin.html" />
+    <link rel="prev" title="Measurements" href="Measurements.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            SExtractor
+              <img src="_static/cover.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="Introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="License.html">License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Installing.html">Installing the software</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Using.html">Using SExtractor</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Processing.html">Processing</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="Measurements.html">Measurements</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Isophotal measurements</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#position-and-shape">Position and shape</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#limits-xmin-ymin-xmax-ymax">Limits: <span class="param">XMIN</span>, <span class="param">YMIN</span>, <span class="param">XMAX</span>, <span class="param">YMAX</span></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#barycenter-x-y">Barycenter: <span class="param">X</span>, <span class="param">Y</span></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#position-of-the-peak-xpeak-ypeak">Position of the peak: <span class="param">XPEAK</span>, <span class="param">YPEAK</span></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#second-order-moments-x2-y2-xy">Second-order moments: <span class="param">X2</span>, <span class="param">Y2</span>, <span class="param">XY</span></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#basic-shape-parameters-a-b-theta">Basic shape parameters: <span class="param">A</span>, <span class="param">B</span>, <span class="param">THETA</span></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#by-products-of-shape-parameters-elongation-and-ellipticity">By-products of shape parameters: <span class="param">ELONGATION</span> and <span class="param">ELLIPTICITY</span></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#ellipse-parameters-cxx-cyy-cxy">Ellipse parameters: <span class="param">CXX</span>, <span class="param">CYY</span>, <span class="param">CXY</span></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#position-uncertainties-errx2-erry2-errxy-erra-errb-errtheta-errcxx-errcyy-errcxy">Position uncertainties: <span class="param">ERRX2</span>, <span class="param">ERRY2</span>, <span class="param">ERRXY</span>, <span class="param">ERRA</span>, <span class="param">ERRB</span>, <span class="param">ERRTHETA</span>, <span class="param">ERRCXX</span>, <span class="param">ERRCYY</span>, <span class="param">ERRCXY</span></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#handling-of-infinitely-thin-detections">Handling of “infinitely thin” detections</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#isophotal-areas-isoarea-isoareaf">Isophotal areas: <span class="param">ISOAREA</span>, <span class="param">ISOAREAF</span></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#photometry">Photometry</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#isophotal-flux-flux-iso">Isophotal flux: <span class="param">FLUX_ISO</span></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#corrected-isophotal-magnitude-mag-isocor">Corrected isophotal magnitude: <span class="param">MAG_ISOCOR</span></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#peak-value-flux-max">Peak value: <span class="param">FLUX_MAX</span></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#class-star-classifier"><span class="param">CLASS_STAR</span> classifier</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#inputs-and-outputs">Inputs and outputs</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#training">Training</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="PositionWin.html">Windowed positional parameters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Photom.html">Aperture photometry</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Model.html">Model fitting</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="references.html">Bibliography</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">SExtractor</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="Measurements.html">Measurements</a></li>
+      <li class="breadcrumb-item active">Isophotal measurements</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/Position.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="isophotal-measurements">
+<h1>Isophotal measurements<a class="headerlink" href="#isophotal-measurements" title="Link to this heading"></a></h1>
+<section id="position-and-shape">
+<h2>Position and shape<a class="headerlink" href="#position-and-shape" title="Link to this heading"></a></h2>
+<p>The following quantities are derived from the spatial distribution <span class="math notranslate nohighlight">\(\cal S\)</span> of pixels detected above the detection threshold (see <a class="reference internal" href="Measurements.html#isophotal-measurements"><span class="std std-ref">description</span></a>).</p>
+<div class="admonition important">
+<p class="admonition-title">Important</p>
+<p>Unless otherwise noted, the pixel values used for computing &quot;isophotal&quot; positions and shapes are taken from the filtered, background-subtracted detection image.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Unless otherwise noted, all parameter names given below are only prefixes.
+They must be followed by _IMAGE if the results shall be expressed in pixel coordinates or <span class="param">_WORLD</span>, <span class="param">_SKY</span>, <span class="param">_J2000</span> or <span class="param">_B1950</span> for <a class="reference external" href="http://www.atnf.csiro.au/people/mcalabre/WCS/index.html">WCS</a> coordinates (see <a class="reference internal" href="Param.html#coord-suffix"><span class="std std-ref">Positions and shapes</span></a>).</p>
+</div>
+<section id="limits-xmin-ymin-xmax-ymax">
+<span id="xyminmax-def"></span><h3>Limits: <span class="param">XMIN</span>, <span class="param">YMIN</span>, <span class="param">XMAX</span>, <span class="param">YMAX</span><a class="headerlink" href="#limits-xmin-ymin-xmax-ymax" title="Link to this heading"></a></h3>
+<p>These coordinates define two corners of a rectangle which encloses the detected object:</p>
+<div class="math notranslate nohighlight" id="equation-xminymax">
+ \begin{eqnarray}
+ {\tt XMIN} &amp; = &amp; \min_{i \in {\cal S}} x_i,\\
+ {\tt YMIN} &amp; = &amp; \min_{i \in {\cal S}} y_i,\\
+ {\tt XMAX} &amp; = &amp; \max_{i \in {\cal S}} x_i,\\
+ {\tt YMAX} &amp; = &amp; \max_{i \in {\cal S}} y_i,
+ \end{eqnarray}</div><p>where <span class="math notranslate nohighlight">\(x_i\)</span> and <span class="math notranslate nohighlight">\(y_i\)</span> are respectively the x-coordinate and y-coordinate of pixel <span class="math notranslate nohighlight">\(i\)</span>.</p>
+</section>
+<section id="barycenter-x-y">
+<span id="pos-iso-def"></span><h3>Barycenter: <span class="param">X</span>, <span class="param">Y</span><a class="headerlink" href="#barycenter-x-y" title="Link to this heading"></a></h3>
+<p>Barycenter coordinates generally define the position of the “center” of a source, although this definition can be inadequate or inaccurate if its spatial profile shows a strong skewness or very large wings. X and Y are simply computed as the first order moments of the profile:</p>
+<div class="math notranslate nohighlight" id="equation-xy">
+ \begin{eqnarray}
+ {\tt X} &amp; = &amp; \overline{x} = \frac{\displaystyle \sum_{i \in {\cal S}}
+ p^{(f)}_i x_i}{\displaystyle \sum_{i \in {\cal S}} p^{(f)}_i},\\
+ {\tt Y} &amp; = &amp; \overline{y} = \frac{\displaystyle \sum_{i \in {\cal S}}
+ p^{(f)}_i y_i}{\displaystyle \sum_{i \in {\cal S}} p^{(f)}_i},
+ \end{eqnarray}</div><p>where <span class="math notranslate nohighlight">\(p^{(f)}_i\)</span> is the value of the pixel <span class="math notranslate nohighlight">\(i\)</span> in the (filtered) detection image.
+In practice, <span class="math notranslate nohighlight">\(x_i\)</span> and <span class="math notranslate nohighlight">\(y_i\)</span> are summed relative to <span class="param">XMIN</span> and <span class="param">YMIN</span> in order to reduce roundoff errors in the summing.</p>
+</section>
+<section id="position-of-the-peak-xpeak-ypeak">
+<span id="pospeak-def"></span><h3>Position of the peak: <span class="param">XPEAK</span>, <span class="param">YPEAK</span><a class="headerlink" href="#position-of-the-peak-xpeak-ypeak" title="Link to this heading"></a></h3>
+<p>It is sometimes useful to have the position <span class="param">XPEAK</span>, <span class="param">YPEAK</span> of the pixel with maximum intensity in a detected object, for instance when working with likelihood maps, or when searching for artifacts. For better robustness, PEAK coordinates are computed on <em>filtered</em> profiles if available. On symmetrical profiles, PEAK positions and barycenters coincide within a fraction of pixel (<span class="param">XPEAK</span> and <span class="param">YPEAK</span> coordinates are quantized by steps of 1 pixel, hence <span class="param">XPEAK_IMAGE</span> and <span class="param">YPEAK_IMAGE</span> are integers). This is no longer true for skewed profiles, therefore a simple comparison between PEAK and barycenter coordinates can be used to identify asymmetrical objects on well-sampled images.</p>
+</section>
+<section id="second-order-moments-x2-y2-xy">
+<span id="moments-iso-def"></span><h3>Second-order moments: <span class="param">X2</span>, <span class="param">Y2</span>, <span class="param">XY</span><a class="headerlink" href="#second-order-moments-x2-y2-xy" title="Link to this heading"></a></h3>
+<p>(Centered) second-order moments are convenient for measuring the spatial spread of a source profile. In <strong class="program">SExtractor</strong> they are computed with:</p>
+<div class="math notranslate nohighlight" id="equation-x2y2">
+ \begin{eqnarray}
+ {\tt X2} &amp; = \overline{x^2} = &amp; \frac{\displaystyle \sum_{i \in {\cal S}} p^{(f)}_i x_i^2}{\displaystyle \sum_{i \in {\cal S}} p^{(f)}_i} - \overline{x}^2,\\
+ {\tt Y2} &amp; = \overline{y^2} = &amp; \frac{\displaystyle \sum_{i \in {\cal S}} p^{(f)}_i y_i^2}{\displaystyle \sum_{i \in {\cal S}} p^{(f)}_i} - \overline{y}^2,\\
+ {\tt XY} &amp; = \overline{xy} = &amp; \frac{\displaystyle \sum_{i \in {\cal S}} p^{(f)}_i x_i y_i}{\displaystyle \sum_{i \in {\cal S}} p^{(f)}_i} - \overline{x}\,\overline{y},
+ \end{eqnarray}</div><p>These expressions are more subject to roundoff errors than if the 1st-order moments were subtracted before summing, but allow both 1st and
+2nd order moments to be computed in one pass.
+Roundoff errors are however kept to a negligible value by measuring all positions relative here again to <span class="param">XMIN</span> and <span class="param">YMIN</span>.</p>
+</section>
+<section id="basic-shape-parameters-a-b-theta">
+<span id="shape-iso-def"></span><h3>Basic shape parameters: <span class="param">A</span>, <span class="param">B</span>, <span class="param">THETA</span><a class="headerlink" href="#basic-shape-parameters-a-b-theta" title="Link to this heading"></a></h3>
+<p>These parameters are intended to describe the detected object as an elliptical shape. <span class="param">A</span> and <span class="param">B</span> are the lengths of the semi-major and semi-minor axes, respectively.
+More precisely, they represent the maximum and minimum spatial dispersion of the object profile along any direction.
+<span class="param">THETA</span> is the position-angle of the <span class="param">A</span> axis relative to the first image axis.
+It is counted positive in the direction of the second axis.</p>
+<p>Here is how shape parameters are computed. 2nd-order moments can easily be expressed in a referential rotated from the <span class="math notranslate nohighlight">\(x,y\)</span> image coordinate system by an angle +<span class="math notranslate nohighlight">\(\theta\)</span>:</p>
+<div class="math notranslate nohighlight" id="equation-varproj">
+<span class="eqno">(9)<a class="headerlink" href="#equation-varproj" title="Link to this equation"></a></span>\[\begin{split} \begin{array}{lcrrr}
+ \overline{x_{\theta}^2} &amp; = &amp; \cos^2\theta\:\overline{x^2} &amp; +\,\sin^2\theta\:\overline{y^2}
+             &amp; -\,2 \cos\theta \sin\theta\:\overline{xy},\\
+ \overline{y_{\theta}^2} &amp; = &amp; \sin^2\theta\:\overline{x^2} &amp; +\,\cos^2\theta\:\overline{y^2}
+             &amp; +\,2 \cos\theta \sin\theta\:\overline{xy},\\
+ \overline{xy_{\theta}} &amp; = &amp; \cos\theta \sin\theta\:\overline{x^2} &amp;
+ -\,\cos\theta \sin\theta\:\overline{y^2} &amp; +\,(\cos^2\theta -
+ \sin^2\theta)\:\overline{xy}.
+ \end{array}\end{split}\]</div>
+<p>One can find the angle(s) <span class="math notranslate nohighlight">\(\theta_0\)</span> for which the variance is minimized (or maximized) along <span class="math notranslate nohighlight">\(x_{\theta}\)</span>:</p>
+<div class="math notranslate nohighlight" id="equation-theta0">
+<span class="eqno">(10)<a class="headerlink" href="#equation-theta0" title="Link to this equation"></a></span>\[{\left.\frac{\partial \overline{x_{\theta}^2}}{\partial \theta} \right|}_{\theta_0} = 0,\]</div>
+<p>which leads to</p>
+<div class="math notranslate nohighlight" id="equation-theta0-2">
+<span class="eqno">(11)<a class="headerlink" href="#equation-theta0-2" title="Link to this equation"></a></span>\[ 2 \cos\theta \sin\theta_0\:(\overline{y^2} - \overline{x^2})
+     + 2 (\cos^2\theta_0 - \sin^2\theta_0)\:\overline{xy} = 0.\]</div>
+<p>If <span class="math notranslate nohighlight">\(\overline{y^2} \neq \overline{x^2}\)</span>, this implies:</p>
+<div class="math notranslate nohighlight" id="equation-theta0-3">
+<span class="eqno">(12)<a class="headerlink" href="#equation-theta0-3" title="Link to this equation"></a></span>\[\tan 2\theta_0 = 2 \frac{\overline{xy}}{\overline{x^2} - \overline{y^2}},\]</div>
+<p>a result which can also be obtained by requiring the covariance <span class="math notranslate nohighlight">\(\overline{xy_{\theta_0}}\)</span> to be null.
+Over the domain <span class="math notranslate nohighlight">\([-\pi/2, +\pi/2[\)</span>, two different angles — with opposite signs — satisfy <a class="reference internal" href="#equation-theta0-3">(12)</a>.
+By definition, <span class="param">THETA</span> is the position angle for which <span class="math notranslate nohighlight">\(\overline{x_{\theta}^2}\)</span> is maximized.
+<span class="param">THETA</span> is therefore the solution to <a class="reference internal" href="#equation-theta0-3">(12)</a> that has the same sign as the
+covariance <span class="math notranslate nohighlight">\(\overline{xy}\)</span>.
+<span class="param">A</span> and <span class="param">B</span> can now simply be expressed as:</p>
+<div class="math notranslate nohighlight" id="equation-aimage">
+ \begin{eqnarray}
+ {\tt A}^2 &amp; = &amp; \overline{x^2}_{\tt THETA},\ \ \ {\rm and}\\
+ {\tt B}^2 &amp; = &amp; \overline{y^2}_{\tt THETA}.
+ \end{eqnarray}</div><p><span class="param">A</span> and <span class="param">B</span> can be computed directly from the 2nd-order moments, using the following equations derived from <a class="reference internal" href="#equation-varproj">(9)</a> after some algebra:</p>
+<div class="math notranslate nohighlight" id="equation-aimage-2">
+ \begin{eqnarray}
+ {\tt A}^2 &amp; = &amp; \frac{\overline{x^2}+\overline{y^2}}{2}
+     + \sqrt{\left(\frac{\overline{x^2}-\overline{y^2}}{2}\right)^2 + \overline{xy}^2},\\
+ {\tt B}^2 &amp; = &amp; \frac{\overline{x^2}+\overline{y^2}}{2},
+     - \sqrt{\left(\frac{\overline{x^2}-\overline{y^2}}{2}\right)^2 + \overline{xy}^2}.
+ \end{eqnarray}</div><p>Note that <span class="param">A</span> and <span class="param">B</span> are exactly halves the <span class="math notranslate nohighlight">\(a\)</span> and <span class="math notranslate nohighlight">\(b\)</span> parameters computed by the COSMOS image analyser <span id="id1">[<a class="reference internal" href="references.html#id38" title="R. S. Stobie, 1980. Application of moments to the analysis of panoramic astronomical photographs. In D. A. Elliott, editor, Conference on Applications of Digital Image Processing to Astronomy, volume 264 of Proc. SPIE, 208-212. 1980.">17</a>]</span>.
+Actually, <span class="math notranslate nohighlight">\(a\)</span> and <span class="math notranslate nohighlight">\(b\)</span> are defined in <span id="id2">[<a class="reference internal" href="references.html#id38" title="R. S. Stobie, 1980. Application of moments to the analysis of panoramic astronomical photographs. In D. A. Elliott, editor, Conference on Applications of Digital Image Processing to Astronomy, volume 264 of Proc. SPIE, 208-212. 1980.">17</a>]</span> as the semi-major and semi-minor axes of an elliptical shape with constant surface brightness, which would have the same 2nd-order moments as the analyzed object.</p>
+</section>
+<section id="by-products-of-shape-parameters-elongation-and-ellipticity">
+<span id="elong-iso-def"></span><h3>By-products of shape parameters: <span class="param">ELONGATION</span> and <span class="param">ELLIPTICITY</span><a class="headerlink" href="#by-products-of-shape-parameters-elongation-and-ellipticity" title="Link to this heading"></a></h3>
+<p>These parameters <a class="footnote-reference brackets" href="#elongation" id="id3" role="doc-noteref"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></a> are directly derived from <span class="param">A</span> and <span class="param">B</span>:</p>
+<div class="math notranslate nohighlight" id="equation-elongation">
+ \begin{eqnarray}
+ {\tt ELONGATION} &amp; = &amp; \frac{\tt A}{\tt B}\ \ \ \ \ \mbox{and}\\
+ {\tt ELLIPTICITY} &amp; = &amp; 1 - \frac{\tt B}{\tt A}.
+ \end{eqnarray}</div><aside class="footnote-list brackets">
+<aside class="footnote brackets" id="elongation" role="doc-footnote">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id3">1</a><span class="fn-bracket">]</span></span>
+<p>These parameters are dimensionless, and for historical reasons do not accept suffixes such as <span class="param">_IMAGE</span> or <span class="param">_WORLD</span>.</p>
+</aside>
+</aside>
+</section>
+<section id="ellipse-parameters-cxx-cyy-cxy">
+<span id="ellipse-iso-def"></span><h3>Ellipse parameters: <span class="param">CXX</span>, <span class="param">CYY</span>, <span class="param">CXY</span><a class="headerlink" href="#ellipse-parameters-cxx-cyy-cxy" title="Link to this heading"></a></h3>
+<p><span class="param">A</span>, <span class="param">B</span> and <span class="param">THETA</span> are not very convenient to use when, for instance, one wants to know if a particular <strong class="program">SExtractor</strong> detection extends over some
+position.
+For this kind of application, three other ellipse parameters are provided; <span class="param">CXX</span>, <span class="param">CYY</span>, and <span class="param">CXY</span>.
+They do nothing more than describing the same ellipse, but in a different way: the elliptical shape associated to a detection is now parameterized as</p>
+<div class="math notranslate nohighlight" id="equation-ellipse">
+<span class="eqno">(16)<a class="headerlink" href="#equation-ellipse" title="Link to this equation"></a></span>\[ {\tt CXX} (x-\overline{x})^2 + {\tt CYY} (y-\overline{y})^2
+     + {\tt CXY} (x-\overline{x})(y-\overline{y}) = R^2,\]</div>
+<p>where <span class="math notranslate nohighlight">\(R\)</span> is a parameter which scales the ellipse, in units of <span class="param">A</span>
+(or <span class="param">B</span>). Generally, the isophotal limit of a detected object is well
+represented by <span class="math notranslate nohighlight">\(R\approx 3\)</span> (<a class="reference internal" href="#fig-ellipse"><span class="std std-numref">Fig. 3</span></a>). Ellipse
+parameters can be derived from the 2nd order moments:</p>
+<div class="math notranslate nohighlight" id="equation-ellipse-2">
+ \begin{eqnarray}
+ {\tt CXX} &amp; = &amp; \frac{\cos^2 {\tt THETA}}{{\tt A}^2} + \frac{\sin^2
+ {\tt THETA}}{{\tt B}^2} =
+ \frac{\overline{y^2}}{\overline{x^2} \overline{y^2} - \overline{xy}^2}\\
+ {\tt CYY} &amp; = &amp; \frac{\sin^2 {\tt THETA}}{{\tt
+ A}^2} + \frac{\cos^2 {\tt THETA}}{{\tt B}^2} =
+ \frac{\overline{x^2}}{\overline{x^2} \overline{y^2} - \overline{xy}^2}\\
+ {\tt CXY} &amp; = &amp; 2 \,\cos {\tt THETA}\,\sin {\tt
+ THETA} \left( \frac{1}{{\tt A}^2} - \frac{1}{{\tt B}^2}\right) = -2\,
+ \frac{\overline{xy}}{\overline{x^2} \overline{y^2} - \overline{xy}^2}.
+ \end{eqnarray}</div><figure class="align-center" id="id10" style="width: 100%">
+<span id="fig-ellipse"></span><img alt="_images/ellipse.png" src="_images/ellipse.png" />
+<figcaption>
+<p><span class="caption-number">Fig. 3 </span><span class="caption-text">Meaning of basic shape parameters.</span><a class="headerlink" href="#id10" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+</section>
+<section id="position-uncertainties-errx2-erry2-errxy-erra-errb-errtheta-errcxx-errcyy-errcxy">
+<span id="poserr-iso-def"></span><h3>Position uncertainties: <span class="param">ERRX2</span>, <span class="param">ERRY2</span>, <span class="param">ERRXY</span>, <span class="param">ERRA</span>, <span class="param">ERRB</span>, <span class="param">ERRTHETA</span>, <span class="param">ERRCXX</span>, <span class="param">ERRCYY</span>, <span class="param">ERRCXY</span><a class="headerlink" href="#position-uncertainties-errx2-erry2-errxy-erra-errb-errtheta-errcxx-errcyy-errcxy" title="Link to this heading"></a></h3>
+<p>Uncertainties on the position of the barycenter can be estimated using
+photon statistics.
+In practice, such estimates are a lower-value of the full uncertainties because they do not include, for instance, the contribution of detection biases or contamination by neighbors.
+Furthermore, <strong class="program">SExtractor</strong> does not currently take into account possible correlations of the noise between adjacent pixels. Hence variances simply write:</p>
+<div class="math notranslate nohighlight" id="equation-errxy">
+ \begin{eqnarray}
+ {\tt ERRX2} &amp; = {\rm var}(\overline{x}) =
+ &amp; \frac{\displaystyle \sum_{i \in {\cal S}} \sigma^2_i (x_i-\overline{x})^2}
+ {\displaystyle \left(\sum_{i \in {\cal S}} p^{(f)}_i\right)^2},\\
+ {\tt ERRY2} &amp; = {\rm var}(\overline{y}) =
+ &amp; \frac{\displaystyle \sum_{i \in {\cal S}} \sigma^2_i (y_i-\overline{y})^2}
+ {\displaystyle \left(\sum_{i \in {\cal S}} p^{(f)}_i\right)^2},\\
+ {\tt ERRXY} &amp; = {\rm cov}(\overline{x},\overline{y}) =
+ &amp; \frac{\displaystyle \sum_{i \in {\cal S}} \sigma^2_i (x_i-\overline{x})(y_i-\overline{y})}
+ {\displaystyle \left(\sum_{i \in {\cal S}} p^{(f)}_i\right)^2}.
+ \end{eqnarray}</div><p><span class="math notranslate nohighlight">\(\sigma_i\)</span> is the flux uncertainty estimated for pixel <span class="math notranslate nohighlight">\(i\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[\sigma^2_i = {\sigma_B}^2_i + \frac{p^{(f)}_i}{g_i},\]</div>
+<p>where <span class="math notranslate nohighlight">\({\sigma_B}_i\)</span> is the local background noise and <span class="math notranslate nohighlight">\(g_i\)</span> the local gain — conversion factor — for pixel <span class="math notranslate nohighlight">\(i\)</span> (see <a class="reference internal" href="Weighting.html#effect-of-weighting"><span class="std std-ref">Effect of weighting</span></a> for more details). Semi-major axis <span class="param">ERRA</span>, semi-minor axis <span class="param">ERRB</span>, and position angle <span class="param">ERRTHETA</span> of the <span class="math notranslate nohighlight">\(1\sigma\)</span> position error ellipse are computed from the covariance matrix exactly like for <a class="reference internal" href="#shape-iso-def"><span class="std std-ref">basic shape parameters</span></a>:</p>
+<div class="math notranslate nohighlight" id="equation-errabtheta">
+ \begin{eqnarray}
+ {\tt ERRA}^2 &amp; = &amp; \frac{{\rm var}(\overline{x})+{\rm var}(\overline{y})}{2}
+     + \sqrt{\left(\frac{{\rm var}(\overline{x})-{\rm var}(\overline{y})}{2}\right)^2
+     + {\rm cov}^2(\overline{x},\overline{y})},\\
+ {\tt ERRB}^2 &amp; = &amp; \frac{{\rm var}(\overline{x})+{\rm var}(\overline{y})}{2}
+     - \sqrt{\left(\frac{{\rm var}(\overline{x})-{\rm var}(\overline{y})}{2}\right)^2
+     + {\rm cov}^2(\overline{x},\overline{y})},\\
+ \tan (2{\tt ERRTHETA}) &amp; = &amp; 2 \,\frac{{\rm cov}(\overline{x},\overline{y})}
+                     {{\rm var}(\overline{x}) - {\rm var}(\overline{y})}.
+ \end{eqnarray}</div><p>And the error ellipse parameters are:</p>
+<div class="math notranslate nohighlight" id="equation-errellipse">
+ \begin{eqnarray}
+ {\tt ERRCXX} &amp; = &amp; \frac{\cos^2 {\tt ERRTHETA}}{{\tt ERRA}^2} +
+ \frac{\sin^2 {\tt ERRTHETA}}{{\tt ERRB}^2} = \frac{{\rm
+ var}(\overline{y})}{{\rm var}(\overline{x}) {\rm var}(\overline{y}) -
+ {\rm cov}^2(\overline{x},\overline{y})},\\
+ {\tt ERRCYY} &amp; = &amp; \frac{\sin^2 {\tt ERRTHETA}}{{\tt ERRA}^2} +
+ \frac{\cos^2 {\tt ERRTHETA}}{{\tt ERRB}^2} =
+ \frac{{\rm var}(\overline{x})}{{\rm var}(\overline{x}) {\rm var}(\overline{y}) -
+ {\rm cov}^2(\overline{x},\overline{y})},\\
+ {\tt ERRCXY} &amp; = &amp; 2 \cos {\tt
+ ERRTHETA}\sin {\tt ERRTHETA} \left( \frac{1}{{\tt ERRA}^2} -
+ \frac{1}{{\tt ERRB}^2}\right)\\ &amp; = &amp; -2 \frac{{\rm
+ cov}(\overline{x},\overline{y})}{{\rm var}(\overline{x}) {\rm var}(\overline{y}) -
+ {\rm cov}^2(\overline{x},\overline{y})}.
+ \end{eqnarray}</div></section>
+<section id="handling-of-infinitely-thin-detections">
+<h3>Handling of “infinitely thin” detections<a class="headerlink" href="#handling-of-infinitely-thin-detections" title="Link to this heading"></a></h3>
+<p>Apart from the mathematical singularities that can be found in some of the above equations describing shape parameters (and which <strong class="program">SExtractor</strong> is able to handle, of course), some detections with very specific shapes may yield unphysical parameters, namely null values for <span class="param">B</span>, <span class="param">ERRB</span>, or even <span class="param">A</span> and <span class="param">ERRA</span>.
+Such detections include single-pixel objects and horizontal, vertical or diagonal lines which are 1-pixel wide. They will generally originate from glitches; but strongly undersampled and/or low S/N genuine sources may also produce such shapes.</p>
+<p>For basic shape parameters, the following convention was adopted: if the
+light distribution of the object falls on one single pixel, or lies on a
+sufficiently thin line of pixels, which we translate mathematically by</p>
+<div class="math notranslate nohighlight" id="equation-singutest">
+<span class="eqno">(21)<a class="headerlink" href="#equation-singutest" title="Link to this equation"></a></span>\[ \overline{x^2}\,\overline{y^2} - \overline{xy}^2 &lt; \rho^2,\]</div>
+<p>then <span class="math notranslate nohighlight">\(\overline{x^2}\)</span> and <span class="math notranslate nohighlight">\(\overline{y^2}\)</span> are incremented by <span class="math notranslate nohighlight">\(\rho\)</span>. <strong class="program">SExtractor</strong> sets <span class="math notranslate nohighlight">\(\rho=1/12\)</span>, which is the variance of a 1-dimensional top-hat distribution with unit width.
+Therefore <span class="math notranslate nohighlight">\(1/\sqrt{12}\)</span> represents the typical minor-axis values assigned (in pixels units) to undersampled sources in <strong class="program">SExtractor</strong>.</p>
+<p>Positional errors are more difficult to handle, as objects with very high signal-to-noise can yield extremely small position uncertainties, just like singular profiles do. Therefore <strong class="program">SExtractor</strong> first checks that <a class="reference internal" href="#equation-singutest">(21)</a> is true. If this is the case, a new test is conducted:</p>
+<div class="math notranslate nohighlight" id="equation-singutest2">
+<span class="eqno">(22)<a class="headerlink" href="#equation-singutest2" title="Link to this equation"></a></span>\[ {\rm var}(\overline{x})\,{\rm var}(\overline{y}) - {\rm
+ covar}^2(\overline{x}, \overline{y}) &lt; \rho^2_e,\]</div>
+<p>where <span class="math notranslate nohighlight">\(\rho_e\)</span> is arbitrarily set to <span class="math notranslate nohighlight">\(\left( \sum_{i \in {\cal S}} \sigma^2_i \right) / \left(\sum_{i \in {\cal S}} p_i\right)^2\)</span>.
+If <a class="reference internal" href="#equation-singutest2">(22)</a> is true, then <span class="math notranslate nohighlight">\(\overline{x^2}\)</span> and <span class="math notranslate nohighlight">\(\overline{y^2}\)</span> are incremented by <span class="math notranslate nohighlight">\(\rho_e\)</span>.</p>
+</section>
+<section id="isophotal-areas-isoarea-isoareaf">
+<span id="isoarea-def"></span><h3>Isophotal areas: <span class="param">ISOAREA</span>, <span class="param">ISOAREAF</span><a class="headerlink" href="#isophotal-areas-isoarea-isoareaf" title="Link to this heading"></a></h3>
+<p>An isophotal area is defined as the number of pixels with values exceeding some threshold above the background. Isophotal areas played an important role in the 80's and the 90's by providing,  at a small computing cost,  morphometric quantities complementary to second-order moments. <strong class="program">SExtractor</strong> computes two isophotal areas inside the detection footprint:</p>
+<ul class="simple">
+<li><p><span class="param">ISOAREAF</span> applies to the (filtered) detection image, above the detection threshold.</p></li>
+<li><p><span class="param">ISOAREA</span> applies to the measurement image, with the additional constraint that the background-subtracted value of measurement image pixels must exceed the threshold set with the <code class="docutils literal notranslate"><span class="pre">ANALYSIS_THRESH</span></code> configuration parameter.</p></li>
+</ul>
+</section>
+</section>
+<section id="photometry">
+<h2>Photometry<a class="headerlink" href="#photometry" title="Link to this heading"></a></h2>
+<div class="admonition important">
+<p class="admonition-title">Important</p>
+<p>Unless otherwise noted, the pixel values used for computing &quot;isophotal&quot; fluxes and surface brightnesses are taken from the background-subtracted measurement image.</p>
+</div>
+<section id="isophotal-flux-flux-iso">
+<span id="flux-iso-def"></span><h3>Isophotal flux: <span class="param">FLUX_ISO</span><a class="headerlink" href="#isophotal-flux-flux-iso" title="Link to this heading"></a></h3>
+<p><span class="param">FLUX_ISO</span> is computed simply by integrating the background-subracted pixels values <span class="math notranslate nohighlight">\(p_i\)</span> from the <em>measurement</em> image within the detection footprint</p>
+<div class="math notranslate nohighlight" id="equation-fluxiso">
+<span class="eqno">(23)<a class="headerlink" href="#equation-fluxiso" title="Link to this equation"></a></span>\[  {\tt FLUX\_ISO} = F_{\rm iso} = \sum_{i \in {\cal S}} p_i.\]</div>
+<p><strong class="program">SExtractor</strong> also provides an estimation of the uncertainty <span class="param">FLUXERR_ISO</span>, a magnitude <span class="param">MAG_ISO</span> and a magnitude error estimate <span class="param">MAGERR_ISO</span>: see <a class="reference internal" href="Param.html#fluxes-and-magnitudes"><span class="std std-ref">Fluxes and magnitudes</span></a>.</p>
+</section>
+<section id="corrected-isophotal-magnitude-mag-isocor">
+<span id="mag-isocor-def"></span><h3>Corrected isophotal magnitude: <span class="param">MAG_ISOCOR</span><a class="headerlink" href="#corrected-isophotal-magnitude-mag-isocor" title="Link to this heading"></a></h3>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Corrected isophotal magnitudes are now deprecated; they remain in <strong class="program">SExtractor</strong> v2.x for compatibility with <strong class="program">SExtractor</strong> v1.</p>
+</div>
+<p><span class="param">MAG_ISOCOR</span> magnitudes are a quick-and-dirty way of retrieving the fraction of flux lost by isophotal magnitudes.</p>
+<p>If one makes the assumption that the intensity profiles of faint objects recorded in the frame are roughly Gaussian because of atmospheric blurring, then the fraction <span class="math notranslate nohighlight">\(\eta = \frac{F_{\rm iso}}{F_{\rm tot}}\)</span> of the total flux enclosed within a particular isophote reads <span id="id4">[<a class="reference internal" href="references.html#id19" title="S. J. Maddox, G. Efstathiou, and W. J. Sutherland, 1990. The APM Galaxy Survey - Part Two - Photometric Corrections. MNRAS, 246:433.">18</a>]</span>:</p>
+<div class="math notranslate nohighlight" id="equation-isocor">
+<span class="eqno">(24)<a class="headerlink" href="#equation-isocor" title="Link to this equation"></a></span>\[ \left(1-\frac{1}{\eta}\right ) \ln (1-\eta) = \frac{A\,t}{F_{\rm iso}},\]</div>
+<p>where <span class="math notranslate nohighlight">\(A\)</span> is the area and <span class="math notranslate nohighlight">\(t\)</span> the threshold related to this isophote.
+:eq:isocor is not analytically invertible, but a good approximation to <span class="math notranslate nohighlight">\(\eta\)</span> (error <span class="math notranslate nohighlight">\(&lt; 10^{-2}\)</span> for <span class="math notranslate nohighlight">\(\eta &gt; 0.4\)</span>) can be done with the second-order polynomial fit:</p>
+<div class="math notranslate nohighlight" id="equation-isocor2">
+<span class="eqno">(25)<a class="headerlink" href="#equation-isocor2" title="Link to this equation"></a></span>\[  \eta \approx 1 - 0.1961 \frac{A\,t}{F_{\rm iso}} - 0.7512
+  \left( \frac{A\,t}{F_{\rm iso}}\right)^2.\]</div>
+<p>A “total” magnitude <span class="param">MAG_ISOCOR</span> estimate is then</p>
+<div class="math notranslate nohighlight" id="equation-magisocor">
+<span class="eqno">(26)<a class="headerlink" href="#equation-magisocor" title="Link to this equation"></a></span>\[  {\tt MAG\_ISOCOR} = {\tt MAG\_ISO} + 2.5 \log_{10} \eta.\]</div>
+<p>Clearly the <span class="param">MAG_ISOCOR</span> correction works best with stars; and although it gives reasonably accurate results with most disk galaxies, it breaks down for ellipticals because of the broader wings in the profiles.</p>
+</section>
+<section id="peak-value-flux-max">
+<span id="flux-max-def"></span><h3>Peak value: <span class="param">FLUX_MAX</span><a class="headerlink" href="#peak-value-flux-max" title="Link to this heading"></a></h3>
+<p><span class="param">FLUX_MAX</span> is the peak pixel value (above the local background) in the measurement image. Note that it may not correspond to the pixel with coordinates given by <span class="param">XPEAK</span> and <span class="param">YPEAK</span> (see <a class="reference internal" href="#pospeak-def"><span class="std std-ref">Position of the peak</span></a>) if <code class="docutils literal notranslate"><span class="pre">FILTER</span></code> is set to <code class="docutils literal notranslate"><span class="pre">Y</span></code> or if the measurement image differs from the detection image.</p>
+</section>
+</section>
+<section id="class-star-classifier">
+<span id="class-star-def"></span><h2><span class="param">CLASS_STAR</span> classifier<a class="headerlink" href="#class-star-classifier" title="Link to this heading"></a></h2>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The <span class="param">CLASS_STAR</span> classifier has been superseded by the <span class="param">SPREAD_MODEL</span> estimator (see <a class="reference internal" href="Model.html#spread-model-def"><span class="std std-ref">Model-based star-galaxy separation: SPREAD_MODEL</span></a>), which offers better performance by making explicit use of the full, variable <abbr title="Point Spread Function">PSF</abbr> model.</p>
+</div>
+<p>A good discrimination between stars and galaxies is essential for both galactic and extragalactic statistical studies.
+The common assumption is that galaxy images look more extended or fuzzier than those of stars (or <abbr title="Quasi-Stellar Object">QSO</abbr>s).
+<strong class="program">SExtractor</strong> provides the <span class="param">CLASS_STAR</span> catalog parameter for separating both types of sources.
+The  <span class="param">CLASS_STAR</span> classifier relies on a <a class="reference external" href="https://en.wikipedia.org/wiki/Multilayer_perceptron">multilayer feed-forward neural network</a> trained using <a class="reference external" href="https://en.wikipedia.org/wiki/Supervised_learning">supervised learning</a> to estimate the <em>a posteriori</em> probability <span id="id5">[<a class="reference internal" href="references.html#id26" title="M. D. Richard and R. P. Lippmann, 1991. Neural network classifiers estimate bayesian a posteriori probabilities. Neural Computation, pages 461–483.">19</a>, <a class="reference internal" href="references.html#id27" title="M. Saerens, P. Latinne, and C. Decaestecker, 2002. Any reasonable cost function can be used for a posteriori probability approximation. IEEE Transactions on Neural Networks, 13(5):1204-1210.">20</a>]</span> of a <strong class="program">SExtractor</strong> detection to be a point source or an extended object.
+Below is a shortened description of the estimator, see <span id="id6">[<a class="reference internal" href="references.html#id2" title="E. Bertin and S. Arnouts, 1996. SExtractor: Software for source extraction. A&amp;AS, 117:393-404.">12</a>]</span> for more details.</p>
+<section id="inputs-and-outputs">
+<h3>Inputs and outputs<a class="headerlink" href="#inputs-and-outputs" title="Link to this heading"></a></h3>
+<p>The neural network is a multilayer Perceptron with a single fully connected, hidden layers.
+Of all neural networks it is probably the best-studied, and it has been intensively applied with success for many classification tasks.</p>
+<p>The classifier (<a class="reference internal" href="#fig-classstarnn"><span class="std std-numref">Fig. 4</span></a>) has 10 inputs:</p>
+<ul class="simple">
+<li><p>8 isophotal areas <span class="math notranslate nohighlight">\(A_0..A_7\)</span>, measured at isophotes exponentially spaced between the analysis threshold (which may be modified with the <code class="docutils literal notranslate"><span class="pre">ANALYSIS_THRESH</span></code> configuration parameter) and the object's peak pixel value</p></li>
+<li><p>The object's peak pixel value above the local background <span class="math notranslate nohighlight">\(I_{\mathrm max}\)</span></p></li>
+<li><p>A <em>seeing</em> input, which acts as a tuning button.</p></li>
+</ul>
+<p>The output layer contains only one neuron, as &quot;star&quot; and &quot;galaxy&quot; are two classes mutually exclusive.
+The output value is a &quot;stellarity index&quot;, which for images that reasonably match those of the training sample is an estimation of the <em>a posteriori</em> probability for the classified object to be a point-source.
+Hence a <span class="param">CLASS_STAR</span> close to 0 means that the object is very likely a galaxy, and 1 that it is a star.
+In practice, real data always differ at least slightly from the training sample, and the <span class="param">CLASS_STAR</span> output is often a poor approximation of the expected <em>a posteriori</em> probabilities.
+Nevertheless, a <span class="param">CLASS_STAR</span> value closer to 0 or 1 normally indicates a higher confidence in the classification, and the balance between sample completeness and purity may still be adjusted by tweaking the decision threshold .</p>
+<figure class="align-center" id="id11" style="width: 100%">
+<span id="fig-classstarnn"></span><img alt="_images/classstarnn.svg" src="_images/classstarnn.svg" />
+<figcaption>
+<p><span class="caption-number">Fig. 4 </span><span class="caption-text">Architecture of <strong class="program">SExtractor</strong>'s <span class="param">CLASS_STAR</span> classifier</span><a class="headerlink" href="#id11" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+<p>The <em>seeing</em> input must be set by the user with the <code class="docutils literal notranslate"><span class="pre">SEEING_FWHM</span></code> configuration parameter.
+If <code class="docutils literal notranslate"><span class="pre">SEEING_FWHM</span></code> is set to 0,  it is automatically measured on the <abbr title="Point Spread Function">PSF</abbr> model which must be provided (using the <code class="docutils literal notranslate"><span class="pre">PSF_NAME</span></code> configuration parameter).</p>
+<p>If no <abbr title="Point Spread Function">PSF</abbr> model is available, the <code class="docutils literal notranslate"><span class="pre">SEEING_FWHM</span></code> configuration parameter must be adjusted by the user to match the actual average <abbr title="Point Spread Function">PSF</abbr> <abbr title="Full Width at Half Maximum">FWHM</abbr> on the image.
+The accuracy with which <code class="docutils literal notranslate"><span class="pre">SEEING_FWHM</span></code> must be set for optimal results ranges from <span class="math notranslate nohighlight">\(\pm 20\%\)</span> for bright sources to about <span class="math notranslate nohighlight">\(\pm 5\%\)</span> for the faintest (<a class="reference internal" href="#fig-classstar-seeing"><span class="std std-numref">Fig. 5</span></a>). <code class="docutils literal notranslate"><span class="pre">SEEING_FWHM</span></code> is expressed in arcseconds.
+The <code class="docutils literal notranslate"><span class="pre">PIXEL_SCALE</span></code> configuration parameter must therefore also be set by the user if WCS information is missing from the <abbr title="Flexible Image Transport System">FITS</abbr> image header.
+There are several ways to measure, directly or indirectly, the size of point sources in <strong class="program">SExtractor</strong>; they may lead to slightly discordant results, depending on the exact shape of the <abbr title="Point Spread Function">PSF</abbr>.
+The measurement <span class="param">FWHM_IMAGE</span> (although not the most reliable as an image quality estimator) sets the reference when it comes to setting <code class="docutils literal notranslate"><span class="pre">SEEING_FWHM</span></code>.</p>
+<p>One may check that the <code class="docutils literal notranslate"><span class="pre">SEEING_FWHM</span></code> is set correctly by making sure that the typical <span class="param">CLASS_STAR</span> value of unclassifiable sources at the faint end of the catalog hovers around the 0.5 mark.</p>
+<figure class="align-center" id="id12" style="width: 100%">
+<span id="fig-classstar-seeing"></span><img alt="_images/classstar_seeing.svg" src="_images/classstar_seeing.svg" />
+<figcaption>
+<p><span class="caption-number">Fig. 5 </span><span class="caption-text">Architecture of <strong class="program">SExtractor</strong>'s <span class="param">CLASS_STAR</span> classifier</span><a class="headerlink" href="#id12" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+</section>
+<section id="training">
+<h3>Training<a class="headerlink" href="#training" title="Link to this heading"></a></h3>
+<p>This section gives some insight on how the <span class="param">CLASS_STAR</span> classifier has been trained.
+The main issue with supervised machine learning is the labeling of the large training sample.
+Hopefully a big percentage of contemporary astronomical images share a common set of generic features, which can be simulated with sufficient realism to create a large training sample together with the ground truth (labels).
+The <span class="param">CLASS_STAR</span> classifier was trained on such a sample of artificial images.</p>
+<p>Six hundred <span class="math notranslate nohighlight">\(512\times512\)</span> simulation images containing stars and galaxies were generated to train the network using an early prototype of the <a class="reference external" href="http://astromatic.net/software/skymaker"><strong class="program">SkyMaker</strong></a> package <span id="id7">[<a class="reference internal" href="references.html#id3" title="E. Bertin, 2009. SkyMaker: astronomical image simulations made easy. Mem.Soc.Ast.It, 80:422.">21</a>]</span>.
+They were done in the blue band, where galaxies present very diversified aspects.
+The two parameters governing the shape of the <abbr title="Point Spread Function">PSF</abbr> (<em>seeing</em> <abbr title="Full Width at Half Maximum">FWHM</abbr> and Moffat <span class="math notranslate nohighlight">\(\beta\)</span> parameter <span id="id8">[<a class="reference internal" href="references.html#id21" title="A. F. J. Moffat, 1969. A Theoretical Investigation of Focal Stellar Images in the Photographic Emulsion and Application to Photographic Photometry. A&amp;A, 3:455.">22</a>]</span>) were chosen randomly with <span class="math notranslate nohighlight">\(0.025\le\)</span> FWHM <span class="math notranslate nohighlight">\(\le 5.5\)</span> and <span class="math notranslate nohighlight">\(2\le\beta\le4\)</span>. Note that the <a class="reference external" href="https://en.wikipedia.org/wiki/Moffat_distribution">Moffat function</a> used in the simulation is a poor approximation to diffraction-limited images, hence the <span class="param">CLASS_STAR</span> classifier is not optimized for space-based images.
+The pixel scale was always taken less than <span class="math notranslate nohighlight">\(\approx 0.7\)</span> FWHM to warrant correct sampling of the image.
+Bright galaxies are simply too rare in the sky to constitute a significant training sample on such a small number of simulations.
+So, keeping a constant comoving number density, we increased artificially the number of nearby galaxies by making the volume element proportional to <span class="math notranslate nohighlight">\(zdz\)</span>.
+Stars were given a number-magnitude distribution identical to that of galaxies.
+<strong>Therefore any pattern presented to the network had a 50% chance to correspond to a star or a galaxy, irrespective of magnitude</strong> <a class="footnote-reference brackets" href="#faint" id="id9" role="doc-noteref"><span class="fn-bracket">[</span>2<span class="fn-bracket">]</span></a>.
+Crowding in the simulated images was higher than what one sees on real images of high galactic latitude fields, allowing for the presence of many “difficult cases” (close double stars, truncated profiles, etc...) that the neural network classifier had to deal with.</p>
+<p><strong class="program">SExtractor</strong> was run on each image with 8 different extraction thresholds. This led to a catalog with about <span class="math notranslate nohighlight">\(10^6\)</span> entries with the 10 input parameters plus the class label. Back-propagation learning took about 15 min on a SUN SPARC20 workstation. The final set of synaptic weights was saved to the file <code class="file docutils literal notranslate"><span class="pre">default.nnw</span></code> , ready to be used in “feed-forward” mode during source extraction.</p>
+<aside class="footnote-list brackets">
+<aside class="footnote brackets" id="faint" role="doc-footnote">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id9">2</a><span class="fn-bracket">]</span></span>
+<p>Faint galaxies have less chance being detected than faint stars, but it has little effect because the ones that are lost at a given magnitude are predominantly the most extended and consequently the easiest to classify.</p>
+</aside>
+</aside>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="Measurements.html" class="btn btn-neutral float-left" title="Measurements" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="PositionWin.html" class="btn btn-neutral float-right" title="Windowed positional parameters" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2017-2023, CFHT/IAP/CNRS/SorbonneU.</p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

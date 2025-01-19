@@ -1,0 +1,399 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Model fitting &mdash; SExtractor 2.28.2 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=cfc9bc01" />
+
+  
+    <link rel="shortcut icon" href="_static/astromaticO.png"/>
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=fb101e21"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Bibliography" href="references.html" />
+    <link rel="prev" title="Aperture photometry" href="Photom.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            SExtractor
+              <img src="_static/cover.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="Introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="License.html">License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Installing.html">Installing the software</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Using.html">Using SExtractor</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Processing.html">Processing</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="Measurements.html">Measurements</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="Position.html">Isophotal measurements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="PositionWin.html">Windowed positional parameters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Photom.html">Aperture photometry</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Model fitting</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#fitting-procedure">Fitting procedure</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#modified-least-squares">Modified least squares</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#change-of-variables">Change of variables</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#regularization">Regularization</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#minimization">Minimization</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#models">Models</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#model-based-star-galaxy-separation-spread-model">Model-based star-galaxy separation: <span class="param">SPREAD_MODEL</span></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="references.html">Bibliography</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">SExtractor</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="Measurements.html">Measurements</a></li>
+      <li class="breadcrumb-item active">Model fitting</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/Model.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="model-fitting">
+<h1>Model fitting<a class="headerlink" href="#model-fitting" title="Link to this heading"></a></h1>
+<section id="fitting-procedure">
+<h2>Fitting procedure<a class="headerlink" href="#fitting-procedure" title="Link to this heading"></a></h2>
+<p>SExtractor can fit models to the images of detected objects since version 2.8. The fit is performed by minimizing the loss function</p>
+<div class="math notranslate nohighlight" id="equation-loss-func">
+<span class="eqno">(45)<a class="headerlink" href="#equation-loss-func" title="Link to this equation"></a></span>\[\lambda(\boldsymbol{q}) = \sum_i \left(g\left(\frac{p_i - \tilde{m}_i(\boldsymbol{q})}{\sigma_i}\right)\right)^2 + \sum_j \left(\frac{f_j(Q_j) - \mu_j}{s_j}\right)^2\]</div>
+<p>with respect to components of the model parameter vector <span class="math notranslate nohighlight">\(\boldsymbol{q}\)</span>. <span class="math notranslate nohighlight">\(\boldsymbol{q}\)</span> comprises parameters describing the shape of the model and the model pixel coordinates <span class="math notranslate nohighlight">\(\boldsymbol{x}\)</span>.</p>
+<section id="modified-least-squares">
+<h3>Modified least squares<a class="headerlink" href="#modified-least-squares" title="Link to this heading"></a></h3>
+<p>The first term in <a class="reference internal" href="#equation-loss-func">(45)</a> is a modified <a class="reference external" href="http://en.wikipedia.org/wiki/Least_squares#Weighted_least_squares">weighted sum of squares</a> that aims at minimizing the residuals of the fit. <span class="math notranslate nohighlight">\(p_i\)</span>, <span class="math notranslate nohighlight">\(\tilde{m}_i(\boldsymbol{q})\)</span> and <span class="math notranslate nohighlight">\(\sigma_i\)</span> are respectively the pixel value above the background, the value of the resampled model, and the pixel value uncertainty at image pixel <span class="math notranslate nohighlight">\(i\)</span>.
+<span class="math notranslate nohighlight">\(g(u)\)</span> is a derivable monotonous function that reduces the influence of large deviations from the model, such as the contamination by neighbors (<a class="reference internal" href="#fig-robustgalfit"><span class="std std-numref">Fig. 7</span></a>):</p>
+<div class="math notranslate nohighlight" id="equation-modified-lsq">
+<span class="eqno">(46)<a class="headerlink" href="#equation-modified-lsq" title="Link to this equation"></a></span>\[\begin{split}g(u) = \left\{
+  \begin{array}{rl}
+     u_0 \log \left(1 + \frac{u}{u_0}\right) &amp; \mbox{if } u \ge 0,\\
+    -u_0 \log \left(1 - \frac{u}{u_0}\right) &amp; \mbox{otherwise}.\\
+  \end{array}
+\right.\end{split}\]</div>
+<p><span class="math notranslate nohighlight">\(u_0\)</span> sets the level below which <span class="math notranslate nohighlight">\(g(u)\approx u\)</span>.
+In practice, choosing <span class="math notranslate nohighlight">\(u_0 = \kappa \sigma_i\)</span> with <span class="math notranslate nohighlight">\(\kappa = 10\)</span> makes the first term in <a class="reference internal" href="#equation-loss-func">(45)</a> behave like a traditional weighted sum of squares for residuals close to the noise level.</p>
+<div class="admonition caution">
+<p class="admonition-title">Caution</p>
+<p>The cost function in <a class="reference internal" href="#equation-loss-func">(45)</a> is optimized for Gaussian noise and makes model-fitting in <strong class="program">SExtractor</strong> appropriate only for image noise with a <abbr title="Probability Density Function">pdf</abbr> symmetrical around the mean.</p>
+</div>
+<figure class="align-center" id="id11" style="width: 100%">
+<span id="fig-robustgalfit"></span><img alt="_images/robustgalfit.png" src="_images/robustgalfit.png" />
+<figcaption>
+<p><span class="caption-number">Fig. 7 </span><span class="caption-text">Effect of the modified least squares loss function on fitting a model to a galaxy with a bright neighbor. <em>Left</em>: the original image; <em>Middle</em>: residuals of the model fitting with a regular least squares (<span class="math notranslate nohighlight">\(\kappa = +\infty\)</span>); <em>Right</em>: modified least squares with <span class="math notranslate nohighlight">\(\kappa = 10\)</span>.</span><a class="headerlink" href="#id11" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+<p>The vector <span class="math notranslate nohighlight">\(\tilde{\boldsymbol{m}}(\boldsymbol{q})\)</span> is obtained by convolving the high resolution model <span class="math notranslate nohighlight">\(\boldsymbol{m}(\boldsymbol{q})\)</span> with the local PSF model <span class="math notranslate nohighlight">\(\boldsymbol{\phi}\)</span> and applying a resampling operator <span class="math notranslate nohighlight">\(\mathbf{R}(\boldsymbol{x})\)</span> to generate the final model raster at position <span class="math notranslate nohighlight">\(\boldsymbol{x}\)</span> at the nominal image resolution:</p>
+<div class="math notranslate nohighlight" id="equation-model-convolution">
+<span class="eqno">(47)<a class="headerlink" href="#equation-model-convolution" title="Link to this equation"></a></span>\[\tilde{\boldsymbol{m}}(\boldsymbol{q}) = \mathbf{R}(\boldsymbol{x}) (\boldsymbol{m}(\boldsymbol{q})*\boldsymbol{\phi}).\]</div>
+<p><span class="math notranslate nohighlight">\(\mathbf{R}(\boldsymbol{x})\)</span> depends on the pixel coordinates <span class="math notranslate nohighlight">\(\boldsymbol{x}\)</span> of the model centroid:</p>
+<div class="math notranslate nohighlight" id="equation-model-resampling">
+<span class="eqno">(48)<a class="headerlink" href="#equation-model-resampling" title="Link to this equation"></a></span>\[\mathbf{R}_{ij}(\boldsymbol{x}) =  h\left(\boldsymbol{x}_j - \eta.(\boldsymbol{x}_i - \boldsymbol{x})\right),\]</div>
+<p>where <span class="math notranslate nohighlight">\(h\)</span> is a 2-dimensional interpolant (interpolating function), <span class="math notranslate nohighlight">\(\boldsymbol{x}_i\)</span> is the coordinate vector of image pixel <span class="math notranslate nohighlight">\(i\)</span>, <span class="math notranslate nohighlight">\(\boldsymbol{x}_j\)</span> the coordinate vector of model sample <span class="math notranslate nohighlight">\(j\)</span>, and <span class="math notranslate nohighlight">\(\eta\)</span> is the image-to-model sampling step ratio (sampling factor) which is by default defined by the PSF model sampling.
+We adopt a Lánczos-4 function <span id="id1">[<a class="reference internal" href="references.html#id10" title="C. E. Duchon, 1979. Lanczos Filtering in One and Two Dimensions. Journal of Applied Meteorology, 18:1016-1022.">28</a>]</span> as interpolant.</p>
+</section>
+<section id="change-of-variables">
+<h3>Change of variables<a class="headerlink" href="#change-of-variables" title="Link to this heading"></a></h3>
+<p>Many model parameters are valid only over a restricted domain.
+Fluxes, for instance, cannot be negative.
+In order to avoid invalid values and also to facilitate convergence, a change of variables is applied individually to each model parameter:</p>
+<div class="math notranslate nohighlight" id="equation-change-of-variables">
+<span class="eqno">(49)<a class="headerlink" href="#equation-change-of-variables" title="Link to this equation"></a></span>\[q_j = f_j(a_j, b_j, Q_j).\]</div>
+<p>The &quot;model&quot; variable <span class="math notranslate nohighlight">\(q_j\)</span> is bounded by the lower limit <span class="math notranslate nohighlight">\(a_j\)</span> and the upper limit <span class="math notranslate nohighlight">\(b_j\)</span> by construction.
+The &quot;engine&quot; variable <span class="math notranslate nohighlight">\(Q_j\)</span> can take any value, and is actually the parameter that is being adjusted in the fit, although it does not have any physical meaning.
+In <strong class="program">SExtractor</strong> three different types of transforms <span class="math notranslate nohighlight">\(f_j()\)</span> are applied, depending on the parameter (<a class="reference internal" href="#change-of-variable-table"><span class="std std-numref">Table 5</span></a>).</p>
+<span id="change-of-variable-table"></span><table class="docutils align-default" id="id12">
+<caption><span class="caption-number">Table 5 </span><span class="caption-text">Types of changes of variables applied to model parameters</span><a class="headerlink" href="#id12" title="Link to this table"></a></caption>
+<thead>
+<tr class="row-odd"><th class="head"><p>Type</p></th>
+<th class="head"><p>Model <span class="math notranslate nohighlight">\(\stackrel{f^{-1}}{\to}\)</span> Engine</p></th>
+<th class="head"><p>Engine <span class="math notranslate nohighlight">\(\stackrel{f}{\to}\)</span> Model</p></th>
+<th class="head"><p>Examples</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Unbounded (linear)</p></td>
+<td><p><span class="math notranslate nohighlight">\(Q_j = q_j\)</span></p></td>
+<td><p><span class="math notranslate nohighlight">\(q_j = Q_j\)</span></p></td>
+<td><div class="line-block">
+<div class="line"><span class="param">SPHEROID_POSANGLE</span></div>
+<div class="line"><span class="param">DISK_POSANGLE</span></div>
+</div>
+</td>
+</tr>
+<tr class="row-odd"><td><p>Bounded linear</p></td>
+<td><p><span class="math notranslate nohighlight">\(Q_j = \ln \frac{q_j - a_j}{b_j - q_j}\)</span></p></td>
+<td><p><span class="math notranslate nohighlight">\(q_j = \frac{b_j - a_j}{1 + \exp -Q_j} + a_j\)</span></p></td>
+<td><div class="line-block">
+<div class="line"><span class="param">XMODEL_IMAGE</span></div>
+<div class="line"><span class="param">SPHEROID_SERSICN</span></div>
+</div>
+</td>
+</tr>
+<tr class="row-even"><td><p>Bounded logarithmic</p></td>
+<td><p><span class="math notranslate nohighlight">\(Q_j = \ln \frac{\ln q_j - \ln a_j}{\ln b_j - \ln q_j}\)</span></p></td>
+<td><p><span class="math notranslate nohighlight">\(q_j = a_j \frac{\ln b_j - \ln a_j}{1 + \exp -Q_j}\)</span></p></td>
+<td><div class="line-block">
+<div class="line"><span class="param">FLUX_SPHEROID</span></div>
+<div class="line"><span class="param">DISK_ASPECT</span></div>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+<p>In practice, this approach works well, and was found to be much more reliable than a box constrained algorithm <span id="id2">[<a class="reference internal" href="references.html#id17" title="C. Kanzow, N. Yamashita, and M. Fukushima, 2004. Levenberg-Marquardt methods with strong local convergence properties for solving nonlinear equations with convex constraints. Journal of Computational and Applied Mathematics, 172(2):375-397.">29</a>]</span>.</p>
+</section>
+<section id="regularization">
+<h3>Regularization<a class="headerlink" href="#regularization" title="Link to this heading"></a></h3>
+<p>Although minimizing the (modified) weighted sum of least squares gives a solution that fits best the data, it does not necessarily correspond to the most probable solution given what we know about celestial objects.
+The discrepancy is particularly significant in very faint (<abbr title="Signal-to-Noise Ratio">SNR</abbr> <span class="math notranslate nohighlight">\(\le 20\)</span>) and barely resolved galaxies, for which there is a tendency to overestimate the elongation, known as the &quot;noise bias&quot; in the weak-lensing community <span id="id3">[<a class="reference internal" href="references.html#id13" title="C. M. Hirata, R. Mandelbaum, U. Seljak, J. Guzik, N. Padmanabhan, C. Blake, J. Brinkmann, T. Budávari, A. Connolly, I. Csabai, R. Scranton, and A. S. Szalay, 2004. Galaxy-galaxy weak lensing in the Sloan Digital Sky Survey: intrinsic alignments and shear calibration errors. MNRAS, 353:529-549.">30</a>, <a class="reference internal" href="references.html#id20" title="P. Melchior and M. Viola, 2012. Means of confusion: how pixel noise affects shear estimates for weak gravitational lensing. MNRAS, 424:2757-2769.">31</a>, <a class="reference internal" href="references.html#id25" title="A. Refregier, T. Kacprzak, A. Amara, S. Bridle, and B. Rowe, 2012. Noise bias in weak lensing shape measurements. MNRAS, 425:1951-1957.">32</a>, <a class="reference internal" href="references.html#id16" title="T. Kacprzak, J. Zuntz, B. Rowe, S. Bridle, A. Refregier, A. Amara, L. Voigt, and M. Hirsch, 2012. Measurement and calibration of noise bias in weak lensing galaxy shape estimation. MNRAS, 427:2711-2722.">33</a>]</span>.
+To mitigate this issue, <strong class="program">SExtractor</strong> implements a simple <a class="reference external" href="https://en.wikipedia.org/wiki/Tikhonov_regularization">Tikhonov regularization</a> scheme on selected engine parameters, in the form of an additional penalty term in <a class="reference internal" href="#equation-loss-func">(45)</a>.
+This term acts as a Gaussian prior on the selected <em>engine</em> parameters. However for the associated <em>model</em> parameters, the change of variables can make the (improper) prior far from Gaussian.
+Currently the only regularized parameter is <span class="param">SPHEROID_ASPECT_IMAGE</span> (and its derivatives <span class="param">SPHEROID_ASPECT_WORLD</span>, <span class="param">ELLIP1MODEL_IMAGE</span>, etc.), for which <span class="math notranslate nohighlight">\(\mu_{\tt SPHEROID\_ASPECT} = 0\)</span> and <span class="math notranslate nohighlight">\(s_{\tt SPHEROID\_ASPECT} = 1\)</span>
+(<a class="reference internal" href="#fig-aspectprior"><span class="std std-numref">Fig. 8</span></a>).</p>
+<figure class="align-center" id="id13" style="width: 100%">
+<span id="fig-aspectprior"></span><img alt="_images/aspectprior.svg" src="_images/aspectprior.svg" />
+<figcaption>
+<p><span class="caption-number">Fig. 8 </span><span class="caption-text">Effect of the Gaussian prior on the <span class="param">SPHEROID_ASPECT_IMAGE</span> model parameter. <em>Left:</em> change of variables between the model (in abscissa) and the engine (in ordinate) parameters. <em>Right</em>: equivalent (improper) prior applied to <span class="param">SPHEROID_ASPECT_IMAGE</span> for <span class="math notranslate nohighlight">\(\mu_{\tt SPHEROID\_ASPECT} = 0\)</span> and <span class="math notranslate nohighlight">\(s_{\tt SPHEROID\_ASPECT} = 1\)</span> in equation <a class="reference internal" href="#equation-loss-func">(45)</a>.</span><a class="headerlink" href="#id13" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+</section>
+<section id="minimization">
+<span id="model-minimization-def"></span><h3>Minimization<a class="headerlink" href="#minimization" title="Link to this heading"></a></h3>
+<p>Minimization of the loss function <span class="math notranslate nohighlight">\(\lambda(\boldsymbol{q})\)</span> is carried out using the <a class="reference external" href="http://en.wikipedia.org/wiki/Levenberg%E2%80%93Marquardt_algorithm">Levenberg-Marquardt algorithm</a>, and more specifically the <a class="reference external" href="http://users.ics.forth.gr/~lourakis/levmar"><strong class="program">LevMar</strong></a> implementation <span id="id4">[<a class="reference internal" href="references.html#id43" title="M.I.A. Lourakis, 2004. Levmar: levenberg-marquardt nonlinear least squares algorithms in C/C++.">34</a>]</span>.
+The library approximates the Jacobian matrix of the model from finite differences using Broyden's <span id="id5">[<a class="reference internal" href="references.html#id6" title="C. Broyden, 1965. A class of methods for solving nonlinear simultaneous equations. Mathematics of Computation, 19:577-593.">35</a>]</span> rank one updates.
+The fit is done inside a disk which diameter is scaled to include the isophotal footprint of the object, plus the FWHM of the PSF, plus a 20 % margin.</p>
+<p>The number of iterations is returned in the <span class="param">NITER_MODEL</span> measurement parameter.
+It is generally a few tens.
+The final value of the modified chi square term in <a class="reference internal" href="#equation-loss-func">(45)</a>, divided by the number of degrees of freedom, is returned in <span class="param">CHI2_MODEL</span>.</p>
+<p id="flags-model-def">The <span class="param">FLAGS_MODEL</span> catalog parameter flags various issues which may happen during the fitting process (see the <a class="reference internal" href="Flagging.html#flagging"><span class="std std-ref">Flagging</span></a> section for details on how flags are managed in <strong class="program">SExtractor</strong>):</p>
+<span id="flags-model-table"></span><table class="docutils align-default" id="id14">
+<caption><span class="caption-number">Table 6 </span><span class="caption-text"><span class="param">FLAGS_MODEL</span> flag description</span><a class="headerlink" href="#id14" title="Link to this table"></a></caption>
+<colgroup>
+<col style="width: 4.8%" />
+<col style="width: 95.2%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Value</p></th>
+<th class="head"><p>Meaning</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>1</p></td>
+<td><p>the unconvolved, supersampled model raster exceeds 512×512 pixels and had to be resized</p></td>
+</tr>
+<tr class="row-odd"><td><p>2</p></td>
+<td><p>the convolved, resampled model raster exceeds 512×512 pixels and had to be resized</p></td>
+</tr>
+<tr class="row-even"><td><p>4</p></td>
+<td><p>not enough pixels are available for model fitting on the measurement image (less pixels than fit parameters)</p></td>
+</tr>
+<tr class="row-odd"><td><p>8</p></td>
+<td><p>at least one of the fitted parameters hits the lower bound</p></td>
+</tr>
+<tr class="row-even"><td><p>16</p></td>
+<td><p>at least one of the fitted parameters hits the upper bound</p></td>
+</tr>
+</tbody>
+</table>
+<p><span class="math notranslate nohighlight">\(1\,\sigma\)</span> error estimates are provided for most measurement parameters; they are obtained from the full covariance matrix of the fit, which is itself computed by inverting the approximate <a class="reference external" href="https://en.wikipedia.org/wiki/Hessian_matrix">Hessian matrix</a> of <span class="math notranslate nohighlight">\(\lambda(\boldsymbol{q})\)</span> at the solution.</p>
+</section>
+</section>
+<section id="models">
+<span id="models-def"></span><h2>Models<a class="headerlink" href="#models" title="Link to this heading"></a></h2>
+<p>Models contain one or more components, which share their central coordinates. For instance, a galaxy model may be composed of a spheroid (bulge) and a disk components. Both components are concentric but they may have different scales, aspect ratios and position angles. Adding a component is done simply by invoking one of its measurement parameters in the parameter file, e.g., <span class="param">DISK_SCALE_IMAGE</span>.</p>
+<p>The present version of <strong class="program">SExtractor</strong> supports the following models</p>
+<ul>
+<li><p><span class="param">BACKOFFSET</span>: flat background offset</p>
+<p>Relevant measurement parameters: <span class="param">FLUX_BACKOFFSET</span>, <span class="param">FLUXERR_BACKOFFSET</span></p>
+</li>
+</ul>
+<div class="math notranslate nohighlight" id="equation-backoffset-model">
+<span class="eqno">(50)<a class="headerlink" href="#equation-backoffset-model" title="Link to this equation"></a></span>\[m_{\tt BACKOFFSET}(r) = m_0\]</div>
+<ul>
+<li><p><span class="param">POINT_SOURCE</span>: point source</p>
+<p>Relevant measurement parameters: <span class="param">FLUX_POINTSOURCE</span>, <span class="param">FLUXERR_POINTSOURCE</span>, <span class="param">MAG_POINTSOURCE</span>, <span class="param">MAGERR_POINTSOURCE</span>, <span class="param">FLUXRATIO_POINTSOURCE</span>, <span class="param">FLUXRATIOERR_POINTSOURCE</span></p>
+</li>
+</ul>
+<div class="math notranslate nohighlight" id="equation-pointsource-model">
+<span class="eqno">(51)<a class="headerlink" href="#equation-pointsource-model" title="Link to this equation"></a></span>\[m_{\tt POINTSOURCE}(r) = m_0 \delta(r)\]</div>
+<ul>
+<li><p><span class="param">DISK</span>: exponential disk</p>
+<p>Relevant measurement  parameters:
+<span class="param">FLUX_DISK</span>, <span class="param">FLUXERR_DISK</span>, <span class="param">MAG_DISK</span>, <span class="param">MAGERR_DISK</span>,
+<span class="param">FLUXRATIO_DISK</span>, <span class="param">FLUXRATIOERR_DISK</span>,
+<span class="param">FLUX_MAX_DISK</span>, <span class="param">MU_MAX_DISK</span>,
+<span class="param">FLUX_EFF_DISK</span>, <span class="param">MU_EFF_DISK</span>,
+<span class="param">FLUX_MEAN_DISK</span>, <span class="param">MU_MEAN_DISK</span>,
+<span class="param">DISK_SCALE_IMAGE</span>, <span class="param">DISK_SCALEERR_IMAGE</span>,
+<span class="param">DISK_SCALE_WORLD</span>, <span class="param">DISK_SCALEERR_WORLD</span>,
+<span class="param">DISK_ASPECT_IMAGE</span>, <span class="param">DISK_ASPECTERR_IMAGE</span>,
+<span class="param">DISK_ASPECT_WORLD</span>, <span class="param">DISK_ASPECTERR_WORLD</span>,
+<span class="param">DISK_INCLINATION</span>, <span class="param">DISK_INCLINATIONERR</span>,
+<span class="param">DISK_THETA_IMAGE</span>, <span class="param">DISK_THETAERR_IMAGE</span>,
+<span class="param">DISK_THETA_WORLD</span>, <span class="param">DISK_THETAERR_WORLD</span>,
+<span class="param">DISK_THETA_SKY</span>, <span class="param">DISK_THETA_J2000</span>, <span class="param">DISK_THETA_B1950</span></p>
+</li>
+</ul>
+<div class="math notranslate nohighlight" id="equation-disk-model">
+<span class="eqno">(52)<a class="headerlink" href="#equation-disk-model" title="Link to this equation"></a></span>\[m_{\tt DISK}(r) = m_0 \exp \left( - {r\over h}\right)\]</div>
+<ul>
+<li><p><span class="param">SPHEROID</span>: Sérsic (<span class="math notranslate nohighlight">\(R^{1/n}\)</span>) spheroid</p>
+<p><span class="param">FLUX_SPHEROID</span>, <span class="param">FLUXERR_SPHEROID</span>, <span class="param">MAG_SPHEROID</span>, <span class="param">MAGERR_SPHEROID</span>,
+<span class="param">FLUXRATIO_SPHEROID</span>, <span class="param">FLUXRATIOERR_SPHEROID</span>,
+<span class="param">FLUX_MAX_SPHEROID</span>, <span class="param">MU_MAX_SPHEROID</span>,
+<span class="param">FLUX_EFF_SPHEROID</span>, <span class="param">MU_EFF_SPHEROID</span>,
+<span class="param">FLUX_MEAN_SPHEROID</span>, <span class="param">MU_MEAN_SPHEROID</span>,
+<span class="param">SPHEROID_SCALE_IMAGE</span>, <span class="param">SPHEROID_SCALEERR_IMAGE</span>,
+<span class="param">SPHEROID_SCALE_WORLD</span>, <span class="param">SPHEROID_SCALEERR_WORLD</span>,
+<span class="param">SPHEROID_ASPECT_IMAGE</span>, <span class="param">SPHEROID_ASPECTERR_IMAGE</span>,
+<span class="param">SPHEROID_ASPECT_WORLD</span>, <span class="param">SPHEROID_ASPECTERR_WORLD</span>,
+<span class="param">SPHEROID_INCLINATION</span>, <span class="param">SPHEROID_INCLINATIONERR</span>,
+<span class="param">SPHEROID_THETA_IMAGE</span>, <span class="param">SPHEROID_THETAERR_IMAGE</span>,
+<span class="param">SPHEROID_THETA_WORLD</span>, <span class="param">SPHEROID_THETAERR_WORLD</span>,
+<span class="param">SPHEROID_THETA_SKY</span>, <span class="param">SPHEROID_THETA_J2000</span>, <span class="param">SPHEROID_THETA_B1950</span>
+<span class="param">SPHEROID_SERSICN</span>, <span class="param">SPHEROID_SERSICNERR</span></p>
+</li>
+</ul>
+<div class="math notranslate nohighlight" id="equation-spheroid-model">
+<span class="eqno">(53)<a class="headerlink" href="#equation-spheroid-model" title="Link to this equation"></a></span>\[m_{\tt SPHEROID}(r) = m_0 \exp \left(- b(n)\,\left({R\over R_e}\right)^{1/n}\right),\]</div>
+<p>where, for the <span id="id6">[<a class="reference internal" href="references.html#id40" title="J. L. Sérsic. Atlas de Galaxias Australes. Cordoba, Argentina: Observatorio Astronomico, 1968, 1968.">36</a>]</span> model, <span class="math notranslate nohighlight">\(b(n)\)</span> is the solution to</p>
+<div class="math notranslate nohighlight" id="equation-bofn">
+<span class="eqno">(54)<a class="headerlink" href="#equation-bofn" title="Link to this equation"></a></span>\[2 \gamma[2\,n,b(n)] = \Gamma(2\,n)\]</div>
+<p>An accurate approximation for the solution for <span class="math notranslate nohighlight">\(b(n)\)</span> of <a class="reference internal" href="#equation-bofn">(54)</a> is <span id="id7">[<a class="reference internal" href="references.html#id8" title="L. Ciotti and G. Bertin, 1999. Analytical properties of the R^(1/m) law. A&amp;A, 352:447-451.">37</a>]</span>:</p>
+<div class="math notranslate nohighlight">
+\[b(n) = 2\,n - {1\over3} + {4\over 405\,n} + {46\over 25515\,n^2} + {131\over 1148175\,n^3}\]</div>
+<p>Experience shows that the de Vaucouleurs spheroid + exponential disk
+combination provides fairly accurate and robust fits for moderately
+resolved faint galaxies. An adjustable Sérsic index may offer lower
+residuals on spheroids and/or well-resolved galaxies, but makes the fit
+less robust and more sensitive to PSF model errors.</p>
+<p>The Sérsic profile is very cuspy in the center for
+<span class="math notranslate nohighlight">\(n&gt;2\)</span>. To avoid huge wings in the FFTs when convolving the profile
+with the PSF, the profile is split between a 3rd order polynomial,
+analytically fit to match, in intensity and its 1st and 2nd spatial
+derivatives, the Sérsic profile at <span class="math notranslate nohighlight">\(R=4\,\rm pixels\)</span>,
+<span class="math notranslate nohighlight">\(I(r) = I_0 + (r/a)^3\)</span>, which has zero first and 2nd derivative at
+the center, i.e. a homogeneous core on one hand, and a residual with
+finite extent on the other.</p>
+<p>For the fit of the spheroid component, the apparent ellipticity allowed
+is taken in the range <span class="math notranslate nohighlight">\([0.5, 2]\)</span> . This obviously forbids very
+flat spheroids to avoid confusion with a flattened disk. By allowing
+ellipticities greater than unity, SExtractor avoids dichotomies of
+position angle when the ellipticity is very low. The Sérsic index is
+allowed values between 1 and 10.</p>
+</section>
+<section id="model-based-star-galaxy-separation-spread-model">
+<span id="spread-model-def"></span><h2>Model-based star-galaxy separation: <span class="param">SPREAD_MODEL</span><a class="headerlink" href="#model-based-star-galaxy-separation-spread-model" title="Link to this heading"></a></h2>
+<p>The <span class="param">SPREAD_MODEL</span> estimator has been developed as a star/galaxy classifier for the DESDM pipeline <span id="id8">[<a class="reference internal" href="references.html#id37" title="J. J. Mohr, R. Armstrong, E. Bertin, G. Daues, S. Desai, M. Gower, R. Gruendl, W. Hanlon, N. Kuropatkin, H. Lin, J. Marriner, D. Petravic, I. Sevilla, M. Swanson, T. Tomashek, D. Tucker, and B. Yanny, 2012. The Dark Energy Survey data processing and calibration system. In Software and Cyberinfrastructure for Astronomy II, volume 8451 of Proc. SPIE, 84510D. September 2012.">38</a>]</span>, and has also been used in other surveys <span id="id9">[<a class="reference internal" href="references.html#id9" title="S. Desai, R. Armstrong, J. J. Mohr, D. R. Semler, J. Liu, E. Bertin, S. S. Allam, W. A. Barkhouse, G. Bazin, E. J. Buckley-Geer, M. C. Cooper, S. M. Hansen, F. W. High, H. Lin, Y.-T. Lin, C.-C. Ngeow, A. Rest, J. Song, D. Tucker, and A. Zenteno, 2012. The Blanco Cosmology Survey: Data Acquisition, Processing, Calibration, Quality Diagnostics, and Data Release. ApJ, 757:83.">39</a>, <a class="reference internal" href="references.html#id5" title="H. Bouy, E. Bertin, E. Moraux, J.-C. Cuillandre, J. Bouvier, D. Barrado, E. Solano, and A. Bayo, 2013. Dynamical analysis of nearby clusters. Automated astrometry from the ground: precision proper motions over a wide field. A&amp;A, 554:A101.">40</a>]</span>.
+<span class="param">SPREAD_MODEL</span> indicates which of the best fitting local PSF model resampled at the current position <span class="math notranslate nohighlight">\(\tilde{\boldsymbol{\phi}}\)</span> (representing a point source) or a slightly &quot;fuzzier&quot; resampled model <span class="math notranslate nohighlight">\(\tilde{\boldsymbol{G}}\)</span> (representing a galaxy) matches best the image data.
+<span class="math notranslate nohighlight">\(\tilde{\boldsymbol{G}}\)</span> is obtained by convolving the local PSF model with a circular exponential model with scalelength = 1/16 <abbr title="Full Width at Half Maximum">FWHM</abbr>, and resampling the result at the current position on the pixel grid. <span class="param">SPREAD_MODEL</span> is normalized to allow comparing sources with different PSFs throughout the field:</p>
+<div class="math notranslate nohighlight" id="equation-spread-model">
+<span class="eqno">(55)<a class="headerlink" href="#equation-spread-model" title="Link to this equation"></a></span>\[{\tt SPREAD\_MODEL} = \frac{\tilde{\boldsymbol{G}}^\mathsf{T} {\bf W}\,\boldsymbol{p}}{\tilde{\boldsymbol{\phi}}^\mathsf{T} {\bf W}\,\boldsymbol{p}}
+  - \frac{\tilde{\boldsymbol{G}}^\mathsf{T} {\bf W}\,\tilde{\boldsymbol{\phi}}}{\tilde{\boldsymbol{\phi}}^\mathsf{T} {\bf W}\,\tilde{\boldsymbol{\phi}}},\]</div>
+<p>where <span class="math notranslate nohighlight">\(\boldsymbol{p}\)</span> is the image vector centered on the source.
+<span class="math notranslate nohighlight">\({\bf W}\)</span> is a weight matrix constant along the diagonal except for bad pixels where the weight is 0.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The definition of <span class="param">SPREAD_MODEL</span> above differs from the one given in previous papers, which was incorrect, although in practice both estimators give very similar results.</p>
+</div>
+<p>By construction, <span class="param">SPREAD_MODEL</span> is close to zero for point sources, positive for extended sources (galaxies), and negative for detections smaller than the <abbr title="Point Spread Function">PSF</abbr>, such as cosmic ray hits.
+On images taken with linear detectors, the average <span class="param">SPREAD_MODEL</span> of point sources should not depend on flux nor <abbr title="Signal-to-Noise Ratio">SNR</abbr>.
+This property may be used to identify bad exposures or <abbr title="Point Spread Function">PSF</abbr> modeling issues (<a class="reference internal" href="#fig-spread"><span class="std std-numref">Fig. 9</span></a>).
+More importantly, this makes <span class="param">SPREAD_MODEL</span> a very convenient estimator for star-galaxy classification, using a positive threshold to identify extended sources.</p>
+<figure class="align-center" id="id15" style="width: 100%">
+<span id="fig-spread"></span><img alt="_images/spread.png" src="_images/spread.png" />
+<figcaption>
+<p><span class="caption-number">Fig. 9 </span><span class="caption-text"><abbr title="Signal-to-Noise Ratio">SNR</abbr> <em>vs</em> <span class="param">SPREAD_MODEL</span> for three exposures from <span id="id10">[<a class="reference internal" href="references.html#id5" title="H. Bouy, E. Bertin, E. Moraux, J.-C. Cuillandre, J. Bouvier, D. Barrado, E. Solano, and A. Bayo, 2013. Dynamical analysis of nearby clusters. Automated astrometry from the ground: precision proper motions over a wide field. A&amp;A, 554:A101.">40</a>]</span>.
+<em>Left plot</em>: &quot;good&quot; exposure; extended sources (galaxies and nebulous features) are on the right handside of the stellar locus, and electronic glitches create a small cloud of points on the left handside.
+<em>Middle</em>: exposure with an unusual amount of electronic glitches.
+<em>Right</em>: exposure with tracking/guiding issues; the <abbr title="Point Spread Function">PSF</abbr> is too complex for individual sources to be identified as a single objects.</span><a class="headerlink" href="#id15" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+<p>The <abbr title="Probability Density Function">pdf</abbr> of <span class="param">SPREAD_MODEL</span> is close to Gaussian for isolated point sources at a given <abbr title="Signal-to-Noise Ratio">SNR</abbr>; it gets larger for the fainter sources because of image noise.
+In order to maintain a certain level of purity or completeness across the whole magnitude range, it is therefore necessary to take into account the uncertainty on <span class="param">SPREAD_MODEL</span>, which can be estimated by propagating the uncertainties on individual pixel values:</p>
+<div class="math notranslate nohighlight" id="equation-spreaderr-model">
+\begin{eqnarray}
+{\tt SPREADERR\_MODEL} &amp; = &amp; \frac{1}{(\tilde{\boldsymbol{\phi}}^\mathsf{T} {\bf W}\,\boldsymbol{p})^2} \left((\tilde{\boldsymbol{G}}^\mathsf{T} {\bf V}\,\tilde{\boldsymbol{G}})\,(\tilde{\boldsymbol{\phi}}^\mathsf{T} {\bf W}\,\boldsymbol{p})^2\right.\nonumber \\
+&amp; &amp; + (\tilde{\boldsymbol{\phi}}^\mathsf{T} {\bf V}\,\tilde{\boldsymbol{\phi}})\,(\tilde{\boldsymbol{G}}^\mathsf{T} {\bf W}\,\boldsymbol{p})^2\nonumber \\
+&amp; &amp; \left. - 2\,(\tilde{\boldsymbol{G}}^\mathsf{T} {\bf V}\,\tilde{\boldsymbol{\phi}})\,(\tilde{\boldsymbol{G}}^\mathsf{T} {\bf W}\,\boldsymbol{p})\,(\tilde{\boldsymbol{\phi}}^\mathsf{T} {\bf W}\,\boldsymbol{p}) \right)^{1/2},
+\end{eqnarray}</div><p>where <span class="math notranslate nohighlight">\({\bf V}\)</span> is the noise covariance matrix, which we assume to be diagonal.
+In practice, one may for instance adopt a threshold for star-galaxy separation which is a combination of a fixed and a variable components, such as <span class="math notranslate nohighlight">\(\sqrt{\epsilon^2 + (\kappa \times {\tt SPREADERR\_MODEL})^2}\)</span>, with <span class="math notranslate nohighlight">\(\epsilon \approx 5.10^{-3}\)</span> and <span class="math notranslate nohighlight">\(\kappa \approx 4\)</span>.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="Photom.html" class="btn btn-neutral float-left" title="Aperture photometry" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="references.html" class="btn btn-neutral float-right" title="Bibliography" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2017-2023, CFHT/IAP/CNRS/SorbonneU.</p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
