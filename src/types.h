@@ -1,3 +1,4 @@
+#pragma once
 /*
 *				types.h
 *
@@ -28,12 +29,9 @@
 
 #include <stdio.h>
 
-#ifndef _FITSCAT_H_
 #include "fits/fitscat.h"
-#endif
-#ifndef _FITSWCS_H_
+
 #include "fitswcs.h"
-#endif
 
 /*-------------------------------- flags ------------------------------------*/
 

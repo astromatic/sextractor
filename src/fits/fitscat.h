@@ -1,3 +1,4 @@
+#pragma once
 /*
 *				fitscat.h
 *
@@ -26,9 +27,6 @@
 *	Last modified:		25/02/2023
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
-
-#ifndef _FITSCAT_H_
-#define _FITSCAT_H_
 
 #include <stdio.h>
 
@@ -345,5 +343,3 @@ extern FLAGTYPE	*alloc_ibody(tabstruct *tab,
 			void (*func)(FLAGTYPE *ptr, int npix));
 
 extern t_type	ttypeof(char *str);
-
-#endif

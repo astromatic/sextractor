@@ -1,3 +1,4 @@
+#pragma once
 /*
 *				fft.h
 *
@@ -26,13 +27,9 @@
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-#ifndef _FITSCAT_H_
 #include "fits/fitscat.h"
-#endif
 
-#ifndef FFTW3_H
-#include FFTW_H
-#endif
+#include <fftw3.h>
 
 /*---------------------------- Internal constants ---------------------------*/
 

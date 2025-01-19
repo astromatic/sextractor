@@ -1,3 +1,4 @@
+#pragma once
 /*
 *				key.h
 *

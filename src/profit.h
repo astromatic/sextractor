@@ -1,3 +1,4 @@
+#pragma once
 /*
 *				profit.h
 *
@@ -25,9 +26,6 @@
 *	Last modified:		16/03/2016
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
-
-#ifndef _PROFIT_H_
-#define _PROFIT_H_
 
 /*-------------------------------- models -----------------------------------*/
 
@@ -269,5 +267,3 @@ void		profit_dfit(profitstruct *profit, profitstruct *dprofit,
 		profit_resetparam(profitstruct *profit, paramenum paramtype),
 		profit_resetparams(profitstruct *profit),
 		profit_surface(profitstruct *profit, obj2struct *obj2);
-
-#endif

@@ -1,3 +1,4 @@
+#pragma once
 /*
 *				extract.h
 *

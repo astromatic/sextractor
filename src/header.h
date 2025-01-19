@@ -1,3 +1,4 @@
+#pragma once
 /*
 *				header.h
 *
@@ -26,9 +27,7 @@
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-#ifndef _FITSCAT_H_
 #include "fits/fitscat.h"
-#endif
 
 /*------------------------------- functions ---------------------------------*/
 extern int		read_aschead(char *filename, int frameno,

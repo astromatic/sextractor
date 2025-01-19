@@ -1,3 +1,4 @@
+#pragma once
 /*
 *				filter.h
 *

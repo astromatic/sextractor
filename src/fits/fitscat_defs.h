@@ -1,3 +1,4 @@
+#pragma once
 /*
 *				fitscat_defs.h
 *
