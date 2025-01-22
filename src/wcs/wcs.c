@@ -24,7 +24,7 @@
 *	along with AstrOmatic software.
 *	If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		10/10/2010
+*	Last modified:		2025-01-22
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 /*=============================================================================
@@ -453,12 +453,7 @@ const char *wcsmix_errmsg[] = {
 
 #define wcs_signbit(X) ((X) < 0.0 ? 1 : 0)
 
-int wcsset (naxis, ctype, wcs)
-
-const int naxis;
-const char ctype[][9];
-struct wcsprm *wcs;
-
+int wcsset (const int naxis, const char ctype[][9], struct wcsprm *wcs)
 {
    int j, k, *ndx;
    char requir[9];
@@ -553,20 +548,9 @@ struct wcsprm *wcs;
 
 /*--------------------------------------------------------------------------*/
 
-int wcsfwd(ctype, wcs, world, crval, cel, phi, theta, prj, imgcrd, lin,
-    pixcrd)
-
-const char ctype[][9];
-struct wcsprm* wcs;
-const double world[];
-const double crval[];
-struct celprm *cel;
-double *phi, *theta;
-struct prjprm *prj;
-double imgcrd[];
-struct linprm *lin;
-double pixcrd[];
-
+int wcsfwd(const char ctype[][9], struct wcsprm* wcs, const double world[], 
+	const double crval[], struct celprm *cel, double * phi, double * theta, struct prjprm *prj, 
+	double imgcrd[], struct linprm *lin, double pixcrd[])
 {
    int    err, j;
    double offset;
@@ -642,20 +626,9 @@ double pixcrd[];
 
 /*--------------------------------------------------------------------------*/
 
-int wcsrev(ctype, wcs, pixcrd, lin, imgcrd, prj, phi, theta, crval, cel,
-    world)
-
-const char ctype[][9];
-struct wcsprm *wcs;
-const double pixcrd[];
-struct linprm *lin;
-double imgcrd[];
-struct prjprm *prj;
-double *phi, *theta;
-const double crval[];
-struct celprm *cel;
-double world[];
-
+int wcsrev(const char ctype[][9], struct wcsprm *wcs, const double pixcrd[], 
+	struct linprm *lin, double imgcrd[], struct prjprm *prj, double *phi, double *theta, 
+	const double crval[], struct celprm *cel, double world[])
 {
    int    err, face, j;
    double offset;
@@ -741,23 +714,10 @@ double world[];
 
 /*--------------------------------------------------------------------------*/
 
-int wcsmix(ctype, wcs, mixpix, mixcel, vspan, vstep, viter, world, crval, cel,
-           phi, theta, prj, imgcrd, lin, pixcrd)
-
-const char ctype[][9];
-struct wcsprm *wcs;
-const int mixpix, mixcel;
-const double vspan[2], vstep;
-int viter;
-double world[];
-const double crval[];
-struct celprm *cel;
-double *phi, *theta;
-struct prjprm *prj;
-double imgcrd[];
-struct linprm *lin;
-double pixcrd[];
-
+int wcsmix(const char ctype[][9], struct wcsprm *wcs, const int mixpix, const int mixcel, 
+	const double vspan[2], const double vstep, int viter, double world[], const double crval[], 
+	struct celprm * cel, double *phi, double *theta, struct prjprm * prj, 
+	double imgcrd[], struct linprm *lin, double pixcrd[])
 {
    const int niter = 60;
    int    crossed, err, istep, iter, j, k, nstep, retry;

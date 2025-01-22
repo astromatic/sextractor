@@ -1,3 +1,4 @@
+#pragma once
 /*
 *				sph.h
 *
@@ -24,7 +25,7 @@
 *	along with AstrOmatic software.
 *	If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		10/10/2010
+*	Last modified:		2025-01-22
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 /*=============================================================================
@@ -58,9 +59,6 @@
 *   $Id: sph.h,v 1.1.1.1 2002/03/15 16:33:26 bertin Exp $
 *===========================================================================*/
 
-#ifndef WCSLIB_SPH
-#define WCSLIB_SPH
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -79,5 +77,3 @@ extern "C" {
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* WCSLIB_SPH */

@@ -24,7 +24,7 @@
 *	along with AstrOmatic software.
 *	If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		18/04/2012
+*	Last modified:		2025-01-22
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 /*=============================================================================
@@ -308,12 +308,7 @@ const char *celrev_errmsg[] = {
    "Invalid value of (x,y)"};
  
 
-int celset(pcode, cel, prj)
-
-const char pcode[4];
-struct celprm *cel;
-struct prjprm *prj;
-
+int celset(const char pcode[4], struct celprm *cel, struct prjprm *prj)
 {
    int dophip;
    const double tol = 1.0e-10;
@@ -565,15 +560,8 @@ struct prjprm *prj;
 
 /*--------------------------------------------------------------------------*/
 
-int celfwd(pcode, lng, lat, cel, phi, theta, prj, x, y)
-
-const char pcode[4];
-const double lng, lat;
-struct celprm *cel;
-double *phi, *theta;
-struct prjprm *prj;
-double *x, *y;
-
+int celfwd(const char pcode[4], const double lng, const double lat, struct celprm *cel, 
+	double *phi, double *theta, struct prjprm *prj, double *x, double *y)
 {
    int    err;
 
@@ -594,15 +582,8 @@ double *x, *y;
 
 /*--------------------------------------------------------------------------*/
 
-int celrev(pcode, x, y, prj, phi, theta, cel, lng, lat)
-
-const char pcode[4];
-const double x, y;
-struct prjprm *prj;
-double *phi, *theta;
-struct celprm *cel;
-double *lng, *lat;
-
+int celrev(const char pcode[4], const double x, const double y, struct prjprm *prj, 
+	double *phi, double *theta, struct celprm *cel, double * lng, double *lat)
 {
    int    err;
 

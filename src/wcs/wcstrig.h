@@ -1,3 +1,4 @@
+#pragma once
 /*
 *				wcstrig.h
 *
@@ -24,7 +25,7 @@
 *	along with AstrOmatic software.
 *	If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		10/10/2010
+*	Last modified:		2025-01-22
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 /*=============================================================================
@@ -57,9 +58,6 @@
 *   Author: Mark Calabretta, Australia Telescope National Facility
 *   $Id: wcstrig.h,v 1.1.1.1 2002/03/15 16:33:26 bertin Exp $
 *===========================================================================*/
-#ifndef WCSLIB_TRIG
-#define WCSLIB_TRIG
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -100,9 +98,7 @@ extern "C" {
 
 /* Domain tolerance for asin and acos functions. */
 #define WCSTRIG_TOL 1e-10
-#endif /* TRIGD */
 
 #ifdef __cplusplus
 };
-
-#endif /* WCSLIB_TRIG */
+#endif

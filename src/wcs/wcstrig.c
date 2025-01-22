@@ -24,7 +24,7 @@
 *	along with AstrOmatic software.
 *	If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		10/10/2010
+*	Last modified:		2025-01-22
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 /*============================================================================
@@ -81,10 +81,7 @@ const double r2d = 180.0 / PI;
 
 #ifndef HAVE_MATHIMF_H
 
-double wcs_cosd(angle)
-
-const double angle;
-
+double wcs_cosd(const double angle)
 {
    double resid;
 
@@ -104,10 +101,7 @@ const double angle;
 
 /*--------------------------------------------------------------------------*/
 
-double wcs_sind(angle)
-
-const double angle;
-
+double wcs_sind(const double angle)
 {
    double resid;
 
@@ -127,10 +121,7 @@ const double angle;
 
 /*--------------------------------------------------------------------------*/
 
-double wcs_tand(angle)
-
-const double angle;
-
+double wcs_tand(const double angle)
 {
    double resid;
 
@@ -148,10 +139,7 @@ const double angle;
 
 /*--------------------------------------------------------------------------*/
 
-double wcs_acosd(v)
-
-const double v;
-
+double wcs_acosd(const double v)
 {
    if (v >= 1.0) {
       if (v-1.0 <  WCSTRIG_TOL) return 0.0;
@@ -166,10 +154,7 @@ const double v;
 
 /*--------------------------------------------------------------------------*/
 
-double wcs_asind(v)
-
-const double v;
-
+double wcs_asind(const double v)
 {
    if (v <= -1.0) {
       if (v+1.0 > -WCSTRIG_TOL) return -90.0;
@@ -184,10 +169,7 @@ const double v;
 
 /*--------------------------------------------------------------------------*/
 
-double wcs_atand(v)
-
-const double v;
-
+double wcs_atand(const double v)
 {
    if (v == -1.0) {
       return -45.0;
@@ -202,10 +184,7 @@ const double v;
 
 /*--------------------------------------------------------------------------*/
 
-double wcs_atan2d(y, x)
-
-const double x, y;
-
+double wcs_atan2d(const double y, const double x)
 {
    if (y == 0.0) {
       if (x >= 0.0) {

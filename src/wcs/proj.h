@@ -1,3 +1,4 @@
+#pragma once
 /*
 *				proj.h
 *
@@ -24,7 +25,7 @@
 *	along with AstrOmatic software.
 *	If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		10/10/2010
+*	Last modified:		2025-01-22
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 /*=============================================================================
@@ -58,9 +59,6 @@
 *   IRAF's TNX added by E.Bertin 2000/03/28
 *   $Id: proj.h,v 1.1.1.1 2002/03/15 16:33:26 bertin Exp $
 *===========================================================================*/
-
-#ifndef WCSLIB_PROJ
-#define WCSLIB_PROJ
 
 #ifdef __cplusplus
 extern "C" {
@@ -186,15 +184,15 @@ struct prjprm {
    int tscset(), tscfwd(), tscrev();
    int tnxset(), tnxfwd(), tnxrev();
 #endif
-/*
+
+#if 0
 extern const char *prjset_errmsg[];
 extern const char *prjfwd_errmsg[];
 extern const char *prjrev_errmsg[];
-*/
+#endif
+
 #define PRJSET 137
 
 #ifdef __cplusplus
 };
 #endif
-
-#endif /* WCSLIB_PROJ */

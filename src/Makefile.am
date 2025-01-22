@@ -26,6 +26,7 @@
 #
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+AM_CFLAGS = -Wall -Wimplicit-function-declaration
 if USE_MODEL
   FFTSOURCE		= fft.c
   PATTERNSOURCE		= pattern.c
