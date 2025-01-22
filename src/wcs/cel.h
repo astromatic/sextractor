@@ -1,3 +1,4 @@
+#pragma once
 /*
 *				cel.h
 *
@@ -24,7 +25,7 @@
 *	along with AstrOmatic software.
 *	If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		11/04/2012
+*	Last modified:		2025-01-22
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 /*=============================================================================
@@ -58,9 +59,6 @@
 *   $Id: cel.h,v 1.1.1.1 2012/04/11 16:33:26 bertin Exp $
 *===========================================================================*/
 
-#ifndef WCSLIB_CEL
-#define WCSLIB_CEL
- 
 #include "proj.h"
 
 #ifdef __cplusplus
@@ -115,5 +113,3 @@ extern const char *celrev_errmsg[];
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* WCSLIB_CEL */

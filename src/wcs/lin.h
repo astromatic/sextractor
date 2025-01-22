@@ -1,3 +1,4 @@
+#pragma once
 /*
 *				lin.h
 *
@@ -24,7 +25,7 @@
 *	along with AstrOmatic software.
 *	If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		10/10/2010
+*	Last modified:		2025-01-22
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 /*=============================================================================
@@ -57,9 +58,6 @@
 *   Author: Mark Calabretta, Australia Telescope National Facility
 *   $Id: lin.h,v 1.1.1.1 2002/03/15 16:33:26 bertin Exp $
 *===========================================================================*/
-
-#ifndef WCSLIB_LIN
-#define WCSLIB_LIN
 
 #ifdef __cplusplus
 extern "C" {
@@ -101,5 +99,3 @@ extern const char *linrev_errmsg[];
 #ifdef __cplusplus
 };
 #endif
-
-#endif /* WCSLIB_LIN */

@@ -1,3 +1,4 @@
+#pragma once
 /*
 *				wcs.h
 *
@@ -24,7 +25,7 @@
 *	along with AstrOmatic software.
 *	If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		10/10/2010
+*	Last modified:		2025-01-22
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 /*=============================================================================
@@ -57,9 +58,6 @@
 *   Author: Mark Calabretta, Australia Telescope National Facility
 *   $Id: wcs.h,v 1.1.1.1 2002/03/15 16:33:26 bertin Exp $
 *===========================================================================*/
-
-#ifndef WCSLIB_WCS
-#define WCSLIB_WCS
 
 #include "cel.h"
 #include "lin.h"
@@ -136,5 +134,3 @@ extern const char *wcsmix_errmsg[];
 #ifdef __cplusplus
 };
 #endif
-
-#endif /* WCSLIB_WCS */

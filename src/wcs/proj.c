@@ -24,7 +24,7 @@
 *	along with AstrOmatic software.
 *	If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		10/10/2010
+*	Last modified:		2025-01-22
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 /*============================================================================
@@ -272,10 +272,7 @@ const char *prjrev_errmsg[] = {
 *                                      -1/mu  for |mu| >= 1.
 *===========================================================================*/
 
-int azpset(prj)
-
-struct prjprm *prj;
-
+int azpset(struct prjprm * prj)
 {
    if (prj->r0 == 0.0) prj->r0 = R2D;
 
@@ -302,12 +299,7 @@ struct prjprm *prj;
 
 /*--------------------------------------------------------------------------*/
 
-int azpfwd(phi, theta, prj, x, y)
-
-const double phi, theta;
-struct prjprm *prj;
-double *x, *y;
-
+int azpfwd(const double phi, const double theta, struct prjprm *prj, double *x, double *y)
 {
    double r, s, sthe;
 
@@ -335,12 +327,7 @@ double *x, *y;
 
 /*--------------------------------------------------------------------------*/
 
-int azprev(x, y, prj, phi, theta)
-
-const double x, y;
-struct prjprm *prj;
-double *phi, *theta;
-
+int azprev(const double x, const double y, struct prjprm *prj, double *phi, double *theta)
 {
    double r, rho, s;
    const double tol = 1.0e-13;
@@ -377,10 +364,7 @@ double *phi, *theta;
 *      prj->r0     r0; reset to 180/pi if 0.
 *===========================================================================*/
 
-int tanset(prj)
-
-struct prjprm *prj;
-
+int tanset(struct prjprm *prj)
 {
    int	k;
 
@@ -403,12 +387,7 @@ struct prjprm *prj;
 
 /*--------------------------------------------------------------------------*/
 
-int tanfwd(phi, theta, prj, x, y)
-
-const double phi, theta;
-struct prjprm *prj;
-double *x, *y;
-
+int tanfwd(const double phi, const double theta, struct prjprm *prj, double *x, double *y)
 {
    double r, s, xp[2];
 
@@ -434,12 +413,7 @@ double *x, *y;
 
 /*--------------------------------------------------------------------------*/
 
-int tanrev(x, y, prj, phi, theta)
-
-const double x, y;
-struct prjprm *prj;
-double *phi, *theta;
-
+int tanrev(const double x, const double y, struct prjprm *prj, double *phi, double *theta)
 {
    double	xp,yp, rp;
 
@@ -480,10 +454,7 @@ double *phi, *theta;
 *      prj->w[4]   alpha**2 + beta**2 - 1
 *===========================================================================*/
 
-int sinset(prj)
-
-struct prjprm *prj;
-
+int sinset(struct prjprm * prj)
 {
    if (prj->r0 == 0.0) prj->r0 = R2D;
 
@@ -504,12 +475,7 @@ struct prjprm *prj;
 
 /*--------------------------------------------------------------------------*/
 
-int sinfwd(phi, theta, prj, x, y)
-
-const double phi, theta;
-struct prjprm *prj;
-double *x, *y;
-
+int sinfwd(const double phi, const double theta, struct prjprm *prj, double *x, double *y)
 {
    double cphi, cthe, sphi, t, z;
 
@@ -555,12 +521,7 @@ double *x, *y;
 
 /*--------------------------------------------------------------------------*/
 
-int sinrev (x, y, prj, phi, theta)
-
-const double x, y;
-struct prjprm *prj;
-double *phi, *theta;
-
+int sinrev (const double x, const double y, struct prjprm *prj, double *phi, double *theta)
 {
    const double tol = 1.0e-13;
    double a, b, c, d, r2, sth, sth1, sth2, sxy, x0, xp, y0, yp, z;
@@ -651,10 +612,7 @@ double *phi, *theta;
 *      prj->w[1]   1/(2*r0)
 *===========================================================================*/
 
-int stgset(prj)
-
-struct prjprm *prj;
-
+int stgset(struct prjprm *prj)
 {
    if (prj->r0 == 0.0) {
       prj->r0 = R2D;
@@ -671,12 +629,7 @@ struct prjprm *prj;
 
 /*--------------------------------------------------------------------------*/
 
-int stgfwd(phi, theta, prj, x, y)
-
-const double phi, theta;
-struct prjprm *prj;
-double *x, *y;
-
+int stgfwd(const double phi, const double theta, struct prjprm *prj, double *x, double *y)
 {
    double r, s;
 
@@ -698,12 +651,7 @@ double *x, *y;
 
 /*--------------------------------------------------------------------------*/
 
-int stgrev(x, y, prj, phi, theta)
-
-const double x, y;
-struct prjprm *prj;
-double *phi, *theta;
-
+int stgrev(const double x, const double y, struct prjprm *prj, double *phi, double *theta)
 {
    double r;
 
@@ -731,10 +679,7 @@ double *phi, *theta;
 *      prj->w[1]   (180/pi)/r0
 *===========================================================================*/
 
-int arcset(prj)
-
-struct prjprm *prj;
-
+int arcset(struct prjprm *prj)
 {
    if (prj->r0 == 0.0) {
       prj->r0 = R2D;
@@ -752,12 +697,7 @@ struct prjprm *prj;
 
 /*--------------------------------------------------------------------------*/
 
-int arcfwd(phi, theta, prj, x, y)
-
-const double phi, theta;
-struct prjprm *prj;
-double *x, *y;
-
+int arcfwd(const double phi, const double theta, struct prjprm *prj, double *x, double *y)
 {
    double r;
 
@@ -774,12 +714,7 @@ double *x, *y;
 
 /*--------------------------------------------------------------------------*/
 
-int arcrev(x, y, prj, phi, theta)
-
-const double x, y;
-struct prjprm *prj;
-double *phi, *theta;
-
+int arcrev(const double x, const double y, struct prjprm *prj, double *phi, double *theta)
 {
    double r;
 
@@ -811,10 +746,7 @@ double *phi, *theta;
 *      prj->w[1]   Radius of the first point of inflection (N > 2).
 *===========================================================================*/
 
-int zpnset(prj)
-
-struct prjprm *prj;
-
+int zpnset(struct prjprm *prj)
 {
    int   i, j, k;
    double d, d1, d2, r, zd, zd1, zd2;
@@ -893,12 +825,7 @@ struct prjprm *prj;
 
 /*--------------------------------------------------------------------------*/
 
-int zpnfwd(phi, theta, prj, x, y)
-
-const double phi, theta;
-struct prjprm *prj;
-double *x, *y;
-
+int zpnfwd(const double phi, const double theta, struct prjprm *prj, double *x, double *y)
 {
    int   j;
    double r, s;
@@ -926,12 +853,7 @@ double *x, *y;
 
 /*--------------------------------------------------------------------------*/
 
-int zpnrev(x, y, prj, phi, theta)
-
-const double x, y;
-struct prjprm *prj;
-double *phi, *theta;
-
+int zpnrev(const double x, const double y, struct prjprm *prj, double *phi, double *theta)
 {
    int   i, j, k;
    double a, b, c, d, lambda, r, r1, r2, rt, zd, zd1, zd2;
@@ -1047,10 +969,7 @@ double *phi, *theta;
 *      prj->w[1]   1/(2*r0)
 *===========================================================================*/
 
-int zeaset(prj)
-
-struct prjprm *prj;
-
+int zeaset(struct prjprm *prj)
 {
    if (prj->r0 == 0.0) {
       prj->r0 = R2D;
@@ -1068,12 +987,7 @@ struct prjprm *prj;
 
 /*--------------------------------------------------------------------------*/
 
-int zeafwd(phi, theta, prj, x, y)
-
-const double phi, theta;
-struct prjprm *prj;
-double *x, *y;
-
+int zeafwd(const double phi, const double theta, struct prjprm *prj, double *x, double *y)
 {
    double r;
 
@@ -1090,12 +1004,7 @@ double *x, *y;
 
 /*--------------------------------------------------------------------------*/
 
-int zearev(x, y, prj, phi, theta)
-
-const double x, y;
-struct prjprm *prj;
-double *phi, *theta;
-
+int zearev(const double x, const double y, struct prjprm *prj, double *phi, double *theta)
 {
    double r, s;
    const double tol = 1.0e-12;
@@ -1144,10 +1053,7 @@ double *phi, *theta;
 *      prj->w[6]   (180/pi)/prj->w[2]
 *===========================================================================*/
 
-int airset(prj)
-
-struct prjprm *prj;
-
+int airset(struct prjprm *prj)
 {
    const double tol = 1.0e-4;
    double cxi;
@@ -1178,12 +1084,7 @@ struct prjprm *prj;
 
 /*--------------------------------------------------------------------------*/
 
-int airfwd(phi, theta, prj, x, y)
-
-const double phi, theta;
-struct prjprm *prj;
-double *x, *y;
-
+int airfwd(const double phi, const double theta, struct prjprm *prj, double *x, double *y)
 {
    double cxi, r, txi, xi;
 
@@ -1214,12 +1115,7 @@ double *x, *y;
 
 /*--------------------------------------------------------------------------*/
 
-int airrev(x, y, prj, phi, theta)
-
-const double x, y;
-struct prjprm *prj;
-double *phi, *theta;
-
+int airrev(const double x, const double y, struct prjprm *prj, double *phi, double *theta)
 {
    int   j;
    double cxi, lambda, r, r1, r2, rt, txi, x1, x2, xi;
@@ -1305,10 +1201,7 @@ double *phi, *theta;
 *      prj->w[3]   1/(r0*(mu + lambda))
 *===========================================================================*/
 
-int cypset(prj)
-
-struct prjprm *prj;
-
+int cypset(struct prjprm *prj)
 {
    if (prj->r0 == 0.0) {
       prj->r0 = R2D;
@@ -1349,12 +1242,7 @@ struct prjprm *prj;
 
 /*--------------------------------------------------------------------------*/
 
-int cypfwd(phi, theta, prj, x, y)
-
-const double phi, theta;
-struct prjprm *prj;
-double *x, *y;
-
+int cypfwd(const double phi, const double theta, struct prjprm *prj, double *x, double *y)
 {
    double s;
 
@@ -1375,12 +1263,7 @@ double *x, *y;
 
 /*--------------------------------------------------------------------------*/
 
-int cyprev(x, y, prj, phi, theta)
-
-const double x, y;
-struct prjprm *prj;
-double *phi, *theta;
-
+int cyprev(const double x, const double y, struct prjprm *prj, double *phi, double *theta)
 {
    double eta;
 
@@ -1408,10 +1291,7 @@ double *phi, *theta;
 *      prj->w[1]   (180/pi)/r0
 *===========================================================================*/
 
-int carset(prj)
-
-struct prjprm *prj;
-
+int carset(struct prjprm *prj)
 {
 
    if (prj->r0 == 0.0) {
@@ -1430,12 +1310,7 @@ struct prjprm *prj;
 
 /*--------------------------------------------------------------------------*/
 
-int carfwd(phi, theta, prj, x, y)
-
-const double phi, theta;
-struct prjprm *prj;
-double *x, *y;
-
+int carfwd(const double phi, const double theta, struct prjprm *prj, double *x, double *y)
 {
    if (prj->flag != PRJSET) {
       if (carset(prj)) return 1;
@@ -1449,12 +1324,7 @@ double *x, *y;
 
 /*--------------------------------------------------------------------------*/
 
-int carrev(x, y, prj, phi, theta)
-
-const double x, y;
-struct prjprm *prj;
-double *phi, *theta;
-
+int carrev(const double x, const double y, struct prjprm *prj, double *phi, double *theta)
 {
    if (prj->flag != PRJSET) {
       if (carset(prj)) return 1;
@@ -1479,10 +1349,7 @@ double *phi, *theta;
 *      prj->w[1]   (180/pi)/r0
 *===========================================================================*/
 
-int merset(prj)
-
-struct prjprm *prj;
-
+int merset(struct prjprm *prj)
 {
    if (prj->r0 == 0.0) {
       prj->r0 = R2D;
@@ -1500,12 +1367,7 @@ struct prjprm *prj;
 
 /*--------------------------------------------------------------------------*/
 
-int merfwd(phi, theta, prj, x, y)
-
-const double phi, theta;
-struct prjprm *prj;
-double *x, *y;
-
+int merfwd(const double phi, const double theta, struct prjprm *prj, double *x, double *y)
 {
    if (prj->flag != PRJSET) {
       if (merset(prj)) return 1;
@@ -1523,12 +1385,7 @@ double *x, *y;
 
 /*--------------------------------------------------------------------------*/
 
-int merrev(x, y, prj, phi, theta)
-
-const double x, y;
-struct prjprm *prj;
-double *phi, *theta;
-
+int merrev(const double x, const double y, struct prjprm *prj, double *phi, double *theta)
 {
    if (prj->flag != PRJSET) {
       if (merset(prj)) return 1;
@@ -1559,10 +1416,7 @@ double *phi, *theta;
 *      prj->w[3]   lambda/r0
 *===========================================================================*/
 
-int ceaset(prj)
-
-struct prjprm *prj;
-
+int ceaset(struct prjprm *prj)
 {
    if (prj->r0 == 0.0) {
       prj->r0 = R2D;
@@ -1590,12 +1444,7 @@ struct prjprm *prj;
 
 /*--------------------------------------------------------------------------*/
 
-int ceafwd(phi, theta, prj, x, y)
-
-const double phi, theta;
-struct prjprm *prj;
-double *x, *y;
-
+int ceafwd(const double phi, const double theta, struct prjprm *prj, double *x, double *y)
 {
    if (prj->flag != PRJSET) {
       if (ceaset(prj)) return 1;
@@ -1609,12 +1458,7 @@ double *x, *y;
 
 /*--------------------------------------------------------------------------*/
 
-int cearev(x, y, prj, phi, theta)
-
-const double x, y;
-struct prjprm *prj;
-double *phi, *theta;
-
+int cearev(const double x, const double y, struct prjprm *prj, double *phi, double *theta)
 {
    double s;
    const double tol = 1.0e-13;
@@ -1659,10 +1503,7 @@ double *phi, *theta;
 *      prj->w[5]   cot(sigma)
 *===========================================================================*/
 
-int copset(prj)
-
-struct prjprm *prj;
-
+int copset(struct prjprm *prj)
 {
    if (prj->r0 == 0.0) prj->r0 = R2D;
 
@@ -1694,12 +1535,7 @@ struct prjprm *prj;
 
 /*--------------------------------------------------------------------------*/
 
-int copfwd(phi, theta, prj, x, y)
-
-const double phi, theta;
-struct prjprm *prj;
-double *x, *y;
-
+int copfwd(const double phi, const double theta, struct prjprm *prj, double *x, double *y)
 {
    double a, r, s, t;
 
@@ -1728,12 +1564,7 @@ double *x, *y;
 
 /*--------------------------------------------------------------------------*/
 
-int coprev(x, y, prj, phi, theta)
-
-const double x, y;
-struct prjprm *prj;
-double *phi, *theta;
-
+int coprev(const double x, const double y, struct prjprm *prj, double *phi, double *theta)
 {
    double a, dy, r;
 
@@ -1773,10 +1604,7 @@ double *phi, *theta;
 *      prj->w[3]   Y0 + sigma
 *===========================================================================*/
 
-int codset(prj)
-
-struct prjprm *prj;
-
+int codset(struct prjprm *prj)
 {
    if (prj->r0 == 0.0) prj->r0 = R2D;
 
@@ -1801,12 +1629,7 @@ struct prjprm *prj;
 
 /*--------------------------------------------------------------------------*/
 
-int codfwd(phi, theta, prj, x, y)
-
-const double phi, theta;
-struct prjprm *prj;
-double *x, *y;
-
+int codfwd(const double phi, const double theta, struct prjprm *prj, double *x, double *y)
 {
    double a, r;
 
@@ -1825,12 +1648,7 @@ double *x, *y;
 
 /*--------------------------------------------------------------------------*/
 
-int codrev(x, y, prj, phi, theta)
-
-const double x, y;
-struct prjprm *prj;
-double *phi, *theta;
-
+int codrev(const double x, const double y, struct prjprm *prj, double *phi, double *theta)
 {
    double a, dy, r;
 
@@ -1875,10 +1693,7 @@ double *phi, *theta;
 *      prj->w[8]   chi*sqrt(psi + 2C)
 *===========================================================================*/
 
-int coeset(prj)
-
-struct prjprm *prj;
-
+int coeset(struct prjprm *prj)
 {
    double theta1, theta2;
 
@@ -1910,12 +1725,7 @@ struct prjprm *prj;
 
 /*--------------------------------------------------------------------------*/
 
-int coefwd(phi, theta, prj, x, y)
-
-const double phi, theta;
-struct prjprm *prj;
-double *x, *y;
-
+int coefwd(const double phi, const double theta, struct prjprm *prj, double *x, double *y)
 {
    double a, r;
 
@@ -1938,12 +1748,7 @@ double *x, *y;
 
 /*--------------------------------------------------------------------------*/
 
-int coerev(x, y, prj, phi, theta)
-
-const double x, y;
-struct prjprm *prj;
-double *phi, *theta;
-
+int coerev(const double x, const double y, struct prjprm *prj, double *phi, double *theta)
 {
    double a, dy, r, w;
    const double tol = 1.0e-12;
@@ -2002,10 +1807,7 @@ double *phi, *theta;
 *      prj->w[4]   1/psi
 *===========================================================================*/
 
-int cooset(prj)
-
-struct prjprm *prj;
-
+int cooset(struct prjprm * prj)
 {
    double cos1, cos2, tan1, tan2, theta1, theta2;
 
@@ -2044,12 +1846,7 @@ struct prjprm *prj;
 
 /*--------------------------------------------------------------------------*/
 
-int coofwd(phi, theta, prj, x, y)
-
-const double phi, theta;
-struct prjprm *prj;
-double *x, *y;
-
+int coofwd(const double phi, const double theta, struct prjprm *prj, double *x, double *y)
 {
    double a, r;
 
@@ -2076,12 +1873,7 @@ double *x, *y;
 
 /*--------------------------------------------------------------------------*/
 
-int coorev(x, y, prj, phi, theta)
-
-const double x, y;
-struct prjprm *prj;
-double *phi, *theta;
-
+int coorev(const double x, const double y, struct prjprm *prj, double *phi, double *theta)
 {
    double a, dy, r;
 
@@ -2125,10 +1917,7 @@ double *phi, *theta;
 *      prj->w[2]   Y0 = r0*cot(theta1) + theta1*pi/180)
 *===========================================================================*/
 
-int bonset(prj)
-
-struct prjprm *prj;
-
+int bonset(struct prjprm *prj)
 {
    if (prj->r0 == 0.0) {
       prj->r0 = R2D;
@@ -2146,12 +1935,7 @@ struct prjprm *prj;
 
 /*--------------------------------------------------------------------------*/
 
-int bonfwd(phi, theta, prj, x, y)
-
-const double phi, theta;
-struct prjprm *prj;
-double *x, *y;
-
+int bonfwd(const double phi, const double theta, struct prjprm *prj, double *x, double *y)
 {
    double a, r;
 
@@ -2175,12 +1959,7 @@ double *x, *y;
 
 /*--------------------------------------------------------------------------*/
 
-int bonrev(x, y, prj, phi, theta)
-
-const double x, y;
-struct prjprm *prj;
-double *phi, *theta;
-
+int bonrev(const double x, const double y, struct prjprm *prj, double *phi, double *theta)
 {
    double a, dy, costhe, r;
 
@@ -2224,10 +2003,7 @@ double *phi, *theta;
 *      prj->w[2]   2*r0
 *===========================================================================*/
 
-int pcoset(prj)
-
-struct prjprm *prj;
-
+int pcoset(struct prjprm *prj)
 {
    if (prj->r0 == 0.0) {
       prj->r0 = R2D;
@@ -2247,12 +2023,7 @@ struct prjprm *prj;
 
 /*--------------------------------------------------------------------------*/
 
-int pcofwd(phi, theta, prj, x, y)
-
-const double phi, theta;
-struct prjprm *prj;
-double *x, *y;
-
+int pcofwd(const double phi, const double theta, struct prjprm *prj, double *x, double *y)
 {
    double a, costhe, cotthe, sinthe;
 
@@ -2278,12 +2049,7 @@ double *x, *y;
 
 /*--------------------------------------------------------------------------*/
 
-int pcorev(x, y, prj, phi, theta)
-
-const double x, y;
-struct prjprm *prj;
-double *phi, *theta;
-
+int pcorev(const double x, const double y, struct prjprm *prj, double *phi, double *theta)
 {
    int   j;
    double f, fneg, fpos, lambda, tanthe, theneg, thepos, w, xp, xx, ymthe, yp;
@@ -2369,10 +2135,7 @@ double *phi, *theta;
 *      prj->w[1]   (180/pi)/r0
 *===========================================================================*/
 
-int glsset(prj)
-
-struct prjprm *prj;
-
+int glsset(struct prjprm *prj)
 {
    if (prj->r0 == 0.0) {
       prj->r0 = R2D;
@@ -2390,12 +2153,7 @@ struct prjprm *prj;
 
 /*--------------------------------------------------------------------------*/
 
-int glsfwd(phi, theta, prj, x, y)
-
-const double phi, theta;
-struct prjprm *prj;
-double *x, *y;
-
+int glsfwd(const double phi, const double theta, struct prjprm *prj, double *x, double *y)
 {
    if (prj->flag != PRJSET) {
       if (glsset(prj)) return 1;
@@ -2409,12 +2167,7 @@ double *x, *y;
 
 /*--------------------------------------------------------------------------*/
 
-int glsrev(x, y, prj, phi, theta)
-
-const double x, y;
-struct prjprm *prj;
-double *phi, *theta;
-
+int glsrev(const double x, const double y, struct prjprm *prj, double *phi, double *theta)
 {
    double w;
 
@@ -2444,10 +2197,7 @@ double *phi, *theta;
 *      prj->w[3]   1/(pi*r0)
 *===========================================================================*/
 
-int parset(prj)
-
-struct prjprm *prj;
-
+int parset(struct prjprm *prj)
 {
    if (prj->r0 == 0.0) {
       prj->r0 = R2D;
@@ -2469,12 +2219,7 @@ struct prjprm *prj;
 
 /*--------------------------------------------------------------------------*/
 
-int parfwd(phi, theta, prj, x, y)
-
-const double phi, theta;
-struct prjprm *prj;
-double *x, *y;
-
+int parfwd(const double phi, const double theta, struct prjprm *prj, double *x, double *y)
 {
    double s;
 
@@ -2491,12 +2236,7 @@ double *x, *y;
 
 /*--------------------------------------------------------------------------*/
 
-int parrev(x, y, prj, phi, theta)
-
-const double x, y;
-struct prjprm *prj;
-double *phi, *theta;
-
+int parrev(const double x, const double y, struct prjprm *prj, double *phi, double *theta)
 {
    double s, t;
 
@@ -2536,10 +2276,7 @@ double *phi, *theta;
 *      prj->w[3]   1/(2*r0)
 *===========================================================================*/
 
-int aitset(prj)
-
-struct prjprm *prj;
-
+int aitset(struct prjprm *prj)
 {
    if (prj->r0 == 0.0) prj->r0 = R2D;
 
@@ -2555,12 +2292,7 @@ struct prjprm *prj;
 
 /*--------------------------------------------------------------------------*/
 
-int aitfwd(phi, theta, prj, x, y)
-
-const double phi, theta;
-struct prjprm *prj;
-double *x, *y;
-
+int aitfwd(const double phi, const double theta, struct prjprm *prj, double *x, double *y)
 {
    double costhe, w;
 
@@ -2578,12 +2310,7 @@ double *x, *y;
 
 /*--------------------------------------------------------------------------*/
 
-int aitrev(x, y, prj, phi, theta)
-
-const double x, y;
-struct prjprm *prj;
-double *phi, *theta;
-
+int aitrev(const double x, const double y, struct prjprm *prj, double *phi, double *theta)
 {
    double s, u, xp, yp, z;
    const double tol = 1.0e-13;
@@ -2633,10 +2360,7 @@ double *phi, *theta;
 *      prj->w[3]   90/r0
 *===========================================================================*/
 
-int molset(prj)
-
-struct prjprm *prj;
-
+int molset(struct prjprm *prj)
 {
    if (prj->r0 == 0.0) prj->r0 = R2D;
 
@@ -2653,12 +2377,7 @@ struct prjprm *prj;
 
 /*--------------------------------------------------------------------------*/
 
-int molfwd(phi, theta, prj, x, y)
-
-const double phi, theta;
-struct prjprm *prj;
-double *x, *y;
-
+int molfwd(const double phi, const double theta, struct prjprm *prj, double *x, double *y)
 {
    int   j;
    double alpha, resid, u, v, v0, v1;
@@ -2701,12 +2420,7 @@ double *x, *y;
 
 /*--------------------------------------------------------------------------*/
 
-int molrev(x, y, prj, phi, theta)
-
-const double x, y;
-struct prjprm *prj;
-double *phi, *theta;
-
+int molrev(const double x, const double y, struct prjprm *prj, double *phi, double *theta)
 {
    double s, y0, z;
    const double tol = 1.0e-12;
@@ -2763,10 +2477,7 @@ double *phi, *theta;
 *      prj->w[1]   (4/pi)/r0
 *===========================================================================*/
 
-int cscset(prj)
-
-struct prjprm *prj;
-
+int cscset(struct prjprm *prj)
 {
    if (prj->r0 == 0.0) {
       prj->r0 = R2D;
@@ -2784,12 +2495,7 @@ struct prjprm *prj;
 
 /*--------------------------------------------------------------------------*/
 
-int cscfwd(phi, theta, prj, x, y)
-
-const double phi, theta;
-struct prjprm *prj;
-double *x, *y;
-
+int cscfwd(const double phi, const double theta, struct prjprm *prj, double *x, double *y)
 {
    int   face;
    double costhe, eta, l, m, n, rho, xi;
@@ -2915,12 +2621,7 @@ double *x, *y;
 
 /*--------------------------------------------------------------------------*/
 
-int cscrev(x, y, prj, phi, theta)
-
-const double x, y;
-struct prjprm *prj;
-double *phi, *theta;
-
+int cscrev(const double x, const double y, struct prjprm *prj, double *phi, double *theta)
 {
    int   face;
    double l, m, n;
@@ -3063,10 +2764,7 @@ double *phi, *theta;
 *      prj->w[1]   (4/pi)/r0
 *===========================================================================*/
 
-int qscset(prj)
-
-struct prjprm *prj;
-
+int qscset(struct prjprm *prj)
 {
    if (prj->r0 == 0.0) {
       prj->r0 = R2D;
@@ -3084,12 +2782,7 @@ struct prjprm *prj;
 
 /*--------------------------------------------------------------------------*/
 
-int qscfwd(phi, theta, prj, x, y)
-
-const double phi, theta;
-struct prjprm *prj;
-double *x, *y;
-
+int qscfwd(const double phi, const double theta, struct prjprm *prj, double *x, double *y)
 {
    int   face;
    double chi, costhe, eta, l, m, n, p, psi, rho, rhu, t, x0, xf, xi, y0, yf;
@@ -3257,12 +2950,7 @@ double *x, *y;
 
 /*--------------------------------------------------------------------------*/
 
-int qscrev(x, y, prj, phi, theta)
-
-const double x, y;
-struct prjprm *prj;
-double *phi, *theta;
-
+int qscrev(const double x, const double y, struct prjprm *prj, double *phi, double *theta)
 {
    int   direct, face;
    double chi, l, m, n, psi, rho, rhu, xf, yf, w;
@@ -3434,10 +3122,7 @@ double *phi, *theta;
 *      prj->w[1]   (4/pi)/r0
 *===========================================================================*/
 
-int tscset(prj)
-
-struct prjprm *prj;
-
+int tscset(struct prjprm *prj)
 {
    if (prj->r0 == 0.0) {
       prj->r0 = R2D;
@@ -3455,12 +3140,7 @@ struct prjprm *prj;
 
 /*--------------------------------------------------------------------------*/
 
-int tscfwd(phi, theta, prj, x, y)
-
-const double phi, theta;
-struct prjprm *prj;
-double *x, *y;
-
+int tscfwd(const double phi, const double theta, struct prjprm *prj, double *x, double *y)
 {
    int   face;
    double costhe, l, m, n, rho, x0, xf, y0, yf;
@@ -3551,12 +3231,7 @@ double *x, *y;
 
 /*--------------------------------------------------------------------------*/
 
-int tscrev(x, y, prj, phi, theta)
-
-const double x, y;
-struct prjprm *prj;
-double *phi, *theta;
-
+int tscrev(const double x, const double y, struct prjprm *prj, double *phi, double *theta)
 {
    double l, m, n, xf, yf;
 
@@ -3634,10 +3309,7 @@ double *phi, *theta;
 *      prj->r0     r0; reset to 180/pi if 0.
 *===========================================================================*/
 
-int tnxset(prj)
-
-struct prjprm *prj;
-
+int tnxset(struct prjprm *prj)
 {
    if (prj->r0 == 0.0) prj->r0 = R2D;
 
@@ -3652,12 +3324,7 @@ struct prjprm *prj;
 
 /*--------------------------------------------------------------------------*/
 
-int tnxfwd(phi, theta, prj, x, y)
-
-const double phi, theta;
-struct prjprm *prj;
-double *x, *y;
-
+int tnxfwd(const double phi, const double theta, struct prjprm *prj, double *x, double *y)
 {
    double r, s, xp[2];
 
@@ -3683,12 +3350,7 @@ double *x, *y;
 
 /*--------------------------------------------------------------------------*/
 
-int tnxrev(x, y, prj, phi, theta)
-
-const double x, y;
-struct prjprm *prj;
-double *phi, *theta;
-
+int tnxrev(const double x, const double y, struct prjprm *prj, double *phi, double *theta)
 {
    double	rp,xp,yp;
 
@@ -3851,4 +3513,3 @@ poly_end:
 
    return 0;
 }
-
