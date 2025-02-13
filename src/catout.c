@@ -1006,7 +1006,7 @@ void	endcat(char *error)
       break;
 
     case ASCII_SKYCAT:
-      fprintf(ascfile, skycattail);
+      fprintf(ascfile, "%s", skycattail);
       if (!prefs.pipe_flag)
         fclose(ascfile);
       break;
