@@ -697,7 +697,7 @@ int	write_xmlconfigparam(FILE *file, char *name, char *unit,
 		name, ucd);
       break;
     case P_STRING:
-      sprintf(value, (char *)key[i].ptr);
+      sprintf(value, "%s", (char *)key[i].ptr);
       fprintf(file, "   <PARAM name=\"%s\" datatype=\"char\" arraysize=\"*\""
 	" ucd=\"%s\" value=\"%s\"/>\n",
 	name, ucd, *value? value: " ");
@@ -706,13 +706,13 @@ int	write_xmlconfigparam(FILE *file, char *name, char *unit,
       n = *(key[i].nlistptr);
       if (n)
         {
-        sprintf(value, ((char **)key[i].ptr)[0]);
+        sprintf(value, "%s", ((char **)key[i].ptr)[0]);
         fprintf(file, "   <PARAM name=\"%s\" datatype=\"char\""
 		" arraysize=\"*\" ucd=\"%s\" value=\"%s",
 		name, ucd, *value? value: " ");
         for (j=1; j<n; j++)
           {
-          sprintf(value, ((char **)key[i].ptr)[j]);
+          sprintf(value, "%s", ((char **)key[i].ptr)[j]);
           fprintf(file, ",%s", *value? value: " ");
           }
         fprintf(file, "\"/>\n");
@@ -723,7 +723,7 @@ int	write_xmlconfigparam(FILE *file, char *name, char *unit,
 		name, ucd);
       break;
     case P_KEY:
-      sprintf(value, key[i].keylist[*((int *)key[i].ptr)]);
+      sprintf(value, "%s", key[i].keylist[*((int *)key[i].ptr)]);
       fprintf(file, "   <PARAM name=\"%s\" datatype=\"char\" arraysize=\"*\""
 	" ucd=\"%s\" value=\"%s\"/>\n",
 	name, ucd, value);
@@ -732,13 +732,13 @@ int	write_xmlconfigparam(FILE *file, char *name, char *unit,
       n = *(key[i].nlistptr);
       if (n)
         {
-        sprintf(value, key[i].keylist[((int *)key[i].ptr)[0]]);
+        sprintf(value, "%s", key[i].keylist[((int *)key[i].ptr)[0]]);
         fprintf(file, "   <PARAM name=\"%s\" datatype=\"char\""
 		" arraysize=\"*\" ucd=\"%s\" value=\"%s",
 		name, ucd, value);
         for (j=1; j<n; j++)
           {
-          sprintf(value, key[i].keylist[((int *)key[i].ptr)[j]]);
+          sprintf(value, "%s", key[i].keylist[((int *)key[i].ptr)[j]]);
           fprintf(file, ",%s", value);
           }
         fprintf(file, "\"/>\n");
