@@ -7,7 +7,11 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 2005-2015 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1994,1997 ESO
+*	          		(C) 1995,1996 Leiden Observatory 
+*	          		(C) 1998-2021 IAP/CNRS/SorbonneU
+*	          		(C)	2021-2023 CFHT/CNRS
+*	          		(C) 2023-2025 CEA/AIM/UParisSaclay
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +26,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		04/03/2015
+*	Last modified:		19/03/2025
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -49,15 +53,15 @@ INPUT	Picture structure pointer,
 	object structure.
 OUTPUT  -.
 NOTES   obj->posx and obj->posy are taken as initial centroid guesses.
-AUTHOR  E. Bertin (IAP)
-VERSION 04/03/2015
+AUTHOR	E. Bertin (CEA/AIM/UParisSaclay)
+VERSION	19/03/2025
  ***/
 void	compute_winpos(picstruct *field, picstruct *wfield, 
 			picstruct *dgeofield, objstruct *obj)
 
   {
    float		r2,invtwosig2, raper,raper2, rintlim,rintlim2,rextlim2,
-			dx,dx1,dy,dy2, ddx, ddy, sig, invngamma, pdbkg,
+			dx,dx1,dy,dy2, ddx, ddy, sig, invngamma,
                         offsetx,offsety,scalex,scaley,scale2, locarea;
    double               tv, norm, pix, var, backnoise2, invgain, locpix,
 			dxpos,dypos, ddxpos, ddypos, err,err2, emx2,emy2,emxy,
@@ -92,16 +96,8 @@ void	compute_winpos(picstruct *field, picstruct *wfield,
   raper = WINPOS_NSIG*sig;
 
 /* For photographic data */
-  if (pflag)
-    {
-    invngamma = 1.0/field->ngamma;
-    pdbkg = expf(obj->dbkg*invngamma);
-    }
-  else
-    {
-    invngamma = 0.0;
-    pdbkg = 0.0;
-    }
+  invngamma = pflag? 1./field->ngamma : 0.;
+
   raper2 = raper*raper;
 /* Internal radius of the oversampled annulus (<r-sqrt(2)/2) */
   rintlim = raper - 0.75;

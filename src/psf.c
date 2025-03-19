@@ -7,7 +7,11 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1998-2020 IAP/CNRS/SorbonneU
+*	Copyright:		(C) 1994,1997 ESO
+*	          		(C) 1995,1996 Leiden Observatory 
+*	          		(C) 1998-2021 IAP/CNRS/SorbonneU
+*	          		(C)	2021-2023 CFHT/CNRS
+*	          		(C) 2023-2025 CEA/AIM/UParisSaclay
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +26,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		15/07/2020
+*	Last modified:		19/03/2025
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -133,7 +137,7 @@ psfstruct	*psf_load(char *filename, int ext)
    char			rkeyname[80],
 			*head, *ci,*co, *pstr, *pstrbuf;
    int			deg[POLY_MAXDIM], group[POLY_MAXDIM], ndim, ngroup,
-			d,e,i,k,p,n, keyn;
+			d,e,i,k,n, keyn;
 
 /* Open the cat (well it is not a "cat", but simply a FITS file */
   if (!(cat = read_cat(filename)))
@@ -782,15 +786,15 @@ void    double_psf_fit(psfstruct *psf, picstruct *field, picstruct *wfield,
     pfluxerr[PSF_NPSFMAX];
 
     double *pmat,
-     *pm, /* *pps,  *px, *py,*/
-    dx,dy,pdx,pdy, /* x1,y1, mx,my,mflux, */
-    val, ppix,ppix2, /* dflux, */
-    gain, radmin2,radmax2,satlevel
-    ,chi2,pwthresh,pbacknoise2, /* mr, */
-    r2=0, dpsf_fwhm,psf_fwhm ;
+     *pm,
+    dx,dy,
+    val, ppix,ppix2,
+    gain, satlevel
+    ,chi2,pwthresh,pbacknoise2,
+    r2=0, dpsf_fwhm;
   float         **psfmasks, **psfmaskx,**psfmasky, *pps;
   float         *pdata, *pdata2, *pdata3, *pweight, *pd, *pw, 
-		*pdh, *pwh, pixstep,ppixstep;
+		*pdh, *pwh, ppixstep;
   PIXTYPE       *pdatah, *pweighth;
   int                   i,j,k,p, npsf, npix,ix,iy,
     width, height, /* hw,hh, */
@@ -801,16 +805,14 @@ void    double_psf_fit(psfstruct *psf, picstruct *field, picstruct *wfield,
   
     static obj2struct   *obj2 = &outobj2;
 
-  pdx = pdy =dx = dy = 0.0;
+  dx = dy = 0.0;
   ppixstep = 1.0/psf->pixstep;
-  pixstep = 1.0/dpsf->pixstep;
   gain = (dfield->gain >0.0? dfield->gain: 1e30);
   npsfmax=prefs.psf_npsfmax;
   pbacknoise2 = field->backsig*field->backsig;
   satlevel = dfield->satur_level - obj->bkg;
   gainflag = prefs.weightgain_flag;
   dpsf_fwhm = dpsf->fwhm*dpsf->pixstep;
-  psf_fwhm = psf->fwhm*psf->pixstep;
   pwthresh = wfield?wfield->weight_thresh:BIG;
 
   /* Initialize outputs */
@@ -835,8 +837,6 @@ void    double_psf_fit(psfstruct *psf, picstruct *field, picstruct *wfield,
   if (height < (ival=(int)(dpsf_fwhm*2)))
     height = ival;
   npix = width*height;
-  radmin2 = PSF_MINSHIFT*PSF_MINSHIFT;
-  radmax2 = npix/2.0;
   psf_fit(dpsf,dfield, dwfield,obj);
   npsf=thedpsfit->npsf;
   
@@ -970,26 +970,7 @@ void    double_psf_fit(psfstruct *psf, picstruct *field, picstruct *wfield,
             sqrt(*pvar):99;
         }
     }
-  /* Compute chi2 if asked to 
-  if (FLAG(obj2.chi2_psf))
-    {
-      for (j=0; j<npsf; j++)
-        {
-          chi2 = 0.0;
-          for (pd=pdata,pw=pweight,p=0; p<npix; pw++,p++)
-            {
-              ppix = *(pd++);
-              ppix -=  psfmasks[j][p]*pflux[j]**pw;
-              chi2 += ppix*ppix;
-              if (chi2>1E29) chi2=1E28;
-            }
-          obj2->chi2_psf = obj->sigbkg>0.?
-            chi2/((npix - 3*npsf)*obj->sigbkg*obj->sigbkg):999999;
 
-        }
-      
-    }
- */
  /* Compute relative error if asked to */
   if (FLAG(obj2.chi2_psf))
   {

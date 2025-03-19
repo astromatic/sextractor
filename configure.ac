@@ -51,7 +51,7 @@ AC_SUBST(PACKAGER, "AstrOmatic")
 AC_SUBST(DATE1, "$date1")
 AC_SUBST(DATE2, "$date2")
 AC_SUBST(DATE3, "$date3")
-AM_CFLAGS="$AM_CFLAGS -Wall -Wimplicit-function-declaration"
+AM_CFLAGS="$AM_CFLAGS -Wall"
 
 # Include macros
 sinclude(acx_atlas.m4)

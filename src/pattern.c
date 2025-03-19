@@ -7,7 +7,11 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 2007-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
+*	Copyright:		(C) 1994,1997 ESO
+*	          		(C) 1995,1996 Leiden Observatory 
+*	          		(C) 1998-2021 IAP/CNRS/SorbonneU
+*	          		(C)	2021-2023 CFHT/CNRS
+*	          		(C) 2023-2025 CEA/AIM/UParisSaclay
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +26,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		09/07/2012
+*	Last modified:		19/03/2025
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -248,51 +252,7 @@ void	pattern_fit(patternstruct *pattern, profitstruct *profit)
 		profit->ix, profit->iy, 1.0);
     free(outpix);
     }
-/*
-{
-catstruct *cat;
-char	name[MAXCHAR];
-static int number;
-int	nout;
 
-nout = nvec;
-QCALLOC(outpix, PIXTYPE, ninpix*nout);
-outpix1 = outpix;
-doutpix1 = pattern->modpix;
-for (p=0; p<nvec; p++)
-{
-dval = pattern->coeff[p];
-for (n=ninpix; n--; )
-*(outpix1++) += dval**(doutpix1++);
-if (pattern->type==PATTERN_POLARFOURIER)
-  {
-  if ((p%pattern->nmodes)%2)
-    outpix1 -= ninpix;
-  }
-else if (pattern->type==PATTERN_POLARSHAPELETS)
-  {
-  }
-else if (!(p%2))
-  outpix1 -= noutpix;
-}
-cat=new_cat(1);
-init_cat(cat);
-cat->tab->naxis=3;
-QMALLOC(cat->tab->naxisn, int, 3);
-cat->tab->naxisn[0]=profit->modnaxisn[0];
-cat->tab->naxisn[1]=profit->modnaxisn[1];
-cat->tab->naxisn[2]=nout;
-cat->tab->bitpix=BP_FLOAT;
-cat->tab->bytepix=4;
-cat->tab->bodybuf=(char *)outpix;
-cat->tab->tabsize=cat->tab->naxisn[0]*cat->tab->naxisn[1]*cat->tab->naxisn[2]*sizeof(PIXTYPE);
-sprintf(name, "tata_%02d.fits", ++number);
-save_cat(cat, name);
-cat->tab->bodybuf=NULL;
-free_cat(&cat, 1);
-free(outpix);
-}
-*/
   return;
   }
 
@@ -416,19 +376,19 @@ INPUT	Pointer to pattern structure,
 	pointer to the profit structure.
 OUTPUT	-.
 NOTES	-.
-AUTHOR	E. Bertin (IAP)
-VERSION	01/12/2009
+AUTHOR	E. Bertin (CEA/AIM/UParisSaclay)
+VERSION	19/03/2025
  ***/
 void	pattern_create(patternstruct *pattern, profitstruct *profit)
   {
    double		*scbuf[PATTERN_FMAX],*scpix[PATTERN_FMAX],
 			*scpixt,*r2buf,*r2pix,
-			x1,x2, x1t,x2t, r,r2,r2min,r2max,
+			x1,x2, x1t,x2t, r,r2,r2max,
 			mod,ang,ang0, cosang,sinang, angcoeff, posangle,flux,
 			ctheta,stheta, saspect,xscale,yscale, scale, aspect,
 			cd11,cd12,cd21,cd22, x1cout,x2cout, cmod,smod,
 			cnorm,snorm,norm,norm0, dval, det, rad, dnrad,
-			cpnorm,spnorm,pnorm, rl,rl2,rh,rh2,r0,r02, sbd,
+			cpnorm,spnorm,pnorm, rl,rl2,rh,rh2,r0, sbd,
 			bt, wb, omwb, bflux, margin2, dposangle;
    int			f,i,p, ix1,ix2, nrad, npix;
 
@@ -436,7 +396,7 @@ void	pattern_create(patternstruct *pattern, profitstruct *profit)
 			dm,fac, beta, invbeta2;
    float		*normt, *cpix,*spix, *pmodpix,*pix,*modpix,
 			fnorm;
-   int			m,n, nmax, kmax,hnmm;
+   int			m,n, nmax, hnmm;
 
 /* Compute Profile CD matrix */
   aspect = fabs(*profit->paramlist[PARAM_DISK_ASPECT]);
@@ -482,7 +442,6 @@ void	pattern_create(patternstruct *pattern, profitstruct *profit)
 /* Determinant of the change of coordinate system */
   det = xscale*yscale;
   sbd = fabs(flux)*det/(2.0*PI);
-  r2min = det/10.0;
 /* Stay within an ellipse contained in the pattern raster, both in x and y */
   r2max = PATTERN_SCALE*PATTERN_SCALE;
   margin2 = (1.0-PATTERN_MARGIN)*(1.0-PATTERN_MARGIN);
@@ -520,7 +479,6 @@ void	pattern_create(patternstruct *pattern, profitstruct *profit)
         rl = p*rad/dnrad;
         rl2 = rl*rl;
         pattern->r[p] = r0 = (p+1)*rad/dnrad;
-        r02 = r0*r0;
         rh = (p+2)*rad/dnrad;
         rh2 = rh*rh;
         pmodpix = profit->modpix;
@@ -609,7 +567,6 @@ void	pattern_create(patternstruct *pattern, profitstruct *profit)
         rl = p*rad/dnrad;
         rl2 = rl*rl;
         pattern->r[p] = r0 = (p+1)*rad/dnrad;
-        r02 = r0*r0;
         rh = (p+2)*rad/dnrad;
         rh2 = rh*rh;
         for (f=0; f<=PATTERN_FMAX; f++)
@@ -685,7 +642,6 @@ void	pattern_create(patternstruct *pattern, profitstruct *profit)
 
     case PATTERN_POLARSHAPELETS:
       nmax = pattern->ncomp;
-      kmax = (nmax+1)*(nmax+2)/2;
       beta = 0.667;
 
       invbeta2 = 1.0/(beta*beta);

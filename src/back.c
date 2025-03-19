@@ -55,7 +55,6 @@ void	makeback(picstruct *field, picstruct *wfield, int wscale_flag)
    tabstruct	*tab, *wtab;
    PIXTYPE	*buf,*wbuf, *buft,*wbuft;
    OFF_T2	fcurpos,wfcurpos, wfcurpos2,fcurpos2, bufshift, jumpsize;
-   OFF_T2	currentElement, wcurrentElement, currentElement2, wcurrentElement2;
    size_t	bufsize, bufsize2,
 		size,meshsize;
    int		i,j,k,m,n, step, nlines,
@@ -63,6 +62,9 @@ void	makeback(picstruct *field, picstruct *wfield, int wscale_flag)
 		lflag, nr;
    float	*ratio,*ratiop, *weight, *sigma,
 		sratio, sigfac;
+#ifdef HAVE_CFITSIO
+   OFF_T2	currentElement, wcurrentElement, currentElement2, wcurrentElement2;
+#endif
 
 /* If the weight-map is not an external one, no stats are needed for it */
   if (wfield && wfield->flags&(INTERP_FIELD|BACKRMS_FIELD))
@@ -967,7 +969,7 @@ float	localback(picstruct *field, objstruct *obj)
       }
     else
       {
-      obj->dbkg = 0.0;
+      obj->dbkg = bkg = 0.0;
       obj->sigbkg = field->backsig;
       }
     free(backpix);
