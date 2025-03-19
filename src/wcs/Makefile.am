@@ -25,10 +25,11 @@
 #	along with AstrOmatic software.
 #	If not, see <http://www.gnu.org/licenses/>.
 #
-#	Last modified:		10/10/2010
+#	Last modified:		2025-01-22 (added -Wall)
 #
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+AM_CFLAGS= -Wall
 noinst_LIBRARIES	= libwcs_c.a
 libwcs_c_a_SOURCES	= cel.c lin.c poly.c proj.c sph.c tnx.c wcs.c \
 			  wcstrig.c \

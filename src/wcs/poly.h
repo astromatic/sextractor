@@ -1,3 +1,4 @@
+#pragma once
 /*
 *				poly.h
 *
@@ -23,12 +24,9 @@
 *	along with AstrOmatic software.
 *	If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		20/11/2012
+*	Last modified:		2025-01-22
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
-
-#ifndef _POLY_H_
-#define _POLY_H_
 
 /*--------------------------------- constants -------------------------------*/
 
@@ -68,8 +66,11 @@ extern int		cholsolve(double *a, double *b, int n),
 			*poly_powers(polystruct *poly),
 			poly_solve(double *a, double *b, int n);
 
-extern void		poly_addcste(polystruct *poly, double *cste),
-			poly_end(polystruct *poly);
+#if 0
+			/* not used */
+extern void		poly_addcste(polystruct *poly, double *cste);
+#endif
+extern void		poly_end(polystruct *poly);
 
 extern double		*poly_deortho(polystruct *poly, double *datain,
 				double *dataout),
@@ -77,6 +78,3 @@ extern double		*poly_deortho(polystruct *poly, double *datain,
 				double *dataout);
 extern void		poly_initortho(polystruct *poly, double *data,
 				int ndata);
-
-#endif
-

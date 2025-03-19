@@ -24,7 +24,7 @@
 *	along with AstrOmatic software.
 *	If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		10/10/2010
+*	Last modified:		2025-01-22
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 /*=============================================================================
@@ -198,10 +198,7 @@ const char *linrev_errmsg[] = {
    "Memory allocation error",
    "PC matrix is singular"};
 
-int linset(lin)
-
-struct linprm *lin;
-
+int linset(struct linprm *lin)
 {
    int i, ij, j, mem, n;
 
@@ -235,12 +232,7 @@ struct linprm *lin;
 
 /*--------------------------------------------------------------------------*/
 
-int linfwd(imgcrd, lin, pixcrd)
-
-const double imgcrd[];
-struct linprm *lin;
-double pixcrd[];
-
+int linfwd(const double imgcrd[], struct linprm *lin, double pixcrd[])
 {
    int i, ij, j, n;
 
@@ -266,12 +258,7 @@ double pixcrd[];
 
 /*--------------------------------------------------------------------------*/
 
-int linrev(pixcrd, lin, imgcrd)
-
-const double pixcrd[];
-struct linprm *lin;
-double imgcrd[];
-
+int linrev(const double pixcrd[], struct linprm *lin, double imgcrd[])
 {
    int i, ij, j, n;
    double temp;
@@ -298,12 +285,7 @@ double imgcrd[];
 
 /*--------------------------------------------------------------------------*/
 
-int matinv(n, mat, inv)
-
-const int n;
-const double mat[];
-double inv[];
-
+int matinv(const int n, const double mat[], double inv[])
 {
    register int i, ij, ik, j, k, kj, pj;
    int    itemp, mem, *mxl, *lxm, pivot;

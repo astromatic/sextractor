@@ -1,3 +1,4 @@
+#pragma once
 /*
 *				tnx.h
 *
@@ -23,12 +24,9 @@
 *	along with AstrOmatic software.
 *	If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		10/10/2010
+*	Last modified:		2025-01-22
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
-
-#ifndef _TNX_H_
-#define _TNX_H_
 
 /*-------------------------------- macros -----------------------------------*/
 
@@ -68,6 +66,3 @@ tnxaxisstruct	*copy_tnxaxis(tnxaxisstruct *axis),
 double		raw_to_tnxaxis(tnxaxisstruct *axis, double x, double y);
 
 void		free_tnxaxis(tnxaxisstruct *axis);
-
-#endif
-

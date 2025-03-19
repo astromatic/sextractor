@@ -23,7 +23,7 @@
 *	along with AstrOmatic software.
 *	If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		20/11/2012
+*	Last modified:		2025-01-22
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -481,15 +481,16 @@ int	poly_fit(polystruct *poly, double *x, double *y, double *w, int ndata,
   coeff = poly->coeff;
   for (j=ncoeff; j--;)
     *(coeff++) = *(betat++);
-/*
+#if 0
   poly_addcste(poly, offset);
-*/
+#endif
   free(beta);
 
   return info;
   }
 
 
+#if 0
 /****** poly_addcste *********************************************************
 PROTO   void poly_addcste(polystruct *poly, double *cste)
 PURPOSE Modify matrix coefficients to mimick the effect of adding a cst to
@@ -572,6 +573,7 @@ void	poly_addcste(polystruct *poly, double *cste)
 
   return;
   }
+#endif /* 0 */
 
 
 /****** poly_solve ************************************************************

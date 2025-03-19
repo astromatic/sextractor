@@ -1,3 +1,4 @@
+#pragma once
 /*
 *				wcsmath.h
 *
@@ -24,7 +25,7 @@
 *	along with AstrOmatic software.
 *	If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		10/10/2010
+*	Last modified:		2025-01-22
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 /*=============================================================================
@@ -58,9 +59,6 @@
 *   $Id: wcsmath.h,v 1.1.1.1 2002/03/15 16:33:26 bertin Exp $
 *===========================================================================*/
 
-#ifndef WCSLIB_MATH
-#define WCSLIB_MATH
-
 #ifdef PI
 #undef PI
 #endif
@@ -86,5 +84,3 @@
 #define R2D (180.0/PI)
 #define SQRT2 1.4142135623730950488
 #define SQRT2INV (1.0/SQRT2)
-
-#endif /* WCSLIB_MATH */
