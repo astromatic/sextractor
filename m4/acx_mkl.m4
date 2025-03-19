@@ -7,7 +7,11 @@ dnl %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 dnl
 dnl	This file part of:	AstrOmatic software
 dnl
-dnl	Copyright:		(C) 2003-2022 IAP/CNRS/SorbonneU
+dnl	Copyright:		(C) 1994,1997 ESO
+dnl	          		(C) 1995,1996 Leiden Observatory 
+dnl	          		(C) 1998-2021 IAP/CNRS/SorbonneU
+dnl	          		(C) 2021-2023 CFHT/CNRS
+dnl	          		(C) 2023-2025 CEA/AIM/UParisSaclay
 dnl
 dnl	License:		GNU General Public License
 dnl
@@ -100,11 +104,13 @@ dnl 64 bit pointers
       AC_SUBST(MKL_CFLAGS, "-qopenmp -DMKL_ILP64 -I$mklroot/include")
       if test x$3 = xyes; then
 dnl Static linking
+        AC_SUBST(MKL_LDFLAGS, "-qmkl-ilp64 -static-intel")
         AC_SUBST(MKL_LIBS, ["$mklroot/lib/libmkl_intel_ilp64.a \
 		$mklroot/lib/libmkl_intel_thread.a \
 		$mklroot/lib/libmkl_core.a -lpthread -lm"])
       else
 dnl Dynamic linking
+      AC_SUBST(MKL_LDFLAGS, "-qmkl-ilp64")
         AC_SUBST(MKL_LIBS, "-L$mklroot/lib  -lmkl_intel_ilp64 \
 	-lmkl_intel_thread -lmkl_core -lpthread -lm")
       fi
@@ -113,11 +119,13 @@ dnl 32 bit pointers
       AC_SUBST(MKL_CFLAGS, "-qopenmp -I$mklroot/include")
       if test x$3 = xyes; then
 dnl Static linking
+        AC_SUBST(MKL_LDFLAGS, "-qmkl -static-intel")
         AC_SUBST(MKL_LIBS, ["$mklroot/lib/libmkl_intel_lp64.a \
 		$mklroot/lib/libmkl_intel_thread.a \
 		$mklroot/lib/libmkl_core.a -lpthread -lm"])
       else
 dnl Dynamic linking
+        AC_SUBST(MKL_LDFLAGS, "-qmkl-ilp64")
         AC_SUBST(MKL_LIBS, "-L$mklroot/lib -lmkl_intel_lp64 \
 		-lmkl_intel_thread -lmkl_core -lpthread -lm")
       fi
@@ -127,11 +135,13 @@ dnl INTEL compiler uses IA32 architecture
     AC_SUBST(MKL_CFLAGS, "-qopenmp -I$mklroot/include")
     if test x$3 = xyes; then
 dnl Static linking
+    AC_SUBST(MKL_LDFLAGS, "-qmkl -static-intel")
     AC_SUBST(MKL_LIBS, ["$mklroot/lib/libmkl_intel.a \
 	$mklroot/lib/libmkl_intel_thread.a \
 	$mklroot/lib/libmkl_core.a -lpthread -lm"])
     else
 dnl Dynamic linking
+      AC_SUBST(MKL_LDFLAGS, "-qmkl")
       AC_SUBST(MKL_LIBS, "-L$mklroot/lib -lmkl_intel -lmkl_intel_thread \
 	-lmkl_core -lpthread -lm")
     fi
@@ -145,12 +155,14 @@ dnl 64 bit pointers
       AC_SUBST(MKL_CFLAGS, "-qopenmp -DMKL_ILP64 -I$mklroot/include")
       if test x$3 = xyes; then
 dnl Static linking
+      AC_SUBST(MKL_LDFLAGS, "-qmkl-ilp64 -static-intel")
       AC_SUBST(MKL_LIBS,
 	["$startgroup,$mklroot/lib/intel64/libmkl_intel_ilp64.a,\
 $mklroot/lib/intel64/libmkl_intel_thread.a,\
 $mklroot/lib/intel64/libmkl_core.a,-end-group -lpthread -lm"])
       else
 dnl Dynamic linking
+        AC_SUBST(MKL_LDFLAGS, "-qmkl-ilp64")
         AC_SUBST(MKL_LIBS, "-L$mklroot/lib/intel64  -lmkl_intel_ilp64 \
 		-lmkl_intel_thread -lmkl_core -lpthread -lm")
       fi
@@ -159,12 +171,14 @@ dnl 32 bit pointers
       AC_SUBST(MKL_CFLAGS, "-qopenmp -I$mklroot/include")
       if test x$3 = xyes; then
 dnl Static linking
+        AC_SUBST(MKL_LDFLAGS, "-qmkl-ilp64 -static-intel")
         AC_SUBST(MKL_LIBS,
 		["$startgroup,$mklroot/lib/intel64/libmkl_intel_lp64.a,\
 $mklroot/lib/intel64/libmkl_intel_thread.a,\
 $mklroot/lib/intel64/libmkl_core.a,--end-group -lpthread -lm"])
       else
 dnl Dynamic linking
+        AC_SUBST(MKL_LDFLAGS, "-qmkl-ilp64")
         AC_SUBST(MKL_LIBS, "-L$mklroot/lib/intel64 -lmkl_intel_lp64 \
 	-lmkl_intel_thread -lmkl_core -lpthread -lm")
       fi
@@ -174,18 +188,18 @@ dnl INTEL compiler uses IA32 architecture
     AC_SUBST(MKL_CFLAGS, "-qopenmp -I$mklroot/include")
     if test x$3 = xyes; then
 dnl Static linking
+      AC_SUBST(MKL_LDFLAGS, "-qmkl -static-intel")
       AC_SUBST(MKL_LIBS, ["$startgroup,$mklroot/lib/ia32/libmkl_intel.a,\
 $mklroot/lib/ia32/libmkl_intel_thread.a,\
 $mklroot/lib/ia32/libmkl_core.a,--end-group -lpthread -lm"])
     else
 dnl Dynamic linking
+      AC_SUBST(MKL_LDFLAGS, "-qmkl")
       AC_SUBST(MKL_LIBS, "-L$mklroot/lib/ia32 -lmkl_intel -lmkl_intel_thread \
 	-lmkl_core -lpthread -lm")
     fi
   fi
 fi
-
-AC_SUBST(MKL_LDFLAGS, "")
 
 dnl --------------------
 dnl Set internal flags
