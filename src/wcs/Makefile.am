@@ -7,8 +7,12 @@
 #
 #	This file part of:	AstrOmatic WCS library
 #
-#	Copyright:		(C) 2002-2010 Emmanuel Bertin -- IAP/CNRS/UPMC
-#				(C) 1995-1999 Mark Calabretta (original WCSlib)
+#	Copyright:		(C) 1994,1997 ESO
+#	          		(C) 1995,1996 Leiden Observatory 
+#	          		(C) 1998-2021 IAP/CNRS/SorbonneU
+#	          		(C) 2021-2023 CFHT/CNRS
+#	          		(C) 2023-2025 CEA/AIM/UParisSaclay
+#	          		(C) 1995-1999 Mark Calabretta (original WCSlib)
 #
 #	Licenses:		GNU General Public License (this file)
 #				GNU Library General Public License (WCSlib)
@@ -25,11 +29,10 @@
 #	along with AstrOmatic software.
 #	If not, see <http://www.gnu.org/licenses/>.
 #
-#	Last modified:		2025-01-22 (added -Wall)
+#	Last modified:		02/12/2015
 #
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-AM_CFLAGS= -Wall
 noinst_LIBRARIES	= libwcs_c.a
 libwcs_c_a_SOURCES	= cel.c lin.c poly.c proj.c sph.c tnx.c wcs.c \
 			  wcstrig.c \

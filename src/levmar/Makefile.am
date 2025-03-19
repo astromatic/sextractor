@@ -7,8 +7,12 @@
 #
 #	This file part of:	AstrOmatic software
 #
-#	Copyright:		(C) 2007-2012 Emmanuel Bertin -- IAP/CNRS/UPMC
-##				(C) 2004-2011 Manolis Lourakis (orig. LevMar)
+#	Copyright:		(C) 1994,1997 ESO
+#	          		(C) 1995,1996 Leiden Observatory 
+#	          		(C) 1998-2021 IAP/CNRS/SorbonneU
+#	          		(C) 2021-2023 CFHT/CNRS
+#	          		(C) 2023-2025 CEA/AIM/UParisSaclay
+#	          		(C) 2004-2011 Manolis Lourakis (orig. LevMar)
 #
 #	Licenses:		GNU General Public License
 #
