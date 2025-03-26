@@ -7,7 +7,11 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2020 IAP/CNRS/SorbonneU
+*	Copyright:		(C) 1994,1997 ESO
+*	          		(C) 1995,1996 Leiden Observatory 
+*	          		(C) 1998-2021 IAP/CNRS/SorbonneU
+*	          		(C) 2021-2023 CFHT/CNRS
+*	          		(C) 2023-2025 CEA/AIM/UParisSaclay
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +26,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		23/09/2020
+*	Last modified:		25/03/2025
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -92,13 +96,13 @@ void	makeback(picstruct *field, picstruct *wfield, int wscale_flag)
   wfcurpos = wfcurpos2 = 0;		/* to avoid gcc -Wall warnings */
   QFTELL(field->file, fcurpos, field->filename);
 #ifdef HAVE_CFITSIO
-  currentElement = (tab->currentElement == 0) ? 1 : tab->currentElement;
+  currentElement = (tab->cfitsio_currentElement == 0) ? 1 : tab->cfitsio_currentElement;
 #endif
 
   if (wfield) {
     QFTELL(wfield->file, wfcurpos, wfield->filename);
 #ifdef HAVE_CFITSIO
-    wcurrentElement = (wtab->currentElement == 0) ? 1 : wtab->currentElement;
+    wcurrentElement = (wtab->cfitsio_currentElement == 0) ? 1 : wtab->cfitsio_currentElement;
 #endif
   }
 
@@ -189,12 +193,12 @@ void	makeback(picstruct *field, picstruct *wfield, int wscale_flag)
 /*---- Image size too big, we have to skip a few data !*/
       QFTELL(field->file, fcurpos2, field->filename);
  #ifdef HAVE_CFITSIO
-     currentElement2 = (tab->currentElement == 0) ? 1 : tab->currentElement;
+     currentElement2 = (tab->cfitsio_currentElement == 0) ? 1 : tab->cfitsio_currentElement;
 #endif
       if (wfield){
         QFTELL(wfield->file, wfcurpos2, wfield->filename);
 #ifdef HAVE_CFITSIO
-        wcurrentElement2 = (wtab->currentElement == 0) ? 1 : wtab->currentElement;
+        wcurrentElement2 = (wtab->cfitsio_currentElement == 0) ? 1 : wtab->cfitsio_currentElement;
 #endif
       }
       if (j == ny-1 && (n=field->height%field->backh))
@@ -218,7 +222,7 @@ void	makeback(picstruct *field, picstruct *wfield, int wscale_flag)
       QFSEEK(field->file, bufshift*(OFF_T2)field->bytepix, SEEK_CUR,
 		field->filename);
 #ifdef HAVE_CFITSIO
-      tab->currentElement += bufshift;
+      tab->cfitsio_currentElement += bufshift;
 #endif
       buft = buf;
       for (i=nlines; i--; buft += w)
@@ -228,7 +232,7 @@ void	makeback(picstruct *field, picstruct *wfield, int wscale_flag)
           QFSEEK(field->file, jumpsize*(OFF_T2)field->bytepix, SEEK_CUR,
 		field->filename);
 #ifdef HAVE_CFITSIO
-          tab->currentElement += jumpsize;
+          tab->cfitsio_currentElement += jumpsize;
 #endif
         }
         }
@@ -239,7 +243,7 @@ void	makeback(picstruct *field, picstruct *wfield, int wscale_flag)
         QFSEEK(wfield->file, bufshift*(OFF_T2)wfield->bytepix, SEEK_CUR,
 		wfield->filename);
 #ifdef HAVE_CFITSIO
-        wtab->currentElement += bufshift;
+        wtab->cfitsio_currentElement += bufshift;
 #endif
         wbuft = wbuf;
         for (i=nlines; i--; wbuft += w)
@@ -250,7 +254,7 @@ void	makeback(picstruct *field, picstruct *wfield, int wscale_flag)
             QFSEEK(wfield->file, jumpsize*(OFF_T2)wfield->bytepix, SEEK_CUR,
 		wfield->filename);
 #ifdef HAVE_CFITSIO
-            wtab->currentElement += jumpsize;
+            wtab->cfitsio_currentElement += jumpsize;
 #endif
           }
           }
@@ -259,7 +263,7 @@ void	makeback(picstruct *field, picstruct *wfield, int wscale_flag)
 	wfield?wfield->weight_thresh:0.0);
       QFSEEK(field->file, fcurpos2, SEEK_SET, field->filename);
 #ifdef HAVE_CFITSIO
-      tab->currentElement = currentElement2;
+      tab->cfitsio_currentElement = currentElement2;
 #endif
       bm = backmesh;
       for (m=nx; m--; bm++)
@@ -271,7 +275,7 @@ void	makeback(picstruct *field, picstruct *wfield, int wscale_flag)
         {
         QFSEEK(wfield->file, wfcurpos2, SEEK_SET, wfield->filename);
 #ifdef HAVE_CFITSIO
-        wtab->currentElement = wcurrentElement2;
+        wtab->cfitsio_currentElement = wcurrentElement2;
 #endif
         wbm = wbackmesh;
         for (m=nx; m--; wbm++)
@@ -328,12 +332,12 @@ void	makeback(picstruct *field, picstruct *wfield, int wscale_flag)
 /* Go back to the original position */
   QFSEEK(field->file, fcurpos, SEEK_SET, field->filename);
 #ifdef HAVE_CFITSIO
-  tab->currentElement = currentElement;
+  tab->cfitsio_currentElement = currentElement;
 #endif
   if (wfield) {
     QFSEEK(wfield->file, wfcurpos, SEEK_SET, wfield->filename);
 #ifdef HAVE_CFITSIO
-    wfield->tab->currentElement =  wcurrentElement;
+    wfield->tab->cfitsio_currentElement =  wcurrentElement;
 #endif
   }
 

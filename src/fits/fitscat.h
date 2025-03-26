@@ -8,7 +8,11 @@
 *
 *	This file part of:	AstrOmatic FITS/LDAC library
 *
-*	Copyright:		(C) 1995-2023 CFHT/IAP/CNRS/SorbonneU
+*	Copyright:		(C) 1994,1997 ESO
+*	          		(C) 1995,1996 Leiden Observatory 
+*	          		(C) 1998-2021 IAP/CNRS/SorbonneU
+*	          		(C) 2021-2023 CFHT/CNRS
+*	          		(C) 2023-2025 CEA/AIM/UParisSaclay
 *
 *	License:		GNU General Public License
 *
@@ -24,7 +28,7 @@
 *	along with AstrOmatic software.
 *	If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		25/02/2023
+*	Last modified:		21/03/2025
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -154,7 +158,8 @@ typedef struct structcat
   int		ntab;			/* number of tables included */
   access_type_t	access_type;		/* READ_ONLY or WRITE_ONLY */
 #ifdef HAVE_CFITSIO
-  fitsfile *infptr;			/* a cfitsio pointer to the file */
+  int       cfitsio_flag;   /* True if CFITSIO read/write required */
+  fitsfile *cfitsio_infptr;			/* Pointer to the CFITSIO structure */
 #endif
   }		catstruct;
 
@@ -199,9 +204,8 @@ typedef struct structtab
   unsigned int	bodysum;	/* Checksum of the FITS body */
   int isTileCompressed;		/* is this a tile compressed image?  */
 #ifdef HAVE_CFITSIO
-  fitsfile *infptr;			/* a cfitsio pointer to the file */
-  int hdunum;				/* FITS HDU number for this 'table' */
-  long currentElement;		/* tracks the current image pixel */
+  int cfitsio_hdunum;				/* FITS HDU number for this 'table' */
+  long cfitsio_currentElement;		/* tracks the current image pixel */
 #endif
   }		tabstruct;
 
@@ -284,6 +288,7 @@ extern int	about_cat(catstruct *cat, FILE *stream),
 		blank_keys(tabstruct *tab),
 		close_cat(catstruct *cat),
 #ifdef	HAVE_CFITSIO
+		open_cfitsio(catstruct *cat, access_type_t at),
 		close_cfitsio(catstruct *cat),
 #endif
 		copy_key(tabstruct *tabin, char *keyname, tabstruct *tabout,

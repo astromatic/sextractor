@@ -7,7 +7,11 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 1993-2020 IAP/CNRS/SorbonneU
+*	Copyright:		(C) 1994,1997 ESO
+*	          		(C) 1995,1996 Leiden Observatory 
+*	          		(C) 1998-2021 IAP/CNRS/SorbonneU
+*	          		(C) 2021-2023 CFHT/CNRS
+*	          		(C) 2023-2025 CEA/AIM/UParisSaclay
 *
 *	License:		GNU General Public License
 *
@@ -22,7 +26,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		23/09/2020
+*	Last modified:		25/03/2025
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -95,7 +99,7 @@ void	*loadstrip(picstruct *field, picstruct *wfield)
       else
       {
 #ifdef HAVE_CFITSIO
-        tab->currentElement = 1;
+        tab->cfitsio_currentElement = 1;
 #endif
         read_body(tab, data, nbpix);
       } 
