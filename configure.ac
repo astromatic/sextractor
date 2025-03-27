@@ -26,7 +26,7 @@
 #	You should have received a copy of the GNU General Public License
 #	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 #
-#	Last modified:		19/03/2025
+#	Last modified:		27/03/2025
 #
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -35,7 +35,7 @@ define([AC_CACHE_LOAD],)
 define([AC_CACHE_SAVE],)
 
 # This is your standard AstrOmatic source code...
-AC_INIT([SExtractor],[2.28.3],[astromatic@astromatic.iap.fr],
+AC_INIT([SExtractor],[2.29.0],[astromatic@astromatic.iap.fr],
         [sextractor],[http://astromatic.net/software/sextractor])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_AUX_DIR(autoconf)

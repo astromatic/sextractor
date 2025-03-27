@@ -24,7 +24,7 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		19/06/2017
+*	Last modified:		27/03/2025
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
@@ -39,6 +39,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#ifdef HAVE_MKL
+ #include MKL_H
+#endif
+
+#ifndef FFTW3_H
+#include FFTW_H
+#endif
+
 #include "define.h"
 #include "globals.h"
 #include "fft.h"
@@ -50,31 +58,31 @@
  fftwf_plan	fplan, bplan;
  int    	firsttimeflag;
 
-#ifdef USE_THREADS
- pthread_mutex_t	fftmutex;
-#endif
  fftwf_complex 		*fdata1;
 
+
 /****** fft_init ************************************************************
-PROTO	void fft_init(void)
+PROTO	void fft_init(int nthreads)
 PURPOSE	Initialize the FFT routines
-INPUT	-.
+INPUT	Number of threads.
 OUTPUT	-.
 NOTES	Global preferences are used for multhreading.
 AUTHOR	E. Bertin (IAP)
-VERSION	26/06/2009
+VERSION	27/11/2012
  ***/
-void    fft_init(int nthreads)
+void	fft_init(int nthreads)
  {
   if (!firsttimeflag)
     {
-#ifdef USE_THREADS
-    if (nthreads > 1)
-      {
-      if (!fftwf_init_threads())
-        error(EXIT_FAILURE, "*Error*: thread initialization failed in ", "FFTW");
-      fftwf_plan_with_nthreads(prefs.nthreads);
-      }
+#if defined(USE_THREADS)
+    if (!nthreads)
+      nthreads = 1;
+  #if defined(HAVE_MKL)
+    mkl_set_num_threads(nthreads);
+  #elif defined(HAVE_FFTWF_MP)
+    if (fftwf_init_threads())
+      fftwf_plan_with_nthreads(nthreads);
+  #endif
 #endif
     firsttimeflag = 1;
     }
@@ -90,20 +98,25 @@ INPUT	-.
 OUTPUT	-.
 NOTES	-.
 AUTHOR	E. Bertin (IAP)
-VERSION	26/06/2009
+VERSION	27/11/2012
  ***/
-void    fft_end(void)
+void	fft_end(void)
  {
 
   if (firsttimeflag)
     {
     firsttimeflag = 0;
+
+#ifdef USE_THREADS
+  #ifdef HAVE_FFTWF_MP
+    fftwf_cleanup_threads();
+  #endif
+#endif
     fftwf_cleanup();
     }
 
   return;
   }
-
 
 /****** fft_reset ***********************************************************
 PROTO	void fft_reset(void)

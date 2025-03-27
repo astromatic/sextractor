@@ -8,7 +8,11 @@
 *
 *	This file part of:	SExtractor
 *
-*	Copyright:		(C) 2007-2022 IAP/CNRS/SorbonneU
+*	Copyright:		(C) 1994,1997 ESO
+*	          		(C) 1995,1996 Leiden Observatory 
+*	          		(C) 1998-2021 IAP/CNRS/SorbonneU
+*	          		(C) 2021-2023 CFHT/CNRS
+*	          		(C) 2023-2025 CEA/AIM/UParisSaclay
 *
 *	License:		GNU General Public License
 *
@@ -23,19 +27,21 @@
 *	You should have received a copy of the GNU General Public License
 *	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 *
-*	Last modified:		07/09/2022
+*	Last modified:		27/03/2025
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-#include "fits/fitscat.h"
+#ifndef _FFT_H_
+#define _FFT_H_
 
-#include <fftw3.h>
+#include FFTW_H
 
 /*---------------------------- Internal constants ---------------------------*/
 
 /*------------------------------- Other Macros ------------------------------*/
 #define	QFFTWF_MALLOC(ptr, typ, nel) \
-		{if (!(ptr = (typ *)fftwf_malloc((size_t)(nel)*sizeof(typ)))) \
+		{ \
+		if (!(ptr = (typ *)fftwf_malloc((size_t)(nel)*sizeof(typ)))) \
 		   { \
 		   sprintf(gstr, #ptr " (" #nel "=%zd elements) " \
 			"at line %d in module " __FILE__ " !", \
@@ -54,5 +60,5 @@ extern void	fft_conv(float *data1, float *fdata2, int *size),
 		fft_end(void),
 		fft_init(int nthreads),
 		fft_reset(void);
-
 extern float	*fft_rtf(float *data, int *size);
+#endif // _FFT_H_
