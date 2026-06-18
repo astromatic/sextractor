@@ -42,7 +42,7 @@
 #include CFITSIO_H
 #endif
 
-#define	MAXCHARS	256	/* max. number of characters */
+#define	MAXCHARS	4096	/* max. number of characters */
 #define WARNING_NMAX	1000	/* max. number of recorded warnings */
 
 /*---------------------------- return messages ------------------------------*/
