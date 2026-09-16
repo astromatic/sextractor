@@ -67,7 +67,7 @@ if test x$2 = x; then
   )
 fi
 
-if test x$ATLAS_ERROR = x; then
+if test "x$ATLAS_ERROR" = "x"; then
   AC_DEFINE_UNQUOTED(ATLAS_BLAS_H, "${acx_atlas_incdir}cblas.h", [BLAS header filename.])
   AC_DEFINE_UNQUOTED(ATLAS_LAPACK_H, "${acx_atlas_incdir}clapack.h", [CLAPACK header filename.])
 

@@ -26,7 +26,7 @@
 #	You should have received a copy of the GNU General Public License
 #	along with SExtractor. If not, see <http://www.gnu.org/licenses/>.
 #
-#	Last modified:		27/03/2025
+#	Last modified:		2025-07-21
 #
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -52,16 +52,6 @@ AC_SUBST(DATE1, "$date1")
 AC_SUBST(DATE2, "$date2")
 AC_SUBST(DATE3, "$date3")
 AM_CFLAGS="$AM_CFLAGS -Wall"
-
-# Include macros
-sinclude(acx_atlas.m4)
-sinclude(acx_openblas.m4)
-sinclude(acx_fftw.m4)
-sinclude(acx_mkl.m4)
-sinclude(acx_cfitsio.m4)
-sinclude(acx_prog_cc_optim.m4)
-sinclude(acx_pthread.m4)
-sinclude(acx_urbi_resolve_dir.m4)
 
 # Provide a special option for setting the package release number
 AC_ARG_WITH(release,
@@ -310,23 +300,27 @@ if test "$enable_model_fitting" != "no"; then
 
     if test "x$enable_openblas" = "xyes"; then
 ######## Handle the OpenBLAS library (linear algebra: BLAS + LAPACKe) ########
-      ACX_OPENBLAS($with_openblas_libdir, $with_openblas_incdir, $use_pthreads, no,
+      AC_MSG_NOTICE("checking openblas + lapacke")
+      AX_BLAS(
         [
-          AM_CFLAGS="$AM_CFLAGS $OPENBLAS_CFLAGS "
-          AM_LDFLAGS="$AM_LDFLAGS $OPENBLAS_LDFLAGS "
-          LIBS="$OPENBLAS_LIBS $LIBS"
-          if test "$OPENBLAS_WARN" != ""; then
-            AC_MSG_WARN([$OPENBLAS_WARN])
-          fi
+          LIBS="$BLAS_LIBS $LIBS"
         ],
-        AC_MSG_ERROR([$OPENBLAS_ERROR Exiting.])
+        AC_MSG_ERROR([blas error... Exiting.])
+      )
+      AX_LAPACK($with_openblas_libdir, $with_openblas_incdir,
+        [
+          AM_CFLAGS="$AM_CFLAGS $LAPACK_CFLAGS "
+          AM_LDFLAGS="$AM_LDFLAGS $LAPACK_LDFLAGS "
+          LIBS="$LAPACK_LIBS $LIBS"
+        ],
+        AC_MSG_ERROR([$LAPACK_ERROR Exiting.])
       )
     else
 ######### handle the ATLAS library (linear algebra: BLAS + cLAPACK) ##########
       ACX_ATLAS($with_atlas_libdir, $with_atlas_incdir, $use_pthreads,
         [
           [LIBS="$ATLAS_LIBS $LIBS"]
-          if test "$ATLAS_WARN" != ""; then
+          if test -n $ATLAS_WARN ; then
             AC_MSG_WARN([$ATLAS_WARN])
 	  fi
         ],
